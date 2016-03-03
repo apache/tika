@@ -88,19 +88,19 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 xhtml.startElement("div", "class", "slide-content");
 
                 textRunsToText(xhtml, slide.getTextParagraphs());
-				
+                
 
-				// Table text
-				for (HSLFShape shape : slide.getShapes()) {
-					if (shape instanceof HSLFTable) {
-						extractTableText(xhtml, (HSLFTable) shape);
-					}
-				}
-				
+                // Table text
+                for (HSLFShape shape : slide.getShapes()) {
+                    if (shape instanceof HSLFTable) {
+                        extractTableText(xhtml, (HSLFTable) shape);
+                    }
+                }
+                
                 xhtml.endElement("div");
             }
 
-			// Slide footer, if present
+            // Slide footer, if present
             if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null && !hf.getFooterText().isEmpty()) {
                 xhtml.startElement("div", "class", "slide-footer");
 
@@ -108,33 +108,33 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
                 xhtml.endElement("div"); //end slide-footer
             }
-			
-			// Find the Notes for this slide and extract inline
-			HSLFNotes notes = slide.getNotes();
-			HeadersFooters nhf = ss.getNotesHeadersFooters();
+            
+            // Find the Notes for this slide and extract inline
+            HSLFNotes notes = slide.getNotes();
+            HeadersFooters nhf = ss.getNotesHeadersFooters();
 
             if (notes != null) {
                 xhtml.startElement("div", "class", "slide-notes");
 
-				
-				
-				// Notes text
+                
+                
+                // Notes text
                 textRunsToText(xhtml, notes.getTextParagraphs());
-				
-				// Note headers/footers can be extracted, but content will be duplicate
-				// Repeat the notes footer, if set
-				/*if (nhf != null && nhf.isFooterVisible() && nhf.getFooterText() != null) {
-					xhtml.startElement("p", "class", "footer");
-					xhtml.characters(nhf.getFooterText()); //is this just a repetition of the footers?
-					xhtml.endElement("p");
-				}
-				
-				// Repeat the Notes header, if set
-				if (nhf != null && nhf.isHeaderVisible() && nhf.getHeaderText() != null) {
-					xhtml.startElement("p", "class", "header");
-					xhtml.characters(nhf.getHeaderText());
-					xhtml.endElement("p");
-				}*/
+                
+                // Note headers/footers can be extracted, but content will be duplicate
+                // Repeat the notes footer, if set
+                /*if (nhf != null && nhf.isFooterVisible() && nhf.getFooterText() != null) {
+                    xhtml.startElement("p", "class", "footer");
+                    xhtml.characters(nhf.getFooterText()); //is this just a repetition of the footers?
+                    xhtml.endElement("p");
+                }
+                
+                // Repeat the Notes header, if set
+                if (nhf != null && nhf.isHeaderVisible() && nhf.getHeaderText() != null) {
+                    xhtml.startElement("p", "class", "header");
+                    xhtml.characters(nhf.getHeaderText());
+                    xhtml.endElement("p");
+                }*/
        
                 xhtml.endElement("div");
             }
@@ -142,41 +142,41 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
             // Comments, if present
             StringBuilder authorStringBuilder = new StringBuilder();
-			
-			Comment[] comments = slide.getComments();
-			if (comments.length > 0) {
-			
-				xhtml.startElement("div", "class", "slide-comments");
-				
-				for (Comment comment : comments) {
-					authorStringBuilder.setLength(0);
-					xhtml.startElement("p"); //start single slide-comment
+            
+            Comment[] comments = slide.getComments();
+            if (comments.length > 0) {
+            
+                xhtml.startElement("div", "class", "slide-comments");
+                
+                for (Comment comment : comments) {
+                    authorStringBuilder.setLength(0);
+                    xhtml.startElement("p"); //start single slide-comment
 
-					if (comment.getAuthor() != null) {
-						authorStringBuilder.append(comment.getAuthor());
-					}
-					if (comment.getAuthorInitials() != null) {
-						if (authorStringBuilder.length() > 0) {
-							authorStringBuilder.append(" ");
-						}
-						authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
-					}
-					if (authorStringBuilder.length() > 0) {
-						if (comment.getText() != null) {
-							authorStringBuilder.append(" - ");
-						}
-						xhtml.startElement("b");
-						xhtml.characters(authorStringBuilder.toString());
-						xhtml.endElement("b");
-					}
-					if (comment.getText() != null) {
-						xhtml.characters(comment.getText());
-					}
-					xhtml.endElement("p"); //end single slide-comment
-				}
-				
-				xhtml.endElement("div"); // end slide-comments
-			}
+                    if (comment.getAuthor() != null) {
+                        authorStringBuilder.append(comment.getAuthor());
+                    }
+                    if (comment.getAuthorInitials() != null) {
+                        if (authorStringBuilder.length() > 0) {
+                            authorStringBuilder.append(" ");
+                        }
+                        authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
+                    }
+                    if (authorStringBuilder.length() > 0) {
+                        if (comment.getText() != null) {
+                            authorStringBuilder.append(" - ");
+                        }
+                        xhtml.startElement("b");
+                        xhtml.characters(authorStringBuilder.toString());
+                        xhtml.endElement("b");
+                    }
+                    if (comment.getText() != null) {
+                        xhtml.characters(comment.getText());
+                    }
+                    xhtml.endElement("p"); //end single slide-comment
+                }
+                
+                xhtml.endElement("div"); // end slide-comments
+            }
 
             // Now any embedded resources
             handleSlideEmbeddedResources(slide, xhtml);
@@ -187,7 +187,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
         handleSlideEmbeddedPictures(ss, xhtml);
 
-		// All slides done
+        // All slides done
         xhtml.endElement("div");
     }
 

@@ -56,18 +56,18 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
      * @see org.apache.poi.xslf.extractor.XSLFPowerPointExtractor#getText()
      */
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
-		
+        
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
         XSLFCommentAuthors commentAuthors = slideShow.getCommentAuthors();
 
-		xhtml.startElement("div", "class", "slideShow");
-		
+        xhtml.startElement("div", "class", "slideShow");
+        
         List<XSLFSlide> slides = slideShow.getSlides();
         for (XSLFSlide slide : slides) {
-			
-			xhtml.startElement("div", "class", "slide");
-			
-			String slideDesc;
+            
+            xhtml.startElement("div", "class", "slide");
+            
+            String slideDesc;
             if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
                 slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
                 slideDesc += "_";
@@ -75,19 +75,19 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 slideDesc = null;
             }
 
-			
+            
             xhtml.startElement("div", "class", "slide-master-content");
-			{
-				// slide layout which is the master sheet for this slide
-				XSLFSlideLayout slideLayout = slide.getMasterSheet();
-				extractContent(slideLayout.getShapes(), true, xhtml, null, null);
-			
-				// slide master which is the master sheet for all text layouts
-				XSLFSheet slideMaster = slideLayout.getMasterSheet();
-				extractContent(slideMaster.getShapes(), true, xhtml, null, null);
-			}
+            {
+                // slide layout which is the master sheet for this slide
+                XSLFSlideLayout slideLayout = slide.getMasterSheet();
+                extractContent(slideLayout.getShapes(), true, xhtml, null, null);
+            
+                // slide master which is the master sheet for all text layouts
+                XSLFSheet slideMaster = slideLayout.getMasterSheet();
+                extractContent(slideMaster.getShapes(), true, xhtml, null, null);
+            }
             xhtml.endElement("div");
-			
+            
             // slide content
             xhtml.startElement("div", "class", "slide-content");
             extractContent(slide.getShapes(), false, xhtml, slideDesc, "slide");
@@ -99,16 +99,16 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.startElement("div", "class", "slide-notes");
 
                 extractContent(slideNotes.getShapes(), false, xhtml, slideDesc, "slide-notes");
-				
+                
                 xhtml.endElement("div");
             }
 
             // comments (if present)
             XSLFComments comments = slide.getComments();
             if (comments != null) {
-				
-				xhtml.startElement("div", "class", "slide-comments");
-				
+                
+                xhtml.startElement("div", "class", "slide-comments");
+                
                 StringBuilder authorStringBuilder = new StringBuilder();
                 for (int i = 0; i < comments.getNumberOfComments(); i++) {
                     authorStringBuilder.setLength(0);
@@ -137,11 +137,11 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.characters(comment.getText());
                     xhtml.endElement("p");
                 }
-				xhtml.endElement("div"); //end of slide-comments
+                xhtml.endElement("div"); //end of slide-comments
             }
-			xhtml.endElement("div"); //end of slide
+            xhtml.endElement("div"); //end of slide
         }
-		// All slides done
+        // All slides done
         xhtml.endElement("div"); //end of slideshow
     }
 
@@ -156,18 +156,18 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 }
                 boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
-					if (ph != null && Arrays.asList("FOOTER", "HEADER", "TITLE").contains(ph.toString())){
-						String type = ph.toString().toLowerCase(Locale.ENGLISH);
-						type = (classPrefix == null || classPrefix.isEmpty())? type : classPrefix + "-" + type;
-						
-						xhtml.startElement("p", "class", type);
 					
-					} else {
-						xhtml.startElement("p");
+                    if (ph != null && Arrays.asList("FOOTER", "HEADER", "TITLE").contains(ph.toString())){
+                        String type = ph.toString().toLowerCase(Locale.ENGLISH);
+                        type = (classPrefix == null || classPrefix.isEmpty())? type : classPrefix + "-" + type;
+                        
+                        xhtml.startElement("p", "class", type);
+                        
+                    } else {
+                        xhtml.startElement("p");
 					}
-                    
 
-                    for (XSLFTextRun run : p.getTextRuns()) {
+					for (XSLFTextRun run : p.getTextRuns()) {
                         //TODO: add check for targetmode=external into POI
                         //then check to confirm that the urls are actually
                         //external and not footnote refs via the current hack
@@ -184,8 +184,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         }
                         inHyperlink = false;
                     }
-
-                    xhtml.endElement("p");
+					xhtml.endElement("p");
+					               
                 }
             } else if (sh instanceof XSLFGroupShape) {
                 // recurse into groups of shapes
