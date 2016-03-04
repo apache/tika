@@ -65,7 +65,8 @@ public class BundleIT {
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException {
         String bundleFileName = System.getProperty(BUNDLE_JAR_SYS_PROP);
-        return options(junitBundles(), mavenBundle("org.apache.tika", "tika-core"),
+        return options(junitBundles(), 
+                bundle(new File("target/test-bundles/tika-core.jar").toURI().toURL().toString()),
                 bundle(new File(bundleFileName).toURI().toString()));
     }
 
