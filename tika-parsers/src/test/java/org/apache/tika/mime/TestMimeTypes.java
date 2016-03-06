@@ -353,6 +353,7 @@ public class TestMimeTypes {
        assertTypeByName("application/x-tar",  "test.tar");
        assertTypeByName("application/gzip", "test.tgz"); // See GZIP, not tar contents of it
        assertTypeByName("application/x-cpio", "test.cpio");
+       assertTypeByName("application/vnd.ms-cab-compressed", "test.cab");
        
        // TODO Add an example .deb and .udeb, then check these
        
@@ -363,6 +364,7 @@ public class TestMimeTypes {
        assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
        assertTypeByData("application/gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
        assertTypeByData("application/x-cpio", "test-documents.cpio");
+       assertTypeByData("application/vnd.ms-cab-compressed", "test-documents.cab");
        
        // For spanned zip files, the .zip file doesn't have the header, it's the other parts
        assertTypeByData("application/octet-stream", "test-documents-spanned.zip");
