@@ -1,0 +1,13 @@
+.OPTION EXPLICIT
+.Set CabinetNameTemplate=test-documents.cab
+.Set Cabinet=on
+.Set Compress=on
+"testEXCEL.xls"
+"testHTML.html"
+"testOpenOffice2.odt"
+"testPDF.pdf"
+"testPPT.ppt"
+"testRTF.rtf"
+"testTXT.txt"
+"testWORD.doc"
+"testXML.xml"
