@@ -362,9 +362,20 @@
   <mime-type type="application/moss-signature"/>
   <mime-type type="application/mosskey-data"/>
   <mime-type type="application/mosskey-request"/>
-  <mime-type type="application/mp4">
-    <glob pattern="*.mp4s"/>
+
+  <mime-type type="application/quicktime">
+    <!-- The is the base QuickTime container -->
+    <!-- QuickTime video, and all MP4 formats, are based on it -->
+    <acronym>QTFF</acronym>
+    <_comment>QuickTime container format</_comment>
   </mime-type>
+  <mime-type type="application/mp4">
+    <!-- Arbitrary data stored in a MP4 container -->
+    <_comment>MP4 container format</_comment>
+    <glob pattern="*.mp4s"/>
+    <sub-class-of type="application/quicktime" />
+  </mime-type>
+
   <mime-type type="application/mpeg4-generic"/>
   <mime-type type="application/mpeg4-iod"/>
   <mime-type type="application/mpeg4-iod-xmt"/>
@@ -4238,6 +4249,7 @@
     <glob pattern="*.mp4a"/>
     <glob pattern="*.m4a"/>
     <glob pattern="*.m4b"/>
+    <sub-class-of type="application/quicktime" />
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
@@ -6370,6 +6382,7 @@
   <mime-type type="video/pointer"/>
 
   <mime-type type="video/quicktime">
+    <_comment>QuickTime Video</_comment>
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
@@ -6378,6 +6391,7 @@
     </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
+    <sub-class-of type="application/quicktime" />
   </mime-type>
 
   <mime-type type="video/raw"/>
