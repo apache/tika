@@ -1506,7 +1506,7 @@
   <mime-type type="application/vnd.ms-asf"/>
   <mime-type type="application/vnd.ms-cab-compressed">
    <magic priority="50">
-      <match value="0x4d534346" type="string" offset="0"> <!-- value="MCSF"-->
+      <match value="MCSF" type="string" offset="0">
       </match>
     </magic>
     <glob pattern="*.cab"/>
@@ -2533,7 +2533,7 @@
   <mime-type type="application/vnd.wv.ssp+xml"/>
   <mime-type type="application/vnd.xara">
    <magic priority="50">
-     <match value="0x78617221" type="string" offset="0"> <!-- value="xar!"-->
+     <match value="xar!" type="string" offset="0"> 
      </match>
     </magic>
     <glob pattern="*.xar"/>
@@ -3401,7 +3401,7 @@
 
   <mime-type type="application/x-mobipocket-ebook">
    <magic priority="50">
-      <match value="0x424f4f4b4d4f4249" type="string" offset="60"> <!-- value="BOOKMOBI"-->
+      <match value="BOOKMOBI" type="string" offset="60"> 
      </match>
     </magic>
     <glob pattern="*.prc"/>
