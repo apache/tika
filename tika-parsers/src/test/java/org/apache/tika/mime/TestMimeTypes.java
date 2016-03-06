@@ -69,6 +69,11 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testNetCDF() throws Exception {
+        assertTypeByData("application/x-netcdf", "sresa1b_ncar_ccsm3_0_run1_200001.nc");
+    }
+
+    @Test
     public void testLoadMimeTypes() throws MimeTypeException {
         assertNotNull(repo.forName("application/octet-stream"));
         assertNotNull(repo.forName("text/x-tex"));

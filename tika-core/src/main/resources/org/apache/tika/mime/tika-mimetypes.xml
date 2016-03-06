@@ -3590,6 +3590,10 @@
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>
+    <magic priority="50">
+      <match value="CDF\001" type="string" offset="0" />
+      <match value="CDF\002" type="string" offset="0" />
+    </magic>
   </mime-type>
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
