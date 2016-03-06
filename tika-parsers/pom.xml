@@ -45,6 +45,7 @@
     <pdfbox.version>1.8.11</pdfbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <cxf.version>3.0.3</cxf.version>
+    <sis.version>0.5</sis.version>
   </properties>
 
   <dependencies>
@@ -335,17 +336,17 @@
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
-      <version>0.5</version>
+      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.storage</groupId>
       <artifactId>sis-netcdf</artifactId>
-      <version>0.5</version>
+      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-metadata</artifactId>
-      <version>0.5</version>
+      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.opengis</groupId>
