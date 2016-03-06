@@ -3407,6 +3407,11 @@
   </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
+    <acronym>MOBI</acronym>
+    <_comment>Mobipocket Ebook</_comment>
+    <magic priority="60">
+      <match value="BOOKMOBI" type="string" offset="23" />
+    </magic>
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
   </mime-type>
@@ -3770,6 +3775,15 @@
 
   <mime-type type="application/x-shar">
     <glob pattern="*.shar"/>
+  </mime-type>
+
+  <mime-type type="application/x-shapefile">
+    <acronym>ESRI Shapefiles</acronym>
+    <_comment>ESRI Shapefiles</_comment>
+    <magic priority="60">
+      <match value="0x0000270a" type="big32" offset="2" />
+    </magic>
+    <glob pattern="*.shp"/>
   </mime-type>
 
   <mime-type type="application/x-shockwave-flash">
