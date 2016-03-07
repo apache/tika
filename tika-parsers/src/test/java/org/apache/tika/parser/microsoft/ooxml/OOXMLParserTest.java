@@ -628,8 +628,8 @@ public class OOXMLParserTest extends TikaTest {
         String xml = getXML("testPPT_various.pptx", metadata).xml;
         assertContains("<p>Footnote appears here", xml);
         assertContains("<p>[1] This is a footnote.", xml);
-        assertContains("<p>This is the header text.</p>", xml);
-        assertContains("<p>This is the footer text.</p>", xml);
+        assertContains("<p class=\"slide-notes-header\">This is the header text.</p>", xml);
+        assertContains("<p class=\"slide-notes-footer\">This is the footer text.</p>", xml);
         assertContains("<p>Here is a text box</p>", xml);
         assertContains("<p>Bold", xml);
         assertContains("italic underline superscript subscript", xml);
@@ -894,7 +894,7 @@ public class OOXMLParserTest extends TikaTest {
         int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\" />");
         int i = xml.indexOf("Send me a note");
         int j = xml.indexOf("<div class=\"embedded\" id=\"slide2_rId4\" />");
-        int k = xml.indexOf("<p>No title</p>");
+        int k = xml.indexOf("<p class=\"slide-title\">No title</p>");
         assertTrue(h != -1);
         assertTrue(i != -1);
         assertTrue(j != -1);
