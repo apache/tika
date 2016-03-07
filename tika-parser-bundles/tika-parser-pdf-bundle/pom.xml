@@ -47,6 +47,7 @@
             <Bundle-Activator>org.apache.tika.module.pdf.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-pdf-module;inline=true,
+              tika-parser-xmp-module;inline=true,
               commons-io;inline=true,
               pdfbox;inline=true,
               bcmail-jdk15on;inline=true,

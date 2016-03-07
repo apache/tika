@@ -9,6 +9,9 @@ Release 2.0 - Future Development
   * (Something about more specific parser bundles, plus an overall one)
 
 Release 1.13 - ???
+
+  * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
+
   * Move serialization of TikaConfig to tika-core and enable dumping
     of the config file via tika-app (TIKA-1657).
 
@@ -16,7 +19,7 @@ Release 1.13 - ???
 
   * Upgrade to sqlite-jdbc 3.8.11.2 (TIKA-1861).  NOTE: this dependency
     is still <scope>provided</scope>.  You need to include this dependency
-    in order to parser sqlite files.
+    in order to parse sqlite files.
 
   * Upgrade to POI 3.14-beta1 (TIKA-1799).
 
