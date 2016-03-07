@@ -1,5 +1,7 @@
 Release 1.13 - ???
 
+  * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
+
   * Move serialization of TikaConfig to tika-core and enable dumping
     of the config file via tika-app (TIKA-1657).
 
@@ -17,7 +19,7 @@ Release 1.13 - ???
   * Upgrade to PDFBox 1.8.11 (TIKA-1830).
 
   * Upgrade to Jackson 2.7.1 (TIKA-1869).
-i
+
   * Upgrade to Apache SIS 0.6 (TIKA-1878).
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).

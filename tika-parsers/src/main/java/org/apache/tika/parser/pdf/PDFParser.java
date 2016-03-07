@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPSchema;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
+import org.apache.jempbox.xmp.XMPSchemaMediaManagement;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
@@ -58,6 +59,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -223,19 +225,24 @@ public class PDFParser extends AbstractParser {
                 Boolean.toString(ap.canPrintDegraded()));
 
 
-        //now go for the XMP stuff
+        //now go for the XMP
         org.apache.jempbox.xmp.XMPMetadata xmp = null;
         XMPSchemaDublinCore dcSchema = null;
+        XMPSchemaMediaManagement mmSchema = null;
         try {
             if (document.getDocumentCatalog().getMetadata() != null) {
                 xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
             }
-            if (xmp != null) {
+        } catch (IOException e) {}
+
+        if (xmp != null) {
+            try {
                 dcSchema = xmp.getDublinCoreSchema();
-            }
-        } catch (IOException e) {
-            //swallow
+            } catch (IOException e) {}
+
+            JempboxExtractor.extractXMPMM(xmp, metadata);
         }
+
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
