@@ -1,0 +1,12 @@
+org\apache\tika\xmp\convert\ITikaToXMPConverter.class
+org\apache\tika\xmp\convert\GenericConverter$1.class
+org\apache\tika\xmp\convert\MSOfficeXMLConverter.class
+org\apache\tika\xmp\XMPMetadata.class
+org\apache\tika\xmp\XMPMetadata$1.class
+org\apache\tika\xmp\convert\AbstractConverter.class
+org\apache\tika\xmp\convert\OpenDocumentConverter.class
+org\apache\tika\xmp\convert\RTFConverter.class
+org\apache\tika\xmp\convert\TikaToXMP.class
+org\apache\tika\xmp\convert\MSOfficeBinaryConverter.class
+org\apache\tika\xmp\convert\GenericConverter.class
+org\apache\tika\xmp\convert\Namespace.class

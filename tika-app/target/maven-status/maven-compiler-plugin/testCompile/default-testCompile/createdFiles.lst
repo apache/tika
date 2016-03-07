@@ -1,0 +1,3 @@
+org\apache\tika\cli\TikaCLITest.class
+org\apache\tika\cli\TikaCLIBatchCommandLineTest.class
+org\apache\tika\cli\TikaCLIBatchIntegrationTest.class

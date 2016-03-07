@@ -1,0 +1,1025 @@
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /language/stream  200 handled=true
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=2,c=27},r=7}
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:28 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3 as handler
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:28 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta
+Mar 03, 2016 10:11:28 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/language/stream)
+Mar 03, 2016 10:11:28 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:28 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@4d0d9fe79 pairs: {PUT /meta HTTP/1.1: null}{Content-Type: application/msword}{Accept: text/csv}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 221/221
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta on AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=8
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:28 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta (application/msword)
+Mar 03, 2016 10:11:28 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 3098/3098
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta  200 handled=true
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@c430e6c5 pairs: {null: HTTP/1.1 200 OK}{Content-Type: text/csv}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4c163e3 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=8}
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta/Author
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta)
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@239a307b9 pairs: {PUT /meta/Author HTTP/1.1: null}{Content-Type: application/msword}{Accept: text/plain}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 1690/1690
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta/Author on AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=9
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta/Author @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta/Author @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta/Author (application/msword)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 1638/1638
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@2a8448fa5 pairs: {null: HTTP/1.1 200 OK}{Content-Type: text/plain}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta/Author  200 handled=true
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7bd7d6d6 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=9}
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta/Author)
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@d554c5f9 pairs: {PUT /meta HTTP/1.1: null}{Content-Type: application/msword}{Accept: application/rdf+xml}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 232/232
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta on AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=10
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta (application/msword)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 3098/3098
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@2dfaea865 pairs: {null: HTTP/1.1 200 OK}{Content-Type: application/rdf+xml}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta  200 handled=true
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=10}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@5e7cd6cc as handler
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta)
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@624ea2359 pairs: {PUT /meta HTTP/1.1: null}{Content-Type: application/msword}{Accept: application/json}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 1689/1689
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta on AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=11
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta (application/msword)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 1638/1638
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@3932c79a5 pairs: {null: HTTP/1.1 200 OK}{Content-Type: application/json}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta  200 handled=true
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=11}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@16150369 as handler
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta/dc:creator
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta)
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@46d590679 pairs: {PUT /meta/dc:creator HTTP/1.1: null}{Content-Type: application/msword}{Accept: application/rdf+xml}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 243/243
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 4096/4096
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta/dc:creator on AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=12
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta/dc:creator @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta/dc:creator @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta/dc:creator (application/msword)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 4096/4096
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 1045/1045
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 3/3
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@2d0399f45 pairs: {null: HTTP/1.1 200 OK}{Content-Type: application/rdf+xml}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta/dc:creator  200 handled=true
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=12}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3aa078fd as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 2/2
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta/Author
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta/dc:creator)
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@49c90a9c9 pairs: {PUT /meta/Author HTTP/1.1: null}{Content-Type: application/msword}{Accept: text/plain}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 3150/3150
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta/Author on AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=13
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta/Author @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta/Author @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta/Author (application/msword)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 5099/5099
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource parse
+WARNING: meta/Author: Text extraction failed
+org.apache.tika.exception.TikaException: Unexpected RuntimeException from org.apache.tika.parser.microsoft.OfficeParser@d42a1cb
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:282)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:281)
+	at org.apache.tika.server.resource.MetadataResource.parseMetadata(MetadataResource.java:126)
+	at org.apache.tika.server.resource.MetadataResource.getMetadataField(MetadataResource.java:96)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:181)
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:97)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:200)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:99)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:59)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:96)
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:307)
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121)
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:251)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPDestination.doService(JettyHTTPDestination.java:261)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPHandler.handle(JettyHTTPHandler.java:70)
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1088)
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1024)
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:135)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:255)
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:116)
+	at org.eclipse.jetty.server.Server.handle(Server.java:366)
+	at org.eclipse.jetty.server.AbstractHttpConnection.handleRequest(AbstractHttpConnection.java:494)
+	at org.eclipse.jetty.server.AbstractHttpConnection.content(AbstractHttpConnection.java:982)
+	at org.eclipse.jetty.server.AbstractHttpConnection$RequestHandler.content(AbstractHttpConnection.java:1043)
+	at org.eclipse.jetty.http.HttpParser.parseNext(HttpParser.java:957)
+	at org.eclipse.jetty.http.HttpParser.parseAvailable(HttpParser.java:240)
+	at org.eclipse.jetty.server.AsyncHttpConnection.handle(AsyncHttpConnection.java:82)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint.handle(SelectChannelEndPoint.java:696)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint$1.run(SelectChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:608)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:543)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: java.lang.IndexOutOfBoundsException: Block 15 not found - java.lang.IndexOutOfBoundsException: Unable to read 512 bytes from 8192 in stream of length 8000
+	at org.apache.poi.poifs.filesystem.NPOIFSFileSystem.getBlockAt(NPOIFSFileSystem.java:484)
+	at org.apache.poi.poifs.filesystem.NPOIFSStream$StreamBlockByteBufferIterator.next(NPOIFSStream.java:169)
+	at org.apache.poi.poifs.filesystem.NPOIFSStream$StreamBlockByteBufferIterator.next(NPOIFSStream.java:142)
+	at org.apache.poi.poifs.property.NPropertyTable.buildProperties(NPropertyTable.java:87)
+	at org.apache.poi.poifs.property.NPropertyTable.<init>(NPropertyTable.java:66)
+	at org.apache.poi.poifs.filesystem.NPOIFSFileSystem.readCoreContents(NPOIFSFileSystem.java:438)
+	at org.apache.poi.poifs.filesystem.NPOIFSFileSystem.<init>(NPOIFSFileSystem.java:333)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:111)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	... 40 more
+
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.MetadataResource getMetadataField
+INFO: Failed to process field Author
+org.apache.tika.server.TikaServerParseException: HTTP 500 Internal Server Error
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:297)
+	at org.apache.tika.server.resource.MetadataResource.parseMetadata(MetadataResource.java:126)
+	at org.apache.tika.server.resource.MetadataResource.getMetadataField(MetadataResource.java:96)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:181)
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:97)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:200)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:99)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:59)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:96)
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:307)
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121)
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:251)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPDestination.doService(JettyHTTPDestination.java:261)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPHandler.handle(JettyHTTPHandler.java:70)
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1088)
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1024)
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:135)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:255)
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:116)
+	at org.eclipse.jetty.server.Server.handle(Server.java:366)
+	at org.eclipse.jetty.server.AbstractHttpConnection.handleRequest(AbstractHttpConnection.java:494)
+	at org.eclipse.jetty.server.AbstractHttpConnection.content(AbstractHttpConnection.java:982)
+	at org.eclipse.jetty.server.AbstractHttpConnection$RequestHandler.content(AbstractHttpConnection.java:1043)
+	at org.eclipse.jetty.http.HttpParser.parseNext(HttpParser.java:957)
+	at org.eclipse.jetty.http.HttpParser.parseAvailable(HttpParser.java:240)
+	at org.eclipse.jetty.server.AsyncHttpConnection.handle(AsyncHttpConnection.java:82)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint.handle(SelectChannelEndPoint.java:696)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint$1.run(SelectChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:608)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:543)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.apache.tika.exception.TikaException: Unexpected RuntimeException from org.apache.tika.parser.microsoft.OfficeParser@d42a1cb
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:282)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:281)
+	... 34 more
+Caused by: java.lang.IndexOutOfBoundsException: Block 15 not found - java.lang.IndexOutOfBoundsException: Unable to read 512 bytes from 8192 in stream of length 8000
+	at org.apache.poi.poifs.filesystem.NPOIFSFileSystem.getBlockAt(NPOIFSFileSystem.java:484)
+	at org.apache.poi.poifs.filesystem.NPOIFSStream$StreamBlockByteBufferIterator.next(NPOIFSStream.java:169)
+	at org.apache.poi.poifs.filesystem.NPOIFSStream$StreamBlockByteBufferIterator.next(NPOIFSStream.java:142)
+	at org.apache.poi.poifs.property.NPropertyTable.buildProperties(NPropertyTable.java:87)
+	at org.apache.poi.poifs.property.NPropertyTable.<init>(NPropertyTable.java:66)
+	at org.apache.poi.poifs.filesystem.NPOIFSFileSystem.readCoreContents(NPOIFSFileSystem.java:438)
+	at org.apache.poi.poifs.filesystem.NPOIFSFileSystem.<init>(NPOIFSFileSystem.java:333)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:111)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	... 40 more
+
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta/Author  400 handled=true
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=13}
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream used: http://localhost:9998/meta/Author
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@2d29b4ee5 pairs: {null: HTTP/1.1 400 Bad Request}{Content-Type: text/plain}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Content-Length: 35}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@1c9b0314 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: ishut SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=-14,l=0,c=-3},r=13}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled -1/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Disabled read interest while writing response SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=true,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=0,l=0,c=-3},r=13}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: close SCEP@7fcdf603{l(/127.0.0.1:61806)<->r(/127.0.0.1:9998),s=1,open=true,ishut=true,oshut=false,rb=false,wb=false,w=true,i=1!}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=0,l=0,c=-3},r=13}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: destroyEndPoint SCEP@7fcdf603{l(null)<->r(0.0.0.0/0.0.0.0:9998),s=1,open=false,ishut=true,oshut=true,rb=false,wb=false,w=true,i=1!}-{AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=0,l=0,c=-3},r=13}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: closed AsyncHttpConnection@6e61e66e,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=0,l=0,c=-3},r=13
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta/Author
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@503f91c39 pairs: {PUT /meta/Author HTTP/1.1: null}{Content-Type: application/msword}{Accept: application/json}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: created SCEP@91a2ada{l(/127.0.0.1:61807)<->r(/127.0.0.1:9998),s=0,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=0}-{AsyncHttpConnection@201fc60a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=-14,l=0,c=0},r=0}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta/Author on AsyncHttpConnection@201fc60a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=1
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta/Author @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta/Author @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta/Author (application/msword)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 3334/3334
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@13526e595 pairs: {null: HTTP/1.1 200 OK}{Content-Type: application/json}{Date: Fri, 04 Mar 2016 06:11:29 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta/Author  200 handled=true
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@15d49048 as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@91a2ada{l(/127.0.0.1:61807)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@201fc60a,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=1}
+Mar 03, 2016 10:11:29 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta
+Mar 03, 2016 10:11:29 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta/Author)
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:29 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@5038d0b59 pairs: {PUT /meta HTTP/1.1: null}{Content-Type: application/vnd.ms-excel}{Accept: text/csv}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 227/227
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta on AsyncHttpConnection@201fc60a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=2
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:29 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta (application/vnd.ms-excel)
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:29 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 4143/4143
+Mar 03, 2016 10:11:30 PM org.apache.tika.server.resource.TikaResource parse
+WARNING: meta: Encrypted document
+org.apache.tika.exception.EncryptedDocumentException: Unable to process: document is encrypted
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:311)
+	at org.apache.tika.parser.microsoft.ExcelExtractor.parse(ExcelExtractor.java:169)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:154)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:117)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:281)
+	at org.apache.tika.server.resource.MetadataResource.parseMetadata(MetadataResource.java:126)
+	at org.apache.tika.server.resource.MetadataResource.getMetadata(MetadataResource.java:60)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:181)
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:97)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:200)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:99)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:59)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:96)
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:307)
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121)
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:251)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPDestination.doService(JettyHTTPDestination.java:261)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPHandler.handle(JettyHTTPHandler.java:70)
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1088)
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1024)
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:135)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:255)
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:116)
+	at org.eclipse.jetty.server.Server.handle(Server.java:366)
+	at org.eclipse.jetty.server.AbstractHttpConnection.handleRequest(AbstractHttpConnection.java:494)
+	at org.eclipse.jetty.server.AbstractHttpConnection.content(AbstractHttpConnection.java:982)
+	at org.eclipse.jetty.server.AbstractHttpConnection$RequestHandler.content(AbstractHttpConnection.java:1043)
+	at org.eclipse.jetty.http.HttpParser.parseNext(HttpParser.java:957)
+	at org.eclipse.jetty.http.HttpParser.parseAvailable(HttpParser.java:235)
+	at org.eclipse.jetty.server.AsyncHttpConnection.handle(AsyncHttpConnection.java:82)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint.handle(SelectChannelEndPoint.java:696)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint$1.run(SelectChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:608)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:543)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.apache.poi.EncryptedDocumentException: Default password is invalid for salt/verifier/verifierHash
+	at org.apache.poi.hssf.record.RecordFactoryInputStream$StreamEncryptionInfo.createDecryptingStream(RecordFactoryInputStream.java:127)
+	at org.apache.poi.hssf.record.RecordFactoryInputStream.<init>(RecordFactoryInputStream.java:209)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.genericProcessEvents(HSSFEventFactory.java:150)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.processEvents(HSSFEventFactory.java:117)
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:309)
+	... 44 more
+
+Mar 03, 2016 10:11:30 PM org.apache.cxf.jaxrs.impl.WebApplicationExceptionMapper toResponse
+WARNING: org.apache.tika.server.TikaServerParseException: HTTP 500 Internal Server Error
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:290)
+	at org.apache.tika.server.resource.MetadataResource.parseMetadata(MetadataResource.java:126)
+	at org.apache.tika.server.resource.MetadataResource.getMetadata(MetadataResource.java:60)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:181)
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:97)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:200)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:99)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:59)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:96)
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:307)
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121)
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:251)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPDestination.doService(JettyHTTPDestination.java:261)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPHandler.handle(JettyHTTPHandler.java:70)
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1088)
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1024)
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:135)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:255)
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:116)
+	at org.eclipse.jetty.server.Server.handle(Server.java:366)
+	at org.eclipse.jetty.server.AbstractHttpConnection.handleRequest(AbstractHttpConnection.java:494)
+	at org.eclipse.jetty.server.AbstractHttpConnection.content(AbstractHttpConnection.java:982)
+	at org.eclipse.jetty.server.AbstractHttpConnection$RequestHandler.content(AbstractHttpConnection.java:1043)
+	at org.eclipse.jetty.http.HttpParser.parseNext(HttpParser.java:957)
+	at org.eclipse.jetty.http.HttpParser.parseAvailable(HttpParser.java:235)
+	at org.eclipse.jetty.server.AsyncHttpConnection.handle(AsyncHttpConnection.java:82)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint.handle(SelectChannelEndPoint.java:696)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint$1.run(SelectChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:608)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:543)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.apache.tika.exception.EncryptedDocumentException: Unable to process: document is encrypted
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:311)
+	at org.apache.tika.parser.microsoft.ExcelExtractor.parse(ExcelExtractor.java:169)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:154)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:117)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:281)
+	... 34 more
+Caused by: org.apache.poi.EncryptedDocumentException: Default password is invalid for salt/verifier/verifierHash
+	at org.apache.poi.hssf.record.RecordFactoryInputStream$StreamEncryptionInfo.createDecryptingStream(RecordFactoryInputStream.java:127)
+	at org.apache.poi.hssf.record.RecordFactoryInputStream.<init>(RecordFactoryInputStream.java:209)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.genericProcessEvents(HSSFEventFactory.java:150)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.processEvents(HSSFEventFactory.java:117)
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:309)
+	... 44 more
+
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@32115b284 pairs: {null: HTTP/1.1 500 Server Error}{Content-Length: 0}{Date: Fri, 04 Mar 2016 06:11:30 GMT}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta  500 handled=true
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@91a2ada{l(/127.0.0.1:61807)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@201fc60a,g=HttpGenerator{s=4,h=0,b=-1,c=-1},p=HttpParser{s=0,l=7,c=-2},r=2}
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta
+Mar 03, 2016 10:11:30 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta)
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@6bb4dd3410 pairs: {PUT /meta HTTP/1.1: null}{Content-Type: application/vnd.ms-excel}{Accept: text/csv}{Password: wrong password}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 253/253
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta on AsyncHttpConnection@201fc60a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=3
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta (application/vnd.ms-excel)
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 4143/4143
+Mar 03, 2016 10:11:30 PM org.apache.tika.server.resource.TikaResource parse
+WARNING: meta: Encrypted document
+org.apache.tika.exception.EncryptedDocumentException: Unable to process: document is encrypted
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:311)
+	at org.apache.tika.parser.microsoft.ExcelExtractor.parse(ExcelExtractor.java:169)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:154)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:117)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:281)
+	at org.apache.tika.server.resource.MetadataResource.parseMetadata(MetadataResource.java:126)
+	at org.apache.tika.server.resource.MetadataResource.getMetadata(MetadataResource.java:60)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:181)
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:97)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:200)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:99)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:59)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:96)
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:307)
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121)
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:251)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPDestination.doService(JettyHTTPDestination.java:261)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPHandler.handle(JettyHTTPHandler.java:70)
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1088)
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1024)
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:135)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:255)
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:116)
+	at org.eclipse.jetty.server.Server.handle(Server.java:366)
+	at org.eclipse.jetty.server.AbstractHttpConnection.handleRequest(AbstractHttpConnection.java:494)
+	at org.eclipse.jetty.server.AbstractHttpConnection.content(AbstractHttpConnection.java:982)
+	at org.eclipse.jetty.server.AbstractHttpConnection$RequestHandler.content(AbstractHttpConnection.java:1043)
+	at org.eclipse.jetty.http.HttpParser.parseNext(HttpParser.java:957)
+	at org.eclipse.jetty.http.HttpParser.parseAvailable(HttpParser.java:235)
+	at org.eclipse.jetty.server.AsyncHttpConnection.handle(AsyncHttpConnection.java:82)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint.handle(SelectChannelEndPoint.java:696)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint$1.run(SelectChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:608)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:543)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.apache.poi.EncryptedDocumentException: Supplied password is invalid for salt/verifier/verifierHash
+	at org.apache.poi.hssf.record.RecordFactoryInputStream$StreamEncryptionInfo.createDecryptingStream(RecordFactoryInputStream.java:127)
+	at org.apache.poi.hssf.record.RecordFactoryInputStream.<init>(RecordFactoryInputStream.java:209)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.genericProcessEvents(HSSFEventFactory.java:150)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.processEvents(HSSFEventFactory.java:117)
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:309)
+	... 44 more
+
+Mar 03, 2016 10:11:30 PM org.apache.cxf.jaxrs.impl.WebApplicationExceptionMapper toResponse
+WARNING: org.apache.tika.server.TikaServerParseException: HTTP 500 Internal Server Error
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:290)
+	at org.apache.tika.server.resource.MetadataResource.parseMetadata(MetadataResource.java:126)
+	at org.apache.tika.server.resource.MetadataResource.getMetadata(MetadataResource.java:60)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:497)
+	at org.apache.cxf.service.invoker.AbstractInvoker.performInvocation(AbstractInvoker.java:181)
+	at org.apache.cxf.service.invoker.AbstractInvoker.invoke(AbstractInvoker.java:97)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:200)
+	at org.apache.cxf.jaxrs.JAXRSInvoker.invoke(JAXRSInvoker.java:99)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor$1.run(ServiceInvokerInterceptor.java:59)
+	at org.apache.cxf.interceptor.ServiceInvokerInterceptor.handleMessage(ServiceInvokerInterceptor.java:96)
+	at org.apache.cxf.phase.PhaseInterceptorChain.doIntercept(PhaseInterceptorChain.java:307)
+	at org.apache.cxf.transport.ChainInitiationObserver.onMessage(ChainInitiationObserver.java:121)
+	at org.apache.cxf.transport.http.AbstractHTTPDestination.invoke(AbstractHTTPDestination.java:251)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPDestination.doService(JettyHTTPDestination.java:261)
+	at org.apache.cxf.transport.http_jetty.JettyHTTPHandler.handle(JettyHTTPHandler.java:70)
+	at org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1088)
+	at org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1024)
+	at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:135)
+	at org.eclipse.jetty.server.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:255)
+	at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:116)
+	at org.eclipse.jetty.server.Server.handle(Server.java:366)
+	at org.eclipse.jetty.server.AbstractHttpConnection.handleRequest(AbstractHttpConnection.java:494)
+	at org.eclipse.jetty.server.AbstractHttpConnection.content(AbstractHttpConnection.java:982)
+	at org.eclipse.jetty.server.AbstractHttpConnection$RequestHandler.content(AbstractHttpConnection.java:1043)
+	at org.eclipse.jetty.http.HttpParser.parseNext(HttpParser.java:957)
+	at org.eclipse.jetty.http.HttpParser.parseAvailable(HttpParser.java:235)
+	at org.eclipse.jetty.server.AsyncHttpConnection.handle(AsyncHttpConnection.java:82)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint.handle(SelectChannelEndPoint.java:696)
+	at org.eclipse.jetty.io.nio.SelectChannelEndPoint$1.run(SelectChannelEndPoint.java:53)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:608)
+	at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:543)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.apache.tika.exception.EncryptedDocumentException: Unable to process: document is encrypted
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:311)
+	at org.apache.tika.parser.microsoft.ExcelExtractor.parse(ExcelExtractor.java:169)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:154)
+	at org.apache.tika.parser.microsoft.OfficeParser.parse(OfficeParser.java:117)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:280)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.server.resource.TikaResource.parse(TikaResource.java:281)
+	... 34 more
+Caused by: org.apache.poi.EncryptedDocumentException: Supplied password is invalid for salt/verifier/verifierHash
+	at org.apache.poi.hssf.record.RecordFactoryInputStream$StreamEncryptionInfo.createDecryptingStream(RecordFactoryInputStream.java:127)
+	at org.apache.poi.hssf.record.RecordFactoryInputStream.<init>(RecordFactoryInputStream.java:209)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.genericProcessEvents(HSSFEventFactory.java:150)
+	at org.apache.poi.hssf.eventusermodel.HSSFEventFactory.processEvents(HSSFEventFactory.java:117)
+	at org.apache.tika.parser.microsoft.ExcelExtractor$TikaHSSFListener.processFile(ExcelExtractor.java:309)
+	... 44 more
+
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@7d9f158f4 pairs: {null: HTTP/1.1 500 Server Error}{Content-Length: 0}{Date: Fri, 04 Mar 2016 06:11:30 GMT}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta  500 handled=true
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@91a2ada{l(/127.0.0.1:61807)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@201fc60a,g=HttpGenerator{s=4,h=0,b=-1,c=-1},p=HttpParser{s=0,l=7,c=-2},r=3}
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta
+Mar 03, 2016 10:11:30 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta)
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@4b8729ff10 pairs: {PUT /meta HTTP/1.1: null}{Content-Type: application/vnd.ms-excel}{Accept: text/csv}{Password: password}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 1707/1707
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta on AsyncHttpConnection@201fc60a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=4
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta (application/vnd.ms-excel)
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 2683/2683
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@61710c65 pairs: {null: HTTP/1.1 200 OK}{Content-Type: text/csv}{Date: Fri, 04 Mar 2016 06:11:30 GMT}{Transfer-Encoding: chunked}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta  200 handled=true
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@91a2ada{l(/127.0.0.1:61807)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@201fc60a,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=4}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@7f2cfe3f as handler
+Mar 03, 2016 10:11:30 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86 as handler
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/meta/xxx
+Mar 03, 2016 10:11:30 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/meta)
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@17d919b69 pairs: {PUT /meta/xxx HTTP/1.1: null}{Content-Type: application/msword}{Accept: application/json}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}{Transfer-Encoding: chunked}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 6144/6144
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST /meta/xxx on AsyncHttpConnection@201fc60a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=6,l=7,c=-2},r=5
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/meta/xxx @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/meta/xxx @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.apache.tika.server.resource.TikaResource logRequest
+INFO: meta/xxx (application/msword)
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 3331/3331
+Mar 03, 2016 10:11:30 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream used: http://localhost:9998/meta/xxx
+Mar 03, 2016 10:11:30 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@53f3bdbd5 pairs: {null: HTTP/1.1 404 Not Found}{Content-Type: application/json}{Date: Fri, 04 Mar 2016 06:11:30 GMT}{Content-Length: 32}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /meta/xxx  404 handled=true
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@91a2ada{l(/127.0.0.1:61807)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@201fc60a,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=7,c=-2},r=5}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:30 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@376a0d86 as handler

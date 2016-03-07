@@ -1,0 +1,37 @@
+Manifest-Version: 1.0
+Bundle-Description: This is the translate Apache Tika™ toolkit. Tran
+ slator implementations may depend on web services.
+Implementation-Title: Apache Tika translate
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-SymbolicName: org.apache.tika.translate
+Implementation-Version: 1.11
+Built-By: adeshgupta
+Bundle-ManifestVersion: 2
+Bnd-LastModified: 1457071875833
+Specification-Vendor: The Apache Software Foundation
+Specification-Title: Apache Tika translate
+Implementation-Vendor-Id: org.apache.tika
+Bundle-DocURL: http://tika.apache.org/
+Bundle-Vendor: The Apache Software Foundation
+Import-Package: com.fasterxml.jackson.databind;version="[2.4,3)";resol
+ ution:=optional,com.fasterxml.jackson.databind.util;version="[2.4,3)"
+ ;resolution:=optional,com.memetix.mst.language;resolution:=optional,c
+ om.memetix.mst.translate;resolution:=optional,javax.ws.rs.core;versio
+ n="[2.0,3)";resolution:=optional,org.apache.cxf.jaxrs.client;version=
+ "[2.7,3)";resolution:=optional,org.apache.tika.config;version="[1.0,2
+ )",org.apache.tika.exception;version="[1.0,2)",org.apache.tika.langua
+ ge;version="[1.0,2)",org.apache.tika.parser.internal,org.w3c.dom
+Tool: Bnd-1.15.0
+Implementation-Vendor: The Apache Software Foundation
+Export-Package: org.apache.tika.language.translate;uses:="org.apache.t
+ ika.language,com.fasterxml.jackson.databind.util,org.apache.tika.exce
+ ption,org.apache.tika.config,org.apache.cxf.jaxrs.client,javax.ws.rs.
+ core,com.fasterxml.jackson.databind,com.memetix.mst.translate,com.mem
+ etix.mst.language"
+Bundle-Version: 1.11.0
+Bundle-Name: Apache Tika translate
+Bundle-Activator: org.apache.tika.parser.internal.Activator
+Created-By: Apache Maven Bundle Plugin
+Build-Jdk: 1.8.0_60
+Specification-Version: 1.11
+

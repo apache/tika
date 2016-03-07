@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.13-SNAPSHOT</version>
+    <version>1.11</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -33,6 +33,16 @@
   <packaging>pom</packaging>
   <name>Apache Tika</name>
   <url>http://tika.apache.org</url>
+
+  <scm>
+    <connection>
+      scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.11-rc1
+    </connection>
+    <developerConnection>
+      scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.11-rc1
+    </developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/tags/1.11-rc1</url>
+  </scm>
 
   <modules>
     <module>tika-parent</module>

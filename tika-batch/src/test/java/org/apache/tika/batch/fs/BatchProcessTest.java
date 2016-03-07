@@ -291,53 +291,24 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertFalse(Files.exists(test2));
     }
 
-    @Test
-    public void testHandlingOfIllegalXMLCharsInException() throws Exception {
-        //tests to make sure that hierarchy is maintained when reading from
-        //file list
-        //also tests that list actually works.
-        Path outputDir = getNewOutputDir("illegal_xml_chars_in_exception");
-
-        Map<String, String> args = getDefaultArgs("illegal_xml_chars_in_exception", outputDir);
-        args.put("numConsumers", "1");
-        args.put("recursiveParserWrapper", "true");
-        args.put("basicHandlerType", "text");
-        args.put("outputSuffix", "json");
-
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
-                "/tika-batch-config-MockConsumersBuilder.xml",
-                "/log4j-on.properties");
-        StreamStrings ss = ex.execute();
-        assertFalse(ss.getOutString().contains("error writing xml stream for"));
-        assertContains("parse_ex resourceId=\"test0_bad_chars.xml\"", ss.getOutString());
-    }
-
     private class BatchProcessTestExecutor {
         private final Map<String, String> args;
         private final String configPath;
-        private final String loggerProps;
         private int exitValue = Integer.MIN_VALUE;
 
         public BatchProcessTestExecutor(Map<String, String> args) {
             this(args, "/tika-batch-config-test.xml");
         }
 
-
-
         public BatchProcessTestExecutor(Map<String, String> args, String configPath) {
-            this(args, configPath, "/log4j_process.properties");
-        }
-
-        public BatchProcessTestExecutor(Map<String, String> args, String configPath, String loggerProps) {
             this.args = args;
             this.configPath = configPath;
-            this.loggerProps = loggerProps;
         }
 
         private StreamStrings execute() {
             Process p = null;
             try {
-                ProcessBuilder b = getNewBatchRunnerProcess(configPath, loggerProps, args);
+                ProcessBuilder b = getNewBatchRunnerProcess(configPath, args);
                 p = b.start();
                 StringStreamGobbler errorGobbler = new StringStreamGobbler(p.getErrorStream());
                 StringStreamGobbler outGobbler = new StringStreamGobbler(p.getInputStream());

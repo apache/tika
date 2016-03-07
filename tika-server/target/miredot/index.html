@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html ng-controller="DocRoot" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/bootstrap-combined.min.css">
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/introstyle.css">
+    <link rel="stylesheet" href="lib/font-awesome/css/font-awesome.css">
+    <!--[if IE 7]>
+    <link rel="stylesheet" href="lib/font-awesome/css/font-awesome-ie7.min.css">
+    <![endif]-->
+
+    <title ng-bind-template="{{projectTitle}}"></title>
+
+    <script src="lib/jquery/jquery-1.9.1.min.js"></script>
+    <script src="lib/angular/angular.js"></script>
+    <script src="lib/angular/angular-sanitize.js"></script>
+    <script src="lib/angular-ui/angular-ui.js"></script>
+    <script src="lib/angular-ui/bootstrap/buttons.js"></script>
+    <script src="lib/underscore.v1.4.4/underscore-min.js"></script>
+    <script src="js/controllers.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/directives.js"></script>
+    <script src="js/watch-fighters.js"></script>
+    <script src="js/ngStorage.js"></script>
+    <script src="js/app.js"></script>
+
+    <style>
+    [ng-cloak] {
+      display: none;
+    }
+    </style>
+    <script>
+    // include angular loader, which allows the files to load in any order
+    /*
+     AngularJS v1.2.6
+     (c) 2010-2014 Google, Inc. http://angularjs.org
+     License: MIT
+    */
+    (function(){'use strict';function d(a){return function(){var c=arguments[0],b,c="["+(a?a+":":"")+c+"] http://errors.angularjs.org/1.2.6/"+(a?a+"/":"")+c;for(b=1;b<arguments.length;b++)c=c+(1==b?"?":"&")+"p"+(b-1)+"="+encodeURIComponent("function"==typeof arguments[b]?arguments[b].toString().replace(/ \{[\s\S]*$/,""):"undefined"==typeof arguments[b]?"undefined":"string"!=typeof arguments[b]?JSON.stringify(arguments[b]):arguments[b]);return Error(c)}}(function(a){var c=d("$injector"),b=d("ng");a=a.angular||
+    (a.angular={});a.$$minErr=a.$$minErr||d;return a.module||(a.module=function(){var a={};return function(e,d,f){if("hasOwnProperty"===e)throw b("badname","module");d&&a.hasOwnProperty(e)&&(a[e]=null);return a[e]||(a[e]=function(){function a(c,d,e){return function(){b[e||"push"]([c,d,arguments]);return g}}if(!d)throw c("nomod",e);var b=[],h=[],k=a("$injector","invoke"),g={_invokeQueue:b,_runBlocks:h,requires:d,name:e,provider:a("$provide","provider"),factory:a("$provide","factory"),service:a("$provide",
+    "service"),value:a("$provide","value"),constant:a("$provide","constant","unshift"),animation:a("$animateProvider","register"),filter:a("$filterProvider","register"),controller:a("$controllerProvider","register"),directive:a("$compileProvider","directive"),config:k,run:function(a){h.push(a);return this}};f&&k(f);return g}())}}())})(window)})(window);
+
+    // include a third-party async loader library
+    /*!
+      * $script.js Async loader & dependency manager
+      * https://github.com/ded/script.js/blob/c29530159a/dist/script.min.js
+      * (c) Dustin Diaz 2013
+      * License: MIT
+      */
+    (function(e,t,n){typeof module!="undefined"&&module.exports?module.exports=n():typeof define=="function"&&define.amd?define(n):t[e]=n()})("$script",this,function(){function v(e,t){for(var n=0,r=e.length;n<r;++n)if(!t(e[n]))return f;return 1}function m(e,t){v(e,function(e){return!t(e)})}function g(e,t,a){function d(e){return e.call?e():r[e]}function b(){if(!--p){r[h]=1,c&&c();for(var e in s)v(e.split("|"),d)&&!m(s[e],d)&&(s[e]=[])}}e=e[l]?e:[e];var f=t&&t.call,c=f?t:a,h=f?e.join(""):t,p=e.length;return setTimeout(function(){m(e,function(e){if(e===null)return b();if(u[e])return h&&(i[h]=1),u[e]==2&&b();u[e]=1,h&&(i[h]=1),y(!n.test(e)&&o?o+e+".js":e,b)})},0),g}function y(n,r){var i=e.createElement("script"),s=f;i.onload=i.onerror=i[d]=function(){if(i[h]&&!/^c|loade/.test(i[h])||s)return;i.onload=i[d]=null,s=1,u[n]=2,r()},i.async=1,i.src=n,t.insertBefore(i,t.firstChild)}var e=document,t=e.getElementsByTagName("head")[0],n=/^https?:\/\//,r={},i={},s={},o,u={},a="string",f=!1,l="push",c="DOMContentLoaded",h="readyState",p="addEventListener",d="onreadystatechange";return!e[h]&&e[p]&&(e[p](c,function b(){e.removeEventListener(c,b,f),e[h]="complete"},f),e[h]="loading"),g.get=y,g.order=function(e,t,n){(function r(i){i=e.shift(),e.length?g(i,r):g(i,t,n)})()},g.path=function(e){o=e},g.ready=function(e,t,n){e=e[l]?e:[e];var i=[];return!m(e,function(e){r[e]||i[l](e)})&&v(e,function(e){return r[e]})?t():!function(e){s[e]=s[e]||[],s[e][l](t),n&&n(i)}(e.join("|")),g},g.done=function(e){g([null],e)},g})
+    // wait until input script is loaded
+    $script([
+        'input/input.js'
+        ], function() {
+            // when all is done, execute bootstrap angular application
+            angular.element(document).ready(function() {
+                //give browser a chance to render the loading message
+                setTimeout(function() {
+                    angular.bootstrap(document, ['miredot']);
+                }, 250);
+            });
+        });
+    </script>
+</head>
+<body>
+
+<!-- Renderer for a resource url in a tree structure in the navbar.
+     Context: 'resource' -->
+<script type="text/ng-template"  id="resource_nav_item_renderer.html">
+    <div class="summaryBaseResource">
+        <span ng-click="hierarchyOpen = !hierarchyOpen" class="hierarchy-toggle">
+            <i ng-class="{'icon-caret-down': hierarchyOpen, 'icon-caret-right': !hierarchyOpen}"></i></span>
+        <a set-href="'#' + getFirstLeaf(resource).hash"
+           set-text="resource.name"
+           target="_self"></a>
+    </div>
+
+    <ul ng-show="hierarchyOpen" class="searchList hierarchical">
+        <li ng-repeat="leaf in resource.leafResources | orderBy:'url'">
+            <div class="summaryMethodUrl">
+                <a set-href="'#' + (leaf.methods | orderBy:methodHttpOrderFunction)[0].hash"
+                   set-text="leaf.name || '&nbsp;/'"
+                   target="_self"></a>
+                <span ng-repeat="method in leaf.methods | orderBy:methodHttpOrderFunction">
+                    <a set-href="'#' + method.hash" class="httpMethod small" set-class="method.method"
+                       set-text="method.method"
+                       target="_self"></a>
+                </span>
+            </div>
+        </li>
+    </ul>
+
+    <ul ng-show="hierarchyOpen" class="searchList hierarchical">
+        <li ng-repeat="resource in resource.resources | orderBy:'name'"
+            ng-include="'resource_nav_item_renderer.html'"></li>
+    </ul>
+</script>
+<div ng-hide="true">
+    <img alt="Loading..." src="img/ajax-loader-mini.gif"/> Loading ...
+</div>
+<div id="content" ng-cloak class="ng-cloak">
+
+<div id="rightwithnav">
+    <div id="navigation">
+    <ul class="nav nav-pills" style="margin-left: -10px; padding-bottom: 14px; padding-left: 10px; padding-top: 4px;">
+        <li ng-class="{active: navigationView == 'hierarchical'}">
+            <a ng-click="navigationView = 'hierarchical'" style="cursor: pointer">Tree</a>
+        </li>
+        <li ng-class="{active: navigationView == 'search'}">
+            <a ng-click="navigationView = 'search'" style="cursor: pointer">Search</a>
+        </li>
+    </ul>
+    </div>
+
+    <div id="right">
+        <!--
+        <div id="expandCollapseTree" class="treeCollapse">
+            <span ng-click="collapseTree()" ng-show="hierarchyOpen == true">
+                collapse all
+            </span>
+            <span ng-click="expandTree()" ng-show="hierarchyOpen == false">
+                expand all
+            </span>
+        </div>
+        -->
+    <div id="rightContent">
+    <div ng-show="navigationView == 'hierarchical'" id="searchResultContainer">
+        <ul class="searchList hierarchical">
+            <li ng-repeat="resource in resourceTree"
+                ng-include="'resource_nav_item_renderer.html'"></li>
+        </ul>
+    </div>
+        
+    <div ng-show="navigationView == 'search'">
+        <div id="searchform">
+        <form>
+            <label for="keywordInput" class="searchLabel">
+                URL contains...
+            </label>
+            <input id="keywordInput" type="text" class="input-medium search-query searchInput" style="margin-bottom: 15px"
+                   ng-model="searchQuery.url">
+
+            <label for="urlInput" class="searchLabel">
+                URL matches...
+            </label>
+            <input id="urlInput" type="text" class="input-medium search-query searchInput" style="display: block; margin-bottom: 15px"
+                   placeholder="{{$storage.baseUrl + '...' }}"
+                   ng-model="searchByExample">
+
+            <label class="searchLabel">
+                Http method
+            </label>
+            <div class="tagInput">
+                <span ng-repeat="method in httpMethods" set-text="method"
+                      class="httpMethod httpMethodSelection" set-class="method" ng-class="{disabled: method != searchQuery.http}"
+                      ng-click="toggleSearchQueryHttp(method)"></span>
+            </div>
+
+            <label class="searchLabel" set-if="serviceTags.length > 0">
+                Tags
+            </label>
+            <div class="tagInput">
+                <div class="tag"
+                ng-repeat="tag in serviceTags | orderBy:'name'"
+                ng-click="tag.selected = ! tag.selected"
+                ng-class="{tagSelected: tag.selected}">
+                    <i class="icon-circle" style="color: #eee; text-shadow: 0 0 -1px rgba(0,0,0,0.3);"></i>
+                    <span set-text="'&nbsp;' + tag.name"></span>
+                </div>
+            </div>
+        </form>
+        </div>
+        <div id="results">
+            <ul id="resultList">
+                <li ng-repeat="interface in interfaces | orderBy:['url', interfaceHttpOrderFunction]"
+                    ng-show="((interface | searchByExampleFilter:searchByExample:$storage.baseUrl)
+                           && (interface | serviceTagFilter:serviceTags)
+                           && (interface | searchQueryFilter:searchQuery))">
+                    <div class="summaryMethodUrl">
+                        <a set-href="'#' + interface.hash" target="_self">
+                            <div class="httpMethodSearchResult">
+                                <span class="httpMethod small" set-class="interface.http" set-text="interface.http"></span>
+                            </div><span set-text="interface.url" class="result"></span>
+                        </a>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+    </div>
+    </div>
+</div>
+
+<div id="leftwithnavbar">
+    <div class="navbar navbartop">
+        <div class="navbar-inner">
+            <div class="container">
+
+                <a class="brand" href="#home" target="_self" set-text="projectTitle"></a>
+
+                <ul class="nav">
+                    <li>
+                        <a href="#interfaces" target="_self" ng-class="{activeView: view=='interfaces'}">Interfaces</a>
+                    </li>
+                    <li set-if="processErrors.length > 0 || projectWarnings.length > 0">
+                        <a href="#warnings" target="_self" ng-class="{activeView: view=='warnings'}"
+                           set-text="'Warnings (' + projectWarnings.length + ')'"></a>
+                    </li>
+                </ul>
+
+                <div class="pull-right" style="margin-right: 20px;">
+                    <a href="http://www.miredot.com" target="_blank"><img src="img/miredot_mini_title.png"></a>
+                    <i class="icon-exclamation-sign failedIcon" set-if="!validLicence && !!licenceErrorMessage" set-title="licenceErrorMessage"></i>
+                </div>
+
+                <!-- Everything you want hidden at 940px or less, place within here -->
+                <div class="nav-collapse collapse">
+                    <!-- .nav, .navbar-search, .navbar-form, etc -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="left">
+        <div id="main">
+
+            <a id="home"></a><a id="interfaces"></a><a id="warnings"></a>
+
+            <div class="notice freeversion" set-if="validLicence && licenceType == 'FREE'">
+                <i class="icon-info-sign" title="Free version"></i>
+                Notice: This documentation was generated by the free version of MireDot.
+                As such, not all features are supported.
+                <span set-html="visitWebsiteForProVersion"></span>
+            </div>
+            <div class="notice invalidlicence" set-if="!validLicence">
+                <i class="icon-exclamation-sign" title="Invalid key"></i>
+                <span set-html="licenceErrorMessage"></span>
+            </div>
+
+            <div id="expandCollapse" ng-show="view=='interfaces'">
+                <span ng-click="setGlobalCollapsedState(true)" class="collapse icon-stack">
+                    <i class="icon-sign-blank text-gray" title="collapse all"></i>
+                    <i class="icon-collapse-top" title="collapse all"></i>
+                </span>
+                <span ng-click="setGlobalCollapsedState(false)" class="expand icon-stack">
+                    <i class="icon-sign-blank text-gray" title="expand all"></i>
+                    <i class="icon-collapse" title="expand all"></i>
+                </span>
+            </div>
+
+            <div id="intro" ng-show="view=='interfaces'"></div>
+
+            <div ng-view></div>
+
+            <div id="contentContent">
+
+                <div ng-show="view=='interfaces'">
+
+        <ul id="mainList">
+            <li ng-repeat="interface in interfaces | orderBy:['url', interfaceHttpOrderFunction]">
+
+                <div ng-click="interface.collapsed = !interface.collapsed" style="cursor: pointer;" set-id="interface.hash">
+                    <i class="icon-bookmark methodIcon"></i>
+                    <h3 class="methodTitle"
+                        set-class="deprecated : interface.deprecated, valueMissing : ! interface.title"
+                        set-html="interface.title || 'title missing'">
+                    </h3>
+                </div>
+
+                <div ng-show="!interface.collapsed">
+                <div>
+                    <div class="tag" ng-repeat="tag in interface.tags | arraySort" ng-class="{tagSelected: isServiceTagSelected(tag)}">
+                        <i class="icon-circle" style="color: #eee; text-shadow: 0 0 -1px rgba(0,0,0,0.3);"></i>
+                        <span set-text="'&nbsp;' + tag"></span>
+                    </div>
+                </div>
+
+                <p class="methodDescription" set-if="interface.deprecated"><b>Deprecated.</b></p>
+                <p class="methodDescription" set-html="interface.beschrijving"></p>
+                </div>
+
+                <div class="methodCall" set-class='interface.http'>
+                    <span class="httpMethod" set-class='interface.http' set-text="interface.http"></span><!-- (no whitespace)
+                 --><span class="methodBaseUrl"
+                          ng-show="editingBaseUrl == false"
+                          ng-click="editingBaseUrl = true; baseUrl = $storage.baseUrl">{{$storage.baseUrl || ' '}}</span><!--
+                 --><input
+                        ng-model="baseUrl"
+                        ng-show="editingBaseUrl == true"
+                        focus-when="editingBaseUrl == true"
+                        on-blur="editingBaseUrl = false; $storage.baseUrl = baseUrl"
+                        on-enter="editingBaseUrl = false; $storage.baseUrl = baseUrl"
+                        /><!--
+                 --><span class="methodUrl" set-html="interface.url | formatUrlParams"></span>
+                </div>
+
+                <div ng-show="!interface.collapsed">
+                <div ng-repeat="inputType in ['PATH', 'QUERY', 'MATRIX', 'FORM', 'COOKIE', 'HEADER']">
+                    <div set-if="interface.inputs[inputType].length > 0">
+                        <h4 set-text="(inputType | capitaliseFirstLetter) + ' Parameters'"></h4>
+
+                        <table class="methodParams">
+                            <tr ng-repeat="input in interface.inputs[inputType]">
+                                <td>
+                                <span class="parameterContainer">
+                                    <span class="parameterName" set-text="input.name"></span>
+                                    <span class="parameterTypeAndValue">
+                                        <span class="parameterType" set-text="formatTypeValue(input.typeValue)"></span>
+                                        <span class="parameterDefaultValue" set-html="formatDefaultValue(input.typeValue, input.defaultValue)"></span>
+                                    </span>
+                                </span>
+
+                                </td>
+                                <td>
+                                    <div set-class="valueMissing : !input.comment"
+                                         set-html="input.comment || 'comment missing'"></div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div set-if="interface.inputs.BODY.length > 0">
+
+                    <h4>Body</h4>
+
+                    <div class="returnsBodyContainer">
+                        <p class="methodDescription"
+                           set-class="valueMissing : !interface.inputs.BODY[0].comment"
+                           set-html="interface.inputs.BODY[0].comment || 'comment missing'">
+                        </p>
+
+                        <div class="mediaTypeContainer">
+                            <div class="mediaType">
+                                <span set-if="interface.consumes.length > 0" set-text="interface.consumes"></span>
+                                <span set-if="interface.consumes.length == 0">no type</span>
+                            </div>
+                        </div>
+                        <div set-if="interface.compressed" class="gzip"></div>
+
+                        <div class="typeValueContainer">
+                            <div set-if="interface.inputs.BODY[0].typeValue.type == 'simple'
+                                      || interface.inputs.BODY[0].typeValue.type == 'enum'">
+                                <span class="parameterType"
+                                      set-text="formatTypeValue(interface.inputs.BODY[0].typeValue)">
+                                </span>
+                                <span class="parameterDefaultValue"
+                                      set-html="formatDefaultValue(interface.inputs.BODY[0].typeValue)"></span>
+                            </div>
+                            <div set-if="!(interface.inputs.BODY[0].typeValue.type == 'simple'
+                                      || interface.inputs.BODY[0].typeValue.type == 'enum')">
+                                <json-to to="interface.inputs.BODY[0].typeValue" json-doc-config="jsonDocConfig"></json-to>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div set-if="interface.output.typeValue != undefined" class="returnsContainer">
+                    <h4>Returns</h4>
+
+                    <div class="returnsBodyContainer">
+
+                        <p class="methodDescription"
+                           set-class="valueMissing : !interface.output.comment"
+                           set-html="interface.output.comment || 'comment missing'">
+                        </p>
+
+                        <div class="mediaTypeContainer">
+                            <div class="mediaType">
+                                <span set-if="interface.produces.length > 0" set-text="interface.produces"></span>
+                                <span set-if="interface.produces.length == 0">no type</span>
+                            </div>
+                        </div>
+                        <div set-if="interface.compressed" class="gzip"></div>
+
+                        <div class="typeValueContainer">
+                            <div set-if="interface.output.typeValue.type == 'simple'
+                                      || interface.output.typeValue.type == 'enum'">
+                                <span class="parameterType"
+                                      set-text="formatTypeValue(interface.output.typeValue)">
+                                </span>
+                                <span class="parameterDefaultValue"
+                                      set-html="formatDefaultValue(interface.output.typeValue)"></span>
+                            </div>
+                            <div set-if="!(interface.output.typeValue.type == 'simple'
+                                      || interface.output.typeValue.type == 'enum')">
+                                <json-to to="interface.output.typeValue" json-doc-config="jsonDocConfig"></json-to>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div set-if="interface.statusCodes.length > 0" class="statusCodeContainer">
+                    <h4>Status codes</h4>
+
+                    <table class="statusCodes">
+                        <tr ng-repeat="statusCode in interface.statusCodes">
+                            <td>
+                                <span class="parameterContainer" set-if="statusCode.httpCode">
+                                    <span class="parameterName" set-text="statusCode.httpCode"></span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="statusCodeComment"
+                                      set-class="valueMissing : !statusCode.comment"
+                                      set-html="statusCode.comment || 'comment missing'"></span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <hr class="interfaceSeparator"/>
+                </div>
+            </li>
+        </ul>
+
+                </div>
+
+                <div ng-show="view=='warnings'">
+                    <div set-if="processErrors.length > 0">
+                        <ul class="warningsList">
+                            <li>
+                                <h3>
+                                    Interfaces not documented
+                                </h3>
+                                <p>
+                                    MireDot believes that the Java methods below correspond to REST interfaces, but somehow had problems
+                                    parsing/processing these interfaces and therefore excluded them from the generated documentation. We
+                                    would very much appreciate it if you would
+                                    <a href="mailto:&#109;&#105;&#114;&#101;&#100;&#111;&#116;&#64;&#113;&#109;&#105;&#110;&#111;&#46;&#99;&#111;&#109;">send us</a>
+                                    the interfaces (not the implementations) and the
+                                    types used (returntype, parameters). This will allow us to further improve MireDot and better document
+                                    your interfaces in the future.
+                                </p>
+                                <ul class="warningsListContent">
+                                    <li ng-repeat="processError in processErrors">
+                                        <i class="icon-question-sign" title="Not Documented"></i>
+                                        <span set-text="processError.class + '.' + processError.method"></span>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <p>
+                        Below is a list of potential problems detected by MireDot. They can be severe or not. Some of them wil result
+                        in low quality documentation, some are real implementation issues. With each warning, the Java method
+                        causing the problem is documented.
+                    </p>
+
+        <ul class="warningsList">
+            <li ng-repeat="(projectWarningType, projectWarningsOfType) in projectWarningsByType">
+
+                <h3 set-title="projectWarningType"
+                    set-text="projectWarningsOfType[0].description">
+                </h3>
+
+                <ul class="warningsListContent" set-if="validLicence && licenceType == 'PRO'">
+                    <li ng-repeat="projectWarning in projectWarningsOfType">
+                        <i set-if="projectWarning.failedBuild" class="icon-exclamation-sign failedIcon" title="Failed Build"></i>
+                        <i set-if="!projectWarning.failedBuild" class="icon-warning-sign warningIcon" title="Warning"></i>
+                        <a set-href="'#' + projectWarning.interface"
+                           set-text="getInterfaceByHash(projectWarning.interface).url"
+                           target="_self"></a>
+                        <p>
+                            <b>method</b>: <span set-text="projectWarning.implementationClass + '.' + projectWarning.implementationMethod"></span><br>
+                            <i set-text="projectWarning.entity"></i>
+                        </p>
+                    </li>
+                </ul>
+
+                <div set-if="validLicence && licenceType == 'FREE'">
+                    <i class="icon-exclamation-sign licenceIcon" title="Free version"></i>
+                    <strong>
+                    <ng-pluralize count="projectWarningsOfType.length"
+                                  when="{'one': 'One issue', 'other': '{} issues'}">
+                    </ng-pluralize>
+                    </strong>
+                    <ng-pluralize count="projectWarningsOfType.length"
+                                  when="{'one': 'is', 'other': 'are'}">
+                    </ng-pluralize> not shown here because this documentation was generated by the free version of MireDot.
+                        As such, not all features are supported.
+                    <span set-html="visitWebsiteForProVersion"></span>
+                </div>
+            </li>
+        </ul>
+
+                </div>
+
+            </div>
+        </div>
+        <div id="footer">
+            <div style="padding-top: 10px; padding-bottom: 10px; text-align: center;">
+                <p class="muted" style="font-size: 12px; margin: 0;">
+                    <span set-text="dateOfGeneration"></span> - REST documentation generated by
+                    <a href="http://www.miredot.com" target="_blank"><img src="img/miredot_mini.png"></a> version {{miredotVersion}}{{versionCheckResult}}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+</body>
+</html>

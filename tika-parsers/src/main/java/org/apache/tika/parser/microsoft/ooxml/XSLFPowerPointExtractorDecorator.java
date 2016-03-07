@@ -27,8 +27,9 @@ import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
-import org.apache.poi.sl.usermodel.SimpleShape;
+import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
+import org.apache.poi.xslf.usermodel.Placeholder;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
 import org.apache.poi.xslf.usermodel.XSLFComments;
@@ -42,7 +43,6 @@ import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSheet;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
-import org.apache.poi.xslf.usermodel.XSLFSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFTable;
 import org.apache.poi.xslf.usermodel.XSLFTableCell;
 import org.apache.poi.xslf.usermodel.XSLFTableRow;
@@ -151,7 +151,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         for (XSLFShape sh : shapes) {
             if (sh instanceof XSLFTextShape) {
                 XSLFTextShape txt = (XSLFTextShape) sh;
-                SimpleShape.Placeholder ph = txt.getTextType();
+                Placeholder ph = txt.getTextType();
                 if (skipPlaceholders && ph != null) {
                     continue;
                 }
@@ -229,9 +229,10 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
         List<PackagePart> parts = new ArrayList<>();
+        XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
         XSLFSlideShow document = null;
         try {
-            document = new XSLFSlideShow(extractor.getPackage());
+            document = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
         } catch (Exception e) {
             throw new TikaException(e.getMessage()); // Shouldn't happen
         }

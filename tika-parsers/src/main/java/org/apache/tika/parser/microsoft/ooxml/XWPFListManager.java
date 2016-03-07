@@ -57,10 +57,6 @@ public class XWPFListManager extends AbstractListManager {
      * @return the formatted number or an empty string if something went wrong
      */
     public String getFormattedNumber(final XWPFParagraph paragraph) {
-        if (numbering == null) {
-            return "";
-        }
-
         int currNumId = paragraph.getNumID().intValue();
         XWPFNum xwpfNum = numbering.getNum(paragraph.getNumID());
         if (xwpfNum == null) {

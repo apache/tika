@@ -17,6 +17,9 @@ package org.apache.tika.batch;
  * limitations under the License.
  */
 
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -32,13 +35,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.SafeContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 
 /**
@@ -78,6 +77,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
 
     private final ArrayBlockingQueue<FileResource> fileQueue;
 
+    private final XMLOutputFactory xmlOutputFactory = XMLOutputFactory.newFactory();
     private final int consumerId;
 
     //used to lock checks on state to prevent
@@ -284,31 +284,34 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
      */
     protected String getXMLifiedLogMsg(String type, String resourceId, Throwable t, String... attrs) {
 
-        ContentHandler toXML = new ToXMLContentHandler();
-        SafeContentHandler handler = new SafeContentHandler(toXML);
-        AttributesImpl attributes = new AttributesImpl();
-        attributes.addAttribute("", "resourceId", "resourceId", "", resourceId);
-        for (int i = 0; i < attrs.length - 1; i++) {
-            attributes.addAttribute("", attrs[i], attrs[i], "", attrs[i + 1]);
-        }
+        StringWriter writer = new StringWriter();
         try {
-            handler.startDocument();
-            handler.startElement("", type, type, attributes);
+            XMLStreamWriter xml = xmlOutputFactory.createXMLStreamWriter(writer);
+            xml.writeStartDocument();
+            xml.writeStartElement(type);
+            xml.writeAttribute("resourceId", resourceId);
+            if (attrs != null) {
+                //this assumes args has name value pairs alternating, name0 at 0, val0 at 1, name1 at 2, val2 at 3, etc.
+                for (int i = 0; i < attrs.length - 1; i++) {
+                    xml.writeAttribute(attrs[i], attrs[i + 1]);
+                }
+            }
             if (t != null) {
                 StringWriter stackWriter = new StringWriter();
                 PrintWriter printWriter = new PrintWriter(stackWriter);
                 t.printStackTrace(printWriter);
                 printWriter.flush();
                 stackWriter.flush();
-                char[] chars = stackWriter.toString().toCharArray();
-                handler.characters(chars, 0, chars.length);
+                xml.writeCharacters(stackWriter.toString());
             }
-            handler.endElement("", type, type);
-            handler.endDocument();
-        } catch (SAXException e) {
-            logger.warn("error writing xml stream for: " + resourceId, t);
+            xml.writeEndElement();
+            xml.writeEndDocument();
+            xml.flush();
+            xml.close();
+        } catch (XMLStreamException e) {
+            logger.error("error writing xml stream for: " + resourceId, t);
         }
-        return handler.toString();
+        return writer.toString();
     }
 
     private FileResource getNextFileResource() throws InterruptedException {
@@ -353,7 +356,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             try {
                 closeable.close();
             } catch (IOException e){
-                logger.warn(e.getMessage());
+                logger.error(e.getMessage());
             }
         }
         closeable = null;
@@ -367,7 +370,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             try {
                 ((Flushable)closeable).flush();
             } catch (IOException e) {
-                logger.warn(e.getMessage());
+                logger.error(e.getMessage());
             }
         }
         close(closeable);

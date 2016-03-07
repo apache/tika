@@ -1,0 +1,192 @@
+Mar 03, 2016 10:11:35 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/
+Mar 03, 2016 10:11:35 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/version)
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@319bc8458 pairs: {GET / HTTP/1.1: null}{Content-Type: text/plain}{Accept: text/plain}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 183/183
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST / on AsyncHttpConnection@47d4e9a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=-5,l=10,c=0},r=65
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/ @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/ @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:35 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream used: http://localhost:9998/
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /  200 handled=true
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@4c5474f55 pairs: {null: HTTP/1.1 200 OK}{Content-Type: text/plain}{Date: Fri, 04 Mar 2016 06:11:35 GMT}{Content-Length: 378}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@5c69f337{l(/127.0.0.1:61808)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@47d4e9a,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=10,c=0},r=65}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@3c9bfddc as handler
+Mar 03, 2016 10:11:35 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/
+Mar 03, 2016 10:11:35 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/)
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@2a79d4b18 pairs: {GET / HTTP/1.1: null}{Content-Type: text/html}{Accept: text/html}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 181/181
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST / on AsyncHttpConnection@47d4e9a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=-5,l=10,c=0},r=66
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/ @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/ @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:35 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream used: http://localhost:9998/
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /  200 handled=true
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@2e9fda695 pairs: {null: HTTP/1.1 200 OK}{Content-Type: text/html}{Date: Fri, 04 Mar 2016 06:11:35 GMT}{Content-Length: 2550}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@5c69f337{l(/127.0.0.1:61808)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@47d4e9a,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=10,c=0},r=66}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@485e36bc as handler
+Mar 03, 2016 10:11:35 PM org.apache.cxf.endpoint.ServerImpl initDestination
+INFO: Setting the server's publish address to be http://localhost:9998/
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} + org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84 as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 + o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: starting o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STARTED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: ProxySelector Request for http://localhost:9998/
+Mar 03, 2016 10:11:35 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream retrieved from the cache, sun.net.www.http.HttpClient(http://localhost:9998/)
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection plainConnect0
+FINEST: Proxy used: DIRECT
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection writeRequests
+FINE: sun.net.www.MessageHeader@435fb7b58 pairs: {GET / HTTP/1.1: null}{Content-Type: text/html}{Accept: text/html}{User-Agent: Apache CXF 3.0.3}{Cache-Control: no-cache}{Pragma: no-cache}{Host: localhost:9998}{Connection: keep-alive}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 181/181
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: REQUEST / on AsyncHttpConnection@47d4e9a,g=HttpGenerator{s=0,h=-1,b=-1,c=-1},p=HttpParser{s=-5,l=10,c=0},r=67
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: scope null||/ @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: context=||/ @ o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:35 PM sun.net.www.http.HttpClient logFinest
+FINEST: KeepAlive stream used: http://localhost:9998/
+Mar 03, 2016 10:11:35 PM sun.net.www.protocol.http.HttpURLConnection getInputStream0
+FINE: sun.net.www.MessageHeader@4e70a7285 pairs: {null: HTTP/1.1 200 OK}{Content-Type: text/html}{Date: Fri, 04 Mar 2016 06:11:35 GMT}{Content-Length: 2550}{Server: Jetty(8.1.15.v20140411)}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: RESPONSE /  200 handled=true
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Enabled read interest SCEP@5c69f337{l(/127.0.0.1:61808)<->r(/127.0.0.1:9998),s=1,open=true,ishut=false,oshut=false,rb=false,wb=false,w=true,i=1r}-{AsyncHttpConnection@47d4e9a,g=HttpGenerator{s=4,h=0,b=0,c=-1},p=HttpParser{s=0,l=10,c=0},r=67}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: filled 0/0
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container org.eclipse.jetty.server.handler.ContextHandlerCollection@185a6e9 - o.e.j.s.h.ContextHandler{,null} as handler
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: stopping o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter info
+INFO: stopped o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: STOPPED o.e.j.s.h.ContextHandler{,null}
+Mar 03, 2016 10:11:35 PM org.slf4j.impl.JCLLoggerAdapter debug
+FINE: Container o.e.j.s.h.ContextHandler{,null} - org.apache.cxf.transport.http_jetty.JettyHTTPHandler@4a11eb84 as handler

@@ -73,4 +73,5 @@ class LinkBuilder {
         
         return new Link(type, uri, title, anchor, rel);
     }
+
 }

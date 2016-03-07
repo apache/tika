@@ -17,14 +17,14 @@
 
 package org.apache.tika.language.translate;
 
-import java.io.IOException;
-import java.util.HashMap;
+import com.fasterxml.jackson.databind.util.LRUMap;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
 
-import com.fasterxml.jackson.databind.util.LRUMap;
+import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * CachedTranslator. Saves a map of previous translations in order to prevent repetitive translation requests.
@@ -72,10 +72,8 @@ public class CachedTranslator implements Translator {
 
 	@Override
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        if (translator == null) {
-            return text;
-        }
-        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        if (translator == null) return text;
+		HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
             translatedText = translator.translate(text, sourceLanguage, targetLanguage);
@@ -118,12 +116,9 @@ public class CachedTranslator implements Translator {
      * @since Tika 1.6
      */
     public int getNumTranslationsFor(String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
-        if (translationCache == null) {
-            return 0;
-        } else {
-            return translationCache.size();
-        }
+        HashMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+        if (translationCache == null) return 0;
+        else return translationCache.size();
     }
 
     /**
@@ -136,8 +131,8 @@ public class CachedTranslator implements Translator {
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String sourceLanguage, String targetLanguage) {
-        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
-        return translationCache.get(text) != null;
+        HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        return translationCache.containsKey(text);
     }
 
     /**

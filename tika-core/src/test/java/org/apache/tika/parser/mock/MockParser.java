@@ -18,8 +18,6 @@ package org.apache.tika.parser.mock;
  */
 
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -50,6 +48,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -123,15 +123,9 @@ public class MockParser extends AbstractParser {
             print(action, name);
         } else if ("embedded".equals(name)) {
             handleEmbedded(action, xhtml, context);
-        } else if ("throwIllegalChars".equals(name)) {
-            throwIllegalChars();
         } else {
             throw new IllegalArgumentException("Didn't recognize mock action: "+name);
         }
-    }
-
-    private void throwIllegalChars() throws IOException {
-        throw new IOException("Can't say \u0000 in xml or \u0001 or \u0002 or \u0003");
     }
 
     private void handleEmbedded(Node action, XHTMLContentHandler handler, ParseContext context)

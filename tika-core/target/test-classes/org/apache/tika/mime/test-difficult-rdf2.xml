@@ -1,0 +1,44 @@
+<!-- This is the OWL 2 Namespace Document, sometimes
+     called the "owl.owl" file.
+
+     For some commentary about its creation, see
+     http://www.w3.org/2007/OWL/wiki/Owl2DotOwlDevel
+
+     This was created from the 16 Oct 2009 version of
+     that page, with the turtle-to-rdf/xml conversion
+     done by cwm, and the conversion to XML entity
+     references done by hand. The GRDDL triple and
+     namespace have also been added by hand
+
+     The real OWL 1 and OWL 2 namespace is:
+          http://www.w3.org/2002/07/owl#
+
+-->
+<!DOCTYPE rdf:RDF [
+
+<!ENTITY location "http://www.w3.org/2002/07/owl" >
+<!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+<!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+<!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+<!ENTITY dc "http://purl.org/dc/elements/1.1/" >
+<!ENTITY grddl "http://www.w3.org/2003/g/data-view#" >
+<!ENTITY owl "&location;#" >
+
+]>
+<rdf:RDF
+    xml:base ="&location;"
+    xmlns:rdf ="&rdf;"
+    xmlns:rdfs="&rdfs;"
+    xmlns:xsd = "&xsd;"
+    xmlns:owl ="&owl;"
+    xmlns:dc = "&dc;"
+    xmlns:grddl = "&grddl;"
+    >
+
+<!--
+  TIKA-309: Mime type application/rdf+xml not correctly detected
+  Simplified test case based on the OWL 2 Namespace Document at
+  http://www.w3.org/2002/07/owl#
+-->
+
+</rdf:RDF>

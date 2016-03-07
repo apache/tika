@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.13-SNAPSHOT</version>
+  <version>1.11</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -361,14 +361,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.4.2</version>
-        <dependencies>
-         <dependency>
-           <groupId>org.apache.maven.scm</groupId>
-           <artifactId>maven-scm-provider-gitexe</artifactId>
-           <version>1.8.1</version>
-         </dependency>
-       </dependencies>
+        <version>2.3.2</version>
       </plugin>
     </plugins>
   </build>
@@ -412,10 +405,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/</developerConnection>
-    <url>https://github.com/apache/tika</url>
-    <tag>HEAD</tag>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.11-rc1/tika-parent</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.11-rc1/tika-parent</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.11-rc1/tika-parent</url>
   </scm>
-
 </project>

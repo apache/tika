@@ -24,13 +24,13 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -633,9 +633,13 @@ public class PDFParserTest extends TikaTest {
 
         File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
         int pdfs = 0;
-        //empty as of PDFBox 1.8.11
-        //leave this in for the 1.8.x series in case something new happens
         Set<String> knownMetadataDiffs = new HashSet<String>();
+        //PDFBox-1792/Tika-1203
+        knownMetadataDiffs.add("testAnnotations.pdf");
+        // Added for TIKA-93.
+        knownMetadataDiffs.add("testOCR.pdf");
+        // Added for TIKA-1085
+        knownMetadataDiffs.add("testPDF_bom.pdf");
 
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
@@ -1326,36 +1330,6 @@ public class PDFParserTest extends TikaTest {
         //TIKA-1678
         XMLResult r = getXML("testPDF_PDFEncodedStringInXMP.pdf");
         assertEquals("Microsoft", r.metadata.get(TikaCoreProperties.TITLE));
-    }
-
-    @Test
-    public void testXFAExtractionBasic() throws Exception {
-        XMLResult r = getXML("testPDF_XFA_govdocs1_258578.pdf");
-        //contains content existing only in the "regular" pdf
-        assertContains("Mount Rushmore National Memorial", r.xml);
-        //contains xfa fields and data
-        assertContains("<li fieldName=\"School_Name\">School Name: my_school</li>",
-            r.xml);
-    }
-
-    @Test
-    public void testXFAOnly() throws Exception {
-        ParseContext context = new ParseContext();
-
-        PDFParserConfig config = new PDFParserConfig();
-        config.setIfXFAExtractOnlyXFA(true);
-        context.set(PDFParserConfig.class, config);
-        ContentHandler handler = new ToXMLContentHandler(StandardCharsets.UTF_8.name());
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser();
-        try (InputStream is = getResourceAsStream("/test-documents/testPDF_XFA_govdocs1_258578.pdf")) {
-            parser.parse(is, handler, metadata, context);
-        }
-        String xml = handler.toString();
-        assertContains("<li fieldName=\"Room_1\">Room [1]: my_room1</li>", xml);
-        assertContains("</xfa_content></body></html>", xml);
-
-        assertNotContained("Mount Rushmore National Memorial", xml);
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {

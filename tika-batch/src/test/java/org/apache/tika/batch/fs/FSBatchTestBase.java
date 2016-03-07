@@ -150,25 +150,23 @@ public abstract class FSBatchTestBase extends TikaTest {
         return runner;
     }
 
-    public ProcessBuilder getNewBatchRunnerProcess(String testConfig, String loggerProps,
-                                                   Map<String, String> args) {
+    public ProcessBuilder getNewBatchRunnerProcess(String testConfig, Map<String, String> args) {
         List<String> argList = new ArrayList<>();
-
         for (Map.Entry<String, String> e : args.entrySet()) {
             argList.add("-"+e.getKey());
             argList.add(e.getValue());
         }
 
-        String[] fullCommandLine = commandLine(testConfig, loggerProps,
+        String[] fullCommandLine = commandLine(testConfig,
                 argList.toArray(new String[argList.size()]));
         return new ProcessBuilder(fullCommandLine);
     }
 
-    private String[] commandLine(String testConfig, String loggerProps, String[] args) {
+    private String[] commandLine(String testConfig, String[] args) {
         List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
         commandLine.add("-Dlog4j.configuration=file:"+
-            this.getClass().getResource(loggerProps).getFile());
+            this.getClass().getResource("/log4j_process.properties").getFile());
         commandLine.add("-Xmx128m");
         commandLine.add("-cp");
         String cp = System.getProperty("java.class.path");

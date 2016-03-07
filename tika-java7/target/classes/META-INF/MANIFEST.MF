@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bundle-Description: Java-7 reliant components, including FileTypeDetec
+ tor implementations
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-SymbolicName: org.apache.tika.java7
+Built-By: adeshgupta
+Bundle-ManifestVersion: 2
+Bnd-LastModified: 1457071922923
+Bundle-DocURL: http://www.apache.org
+Bundle-Vendor: The Apache Software Foundation
+Import-Package: org.apache.tika;version="[1.0,2)",org.apache.tika.mime
+ ;version="[1.2,2)"
+Tool: Bnd-1.15.0
+Export-Package: org.apache.tika.filetypedetector;uses:="org.apache.tik
+ a,org.apache.tika.mime";version="1.0.0"
+Bundle-Version: 1.11.0
+Bundle-Name: Apache Tika Java-7 Components
+Created-By: Apache Maven Bundle Plugin
+Build-Jdk: 1.8.0_60
+

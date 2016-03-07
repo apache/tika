@@ -27,8 +27,6 @@ public interface TikaMetadataKeys {
 
     String EMBEDDED_RELATIONSHIP_ID = "embeddedRelationshipId";
 
-    String EMBEDDED_STORAGE_CLASS_ID = "embeddedStorageClassId";
-
     String EMBEDDED_RESOURCE_TYPE = "embeddedResourceType";
 
 }

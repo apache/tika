@@ -30,8 +30,8 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.example.DumpTikaConfigExample.Mode;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
@@ -64,9 +64,9 @@ public class DumpTikaConfigExampleTest {
     public void testDump() throws Exception {
         DumpTikaConfigExample ex = new DumpTikaConfigExample();
         for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
-            for (TikaConfigSerializer.Mode mode : TikaConfigSerializer.Mode.values()) {
+            for (Mode mode : Mode.values()) {
                 Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);
-                TikaConfigSerializer.serialize(TikaConfig.getDefaultConfig(), mode, writer, charset);
+                ex.dump(TikaConfig.getDefaultConfig(), mode, writer, charset.name());
                 writer.flush();
                 writer.close();
     

@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.stream.XMLStreamException;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -65,7 +63,6 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlin
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.pdmodel.interactive.form.PDField;
 import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
-import org.apache.pdfbox.pdmodel.interactive.form.PDXFA;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
@@ -102,7 +99,6 @@ class PDF2XHTML extends PDFTextStripper {
     private final ParseContext context;
     private final XHTMLContentHandler handler;
     private final PDFParserConfig config;
-    private final Metadata metadata;
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.
@@ -125,7 +121,6 @@ class PDF2XHTML extends PDFTextStripper {
         this.originalHandler = handler;
         this.context = context;
         this.handler = new XHTMLContentHandler(handler, metadata);
-        this.metadata = metadata;
     }
 
     /**
@@ -585,21 +580,6 @@ class PDF2XHTML extends PDFTextStripper {
         PDAcroForm form = catalog.getAcroForm();
         if (form == null)
             return;
-
-        //if it has xfa, try that.
-        //if it doesn't exist or there's an exception,
-        //go with traditional AcroForm
-        PDXFA pdxfa = form.getXFA();
-        if (pdxfa != null) {
-            XFAExtractor xfaExtractor = new XFAExtractor();
-            try {
-                xfaExtractor.extract(new BufferedInputStream(
-                        new ByteArrayInputStream(pdxfa.getBytes())), handler, metadata);
-                return;
-            } catch (XMLStreamException |IOException e) {
-                //if there was an xml parse exception in xfa, try the AcroForm
-            }
-        }
 
         @SuppressWarnings("rawtypes")
         List fields = form.getFields();

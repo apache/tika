@@ -18,20 +18,18 @@
 package org.apache.tika.parser.geo.topic;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.tika.parser.geo.topic.gazetteer.Location;
+import java.util.HashMap;
 
 public class GeoTag {
-	Location location = new Location();
-	List<GeoTag> alternatives = new ArrayList<GeoTag>();
+	String Geographic_NAME;
+	String Geographic_LONGTITUDE;
+	String Geographic_LATITUDE;
+	ArrayList<GeoTag> alternatives = new ArrayList<GeoTag>();
 
 	public void setMain(String name, String longitude, String latitude) {
-		this.location.setName(name);
-		this.location.setLatitude(longitude);
-		this.location.setLongitude(latitude);
-		
+		Geographic_NAME = name;
+		Geographic_LONGTITUDE = longitude;
+		Geographic_LATITUDE = latitude;
 	}
 
 	public void addAlternative(GeoTag geotag) {
@@ -46,17 +44,20 @@ public class GeoTag {
 	 * @param bestNER best name entity among all the extracted entities for the
 	 * input stream
 	 */
-	public void toGeoTag(Map<String, List<Location>> resolvedGeonames,
+	public void toGeoTag(HashMap<String, ArrayList<String>> resolvedGeonames,
 			String bestNER) {
 
 		for (String key : resolvedGeonames.keySet()) {
-			List<Location> cur = resolvedGeonames.get(key);
+			ArrayList<String> cur = resolvedGeonames.get(key);
 			if (key.equals(bestNER)) {
-				this.location = cur.get(0);
-				
+				this.Geographic_NAME = cur.get(0);
+				this.Geographic_LONGTITUDE = cur.get(1);
+				this.Geographic_LATITUDE = cur.get(2);
 			} else {
 				GeoTag alter = new GeoTag();
-				alter.location = cur.get(0);
+				alter.Geographic_NAME = cur.get(0);
+				alter.Geographic_LONGTITUDE = cur.get(1);
+				alter.Geographic_LATITUDE = cur.get(2);
 				this.addAlternative(alter);
 			}
 		}

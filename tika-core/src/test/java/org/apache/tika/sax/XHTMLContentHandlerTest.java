@@ -140,23 +140,6 @@ public class XHTMLContentHandlerTest {
 
         assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
     }
-    
-    @Test
-    public void testAttributesOnHtml() throws Exception {
-        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
-        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
-        AttributesImpl attributes = new AttributesImpl();
-
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
-        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
-
-        xhtmlContentHandler.startDocument();
-        xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "html", "html", attributes);
-        xhtmlContentHandler.endElement("html");
-        xhtmlContentHandler.endDocument();
-
-        assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
-    }
 
     /**
      * Return array of non-zerolength words. Splitting on whitespace will get us

@@ -121,10 +121,17 @@ public class TesseractOCRParser extends AbstractParser {
 
         // Try running Tesseract from there, and see if it exists + works
         String[] checkCmd = { tesseract };
-        boolean hasTesseract = ExternalParser.check(checkCmd);
-        TESSERACT_PRESENT.put(tesseract, hasTesseract);
-        return hasTesseract;
-     
+        try {
+            boolean hasTesseract = ExternalParser.check(checkCmd);
+            TESSERACT_PRESENT.put(tesseract, hasTesseract);
+            return hasTesseract;
+        } catch (NoClassDefFoundError e) {
+            // This happens under OSGi + Fork Parser - see TIKA-1507
+            // As a workaround for now, just say we can't use OCR
+            // TODO Resolve it so we don't need this try/catch block
+            TESSERACT_PRESENT.put(tesseract, false);
+            return false;
+        }
     }
 
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,

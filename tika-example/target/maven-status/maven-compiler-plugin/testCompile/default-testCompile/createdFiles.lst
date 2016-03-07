@@ -1,0 +1,9 @@
+org\apache\tika\example\LanguageIdentifierExampleTest.class
+org\apache\tika\example\TranslatorExampleTest.class
+org\apache\tika\example\SimpleTypeDetectorTest.class
+org\apache\tika\example\SimpleTextExtractorTest.class
+org\apache\tika\example\DumpTikaConfigExampleTest.class
+org\apache\tika\example\ExtractEmbeddedFilesTest.class
+org\apache\tika\example\TestParsingExample.class
+org\apache\tika\example\ContentHandlerExampleTest.class
+org\apache\tika\example\AdvancedTypeDetectorTest.class

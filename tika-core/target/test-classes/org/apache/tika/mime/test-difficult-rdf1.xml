@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+
+<!DOCTYPE uridef[
+  <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns">
+  <!ENTITY shadow-rdf "http://www.daml.org/services/owl-s/1.2/generic/ObjectList.owl">
+  <!ENTITY expr "http://www.daml.org/services/owl-s/1.2/generic/Expression.owl">
+  <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema">
+  <!ENTITY owl "http://www.w3.org/2002/07/owl">
+  <!ENTITY xsd "http://www.w3.org/2001/XMLSchema">
+  <!ENTITY time "http://www.isi.edu/~hobbs/damltime/time-entry.owl">
+  <!ENTITY swrl "http://www.w3.org/2003/11/swrl">
+  <!ENTITY service "http://www.daml.org/services/owl-s/1.2/Service.owl">
+  <!ENTITY grounding "http://www.daml.org/services/owl-s/1.2/Grounding.owl">
+  <!ENTITY process "http://www.daml.org/services/owl-s/1.2/Process.owl">
+  <!ENTITY DEFAULT "http://www.daml.org/services/owl-s/1.2/Process.owl">
+]>
+
+
+<rdf:RDF
+  xmlns:rdf=    "&rdf;#"
+  xmlns:shadow-rdf= "&shadow-rdf;#"
+  xmlns:expr= "&expr;#"
+  xmlns:rdfs=   "&rdfs;#"
+  xmlns:owl= "&owl;#"
+  xmlns:swrl= "&swrl;#"
+  xmlns:xsd= "&xsd;#"
+  xmlns:service= "&service;#"
+  xmlns:process= "&process;#"
+  xmlns:grounding= "&grounding;#"
+  xmlns=        "&DEFAULT;#"
+  xml:base="&process;">
+
+<!--
+  TIKA-309: Mime type application/rdf+xml not correctly detected
+  Simplified test case based on the OWL document at
+  http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl
+-->
+
+</rdf:RDF>

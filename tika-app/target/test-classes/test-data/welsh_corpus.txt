@@ -1,0 +1,2602 @@
+﻿#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+Corwynt Isabel oedd y corwynt costliest a deadliest yn 2003 tymor corwynt Iwerydd. Y storm a enwir nawfed, corwynt bumed, a'r ail corwynt mawr y tymor, Isabel ffurfio o ton trofannol ar Medi 6 yn y Cefnfor Iwerydd trofannol. Mae'n symud northwestward, ac o fewn amgylchedd o olau cneifio gwynt a dŵr cynnes yn gyson cryfhau i gyrraedd brig wyntoedd o 165 milltir yr awr (265 km / h) ar Fedi 11. Ar ôl amrywio mewn dwysedd am bedwar diwrnod, Isabel gwanhau raddol a gwneud landfall ar y banciau Allanol o North Carolina gyda gwyntoedd o 105 milltir yr awr (165 km / h) ar Fedi 18. Mae'n gyflym gwanhau dros dir a daeth yn 
+extratropical dros Pennsylvania orllewinol y diwrnod nesaf.
+Yng Ngogledd Carolina, yr ymchwydd storm o'r Isabel olchi allan dogn o Hatteras Ynys i ffurfio hyn a elwir answyddogol fel Isabel Inlet. Difrod oedd 
+fwyaf ar hyd y Banciau Allanol, lle mae miloedd o gartrefi eu difrodi neu eu dinistrio hyd yn oed. Mae gwaethaf o effeithiau Isabel digwydd yn Virginia, 
+yn enwedig yn yr ardal Ffyrdd Hampton ac ar hyd y glannau afonydd mor bell i'r gorllewin ac i'r gogledd fel Richmond a Washington, DC. Virginia adroddodd 
+y mwyaf o farwolaethau a difrod gan y corwynt. Mae tua 64% o'r difrod a 68% o'r marwolaethau wedi digwydd yng Ngogledd Carolina a Virginia. Electric gwasanaeth 
+yn amharu mewn ardaloedd o Virginia am sawl diwrnod, mae rhai ardaloedd mwy gwledig oedd heb drydan am wythnosau, ac yn achosi llifogydd lleol miloedd o ddoleri 
+mewn difrod.
+Cymedrol i niwed difrifol ymestyn i fyny'r arfordir yr Iwerydd a chyn belled ag mewndirol Gorllewin Virginia. Tua chwe miliwn o bobl yn cael eu gadael heb 
+wasanaeth trydan yn yr dwyreiniol Unol Daleithiau gan y gwyntoedd cryf o Isabel. Glawiad gan y storm estynedig o Dde Carolina i Maine, ac tua'r gorllewin i 
+Michigan. Drwy gydol y llwybr o Isabel, difrod cyfanswm o tua $ 3600000000 (2003 USD, $ 4300000000 2011 USD). 16 marwolaeth mewn saith Taleithiau'r Unol 
+Daleithiau oedd yn perthyn yn uniongyrchol i'r corwynt, gyda 35 o farwolaethau o bob chwech o wladwriaethau a thalaith Canada yn un sy'n ymwneud yn anuniongyrchol
+at y corwynt.
+Mae ton trofannol symud oddi ar arfordir Affrica ar Fedi 1. Mae ardal o wasgedd isel sy'n gysylltiedig â symud y don yn araf tua'r gorllewin, ac mae ei 
+darfudiad lle cyntaf yn ymddangos i fod yn well a drefnwyd. Ar Medi 3, gan ei drosglwyddo i i'r de o'r ynysoedd Cape Verde, sefydliad o fewn y system diraddio, 
+er bod mwy o darfudiad y diwrnod nesaf. Mae'r system yn raddol daeth yn trefnu yn well, a dosbarthiadau Dvorak dechreuodd fuan ar Fedi 5. Yn seiliedig ar y 
+gwaith o ddatblygu cylchrediad arwyneb ar gau, amcangyfrifir y system a ddatblygwyd yn Trofannol Depression tri ar ddeg yn gynnar ar Fedi 6. Awr yn ddiweddarach, 
+mae'n dwysáu i mewn i Storm Drofannol Isabel, yn weithredol er nad oedd y Hurricane Center Cenedlaethol yn dechrau cyhoeddi advisories tan 13 awr ar ôl iddo 
+ddatblygu gyntaf.
+Wedi'i leoli o fewn ardal o olau cneifio gwynt a dŵr cynnes, Isabel a drefnwyd yn raddol fel y bandiau crwm datblygu o amgylch ardal crwn o darfudiad dwfn 
+ger y ganolfan. Mae raddol gryfhau wrth iddo symud i'r gorllewin-gogledd-orllewin, ac Isabel cryfhau i corwynt ar Medi 7 dilynol i ddatblygiad mawr, ac eto 
+llygad carpiog leoli ger y darfudiad dyfnaf. Mae llygad, patrwm darfudol yn gyffredinol, ac all-lif gwella'n raddol mewn sefydliad, [8] a darfudiad dwfn 
+amgylchynu gyflym y 40-milltir (60 km) llygad-eang. Isabel dwysáu ar Fedi 8 i gyrraedd statws corwynt mawr tra lleoli 1,300 o filltiroedd (2,100 km) i'r 
+dwyrain-gogledd-ddwyrain o Barbuda. Ar Medi 9, Isabel cyrraedd brig dwysedd sylfaenol o 135 milltir yr awr (215 km / h) am tua 24 awr, mae fach iawn Categori 4 
+corwynt ar y Raddfa Saffir-Simpson.
+Yn gynnar ar Medi 10, daeth y eyewall llai diffiniedig, y darfudiad ger y llygad daeth herydu, ac all-lif gogledd daeth yn cyfyngu ychydig. 
+O ganlyniad, Isabel gwanhau ychydig i 3 Categori corwynt. Roedd y corwynt troi mwy i'r gorllewin o ganlyniad i ddylanwad y Uchel Bermuda-Azores. 
+Yn ddiweddarach ar Medi 10, Isabel restrengthened i 4 Categori corwynt ar ôl darfudiad dyfnhau ger y eyewall fwyfwy trefnu. Y corwynt yn parhau i ddwysau , a 
+Isabel cyrraedd ei anterth ddwysedd o 165 milltir yr awr (270 km / h) ar Medi 11, mae 5 Categori corwynt ar y Raddfa Saffir-Simpson. Oherwydd yn eyewall cylch 
+adnewyddu, Isabel gwanhau ychydig, er ei fod yn cadw Categori 5 Statws am 24 awr. Yn Isabel cafodd eyewall arall, beicio newydd all-lif wedi dirywio o ran 
+ymddangosiad ac darfudiad o amgylch y llygad gwanhau, ac yn gynnar ar Medi 13 Isabel gwanhau i cryf Categori 4 corwynt. Mae gwendid yn y grib i ei ganiatáu 
+gogledd y corwynt i droi i'r gorllewin-gogledd-orllewin. [1] Ar ôl cwblhau'r cylch newydd, y corwynt's mawr 40 milltir (65 km) llygaid led daeth yn diffinio yn 
+well, ac yn hwyr ar y 13 Isabel ail-ennill statws Categori 5. Mae Corwynt NOAA Hunter Ragchwilio hedfan awyrennau i mewn i'r corwynt lansio dropsonde sy'n 
+mesur cyflymder gwynt yn y pryd o 233 milltir yr awr (375 km / h), y cyflymder y gwynt cryfaf y pryd a gofnodwyd mewn Iwerydd corwynt. Cloud topiau cynhesu eto 
+yn fuan wedi hynny, a Isabel gwanhau i cryf Categori 4 corwynt yn gynnar ar Fedi 14. Yn ddiweddarach y diwrnod hwnnw, yn ad-drefnu, ac am y trydydd tro iddo 
+ennill statws Categori 5 tra leoli 400 milltir (650 km) i'r gogledd o San Juan, Puerto Rico.
+topiau Cwmwl o amgylch y ganolfan arwain at Isabel gwanhau at 4 Categori corwynt yn gynnar ar Medi 15. Yn ddiweddarach y diwrnod hwnnw, y craidd mewnol o darfudiad 
+dwfn dechreuodd ddirywio tra bod y llygad o ran ymddangosiad wedi pydru. Fel grib at ei adeiladu southeastward gogledd-orllewin, mae'n arwain at Isabel decelerating 
+gan ei fod yn troi i'r gogledd-gogledd-orllewin. Mae cynyddu cneifio gwynt fertigol gyfrannodd yn gwanhau ymhellach y corwynt, a Isabel gwanhau at Categori 
+2 corwynt ar Medi 16 tra lleoli 645 milltir (1,035 km) i'r de-ddwyrain o Cape Hatteras, North Carolina. Darfudiad parhau'n fach iawn, er bod all-lif cadw
+sefydliad rhagorol, ac yn parhau i fod yn Isabel Categori 2 corwynt am ddau ddiwrnod tan wneud landfall rhwng Cape Lookout a Ocracoke Ynys ar 18 Medi gyda 
+gwyntoedd o 105 milltir yr awr (165 km / h). Mae'n gwanhau ar ôl iddo wneud landfall, er oherwydd ei gynnig ymlaen yn gyflym Isabel parhau i fod yn corwynt nes 
+cyrraedd Virginia gorllewin yn gynnar ar Medi 19. Ar ôl pasio trwy Gorllewin Virginia fel storm drofannol, Isabel daeth extratropical dros Pennsylvania 
+gorllewinol. Yn ddiweddarach y diwrnod hwnnw, yn croesi i mewn i Lyn Erie Canada, a chafodd ei amsugno gan storm mwy o faint extratropical dros y Dosbarth 
+Cochrane o Ontario.
+50 awr cyn gwneud Isabel landfall, cyhoeddodd y Ganolfan Genedlaethol Corwynt yn gwylio corwynt o Little Afon, De Carolina i Chincoteague, Virginia, gan 
+gynnwys y Pamlico a Albemarle Sounds a'r is Chesapeake Bay. Mae'r NHC hefyd yn cyhoeddi de storm drofannol o wylio Little Afon, De Carolina i geg yr Afon 
+Santee, yn ogystal ag o Chincoteague, Virginia tua'r gogledd i Little Moryd Wy, New Jersey. Rhybuddion a storm drofannol Corwynt eu cyhoeddi yn raddol ar gyfer 
+rhannau o'r Arfordir Dwyrain yr Unol Daleithiau. Erbyn yr amser a wnaed Isabel landfall, rhybudd storm drofannol bodoli oddi Chincoteague, Virginia i Tân 
+Island, Efrog Newydd ac o Cape Fear, Gogledd Carolina i geg yr Afon Santee yn Ne Carolina, a rhybudd corwynt yn bodoli o Chincoteague, Virginia i Cape Fear. 
+Landfall rhagolygon yn gywir iawn;. o dri diwrnod blaenorol, mae'r gwall trac rhagolwg cyfartalog ar gyfer ei landfall oedd dim ond 36 milltir (58 km), ac ar 
+gyfer 48 awr o flaen llaw y gwall trac ar gyfartaledd oedd 18 milltir (29 km)
+Datganodd swyddogion gwagio gorfodol ar gyfer 24 o siroedd yng Ngogledd Carolina, Virginia, ac yn Maryland, ond yn gyffredinol nid llawer o chwith. Yn ôl 
+arolwg a gynhaliwyd gan yr Unol Daleithiau Adran Fasnach, roedd cyfraddau gwacįu amcangyfrifwyd fel a ganlyn;. 45% yn y Banciau Allanol, 23% yn yr ardal o 
+amgylch y Sound Pamlico, 23% yn Virginia, a thua 15% yn Maryland Mae'r bygythiad o Isabel arwain at gwacau o gannoedd o filoedd o drigolion, yn bennaf 
+yng Ngogledd Carolina a Virginia, ac roedd yn cynnwys mwy na 12,000 o drigolion yn aros mewn llochesi argyfwng.
+19 feysydd awyr mawr ar hyd yr Arfordir Dwyrain yr Unol Daleithiau ar gau, gyda mwy na 1,500 o deithiau ganslo. Mae'r system Washington Metro a Metrobus cau 
+cyn dyfodiad y storm, a Amtrak canslo bron pob trên i'r de o brifddinas y wlad. Ysgolion a busnesau ledled ei llwybr ar gau cyn Isabel's cyrraedd er mwyn 
+caniatáu amser i baratoi; caledwedd a storfeydd gwella cartrefi Adroddodd busnes yn gyflym o bren haenog, flashlights, batris, a generaduron symudol, fel 
+preswylwyr a baratowyd ar gyfer effaith y storm potensial. Roedd y llywodraeth ffederal Caewyd heb gynnwys aelodau staff mewn argyfwng. Gorchmynnodd y Unol 
+Daleithiau Llynges cael gwared o 40 llongau a llongau tanfor a dwsinau o awyrennau o safleoedd llynges ger Norfolk, Virginia.
+Gwyntoedd cryf o Isabel ymestyn o Ogledd Carolina i New England ac tua'r gorllewin i'r Gorllewin Virginia. Mae'r gwyntoedd, ynghyd â glawiad blaenorol sydd 
+iraidd y pridd, downed llawer o goed a gwifrau trydan ar draws ei llwybr, gan adael tua 6 miliwn o gwsmeriaid trydan heb rym ar ryw adeg. Mae rhannau o Virginia
+arfordirol, yn enwedig yn y Ffyrdd Hampton a Gogledd-ddwyrain North Carolina ardaloedd, roedd heb drydan am bron i fis. Ardaloedd arfordirol dioddef o tonnau 
+ac mae ei ymchwydd storm pwerus, gydag ardaloedd yng Ngogledd Carolina dwyrain a de-ddwyrain Virginia adrodd am ddifrod difrifol o'r ddau gwyntoedd a'r ymchwydd
+storm. Trwy gydol ei lwybr, Isabel arwain at $ 3600000000 mewn difrod (2003 USD, $ 4300000000 2011 USD) a 51 o farwolaethau, o'r rhain roedd 16 yn ymwneud yn 
+uniongyrchol ag effeithiau y storm's.
+Mae llywodraethwyr o Pennsylvania, West Virginia, Maryland, New Jersey, a Delaware datgan wladwriaethau o argyfwng. oedd [20] Isabel y corwynt mawr cyntaf i 
+fygwth y-Canolbarth Iwerydd wladwriaethau a'r De ers Corwynt Floyd ym mis Medi 1999. Isabel's effaith fwyaf yn ganlyniad i ddifrod llifogydd, y gwaethaf mewn 
+rhai meysydd o Virginia ers 1972's Corwynt Agnes. Mae mwy na 60 miliwn o bobl eu heffeithio i ryw raddau-nifer tebyg i Floyd ond yn fwy nag unrhyw corwynt 
+eraill yn y cof yn ddiweddar.
+Syrffio pwerus effeithio ar arfordir gogleddol yr ynysoedd yn yr Antilles Fwyaf. Cryf chwyddo hefyd yn rhwymo y Bahamas. Yn ystod y rhan fwyaf corwyntoedd, 
+lleoliad y Bahamas atal pwerus chwyddo o corwyntoedd Iwerydd o'r de-ddwyrain trawiadol Florida. Fodd bynnag, mae'r cyfuniad o'r lleoliad, ymlaen cyflymder, 
+a chryfder Isabel gynhyrchwyd cryf chwyddo drwy'r Sianel Providence ymlaen i cul 10 milltir (16 km) darn o arfordir de-ddwyreiniol Florida; uchder tonnau 
+cyrraedd uchafbwynt yn 14 troedfedd (4.3 m) yn Delray Traeth. Mae'r chwyddo capsized yn badau dŵr ac yn anafu ei ddau teithwyr yn Boynton Traeth, ac yn 
+nofiwr angen cymorth i gael eich achub ger Traeth Juno. Erydiad y traeth Mân adroddwyd yn Palm Beach Sir. [23] Yn y rhan ogleddol y wladwriaeth, tonnau cyrraedd
+hyd at 15 troedfedd (4.5 m) o uchder ar Flagler Beach, gan achosi i'r Pier Flagler Beach i fod ar gau oherwydd byrddau difrodi gan y tonnau. cerrynt Rip o 
+Isabel lladd yn syrffiwr ar draeth mwy byrfyfyr yn Nassau Sir, gyda chwech o bobl ychwanegol yn ei gwneud yn ofynnol achub oddi wrth y cerrynt. Roedd y 
+traethau oedd ar gau yn ddiweddarach yn ystod y gwaethaf y syrffio garw.
+Yn y gogledd-ddwyrain De Carolina, mae'r rainbands allanol gwyntoedd cymedrol a gynhyrchir gan gyrraedd 45 mya (72 km / h) yn Myrtle Beach. Glawiad oedd golau, 
+gyrraedd cyfanswm o 1.34 modfedd (34 mm) yn y Loris.
+Isabel gynhyrchwyd cymedrol i niwed trwm ar draws ddwyreiniol Gogledd Carolina, gwerth cyfanswm o $ 450,000,000 (2003 USD, $ 537,000,000 2011 USD). Difrod oedd 
+trymaf yn Dare Sir, lle mae llifogydd ymchwydd storm a gwyntoedd cryf eu difrodi miloedd o dai. [28] Y ymchwydd storm wedi cynhyrchu gilfach 2,000 troedfedd 
+(600 m) o led ar Hatteras Ynys, ynysu Hatteras ar y ffordd am ddau fis. [29] gwyntoedd cryf downed cannoedd o goed ar draws y wladwriaeth, gan adael hyd i 
+700,000 breswylwyr heb bŵer. Mae'r rhan fwyaf o ardaloedd gyda phŵer toriadau wedi grym adfer o fewn ychydig ddyddiau. Roedd y corwynt yn uniongyrchol 
+lladd un person ac yn anuniongyrchol ladd dau yn y wladwriaeth.
+Mae'r ymchwydd storm assailed llawer o Virginia de-ddwyreiniol, gan gyrraedd uchafbwynt ar amcangyfrif 9 troedfedd (2.7 m) yn Richmond ar hyd yr Afon James; 
+yr ymchwydd achosi difrod sylweddol i gartrefi ar hyd ffyrdd afon, [19] yn arbennig ar hyd y rhannau canol y basnau afonydd James . Mae'r ymchwydd storm 
+cryf rhagori ar y lifddorau'n i'r Twnnel Midtown tra bod gweithwyr ceisio cau'r giât; tua 44 miliwn galwyn o ddŵr llifogydd y twnnel yn gyfan gwbl mewn dim ond 
+40 munud, gyda gweithwyr prin yn gallu dianc [30] pellach. mewndirol, glaw trwm adroddwyd, gyrraedd cyfanswm o 20.2 modfedd (513 mm) yn Upper Sherando, gan 
+achosi difrod a fflach llifogydd difrifol. Winds gan y corwynt dinistrio dros 1,000 o dai ac yn difrodi 9,000 yn fwy; difrod yn y cyflwr cyfanswm o tua $ 
+1850000000 (2003 USD, $ 2210000000 2011 USD), ymysg y seiclonau costliest trofannol yn Virginia hanes Mae dreigl Isabel. arwain hefyd mewn 32 o farwolaethau yn 
+y wladwriaeth, 10 yn uniongyrchol o effeithiau y storm's a 22 yn ymwneud yn anuniongyrchol.
+Mae tua 1,240,000 o bobl golli grym trwy gydol Maryland a Washington, DC Y gwaethaf o effeithiau Isabel yn dod oddi ar ei, ymchwydd storm a boddi ardaloedd ar 
+hyd yr arfordir ac yn arwain at erydiad difrifol traeth. Yn y Dwyrain Maryland, cannoedd o adeiladau eu difrodi neu ei dinistrio gan y ymchwydd storm a 
+llifogydd llanw cysylltiedig. Y llifogydd mwyaf difrifol yn digwydd yn y rhannau deheuol o siroedd Dorchester a Gwlad yr Haf, ac ar Ynys Gaint ym Queen Anne's 
+Sir. Mae miloedd o dai yn yr effeithir arnynt yng Nghanolbarth Maryland, gyda stormydd difrifol llifogydd ymchwydd adroddwyd yn Baltimore a Annapolis. 
+Washington, DC o niwed, cymedrol, yn bennaf gan y gwyntoedd. Drwy gydol Maryland a Washington, difrod cyfanswm o tua $ 945,000,000 (2003 USD, 1130000000 $ USD 
+2011), gyda dim ond un farwolaeth uniongyrchol o ganlyniad i lifogydd.
+Mae effeithiau y corwynt yn Delaware eu gwaethygu gan lifogydd a achosir gan y gweddillion Storm Trofannol Henri diwrnod o'r blaen. gwyntoedd Cymedrol o hyd i 
+62 mya (100 km / h) yn Lewes downed nifer o goed, aelodau coed, a llinellau pŵer ar draws y wladwriaeth, gadael o leiaf 15,300 heb bŵer. Mae nifer o ardaloedd 
+ar dir isel yn boddi o ganlyniad i syrffio uchel, ymchwydd storm cryf, neu ddŵr ffo rhag llifogydd mewndirol pellach. Y daith Corwynt Isabel o ganlyniad 
+yn $ 40 miliwn mewn difrod (2003 USD, $ 47,800,000 2011 USD) a dim anafiadau yn y wladwriaeth.
+Spotify toriadau yn ôl ar cerddoriaeth rhad ac am ddim
+Spotify gyda Martin sylfaenwyr Lorentzon (L) a Daniel EK (R). Fis diwethaf cyhoeddodd Spotify un filiwn o danysgrifwyr talu
+Arhosa yn darllen y brif stori
+Storïau Perthnasol
+Hysbysebion Spotify daro gan ymosod malware Spotify hits 1,000,000 carreg filltir Spotify i ehangu er gwaetha'r colledion
+Gwasanaeth ar-lein cerddoriaeth Spotify yn haneru faint o gerddoriaeth rhad ac am ddim y gall defnyddwyr wrando.
+Bydd defnyddwyr ei wasanaeth am ddim yn cael ei gyfyngu i 10 awr y mis, hanner yr amser a gynigir ar hyn o bryd a bydd ond yn gallu gwrando ar draciau bum 
+gwaith, o fis Mai.
+Bydd defnyddwyr newydd yn cael chwe mis o gynnwys rhad ac am ddim cyn y newidiadau gic i mewn
+Y newyddion wedi gwylltio cefnogwyr sy'n cyhuddo'r cwmni o geisio newid ei fodel o am ddim i dalu.
+Mae hyn yn rhywbeth ei wrthod gan Spotify.
+Ken Parciau, swyddog Spotify prif gynnwys wrth y BBC: "Ein prif flaenoriaeth yw i gadw'r gwasanaeth rhad ac am ddim, sef yr hyn wedi gwneud Spotify mor 
+boblogaidd.
+"Rydym yn gwmni sydd ag uchelgais i gynnig yr holl gerddoriaeth y byd i bawb sy'n golygu tyfu'r busnes a defnyddwyr ein sylfaen i lawer gwaith ei maint 
+presennol."
+"Mae popeth a wnawn ei gynllunio i sicrhau bod ein defnyddwyr yn parhau i gael mynediad i ddim yn brofiad anhygoel," ychwanegodd.
+Y mis diwethaf, mae'r gwasanaeth cerddoriaeth ar-lein cyhoeddi ei fod wedi cael un miliwn o danysgrifwyr talu ar draws Ewrop.
+Ond mae'r rhan fwyaf o'i wrandawyr 6.67m yn defnyddio'r gwasanaeth rhad ac am ddim, sydd yn cael cymhorthdal ​​gan hysbysebion.
+US-diffoddwyr troseddau yn cael eu cau mewn ar gang y tu ôl i botnet enfawr ar ôl cymryd rheolaeth ar weinyddion y troseddwyr '.
+Dyma'r tro cyntaf ymchwilwyr FBI wedi defnyddio dull o'r fath.
+Roedd yr Adran Cyfiawnder yr Unol Daleithiau i geisio caniatâd y llys gan farnwr i wneud y pigiad.
+Mae'n galluogi'r awdurdodau i roi gorchmynion ei hun, i bob pwrpas yn gorchymyn malware at caea i lawr. Mae hefyd wedi mewngofnodi y cyfeiriadau IP peiriannau 
+gyfaddawdu.
+Mae'n golygu y bydd yr awdurdodau yn gallu hysbysu ISPs am ba peiriannau wedi cael eu heintio ac yn goruchwylio cychwynnol yn ei dro, gall roi dioddefwyr yn gwybod bod eu peiriannau wedi cael eu cymryd drosodd.
+Mae ymagwedd debyg ei ddefnyddio y llynedd gan yr heddlu Iseldiroedd fel rhan o'i shutdown o'r botnet Bredolab.
+Ar y pryd, arbenigwyr preifatrwydd cwestiynu cyfreithlondeb symudiad o'r fath.
+Miliynau'r recriwtio
+Mae botnet yn rhwydwaith o gyfrifiaduron sydd wedi'u heintio, a elwir hefyd yn cyfrifiaduron zombie.
+Coreflood, mae'r rhaglen yn malware anogaeth yr ymchwiliad FBI, wedi bod o gwmpas am o leiaf ddeng mlynedd a gallant gofnodi strôc allweddol, gan alluogi troseddwyr i gymryd drosodd gyfrifiaduron diarwybod a dwyn ​​cyfrineiriau, bancio a gwybodaeth cerdyn credyd.
+Credir ei fod wedi recriwtio tua 2.3 miliwn peiriannau ac raked mewn miliynau ar gyfer y rhai y tu ôl iddo.
+Mae swyddogion wedi peidio dweud o ble y daeth yr ymosodiadau er ei bod yn ymddangos yn gyson â gweithgarwch Seiberdrosedd yn Nwyrain Ewrop.
+Ymchwilwyr atafaelwyd pump o weinyddion y botnet's a oedd yn rheoli cannoedd o filoedd o beiriannau heintio.
+Maent hefyd yn cipio 29 enwau parth a ddefnyddir gan y botnet.
+"O ganlyniad i'r peiriannau zombie yn y rhwydwaith Coreflood yn cael eu hail-gyfeirio i gyfathrebu gyda'r gweinydd a reolir gan asiantaethau gorfodi'r gyfraith," esboniodd Noa Bar Yosef, mae uwch strategydd gwmni diogelwch Imperva.
+"Gall y 'da' gweinydd yna mater gorchmynion i atal y gweithredu malware ar y peiriannau peryglu."
+Fujitsu yw creu rhwydwaith band eang tra chyflym ar gyfer rhannau gwledig o'r DU, gystadlu BT's gwasanaeth.
+Virgin Media a TalkTalk eisoes wedi dweud y byddant yn ei ddefnyddio i ddarparu gwasanaethau rhyngrwyd. Bydd hefyd yn agored i awdurdodau lleol.
+Bydd llawer o'r system yn cael ei adeiladu ar isadeiledd BT, megis dwythellau tanddaearol a polion ffôn, y mae wedi cael ei gorfodi i agor hyd at gystadleuwyr.
+Fujitsu eisiau £ 500m o arian y llywodraeth i helpu i ariannu'r prosiect.
+Byddai hynny'n cyfrif am y gyfran fwyaf o'r £ 530m y llywodraeth wedi neilltuo i ysgogi prosiectau band eang gwledig.
+Mae hyn yn arian parod yn dod o gronfa fwriadwyd yn wreiddiol i helpu'r newid i ddigidol. Mae £ 300m, o ffi'r drwydded y BBC, ar gael ar ôl 2015.
+Bydd yr arian yn cael ei roi i awdurdodau lleol gyda Fujitsu gallu gwneud cais i ddarparu rhwydwaith yn yr ardal honno.
+Hebddo, ni fydd y rhwydwaith yn cael ei adeiladu, dywedodd Andy Stevenson, rheolwr gyfarwyddwr atebion rhwydwaith yn Fujitsu y BBC.
+Arhosa yn darllen y brif stori
+"Cychwyn Dyfyniad
+    Cyn i ni fynd cynhyrfu gormod am y wawr newydd ar gyfer band eang Prydeinig, mae arnom angen ychydig mwy o wybodaeth "
+Diwedd Dyfyniad Rory Cellan Technoleg gohebydd-Jones
+Darllenwch Rory's meddyliau yn llawn
+"Gan dybio byddwn yn llwyddiannus byddem yn gobeithio ychwanegu ein cwsmeriaid yn gyntaf manwerthu yn 2012 a chyrraedd 5 miliwn yn tair i bum mlynedd," meddai.
+Mae'n gobeithio y bydd awdurdodau lleol yn fand gyda'i gilydd i ddarparu arian ar gyfer y prosiect.
+"Nid ydym am i roi diwedd ar i fyny gyda 40 rhwydweithiau ddarniog felly mae'n gwneud synnwyr i ranbarthau i ddod at ei gilydd. Nid yw hynny'n orfodol ond yr hyn yr ydym yn disgwyl i hynny ddigwydd," meddai.
+Daw'r cyhoeddiad wrth i ymchwil yn awgrymu dim ond 1% o gartrefi'r DU ar hyn o bryd yn cael mynediad at fand eang tra chyflym, a ddiffinnir fel cyflymder o dros 25Mbps.
+Bydd y rhwydwaith Fujitsu ffibr optig cynnig ceblau yn uniongyrchol i gartrefi - yr hyn a elwir Ffibr-i'r-y Cartref (FTTH). Gallai hynny ddod gyflymach na 1Gbps gyda'r potensial i fynd hyd yn oed yn gynt.
+Byddai'r system yn fwy soffistigedig nag rwydwaith BT tra chyflym, sy'n dibynnu'n bennaf ar arafach Ffibr-i'r-y (FTTC) technoleg-Cabinet. FTTC yn cynnig cyflymder o hyd at 40Mbps.
+Ddiffuant dewis
+Bydd ISPs eraill, grwpiau cymunedol ac awdurdodau lleol yn gallu manteisio ar y rhwydwaith.
+Duncan Tait, prif weithredwr Fujitsu yn credu y gallai bywyd newydd i gymunedau gwledig.
+"Os wneud yn gywir gall hyn fod yn gyfrwng allweddol i gyflymu'r adferiad yn y DU ac yn dod â dewis gwirioneddol i genedlaethau o gymunedau hamddifadu o gymryd rhan lawn yn y economi'r DU," meddai.
+Disgrifiodd Virgin Media prif weithredwr Neil Berkett fel: "unwaith mewn oes cyfle i wneud y uchelgais o gymdeithas yn ddigidol yn realiti y tu hwnt i ddinasoedd y wlad a'r trefi".
+Amcangyfrifir na fydd un rhan o dair o'r DU cael eu gwasanaethu gan fand eang presennol atebion masnachol oherwydd nad yw'n ymarferol yn economaidd i'w gynnig iddynt mewn ardaloedd anghysbell.
+Dywedodd y gweinidog Cyfathrebu Ed Vaizey oedd y rhwydwaith arfaethedig "union fath o uchelgais ac arloesi" bod y llywodraeth yn awyddus i ysgogi.
+Dywedodd Sebastien Lahtinen, cyd-sylfaenydd y safle band eang newyddion ThinkBroadband y cydweithio rhwng Fujitsu, byddai Virgin Media a TalkTalk darparu "ddewis amgen gwirioneddol i BT cyfanwerthu a allai helpu neidio o flaen ardaloedd trefol".
+"Mae'n union beth ymgyrchwyr ar gyfer y trydydd terfynol wedi cael eu ceisio. Gallai'r DU fod ar fin gymryd y naid fwyaf ymlaen o ran mynediad band eang y genhedlaeth nesaf," meddai.
+Modest cyflymder
+Gorfforaeth Sony yn ystyried cau rhai o'i safle'r cwmni yn Siapan oherwydd y prinder bŵer parhaus.
+Er mwyn arbed ynni, y cwmni dywedodd ei bod yn cynllunio i roi ei staff bythefnos i ffwrdd yn ystod misoedd yr haf.
+Japan wedi bod yn dioddef prinder grym oherwydd y difrod a achoswyd at ei gorsafoedd ynni niwclear a thermol.
+Yr wythnos diwethaf y llywodraeth yn gosod targedau arbed ynni a gofynnodd gweithgynhyrchwyr i leihau eu defnydd o ynni.
+Sefyllfa'n dirywio
+Arhosa yn darllen y brif stori
+"Cychwyn Dyfyniad
+    Os yw prinder pŵer yn hirfaith neu os bydd y sefyllfa yn y ffatri niwclear dirywio, bydd yr agwedd yn newid "
+Diwedd Dyfyniad Shinohara Naoyuki Cronfa Ariannol Ryngwladol
+Ofnir bod y sefyllfa pŵer yn Siapan yn debygol o waethygu yn ystod y misoedd nesaf wrth i'r galw am drydan yn cyrraedd lefelau haf brig.
+O ganlyniad, mae cwmnïau yn cael eu gorfodi i feddwl am fesurau i leihau eu defnydd o ynni, tra'n ceisio cynnal lefelau cynhyrchu.
+Sony dweud ei fod yn bwriadu cyflwyno amryw o wyliau cenedlaethol a gofyn i'w staff i weithio diwrnodau ychwanegol yn ddiweddarach yn y flwyddyn pan fydd y sefyllfa'n cyflenwad pŵer yn debygol o fod wedi gwella.
+"Rydym yn awyddus i ddarparu dwy wythnos o wyliau i weithwyr i liniaru defnydd o drydan," meddai llefarydd Sony George Boyd y BBC.
+Dywedodd Mr Boyd hynny yn ogystal â cau i lawr fangre yn ystod misoedd yr haf, mae'r cwmni hefyd yn ystyried newid ei oriau gwaith.
+"Rydym yn debygol o ddod â'r oriau gwaith yn ei flaen i leihau'r defnydd o drydan o ddydd i ddydd yn ogystal," meddai Mr Boyd.
+problemau Cynhyrchu
+Mae'r difrod a achoswyd gan y ddaeargryn a tswnami yn Siapan wedi cael effaith fawr ar weithgynhyrchwyr.
+Maent wedi bod yn wynebu problemau yn amrywio o prinder o rannau i doriadau pŵer.
+moduron Toyota wedi atal cynhyrchu ar y rhan fwyaf o'i planhigion yn Japan a llai o allbwn hefyd yn ei ffatrïoedd Gogledd America ac Ewrop.
+Nissan a Honda hefyd wedi cael eu gorfodi i arafu gynhyrchu yn eu gweithfeydd.
+Ar ddydd Mercher, y llywodraeth Siapan israddio ei asesiad o'r economi dweud bod y dadansoddiad o'r cadwyni cyflenwi a'r argyfwng bŵer parhaus yn cael effaith negyddol ar dwf.
+Dadansoddwyr Dywedodd fod ar gyfer yr economi a'r diwydiant i fynd yn ôl ar y trywydd iawn byddai'r materion hyn yn rhaid mynd i'r afael yn gyflym.
+"Mae yna ansicrwydd yn uchel iawn ar agwedd Siapan," meddai Naoyuki Shinohara, o'r Gronfa Ariannol Ryngwladol.
+"Os yw prinder pŵer yn hirfaith neu os bydd y sefyllfa yn y ffatri niwclear dirywio, bydd y rhagolygon yn newid ... y risg yn gadarn i'r downside," meddai.
+Fodd bynnag, gallai un pwynt glynu yn y pris BT yn bwriadu codi tâl am fynediad i'w dwythellau a polion. Yr oedd yn gorfodi i agor hwy i fyny i gystadleuwyr ond yn ISPs, gan gynnwys Virgin Media a Sky, wedi ysgrifennu at y llywodraeth yn gofyn iddo ailasesu'r y pris.
+Yn y llythyr, a anfonwyd yn gynharach y mis hwn, dywedodd Virgin Media y byddai'n fwy cost-effeithiol i adeiladu dwythell cwbl ar wahân ac yn rhwydwaith polyn na'r talu'r prisiau a ofynnir gan BT.
+Mae'r llywodraeth wedi dweud ei bod am wneud y DU yn y lle gorau yn Ewrop ar gyfer band eang tra chyflym erbyn 2015, ond mae ymchwil newydd yn awgrymu ei fod yn cael ei fabwysiadu ar gyflymder cymharol fach.
+dod o hyd Band Eang dadansoddiad cadarn Point Topic mai dim ond 1% o gartrefi ar hyn o bryd yn cael band eang cyflymder o 25Mbps neu uwch.
+Erbyn diwedd 2010, roedd 175,000 linellau tra chyflym band eang, mae'r mwyafrif yn gwneud i fyny o'r cwsmeriaid 118.000 Virgin Media cofrestru ar gyfer ei gwasanaeth band eang 50Mbps. Mae'r gweddill yn dod o BT neu weithredwyr amgen.
+"Ar y raddfa basio dylem y chwarter miliwn o garreg filltir rhywbryd rhwng nawr a diwedd mis Ebrill," meddai Point Topic prif ddadansoddwr Tim Johnson.
+Sweden a Singapore yn y gwledydd mwyaf cystadleuol yn yr economi ddigidol, yn ôl astudiaeth gan y Fforwm Economaidd Byd (WEF).
+Nordig ac economïau Asiaidd yn cael eu gorau wrth ddefnyddio technolegau gwybodaeth a chyfathrebu (TGCh) i hybu eu twf, dywedodd y WEF.
+Ffindir yw yn y trydydd safle, y Swistir pedwerydd a'r pumed Unol Daleithiau.
+Dywedodd y WEF oedd TGCh "yn alluogwr allweddol o fwy economaidd, yn amgylcheddol ac yn gymdeithasol byd cynaliadwy".
+Arloesi
+Dywedodd y defnydd o dechnoleg gwybodaeth a chyfathrebu yn arbennig o bwysig "yn dilyn un o'r argyfyngau economaidd mwyaf difrifol yn ystod y degawdau".
+Arhosa yn darllen y brif stori
+Rhan fwyaf o economïau CYSYLLTIEDIG DIGIDOL
+Ffynhonnell: WEF
+WEF Mae'r adroddiad yn canolbwyntio ar y pwer o TGCh i drawsnewid gymdeithas yn y degawd nesaf drwy foderneiddio ac arloesi.
+Eraill mewn sefyllfa hynod gwledydd Nordig yn cynnwys Denmarc yn fan seithfed a Norwy yn y nawfed, gyda Gwlad yr Iâ safle yn safle 16.
+Yn y cyfamser, o dan arweiniad Singapore yn ail, y llall economïau Tiger Asiaidd uchel yn cael eu gosod Taiwan a De Korea mewn sefyllfa dosbarth a degfed yn y drefn honno, ac yn Hong Kong yn dilyn yn agos yn 12fed.
+Canada cwblhau'r 10 uchaf yn yr wythfed safle.
+Mae'r adroddiad, sy'n ymdrin 138 economïau, yn edrych ar dri maes.
+Maent yn y busnes cyffredinol, yr amgylchedd rheoleiddio a seilwaith ar gyfer TGCh, y parodrwydd y tri sector rhanddeiliaid allweddol - unigolion, busnesau a llywodraethau - i ddefnyddio ac elwa o TGCh; ac mae'r defnydd gwirioneddol o TGCh sydd ar gael.
+Cisco Systems wedi dweud ei fod yn cau i lawr ei fusnes Flip camera fideo a thorri 550 o swyddi gan ei fod yn disodli'r ei gynnyrch i ddefnyddwyr uned.
+Blynyddoedd diwethaf, Cisco, gwneuthurwr mwyaf y byd o rwydweithio offer cyfrifiadurol, wedi ceisio arallgyfeirio a symud i mewn i'r farchnad defnyddwyr.
+Beirniadu Dadansoddwyr i'r grŵp am geisio gwneud gormod.
+Yr wythnos diwethaf, cyfaddefodd prif Cisco John Chambers y cwmni wedi colli ei ffordd ac yn addo cymryd "camau beiddgar" i ailffocysu.
+"Rydym yn gwneud allweddol, yn symud targedu fel yr ydym yn cysoni weithrediadau er mwyn cefnogi ein strategaeth platfform rhwydwaith-ganolog," meddai Mr Chambers mewn datganiad.
+Methu werthu?
+Cisco prynu Pur Technolegau Digidol, y gwneuthurwr y camcorder Flip, am $ 590m yn 2009.
+Mae'r Flip gyflym daeth yn diolch gwerthwr top at ei hawdd i'w ddefnyddio, gyda'i llofnod yn cynnwys USB connector sy'n flipped allan o'r achos, gan ganiatáu i'r camera i fod yn gysylltiedig yn uniongyrchol â chyfrifiadur.
+"Maen cyhoeddodd y maent yn cau i lawr, fel eu bod yn awgrymu eu bod yn gallu ei werthu," meddai Philip Alling, dadansoddwr gyda Soddgyfrannau Iwerydd.
+"Mae'n siomedig na fyddent yn gallu cynhyrchu unrhyw elw o werthu'r busnes."
+Ond dywedodd Tim Ghriskey, prif swyddog buddsoddi o'r Grŵp Solaris,: "Mae hwn yn un cam yn canolbwyntio ffocws Cisco ar y fenter hon yn dod yn gyflymach na fyddem wedi disgwyl, ond efallai Cisco wedi bod yn astudio yma am ychydig.."
+Ychwanegodd y gall y cwmni gael ei ailstrwythuro ei fusnes defnyddwyr fel y gall gwerthu'r is-adran.
+Microsoft yn lansio ei fersiwn ei hun o Google's StreetView - trosleisio'r Streetside - ar draws Ewrop.
+Ceir ffitio â chamerâu wedi dechrau cymryd lluniau o gwmpas Llundain a bydd yn dechrau mapio ddinasoedd mawr ar y cyfandir mis nesaf.
+Mae'r gwasanaeth eisoes ar gael mewn 56 o drefi a dinasoedd yr Unol Daleithiau.
+Microsoft wedi bod yn awyddus i osgoi'r pryderon a phreifatrwydd y llethu Google gwasanaeth ond dywedodd ei fod yn bwriadu casglu data wi-fi.
+I ddechrau, bydd Streetside fod ar raddfa lai na Streetview, yn ôl cyfarwyddwr y cwmni o chwilio, Dave Coplin.
+"Nid ydym yn gosod allan i gofnodi pob stryd. Credwn ei bod yn mwyaf gwerthfawr mewn canolfannau trefol lle mae pobl am ddod o hyd i wasanaethau,"meddai wrth BBC Newyddion.
+Data Wi-fi
+Microsoft nod yn y pen draw oedd i gyfuno Streetside gyda gwasanaethau yn seiliedig ar leoliad, eglurodd Mr Coplin.
+Er mwyn gwneud hynny, roedd angen i gasglu wi-fi data, megis y rhif unigryw sy'n nodi lleoliad y poeth, y cryfder y signal a'r math o signal di-wifr yn cael ei ddefnyddio. Byddai hynny'n wybodaeth yn cael ei defnyddio i helpu i ddod o hyd i ddefnyddwyr.
+Google yn rhedeg i drafferth gyda grwpiau phreifatrwydd wrth greu Streetview daeth i'r amlwg ar ôl y cwmni rhyng-gipio ac yn storio gwybodaeth breifat gan rai mannau poeth.
+Google ymddiheuro am y "camgymeriad" y mae'n rhoi'r bai ar twyllodrus codio.
+Mae'r digwyddiad wedi arwain at ymchwiliadau o amgylch y byd ac wedi eu gorfodi y cawr chwiliad i wneud newidiadau radical i ei pholisïau preifatrwydd.
+Mewn cyferbyniad Microsoft dywedodd y byddai'n casglu'r "lleiaf moel" o ddata.
+Mae eisoes wedi dechrau tynnu lluniau lefel y stryd, fodd bynnag, mae'r gyfran wi-fi sganio o'r broses yn cael ei ddal nes bod y cwmni yn mireinio ei strategaeth.
+"Rydym yn cymryd y penderfyniad i ohirio wi-fi casglu data. Rydym wedi hoffi ei wneud yn y ffordd iawn," meddai Dave Coplin.
+Mae'n debyg mai'r ffordd hawsaf i unrhyw berson i ddechrau siarad Cymraeg yn codi i'r cae ar ddiwedd pob brawddeg. Ar ôl hyn wedi bod yn meistroli mae angen i 
+chi gyflwyno eich holl R's. Yna dweud eich d'au fel th's a byddwch ar eich ffordd i rhuglder. I gael graddau uwch mewn arholiadau TGAU, mae angen cynhyrchu 
+digon o boeri wrth ddarllen allan dedfrydau a roddwyd (fel arfer 40-55 ml). Y cam olaf yn dysgu i siarad Cymraeg yn dweud "yw hi?" ar ddiwedd pob cwestiwn a 
+phawb cyfarchiad â-"Orite Butt!". Mae'n diffucult i feistroli ond mae'r siaradwr Saesneg ar gyfartaledd yn cymryd tua 3 blynedd i ddysgu Cymraeg i safon TGAU AC.
+Cymry yn bobl nad oes ganddynt unrhyw synnwyr digrifwch, ni allant gymryd jôc, ac maent yn casáu yn anghywir! Maent hefyd yn credu eu bod yn duw
+Ychydig a wyddys am y Gymraeg. Rydym yn gwybod eu bod yn arogli fel siopau sglodion, maent yn byw mewn pysgod mawr sy'n gallu na anadl o dan y dŵr, y maent wedi eu hiaith eu hunain gyflym rhyfedd eu bod yn galw "LLyddpwdlldddddddddddddd" a bod ganddynt allu rhyfedd i telepathically gyfathrebu â phobl Tseiniaidd. Mae'n bosib iawn bod y Gymraeg yn ceisio dominyddu'r byd gyda'r Tseiniaidd neu yn syml brynu eu lama o Dibet. Mae llawer o drysu yr iaith Gymraeg gyda syniad warthus o'r enw "English" (ynganu cum-rhacs), sydd mewn gwirionedd yn cael ei siarad yn Lerpwl o ganlyniad i faint o boeri.
+Mae un ffigwr eiconig cymru yn mytholeg gymraeg yn Grubb Tim, yn gyn-cytundeb hwnnw lunatic De Cymru. Ar ôl gadael y cytundeb hwnnw oedd am barhau i achosi poen ar ddynion ifanc o ogledd Cymru a thrwy cosbi yn pop a elwir yn anghyfreithlon ymfudwr. Nid oedd Tim cymraeg speek nac Saesneg, yn hytrach ei fod wedi ei hun ddyfyniadau uniqe megis: "yeeeeeeer chwi yn awr cunt bach" "os ydych fuck mi gwmpas fechgyn, yr wyf yn fuck byddwch chi o gwmpas drwy'r nos" yn beth annifyr i'r flwyddyn yn 40 oed ddyn i ddweud i fechgyn ifanc gan ei fod yn dal i fod yn rhedeg o gwmpas yn shorts bach. Tim yn gwadu bod yn Pedo ac yn mynnu ei fod yn hyfforddi ar gyfer marathon, ond fi dal have'nt weld yn rhedeg un marathon. Un o'r enwau nifer y Gymraeg leol yn galw hyn bwystfil chwedlonol yw "cachu danadd" (neu shit speek dannedd yn Lloegr).
+Mae'r rhain bodau fel arall yn anhysbys i ni a gall fod yn fwy peryglus nag yr ydym yn rhoi clod am - dim ond meddwl am y peth, pawb sy'n chwaraewyr rygbi mewn un wlad? Rhaid iddynt fod hyfforddiant i rywbeth. Mae tystiolaeth wedi cael ei ganfod yn awgrymu bod gan Gymru boblogaeth llawer llai na i fod - mae'r Gymraeg yn symud o gwmpas yn llawer gwneud yn anodd eu cyfrif.
+Mae arweinwyr y ras rhyfedd, Tom Jones a Charlotte Church, wedi gwneud y bobl y byd ymddiried iddynt gan eu hypnotising gyda'u canu, fel eu bod yn cael y cyfle i ddarlledu eu lleisiau ar draws y byd: pan fydd y Cymry glywed y signal maent yn Bydd y gwanwyn ar waith ac yn dal i bawb a oedd yn gwrando ac yn gwneud iddynt wneud eu cais ac yn eu gorfodi i siarad Cymraeg. Byddant yn dal arweinwyr y byd a grym yr ychydig nad oedd yn gwrando ar fynd i guddio.
+Mae tystiolaeth yn awgrymu bod y Gymraeg yn tarddu tomatos ffres ffurflen ar y winwydden rhwng 1945 a 1946. Mae'r olion cynharaf ffosiledig o ddyn Gymraeg Cafwyd hyd yn Nyffryn Brymbo gan archeolegwyr yn 1950. Dyddio Carbon yn amcangyfrif bod "Brymbo dyn" yn byw rhwng 1946 a 1947.
+Mae Cymro cynnar o bwys oedd John Olwyn moesol athronydd a mathemategydd arloesol.
+Caerdydd, Cymru - Mae corff gwarchod hysbysebu wedi gwrthod 21 o gwynion am masnachol a oedd yn cynnwys tîm o Gymru yn cael hawl cwestiwn mewn sioe gwis.
+Achwynwyr Dywedodd yr hysbyseb ar gyfer cwmni fodca Cymreig Carreg Aberhonddu cyflwynwyd fel Cymry o gudd-wybodaeth uchel.
+Dangosodd gwraig o'r enw Mrs Jones yn ateb y cwestiwn "beth yw prifddinas Cymru?" yn gywir, cyn voiceover a ddywedodd: "Nid Dyna beth y byddech yn ei ddisgwyl 
+gan Gymru". I gadw i fyny gyda chynrychiolaeth briodol o'r genedl Gymreig, fodd bynnag, roedd nifer o atebion fandio o amgylch y tîm cyn yr ateb cywir ei ddewis. Mae un aelod o'r tîm arall, Mr Jones yn gyntaf gwaeddodd allan y llythyr W. Ar cael gwybod "glyfar, ond yr ydym yn wir yn edrych am ddinas"meddai wedyn yn ymateb "oh sorreeee, yr wyf yn golygu Wrecsam!"
+Ar ôl y throsleisio yn dweud "Nawr, dyna beth byddech yn ei ddisgwyl o Gymru", potel o fodca yn cael ei ddangos yn erbyn y cefndir o redeg ddŵr. Y throsleisio 
+yn parhau: "Ac nid y twat Rhydian ar-X Factor yn unig nawr ond mae pobl yn dal i hoffi ein fodca yn yr un Gall fod yn Gymraeg, gall fod yn shit, ond y gorau 
+sydd gennym..!"
+Dywedodd y Hysbysebu Awdurdod Darlledu (Baa), a oedd wedi gweithio gyda'r rhai sy'n gwneud ar y fasnachol, ei fod yn credu bod y neges yn fwriadol gwatwar a 
+cheeky i apelio at wylwyr Saesneg sydd yn y targedau hysbysebu cynradd, ond nad oedd yn torri'r cod. "Rydym yn ymddiheuro ddiffuant i unrhyw un sy'n dod o hyd 
+neu gymerodd drosedd i hyn masnachol neilltuol. Rwy'n gwybod y Gymraeg wedi bod yn meddwl llawer iawn ohonynt eu hunain ers datganoli a ffurfio Llywodraeth 
+Cynulliad Cymru ac mae'n debyg nad hyn yn helpu pethau o gwbl. "
+Mae'r 1,963 Sheepo Cover Up Ddeddf yn weithred hysbys ychydig o ddeddf a basiwyd yn y tai y Senedd ar ôl argyfwng cenedlaethol yn 1962. Mae'n hysbys fawr 
+oherwydd y Saesneg yn disgleirdeb cneifio a rhaid oruchaf cuddio sgiliau, fodd bynnag, ar gyfer addysg eich hun yn cael ei wneud yn hysbys yma ac yn y bôn fel 
+a ganlyn:
+Yn y 50 Hwyr yn y cafodd ei wneud yn hysbys i swyddogion y llywodraeth uchel i fyny bod nifer y defaid oedd ffrwythlon ar draws y DU yn gostwng yn gyflym i fod 
+i organau rhywiol treiglo yn wael. O ganlyniad i hyn y boblogaeth yn gyffredinol o ddefaid yn edwino. Roedd yn credu i ddechrau fod hyn yn ganlyniad i leekage 
+ymbelydrol o gemegau a allai fod wedi effeithio ar genedlaethau o ddefaid neu o bosibl yn unig clefyd drwg (syniad a fyddai'n cael eu defnyddio hefyd gan y 
+Llywodraeth yn nes ymlaen). Fodd bynnag, pan fydd y ffenomenon gwaethygu yn fuan i mewn argyfwng ar raddfa lawn yn 1962, i'r graddau lle gan y byddai poblogaeth
+ Prydain o ddefaid yn dod yn diflannu mewn ychydig o dan ddwy flynedd, mae ymchwiliad llywodraeth wedi cael ei lansio. Ystod y cyfnod hwn gwelwyd bod y cyflwr 
+ gwael y defaid oedd i lawr i culprit sengl, y Sais. Nid yw'r organau rhywiol y defaid yn treiglo ond yn mutalated yn lle hynny. Mae'r llywodraeth yn sylweddoli,
+ os gair o hyn yn mynd allan byddent yn cael eu ridiculed gan y majotity o'r byd ac felly yn 1963 gweithred o gyfraith yn pasio adnabod fel y 1963 Sheepo Cover 
+ Up Ddeddf.
+ Roedd y Ddeddf yn y bôn yn ffordd o beio'r cyflenwad cynyddol brin o ddefaid unraped, sy'n digwydd o ganlyniad i feddwl afiach o gwrthnysig o unrhyw ddyn 
+ Saesneg, ar Lloegr agosaf wyliwr diniwed, y Gymraeg. Mae'r Ddeddf yn datgan y dylai pob AS yn Saesneg yn gwneud eu gorau glas i gyflwyno hyn theori a twyllo 
+ gymaint o bobl ag y bo modd. Er mwyn eu clod maent wedi bod yn hynod lwyddiannus ac wedi dylanwadu ar lawer o bobl ledled y byd. Mae'r Saesneg yn mynd i 
+ drafferth mawr i wneud y theori credadwy a miloedd bob blwyddyn o symud defaid difrodi o Loegr, (yn ogystal ag unrhyw un a allai fod wedi crwydro i mewn yr 
+ Alban) i mewn i Gymru. Mae'r ddeddf hefyd pwerau newydd ac adnoddau economaidd sydd ar gael sy'n cael eu defnyddio i smuggle defaid newydd di-ri i mewn i'r 
+ wlad bob blwyddyn. O bryd i'w gilydd digwyddiadau yn dal i fynd allan o law, fodd bynnag, yr enghraifft fwyaf nodedig yn yr achos diweddar o "clwy'r traed a'r 
+ genau. " Yma, ar darganfyddiad o storfeydd helaeth o ddefaid anffrwythlon, nifer o ymchwilwyr, a oedd wedi dod o bob cwr o'r byd, diflannodd (llofruddiwyd yn 
+ ôl pob tebyg gan y llywodraeth) a nifer helaeth o ddefaid diniwed, gwartheg ac anifeiliaid eraill yn cael eu lladd mewn ymgais i gael gwared ar yr holl 
+ tystiolaeth o bwystfileiddiwch.
+ Mor truan genhẏf truan môr.
+Aderyv. Yr wyf yn keduyv yn chaduan.
+Oed kyulauan kyulawr llachar.
+Oed yscuid o tryuruyd o tryuan.
+Talyessin.
+Oed maelgun yn inimnan uelun
+Y family toryuulu rac thauant ny.
+Myrtin.
+Rac deuur ytirran ineutur.
+Rac errith. yn welugan Ar Y gurrith.
+Mein winev mewn diheu yn dygan.
+Moch guelher y Elgan by niuer.
+Och oe maur yn Leith deuthan y teith.
+Taliessin.
+Rys undant oet y rychvant Tarian.
+Attad cuddiodd y daeht kyulaun rad.
+LLAS kuynan y kyndur tra messur.
+LLAS uuan hyffordd ant helon o dinon.
+Tryuir. Water maur nod clod. by. Elgan.
+Mirtin.
+Athrui Truy. ruy. yn ruy. y doethan.
+Trav amelgan imdoeth bran athrau.
+Llat dinet oe dinel. kyulauan
+Ab Erbin uerin ae yn wnaethan.
+Taliessin.
+Llu maelgun bu doethan y yscun.
+Kad WIR Aer trybelidiad. guaedlan.
+Neu sosban arywderit gueith
+Vit y deunit. o cuddiodd y wuchit darperan y.
+Mirtin.
+Llyavs peleidrad guadlan guaedlad.
+Bryv aerwir Llyaus vidan breuaul.
+Brivher Llyaus gwaharddiad. foher llyaus gwaharddiad.
+Hymchuel ev Llyaus yn hymvan Water.
+Taliessin.
+Seith eliffer meib. Seith guir brouher gwaharddiad.
+Seith guaew ochel ny yn seithran Water.
+Myrtin.
+Seith lliw haul. vuelin. Seith kyuerbin Kad.
+Seithued kinhuan y kinvelin pop.
+Taliesson.
+Seith guaew gowanon. Seith loneid awon.
+O guaed dylanuan y kinreinon.
+Myrtin.
+Haelon ugein Sieth. yn ygwllon aethan.
+Yg keliton coed. y. daruuan.
+A all ys mi myrtin guydi. taliessin.
+Bithaud. kyffredin. Darogan yn sicrhau VY.
+Breudid a uelun neithwir. ysceluit ae dehoglho.
+Ny ritreithir y reuit. nis guibit ar nuygelho.
+Gueithred llara llyuiau niuer nid hoffet meiuret bro.
+Neur uum ydan un duted a bun dec liu guanec gro.
+Guaeth. vygniw odiuattep. ir nep nuy hatnappo.
+Nytiuuic rac dricweithred. im attrec guydi darffo.
+Ny dichuenic but pedi. ys guell delli urth auo.
+Ac imganlin adeduit. adioffrid aaduo.
+Awna mynich enuuyret. ordivet. aserlinho.
+Nid ehalath astraetha. nychaffaw ae hamhevo.
+Ny lluit renuet y direid. Ny chenir buyeid arffo.
+Ny naut ucheneid rach cuael. Ny derllit haelar nuybo.
+Ny ry del
+Devs ren rimawy awen. Amen fiat.
+Fynedic. waud. fruythlawn. traethaud trybestraud heid.
+Hervit urten autyl kyrridven ogyrven amhad.
+Amhadanav areith awyrllav. y cavkeineid.
+Cuhelin bart. kymraec hart kidvrthodiad.
+Kert kimuynas. ked kywtas. nifain tinieid.
+Gathyr kywystraud. kyvan volaud. clutaud attad.
+Kywrgein genhid. cor a chiwid. kyhid kydneid.
+Kywyrgyrn kyvle kywlaun flamde kywvire vad.
+Kenetyl woror. kywrisc woscord. kyghygueid.
+Kywolv. waur. kywarvs mavr. kir llavr eircheid.
+Kerit vychod. kerenhit nod clod achvbiad.
+Clo kelvid. kant kalan kid. kynvllid greid.
+Greid bleit blyghaud. Gretyw detyw duraud. gnaud branduriaeth.
+Gur oet eitoel gorvyreol. gordethol doeth.
+Gvytbuil dragon. gosparth brython. gosgyman gvith.
+Gnaud tryganet. gnaud kyhidet. gorsset metveith.
+Mettvin kywran. marchauc mitlan. mann meidrolaeth.
+Meitrid mur ior. maus pedir pedror. maur cor kyvoeth.
+Moes vreisc vreyr. moes wirth vehir. milwir orvith.
+Maer claer kywid. mad cathyl kyvid. moidit ieith.
+Mas cas nognav. minhev nev frav. molav frav fraeth.
+Muner uodauc. maer anhetauc. maretauc doet.
+Mdel visci mel vartoni. mynogi gvyth.
+Mynvinad vron. metv ton dros traeth.
+Mer kertev kein. mywir covein. mirein anoeth.
+Menestir. vytud. meuvet vetvd. molud esmuith.
+Music a gan mal eur orian. man vahanieth.
+Gveith reith rysset. gvich ruich ryuet. rinuet reen.
+rec rysiolaw. rec a archaw. ruymav iurthen.
+Ruthur. vthir avel. rynaut uvel. ryvel vebin.
+Ruteur dyrllit. rychlud clodrit. rihit aden.
+Rev wet paraud. rin vynn. wascaud. tra gwaud wobrin.
+Ry hait itaut. rycheidv y naut. rac caut gelin.
+Ry chedwis detryf. ry chynis gretyw. rac lletyw ogyrven.
+Rac. dac. drossow. reghid brid bot. rot cuhelin.
+Kervit vrten. kyrridven autyl. ogyrven amhad.
+Amhad ANAV. ayrllav areith. CAV y keineid.
+Cvhelin gwneuthur. Coeth kymraec. awyrllav kyvoeth.
+Id Keluit Club. llif cluir Áedán. kywlavan lev.
+Kert kywlaunder. dirper kadeir wober cadir. yv.
+Kanholicion. eilon caffod. vrthav ffordd.
+Cau tyirnet. kyurysswyv kyhidet cathil.
+Campws y veirch. canhyn peirch ae. glyv eirch kywren.
+Cor waradred. Nododd kenetyl kywetliv holwyd.
+Lliwed yn hun. eitun llysseit. Llun venediv.
+Llyd am kywor. desseffor llog. Porth ANAV llog.
+Llvgyrin kytrim. lledvegin grim. YD llim glev grim.
+Lleuver synhuir. llauer yn VYR. woriv llvir id.
+Gorpo hetiv Gulet gvr tagnevet druy o het.
+Kynaenad keluit. kynelv o douit.
+Kyuaenad didan o kynan kein Crist.
+Ac croen gyuerkinan Huan am.y.gylchin.
+Ar yssit gnyuer the pegor na'r môr.
+Ar gnyuer. edeinauc yn kyuoethauc oruc.
+Ac croen. diogelwch. paup. trychant dair tauaud.
+Ny ellynt vetraethaud. kywoethev y triudaud.
+Din y dyual Fuad. Ny cospaud eruill.
+Kymun paraud gweddïo. yn Erbin tridaud.
+Gofynnwch i glaf glefychaud. Gwaharddiadau Wanha. gnaud y
+Y diodrut. y isscaud.
+Guae PIR din ti hewid doduid unbid.
+Onid imwaredit. druc digonit neu.
+Mark ythrihit Nev ythruid. a. kerit.
+Drud dytihenit. logylwit imtuin AR dy.
+Trvach dydivet. lauriav dy. o. braster.
+Asegi athraed athydwet prit ymlith.
+Dihafal dyisscar dyimteith kedimteith ath.
+CORPH diffid direid. gobuill. o. theneid.
+CORPH gilit y us glivit paleueir.
+Dad roteiste OTH braster rev. Argel kyues ên.
+Dad roteiste otholud mwd muill Moll ên.
+Ac y haruetud. diadaud y cerrynt eiledol.
+Ac ny riuelssud y Meint yn garyssud.
+Ac o itoet wud y gwedd lurv. Dud.
+Adaon offuiant kymeint i taethant ig.
+Siant Prit prinude. ageugant othriit.
+Ac ysmortiuant. mal gossod amrant.
+Mae gwarant o Treis tragissant ASV ueleiste.
+Ny guener phercheiste OTH etyllter vaur.
+Ni pader cheuntoste i philgeint i Gosper.
+Pader priw traethaud. o gobuill nebaud
+Namuin y trindaud.
+Istedlit llethr Teithio beunit pader dair Seith.
+Nidoes Affv cerrynt eiledol. nithreghis cerrynt eiledol. ev peswch.
+Moe y dinwassute merwerit. Dim evegil phregeth.
+Mae guerth deid fi glethuir i buost vffil.
+Ni creirev phercheiste i lloc ar ôl llanev.
+Not kiwrev endeueiste higlev beirt gouec.
+Ni lleith kiureith creaudir ên newydd phercheiste
+Llyaus ardiareith adodute aghiuieith.
+Vi Gvae genhide imteith PIR yn kyueith.
+Vi Gvae dikiuolv AR pirwuuf.
+Tremio douthume attad vianuad Bichan oeth.
+Newydd rimartuad OTH kueithad laur.
+Arnun nincred ffug us. OTH tremint. ted trvy.
+Eneid fyn guneit im. yn digerit aghen.
+Guir imgotev guae uinhev yv deuthoste PIR.
+Nac irofe. aghev nac. na diuet. na dechrev.
+O Seith lauanad. im se suinad gwaharddiad.
+O Seith AR im badell creadur dodaeth pur.
+Oet di. lliw haul. llachar. im badell par roted.
+Daear prit Oetun. nym dyhaetei alar.
+Oetun guint da nom gouchaf vynruc llei.
+Oetun keton mynit keissau AR in nyul hit
+Guit blodev Oetun eluit vinep AR.
+Im douit Amssuinasseie dodath deunit AR.
+Eneid fyn guneit im.
+Nac im adneirun nev. rim waredun.
+Keugant kywraghaum. wide kywisscaran.
+A chiwnod senet. A cheugant kinatlet.
+A daduirein obet guydi hir gorwet.
+Kywoethauc duw awet. y din iny deheu wuchet.
+A dyadu tan ar poploet anylan.
+Alluch a tharian. a llyaus llydan.
+Ny llettaud lle dinag. na didrif na diag.
+A widy tagde teernas arvere.
+Dygettaur. y. tri. llv. rac drech. drem iessu.
+Llu guirin guinion eiliv egilion.
+Llv arall brithion. eiliv brodorion.
+Tryde llv diuedit. syth leith gyweithit.
+Hilant iglithuir un parthred dievil.
+In vn nidaon gan dull aghimon.
+Myny mae meillon agulith ar tirion.
+Myny mae kertorion in kyveir kysson.
+Kein vid ev goffalon gan guledic gorchortion.
+Myny mae ehestil am teernas uwil.
+Men y mae peryw hael iny claer kyueistet.
+Rotiad bid beddrael. nid guael y gerenhit.
+A chin deginull emne eilivert vedit.
+or saul dymguytat. ar lleith dimgorbit.
+Ac ew gueith dimgunelemne. dimbrodic dit.
+Nis rydraeth ryuetev kyvoeth ruytev douit.
+Tri anreithmarch inis pridein.
+Carnawlauc march. Owein. mab Vrien.
+a. Bucheslum. seri. march Gigaun cletywrut.
+a Tauautir breichir. m. kadwallaun. fil'. k.
+Tri thom etystir inis pridein.
+Arwul melin. march passcen fil'. Vrien.
+a. Du hir terwenhit. m. selyw mab kynan garrvin.
+a. Drudluid. m. Ryterch hael.
+Tri gohoev etystir inis pridein.
+Guynev godvff. hir. march kei.
+Ruthir ehon tuth bleit. m. Gilberd mab kadgyffro.
+a. keincaled. m. gualchmei.
+Tri hoev etistir inis pridein.
+llvagor. m. karadauc. B.
+a melynlas. m. kaswallaun mab Bely.
+Moli duu innechrev a diuet.
+Ae kyniw ny welli ny omet.
+Vn mab meir modridaw teernet.
+Meir mam crist. ergynan rianet.
+Dydav yr heul or duyrein ir goglet.
+Dy eiraul ir dy. maur drugaret.
+Ar dy mab iolud en karet.
+Duv uchom. Duu ragom. Duu vet.
+Ren new anrotone. ran trugaret.
+Teyrn uron. tanc y romne. heb imomet
+Diwyccomne a digonhom ogamuet.
+Kin myned im guerid imiruet.
+In tywill heb canvill im gorsset.
+Ym gueinvod im gorod im gorwet.
+Guydi merch ac imtuin glassuet.
+A chyuet a chid im agraget.
+Ny chisgaw gobuyllaw om diwet.
+Gulad it imne. ysagro ymassvet.
+Mal deil ovlaen guit daduet.
+Guae aguar a graun maur uerthet.
+Ac onysguataul y riet.
+Kyn gatter ew in ryred. pressen. perygil uit inydivet.
+Ny vir drud. nid yscrid iny timhyr.
+Ny chiuid uore. ny chiueirch. nid eistet.
+Ny chan wen nid eirch trugaret.
+Bit chuero y talhaur iny diwet.
+Syberuid. a maur wrid. a maret.
+Meithrin corph. y lyffeint a nadret.
+Allevuod ac imtuin enviret.
+Ac aghen dydau urth gluydet.
+Ew inluth dy chinull dy chiuet.
+Dynessa heneint alled arnad.
+Dy clust. di trein. di teint neud adwet.
+Dy chricha croen diuisset.
+Athuna heneint alluidet.
+An eirolve ne inihagel. ar ren new rana trugaret.
+Kintevin keinhaw amsser. Dyar adar glas callet.
+Ereidir in rich. ich iguet.
+Guirt mor brithottor tiret.
+Ban ganhont cogev ar blaen guit.
+Guiw handid muy. vyllauuridet.
+Tost much amluc anhunet.
+Kan ethint my kereint in attwet.
+Ym brin in tyno. ininysset
+Mor impop for itelher. rac crist guin nid oes inialet.
+Oet in chuant in car in trosset
+Treitau ty tir dyalltudet.
+Seith seint a seith ugeint. a seith cant. awant in un orsset.
+Ygid a crist guin. ny forthint vevygilet.
+Rec aarchawe nim naccer. y rof aduv. dagnouet.
+Am bo forth. y porth riet.
+Crist ny buve trist ythorsset.
+Gogonedauc argluit Guell hanpich.
+Athuendicco egluis de. achagell.
+A. kagell. egluis cerrynt eiledol.
+A. vastad. yn diffuis.
+A. yssit finhaun gynta '.
+Oherwydd guint ae. vn eiledol eluit ae.
+A. y AR risgaud dit.
+A. Siric yn perwit.
+Athuendiguiste awraham ffit pen.
+Tragiuit vuchet A..
+A. Adar yn guenen.
+A. attpaur. adien.
+Athuendiguste aron yn moesen.
+A. vascul yn femen.
+A. seithnieu yn SER.
+A. awir. ether cerrynt eiledol.
+A. llevren yn llyther.
+A. piscaud hydiruer in.
+A. kywid. agueithred.
+A. da ysaul digoned.
+Athuendigaf de argluit gogned.
+Gogonedauc a. h. g.
+Arduireaue tri trined in celi.
+Yssi un athri. vned un yuni.
+Vn guirth oe teithi. un duu diuoli.
+Athuolaf uaurri maur dyurhidri.
+Dyuolaur ysguir. Dyuolaudir ysmi.
+Ys bud bartoni arhelv eloy.
+Hanpich guell cristi.
+Pater. & fili & spiru. domni on. adonay.
+Arduireaue dev. yssi vn a deu.
+Yssi tri hep. ev. hep haut y amhev.
+Awnaeth fruith afreu afop. amriffreu.
+Duu y env. in deu. duyuaul y kyffreu.
+Duu y env. in tri duyuuaul. y inni.
+Duu y env in vn. Duu paulac annhun.
+Arduyreaue. vn issy deu ac un.
+Issi tri ar nun. issi duu y hun.
+Aunaeth maurth a llun. a mascul a bun.
+Ac nat kyuorun bas ac anotun.
+Auneth tuim ac oer. a. heul alloer.
+Allythir. ig. cuir afflam im pabuir.
+A. serch in sinhuir. a bun hygar huir.
+Allosci. pimp kaer otyueti. wir.
+Ynenu domni meu y. voli. maur y uolaud.
+Molawe douit. maur y kinnit ar y cardaud.
+Duu anamuc. Duu angoruc. Duu anguaraud.
+Duu angobeith. teilug pirfeith. tec y purfaud.
+Duu andyli. Duu issi vry. vrenhin trindaud.
+Duu abroued iny truyted in y trallaud.
+Duu a dyfu. oe garcharu gan vuildaud.
+Guledic deduit an gunel inrit erbin dit braud.
+An duch ir gulet iry varet. ae. werindaud.
+Ym paraduis. impur kynnuis rac puis pechaud.
+Angunel iechid iry penid ae pimp dirnaud.
+Dolur eghirith. Duu andiffirch ban kyinirth cnaud.
+Din a collei bei nasprinhei diuei devaud.
+Or croc crevled y deuth guared ir vedissyaud.
+Kadarn bugeil Crist nid adweil. y teilygdaud.
+Brenhin guirthvin guirth uchaw yssit.
+Yssi pen plant adaw.
+Yssi per gadeir gadarnaw.
+Yssi hael diwael diweirhaw.
+Yssi haul uraul gurhaw.
+A cliwir. issi owir id pridaw.
+Y Duv maur. y guv llaur llariaw.
+Y duv guin guengert aganaw.
+yny wuyw. y duv indin digerit. ordevnit y diallaw.
+O pechu a pechuis adaw. O pechaud kin braud pryderaw.
+Erbin oed y dit. y del paup oe
+Bet iny devret in devraw.
+Mal y bv ban fv oreuhaw.
+In vn llv ir vn lle teccaw.
+Hid impen vn brin erbin ev barnv.
+Or teulv teilyghaw.
+Teilygdaud wascaud. osgort nav grad new.
+Vy Dewis kinvllaud.
+Vy Devus domenvs menaud.
+Vy bardeir. y Beirt y uedissiaud.
+Vy maurhidic nen. vy perchen.
+Vy parch. kin tywarch. Kin tywaud.
+Amgadu y traethu trathaud.
+Yth voli kin tewi tawaud.
+Ac im cow. valioff. adiwaud
+Urth y gureic. y am dreic vffyldaud.
+Ban dywu guas duv diwarnaud
+attav. ir imbrav ae briaud.
+Rotesew dirneid. kin dirnaud.
+A bilwis o bilion. y gnaud.
+Ganydoet hagen higaff. y rotion. a rothei o nebaud.
+Gvnaeht duv trvgar gardaud.
+In evr coeth kyvoeth. y trindaud.
+Y mas maeistaud. y mae moliduv.
+Adwin y coti. A. diwad pechaud.
+Wid. weti. Adiwin kelv brad keli.
+Culuit argluit new nav kanmaul attad.
+Guenglad vad veidroli.
+Guenvlit rit rieitun voli.
+Gwingar kar gvar guironet kedwi.
+Ny chedwis eva irawllen per barauys duv.
+Vrthi. am y cham nychimv ahi.
+Guyth golev a orev erni.
+Ryv duted edmic. ogyllestic guisc. A guiscvis imdeni.
+Periw new a peris idi. imperuet ychiwoeth y noethi.
+Ac eil guirth. awnaeth ehalaeth argluit a ergliw y voli.
+Ban winnvis gochel y deli.
+Sew fort yffroes iti.
+Inytoet aradur in eredic tir
+Herwit guir in gueini. Y diwaud y trindaud keli.
+Ew ae mam dinam daun owri.
+Agur guin. Turr guir gwydi ny.
+A dav y geissav in guesti.
+Ar owris y winiti.
+A gueleiste gueric a mab genti.
+A diwed tithev irolev guironet.
+My thomet in gweti.
+Jn gueled in myned hebti.
+Y rander arad duv erni.
+Ar huni y doeth digiwoth gwerin. Llin kain kaderthi.
+Toriw anwar enwir ev hinni.
+Turr keisseid y keissav keli.
+Y diwod vn gurthwn gurtharab. Vrth y gvr aweli.
+A gueleiste dinion din. gowri.
+In myned hebod heb drossi.
+Gueleis banllyuneis yllentir
+Deguch a weluch y medi.
+Sew awnaethant plant kai
+Y Vrth y medel ym chueli.
+Druy eiroled meir mari.
+Oe gvybod guybv duv oheni.
+Yt oet iny diffrid. y gidahi.
+Ysprid glan a gleindid indi.
+Adwin caer yssit ar lan llyant.
+Adwin yd rotir y pauper y chwant.
+Gogywarch de gwinet boed tev wyant.
+Gwaewaur rrin. Rei adarwant.
+Dyv merchir. gueleisse guir yg cvinowant.
+Dyv iev bv. ir. guarth. it adcorssant.
+Ad oet bryger coch. ac och ar dant.
+Oet llutedic guir guinet. Dit y deuthant.
+Ac am kewin llech vaelvy kylchuy wriwant.
+Cuytin y can keiwin llv o carant.
+Dinas Maon duv daffar. adviar adwin pendevic.
+Asich heul. agulich edar.
+Dinas Maon teernet vnbin cas. kymynad degin Kad.
+Asich agulic heul. Mervin.
+Dinas Maon gulad adav. amdiffin amdanav duv.
+Asich agulic heul. nynhav
+Mad dodes y morutuit. mawrth merchin AR lluid.
+Kaderduram diwurn. maelgun agulich asich heul.
+Gwin y vedwen y cais yn guy diffrin.
+Mae vn sirth chegev y pop. dvy pop.
+Ac mae vo sosban uit. y gad yn ardudvy.
+Mae biv chimrevan am gwared vochnvy.
+Mae pheleidir yn inyganhvy Gaur.
+Imon edwin Ac. gluedichuy gwaharddiad.
+Ar gueisson gleisson ysca [ennill] travodi.
+rution AR Dillad yn Roti ev.
+Gwin y cais ar y vedwen hi. ym pimlumon.
+gwaharddiad yn eilon vit Baran wil gwaharddiad.
+Ac mae wil. y. freigc yn lluricogion.
+eiledol yb ir gewin aeluid balawon bvid.
+yn mineich mewn vynich yn varchogion.
+Gwin bid dinvythuy hi veduen y yguarthaw.
+A vo gwaharddiad vibid y gad yn Ardudwy.
+Kychuin peleidir Ar yb edrywuy.
+A. Taw AR Phont. other eiledol tawuy AR.
+Amwall other Ac am Gwy dwylan.
+Ar saer gunelwy ae. bid garvy y env.
+Dydd Llun Arbenygaul ae. guledychuy.
+UNDER Guraget y gint. yg guir kystvy.
+Dedwytach dim harhowe mi ae.
+Amser kadwaladir. kert yn ganhwi
+Afallen peren per ychageu.
+Puwaur maur weirrauc enwauc invev.
+In diffrin machavuy merchyrdit crev.
+Gorvolet y gimry goruaur gadev.
+In amuin kyminaud clefytaud clev.
+Aer o Saesson. ar onn verev.
+A guarwyaur pelre ac ev pennev.
+A mi disgoganafe gwir heb gev.
+Dyrchafaud maban in advan y dehev.
+Afallen peren pren hyduf glas.
+Pvwaur y chagev hy ae chein wanas.
+Ami dysgoganafe kad am dias.
+Penguern kywetyrn mety hatas.
+[Ac am glych kyminawd kymyn leas
+Eingyl gan pendeuic eryri eri attkas.]
+Awallen peren. a pren melin.
+A tyw in hal art. heb art inychilchin.
+Ami discoganwe kad im prydin.
+In amvin ev terwin aguir dulin.
+Seith log. y deuant dros lydan lin.
+A seith cant. dros mor y oreskin.
+Or saul y deuant. nydant y kenhin.
+Namuin seith lledawc gwydi ev llettkint.
+Awallen peren. Atyf tra run.
+Kymaeth lissvne iny bon. ir bot y wun.
+Amyscud. ar wy isguit. amdet ar wydun.
+Ac yg coed. keliton y kisceisse vyhun.
+Oian a perchellan. pir puyllutte hun.
+Andaude adar dywir ev hymevtun.
+Teernet dros mor adav dyv. llun.
+Guin ev bed ve kymri or arowun.
+Awallen peren atif in llanerch.
+Y hangert ae hargel rac riev ryderch.
+Amsathir inybon. maon ynychilch.
+Oet aelav vt vt dulloet diheueirch.
+Nu nym cari guendit ac nimeneirch.
+Oef kas gan gwassauc guaessaf rydirch.
+Ryrewineis y mab ae merch.
+Aghev aduc paup. pa rac nam kyueirch.
+A. guydi guendolev nep riev impeirch.
+Nym gogaun guarvy. nym goffvy gorterch.
+Ac igueith arywderit. oet eur. wygorthorch
+Kin buyf. aelav hetiv gan eiliv eleirch.
+Afallen peren. blodev essplit.
+Atiff in argel in argoydit.
+Chuetlev a giklev ir inechrev dit.
+Ryssorri guassauc guaessaf. meufit.
+Duywetih atheirgueith. pedeirguieth in vn. dit.
+Och iessu. na dyffv wynihenit.
+Kyn dyffod ar willave lleith mab guendit.
+Afallen peren atiff ar lan. afon.
+Iny llurv. ny lluit maer. arychlaer aeron.
+Trafu vm puyll. wastad. am buiad inibon.
+A. bun wen warius. vn weinus vanon
+Dec inlinet adev ugein iny gein anetwon
+It vif inymteith gan willeith agwillon.
+Guydi da diogan aditan kertorion.
+Nv nev nam guy. guall. gan wylleith a guyllon.
+Nv nev nachyscafe ergrinaf. wynragon.
+Vy argluit guendolev ambrorryv brodorion.
+Guydi porthi heint a hoed am cylch coed keliton.
+Buyf guas guinwydic. gan guledic gorchortion.
+Afallen peren blodev essplit.
+Atyf igwerid ag hiid y guit.
+Disgogan hwimleian hwetil adiwit.
+Id lathennaur gan brid gurhid erwit.
+Rac dreigev arderchev. riev rybit.
+Goruit grat wehin din digrefit.
+Rach maban hvan heolit arweit.
+saesson ardiwreit beirt ar kinit.
+Afallen peren a pren fion
+Attif y dan gel yg coed keliton.
+Kid keisseer ofer vit heruit y haton.
+Iny del kadwaladir oe kinadil kadwaon.
+Y erir tywi a teiwi affon.
+A dyuod grande o aranwinion.
+A guneuthur guar. o. willt. a gwallt hirion.
+Afallen peren a pren fion.
+Attif. y dan gel yg coed keliton.
+Kid keisser ofervit herwit. y havon.
+Yn y del kadwaladir oe kinadyl. rid reon.
+Kinan iny erbin ef kychwin ar saesson.
+Kimry a orvit kein bid endragon.
+Kaffaud paub y teithi. llauen vi bri brython.
+Kenhittor kirrn eluch. kathil hetuch a hinon.
+Oian a parchellan. a parchell dedwit
+Nachlat dyredcir ympen minit.
+Clat in lle argel in arcoedit.
+Rac erwis ritech hael ruyfadur fit.
+Ami disgoganafe a gwir uit.
+Hid in aber taradir rac trausev prydein
+Kimry oll inyeu kyfluit.
+Llyuelin y envo eissillit
+Gwinet gur digorbit.
+Oian a parchellan. oet reid myned
+rac. kinytion mordei bei llafassed.
+Rac diuod erlid arnamne a ingueled.
+Ac or diaghune. ny chumune in lluted.
+Ami disgoganafe. rac ton navfed.
+Rac vnic bariffvin gvehin dived.
+Dirchafaud llogaud tud ir llettcred.
+Yn tymhir gurthtir a guystuiled.
+In y del kinan iti oechin gueled.
+Ny bit attcor bith ar y threfred.
+Oian a parchellan nyhaut kisscaff.
+Rac godurt y galar yssit arnaf.
+Deg mlinet a deu ygein yd portheise poen
+Y struc aorhoen yssit arnaf.
+Oes imi gan iessv gaffv guaessaf
+Brenhinoet newoet achoet uchaf.
+Nymad rianed oplant adaw.
+Ar ny creddoe ydovit indit diwethaf.
+Yd welese gnendolev in perthic riev.
+In cynull preitev o pop eithaw.
+Ydan vyguerid rut nv neud araf.
+Pen teernet goglet llaret mvyhaw.
+Oian aparchellan oet reid gweti.
+Rac offin pimp penaeth o nortmandi.
+Ar pimhed in myned dros mor heli.
+Y oreskin iwerton tirion trewi.
+Ef gunahaud ryuel a difissci.
+Ac arfev coch. ac och indi.
+Ac winttuy in dihev adoant o heni.
+Ac. awnant enrydet ar bet. Dewi.
+Ami disgoganafe bid divisci.
+O ymlat mab a thad gulad ae guybi.
+A myned y loegruis diffuis trewi.
+Ac nabo guared bith y nortmandi.
+Oian a parchellan. Nauit hunauc.
+Rydibit attemne chuetil dyfridauc.
+Penaetheu bychein anudonauc.
+Meiri mangaled am pen keinhauc.
+Pan diffon. dros mor guir eneichauc.
+Kad meirch. y danuit ve dev wynepauc.
+Deuwlaen. ar euguaev anoleithauc.
+Erti heb medi ymbid dyhetauc.
+Guell bet. no buhet pop yghenauc.
+Cirrn ar y guarget pedryfanhauc.
+Affanvont ve corforion meibon eidauc.
+Y bit bore taer. rac kaer sallauc.
+Oian a parchellan. a parchell dyhet.
+Run dyuueid huimleian chuetyl enryuet.
+Ami discoganaue hav guithlonet.
+Kywrug brodoryon brad o winet.
+Ban diholer taguistil inhir o tir guinet.
+Dybit seith ganllog o ynt gan wint goglet
+Ac in aber dev eu kinatlet.
+Oian a parchellan a parchell guin.
+Rymdywod himleian chuetil am echrin
+Pan bebillo lloegir in tir ethlin.
+A guneuthur dyganhuy dinas degin.
+O g*(---) lloegir a llyuelin
+Aduit mab arwarr. (---) kychuin.
+Ban sorro deinoel mab dunaud deinwin.
+Ad vit frangc ar ffo fort ny ofin.
+In aber dulas. gvanas guehin.
+Cochuet inev kylwet. yn ev kilchin.
+Oian a parchellan hoian hoiev.
+Bel ychenauc duv gunai. ymchuelev.
+y (---)ll yssy. wiv. bitaud mev.
+Ar hun yssy (---) keisssed intev.
+Oian a parchellan neud dit golev.
+Andaude leis adar duffyr dyar leissev.
+An hit ni bluitinet a hir diev.
+Arievenwir edwi fruytheu.
+Ac escib. lluch lladron differch llannev.
+Amyneich a obrin beich o bechodev.
+Oian a parchellan llim y vinet.
+Kyuuely anwinud panelhute y oruet.
+Bychan awir ryderch hael heno y ar y wlet.
+A protheise neithuir o anhunet.
+Eiri hid impen clun. gan cun callet.
+Pibonvy imblev. blin wy rysset.
+Ry dibit div maur dit guithlonet.
+Kywrug glyu powis achlas guinet.
+A chivod hirell oe hir orwet.
+Y amvin ae elin terwin guinet.
+Ac onymbit gan vy ri ran trugaret.
+Guae wi ban imbv. trv vy diwet.
+Oian a parchan. Ny bit kywun.
+Ban kyhin llu aer o kaer wyrtin.
+Y harduy dev kenev. in kynwrenhin.
+O hil ris aerllut. aer llyf bitin.
+Ban llather y Saesson y kimerev trin.
+Guin ev. bid vy kimri. kimrvy. werin.
+Oian a parchellan. a parchell. guin gvis.
+Nachuste hun bore. nachlat im prisc.
+Rach dyuod. Ryderch. hael. ae cvn kyfruys.
+Kin caffael o honautte y coed reddaud. dychuis.
+Oian a parchellan a parchell guin.
+Bei gueled a weleis o treis degin.
+Nychyscute hun bore. ny chlatude brin. [*]
+Ban eistetho saesson iny sarffren.
+A chirchu o pell castell gollwin
+A tuit dillad hoev a gloev dullin.
+Oian a parchellan andaude y naur
+Ban dottint. ve guir guinet ev gueith maur.
+Llaffnev in ertirn kirn a ganhaur.
+Briuhand llurugev rac llun waewaur [**]
+Ami disgoganauc. deu priodaur.
+A luniont tegnevet o nef hid laur.
+Kynan kadwaladir. Kymri penbaladir.
+Bitaud ev kinatil aedmyccaur.
+A chiureithau gulad. a chistutia gwad.
+Allv alle(---)divahaur.
+An bi ni inaeth guared guy(---)aeth
+Neb o haelonaeth nididolaur.
+Oian a parchellan. Nud glas minit.
+Tenev vyllen imi nyd llonit.
+Lluid yv. vybliet nim treit guendit.
+Ban diffont guir. brineirch ir guarth luit.
+Kimri a oruit kein bid ev dit.
+Oian a parchellan. a parchell gawi.
+Na chlat de redkir nac iste. wiuuy.
+Na achar waes. nachar. warvy.
+A chussil arotafe y wenabuy.
+Nauid ieuangc serchauc syberv warruy.
+Ami discoganafe guieth marchavvi.
+Aduit geloraur rut in riv didmuy.
+O kiwranc y kynvrein bron reinon kifrvi.
+Advit bore och. acoch ofuy.
+Arth o deheubarth a dirchafuy.
+Rylletaud y wir ew tra thir mynvy.
+Guini bid hi guendit ae harovy
+Ban. vo pendewic dyued ae guledichuy.
+Oian a parchellan neud blodeu drein.
+Gorlas kein minit eliut neud kin.
+Ami discoganaue kad coed lluiuein.
+A geloraur rirtion rac ruthir owein.
+Ban gunelhot meiriev datlev bichein.
+Anudon abrad gulad veibonin.
+A phan del kadualadir y orescin
+Mon dileaur saeson o tirion prydein.
+Oian a parchellan maur erissi
+A uit impridein ac nim dorbi.
+Ban diffon brodorion o amtiret.
+Mon. y holi brithou brithuid dybi.
+Dirchafaud dreic faud fau isperi
+Gurt kyuan uaran o lan teiwi.
+Gunahaud am dyued diguiysci.
+Bit itau inaelau eilon indi.
+Oian a parchellan. Mor enryuet.
+Na bit un enhid y bid munvet.
+Pelled son saeson seil kynriss.
+Ar brithon haelon hil kymuyet.
+A mi discoganaue kindiguiet.
+Brithon dros saesson brithuir ae met.
+ac ina indaune daun goruolet.
+Guidi bod inhir inhuir. vridet.
+Oian a parchellan andaude ireilon
+A groar adar kir kaer reon.
+Vn yssun aroun minit maon
+Y edrich drichumauc drich serchogion.
+Ami discoganawe kad ar y ton.
+A chad machavvy. a chad avon.
+A chadcorsmochno. a chad minron.
+A chad kyminaud. a chad caerlleon.
+A chad abergweith. a chad ieithion.
+A phan vo diwed tir terwin. y. eilon.
+Maban dirchavaud mad. y vrython.
+Hoian a parchellan. Bydan a vit.
+Mor truan y. dyuod. ac ew dybit.
+Mrynion moelon. guarget revit.
+Karant ny parchant eu kerenhit.
+Rvit ny kywriut. vrth y gilit.
+Escyp agkyueith diffeith difid.
+Hoian a parchellan bichan brychni.
+Andaude leis adar myr. maur ev hinni.
+Kertorion allan heb ran teithi.
+Kyn safont iny drvs this nys deupi.
+Rymdivod gwyllan o pell ymi.
+Teernet en ryuet ev kiniweti.
+Avvahont dihet a divysci.
+Ac y kuwenv dywiev divod iti.
+Ac imlat in taer am dvylan tywi.
+Hoian a parchllan. bychan breichvras.
+Andav de leis adar mor maur eu dias.
+Kertorion allan heb ran vrdas.
+Gurthwnaud espid a brid gan gwas.
+Heb cadvid. vynep heb ran vrdas.
+Ban. vo. dev broder. deu itas am tir.
+Megittor oc ev guir. vy. hir alanas.
+Hoian a parchellan. Nym dawe kingid.
+O clybod lleis adar duwir dyar ev grid.
+Tenev gvallt vyn pen. vy llen nyd clid.
+Dolit vy iscubaur. nyd maur vy id.
+Vy craun haw ami nid imverid.
+Kyn iscar aduv ditaul kyvid.
+Ami discoganawe kin. gorffen bid.
+Gwraget heb gvilet. gwir heb gurhid.
+Hoian a parchellan a parchell rymi.
+Tenev vyllen nid llonit ymi
+Yr gueith arywderit mi nym dorbi.
+Kynduguitei awir y lavr. allyr. enlli.
+Ami discoganawe gvydi henri.
+Breenhin na breenhin brithwyd dybi.
+Ban vo pont. ar. taw ac arall ar tywi.
+Y dav y dyved ryvel iti.
+* In the margin:
+Ny chirchud differch o diffuis lin
+* In the margin:
+Ban diffon nortmin. yarl llidan lin
+Advit imurchrin in gan vitinaur.
+Agorescin pridein y uiron yswein
+Ar vall o lundein adyattavr. ami
+E betev ae gulich y glav, -
+ny gvir tywnassint dignav VY:
+Kerwid yn Chivrid yn chav.
+E betev ae gvitwal tut, -
+rejected in part ymtial llesseint ny:
+Guryen, Morien yn Morial.
+E betev ae gvlich kauad, -
+llesseint gvyr ny yn lledrad:
+Gwen yn Gurien yn Guriad.
+Bet tad awen Tedei
+yg godir Brin so;
+yd in tolo tunnell vna
+Llan Dilan Bevno Bet.
+Bet ygodir cletifhir Keri Hen Eglwys
+graende in the diffuis,
+tarv torment, Corbre ymynwent.
+Bet vann sinhuir Seithennin
+y ryg Kaer Kenedir a glann
+môr, mauridic a kinran.
+Aber Gwenoli En
+Pryderi Mae y ber;
+tir in terev y tonnev
+yg Hir bet Gwallauc Karrauc.
+Bet Peryton ym Gwalchmei
+ir diliv dyneton y;
+mewn bet Llan Kinon Padarn.
+Bet gur gwaud urtin yn tytin uchel
+yn gwelitin Isel,
+Kynon bet mab Clytno Idin.
+Bet Run Pyd mab yn avon ergid
+mewn gverid oervel ig;
+bet Kinon yn Reon gwared.
+Piev y bet Dan y brin y?
+gurt Bet gur yg kyniscin,
+Kinon mab Clytno Idin.
+Ossran mab Bet yg Camlan,
+kywlavan llauer gvydi;
+bet Bedwir yn Tryvan alld.
+Bet Owein ab Urien im pedrya [e] cais l,
+UNDER gverid Morvael Llan;
+Riderch Hael yn Abererch.
+Guydi gurum a choch a chein
+yn goruytaur minrein maur,
+mewn bet Llan Helet Owein.
+gweli Gwydi yn gaedlan
+a, seirch gviscav yn Cann meirch,
+ew neud bet Kintilan hun.
+Piev y cystlun bet da y
+yn kigrun AR lv wnai Loegir?
+Bet Gwen ab Hen Llyuarch hun.
+Piev y bet yn yr amgant
+tudol môr ae yn nant goror?
+Bet mab Meigen Run, rviw cant.
+bet y Piev yn Inis yr
+tudol môr ae yn gwris goror?
+Bet mab Meigen Run, llis rvif.
+Es cul bet ys hir y
+mewn llyaus llurv Amhir,
+Bet mab Meigen Run, Gwir ruyw.
+Tri bet bodauc dair yn brin arterchauc
+ym Gvinionauc Gwinn Pant:
+Môr a Meilir yn Madauc.
+Bet Madauc, egluc mur yg kinhen kywluc,
+vir gorev Vrien [c],
+mab y Guyn o Winllyuc.
+Bet Mor maurhidic, unben diessic,
+swydd kinhen kinteic,
+Peredur Penwetic mab.
+Bet Meilir sinhvir maluinauc saluvodauc,
+ffiscad fodiauc fuir,
+mab y Bruin o Bricheinauc.
+Piev bet y ym Vaen Gwared holwyd
+ae yr ysgrifbin by anvaered?
+Bet Run mab Alun Diwed.
+Bet in Dywed Alun y drewred drav,
+ny kiliei o caled,
+Meigan mab mad Cynnal a badell.
+Bet Llia Gvitel yn Argel Arduduy
+gvelt y UNDER gvevel ae;
+bet Epint inyffrin [t] Gewel.
+Bet Dywel ig mab Erbin Caeav gwestedin
+ny bitei breinhin y gur,
+Trin ochelei divei ny.
+Bet Gurgi gvychit yn lev Guindodit
+bet, Llaur ouit llu,
+yg yssit guarthaw Guyr Guanas.
+hir beteu E yg Guanas, -
+ae dioes ny chauas
+VY pvy vynt, y neges hon pvy Water.
+Teulu Oeth Anoeth cerrynt eiledol yn ynoeth dyuu
+Water gur y, guas Water y;
+ae ceisso clated VY Guanas.
+Bet AR Llaueghin avon Certenhin Llvch,
+ysgrifbin Saeson suyt Erbin,
+ny site bitei drimis HRB.
+E beteu in Hir Vynyt
+llvyr in the lluossit guyr:
+gvrhyd Gvryen bet enguavc
+yn Lliwelit uab Llvytauc.
+Pieu yr bet mynyt in the
+yn luossit lyviasei?
+Bet Hael ab Fyrnuael Hyvlyt.
+Pieu ir hun bet? Hir Eitivlch Bet,
+ig gurthtir Turch Pennant,
+mab gyuulch gywlauan Arthan.
+Bet y UNDER Llev Llaugyfes achles môr,
+in the gywnes y bu,
+gur guir rodes y neb ny.
+Bet in rut Beidauc Riv Lyvnav amgant,
+bet Keri Lluoscar yg,
+eiledol in Ryd Omni Britu bet.
+Pell y argut vysci cerrynt eiledol,
+gueryd Machave torri ae:
+hirguyn bysset Beidauc rut.
+Pell y anau vysci cerrynt eiledol,
+gueryd Machave arnau,
+Beidauc Llydau ab rut Emer.
+Bet unpen o Priden in lleutir Guynnassed,
+in yd yn Lliv Llychur in;
+ig Kelli Gyrthmul Uriauael bet.
+E bet Ystyuacheu in
+Some the paup in amheu y,
+Gurtheneu Gurtheyrn bet.
+Kian a drav in diffeith cnud ud,
+pen bet otuch Alltud,
+bet Kindilic Corknud mab.
+Neum Duc y bartrin i Elffin VY prowl
+kinran vch gessevin, -
+bet Ruvaun ruyvenit rhedeg.
+Neum Duc y martrin i Elffin VY browl
+gessevin kinran vch, -
+bet Ruvaun daerin ry ievanc.
+Bet Mawrth y, bet y Guythur,
+bet Cledyfrut Gugaun y;
+bid anoeth Arthur y bet.
+Bet ys Elchwith gulich glav [y],
+Maes y danav Meuetauc;
+kuinav y dyliei Kynon.
+Piev y bet hun, mae hun?
+Gowin ymi, gwn mi ae:
+bet ew bet Eitew oet hun,
+bet Eidal yscvn tal.
+Eitew eiledol Eidal, alltudion diessic,
+drei cylchuy kanavon;
+meibon mei meirch mekid Meigen.
+Piev y bet hun? Bet Bruyno Hir,
+WIR y hydir yn y bro:
+yd parth bitei ny vei gyfer.
+Piev y bet hun? optionally
+Aral guythuch ervid urth,
+trath vrthid lathei chvartei.
+Bet Silit dywal yn Edrywuy le,
+bet Llemenic yn Elvy Llan
+yg Guernin bet Eilinvy bre.
+mirein milur Bet gnaud lav oe kelein
+perthynas agosaf y bu mein tav dan,
+Llachar mab Run yg kein Clun.
+Bet Talan in talyrth teircad ygyrth,
+kymynad nyrth pop pen,
+hyget, agoret y pirth.
+Bet daear inywinder Elissner ab Ner,
+diarchar dibryder,
+llv ysgrifbin wu the time hyffordd ant.
+Var Bet gur y gurt, niver llyv Llachar,
+mewn duwir aber Dyar,
+toniar in the gvna Tavue.
+Piev y bet yn Ridev y?
+: Gwyn Ruyw Bet, Rigenev mab,
+gur yn arwev y AR digonei da.
+Piev y bet hun? Bet Breint
+y ryg lledneint ae Llewni,
+gur bet isscereint y guae.
+Piev y bet yn brin y llethir?
+NYS Llauer gowin guir ae:
+bet Coel Kinvelin y mab.
+Bet Deheveint AR Cleveint awon,
+yg Mathauarn gurthtir,
+Cadarn kedwir ystifful.
+Bet Aron Diwinvin mab yn Hirgweun le;
+ny dodei lew ladron AR,
+ny rotei Alon y Gwir.
+Bet Llut Tawlogev mab yn Trav y trewrud,
+Mae mal y ym kystut y,
+clathei ae, [ef] caffei ond.
+Piev y bet Ryddnant lan AR?
+Run env y, keucant radev,
+ew ri, Riogan gvant ae.
+Oet ef kyfnissen galanas y holi,
+gua ut [iua] wr [r], grut Aten;
+yn bvir chen ond, Bradwen bet.
+Piev y bet pedrival
+mein pedwar ae yb y tal?
+Bet Madauc, dywal marchauc.
+En Eiwonit, tir Elvit,
+hir y [bet] Mae hyduf gur:
+lleas paup rydighir sosban.
+E bet ar dair yg Kelvi Kewin,
+ae awen divaud IMI:
+bet duyael garv Kinon y,
+bet Kinvael, Kinveli bet.
+Bet Llvid lledneis ig Kemeis tir:
+perthynas agosaf boed hir y eis tuw,
+treis tarv o dygirchei Trin.
+Bet Siaun svberv yn Hirerv minit
+y ryg gverid y derv ae,
+chuerthinauc, bra UC [da], bridchuerv.
+Piev y bet yn clidur y?
+Tra eitilur ny bv wu, -
+bet Ebediv am Maelur.
+Piev y bet yn yr allt Trav?
+Gelin y Lauer y lav,
+, Trin tarv itav trugaret.
+Y beddau in the Morua,
+ys Bychan ay haelewy:
+Mae y Sanant, vun syberw,
+Mae Rhedeg y afwy ryuel,
+Mae Garrwen y verch Hennin,
+Mae Lledin y mae Llywy.
+Gwely in Henben Hennin aelwyt Dinorben,
+gwely Dyuet in Airgwl;
+in Cyhoret Gynan ryt.
+Gogyuarch pwb diara
+pieu here vedgor yr yssy:
+gwely Einyawn ab Cunedda,
+ddiua ym Cwl y Prydein.
+Piev yr gwely in the Maes Mawr?
+Balch lafnawr Ar Y gyfraith y, -
+Gwely Beli ab Benlli Gawr.
+Cantreghis amhoen wiguisc.
+O amryues adwaen neus.
+Nym gunaho Duy douit poen.
+Ny poen dowit gvnaho Duy
+Ar din awar amydic ae.
+Direid newydd. direid daear.
+Daearaul. aduv pechodaul imyoel.
+A deweint. duhuned.
+Mae Crist gothuy nachisced.
+Nachisced mab. din. dioteiveint yr
+Mab duv. yn pilgeint duhuned
+Ew keiff newydd chirreiveint.
+Ryrreiweint yn eiff i goffaho
+Duv nistirmycco cerrynt eiledol.
+Mae system weithredu y tragho newydd.
+Otreinc ​​imdiwin din mab rejected in part
+A duv. Yr wyf yn pechaud o awnel.
+aeth mad ny eneid gnaud iny.
+Ny naud imioli direid y
+Mae duv inerbin dit kynhi
+Ny treghi y thebic drud.
+Cantreghis.
+Heb coffav daun duv diffrid
+Gwirion egilion hevid cerrynt eiledol
+Cam o Gormot syberwid.
+Guae imbit ae rejected in part gunel Kel.
+Ol Alaw Nycharaw difod
+Bressuil. pressent yshawod pop.
+Itav wuyf Din. eitav clod
+Im gorev Yduv gorvod.
+Garaw voli tagtew avedir pedyr
+Iaun. pelltaun ae. ew ygid cerrynt eiledol
+Im atew pop ieith obeith.
+Llara cloduaur, porthaur newydd Hael.
+Y duv Roti y bwa harchaw
+Argluit. in Eloy argledir.
+Im eneid Edrychwch ar dudalen wyth y rac.
+Naut oll yr Holl merthyri.
+Y duv Y harchaw aton bwa
+Dihev gelinion poenev rac.
+y. menid. cofion o pleid.
+Meir Naut gueriton AR gwiri.
+Y duv. y. harchaw bwa hewid
+Gall Kywiaun dichaun vyniffrid.
+Y. meneid envid rac poen.
+Y duv. y. giwreint harchaw bwa
+Bresswil inprissur pilgeint pop.
+Y meneid oweint poein rac.
+Naut duire Seint y rolre.
+Duv coffav Heb.
+Rac kẏstut gelin gereint. y gueleise
+Gall crimrut meirch. yn achlut Gaur garv gwidẏ
+Gelin gereint dihad RAC. crimr gueleise-meirch
+ut o Kad. yn puẏllad guẏdi Gaur garu. RAC gereint ge-
+Ormes lin. gueleis meirch cucrees all. aguẏdi gaurga-
+achles rv. En llogborth ẏgueleise vitheint. ageloraur
+mvẏ nomeint. rut aguir gereint ruthir rac. Enllo-
+ẏgueleisegiminad gborth. guirigrid aguaed am IAD. rac
+mab vaur ẏtad gereint. En llogporth gueleise gotto-
+ev. nẏgilint aguir gvaev rac. gvin acẏved oguẏdir-glo
+ev. En llogporth y guir.aguẏar arwev gueleise yn din-
+ev. agvẏdi atnev garv Gaur. En llogporth y gueleise. y
+arthur guir deur kẏmẏnint Adur. Llyw ameraudur-
+iaudir llawrur. En llogporth y gereint y LLAS. guir
+deur o odir diwneint. yn gên rillethid ve.lla-
+tẏsseint. Ail Oet UNDER rereint vortuid gereīt
+garhirion guenith graun. Erir ruthir Rution-
+ion Blith. Ail UNDER Oet rerent vortuid gereint. garhiriō
+graun aebv. Trais yn y Cartref Rution ruthir eriron. Ail rereint Oet
+UNDER mortuid gereint. garhirion boloch graun. Rution
+ruthir eriron coch. Oet rerereint gereint UNDER mortuid
+garhirion wehin graun. Rution ruthir gvīn eririon.
+UNDER rerereint Oet vortuid gereint. garhirion mawr
+hit. turuf AR goteith mẏnit diffeith. Ail rereint Oet
+UNDER vortuid garhirion gereint anchvant nain. Blaur
+inariant euraun Blaen. UNDER rerereint Oet mortuid
+gereint. garhirion. ADAS graun. Erẏrion ruthir Rution
+glas. Ail Oet UNDER rereint mortuid gereint. garhiri-
+Water graun ar buẏd. Eririon ruthir Rution llvid.
+Gwaharddiad Cynnal a oet gereint open pirth newydd. Crist rotei
+aarched Prydein mirein prid wogoned.
+Duv yn kymhorth yn Nerth mewn porth yn canhorthuy.
+Y valch teeirn dinas unbin degin adwi.
+Hywel welmor. oror kimry arvy kyghor.
+Terruin trochiad. torwoet ueitad goronvy vab.
+Godrut y var. gurt yn rycothvy gvae trydar.
+Pedriauc heul. muyhaw y treul. kylchwy vchel.
+Tir brycheinauc. iaun dy priaud. paup gwelhvy ae.
+rydadlas Nev yb Euas eurgvas luith lyvuy.
+Ergig anchvant. guent. gulad Morgant. Dyffrin mynvy.
+Gvhir penrin ystradvi brin. tywin. warvy.
+Dywed dvycaun. kerediciawn. kiflaun owuy.
+Mae cerrynt eiledol ewionit meironit. ardudvy cerrynt eiledol.
+Ros rowynniauc. rhedeg arderchauc. yg rugil gortuy.
+Tegigil (---) al. arlvy Arial edeirnaun Ial.
+Ryuel ebruit. yn cluit diffrin. yn convy nant.
+Powis enwauc. yn mvy Avo chyueilauc cerrynt eiledol.
+hawren Dyffrin. dygen Keri. venvy kyven.
+Elwael Buallt. Guell maelenit. pell y treithvy.
+ynis rac gynta '. Inis AR gynta '. AR tramordvy.
+Hyuel guledic. vutic gveith vt. id y guystlvy.
+tharkiveir AR Y penn pennic. o. planhigion nevuy.
+Goruir edwin. breenhin guraul. denvy dilywin.
+Dreic turvf angerdaul maur moroet. achupvy meint.
+Rywiscuis llaur yb amaervy eur y vyssaur.
+Na bei chaned. y. tyernet rvy anhvyet.
+Neu inaeht ageis Saul head teacher. camrvy arvaeth.
+Hydir y kymhell. env opell hywel. yv Guell VY Noc.
+Dipryderant di yscarant. rac. y dibvy.
+Dihev ittunt. kystut trallaud. achur kystvy.
+Gwerin werid. gwedy clevid erid yn chymvy.
+Ny DAV bid orphen metic cuddio. nottvy y cuddio.
+Hyuel haelaf. vaur eilassaw gorescynhvy.
+Caffaud urth y hyuel hoewet. wy rybuchvy.
+Vy ry puched y colowin holwyd. pedrydant clod.
+Ryuel haval vrien Dywal. vythein Arial.
+Guriac dorwyn gueilgi. hehowin kyvid milcant colofyn.
+Llugirn deudor. Agor lluoet. gur. bangor breint.
+Prydus ben Owner priodaur. ysgrifbin kinweint pop.
+Gorev breenhin gollewin AR. cuddio yn llundein.
+Haelaw lariaw. teccaf levaf. o blanhigion adaw.
+Gwerlig haeton gvaut vetveint vaton verdidon.
+Goruir gwerennic mur menic gurhid gormant.
+Terruin am tir. Reith kywir ri. morgan o Hil.
+O rytheint radev morccanhvc o rieinvc.
+O teernon kywrid Leon. reibeint Galon
+Vn vid veneid ellyspp y cais. porthant gelleist.
+Heothil hir ew cerrynt eiledol. a chein y atew artuniant trvi.
+Vrten arnav. rad anaw cerrynt eiledol. affav a phlant.
+Assuynaw naut diamehv duv
+Y daun wiffinnhev aedonyauc.
+Ar dy guir aerev erir.
+Ar dy gulad dehev guledic.
+Assuinaf archaf eirchad
+Ym gelwir. kywir naut kygwastad.
+Ar dydrissev aer. drussad.
+Gvaur didrissaur Ar gwenvlad.
+Assuinaw archaw vaur bwa
+Y periw yn allaur peris newydd.
+Naut dyuar rac kertaur car.
+Ar diporthaur AR dypirth.
+Assuinaf naut haelon Haut
+Deheuparth kertorion diheuporth.
+Athturuf othtarianogion.
+Meibon Athtoryf teern oth.
+Assuinaf nacheluch y chnaut.
+Ychporth. Gall perthin attreguch.
+Gostecwir llis gosteguch.
+Gostec. aglywuch barwnig beirt.
+Haut Assuinaf haelvonet naut.
+Worsset. teernet orsseiw Nyth.
+Ar dy torif coryf kywrisset
+Ar dy teleu teilug bodloni.
+Cuin ev Met gwiraud cwrdd kirn
+Ae gwallav. ae gwellig yn eurdirn.
+Agloev y ved yn edirn.
+Agliv deur. aglev teeirn.
+Teern weilch prydaw pridein
+Ych priwgert. ych priwelod adigaw.
+Ych. ych barwnig beirnad vytaw.
+Ych porth yv perthin ataf.
+Attep aganaw canhuyw AR.
+Vy argluit. ergliv. wi. Gall dothiuf.
+Lleissaun glevrit llev gliv lliw.
+Laessa divar di barwnig wif.
+Imruw kertaur Viw. ruisc. morkimlaut
+Gurt. ruis firt kert kvit. vahaut.
+assuinasserv hirvlaut herv.
+Assuinaf naw wut AR. naut.
+Assuinaw naut diamhev duv. y daun.
+Tra vom kyd keredd. goned kydimyteith.
+Bid pyrfeyth yn gueithred.
+Keyssun y minared ffit drvi
+A. erevit. acred. credwit kyd
+Douit. kereirhyt drvi. heini.
+Maur penyd peunyt meith.
+Eneid badell kenerchyt im.
+Pa cwmpas ae divet bet.
+DV capan uarch du dy dy.
+Du duhunan dy penddu.
+Ia du yscolan ti ae.
+Mi iscolan yscolheic
+Yscawin y puill iscodic.
+Guae. agaut buat guledic ny.
+O ecluis losci. iscol buch allat.
+Allyvir voti y wialen.
+Vy penhid. kynhi ystrum.
+Creaudir y creadurev. perthidev
+Muyhaw. kyrraw de IMI vygev.
+Ath vradaste. am tuyllas ynnev.
+Im llaun Bluytin rydoded.
+Ym. paul AR bangor heb y galon.
+Edrich môr by de poen imy pryued.
+Arvn yscuypun Bei.
+Guint amluch Mor. fallum y brics vlaen guit.
+NYS gunaun Arav bith vneuthume.
+Creaudir creaduriev y muythaw perthidev.
+Matev imvygev. athuradaste am tuyllas ynheu.
+Bluytin llaun ymrydodid. ym bangor paul AR
+Heb y galon. môr edrich by de poen pryued IMI.
+Geir adywedaw Kyntaw.
+Y bore kyuodaw gwaharddiad.
+Croes Crist yn ymdanaw wissc.
+Arhelv guiscav uy y plant
+Hetiu. Trev heb yn glyuaw.
+Ew not niscredaw duu wy.
+Guiscaw ymdanaw inberch.
+Ny credaw kerch coel canyd.
+Y gur yb creuyse yb Nerth.
+Ymae vimrid ardebed.
+Arowun AR mwy wyned.
+Bitaud Etyl butic holwyd.
+Ymae vymrid kighor AR.
+Arowun myned. AR môr.
+Etyl IOR butic bytaud.
+Dyrcheuid bran y hadein.
+Arowun myned ruvein.
+Etil kein butic bytaud.
+Ystarnde wineu Guin fruin.
+Rin Redec raun hiraethauc.
+plant newydd. oet reid genhin duu.
+Ytarnde blev winev y birr.
+Ruit ygniw. rygig. otew.
+Truin vo mynyd. yduit Trev.
+Winev hir y Ystarnde neid.
+Yg Ruit rygig nyw. woteid.
+Ny Trev AR lut lev direid.
+Trum kyduod daear. dris tev deil.
+Chuerv vuelin cwrdd melis.
+Ren ruitade y neges hon VY newydd.
+O eissillit guledic. a gueith
+Wtic. wosprid. ysgrifbin aphedir pop ieith.
+Sanffreid suynade yn imdeith.
+Heul eirioled arouned
+Argluit. kely Crist. colowin holwyd.
+Dywyccviff wym pechaud yb gueithred.
+Mi aego winneis offereid y
+Cais. ae hesgip ae higneid
+Beth orev rac eneid Ba.
+Pader o buyeid yn bendiceid
+Creto. ae rac eneid canho.
+Cuddiodd waud gortywneid Goreu.
+Yscythrich gaer yn ti delhich. allunhich tagneuet.
+Nythvi trugaret AR tranc.
+Ro vyd. y. newynauc. yn noeth y Dillad.
+Mae chenich golychuid.
+O dothuid dieuil kyuil.
+Water Syberu dolur aseguir AR knaud.
+Guerth myned for uessur.
+Ystir nithiau pur ny bo.
+Ryhun yn ryetudaud. ariwiraud
+O milfeddyg. yn rietillter. o gynaud.
+Llyna chuech chuerv Erbin. braud.
+Anudon am tir. abrad argluid.
+Mae llaugar diuanv.
+Dit braud ediwar bitaud.
+O adeueint pilgeint kyuodi
+Duhunau. meitunav y cerrynt eiledol. AR Seint.
+Id keiff. cristaun pop. kyrreiueint.
+Ar waelod y dudalen mewn llaw wahanol:
+Elerch Torrwin tuth pisc
+Ton. areith trybelid.
+Duv y din yn kedimdeith denvin.
+Blaen perthen Gorwin. Kein gywrev
+Adar. hir cogev Bann dit.
+Trugar orev duv daffar.
+Erbin AR Gvledic bennic attad.
+Er o kyuarch BArch. o. kyuaenad.
+Ynigabil AR barabil y parad.
+Vy kert kirpuill ith. kanuill kangulad.
+A all vid priodaur.
+Canuid meidrad maur.
+Canuid guaur kighoraru Goleuad.
+Bron Canuid proffuid. canuid inad.
+Hael riev Canuid. canuid. rotiad.
+Canuid. im athro. namethryad.
+Troseddwyr Eraill. vann. varan oth. virein oth gulad.
+Nam oth ditaul. wt. vt echeiad.
+Nam ymplic gwellic impled dirad.
+Nam gollug oth lav. guallus trewad.
+Nam digarad ellug by du llu.
+Gwledic arbennic. geneise gwaharddiad.
+O. honaud. Ower optionally traethaud AR IMI yn trecheis.
+Not eissev. kerd wy. kg ewreis kein.
+Not eissywed keweis holwyd y dynion.
+Ew not crevis ym dews diffleis.
+Guneuthur Bl. thuill na amhuill. na threis.
+Ew not duhunaur yn handeneis.
+Ew rotir not newydd. keis ir neb nvy.
+Not rvy o eis awit awenyt.
+Not rvy o obruy yn obryneis.
+Not ryuegeis ryuic porthi im geni.
+Penid not porthi. vetyleis ry.
+Yn rydamvneis plant adaud wy.
+Rydid imeneid. ry ioles reid.
+Bendith y wenwas. ir dyrnas Rhagfyr
+Breisc tunnell. Bron ehalaeth.
+Duv. env y ym ieith impop nvfin.
+Dyllit rymaeth enweir Meir.
+Yg corffolaeth devthoste Mad.
+Llyna gobeith gowri mab.
+Mae dylivas idas y eltih.
+Bu drvil. vewil. athuyllvriaeth.
+Yn argluit y guassanaeth gvar hudail.
+Bu hywit. cerrynt eiledol. ny bu gwneuthur.
+Ac cuddio vraud. arvaeth vn y ny.
+Pridit barwnig Kyffei. AR yssit.
+Yn eluit. Ar echuit AR hallt.
+Ar Early. AR Mir. AR syweditiath syr.
+Beirnad rodiad fraeth llara llau.
+Mui y dinwas sune. eddwaeth guanaune.
+Kyuoethev. ri. nisrdraeth.
+Hetiv duv Maur. Moli daaeth dyvr.
+Bendith nautoryw newydd. keluit ir
+Creaudir. douit duu kyuothauc.
+Lleuenit lleuver Aperis.
+Hael. heul vynver yn dit.
+Cristaun kanuill Eil. yn leuich eigaun ae.
+Vilenhit vilioet Lloer.
+Athrydit ryuet. merwerit yv
+Mor. threia cv. chil echwit [*]
+Cv da. ymda CVD. cv. treigil. threwna cv.
+Pa cuddio. a. Nev chil vit.
+Y pen Y mlinet Seith.
+Y plant risset y Duc.
+Y dadwet. ynyduit
+Beir ara Jolune. kyvoethauc
+Vab Meir Duu a eulit eiledol peris newydd.
+Tremio deuthoste diwedit y passc.
+O vffern. awu rhedeg iti. v rit.
+Ren digerenhit ryphrionomne newydd.
+Yn yr ymyl:
+Digones perw. pedwerit
+Yvet. chwit duwyr redecauc.
+Lym brin llum Awel.
+Anhaut clid caffael.
+Llicrid llin gwared reuhid.
+Ryseiw gur conin arvn.
+Ton trathon TOID tir tu.
+Goruchel guaetev banev Bron rac
+Bre allen bgreti neu seuir.
+Lle Oer. ra brythuch luch
+Gaeaw. caun Crin truch calaw.
+Kedic Awel. inibluch coed.
+Oer guely isscaud ygkisscaud
+Iaen. hit cul caun barywhaud.
+guit diuedit Birr gvyrhaud.
+Ottid Enes Guin y eiry.
+Nida kedwir oe y neges hon.
+Oer llinnev Water llyu tes. Part
+Ottid Guin eiry. so.
+segur yscuid iâr iscuit AR.
+Ryuaur guint reuhid Dien.
+Ottid AR eiry warthaw rev.
+Gosgupid tev Blaen gint guit.
+Kadir yscuid glev yscuit AR.
+Ottid eiry tohid istrad.
+Diuryssintvy keduir y CAD.
+Mi nidaw. NIM anaw gad.
+Ottid o eiry riv Trais yn y Cartref.
+Karcharau goruit biv cul.
+Not annuyd hetiv hawdit.
+Ottid eiry. goror jin
+Mynit. guit llum AR llog môr.
+Meccid llvwyr kyghor Lauer.
+Eurtirn am cirn. cirn am duir.
+Oer llyri lluchedic auir BIR
+Diwedit gvir gvit Blaen.
+Gaur igogaur Gvenin Guan
+Adar. duilith dit.
+Gwar Kyssulwin brin kewin choch.
+Gwenin giodo. agdo oer
+gwared. rev reuid vo sosban.
+goleith NEP Ir. dyppo lleith.
+gwirdiv igkeithiv Guenin
+calaw Crin Mor riv caled.
+Oer divlit. yr hetiv eluit.
+Ig Guenin gulybur clidur rac
+Gaeaw. glas cunlleit ewur CEV.
+Dric gur llyvrder weuet AR.
+Hir nos Ros llum riv lluid.
+guilan galn Glas yn emriv.
+Garv hetiv glau Mir auit.
+Sich awgrym gulip guint.
+Kinuedauc diffrint.
+cul callet hit Oer
+Llywin awon uit hinon.
+avonit imynit Driccin
+Igniw. lliw gulichid trewit llaur.
+Neud gueilgi gueled eluit ir.
+Not vid iscolheic. optionally vid eleic
+Unben. eluir Nyth yn reid dit.
+Och gindilic. na buost gureic.
+Kirchid Carv cum crum tal
+Clid. briuhid. ia. llum brooet.
+Trum Rydieigc o glev laur.
+Bron Bronureith breith.
+Bron bronureith Breith.
+Briuhid talglan. by
+Carv garn cam gulgrum.
+Awel guaet Gorchuel. vann.
+Breit guir neu allen seuri.
+Kalangaeaw gordugor gurim
+Blaen gruc. tunnell goreuynauc môr.
+Bir dit deruihid kighor ych.
+O kiscaud yscuid Aral cerrynt eiledol
+Goruit. yn guir diarchar deur.
+Tec nos. y. escar ffissccau.
+creilum guint Kinteic
+Coed. caun Crin iscun caru.
+Pelis enuir yf tir hun.
+Kin ottei eiry cuddiodd inaruul
+Melin. awirtul artu gunaei NIM.
+Towissune brin y lv. tytul.
+A all medrit morruit. rodwit y
+Mae gwared â riv adiguit eiry.
+Pelis kyvarwit vid badell.
+Nim Prydein pryder guna im
+Heno kyrchu uchei priw bro.
+Ar y gall kanlin Owein.
+Kin yscuid ariw imtuin Water cerrynt eiledol
+Arnad. Kad diffreidad kynuid.
+yf Pelis tir. ythuaguid.
+Y gur yn duv rithao. rigaeth o
+Carchar. penaeth par o rut y
+Owein. reged am ryvaeth.
+A all ethiv ruiw i mewn
+Rodwit iwerit a family fouch na.
+Guydi. Cyfarfu'r vynuch na meuil.
+Y bore las by the dit
+Gwaharddiad kirchuid mwg treuit maur.
+Nyd oet uagaud mechit meirch.
+Nim guna lleuenit llad.
+Neu amcavall chuetleu.
+Kyuaruuan amcavall.
+Kelein ariuar wal AR
+Kiwranc rhedeg other AR drud.
+Canisfonogion mugc. mechit alataut.
+Druduas nis amgiffre dit.
+Periw pereiste newydd dyuit IMI.
+Gwir. igrid. rewittor gwared.
+Oeruelauc Tonn. Bron môr brith.
+Ren rothid. duv. kighor ynddo.
+Llywarch Mechit mab. dihawarch
+Vnben. lliwalarch llenn glvystec.
+Kyntaw. gorymdaith ffruinchluymus.
+Pa gur yv porthaur y.
+Gleuliud gauaeluaur.
+Pa gur gouin ae.
+Arthur. yn Guin chei.
+Pa genhid imda.
+Guir gorev cais im.
+Ny ty Ym doi.
+Onysguaredi.
+Mi ae guardi.
+Ae gueli Athi.
+Elei Vythneint.
+Assivyon ell tri.
+Mabon am mydron.
+Guas uthir dragon pen.
+Kysceint. Banon mab.
+Mae godybrion Guin.
+Rin Oet gueisson VY
+Yn detvon ev amuin.
+manawidan llyr ab.
+Oet tuis y cusil.
+Neustuc manauid.
+Eis o Tull trywrid.
+Mae mabon am melld.
+Maglei guaed guelld AR.
+Ac anguas edeinauc.
+A lluch. llauynnauc.
+Oetin diffreidauc.
+Ar cyminauc eidin.
+Ae Argluit llochi
+Fy Nei ymtiwygei.
+Ae Kei heiriolei.
+Llathei Trae pop dair.
+Pan colled kelli.
+cuelli caffad. aseirolei.
+Kei cuddio kymynhei trae.
+Arthur huarhei ced.
+Y guaed gouerei.
+Yn awarnach neuat
+Yn agurach ew imlat.
+Ew yn palach pen guant.
+Yn atodev. dissethach.
+Ym minit eidin.
+Amuc. a. chinbin.
+Pop cant cuitin id.
+Yr wyf yn d cvitin. cantt pop.
+Bedrydant beduir RAC.
+Ar traethevtrywrid.
+Mewn amrvin o garv luid.
+Oet guychir y annuyd.
+O detyw yscuid cerrynt eiledol.
+Oet guaget bragad
+Vrth. ig Kei Kad.
+Oet cletyw ighad.
+Oe diguistlad lav.
+Oet hyneiw guastad
+Authorised Ar AR lleg gulad.
+Beduir. yn bridlav.
+Guarandau Nau cant.
+eirthau y chuechant.
+Mae ortinav y talei.
+Gueisson am buyint.
+Banuitint Guell Oet.
+Emreis riev RAC.
+Gueleise. URIs AR Kei.
+Preitev gorthowis.
+Hir gur Oet yn ewnis.
+Trum Oet y Galw.
+Tost Oet y cynial.
+Tremio yuei o wual
+Y peduar urth uie.
+Yg pendelhei Kad.
+Idlathei Vrth cant.
+Digonhei ny bei duv ae.
+Oet Kei diheit aghev.
+Allachev Guin Kei.
+Digonint rydym kadev
+Kin gloes verev glas.
+Ystaw guarthaw Y ym gwn.
+Kei a guiton nav guant.
+Kei ennill von aaeth
+Y lleuon dilein.
+Y iscuid oet mynud
+Erbin paulc cath.
+Pan gogiuerch Tud.
+Puy paluc guant cath.
+Kinlluc ugein Nau.
+Mae cuytei yn y buyd.
+Nau ugein kinran. mae
+Yma mae'r MS yn ddiffygiol.
+Meinoeth kiclev heid lew.
+Pen Gethin gwaharddiad dygneid pell.
+Llaur lochir ony nyffeid.
+A all ei coegauc issi moreurauc
+Ahin yn llis Emil guallauc.
+Minnev bitaw golvduc.
+Boed emendiceid guit ir.
+Attinvis y ligad. yn y ffraethineb.
+Gwallauc ab argluit lleinauc.
+Boed emendiceid DV guit ir.
+Attinnuis y ligad ttv oe.
+Guallauc ab llv pen lleinnauc.
+Boed emendiceid guenn guit ir.
+Attinvis y ligad. oe penn.
+G. ab lleinauc unben.
+Boed emendiceid glas guit ir.
+Attinwis y ligad yn guas.
+Vrtas mab G. lleynnauc
+Ar y margin:
+Aeth neb not auei envauc.
+Yn idaeth gorlluro gvalluc
+Veiriauc yr Yvalaen.
+Auei not NEP aeth edmic
+Ir gorlluro id Meuric aeth
+Ar y gureic kewin yn diblic dair.
+Trin Tarv blaut anvidin.
+Ar llu benic anhaut caead.
+Dinam eiroes naut am Oes.
+Gurt kinnit Ygan y gur.
+Arbennic llv owit llid.
+Canyserchit naut Athvit.
+Canis naut arotit im.
+Môr y thogyuechit verth.
+Guanur llv pandoit Trais yn y Cartref py.
+o deuaw gwaharddiad Kad yn chiminad
+Maur aessaur cerrynt eiledol yn aghad.
+Briuint penaur peleidrad.
+Ath kiuarchaw yscun HV
+Gur. ae iscuid yn aghen.
+Pebir dyechen badell gur iv.
+Caringrun wimarch trablunt Kad.
+Hud gelwire mab nud Guin im.
+Gorterch creurdilad lut merch.
+Canisti Guin kiwir gur.
+Racod ryimgelir ny.
+Garanhir guitnev Minnev.
+Nim Club gade kyulauaret
+Athi. urthi fruin ydwet.
+Trum Dywris im tawuy anet.
+Not alawaraw tawue y nessaw
+Urthid. vin nam y eithaw tawue.
+Erir môr treiaw terruin.
+Yscithreid VY mordruy kywruy EUR
+Cann. wyauarvy by the.
+Gueleis aer wantvy Kaer rac.
+Rac llv mantvy a weleis
+Aessaur brihuid. eis torrhid.
+Mygedaul. kein yn treis dygei.
+Cnau ab Gwin ond. bitinaur.
+Kint ysirthei kadoet rac carnetaur
+Dy ueirch. dim bruyn laur y briw.
+Ystec VY istrun cerrynt eiledol ki.
+Ac yssew. orev neu cvn.
+Dormach oet hunnv maelgun y afv.
+Dormach triunrut ssillit ba
+Arnaw canissam giffredit.
+Dy winit AR gruidir wibir.
+Iny awum Mi LLAS guendolev Lle.
+Mab keidav ​​kertev colowin.
+Gwaharddiad crev brein ryerhint AR.
+Mi awum yn LLAS bran Lle.
+Mab ywerit lydan clod.
+Mab ywerit lydan clod.
+Gwaharddiad ryerint garthan brein.
+Mi LLAS Lle llachev awum.
+Uithir arthur Mab kertev ig.
+Gwaharddiad crev brein ryreint AR.
+Mi las awum Lle Meuric.
+Mab karreian edmic clod.
+Gwaharddiad cic brein ryreeint AR.
+Ny LLAS buum Lle gwallauc
+Mab goholheth teithiac.
+Attwod lloegir lleynnac mab.
+Mi LLAS awum Lle milvir
+Prydein. neu duyrein goglet ir.
+Mi. wi. wiw. vintev. y. bet.
+Mi LLAS awum Lle milguir
+Bridein neu dehev duyrein ir.
+Mi. wi. wiv. vintev. y aghev.
+Morva karhwine Kyd. môr cassaue
+Pyr toei wanec carrec camhur.
+Glev hygar diwal huyscur Hael.
+Bit beirt Yscinvaen clydur butic.
+Goruc clod awirtul heilin benffic.
+Kyd tunnell morua carhiuwe cassaaue.
+Digones tunnell treis oer y cleis ron.
+Ew kuynhiw wuiw iny yn hervit anrh.
+Gweith heinyw winvywron golchiw AR.
+Lleinv y Kid keudaud beirv nis calon.
+Ac inllvrv ron y kiniod kyheic.
+Yssim negessev oe edivar.
+Gwaharddiad wrissuis aghev pell y pebrur.
+Glev kyweithit diwal yd vam yn dev.
+Menic mae'n arwet dalennev duwir.
+Fechid diristan othiwod.
+Mi nythervill imchod.
+Mawrth guertheisse Omparth irod.
+BLIS amoet kyheic Dial.
+Yr wyf yn y melis kywrev y.
+Och Corr dy sorrde ewnis bv ymi.
+Fersiwn oddi wrth y Myvyrian Archaiology:
+Ai Cant Gwyddneu
+Kyd karui vi Morva, kassaa vi môr pur
+Doe waneg kamhur karrec
+Glew diwael hygar Hael hwyskur
+Yscinvaen beirt clydur cais bydic
+Goruc klod Heilin awirdwl benffic
+Hyd braud parahawd y ertivul
+Hyd karui vi Morfa cassa vi don
+Digoneis don Kleis dreis oer ron y
+Ef anrh kwyniw herwyt in ff wiw
+Golchiw heiniw Gwaith neu winuiuron
+Kyd illeinw nis beirw keudaud kalon
+Ac lluru us ron y kumod cyheic
+Y vun negessau oi edivar
+Gwaharddiad vryssyus pebrur pell agheu y
+Glew diwal kywerthyd yd ofer yng de u
+Menic mae'n arwet dalenneu duwir
+Fechit dirisclan divot oth
+Mi nith erwill fuched diot
+Gwerthais parth Om y march irot
+BLIS amoed Deialu kyheic
+Yr wyf yn y kyvreu y melis
+Troseddwyr Eraill korr sorr dy di ymi ewnis bu
+Marchauc dinas agirch y
+Ae cun gwinion bras cirn ae.
+Nithadwaen. rythwelas mi ..
+Marchauch yn kirch aber ir.
+Ar y gorymdaith Cadarn Kad fer.
+Dabre genhiw gwatter nym.
+Mi nyd aw INA yn aur.
+Gotev godriccaur y gueith.
+Elhid bendith newydd. a. llaur.
+Guelas NIM Ygur beunit.
+Deduit ygur Ytebic.
+Aphandoit eidy Ba cuddio.
+Gwaharddiad deuaw seon caer o
+O imlat itewon cerrynt eiledol.
+Lev caer Itaw yn gwidion.
+Dabrede dinas genhiw ir
+Athuit cwrdd pehllas ara.
+Diwanas AR EUR Ac coeth.
+Mi adwaen nyd y gurhy
+Ametev lliw haul yn gveli.
+Tec diwedi y achuec.
+Imtino genhiw Dabre
+Gorysgelhor Guin Athuit.
+Vgnach: Gwyn. vyheno mydno mab.
+Vgnach ithorsset bendith
+Athvo rad enrydet cerrynt eiledol.
+Taliessin viw itti inhev talaw gulet dy.
+Taliessin penhaw neu guir.
+Yg Beitad ykyuergir kert.
+Tric ima cuddio dyv merch.
+Vgnach mvihaw y Alaw.
+Athvo. rad gulad y pennhaw.
+Ny haetaw thrigiaw kabil ny.
+Marunad Madawc mab Maredut.
+Kyntelv Mawr Pridit Ae Cant.
+Goduryw o glyuaw. claur AR
+Maelenit. eluit mur Gaur eluan.
+Teulv Madauc anhaur mad.
+Mal teulv. Bann Benlli Gaur.
+Goduryw yn glyaw. AR claur Ieithon.
+Hir. hydir WIR y saesson AR.
+Teulv Galon Madawc mur.
+Mal turuw. kinon tormenhoet.
+Goduryw yn glivaw. godor drein
+Waewaur loegir guae yn kein dit.
+Teulv Prydein madauc mur.
+In lluithauc. yn brein llithiav.
+Goduryw yn gliuaw. llavur claur AR.
+Rei. dissegur ryuelclod.
+Eglur Teulv madauc mur.
+Mal arthur toryw gavr tenlu.
+Goduryw yn glyaw. vagv claur AR
+Glyv. gloev byeiwu madauc.
+Kinytu kyva Trinva.
+Trydit teulv tri diweir.
+Ri Kywarchaw im. wobeith rad
+Canweith kywercheise Kywarchaw.
+Y prydv prowi. opriwieth.
+Eurgert. ym kedymteith argluit.
+Y madauc cvinav. metweith
+Y alar. ae Alon ieith ympob.
+Dor yscor iscvid canhimteith.
+Tarian yn aerwan. yn evrweith.
+Turuw gruc yg goteith gotuc.
+Tariw escar iscuid y ym dileith.
+Rwy mirt kertorion kyrt. wobeith.
+Rut dilut kedimteith diletyw.
+Ry gelwid. madauc. Noe Leith perthynas agosaf.
+Ruid Galon. y. vogion diffeith.
+Rvit attaw vygobeith attep.
+Rit. wisscoet. wessgvin canhimteith.
+Rut ar gir. Bran vab lledieith llir.
+Ruit y clod anreith includav.
+Rut vaon woauc oleith ny.
+Wastad Rad canhimteith gwistlon.
+Llawin aryrad. ig cvnlleith Kad ig .*
+Llav escud. UNDER iscvd calchwreith.
+Llev powis peues diobeith.
+Haul owin. gur mabweith Edau ny.
+Hvil yscvn pedeirieith yscvid .**
+Madauc Hael. veuder anhyweith.
+A all deryv. darfv am oeleith.
+A all daeraud. kedymteith darw.
+Oet beirtcar. clvm barwnig di ledieith
+Agor Oet Cadarn. dywinmor diffeith.
+Oet hir y truited. OED higar hyged.
+Oet guyar llawar. kywarweith oe.
+Blas buelin Oet. Gwanas gwadreith,
+Oet eurllev. aer o kadieith llin.
+Oet diwarn unbin kedymteith kadarn.
+Oet dirn yn heirn. talheith y haearn.
+Yspo diwet Ae. canbv. y Leith.
+Ydiwin affeith y kymeint y cam.
+Yg Seint goleuder. ig goleudeith.
+Yg Goleuad rad. perfeith ridid​​.
+Seithenhin allen sawde.
+Varanres edrychuirde Ac
+Mor. maes rytoes guitnev.
+Boed emendiceid y morvin
+Aehellygaut guydi cvin.
+Finaun wenestir terruin môr.
+Boed emendiceid y vachteith.
+Ae. golligaut guydi gueith.
+Finaun wenestir diffeith môr
+Diaspad vann caer vererid Ar y.
+Cuddiodd duu y dodir AR.
+Guydi traha Gnaud trangc hir.
+Diaspad Mererid. Kaer van Ar Y
+Hetiv. dadoluch cuddiodd duu Ar Y.
+Traha attreguch Gnaud guydi.
+Diaspad Mererid yb gorchiut
+Heno. gorllut nihaut cerrynt eiledol
+G. g. traha tramguit.
+Diaspad Mererid gwinev Ar y
+Kadir duv ae gorev keadaul.
+Gormot eissev Gnaud guydi.
+Diaspad Mererid. am kymhell
+Heno nyistauell y urth.
+Gnaud guydi traha trangc pell.
+Bet vann synhuir seithenhin
+Kaer kenedir Rug yn glan.
+Mor maurhidic a kinran.
+Lleuuyd echassaf
+vryen a gyrchaf.
+badell del vygwaessaf.
+Ar parth goreuhaf
+NYT byth mawr ym dawr
+Af attadunt NYT
+Ny chyrchafi gogled
+pei kyn yb lawered
+Im hoffed REIT NYT.
+Lloyfenyd wedi blino
+Ys y MEU gwyled.
+MEU delideu ys y
+uualeu o med
+Goreu by teyrn.
+Teyrned pop ieith
+Gwynir yt Ragot
+Mynasswn ef Kyt
+NYT OED dda y mae gerwn.
+weithon y gwelaf
+Namyn y duw vchaf
+Dy teyrn veibon
+Water hyscyrron Wykanan
+dirmygaf minyw.
+yt ganaf idaw.
+kynnwys a gaffaf.
+ydan eilassaf.
+gweheleith a welaf.
+ny bydaf ganthunt.
+AR meiteyrned.
+y gwnelwn gyghwystled.
+Nym gomed Vyren.
+Water MEU ys reufed.
+ys y MEU llared.
+gorefrasseu ae
+yn dieisseu da.
+haelaf rygigleu.
+mae'n oll yd ynt geith.
+ys dir oleith dy.
+gweyhelu henwn.
+ys kyn gwybydwn.
+y meint a gaffaf.
+NYS dioferaf.
+dynedon haelaf
+Water Galon wedi blino in.
+Ac yny iâr vallwyfi
+ym dygyn agheu aghen
+bydaf ym dirwen ny
+na molwyfi vryen.
+Diawchleison a oed amherawdyr yn Rufein. A gwedy marw Eua y wteie a gadu un mab o etiued udunt, ynteu a dyfynnawd attaw seithwyr o doethon Rufein. Nyt amgen eu henweu, Bantillas, Aw[528]gustus, Lentilus, Malqwidas, Catomas uarchawc da, Iesse, Martinus. A’r gwyr hynny gwedy eu dyuot a ofynnassant y’r amherawdyr beth a uynnit ac wynt, a phaham y dyfynnassit wynt yno. “Llyma yr achaws,” heb yr amherawdyr. “Vn mab yssyd yin, a gofyn y chwitheu att hwy y rodwyf ef y dyscu moesseu a deuodeu a mynutrwyd a magyat da idaw.”
+“Yrof a Duw,” heb y Bantillas, vn o doethon Rufein, “pei rodut attaf i dy uab ar uaeth, mi a dysgwn idaw kymeint ae a wn i, mi a'm whech kedymdeith, erbyn Penn y seith mlyned.” " Ie,” heb yr Awgustus, “roder attaf i y mab, ac ar benn y whech blynedd mi a baraf idaw gwybot kymeint ac a wdain ni yn seith.” Heb y Kato, “Herwyd y messureu a gymero y mab o’e ethrylith a’e adysc, herwyd hynny yd adawaf i y dysgu.” “Os attaf i y rodir ar uaeth,” heb y Iesse, “mi a’e dysgaf yn oreu y gallwyf, os mi a vyd tatmaeth idaw.”
+Agwedy daruot y bop un o’r whegwyr adaw dysgu y mab yn y mod goreu y gellynt, yna y kafas yr amherawdyr yn y gyghor rodi y uab ar uaeth attunt eli seith. Ac adeilat ty a wnaethpwyt udunt ar lan auon Tyber odieithyr Rufein, yn lie karueid erdrym gwastatsych. Ac wynt a ysgriuennassant y seith gelfydyt ygkylch ogylch y ty, ac a dysgassant y mab yny oed aeduet y synhwyreu a chymhendoeth y barableu ac arafgaii y weithredoed.
+Ac yn yr amser hwnnw yr amherawdyr a briodes gwreic. A gwedy y dwyn y iys a chysgu genti, amovyn a wnaeth hi ac un ac arall a oed etiued y’r amherawdyr. A diwarnawt y deuth hi y ty wrach heb un dant yn y phenn, a dywedut wrth y wrach: “Yr Duw, mae blant yr amherawdyr?” “Nyt oes idaw vn mab,” heb y wrach. “Gwae vinneu,” heb hi, “y uot ef yn anuab.” Yna y dyw[529]awt y wrach, “Nyt reit itti hynny; darogan yw idaw gaffel plant. Ac atuyd ys ohonat y keiff, kyn nys kaffo o arall. Ac na uyd drist, vn mab yssyd idaw ar uaeth gan doethon Rufein.” Ac yna y doeth hi y’r ilys yn llawen orawenus, a dywedut wrth yr amherawdyr: “Pa ystyr y kely di dy blant ragof i?“ heb hi. “Nys kelaf ynneu bellach,” heb ef, “ac auory mi a baraf anuon yn y ol."
+A’r nos honno, ual yd oed y mab a’e athrawon yn gorymdeith, wynt a welynt yn eglurder y syr a chyffroedigaeth y sygneu y bydei wr dihenyd y mab ony bei amddiffyn kymen arnaw. A’r mab hefyt a welas hynny. Ac ef a dywawt wrth y athrawon: "Pei amdiffynnewch chwi vyui y seith niwarnawt oc awch doethineb, minne vy hunan a’m amdiffynnwn yr wythuet dyd.” Ac adaw y amdiffyn a wnaethant.
+A thrannoeth, nachaf gennadeu y gan yr amherawdyr y erchi udunt dwyn y mab y dangos y’r amherodres newyd. A gwedy y dyuot y’r neuad a’e ressawu o’e dat a’r niuer, ny dywat ef un geir mwy no chyt bei mut. A drwc yd aeth ar yr amherawdyr welet y uab yn vut. Ac erchi y dwyn y dangos y lysuam. A hitheu pan y gwelas a fllemychawd o’e garyat, ac a’e duc y ystauell dirgeledic. A thrwy gytkam garyat geireu serchawl y dywawt hi wrthaw ef. A’r gwas a’e tremygawd ac a edewis y ty idi. A hitheu, pan welas y thremygu, a dodes diaspat uchelgroch oruchel, a than ysgythru y phenn o’e hardunyant a’e gwisgoed, a gwneuthur gwallt melyn yn uonwyn briwedic, a cbyrchu tuac ystauell yr amherawdyr. A ryued nat oed yssic penneu y byssed, rae ffestet y maedei benneu y byssed a’e dwylaw y gyt, yn mynet y gwynaw treis a gordwy wrth yr [530] amherawdyr rae y uab, a dywedut y uot ef yn keissaw dwyn treis erni.
+Ac yna y tygawd yr amherawdyr trwy lit y llw mwyhaf, vn am uudanyaeth y uab, nat oed waeth gantaw y uarw no'e vyw; yr eil o aehaws sarhaet y urenhines, na bydei y encit yndaw hwy noc hyt trannocth.
+A’r nos honno y dywawt yr amherawdres wrth yr amherawdyr “Ef a deruyd itti am dy uab ual y daruu gynt y’r prenn pinus mawr o aehaws y pinwyden veehan a oed yn tyuu yn y hymyl, a cheing o’r uawr yn llesteiraw ar y vechan dyfu. Ac yna yd erehis y bwrgeis bioed y gwyd y ardwr torri keig o’r binwyden hen, a oed yn llesteiryaw ar y ucchan kyuodi. A gwedy torn y geig, y prenn yn gwbyl a gninawd, ae yna’ yd erchis y torri oil. Megys hynny y deruyd y titheu am dy vab a rodeist y ueithryn att y seithwyr doeth. Yr collet itti y mae ef dan gel yn keissaw duundeb y gwyrda y’th distriw di, ae y wledychu ehun heb olud.”
+A llityaw a oruc yr amherawdyr, ac adaw y diuetha trannoeth. A gwedy treulaw y hwnnw a’ r nos honno ar ardunyant digrifwch y’r vrenhines, yn ieuegtit y dyd drannoeth y kyfodes yr amherawdyr visgaw ymdanaw a chyrchu y dadleudy. ar hynt, gofyn y’r doethon pa adoet a wneit ar y vab ef.
+Ac yna y kyfodes Bantillas y uynyd y dywedut ual hynn: “Arglwyd amher,“ heb ef, “Os o achaws mudanyaeth y mab y dihenydyir, iawnach yw bot drugarawc wrthaw am hynny no bot yn greulawn. Kanys gorthrymach yw idaw ef yr anaf hwnnw noe y neb. Os am guhudet y urenbines, vn ffunut [531] y deruyd ytti am dy vab ac y daruu gynt y uarchawc arderchawc bonhedic am vilgi a oed idaw.” “Beth oed hynny?” heb yr amherawdyr. “Ym kyffes! nys managaf itt, ony rody dy gret na dihenydyer y mab yn oet y dyd hediw.” “Na dihenydyir, myn uyg kret!” heb ef, “a dywet ym dy chwedyl.”
+“Yd oed’ gynt yn Rufein marchawc a e lys wrth ystlys y gaer. A dydgweith yd oed twrneimeint ac ymwan yrwng y inarchogyon. Sef a wnaeth yr amherotres a’e thylwyth, mynet hyt ar uan y gaer y edrych ar yr ymwan, heb adaw undyn yn y llys onyt vn mab y marchawc yn kyscu y mywn crut, a’e vilgi yn gorwed yn y ymyl. A chan weryrat y meirch, ac angerd y gwyr, a thrwst y gwaewyr yn kyflad wrth y taryaneu eurgrwydyr, y deffroes sarff o uur y kastell, a chyrchu neuad y marchawc. Ac arganuot y mab yn y krut, a dwyn ruthur idaw. A chynn ymgael ac ef, bwrw o milgi buanllym neit idi. A chan eu hymlad ac eu hymdaraw, ymchoelut y crut a’e wyneb y waeret, a’r mab yndaw. A’r ki buanllym bonhedic a ladawd y sarff, a’e gadaw yn drylleu man yn ymyl y krut. A phan doeth yr arglwydes y mywn ac arganuot y ki a’r krut yn waetlyt, dyuot yn erbyn y marchawc y dan leuein a gweidi y gwynaw rac y ki a ladyssei y un mab. A’r marchawc trwy y lit a ladawd y ki. Ac yr didanu y wreic, ef a deuth y edrych y uab. A phan deuth, yd oed y mab yn holliach y dan y crut a’r sarff yn ddrylleu man yn y ymyl. Ac yna yd aeth yn drwc ar y marchawc had ki kystal a hwnnw o eir ac annoc y wreic. Vehly y [532] deruyd y titheu o lad dy vab o guhudet ac annoc dy wreic.”
+Ac yna y tyngawd yr amherawdyr na ledit y mab y dyd hwnnw. A gwedy teruynu eu kyghoreu ac eu dadleueu, y’r y deuthant. A phan wybu yr uot yn well gan yr amherawdyr no bwyta, kyntafymdidan a oruc hi, idaw a dihenydywyt y mab. “Nado, vyg kret!” heb ef. “Mi a wn, hi, “pan yw doethon Rufein a beris hynny. Vn ansawd, hagen, y deruyd ytti gredu udunt hwy ac y daruu gynt y’r baed koet am y bugeil.” “Pa delw uu?“ heb yr amherawdyr. “Myn vyg cret! nys dywedaf, ony rody dy gret ar dihenydyaw y mab auory.” “Dihennydyir, myn uyg kret!” heb ef.
+“Llyma y chwedyl,” heb hi. “Prenn perffrwyth brieawclas a oed y mywn fforest yn Ffreinc. A’r baed ny mynnei ffrwyth prenn yn y coet namyn ffrwyth y prenn bwnnw. A dydgweith yd arganuu y bugeil y prenn, a gwelet y ffrwyth yn dec ac yn garueid velys aeduet, a ehynullaw coeleit o’r ffrwyth. Ac ar hynny, nachaf y baed yn dyuot. Ac fly chauas y bugeil o ennyt onyt drigyaw y vric y prenn rae ofyn y baed, a’e goeleit gantaw. A’r baed, gwedy na chafas y frwyth megys y gordyfnassei, ffroeni ac ysgyrnygu danned a oruc. Ac arganuot y bugeil ym brie y prenn, a thrwy y lit dechreu diwreidaw y prenn. A phan. welas y bugeil hynny, gellwng y frwyth y’r baed a oruc. A’r baed, pan gafas dogyn, ef a gysgawd dan vric y prenn. Ac ac ef yn kysgu y disgyn y bugeil y’r llawr, ac a dyr breuant y baed a chyllell. Velly y deruyd y uaed Rufein, ac y dygir frwyth yr amberotraeth y gantaw.”
+“Myn vyg cret!" heb yr amherawdyr, “fly byd byw hwy floe auory.” Trannoeth, trwy y lit, kyrchu y dadleudy a oruc yr amherawdyr, ac ar hynt erchi dihenydyaw [533] y vab. Ac yna y kyfodes Awgustus y uynyd a dywedut ual hyn. “Arglwyd,” heb ef, “fly wnel Duw ytti wneuthur am dy uab megys y gwnaeth Ipokras am y nd.” “Beth oed hynny?” “Myn uyg kret! nas managaf, ony rody dy gret na dihenydyer y mab hediw.” “Na dihenydyir, myri vyg cret!”
+“Nei uab chwaer oed y Ipokras. A goreu ffusugwr oed o’r byt. A gwedy anuon kennat o vrenhin Ugarie y erchi y Ipokras dyuot y iachau mab a oed idaw yn glaf diobeith, ny’ allawd ef uynet, namyn ellwg y nei yno. A’r gwas, pan doeth y’r llys, ef a vyryawd olwc ar y brenhin a’r urenhines ac ar y mab. A gwedy na welas ef dim o annyan y brerihin yn y mab, gofyn wnaeth y uam y mab pwy oed y dat, kany allei ef y uedeginyaethu ef yny wypei anyan a natur y genedyl yd hanoed ohonei. Ac yna y dywawt hitheu y gael ef o orderchat o Iarll Nawern. Ac yna y peris ef rodi kic ych ieuanc yr mab, yny uu holliach. A gwedy y dyuot atref y gofynnawd y ewythyr idaw pa wed yd iachaawd y rnab. ‘A chic ych ieuanc,’ heb ef. ‘Os gwir a dywedy was,’ heb ef, ‘o odineb y kaffat ef.’ wir yw,’ heb y mab. A phan welas y mon geluyd a hynny, medylyaw a oruc y lad, ac erchi idaw dyuot y orymdeith y gyt ac ef. A gwedy eu dyuot y le disathyr dirgeledic, dywedut wrth y nei ‘ Mi a gtywaf,’ heb ef, ‘arogleu llysseu da.’ ‘Minneu a’e clywaf,’ heb y mab, ‘ate mynny di wyntwy?’ ‘Mynnaf,’ heb ef. Ac a’r mab yn gostwng y uedi y llysseu, y urathü a chyllell trwydaw yny dygwyd yn uarw y’r llawr. Ac yna y caplawd pawp Ipokras, ac yd emelldigwyt. Ac uelly, arglwyd amherawdyr, y deruyd y titheu ac yd emelltigir, o phery dihenydyaw dy uab ac ef yn winion.”
+“Na pharaf, myn vyg cret I” heb ef. A’r nos honno, gwedy daruot bwyt, gofyn a oruc yr [534] amherodres a daroed dihenydyaw y mab. “Na deryw,” heb yr amherawdyr. “ Ic,” heb hi, “doethon Rufein a beris hynny. Ac un ffunut y deruyd itti o gredu udunt am dy uab ac y daruu gynt y wr a ladawd y uab y benn, a’e gladu yn yr ysteuyll bychein.” “Pa delw uu hynny ?“ heb ef. “Myn vyg kret! nys dywedaf, ony rody dy gret ar dihenydyaw y mab avory.” “Llyma vyg cret y dihenydyir.”
+“Mi a gigleu gynt uot amherawdyr yn Rufein, a chwannockaf dyn o’r byt y da bydawl oed. A gwedy daruot idaw kasglu a chynnull lionejt twr o cur ac aryant a thiysseu mawrweirthawc, ef a ossodes kebyd kyfoethawc ofnawc yn geitwat ar y da. Sef yd oed gwr godlawt calionawc yn y dinas, a gwas ieuanc dihauarchlym yn uab idaw. A’r gwr a’e uab a doethant hyt nos am benn y twr ac a’e torrassant, ac a dugant a vynassant o’r da. A thrannoeth, pan deuth y keitwat y edrych y twr, neur daroed dwyn diuessured o’r da yn lietrat. Ac yna yn ystrywgail, medylyeit a oruc y keitwat, a gossot kerwyneit o lut ardymeredic gerbronn y twr yn y lie y torryssit, y edrych pci kaffei y hadron y dangos y’r amherawdyr rae y amheu ef. A’r hadron, gwedy treulaw y da hwnnw ar tir a dayar a thei a phlasseu ac wrth eu digrifwch, wynt a deuthant drachefyn tu a’r twr. Ac ac wynt ae eu hysgafel gantunt kyrchu allan, fly wybu y tat vn geir yny byt y wregis yn y gerwyneit lut. Ac gofyn kyghor a oruc y uab. ‘Nys gwn,’ heb y mab, ‘onyt torn dy benn a chledyf gudyaw yn lie dirgei. Kanys o’th ‘diwedir’ a’th eneit ynot, dy gystudyaw wneir itt, a’th boeni yny adeuych y da. c yna y menegy ditheu.’ ‘Och ! arglwyd uab,' heb ef, ‘nyt uehly y gwney a ml. ugarockaf gwr o’r byt yw yr amherawdyr, da yssyd barawt, a’m eneit a gaffaf ynneu [yr] y eturyt drachefyn.’ ‘Myn y gwr y credaf idaw!’ heb y mab, ‘ny [535] byryaf y ri pheth yn antur yr had dy benn y arnat.’ Pa tn pheth yw y rei hynny?’ heb y tat. ‘Y da kyndrychawl yssyd gerinyf, a’m eneit vy hun, a’r tir a’r trefneu a bryneist ditheu.’ Ac yn greulawn estrongar had penn y dat y arnaw. Vehly y peir dy uab dy lad ditheu o chwant a charyat dy deyrnas, yssyd well no’r swhlt.”
+“Myn uyg cret!” heb ef, ny byd y eneit yndaw hwy noc hyt auory.” A thrannoeth pan welas y dyd, kyrchu y dadleuty ae erchi dihenydyaw y mab. Ac yria y kyuodes Lentillus y uynyd a dywedut val hynn. “Arglwyd amherawdyr,” heb ef, “un ansawd y deruyd ytti, o phery dihenydyaw dy uab, ae y daruu gynt y hen wrda kyuoethawc am wreic ieuanc dec a oed idaw a garei yn vawr.” “Beth oed hynny?” heb yr amherawdyr. “Myn Duw! nys managaf, ony rody dy gret na dihenydyer y mab hediw.” “Na dihenydyir, myn vyg kret! a dywet ym dy chwedyl.”
+“Hen wrda bonhedic oed gynt, ac ef a briodes morwyn ieuanc vonhedic. Ac fly bu hir gwedy eu dyuot y gyt yny vyryawd lii serch lledradeid ar was ieuanc o lys yr arglwyd. A gossot eluyd ac ef a wnaeth. Ac ygkylch y rann gyntaf o’r nos, pan oed drymaf hun y gwr, y kyuodes hi y vynyd, ac y deuth att y gorderch. Ac fly bu hir gwedy y mynet yny dyffry y gwr, ac ymtroi yn y wely. Ac ual ryued uu gantaw clybot y wely yn wac o e gymar. A thrwy lit ac ediged y kyfodes y uynyd a cheissaw y ty amdanei. A gwedy nas kauas, y deuth ef drachefyn tua’r drws, a chaeu y drws yn gadarn, a thygu trwy y lit na sagei hi y ty hwnnw tra uei vyw. A hitheu, gwedy ymlenwi yn digrifwch serchawl gyt a’e gorderch, ychydic kynn y dyd y deuth tua’r drws. A gwedy na welas y drws yn agoret, erchi agori a oruc. ‘Llyma vyg cret,’ heb y gwr, ‘nat agorir y ty yma ragot ti y’th oes. Ac auory, yg [536] gwyd dy genedyl, mi a baraf dy lebydyaw a mein. Llyma vyg kret,’ heb hi, ‘vot yn gynt y byrywn neit o'r lle yd wyf yn y bysgotiyn yma y’m bodi, noc yd arhown yr adoet hwnnw arnaf i.' Ac arganuot maen mawr yn y hymyl a wnaeth, a dyrchauel y maen mawr ar y hysgwyd a’e vwrw yn y llyn, yny glywit y kwymp dros yr holl lys. A gwaethaf yn y byt yd aeth arnaw ef hynny, a dyuot allan a oruc y edrych a ordiwedei yr eneit yndi. A hitheu yn gyflym diueryawc a aeth y mywn, a chaeu yn gadarn erni, a’e uegythyaw ef am torri y briodas ac adaw y ty a’e wely amser hwnnw yn y nos. A thrannoeth, yg gwyd brawtwyr y dinas a’r swydogyon, y bu reit y’r gwr diodef y poen a’r dial a dylyei hi y gael am y drygeu. Ac uelly y siomha dy wreic ditheu am dy uab; a hi yssyd drwc a chamgylus, a’r mab yssyd ar r iawn."
+“Myn uyg cret!" heb ef, “ny dihenydyir ef hediw.” A gwedy bwyt y dywawt y urenhines “Mi a wn,” heb hi, “na adawd doethon Rufein dihenydyaw y mab bediw.” “Nado,” heb ef. “Myn vyg cret!" heb hi, “un funut y deruyd itti, o gredu udunt am dy uab, ac y daruu gynt y vn o dinaswyr Rufein am pren ffrwythlawn bricawclas a oed annwyl gantaw.” “Beth oed hynny?” heb yr amherawdyr. “Llyma uy ffyd nas dywedaf, ony rody dy gret ar dihenydyaw y mab auory.” “Myn vyg kret !“ heb ef, “y dihenydyir.”
+“Llyma y chwedyl,” heb hi. “Y wr o Rufein yd oed prenn perffrwyth yn tyfu yn y erber, a cheing unyawn dec yn kyuodi o von y prenn ac yn kyrchu y’r awyr. Ac od oed annwyl gan y gwr y prenn a’r ffrwyth, annwylach oed y geing o achaws y thecket. ‘Yrof a Duw!’ heb y gardwr, ‘bei vyg kyghor a wnelut, ti a barut torn y geing y wrth y prenn.’ ‘Pa [537] ham?’ heb ef. ‘Am na tiogel ytt gaffel ffrwyth y prenn tra vo y geing racko yn ysgynnprenn ac yn ganhalprenn drycdynyon a hadron, ac nat oes fford y drigyaw y’r prenn nac y gaffel y ffrwyth onyt trwy y geing racko.’ ‘Myn uyg cret !' heb ef, ‘fly thorrir dim o geing yr hynny mwy no chynt.’ ‘A bit uelly,’ heb y gardwr. A’r nos honno ef a deuth hadron y’r prenn a’e yspeilaw o ffrwyth, a’e adaw ynteu yn amnoeth bricawcdwn erbyn trannoeth y bore. Ky noethet a hynny y gedeu doethon Rufein ditheu o ffrwyth dy deyrnas ony ledy y geing gan dy uab.”
+“Lledir, myn vyg cret ! avory y bore,” heb ef, “ac wynteu kymeint vn.” A thrarinoeth, trwy lit ac annoc y vrenhines, kyrchu y dadleudy a wnaeth yr amherawdyr, ac erchi dihenydyaw y uab, a doethon Rufein y gyt ac ef. Ac yna y kyuodes Malqwidas a uynyd-gwr aduwynbrud oed hwnnw- a dywedut ual hynn. “Arglwyd amherawdyr,” heb ef, “os o annoc dy wreic a'e chuhudet y pery dihenydyaw dy uab, ef a’th syomir ual y syomes y bleid y bugeil.” "Pa wed uu hynny?” heb yr amherawdyr. "Myn vyg kret!” heb ef, “nys managaf, ny rody dy gret na dihenydyer y mab.” Na dihenydyir, myn uyg cret! a manac m dy chwedyl.”
+“Llyma y chwedyl,” heb ef. “Namyn dinas kyfoethawc kadarn a oed yn y dwyrein, a seithwyr kymhendoeth synnhwyrus a oedynt yn kadw ac yn hlywyaw y dinas. Ac nyt yn y kaerwyr a’r dinasswyr yd oed gedernit y dinas, namyn yn doethineb y gwyr a’e kymhendawt. Ac yn hynny y deuth brenhin creulawn kadarn y geissaw goresgyn y dinas. A gwedy eisted yn y gylch a gossot peiranneu wrthaw, ny thygyawd y’r brenhin dim, rae kymhennet y gwyr o vywn yn kadw eu dinas. A phan welas y brenhin ystrywgar na cheffit y dinas o ymlad, [538] ef a wnaeth yn diueryawc adaw kihiaw y wrthaw, ac nat ymladei a niuer y dinas, yr anuon attaw ef y seithwyr uchot. A’r bobyl disynhwyr, heb welet y brat a’r dolur a oed ygkud y dan y deil, a gredassant kelwyd a ffalsted edewidyon y brenhin, ac a gymerassant y gwyr ac a’e rwymassant, ar uedwl eu hanuon idaw allan. Ac yna y kyuodes un o’r doethon y uynyd ac y dywawt ual hynn: ‘Ha I wyrda,’ heb ef, ‘un ansawd y deruyd y chwi o gredu y’r brenhin creulawn racko, gwedy y rodoch nyni yn y uedyant, ac y somhes gynt y bleid y bugeil?’ ‘Pa wed uu hynny?’ heb wynteu.
+‘Bleid creulawn enwir a oed yn keisaw kyfle a chyflwr ar y bugeil a’e aniueileit y eu had. Ac ny adei gauaeigwn buanhlym oed y’r bugeil seibeint idaw, nac yg koet nac ym maes. A’r bleid pan welas hynny a edewis hedwch a thagnefed tragywydawl y’r bugeil a’e ysgrybui yr daia y kwn a'e rwymaw a’e rodi attaw ef. A’r bugeil ynuyt a gredawd y eireu kelwydawc y bleid, ac a anuones y kwn y’r bleid. Ac ynteu yn gyflym a ladawd y kwn, a gwedy hynny yr yscrubyl, ac o’r diwed y bugeil. Velly y had y brenhin ereulawn racko chwitheu oil o chredwch idaw, gwedy darffo idaw yn had nyriheu.’
+‘Byw yw Duw, o chredwn idaw nac o’ch rodwri chwitheu vyth yn y uedyant.’ Ac yna o’e kyghor hwy y goruuant arnaw ef ac y llas. Hynn, arglwyd, a dywedat ytt yn wir. Megys y mynassel ef eu llad hwy bei credassynt idaw, ac ual y lladawd y bleid y bugeil o gredu idaw, velly y llad dy wreic ditheu o chredy idi, ac o phery an had ninheu o'e hannoc.”
+"Na pharaf, myn vy ffyd!” heb ef. Ac yna gwedy daruot bwyta y dywawt y urenhines wrth yr amherawdyr ual hynn. "Megyrs y tyn arogleu y deil a’r blodeu yr at y ar [539] ydrywed, yny gollo y llwdyn gantaw, velly y mae doethon Rufein y'th tynnu ditheu o eireu tec a pharableu eureit am dy uab, yny gohlych dy vrenhinyaeth a’th gyuoeth. Kanys vn ansawd y deruyd itti, o gredu udvnt hwy, ae y daruu nt y Rassiafl amherawdyr. “Beth uu hynny?" heb ef. “Llyma vy ffyd,” heb in, “nas dywedaf, ony rody dy gret ar dihenydyaw dy uab auory. Dihenydyir, myn uyg cret! a pha delw uu hynny?”
+“Llyma y chwedyl,” heb hi. “Fferyll,” heb hi, “a ossodes eolofyn ym perued Rufein, ac ar benn y golofyn drych o geluydyt igyrmars. Ac yn y drych y gwelas senedwyr Ruuein, pa deyrnas bynnac a geisynt, na wrthwynepei neb udunt. Ac yna yn gyflym yd eynt am benn yr honn a uynnynt, ac y darestygynt hi udunt. A’r golofyn a’r drych a oedynt yn peri y pob teyrnas ofynhav rac gwyr Ruuein yn vwy no chynt. Ac yna y kynnigyawd brenhin y Pwyl anneiryf o da y’r neb a gymerei arnaw diwreidaw y golovyn a thorn y drych. Ac yna y kyuodes deu vroder vn uam y uynyd a dywedut ual hynn. ‘Arglwyd vrenhin,’ hcb wynt, ‘pei caffem ni deu peth ni a diwreidem y golofyn.’ ‘Pa wed yw hynny?’ heb ef. ‘Yn dyrchafel ar urdas ae anryded a vei vwy rae llaw, a chyfreideu kyndrychawl yssyd neit yr awr honn?’ ‘Beth yw hynny?’ heb ef. ‘Dwy vanileit o eur,’ heb wynt, ‘kanys chwanockaf dyn o’r byt y cur yw Gracian amherawdyr.’ ‘A hynny a geffwch,’ heb y brenhin. Ac eur a bent udunt. Ac wynteu a gyrchassant a’r cur tua Ruuein, ac hyt nos hwynt a gladassant y dwy uanil yn ymyl y dinas ger llaw prifford. A thranoeth, wynt a deuthant y’r llys, a chyf [540] arch gwell y’r amhenawdyn ac ymgynnic yn wyr idaw. ‘Pa wassanaeth neu pa geluydyt a wdawch chwi, pan gymerwyf i chwi yn wyn yin?’ ‘Ni a wdam,’ heb wynt, ‘a uo cur ac aryant kudyedic y’th teyrnas, a ni a barwn itt y gad o gwbyl.’ ‘Ewch chwi heno gwedy awch bwyt tua’eh llety, ac ednychweh erbyn auory a vo cur kudyedic y’m kyuoeth. Ac or byd, menegwch yin, ae o chaffaf hynny yr win, mi a’ch kyineraf yn anwyleit ym.’ Ac ymeith yd acthant y lletty. A thranoeth y deuth y mab ieuaf hyt rac bron yr amherawdyr, a dywedut rygael ohonaw ef ar y dewindabaeth bot barileit o eur yn ymyl porth y dinas yghud. Ac yna yn diannot y peris yr amherawdyr uynct y geissaw hwnnw. A gwedy y gael a’e dwyn idaw kymerth y gwas yn annwyl idaw. A thrannoeth y deuth y mab arall a dywedut rygael ohonaw ef an y vreudwyt bot barileit o eur yghud yn y porth arall y’r dinas. A gwedy proui hynny a’e gael yn win, credadwy uu y gweisson a hoff gantaw o hynny allan, a’e kymryt yn annwyleit idaw. Ac wynteu yna a dywedassant bot o eur y dan y golofyn a waredei y deyrnas yn dragywyd. Ac yna y dywawt senedwyr Rufein, o diwreidit y golofyn, na bydei gyn gydarnet Ruuein o hynny allan a chynt. Ac ny adawd chwant eur ac aryant y’r amherawdyr uot wrth gyghor y gwyr hynny. Diwneidwyt y golofyn, a hynny a tyrr y drych. A drwc yd aeth ar senedwyr Ruuein hynny. Ac yn gyflym dyuot am y benn a’e dala a’e rwymaw, a chymell arnaw yuet eur brwt [541] gan dywedut wrthaw ual hynn: 'Eur a whennycheist, eur a uynny.’ Velly ny at dy chwant ditheu y wanandaw doethon Rufein, y rei yssyd y’th dihinyaw ac eureit barableu, y [ti] gredu uyg kyghoreu i am dihenydyaw dy uab, yny wnelont dy agheu a’th adoet yn dybryt.”
+“Myn uyg kret,” heb ef, “fly byd byw eithyr hyt auory.” A thrannoeth y bore, kyntaf peth a wnaeth ef, erchi dihenydyaw y mab. Ac yna y kyfodes Kato Hen, gwr kymhendoeth, a dywedut ual hynn. “Arglwyd amherawdyr, nyt yn ol ymadrod­yon ffalst kelwydawc a glywho dy glusteu y dylyy” uarnu, namyn trwy anmyned, a cheissaw gwirioned y uarnu gwir yrwng hen a ieuanc. A chy aghywiret vyd dy wreic itti, yr honn yd wyt yn y charu ac yn y chredu, ac y bu wreie i sirif o Lesodonia.”
+“Kato Hen,” heb yr amherawdyr, “pa wed uu hynny?” “Llyma vy ffyd nas managaf, ony rody dy gret na dihenydyer y mab hediw.” “Na dihenydyir, myn uyg cret !“ heb ef. “Llyma y chwedyl,” heb ef.
+“Yd oed gynt gwas ieuanc o Ruuein yn syryf o Lesodonia. A diwarnawt yd oed yn nadu paladyr, a’e wreic yn kytkam ac ef, ac ef yn gware a hi. Ac yn hynny ef a gyfaruu blaen y gyllell ef a’e llaw hi yny doeth y gwaet. A chyndrwc yd aeth arnaw ef hynny a’e vrathu ehun a wnaeth y dan y vron a’e gyllell, yny dygwyd yn varw y'r llawr. A gwedy gwneuthur y gyweirdeb a'e wassanaeth yn y llys, ef a duepwyt tu a’r llan y gladu. A ryfed nat oed yssic penneu y byssed, rae ffesdet y maedei y dwylaw y yt yn kwynaw y gwr. Vch oed bop llef a diaspedei floe a oed o gorn a ehloeh dros wyneb yr holl dinas. A gwedy eladu y gwr a chilyaw pawb o’r eglwys, y main a erchis y’r unbennes dyuot gyt a hi atref. Hitheu a tygawd y’r gwr a oed ueh penn [542] nat aei hi odyno yny uet varw. ‘Ny eily di,’ heb y main, ‘gywiraw y geir hwnnw. Ac am hynny iawnach yw ytt dyuot y’th lys dy hun y gwynaw dy wr, no thrigyaw yn lie ofnawc aruthur mal hwnn mor ume a hynny.’ ‘Mi a brofaf a’e gallwyf,’ heb hi. Ac yna y pens y main kynneu tan goleu abrwsgyl ger y bronn, ae adaw bwyt a diawt y dreulaw pan delei newyn arnei wrth na chyfeireh newyn y borthi. A’r nos honno yd oed marehawe pedrydawe kadarn o’r gaer yn gwyiat herwyr a grogyssit y dyd hwnnw. Ac ual y byd yn troi o bell ac o agos, ef a welei oleuat amlwc yn y lie nys gwelsei kyn no hynny eiryoet. A brathu y uareh a wnaeth y edrych pa le yd oed y tan, a pha achaws y gwnathoedit. A phan deuth, ef a welei mur a inynnwent ae eglwys, a than uchel goleu yn yr egiwys. A ffrwynglymu y uarch a oruc ef wrth porth y uynnwent, ac yn y aruot a e arueu dwyn hwyl y’r egiwys y edrych pwy oed yndi. A phan deuth, nyt oed namyn morwynwreic ieuanc yn eisted oduch bed newyd gladu a than goleu diuwc rac y bronn, a dogyn o vwyt a diawt yn y hymyi. A gofyn a wnaeth ef beth a wnaei dyn mor ieuanc o oetran a mor dinerth o gorff a mor adfwyn o bryt yn lie mor ofnawc a hwnnw ehunan. Ac yna y dywawt hitheu nat oed erni ofyn kymeint a hwyret yd oed agheu yn dyuot idi. A’r marchawc a ofynnawd idi py achaws oed hynny. ‘Cladu,’ heb hi, ‘y gwr mwyaf a gereis yr­moet, ac a garaf tra uwyf vyw, yn y lie hwnn hediw. Diogel uu garu ohonaw ynteu vinneu yn vwy no neb, pan dyckei y adoet ehun o’m achos ynneu.’ ‘A! vnbennes,’ heb y marchawc, ‘pei vyg kyghor a wneiut, ti a drout o’r medwl hwnnw, ac a gymerut gwr a uei gystai a’th wr dy hun, neu a vei well.’ ‘Na uynnaf, [543] myn y gwr yssyd vch penn! gwr vyth gwedy ef.’ A gwedy ymdidan rynnawd onadunt, y marchawc a gyrchawd tua’r crocwyd. A phan deuth ef athoedit ac un o’r hadron ymeith. A drwc yd aeth arnaw ef hynny; kanys gwassanaeth y marchawc oed, dros y dir a’e dayar, kadw gwyr bonhedic a grockit rac eu dwyn o’e kenedyl y eu kladu. A thrachefyn y deuth ef att yr unbennes, a menegi y gyfranc a’e damwein idi. ‘Pei rodut dy gret ar vym priodi i, ml a’th rydhawn o’r pwnc hwnnw.’ ‘Llyma vy ffyd,’ heb ef, ‘y’th priodaf.’ ‘Llyma uai’ ffy gwneiych.’ heb hi. ‘Datciad y gwr ysyd yma, a chroc ef yn lle yr herwr. A hynny nys gwybyd neb onyt ni yn deu.’ A datkiadu y pwll a wnaeth ef yny doeth tua’r corff. ‘Llyma hwnn,’ heb ef. ‘Bwrw y uynyd,’ heb hitheu. ‘Ym kyffes!’ heb ef, ‘haws oed gennyf i ymlad a thrywyr byw no dodi vy liaw ar ungwr marw.’ ‘Mi a’e dodaf’ heb hi. A bwrw neit esgutlym yn y pwil, a thaflu y corff y uynyd hyt ar lan y pwil. ‘Dwc di ef bellach tua’r crocwyd,’ heb hi. ‘Nys gwyr Duw,’ heb ef, ‘ymi nac y’m march ailel ymdeith onyt yn anawd rac ineint yssyd o arueu ymdanam.’ ‘Mi a’e gaiiaf,’ heb hi. ‘Dyrchaf di ef ar vy ysgwyd.’ A gwedy y gaei ar y hysgwyd, hi a gerdawd brasgameu gwrawidrut ac ef yny deuth hyt y crocwyd. ‘Och!’ heb y marchawc, ‘pa da o hynny? Yd oed dyrnawt cledyf ar penn yr herwr.’ ‘Taraw ditheu,’ heb hi, ‘dyrnawt ar penn hwnn.’ ‘Na thrawaf, yin kyffes!’ heb ef. ‘Yin kyffes!’ heb hi, ‘mi a e trawaf.’ A tharaw dyrnawt mawr a’e giedyf ef ar Penn y gwr. ‘Ie,’ heb y marchawc, ‘pa da o hynny? Yd oed yr herwr yn vantach.’ ‘Minneu a wnaf hwnn yn vantach,’ heb hi. A chad maen mawr, a dyrchauel llaw arnaw yny vyd lledyr [554] y weuusseu a’e danned yn drylleu o angerd a chedernit y dyrnawt. ‘I;’ heb y marchawc yna, ‘aruoel oed yr herwr.’ ‘Minneu a wnaf hwnn yn aruoel.’ heb hi. A chymryt Penn y gwr yrwng penn y deulin a’e deu troet wrth y dwy ysgwyd. Na gwreic yn kneifaw na gwr yn eillaw, fly bu yr vn gynt yn hunyo penn y gwr no hi. Ac ar uyrder, o’e dal hyt uchafyon y iat nyt edewis un blewyn heb y dynnu ymeith, mwy noc y gedeu y memrennyd ar y memrwn. A gwedy daruot idi hyriny, hi a erchis y’r marchawc y grogi. ‘Llyma vyg cret nas crogaf, ac nas crogy ditheu. A phettut un wreic di o’r byt, fly mynnwn i dim ohonat ti. Kanys pan vydut ti mor agkywir a hynny wrth y gwr a’th priodes yr yn verch, ac a duc y adoet o’th garyat, ys agkywir a beth vydut ti ymi, heb welet golwc arnaf eiryoet hyt heno. Ac am hynny dos di y fford y mynnych, wrth na mynnaf i dydi byth.’ Ym kyffes i y Duw, arglwyd amherawdyr, kyn aghywiret a hynny rae llaw vyd y wreic yd wyt yn pen dihenydyaw dy uab yr awr honn o’e hachaws.”
+“Llyma vyg cret na dihenydyir,” heb ef. A gwedy daruot bwyta, y vrenhines a ovynawd y’r amherawdyr a daroed dihenydyaw y mab. “Na derw,” heb ef. “Ny deruyd byth,” heb hi, “tra uo byw doethon Ruuein. Kanys megys y tynn y vamaeth y mab y ar y lit a’e gyffro trwy sonyaw a thrabludyaw yn y glusteu neu dangos ryw betheu ffol massw idaw, velly y mae doethon Ruuein y'th tynnu titheu y ar dy gyffro am vyg gwaratwyd i a’m kewilyd gan dy uab, trwy eu son a’e hymdidaneu ar yr ryw liw [545] ar gelwyd a dangossant ytt. Ac un ansawd y deruyd ytt o’r diwed, o gredu udunt, ac y daruu gynt y’r brenhin a welei trwy y hun y dallu beunoeth.” “Pa delw oed hynny?” heb yr amherawdyr. “Llyma vyg cret nas managaf, ony rody dy gret ar diua y mab auory.” “Llyma vyg cret y diueir,” heb ef.
+“Yd oed brenhin gynt ar vn o dinassoed Rufein, ac ef a ossodes seithwyr y Iywyaw y dinas. A’r gwyr a ymrodes y gynnuUaw eur ac aryant a thlysseu, yny oed gyfoethogach y tlotaf onadunt o da kyndrychawl no’r brenhin. A hynny a wnaethant hwy o’e kyt gyghor ual y keffynt had y brenhin a rannu y urenhinyaeth yryngtunt, a hynny o nerth a chedernit eu da. A pheunoeth y gwelei y brenhin, trwy y hun, peir a seith troet [ydanaw, a mwc] yn kyuodi ohonaw, yn vn ffunyt a chyt bei ffyryfdan kadarn y danaw. A gwrychyon a deuynt o’r rei hynny am y lygeit ac a’e dallei, tybygei ef. Ac yna yd anuones ef kennadeu yn ol dewinyon breudwydon y bop lle. A’r kennadeu a damweinawd ar was ieuanc a gawssei ragor gan Duw o yspryt dewinyaeth y dehogyl I breudwydyon a gweledigaethev a delynt rac llaw yn oes oessoed. A’r gwas a ducpwyt hyt rac bron y brenhin, a’r brenhin gwedy y dyuot a uenegis idaw y vreudwyt. ‘Ie,’ heb y gwas, ‘dehogyi dy ureudwyt a wnaf, a’th gyghori ditheu amdanaw. Ac ony bydy wrth gyghor, ef a daw dy ureudwyt ytt odieithyr dy hun ual yd wyt yn y gwelet drwy dy hun. Llyma dy vreudwyt,’ heb y gwas. ‘Y peir a weiut trwy dy hun a arwydockaa y dinas hwnn. Y seith troet a welut yw y seithwyr yssyd yn y lywyaw, y rd yssyd yn berwi o ormod kyuoeth a golut ac yn darparu brat ytt, ony ledir wynt yn ebrwyd.’ Ac ny bu y brenhin wrth gyghor y gwas, [546] yny ladassant wy euo a dwyn y urenhinyaeth y arnaw. Velly ny bydy ditheu am dy uab a doethon Rufein, y rd yssyd y’th uredychu ac y’th dwyllaw ar eireu yny gafforit gyfle y’th lad ac y dwyn dy deyrnas y arnat, ony iedy wynt yn ebrwyd.”
+“Llyma uyg cret,” heb ef, “y lledir wynt auory.” A thrannoeth, trwy y lit, kyrchu y dadleudy a oruc, ac erchi crogi y uab a doethon Ruuein y gyt ac ef. Ac yna y kyuodes Iesse y uynyd a dywedut ual hynn yg gwyd pawb o’r niuer. “Ny dyly arglwyd bot yn anwadal na gadu y ffalsted a chelwyd y droi. Ac ual y somes y urenhines y brenhin gynt am y marcbawc, velly y soma dy wreic titheu tydi.” “Pa delw uu hynny?” heb ef. “Myn Duw! nys managaf, ony rody dy gret na dihenydyer y mab hediw.” “Na dihenydyir,” heb yr amherawdyr.
+“Llyma y chwedyl,” heb ynteu. “Yd oed marchawc gynt a welei y uot beunoeth y mywn twr uchel, yn ymgaru ac arglwydes ieuanc delediw fly welsei eiryoet olwc erni odieithyr y hun. A churyaw yn uawr a wnaeth o garyat yr unbennes. Sef a gafas yn y gyghor, mynet y grwytraw bydoed a dinassoed amdanei. Ac ual y byd yn kerdet, ef a weld gaer uawr vylchawc, a chastell ffyryf mawr amlwc yn y hymyl, a ffyryftwr aruchel yn y kastell, kynhebic y liw a’e lun y’r hwnn y gwelei y vot yndaw beunoeth ef a’ r wreic vwyhaf a garei. A thua’r twr y kyrchawd, a’r brifford y dan y kastell a gerdawd yriy doeth yn ogyvuch a’r twr. A bwrw golwc ar y twr a wnaeth, ac arganuot y wreic vwyhaf a garei yndaw; a llawen a da uu gantaw y gwelet. A’r dinas a gyrchawd, a dala lletty yndaw y nos honno. A thrannoeth, drwy uawred dyuot tua phorth y kastell, a galw y porthawr attaw, ac erchi idaw vynet y ovyn y’r brenhin a vynnei uarchawc ieuanc diffalst diwyt yn wr idaw. A dyuot a oruc att y brenhin, a dywedut uelly wrthaw, ‘Gollygher y mywn,’ heb ef, ‘y [547] edrych a aller defnyd ohonaw.’ A’r marchawc a deuth y’r llys, a chanmoledic uu gan bawp y deuodyat ef. Ac ar vyrder,” kyn ganmoledicket vu a’e wneuthur o brenhin yn oruchel dros y gyuoeth. Ac yna y dywawt ef wrth y brenhin vot yn reit idaw ef gaffel lie dirgeledic y vedylyaw ygkylch swyd a chyfrif kymeint ac a oed arnaw. ‘Edrych y kyfle a vynnych a chymer ef.’ ‘Llyma a vynnwn i, arglwyd,’ heb ef, ‘gadu ym adeilat ystaueil yn ymyl y twr; kanys diamsathyr yw yno.’ ‘Da yw gennyf i hynny,’ heb y brenhin. Ac ar hynt, y marchawc a hens adeilat ystauell hard idaw yn ymyl y twr, a pheri y’r saer gwneuthur fford dirgeledic idaw y vynet y’r twr att wreic y brenhin. A’r saer a wnaeth y ffordd, ac yny ymgauas a’r vrenhines y wneuthur y vynnv ohonei. Ac uai yd oed, diwarnawt, yn bwyta an yr vn bwrd a’r brenhin, yd arganuu y brenhin y vodrwy annwylaf yn y helw am vys y marchawc. Ac yn llidiawc cidigus, gofyn idaw beth a wnaei y vodrwy ef ar law y marchawc. A’r marchawc ystrywgar a tygawd na bu uedyannus dyn eiryoet arnei namyn euo. ‘Ac am hynny, arglwyd, galw dy gof attat, ac edrych pa du y kedweist dy uodrwy, wrth na bu honn ciryoet y’th ueu di.’ Ac ymgynhewi a oruc y brenhin, a bwytta, a ryuedu gweith y uodrwy. A gwedy bwyta, y brenhin a gychwynnawd tua’r twr y ovyn y’r urenhines y vodrwy. A’r marchawc o’e fford ynteu a duc y vodrwy idi y dangos y’r brenhin pan y gofynnei. A’r brenhin, pan doeth, a ofynnawd y vodrwy, a hitheu a’e dangosses idaw. Ac yna [548] y goruc y brenhin y agreiffto ehun yn y uedwl am gystudyaw y marchawc ac am dybyaw y wreic, ac wynt yn wirion ar y vryt ef. Ac yna y dywawt y marchawc wrth y vrenhines ‘Miui a af y hela y gyt a’r brenhin auory. A mi a e gwahodaf ef wrth y vwyt y’m ystauell i pan del o hela, ac a dywedaf idaw dyuot y wreic vwyaf a garaf o’m gwlat y’m ol. A byd ditheu yn an herbyn ninneu, ac amryw wisc ymdanat. Ac yr a gymero ef o adnabot arnat ti, na at ti arnat y adnabot ef na’e welet eiryoet hyt yna.’ ‘Mi a wnaf,’ heb hi. A thrannoeth yd aethant y hela. A gwedy kanu corn had a daruot hela, y marchawc a adolygawd y’r brenhin dyuot y vwyta y ystauell ef y dyd hwnnw. A’r brenhin a deuth; a phan deuth, kyntaf dyn a welas, y wreic yn ystauell y marchawc. A gofyn a wnaeth ef idi beth a wnaei hi yno, a pha fford y deuth yno. ‘Anawd iawn,’ heb hi, ‘yw ymi venegi ytti y gyniuer fford amdyfrwys a ymdeeis i o m gwlat hyt yma. Ny wn ynneu le iawnach ym vot floe yn ystauehl y gwr mwyaf a garaf. Ac os bwrw kyfadnabot yd wyt ti yn oh kyffelybrwyd, edrych di pa he y mae y neb yd wyt yn y geissaw, wrth na weleist ti olwc arnaf i eiryoet hyt hediw.’ Ac yna kynhewt a oruc y brenhin, a medylyaw na welas eiryoet gwreic a modrwy mor debig a’e wreie ef a’e vodrwy y wreic a modrwy y marehawc. A gwedy bwyt, y brenhin a aeth tua’r twr y geissaw diheurwyd am y wreic ual y kafas am y vodrwy. A hitheu a’e racvlaenawd ef y fford arahl, ae a symudawd wise a gwisgaw y chartrefwise ehun ymdanei. Ac ynteu pan deuth a’e hagreithawd ehun yn y uedwl, am y gamadnabot ar orderch y marehawc. Ac ym Penn yspeit o amser, y marchawc awelas nat oed diberigyl idaw kynnal karadas a gwreic y brenhin yn un what ac ef, ygwaethach yn y lys a’e gastehl ehun. Ac ef a gafas yn y gyghor parattoi hong a’e hlenwi o bop da. Ac yna ef a erchis kenyat y brenhin y uynet tua’e wlat, wrth na buassei ys hir o amser. A’r brenhin a e kanhadawd. A thrannoeth, ef a doeth kyn eu kychwynnv, ef a’e orderch, att y brenhin y lie yd oed ef yn gwarandaw offeren. Ac ef a adolygawd” idaw pen y offeirat teulu gwneuthur rwym priodas yrygtunt eli deu. A’r brenhin a beris eu priodi. A gwedy y briodas, wynt a gyrchassant y’r hong. A’r brenhin a aeth tua’r twr. A phan deuth, yd oed y twr yn wac, a’e wreic gwedy mynet gyt a’r marchawc. Velly, arglwyd amherawdyr, y soma dy wreic ditheu o gredu idi, a pheri dihenydyaw dy uab o’e hachaws.”
+“Na pharaf, myn vyg cret!” heb ef. A’r nos honno y dywawt yr amherotres adan ucheneidaw a thristwch, a dywedut wrth y brenhin: “Ef a deruyd yti ual y daruu y ystiwart brenhin y Pwyl.” “Beth oed hynny?” heb y brenhin. “Nys managaf, ony rody dy gret ar dihenydyaw y mab avory. “Yn wir,” heb ef, “ef a ledir.”
+“Y brenhin hwnnw a dyfassei heint yndaw ac a hwydawd. A gwedy y uedeginyaethu yn iach yd erchis y medic idaw keissaw gwreic ar y wely. Ac yd erchis ynteu y’r ystiwart llogi gwreic idaw yr naw morc. Sef a oruc ynteu, o chwant y da, rodi y wraig briawt ehun ar wely y brenhin. A gwedi bot achaws y’r brenhin y nos honno a gwreic yr ystiwart, ef a’ doeth y gwr drannoeth y erchi idi kyuodi y vynyd. A’r brenhin nis gadawd. Ac yna y datkanawd ynteu yg gwyd y brenhin y gain a’e gared. Ac yna y deholet ef o’r kyuoeth, a’r wreic a gafas gossymdeith digawn y gan y brenhin. Velly y deruyd [550] y titheu o chwant gwrandaw geireu y seithwyr doeth, ae y’th detholir o’th gyuoeth, a minneu a gaffaf digawn o da gan vyg kenedyl.”
+A’r brenhin a Iidyawd o’r geir hwnnw, ac a tyghawd y lledit y inab drannoeth. A thrannoeth, heb gyghor gwyrda, yd erchis dihenydyaw y inab. Ac yna y doeth Martin, a dywedut a oruc wrth yr amher­awdyr val hynn. “Os o annoc yr ainherotres, heb gyfreith a heb yarn gwyrda, y lledy dy uab, ef a deruyd yt ual y daruu y wr henndoeth am y wreic.” Ac ny managawd y chwedyl yny rodes nawd y’r mab hyt trannoeth. Ac yna y dywawt ef.
+“Gwr hen a priodes morwyn ieuanc, ac a uu gywir wrthaw vlwydyn. A gwedy hynny ymdidan a orue a’e main yn yr eglwys, a dywedut nat oed uawr o digrifwch serchawl yd oed hi yn y gael gan y gwr yn y gwely, ac am hynny y hot hi yn karu gwas ieuanc. ‘Ie,’ heb y main, ‘prawf yn gyntaf annwyt dy wr, a thor y planbrenn bychan tec ffrwythlawn yssyd yn tyvu yn y erber, ac yssyd annwyiach gantaw noc un o’r prenneu ereill.’ A hitheu a wnaeth hynny. A gwedy daruot idi y dorri a dodi ar y tan, yr arglwyd a deuth adref o vwrw gweilch ac a adnabu y prenn. A gwedy gofyn ohonaw pwy a dorrassei y prenn y dywawt y wreic pan yw o eisseu tan y gwnathoed hi hynny, y ben tan idaw ef erbyn y dyuot atref. A thrannoeth, ymgael a main a wnaeth yn yr eglwys, a menegi idi y damwein oil, ac y dywawt y hot yn karu gwas ieuanc. Ac eissoes o annoc y main hi a broues y gwr yr eilweith. Val yd oed y gwr yn dyuot o hela, bytheiades a oed idaw, a garei yn vwy no’r hoIl gwn, a redawd an ffwrwr y swrkot. Sef a wnaeth hitheu, ysclyfyeit kyllell vn o’r gwyr a had yr ast. A gwedy y hagreithaw o’e gwr am wneuthur hynny yn y wyd ef, hitheu a dywawt pan yw o [551] drycanyan am Iygru y phan newyd y gwnathoed hi hynny, ac na wnaey byth y kyfryw. Ac yna y tewit wrthi. A thrannoeth, gwedy dywedut y main hynny, hi a dywawt y hot yn karu y gwas ieuane. A gwedy gofyn o’e main idi pwy a garei, hitheu a dywawt nat marchawe oed, namyn yr effeirat plwyf, ac na wnaei vocsach. ‘Ie,’ heb y main, ‘medylya yn gyntaf rae bot yn greulonach dial gwr hen, gwedy llittio, no gwr ieuanc. A phrawf ef y dryded weith.’ O annoe y main hi a’e proues ual hynn. Val yd oed ef yn gwneuthur gwled y vonhedigyon a phennaduryeit y dinas, gwedy gossot pawb y eisted a gwassanaethu arnadunt o’r anree kyntaf, hithev a rwyinawd agoryat y phrenuol wrth y lliein a oed ar y bwrd. A chyvodi a oruc ar y redee tua’r penn arall y’r ty a thynnv y lliein, yny dygwyd y’r llawr a oed arnaw o vwyt a diawt a phetheu ereill. Ac escussaw a wnaeth a dywedut mae y gyrchu kyllell a uei well y harglwyd y daroed idi y damwein hwnnw. Ac yna, o orchymyn yr arglwyd, y dodet llieineu o newyd ar y byrdeu a bwyt a llynn arnadunt. A thrannoeth y bore, kyvodi a oruc y gwr y uynyd, a pheri kynneu tan mawr. Ac ymliw a’e wreic am y tn gweithret a wnathoed, a dywedut pan yw o amylder drycwaet a oed yn y chorff y gwnadoed hi hynny. Ac o’e hanuod hi, ef a beris idi dwymaw y breich wrth y tan, ac a beris ellwng gwaet arnei yny25 oed yn llywygu; ac yna rwymaw y dwy vreich a’e dodi yn y
+gwely. A hitheu a anuones at y main y - dywedut y had. Ae mam a doeth attei a dywedut wrthi: ‘Pony dywedeis i itti nat oed dial drymaeh floe vn henwr gwedy lhittyei?’ Ac eilweith dywedut wrthi A gredy di bellach y’r gwr ieuanc?’ ‘Na chredaf, dioer, byth,’ heb hi. A thra uu vyw y bu diweir a gwastat. Ymogel di[552]theu, arglwyd amherawdyr,” heb y Martin, “rae dygwydaw y mywn kared kymeint ac y lledych dy uab yr ethrot dy wreic. A bit diogel itt y dyweit y mab auory.”
+“Ny chredaf ynneu hi vyth,” heb y brenhin. A phan uenegis y brenhin y’r urenhines y dywedei y mab drannoeth, i kythrudyaw yn uawr a orue hi, ac ny wybu hi dim dechymie o hynny allan. A thrannoeth, pan gyuodes yr heul ar y byt yn oleu diwybyr, yr amherawdyr a r gwyrda a’r doethon a aethant y’r eglwys. A gwedy gwarandaw offeren yn dwywawl, yd aethant odieithyr y vynnwent y eisted ar penn karrec y le amlwc. Ac yna y doeth y inab ger bronn yr amherawdyr rwg deuwr doeth. A gwedy adohi y arglwyd dat ac erehi idaw y gerenyd, herwyd na haedassei ef na’e var na’e anuod, “A’r goruchaf Duw,” heb ef, “y gwr a wyr pob peth o’r a uu ac a vyd, a dangosses ymi ac y’m hathrawon yn amlwc, trwy yr arwyd ar y lleuat a’r seren oleu eglur yn y hymyl, o dywedwn i vngeir yn vu o’r seith niwarnawt, na dihagwn rae agheu. Ac yna, arglwyd dat,” heb y mab, “am y weledigaeth honno y teweis i, arglwyd, a’r amherotres y’m ethrot ac y’m kuhudaw wrthyt megys pci bydwn gelyn itt a cheissaw dy amherodraeth a’th diuetha. A thebic yw hi wrthyt ti amdanaf i ac y bu yrwng y marchawc gynt a ‘e vu mab ar y mor.” “Beth oed hynny?” heb yr amherawdyr.
+“Marchawc a’e uab a oedynt y mywn ysgraff ar y mor. A dyuot dwy vran a greu uch eu penn, a disgynn ar gwrr yr ysgraf a greu bop eilwers. A ryued uu gan y marchawc hynny. A’r mab a dywawt wrth y dat bot y brein yn dywedut y bydei da gan y dat kael dala blaen y lewys tra ymolchei, a’e uam yn dala twel idaw. A llidyaw a oruc y marchawc o’r geir hwnnw, ac ysclyffyeit y mab [5~] a’c vwrw yn y mor dros y benn, a mynet ymeith a’e yscraf. Ac o dwywawl dyghet, ymlusc o’r mab ar y dwylaw a e draet yny ymgafas a charrec yrwng alit a mor. Ac yno y bu tridie a theirnos heb vwyt a heb diawt. Ac yno y kauas pyscodwr y mab, ae y gwerthawd ef y ystiwart o wlat bell yr ugein more. Ac rac aduwynet y uoesseu a dahet y deuodeu a’ e wassanaeth, ef a gafas enryded mawr gan yr arglwyd. Ac yn hynny, brenhin y wlat honno a oedit yn y orthrymu yn uawr o achaws bot teir bran yn greu uch y benn nos a dyd. A galw y gyt y holl wyrda a’e doethon, ac adaw rodi y vn verch a hanner y vrenhinyaeth y’r neb a dehoglei greuat y brein ac a’e gwylltei byth y wrthaw ef. A gwedy na cheffit neb a allei hynny nac a’e gwypei, o ganyat yr ystiwart y kyuodes y gwas ieuanc a dywedut wrth y brenhin, o chadarnhaei y edewit, y gwnaei ef gymeint ac yd oed y brenhin yn y erchi. A gwedy kanhadu hynny, y mab a dywawt ual hynn. Yr ys deg mlyned a mwy,’ heb ef, ‘y bu newyn ar yr adar ac ar yr aniueileit ereill. Yr hynaf o’r brein a edewis y wreic ym perigyl agheu o newyn, ac a aeth ymeith y wlat arall y geissaw bwyt. A’r bran racco, oed ieu no hwnnw, a drigyawd gyt a hi yr hynny hyt hediw. Ac yr awr honn, gwedy amlhau ymborth, y deuth y bran hen drachefyn, ac y mae yn holi y wreic y’r hail a’r bran arali yn y hattaI racdaw. A phellach, oc eu kytsynnedigaeth, y maent yn dodi ar dy yarn di deruyn eu dadyl, kanys pennaf wyt.’ Ac yna, o duundeb y gwyrda, y barnawd y brenhin y wreic y’r hwnn a’e differth rac y marw o newyn, ac na dylyei yr hwnn a’e gedewis dim ohonei. A phan welas y brein hynny, ehedec a wnaeth y deu vran y gyt yn llawen orawenus, a’r hen vran a ehedawd ymeith y dan ermein a gweidi. Ac yna y kauas y mab [554] enryded mawr gan y brenhin, ac y barnwyt yn lie gwr doeth. Ac o gyt gyghor y rodet merch y brenhin y’r mab, a hanner y vren­hinyaeth. A dydgweith, ual y byd y mab yn mynet trwy y dinas, ef a welei y yam a’e dat yn lietyv yn ty vwrgeis, wedy adaw y wlat o eisseu da, a dyuot y geissaw da hyt yno. Ac ygkyich gosper, ef a anuones ysgwier idaw y ty y bwrgeis, a dywedut idaw y bydei y brenhin ieuanc y gyt ac ef drannoeth yn bwyta. A’r bwrgeis a dywat: ‘Bit yn llawen. Ef a geiff goreu a galler idaw.’ A thrannoeth, pan uu amser gan y brenhin, ef a doeth y letty y marchawc. A phan doeth, y marchawc a gymerth lavwr a chawc y gynnic dwfyr y ymolchi y’r brenhin ieuanc; ac nys gadawd ynteu. Ac ef a geissawd daia y venyc, a’e wreic yn dala twel. A’e wrthot a oruc ynteu, a dywedut dan owenu yn llawen: ‘Arglwyd dat,’ heb ef, ilyma wedy r’dyuot yr hynn a dywedeis i ytti, ac yd oed y brein gynt yn greu ar yr ysgraff pan vyryeist ti vyui yn y mor. Ac na dolurya di yr hynny, kans Duw a’e troes yn lies ymi. Ac o hynn allan y kytwledychy di, ti a’m main, y gyt a mlvi tra voch vyw.’ Megis hynny, arglwyd dat, val y bu y mab hwnnw ufud a darestyngedic y dat, velly y keffy ditheu vyvi yn uvud ytt yr meint vo vyg gailu yn y byt hwnn. Ac yr Duw na chret ti geissaw ohonaf i treissaw dy wreic. Ti a wdost pen ohonat ti dy hun, o’e harch hi yg gwyd gwyrda, ymi vynet y hystauell hi. Ac ymgynnic ual nat oed gyfyawn idi, hynny a oruc hitheu. A gwedy y gwrthot ohonaf i, hitheu vegys agheu vy eneit a amgreffinnawd ehun, ac a tynnawd waet o’e hwyneb a gwallt y phenn. Ac yr hynny oil, argiwyd dat, myui a odefaf dy yarn di, ti a’th wyrda, arnaf i.”
+Ac yna y gelwit ar yr amherotres y atteb rac bronn. [555] Hi a dywawt rywneuthur ohonei hi hynny rac dwyn O’ r mab kyuoeth y dat a” hitheu. Ac yna o yarn yr amherawdyr a’r gwyrdaa y llosget korf yr amherodres, ac o yarn y goruchaf vrawdwr. Sef oed hwnnw, Duw goruchaf, yr hwnn a gymerth yr eneit y’r poen a haedawd yn diannot.
+Ac uelly y teruyna chwedyleu y seith doeth.
+Peiryan vaban peit ietkynt ti ath.
+Mae YAY duw di ddifero Gwyddyl gynt.
+Mae dieuyl allt Wyddyl kyfrang fordd.
+Mae freinc ​​yn esgorynt breidd gwydyi.
+Áedán yn flydan o dramwy môr dyuyd.
+Mae llu o vanaw yn ganthaw gyuyt.
+AR ynyssoedd Wyddyl AR allt fordd.
+dieuyi kyfrang kyfret agwydd.
+Peiryan vaban peit riduan ti ath.
+Áedán yn llydan o dramwy dyuydd môr.
+Ac yn hedfan will na maban thwrw tharan na.
+tarf llawer o chyuarf. Owner yn llawer. in Áedán eidaw.
+llawer penhir par. hir paiadyr Lawer
+in achubeit tir. gafran tyfo.
+llawer llunic. helym liawer am Benn. vuch Ar y amkan.
+llawer coch cleddyf. gwas llawer gwrthgroch. gynif gwaetlan gaer.
+llawer gorwyd hoyw. llawer Loyw yscwyt ysgaln lydan.
+Mae wendydd y dyweit. vo kyfliw sosban Dydd. Darogan yn sicrhau dyuydd.
+Mae y dyweit pheirch na waesawc yritawc na llann na llochawt.
+Peiryan vaban peit ti ath wylaw.
+o glaw glywet dygnn awyr gnawt
+Áedán yn ddyuyd yn llu for eluyd
+Ac yn hedfan wyr gwendydd WNA dwylaw y py.
+broydyr mywn brodyr brydyon y mal.
+achaws na thraw odefynt nac Ormes na here.
+vn adewit in the eithyr y ofit
+idaw ysywaeth synhwyr ysyodit by
+morwrynn vab Myrddin opinion gwynn hebawc
+vei ysgrifbin wrthryn Rym yr. ymdaraw AR
+llonn badell varw vei Pann vei Tonn ysgwyd.
+Pann vei gilyaw Noe waet callonn KY.
+o gof gwyndoleu gynedeu gyt ae.
+gwae vi hwyret yb angheu y daw.
+Kymer gynghor Peiryan vaban dy.
+gnawt ddetwydd y ragor haydu Hael.
+rydderch Hael o gyfrang yn hepkor.
+Ac onyt detwyd hedfan will esgor.
+A mi a ddarogeneis rwng dyfwn o beis
+dreis kynar y Kan. Wrth hanor Water.
+Amser y pen ôl i cor in mywn stondyn gynt.
+FfEY opinion vyghortho o rhudd a phorphor.
+Mae nam NYT Heddiw kein grudd kelein nam.
+riein virein by hepkor VY is easy.
+Ar llef y galwaf cnist VY kiywytor.
+Agor poetiw MEU pyrth y nef.
+darn vaban Peiryan dy dagreu.
+wylaw ef oreu digrif NYT NYT.
+myrthyn a godeu Mawr y ddyuyd.
+aallau o VY mrodoryon yn gwynddoleu.
+Goreu gwgon Llewelyn neu haelon.
+Einion rwyf rywallon kadeu pwb.
+o gyfrang clotleu ryderch Áedán cerrynt eiledol.
+môr hygleu ciywir the neu deheu yr Gogledd.
+Mae dyweit y wendyd Goleu vo sosban. Dydd
+full vydd koedydd arueu y cerrynt eiledol o wyr.
+Peiryan vaban gysgu di keis
+hun gnawt diddanu ku eiddunaw y kerdeu.
+gnawt haylyon eirchyon y vyd.
+ymgaru serchogyon gnawt.
+Llanelli Llanelli Heritage Group gnawt anyanawl rwng achehydrawl dyn.
+gnawt NYT anyanawl eiledol yn digu vo.
+llidiawe gnawt marchawc in dywyssawc llu.
+Mae brein gelein AR. mae in chicwein du.
+gnawt NYT anuat peirch. na grudd na llygat
+IAT gyrchu nac yr y emennyd.
+Gwedy hir orwedd. mae o datwyrein vedd.
+bardd ef jessu in a vo Bianca Diwedd Amen.
+... Din Kant ae
+Coronog Faban medd Taliesin
+Mae ddarlleir Llyfrau in Merddin,
+Ynghanol EI dy'r nertha ef Werin
+Ac in niwedd EI dy'r ef yn y Brenin should.
+Coronog Faban a Gwener Dduw gyfyd
+In Number erbyn Holl Gog Magog ai
+Ac o fanner yn battelu dynn EI UNDER
+Yno gwae'r Sais yn time EI fo'n.
+Coronog Faban Penna: Gwyn Iesu
+O dir y Gogledd y daw i Gymru,
+Gwynfyd family badell Eliso welir,
+A meibion ​​Gruffudd Wyrion cerrynt eiledol Dyddgu.
+Beth Coronog Faban llyma Rhyfedd
+Rhag Ofn CAFOD ef a gilia I'r Gogledd,
+Fe ryfedd in gyll Arglwyddiaeth Lloegr,
+should Ac etto y Brenin Diwedd y e'n.
+Coronog Faban ddiau credwn in,
+Y daw llynges i Aberdaugleddau,
+Yna y cryn Lloegr Chwedlau glywer sosban,
+ACA ynys bawdd dwr Deyrnas maddau.
+Coronog Faban medd proffwydi
+yn Ddaw i Brydain for Gweilgi Gefn
+Tremio Ddel llynges Daer i Gaergybi.
+Yna gwae'r Saeson Holl ai gwmpeini gymhelri, yn al.
+Coronog Faban a dynnir adanedd
+O waelod Lloegr Gogledd y gân,
+OND its learners heb ei esgyll a geidw Gwynedd
+Ac in this nheyrnas y beilchion ryfedd sy.
+Coronog Faban medd Henricus
+Hen brophwyd yr Alhan o Fudd Gallus
+Water in Ac Ieuenctid ddystlus y Goron
+EI in Ac henaint yn ddownus should
+Coronog Faban medd prophwyd other
+Mettonys Esgob yn rygall fu,
+Ac ef Water in Ieuenctid yn Ladd a bwyall,
+Ac in EI henaint ef yn ddiball in Ladd.
+Coronog fahan yn Llynges gyfyd,
+Medd Sibli ddoeth a fu Frenhines,
+Ac I'r Twrciaid WNA ef o afles,
+rhagddo a chilio not neges hon.
+Coronog Faban medd Apostolion,
+A WNA rhyfeddod ym mysg yr Iuddewon.
+Ef UCMC Bair iddynt gredu y Cristnogion
+Yr wyf golli Grist blood EI Galon.
+Coronog Faban medd Rhufain doethion
+Mae Rhanbarth â gyfer y Dwyrain i dir,
+Yr wyf ddwyn ef Tair Coron should ddamwain AR
+Ac i ddwyn urddas i Ynys Prydain.
+Coronog Faban a gaiff urddas mawr
+Medd iâr Broffwyd elwir yn Gildas,
+In Rhufain tir ef yn WNA urddas,
+Ai gasogion anras in a syrth.
+Coronog Faban gwedi draha mawr,
+Medd Ioannes passia y drei
+Ef a gaiff Gorfod gân Gaerdroea,
+Ac in mysg Brenhinoedd ef yn Penna Fudd.
+Coronog Faban ddiammau in,
+In Nhwr Babilon yn Eglwysau gyfyd
+Brenin coronog should ddiammau in
+Gwae'r ACA Twrc Sarsiniaid badell ammau heh Ddel.
+Coronog Faban a gaiff EI Gyfarch,
+Ofn RhAG i Gaffael ammharch Loegr,
+AB ddianc o ddwylo Lwarch Hil,
+y UCMC diengis Sionas o morfarch y fol.
+Coronog Faban onibai am drafel mawr,
+Dros foroedd a thiroedd a chwedi Rhyfel,
+ar gyfer yr clywir ai medd Archangel,
+In in Isel Nyffryn Siossifath y tir.
+Coronog Faban yn irgyll UNDER
+Ar y gwyr sy 'in the Cestyll,
+ar gyfer in Baner gyfyd EI sefyll,
+Gwae Arglwydd Rhaglan penn y Pebyll.
+Llyma yr mod y treythir o eryr yr englynyon
+Es Gabrielle Kann ryfedaf do I fardd.
+o vlaen in ae Dar vric caled.
+look py py eryr chward.
+ordiwes bellglot Arthur.
+llu arth achles llewenyd.
+yr eryr weles ath gynt.
+Ys ryfedaf myr tu o
+fel vyuyr in gofynnaf
+py chward eryr look py.
+engyhynt bellglot Arthur
+llu arth llew [e] nyd dremynt
+ath yr eryr welas gynt.
+Yr eryr yn Seif Dar ymbric.
+[Pei] Adar hanfut o ryw
+Byd ny [ut] Gwar na na CC.
+Arthur [Edy] gl aruthyr FAWC
+ruthyr ny dy Alon rac dy Seif
+[Uab]: Gwyn Madawc mab uthyr mi.
+Yr eryr ny ryw dy wn
+a dreigla kernyw lgyngoet
+Madawc mab uthur NYT [taliad iawndal] uab.
+Arthur r ieith * **** goleuo'n
+Gwyr *** h * gwaret NYT goleuo'n
+gelwit ym eliwlat gynt.
+Yr eryr golwc diuei
+NYT barabyl AR dy dy'r vei
+ti ae eliwlat Nei VY.
+ffossawc dihafarch Arthur.
+diarwrein arllwybrawt
+ys gwiw honawt o kystlwn.
+Yr eryr Eglur barabyl
+a dywedy di arthur Wrth
+Beth yssyd y drwc wneuthur.
+Medylyaw aferdwl drwy drwc
+yn hir drigyaw yny medwl.
+ardwl pechawt rygelwit.
+Yr eryr diwc barabyl.
+wyf yn amlwc in dywedy.
+Beth wneuthur y drwc yssyd.
+anghywir brat Medylyaw
+in chelu yn medwl hir.
+GED a gelwir y phechawt.
+Yr eryr Tawel barabyl
+wyf yn ymgel dywedy di rejected in part
+Beth am peir y fford ochel.
+Gwediaw duw pylgeint pwb
+yn kereifyeint damunaw
+eiledol er [Chi] * Seint canhorthwy.
+Yr eryr doethaf parabyl
+yttyhun ygouynnaf.
+py haedaf delw Crist y bachgen wedi mynd.
+Karu duw vnyawn bryt o
+kyfyawn erchi arch cerrynt eiledol
+ath nef ved o wawr bydawl.
+Yr eryr Gwir euenygi
+ys llwyr ytti y gorfynnaf.
+da ae by voli y grym.
+gadarnaf gwryt Arthur
+eithyaf arth gwrodeu pwb gwyr.
+pwb FfMC molet y yspryt.
+Yr eryr blegyt ratlawn
+rejected in part ergryt athovynnaf
+pwy yssyd AR yspryt pwb FfMC.
+Arthur NYT lafneu segur
+yggwaetfreu ongyr rudyeist
+amheu cret nam: Gwyn vi Crist.
+Yr eryr adef ratlawn
+ath ovynnaf o hyt llef
+Beth y nef geissyaw oreu.
+Ediuarwch yb drossed
+rhedeg yn gobeth Dang * nefed
+this yr ath beir drugared.
+Yr eryr didlawt barabyl
+ardraeithawt arderchawc ath ofyñaf
+Beth waethaf gyt a phechawt.
+Arthur gwneuthur arderchawc | ieith
+profer gwedy kyfyeith pwb
+Gwyn gwaethaf ysgubor añobeith.
+Yr eryr barabyl gynyd.
+for ofynnaf ath dofyd
+Beth añobeith o yssyd.
+uffernawl hirboen Haedu
+yn dragywydawl duw in cholli
+Cwymp yn anesgwrawl Chael.
+Yr eryr ymadaw eith [i]
+ath lwyr ofynnaf rac llaw
+ae nid oes dim gwell gobeithaw.
+Arthur kyman arderchawc
+neu myn eluyd kyfran Kael
+gwan Gadarn Wrth gobeithet.
+Yr eryr kywir parabyl
+y gofynnir yttyhun
+kadarn ponyt Owner tir.
+Arthur geldyfawc * wy t
+Na choll alaf yr dofyd
+Pennaf y ywr kydernit.
+Yr eryr diheu parabyl
+ath ovynnaf eireu AR
+do I ponyt Gadarn inheu.
+kadoed kernyw Pen Arthur
+lyw arderchawc luydawc
+y Pennaf y kydernit [w] [d]: Gwyn.
+Yr eryr diarfford ieith
+gogorus gnawt ualdord
+Beth mae gosgord yr duw ryd.
+Gosgord voli nyw kywir
+eiledol NYT kywir gyfarchei
+vessur duw ny dyt arnei.
+Yr eryr nefaw [l] dy̴ghet
+neu chaffaf welet y ny
+Beth mae kret WNA ae yr Crist.
+Arthur wydua llewenyd
+lluoessawc wyt argletryd
+hun ty ae dydbrawt gwybyd.
+Yr eryr diamuarn Geir
+ath ofynnaf Gadarn in
+dydbrawt ae y varn y rodir.
+Arthur wydua arderchawc
+yth dyd dyffed phalla ny
+duw ehun mae yna varn.
+Yr eryr [barabyl cyhoed]
+Owner ath ovyn * toruoed
+Beth dydbrawt yn WNA y pobloed.
+Arthur argae arderchawc | ad
+gwyr arth heilde wirodeu
+yna y gwybyd y Pawb le.
+Mi ae gofynneis y goffeiryeit
+y̴gneit esgyb y cerrynt eiledol y cerrynt eiledol
+yf eneit oreu Beth rac.
+Pader o maeyeit a gredo bendigedic
+Ae eneit rac Cano
+angheu hyt gordyfnot Goreu.
+Ys kyrchych fford y delych
+Allu dy vyd da dangnofed
+Nyth reddruga AR didra adneu.
+dolur segur Syberw
+Ar Water for knawt mynet vessur
+ys dir nychyaw pur ny bo.
+Anudon wyf yn dir yn brat arglwyd
+o gar dy gyfraith diuaño
+dyd | ediuar bydawt brawt.
+Ac eryr teruyna eglynyon yr velly y.
+Yr eryr barabl difrad,
+NO ti ydyw Eliwlad,
+Ai gwiw ymladd am danad?
+answered ddihafarch Arthur,
+Ni Saif Wyneb i'th gelyn,
+Rhag Angau us ddiainc neb.
+Yr eryr ddiymgel iaith,
+Mae ryfel allai neb drwy
+In fyw yn eilwaith gaffel dy?
+haelion bendefig Arthur,
+O chredir Ganon geiriau'r,
+Mae ymryson Duw thycia us.
+Pa stondyn in gwr gyffredinrwydd Gwledd
+NAI dechreu eiddaw eb NAI Diwedd
+Islaw'r eiste obry cyntedd.
+Y Melwas o wydrin ynys
+di aur vlyche goreurin
+lewais us free oth i ennill.
+Aro snevin ychydsc
+vi wallaf us vyngwin
+AR wr us gwastraf gofy safai us in Trin
+Gai ddaliai us in ff vn.
+Ni arveisiwn ryd
+gofy yn gemyn vo yn gwryd
+o drai drom lluric
+ms are gwr a ddaliai Gai.
+Taw oedd salwet Taw a'th
+onit welet llw yn dda
+us AR Gai ddalut d'wvthvet.
+Gwenhwyvar Olwg hyddgan
+na'm Bychan bwy Cyd dirmic
+Gai ddaliwn mi vyhvnan.
+Tydi oedd gwaharddiad ben AR
+ai ysgyvaint coch ben Val
+vaint anhebic Gai ff o wyt.
+Gnawd gwecry veddw ff
+jawn i gadwn velly
+Melwas hyny AR ywr mi gadwn.
+Canys dechrefiasoch
+rhagoch ​​ymddiddenwch
+ef yn lloch mAh Edwyn ai.
+Ymhle ymdelsawch yr gynt
+in llys Braint i vrddasol
+Gwin yvet in Geraint o
+Lle dwir Gwir AR dir Dyfnaint.
+Cas gennyf iâr wen gwrllwyd
+gledde ai waell n UNDER ff en
+yn amgen eb chwenych allel.
+Ine genyf Casach
+Balch llwrf gwr daeth i'r geirie
+dadmer us us thyn fi gledde
+hwde di hwde dithe.
+Mis Jonawr, myglyd dyffryn,
+, Trulliad cof ac klerddyn trallawd,
+Kul bran, Llais gwenyn anaml,
+buches gwac, diwres odyn;
+ofyn gwr anwiw ff gwael;
+gwae a garo gelyn DRI ff;
+Gwir a Kynvelyn ddyvod
+"Gorev kannwyll Pwyll i ddyn."
+Mis Chwefrol, ankwyn anaml,
+pal llafurus Olwyn cerrynt eiledol;
+knawd gwarth o gysswyn fynych;
+rejected in part wae cyrch yn achwyn wnel;
+tri ffeth a dryg-wenwyn sych,
+, Gwraic kyngor murn, a chynllwyn;
+ki ysgrifbin Wanwyn vore AR;
+gwae yn vorwyn i ladodd;
+Diwedd da i Dydd should Fwyn.
+Mis Mawrth, Adar rhyfic mawr,
+Talar chwerw AR oerwynt ben;
+Hwy vydd hindda dim heiniar;
+Hwy pery dim Galar llid;
+pwb taliad iawndal arynaig esgar;
+pwb gymar yn argraffiad i Edwyn;
+pwb peth yn Ddaw ddaiar Drwy'r
+y daeth i'r marw, mawr i Garchar.
+Mis Ebrill, gorthir wybraidd,
+lluddedig Ychen, tir llwm,
+, Hydd clusthir gwareus gwael;
+gwahoddir er nas OSB knawd;
+AML bai Pawb kerir nis Lle;
+gwyn i Fyd o kowir vo;
+knawd enwir Blant AR difrawd;
+knawd gwedi traha tranck hir.
+Mis Mai, difrodus geilwad,
+pwb klyd klawdd ddigarad ff;
+iâr diarchenad llawen;
+hyddail koed, hyfryd anllad;
+is easy kymod Lle bo Kariad;
+Llafar Koç yn bytheiad;
+hwyrach optionally Mynd I'r Farchnad
+test yr Oen dim chroen y ddavad.
+Mehevin Mis hardd, tiredd,
+, Môr llyfn marianedd llawen,
+Dydd hirgain, heinif gwargedd,
+, Praidd hylawn hyffordd Mignedd;
+Duw yn pwb gar tangnevedd,
+Diawl o pwb Bair kynddrygedd;
+Pawb yn chwennych anrrydedd;
+pwb kadarn ddiwedd ff gwan.
+Mis July, gwair hyglyd,
+tes taer, toddedig kessair;
+gyngrair us hir gwilliad torgoch;
+lwydd us Korff Hil anniwair;
+llwyr mefl mowrair dielid;
+, Ydlan full lledwag kronffair;
+Gwir a mab maeth ddyvod Mair,
+"Duw a Farn, dyn yn levair".
+Mis Awst, morva molwynoc,
+, Gwenyn modryda full llon;
+kryman works dim Bwa gwell;
+das amlach na chwarwyva;
+us Wyn Ioan us weddia,
+Ido optionally teilwng i Fara;
+Gwir i ddyfod Sain Brenda
+"Da kyrchir no'r less optionally drwc".
+Mis Medi, ynGhanon mydr,
+aeddfed OED yd cerrynt eiledol Aeron;
+hiraeth by gwae fy nghalon;
+Golwg dylodion AR Duw;
+Gwir gwaetha gwarthrudd Dynion;
+gwaetha da drwy anudon;
+traha gwirion a threisio
+a ddiva etifeddion yr.
+Mis Hydref, echel hydraul,
+hydd chwareus, Awel chwyrn;
+ysbeilwyr knawd rryfel in;
+knawd ddiymgel in lledrad;
+wnel gwae us ddiriaid ddawr yf;
+trychni us is easy i ochel;
+Angau ddiogel i Bawb sy,
+AMAU should Dydd y del y.
+Mis Tachwedd, merydd tuchan,
+llydnod bras, llednoeth koydydd;
+Patrymau gweithio Working pattern yn Ddaw lawenydd drwy,
+Patrymau gweithio Working pattern drosti drist yn dderfydd;
+da y optionally kybydd eiddo'r,
+yr Hael pieifydd rhoddo ai;
+dyn yn da'r Byd yn dderfydd,
+da tragwyddol should nefol.
+Mis December, byrddydd, hirnos,
+Egin in ymennydd, rhos in brwyn,
+eos cerrynt eiledol Tawel gwenyn;
+Trin in niwedd kyfeddnos;
+adail Dedwydd ddiddos in;
+rejected in part proceedings diriaid adwyth;
+er yr hoydl gân i haros
+dderfydd yn nydd in a nos.
+1. Diana a Virbius
+Nid yw PWY yn gwybod Turner llun o'r Golden Bough? Mae'r olygfa, suffused gyda'r glow euraidd o ddychymyg y mae y meddwl dwyfol o Turner drwytho a gweddnewidiwyd hyd yn oed y dirwedd tecaf naturiol, mae gweledigaeth breuddwyd-fel y llyn goetir bach o Nemi-"Diana's Mirror," fel y'i gelwid gan yr henuriaid. Ni all unrhyw un sydd wedi gweld bod dŵr yn dawel, lapped mewn pant gwyrdd o'r bryniau Alban, byth yn ei anghofio. Mae'r ddau bentref Eidalaidd sy'n nodweddiadol gwsg ar ei glannau, ac mae'r un mor palas yr Eidal mae ei gerddi teras disgyn yn serth at y llyn, prin torri'r llonyddwch a hyd yn oed y solitariness yr olygfa. Gallai Diana ei hun o hyd lechu gan y lan unig, yn dal i aflonyddu y coetiroedd hyn gwyllt.
+Yn hynafiaeth y dirwedd hon coediog oedd yr olygfa o drasiedi rhyfedd ac yn rheolaidd. Ar y lan ogleddol y llyn, hawl o dan y clogwyni serth y mae'r pentref modern o Nemi yn clwydo, safodd y llwyn cysegredig a noddfa o Diana Nemorensis, neu Diana o'r Wood. Mae'r llyn a'r llwyn yn elwir weithiau yn y llyn a llwyn o Aricia. Ond y dref Aricia (y fodern La Riccia) wedi ei leoli tua thair milltir i ffwrdd, wrth droed y Mynydd Alban, ac yn gwahanu gan disgyniad serth oddi wrth y llyn, sydd yn gorwedd mewn fach crater-fel pant ar ochr mynydd. Yn y llwyn sanctaidd yno tyfodd cylch coeden penodol sydd ar unrhyw adeg o'r dydd, ac mae'n debyg ymhell i'r nos, efallai y ffigur llwm eu gweld yn crwydro. Yn ei law ef yn cario cleddyf llunio, ac mae'n cadw weld beth warily am dano fel pe bai ar bob unwaith ei fod yn disgwyl i gael eu gosod arno gan gelyn. Yr oedd yn offeiriad ac yn llofrudd, ac y dyn ar eu cyfer roedd yn edrych yn hwyr neu'n hwyrach i lofruddiaeth iddo ac yn dal yn offeiriad yn ei le ef. Cymaint oedd y rheol y cysegr. Gallai ymgeisydd ar gyfer yr offeiriadaeth unig yn llwyddo i swydd gan ladd yr offeiriad, a chael ei ladd, cadwodd swydd hyd ei fod ef ei hun lladdwyd gan cryfach neu fwy cyfrwys.
+Mae'r swydd a ddaliodd gan y ddeiliadaeth ansicr a wnaed gydag ef teitl brenin, ond yn sicr nid oes pen ei goroni erioed uneasier lleyg, neu ymwelodd freuddwydion ddrwg mwy, nag ef. Ar gyfer y flwyddyn yn ôl blwyddyn, yn yr haf a'r gaeaf, mewn tywydd teg ac yn budr, bu'n rhaid iddo gadw ei wylio unig, a phryd bynnag y mae'n snatched o gwsg cythryblus yr oedd ar y peril ei fywyd. Mae llacio lleiaf ei wyliadwriaeth, y lleiaf diddymu ei gryfder aelod neu sgil y ffens, ei roi mewn perygl; gallai blew llwyd sêl ei farwolaeth-warant. I pererinion addfwyn a duwiol yn y cysegr efallai y golwg yn dda iddo yn ymddangos i darken y tirwedd teg, fel pan yn sydyn cwmwl blots yr haul ar ddiwrnod braf. Gall y glas dreamy o awyr Eidal, y cysgod brith y coed yr haf, ac mae'r ddisgleirdeb y tonnau yn yr haul, wedi roddir ond yn sâl gyda ffigur hwnnw llym a sinistr. Yn hytrach rydym yn darlun i ni ein hunain y fan a'r lle gan y gall fod wedi bod yn dyst yn Wayfarer hwyr ar un o'r rhai nosweithiau gwyllt yr hydref pan fydd y dail marw yn disgyn trwchus, a'r gwyntoedd yn ymddangos i ganu'r galargân y flwyddyn marw. Mae'n ddarlun prudd, gosod i gerddoriaeth melancholy-y cefndir o goedwig sy'n dangos du a garw yn erbyn awyr gostwng a stormus, mae sighing y gwynt yn y canghennau, y rustle y dail gwywo dan droed, y lapio o ddŵr oer ar y lan, ac yn y blaendir, rheoli'r galon yn ôl a blaen, yn awr yn cyfnos ac yn awr mewn gwyll, yn ffigwr tywyll gyda gliter o ddur ar yr ysgwydd pryd bynnag y lleuad welw, marchogaeth clir o'r cwmwl-rac, cyfoedion i lawr arno drwy'r brigau e'n diferu.
+Y rheol rhyfedd o hyn offeiriadaeth Nid oes gan cyfochrog yn hynafol clasurol, ac ni ellir ei esbonio oddi wrtho. I ddod o hyd esboniad mae'n rhaid i ni fynd ymhellach i ffwrdd. Ni fydd neb yn ôl pob tebyg wadu bod y fath savors arferiad o oedran barbaraidd, a, goroesi i mewn amseroedd imperial, yn sefyll allan ar wahân trawiadol o'r gymdeithas Eidalaidd caboledig y dydd, fel craig primaeval yn codi o lawnt llyfn-heillio. Mae'n y anfoesgarwch iawn ac barbariaeth o'r arferiad sy'n caniatáu i ni obeithio o egluro hynny. Ar gyfer diweddar ymchwilio i hanes cynnar y dyn wedi datgelu y tebygrwydd hanfodol y mae, o dan nifer o wahaniaethau arwynebol, mae'r meddwl dynol wedi ymhelaethu ei athroniaeth cyntaf crai o fywyd. Yn unol â hynny, os gallwn ddangos bod yn arferiad barbaraidd, fel bod yr offeiriadaeth o Nemi, wedi bodoli mewn mannau eraill; os gallwn ganfod y cymhellion a arweiniodd at ei sefydliad, os gallwn brofi bod cymhellion hyn wedi gweithredu yn eang, o bosibl yn gyffredinol, yn gymdeithas ddynol, gan gynhyrchu mewn amgylchiadau amrywiol amrywiaeth o sefydliadau gwahanol yn benodol ond generig fel ei gilydd; os gallwn ddangos, yn olaf, bod y rhain cymhellion iawn, gyda rhai o'u sefydliadau deilliadol, oedd mewn gwirionedd yn y gwaith yn hynafiaeth clasurol;, yna efallai y byddwn yn casglu bod yn weddol ar oedran anghysbell yr un cymhellion rhoi genedigaeth i offeiriadaeth yr Nemi. O'r fath casgliad, yn niffyg tystiolaeth uniongyrchol o ran sut ni all yr offeiriadaeth oedd mewn gwirionedd yn codi, swm i'w arddangos. Ond bydd yn fwy neu'n llai tebygol yn ôl faint o gyflawn ag y mae'n bodloni'r amodau rwyf wedi nodi. Mae gwrthrych y llyfr hwn yw, drwy gyfarfod yr amodau hyn, i gynnig esboniad eithaf tebygol y offeiriadaeth o Nemi.
+Dechreuaf drwy osod allan y rhai ffeithiau a chwedlau sydd wedi dod i lawr i ni ar y pwnc. Yn ôl un stori y addoli Diana ar Nemi sefydlwyd gan Orestes, sydd, ar ôl lladd Thoas, Brenin y Chersonese Tauric (y Crimea), ffodd gyda'i chwaer i'r Eidal, gan ddod ag ef delwedd y Diana Tauric cudd mewn fagot o ffyn. Ar ôl ei farwolaeth ei esgyrn eu cludo o Aricia i Rufain a'i gladdu o flaen y deml o Sadwrn, ar y llethr Capitoline, wrth ochr y deml Concord. Y ddefod gwaedlyd a chwedl priodoli i'r Diana Tauric yn gyfarwydd i ddarllenwyr clasurol; ei bod yn dweud fod pob dieithr a laniodd ar y lan yn aberthu ar ei allor. Ond cludo i'r Eidal, y ddefod tybiedig ffurflen ysgafnach. O fewn y cysegr yn Nemi tyfodd coeden penodol y gallai unrhyw gangen yn cael eu torri. Dim ond runaway gaethweision oedd yn caniatáu i dorri i ffwrdd, os yw ef allai, un o'i changhennau. Llwyddiant yn yr ymgais hawl iddo i ymladd yr offeiriad yn ymladd sengl, ac os efe a'i lladdodd ef efe a deyrnasodd yn ei le ef gyda'r teitl Brenin y Coed (Rex Nemorensis). Yn ôl y farn gyhoeddus ar y ancients y gangen dyngedfennol oedd bod Golden Bough sydd, ar y Sibyl's bidio, Aeneas dynnu cyn iddo essayed y daith beryglus i fyd y meirw. Yr awyren y caethweision a gynrychiolir, dywedwyd, yr awyren o Orestes; ei afael â'r yr offeiriad yn hel atgofion o'r aberth dynol a gynigir ar ôl i'r Tauric Diana. Mae'r rheol hon o olyniaeth gan y cleddyf Arsylwyd i lawr i amseroedd imperial; am ymysg ei freaks eraill Caligula, gan feddwl fod yr offeiriad o Nemi wedi dal swydd yn rhy hir, llogi ruffian mwy hoelion wyth ei ladd ef, ac yn deithiwr Groeg, a ymwelodd yr Eidal yn oes y Antonines, sylwadau a lawr at ei amser i'r offeiriadaeth yn dal y wobr o fuddugoliaeth mewn ymladd sengl.
+O'r addoliad Diana ar Nemi gall rhai nodweddion blaenllaw yn dal i gael eu gwneud allan. O'r offrymau addunedol sydd wedi eu darganfod ar y safle, mae'n ymddangos ei bod yn genhedlu o enwedig fel Huntress, ac ymhellach fel bendith dynion a merched gyda epil, a mamau beichiog ganiatáu cyflenwi hawdd. Unwaith eto, tân i bob golwg wedi chwarae rhan flaenllaw yn ei defodol. Ar gyfer ystod ei ŵyl flynyddol, a gynhaliwyd ar y trydydd ar ddeg o Awst, ar yr adeg poethaf y flwyddyn, ei disgleirio llwyn gyda llu o ffaglau, y mae eu llacharedd goch wedi'i adlewyrchu gan y llyn, a thrwy gydol y hyd a lled yr Eidal y diwrnod oedd Cedwir â defodau sanctaidd ar bob aelwyd yn y cartref. Efydd gerfluniau dod o hyd yn ei ganolfan yn cynrychioli y dduwies ei hun daliad tortsh yn ei godi llaw dde, a menywod y mae eu gweddïau wedi cael eu clywed gan ei ddaeth goroni â torchau a ffaglau goleuo dwyn at y cysegr yn cyflawni eu addunedau. Mae rhai anhysbys un ymroddedig perpetually lamp llosgi mewn ychydig cysegr yn Nemi er diogelwch yr ymerawdwr Claudius a'i deulu. Efallai y bydd y lampau terra-cotta sydd wedi cael eu darganfod yn y llwyn efallai wedi cyflawni pwrpas tebyg ar gyfer personau mwyaf gwerinol. Os felly, byddai y gyfatebiaeth yr arferiad i Gatholig yr arfer o neilltuo ganhwyllau sanctaidd mewn eglwysi fod yn amlwg. Bellach, mae'r teitl Vesta talu gan Diana yn Nemi bwyntiau yn glir at gynnal tân sanctaidd barhaol yn ei cysegr. Mae islawr crwn mawr yn y gornel ogledd-ddwyreiniol y deml, a godwyd ar tri cham a dwyn olion o balmant mosaig, yn ôl pob tebyg cefnogi teml rownd o Diana yn ei gymeriad Vesta, fel y deml rownd o Vesta yn y Fforwm Rhufeinig. Yma, byddai'r tân sanctaidd i bob golwg wedi tueddu gan Vestal Virgins, ar gyfer y pennaeth Vestal mewn terra-cotta Daethpwyd o hyd y fan a'r lle, ac addoliad o dân parhaol, derbyn gofal gan morwynion sanctaidd, ymddengys iddi gael ei cyffredin mewn Latium o'r cynharaf at yr amseroedd diweddaraf. Bellach, yn yr ŵyl flynyddol y dduwies, cŵn hela oedd coroni ac anifeiliaid gwyllt nad oedd molested; bobl ifanc yn mynd trwy seremoni purificatory yn ei anrhydedd; gwin dygwyd allan, ac yn y wledd yn cynnwys yn blentyn weini cacennau chwilboeth ar blatiau o ddail, ac afalau yn dal i hongian mewn clystyrau ar y brigau.
+Ond nid oedd Diana teyrnasiad ei ben ei hun yn ei llwyn yn Nemi. Dau divinities llai rhannu ei gysegr goedwig. Un oedd Egeria, y nymff y dwr clir sydd, byrlymu o'r creigiau basaltic, a ddefnyddir i ostwng yng rhaeadrau osgeiddig i mewn i'r llyn yn y lle a elwir Le Mole, oherwydd dyma fe sefydlwyd y melinau y pentref modern o Nemi. Mae purling o'r ffrwd gan ei fod yn rhedeg dros y cerrig mân yn cael ei grybwyll gan Ovid, a oedd yn dweud wrthym ei fod wedi aml yn yfed o'i dwr. Merched gyda phlentyn a ddefnyddir i aberthu i Egeria, oherwydd ei bod yn credu, fel Diana, i allu rhoi iddynt gyflwyno hawdd. Traddodiad rhedeg bod y nymff oedd y wraig neu'r feistres y brenin doeth Numa, ei fod wedi consorted gyda hi yn y cyfrinachedd y llwyn sanctaidd, a bod y deddfau sy'n roddodd y Rhufeiniaid wedi cael ei ysbrydoli gan cymundeb gyda hi Diwinyddiaeth. Plutarch y chwedl yn cymharu â chwedlau eraill o wrth ei fodd o duwiesau i ddynion marwol, megis y cariad Cybele a'r Lleuad ar gyfer y ffair bobl ifanc Attis a Endymion. Yn ôl rhai, nid yw'r trysting-lle'r oedd cariadon yn y coed o Nemi ond mewn llwyn y tu allan i'r diferu Porta Capena yn Rhufain, lle y gwanwyn arall cysegredig o Egeria ddylifodd o ogof dywyll. Bob dydd mae'r Vestals Rhufeinig hôl dwr o'r ffynnon i olchi deml Vesta, cario yn piserau llestri pridd ar eu pennau. Yn Juvenal amser y graig naturiol wedi ei chau mewn marmor, ac yn y fan a'r lle sanctaidd ei halogi gan gangiau o Iddewon yn wael, a oedd yn dioddef o chyrcyda, sipsiwn fel, yn y llwyn. Efallai y byddwn yn tybio bod y gwanwyn a syrthiodd i mewn i'r llyn o Nemi oedd y gwir Egeria gwreiddiol, a dyna pryd yr ymfudwyr cyntaf symud i lawr o'r bryniau Alban i lannau Tiber maent yn dwyn y nymff gyda hwy a dod o hyd i gartref newydd ar gyfer ei mewn llwyn y tu allan i gatiau. Mae olion baddonau sydd wedi cael eu darganfod yn y caeadle cysegredig, ynghyd â modelau terra-cotta llawer o wahanol rannau o'r corff dynol, yn awgrymu bod y dyfroedd o Egeria cael eu defnyddio i wella cleifion, a allai fod wedi dynodi eu gobeithion neu testified eu ddiolchgarwch gan neilltuo thebygrwydd gweledol o'r aelodau afiach i'r dduwies, yn unol ag arfer a welwyd o hyd mewn llawer rhan o Ewrop. Hyd heddiw byddai'n ymddangos fod y gwanwyn yn cadw rhinweddau meddyginiaethol.
+Mae eraill y duwiau a duwiesau fân ar Nemi oedd Virbius. Ôl y chwedl wedi ei bod Virbius oedd y Hippolytus arwr Groegaidd ifanc, dilychwin ac yn deg, a ddysgodd y grefft o venery o'r Chiron Centaur, a threuliodd ei holl ddyddiau yn mynd ar drywydd frigau'r bwystfilod gwylltion gyda'r Artemis Huntress gwyryf (Groeg yr cyfatebol o Diana) am ei cymrawd yn unig. Falch o'i gymdeithas dwyfol, efe spurned y cariad o ferched, ac mae hyn yn profi ei bane. Ar gyfer Aphrodite, pigo gan ei scorn, llysfam ysbrydoli ei Phaedra gydag gariad ef: a phan oedd ei disdained datblygiadau annuwiol hi drwy dwyll gyhuddo ef i'w Theseus dad. Roedd y slander Credwyd, ac yn gweddïo Theseus at ei Poseidon hyrddod i ddial y ddychmygu anghywir. Felly, er Hippolytus gyrru mewn cerbyd gan y lan y Gwlff Saronic, y môr-duw anfon tarw ffyrnig allan oddi wrth y tonnau. Mae'r ceffylau ofnus bolltio, taflu Hippolytus oddi wrth y cerbyd, ac yn llusgo ef yn eu carnau i farwolaeth. Ond Diana, ar gyfer y cariad hi turio Hippolytus, perswadiodd y Aesculapius ele i ddod â hi helwyr deg ifanc yn ôl yn fyw gan ei SIMPLES. Iau, ddig y dylai dyn marwol ddychwelyd o byrth angau, byrdwn i lawr yr ele ymyrraeth ei hun i Hades. Ond Diana cuddiodd ei hoff gan y duw dig mewn cwmwl trwchus, cuddio ei nodweddion drwy ychwanegu blynyddoedd i ei fywyd, ac yna bore ef bell i ffwrdd i AADGOS o Nemi, lle bu'n ymddiriedwyd ef i'r Egeria nymff, i fyw yno, anhysbys ac unigol, o dan yr enw Virbius, yn nyfnder y goedwig Eidal. Mae yna efe a deyrnasodd yn frenin, ac yno ymroddedig o ganolfan i Diana. Yr oedd ganddo fab hawddgar, Virbius, a, undaunted gan dynged ei dad, gyrru tîm o steeds tanllyd i ymuno â'r Latins yn y rhyfel yn erbyn Aeneas a'r Trojans. Roedd Virbius addoli fel duw nid yn unig yn Nemi ond mewn mannau eraill, ar ei gyfer yn Campania clywn am offeiriad arbennig neilltuo i ei wasanaeth. Ceffylau eu heithrio o'r llwyn cysegr Arician ac oherwydd bod wedi lladd ceffylau Hippolytus. Yr oedd yn anghyfreithlon i gyffwrdd ei ddelwedd. Roedd rhai yn credu ei fod yn yr haul. "Ond y gwir yw," meddai Servius, "ei fod yn dwyfoldeb gysylltiedig â Diana, fel y Attis yn gysylltiedig â Mam y Duwiau, a Erichthonius gyda Minerva, a Adonis gyda Venus." Beth yw natur y gymdeithas oedd ein Rhaid i holi ar hyn o bryd. Yma, mae'n werth sylwi bod yn ei yrfa hir ac mae hyn brith personage chwedlonol neu wedi dangos dycnwch anhygoel o fywyd. Ar gyfer y gallwn prin amheuaeth fod y Hippolytus Sant y calendr Rhufeinig, a gafodd ei lusgo gan geffylau i farwolaeth ar y trydydd ar ddeg o Awst, Diana's diwrnod ei hun, dim heblaw arwr Groegaidd o'r un enw, a oedd, ar ôl marw ddwywaith drosodd fel bechadur cenhedloedd, wedi cael ei dadebru hapus fel sant Cristnogol.
+Mae angen unrhyw arddangosiad cymhleth er mwyn darbwyllo ni fod y storïau ddywedodd i gyfrif am Diana's addoli yn cael eu unhistorical Nemi. Mae'n amlwg eu bod yn perthyn i'r dosbarth hwnnw mawr o fythau sy'n cael eu gwneud i fyny i esbonio tarddiad o ddefod grefyddol ac nad oes gennych sylfaen ar wahân i'r debyg, real neu ddychmygol, a all fod yn olrhain rhyngddo a'r rhai defodol tramor. Mae anghysonder Nemi mythau hyn yn wir dryloyw, gan fod y sylfaen y addoli yn olrhain yn awr i Orestes ac yn awr i Hippolytus, gan fod hyn yn ôl neu sy'n nodwedd o'r ddefod rhaid cyfrif amdanynt. Mae gwerth gwirioneddol chwedlau o'r fath yw eu bod yn fodd i ddangos natur y addoliad trwy ddarparu safon â hwy i gymharu iddo; ac ymhellach, eu bod yn anuniongyrchol ddwyn tystiolaeth i'w hoed hybarch drwy ddangos bod y tarddiad gwir oedd ar goll yn y niwl o hynafiaeth gwych. Yn yr ail ran Nemi chwedlau hyn yn fwy na thebyg y gellir ymddiried ynddo nag y traddodiad yn ôl pob golwg hanesyddol, ardystiedig ar gyfer gan Cato yr Hynaf, fod y llwyn sanctaidd yn ymroddedig i Diana gan penodol Baebius Egerius neu Laevius o Tusculum, yn unben Lladin, ar ran y pobloedd Tusculum, Aricia, Lanuvium, Laurentum, Cora, Tibur, Pometia, a Ardea. Mae hyn yn wir traddodiad siarad ar ran yr oedran mawr y cysegr, gan ei fod yn ymddangos hyd yn ei sylfaen rywbryd cyn 495 CC, y flwyddyn y Pometia ei ddiswyddo gan y Rhufeiniaid ac yn diflannu o hanes. Ond ni allwn dybio y mor barbaraidd rheol fel bod yr offeiriadaeth Arician sefydlwyd yn fwriadol gan gynghrair o gymunedau gwâr, megis y dinasoedd Lladin heb os oedd. Mae'n rhaid ei fod wedi'i drosglwyddo o gyfnod y tu hwnt i'r cof am ddyn, pryd yr Eidal oedd yn dal mewn cyflwr llawer ruder nag unrhyw hysbys i ni yn y cyfnod hanesyddol. Mae'r credyd y traddodiad yn ysgwyd yn hytrach na chadarnhau gan stori arall sy'n priodoli'r sylfaen y cysegr i penodol Manius Egerius, a arweiniodd at y dywediad, "Mae yna lawer o Manii Aricia." Mae'r ddihareb rhai esbonio hyn gan honni bod Manius Egerius oedd y hynafiad o linell hir a nodedig, tra bod eraill yn meddwl ei fod yn golygu bod pobl yn hyll ac yn deformed llawer yn Aricia, ac maent yn deillio y Manius enw o Mania, mae bogi neu destun cwyno i ddychryn plant. Mae dychanwr Rhufeinig yn defnyddio'r enw fel Manius nodweddiadol o'r cardotwyr a lleyg yn aros am pererinion ar y llethrau Arician. Mae'r gwahaniaeth barn, ynghyd â'r anghysondeb rhwng Manius Egerius o Aricia a Egerius Laevius o Tusculum, yn ogystal â'r tebygrwydd y ddau enw i Egeria chwedlonol y, cyffroi ein amheuaeth. Eto i gyd mae'r traddodiad a gofnodir gan Cato ymddangos yn rhy amgylchiadol, ac mae ei noddwr yn rhy barchus, i ganiatáu inni ei wrthod fel ffuglen segur. Yn hytrach efallai y byddwn yn tybio ei fod yn cyfeirio at rai adfer hynafol neu ailadeiladu y cysegr, a gynhaliwyd mewn gwirionedd gan y Conffederasiwn wladwriaethau. Ar unrhyw gyfradd mae'n tystio i'r gred bod y llwyn wedi ei o'r oesoedd cynnar fan cyffredin o addoliad ar gyfer llawer o ddinasoedd hynaf y wlad, os nid ar gyfer y Cydfwriad Lladin cyfan.
+2. Artemis a Hippolytus
+Yr wyf yn WEDI dweud bod y Arician chwedlau o Orestes a Hippolytus, er bod ddiwerth fel hanes, â gwerth penodol i'r graddau y gallant ein helpu ni i ddeall yr addoli ar Nemi yn well trwy ei gymharu â defod a mythau o gwarchodfeydd eraill. Rhaid i ni ofyn i ni'n hunain, Pam oedd awdur draw chwedlau hyn ar Orestes a Hippolytus er mwyn egluro Virbius a Brenin y Coed? O ran Orestes, mae'r ateb yn amlwg. Ef a delwedd y Diana Tauric, gellid ond yn cael ei appeased â gwaed dynol, eu llusgo i mewn i rendro ddealladwy i'r rheol murderous o olyniaeth i'r offeiriadaeth Arician. O ran Hippolytus nad yw'r achos yn un mor blaen. Mae'r modd ei farwolaeth yn awgrymu ddigon rhwydd yn rheswm dros y gwaharddiad ceffylau o'r llwyn, ond mae hyn yn ei ben ei hun yn ymddangos yn ddigon prin i roi cyfrif ar gyfer adnabod. Rhaid inni geisio prob ddyfnach gan edrych ar y addoli yn ogystal â'r chwedl neu myth o Hippolytus.
+Roedd ganddo noddfa enwog yn ei gartref teuluol o Troezen, a leolir ar y hardd, bron bae dirgloi, lle mae llwyni o orennau a lemonau, gyda gypreswydden tal soaring fel meindyrau tywyll yn uwch na'r ardd Hesperides, bellach yn dilladu y stribyn ffrwythlon ar lan y droed y mynyddoedd garw. Ar draws y dŵr glas y bae tawel, y mae'n llochesi o'r môr agored, yn codi Poseidon's ynys sanctaidd, ei copaon cudd yn y gwyrdd prudd y pinwydd. Ar y ffair Hippolytus arfordir yn addoli. O fewn ei gysegr sefyll yn deml â delwedd hynafol. Ei wasanaeth ei pherfformio gan offeiriad oedd yn dal swydd ar gyfer bywyd; bob blwyddyn yn wyl aberthol ei gynnal yn ei anrhydeddu, ac mae ei dynged annhymig galar yn flynyddol, gyda wylofain a siantiau doleful, gan morwynion unwedded. Pobl ifanc a morwynion ymroddedig cloeon ar eu gwallt yn ei deml cyn priodi. Mae ei fedd yn bodoli ar Troezen, er na fyddai'r bobl ddangos hynny. Awgrymwyd, gyda hygrededd mawr, bod yn y Hippolytus golygus, hoff Artemis, torri i ffwrdd yn ei brif ifanc, ac yn flynyddol gan llancesau galar, mae gennym un o'r rhai sy'n hoff o marwol dduwies sy'n ymddangos mor aml mewn crefydd hynafol, a ohonynt Adonis yw'r math mwyaf cyfarwydd. Roedd y gystadleuaeth o Artemis a Phaedra ar gyfer y hoffter o Hippolytus atgynhyrchu, yn ôl y sôn, o dan enwau gwahanol, y gystadleuaeth rhwng y Aphrodite a Proserpine ar gyfer y cariad Adonis, ar gyfer Phaedra yn unig yw dwbl o Aphrodite. Mae'r ddamcaniaeth yn ôl pob tebyg yn unrhyw anghyfiawnder naill ai i Hippolytus neu i Artemis. Ar gyfer Artemis oedd yn wreiddiol yn dduwies fawr o ffrwythlondeb, ac, ar yr egwyddorion crefydd cynnar, mae hi sy'n rhaid i ffrwythloni'r natur ei hun fod yn ffrwythlon, ac i fod yn bod yn rhaid iddi gael o reidrwydd Consort gwrywaidd. Ar y farn hon, Hippolytus oedd y Consort o Artemis yn Troezen, ac mae'r cneifio tresses gynigiwyd iddo gan y bobl ifanc Troezenian a morwynion priodas cyn eu cynllunio i gryfhau ei undeb â'r dduwies, ac felly i hyrwyddo ffrwythlondeb y ddaear, o wartheg , ac y ddynoliaeth. Mae cryn dipyn o gadarnhad o'r farn hon fod o fewn y ganolfan o Hippolytus ar Troezen roedd haddoli dau pwerau benywaidd a enwir Damia a Auxesia, y mae ei enwad â ffrwythlondeb y ddaear yn ddiamheuol. Pan Epidaurus dioddef o prinder, y bobl, mewn ufudd-dod i oracl, cerfio delweddau o Damia a Auxesia allan o bren cysegredig olewydd, ac nid oes unrhyw gynt wedi eu gwneud hynny ac yn eu gosod i fyny na'r ddaear yn dwyn ffrwyth eto. Ar ben hynny, ar Troezen ei hun, ac i bob golwg o fewn y caeadle o Hippolytus, gŵyl rhyfedd o gerrig-taflu ei gynnal yn anrhydedd o'r morwynion, gan fod y galw Troezenians iddynt; ac mae'n hawdd i ddangos bod arferion tebyg wedi cael eu hymarfer mewn llawer o diroedd at y diben penodol o sicrhau cnydau da. Yn hanes y farwolaeth drasig y Hippolytus fabolaidd efallai y byddwn yn dirnad i gydweddiad â chwedlau tebyg o bobl ifanc yn deg ond marwol eraill sy'n talu gyda eu bywydau er Rapture byr o gariad o dduwies anfarwol. Mae'r rhain yn gariadon hapless oedd yn ôl pob tebyg nid bob amser mythau yn unig, ac mae'r chwedlau sy'n olrhain eu gwaed golli yn y blodau porffor y fioled, y staen coch y blodyn y gwynt, neu fflysio rhuddgoch y rhosyn oedd unrhyw arwyddluniau segur barddonol o ieuenctid a harddwch fleeting fel y blodau haf. chwedlau o'r fath yn cynnwys athroniaeth dyfnach o ran o fywyd dyn i fywyd natur-athroniaeth trist oedd yn rhoi genedigaeth i ymarfer trasig. Beth sy'n athroniaeth ac arfer hwnnw oedd, byddwn yn dysgu yn nes ymlaen.
+3. Ailddangosiad
+Gall WE bellach efallai yn deall pam yr henuriaid a nodwyd Hippolytus, mae'r Consort o Artemis, gyda Virbius, sydd, yn ôl Servius, yn sefyll i Diana fel Adonis i Venus, neu Attis i Mam y Duwiau. Ar gyfer Diana, fel Artemis, oedd yn dduwies ffrwythlondeb yn gyffredinol, ac o geni plant yn arbennig. Fel y cyfryw hi, fel ei cyfatebol Groeg, sydd ei angen yn bartner gwrywaidd. Partner hwnnw, os Servius yn iawn, roedd Virbius. Daeth Yn ei gymeriad y sylfaenydd y llwyn sanctaidd a frenin cyntaf o Nemi, Virbius yn amlwg yn y rhagflaenydd chwedlonol neu gynddelw o linell o offeiriaid a wasanaethodd Diana o dan y teitl Brenhinoedd y Wood, ac sydd, fel yntau, un ar ôl y llall, i ben yn dreisgar. Mae'n naturiol, felly, i conjecture eu bod yn sefyll i'r dduwies y llwyn yn yr un perthynas lle Virbius sefyll iddi, yn fyr, fod y Brenin marwol y Wood wedi gyfer ei frenhines y goedlan ei hun Diana. Os yw'r goeden sanctaidd y mae ef ei warchod gyda ei fywyd oedd i fod, yn ôl pob tebyg, i fod yn ei ymgorffori arbennig, efallai na fydd ei offeiriad dim ond ei addoli fel ei dduwies ond ei groesawu fel ei wraig. Mae o leiaf ddim hurt yn y dybiaeth, gan fod hyd yn oed yng nghyfnod Pliny Rhufeinig bonheddig yn ei ddefnyddio felly i drin ffawydd prydferth-coed mewn rhan arall o'r llwyn sanctaidd Diana ar y bryniau Alban. Mae'n cofleidio iddo, efe a'i cusanodd ef, ei fod yn gorwedd o dan ei gysgod, efe win tywalltodd ar ei boncyff. Mae'n debyg iddo gymryd y goeden ar gyfer y dduwies. Mae'r arfer o gorfforol priodi dynion a merched i goed yn ymarfer dal i fod yn India a rhannau eraill o'r Dwyrain. Pam na ddylai fod wedi cael yn Latium hynafol?
+Adolygu'r dystiolaeth yn ei gyfanrwydd, efallai y byddwn yn dod i'r casgliad bod yr addoliad Diana yn ei llwyn cysegredig ar Nemi oedd o bwys mawr a hynafiaeth cyn cof; bod yn barchedig fel y dduwies coetiroedd ac o greaduriaid gwyllt, yn ôl pob tebyg hefyd o wartheg yn y cartref ac o y ffrwythau'r ddaear; ei bod yn credu i fendithio ddynion a merched gyda epil ac i helpu mamau yn childbed; fod ei tân sanctaidd, yn tueddu gan morynion dilychwin, llosgi perpetually mewn teml rownd o fewn y ganolfan; sy'n gysylltiedig â hi yn dwr-nymff Egeria sy'n rhyddhau un o Diana swyddogaethau'r hun gan fenywod succouring yn esgor, ac a oedd i fod popularly i gael paru gyda brenin Rhufeinig hen yn y llwyn sanctaidd; ymhellach, bod Diana o'r Wood ei hun wedi cael Virbius gydymaith gwrywaidd yn ôl enw , a oedd i iddi beth oedd i Adonis Venus, neu Attis i Cybele, ac, yn olaf, bod hyn Virbius chwedlonol yn cael ei gynrychioli yn y cyfnod hanesyddol gan linell o offeiriaid a elwir yn Brenhinoedd y Wood, a fu farw yn rheolaidd gan y cleddyfau eu holynwyr , ac yr oedd eu bywydau mewn modd rhwymo i fyny gyda choeden penodol yn y llwyn, gan fod yr amod bod coeden yn anafu eu bod yn ddiogel rhag ymosodiad.
+Yn amlwg nid yw'r rhain yn y casgliadau eu hunain yn ddigon i esbonio'r rheol benodol o olyniaeth i'r offeiriadaeth. Ond efallai y bydd efallai yr arolwg o faes ehangach ein harwain i feddwl eu bod yn cynnwys yn germ yr ateb y broblem. Er bod yr arolwg ehangach y mae'n rhaid i ni nawr fynd i'r afael ein hunain. Bydd yn cael ei hir a llafurus, ond efallai y bydd rhywbeth yn meddu ar y diddordeb a swyn o daith ddarganfod, lle byddwn yn ymweld â llawer o wledydd tramor rhyfedd, gyda phobl tramor rhyfedd, ac yn dal i arferion dieithryn. Mae'r gwynt yn y shrouds: rydym yn ysgwyd allan ein hwyliau iddo, a gadael yr arfordir yr Eidal y tu ôl i ni am y tro.
+II. Kings Priestly
+Y cwestiynau yr ydym wedi gosod i ni'n hunain i ateb yn bennaf yn ddwy: yn gyntaf, pam roedd Diana's offeiriad yn Nemi, y Brenin y Wood, i ladd ei ragflaenydd? ail, pam cyn gwneud hynny pe bai wedi dynnu'n y gangen o'r goeden penodol y mae barn y cyhoedd am y ancients nodwyd bod ganddynt Virgil's Golden Bough?
+Y pwynt cyntaf ar yr ydym yn cau yw teitl yr offeiriad. Pam y cafodd efe a alwodd y Brenin yr Wood? Pam y cafodd ei swydd siarad o fel teyrnas?
+Mae'r undeb o deitl brenhinol â dyletswyddau offeiriadol yn gyffredin yn yr Eidal a Gwlad Groeg hynafol. Yn Rhufain ac mewn dinasoedd eraill o Latium oedd offeiriad o'r enw y Brenin Aberth neu'r Brenin y Defodau Sacred, a'i wraig dwyn y teitl Queen of the Defodau Sacred. Yn Athen gweriniaethol yr ynad ail blynyddol y wladwriaeth galwyd y Brenin, a'i wraig y Frenhines, y swyddogaethau roedd y ddau yn grefyddol. Mae llawer o ddemocratiaethau Groeg frenhinoedd eraill oedd mewn enw, y mae eu dyletswyddau, i'r graddau y maent yn hysbys, i bob golwg wedi offeiriadol, ac i gael canolbwyntio o amgylch yr Aelwyd Cyffredin y wladwriaeth. Roedd rhai yn dweud Groeg oedd nifer o'r brenhinoedd mewn enw, oedd yn dal swydd ar yr un pryd. Yn Rhufain y traddodiad oedd bod y Brenin Aberth cael ei benodi ar ôl dileu'r frenhiniaeth er mwyn cynnig yr aberthau a cyn wedi ei gynnig gan y brenhinoedd. Golygfa tebyg ynghylch tarddiad y brenhinoedd offeiriadol Ymddengys fod prevailed yng Ngwlad Groeg. Yn ei hun nid yw'r farn yn annhebygol, a yw'n cael ei ategu gan yr enghraifft o Sparta, bron y wladwriaeth yn unig Groeg unig sy'n cadw ar ffurf kingly o lywodraeth yn y cyfnod hanesyddol. Ar gyfer ym mhob aberthau Sparta wladwriaeth cynigiwyd gan y brenhinoedd fel disgynyddion y duw. Mae un o'r ddau frenin Spartan gynhaliwyd yr offeiriadaeth o Zeus Lacedaemon, y llall yr offeiriadaeth o Heavenly Zeus.
+Mae'r cyfuniad hwn o swyddogaethau offeiriadol gydag awdurdod brenhinol yn gyfarwydd i bob un. Asia Leiaf, er enghraifft, roedd y sedd o brifddinasoedd crefyddol amrywiol iawn peopled gan filoedd o gaethweision cysegredig, ac yn rheoli gan pontiffs sy'n wielded ar lefel awdurdod unwaith tymhorol ac ysbrydol, fel y popes Rhufain canoloesol. dinasoedd offeiriad-marchogaeth o'r fath yn Zela a Pessinus. Teutonic brenhinoedd, unwaith eto, yn y dyddiau hen cenhedloedd i bob golwg wedi sefyll yn y sefyllfa, ac i fod wedi arfer y pwerau, o offeiriaid uchel. Mae Ymerawdwyr o Tsieina a gynigir ebyrth cyhoeddus, y manylion a rheoleiddio gan y llyfrau ddefod. Roedd y Brenin Madagascar uchel-offeiriad y deyrnas. Yn yr ŵyl mawr y flwyddyn newydd, pan oedd bustach haberthu er lles y deyrnas, y brenin yn sefyll dros yr aberth i gynnig gweddi a diolchgarwch, tra bod ei cynorthwywyr lladd yr anifail. Yn y dywed frenhinol sy'n dal i gadw eu hannibyniaeth ymysg y Gallas y Dwyrain Affrica, y brenin ebyrth ar ben y mynyddoedd ac yn rheoleiddio immolation dioddefwyr dynol; ac mae'r golau gwan o draddodiad yn datgelu undeb tebyg o bŵer amserol ac ysbrydol, o brenhinol a dyletswyddau offeiriadol, yn y brenhinoedd y rhanbarth hwnnw hyfryd o Ganol America y mae eu cyfalaf hynafol, claddu yn awr o dan y twf rheng y goedwig trofannol, yn cael ei farcio gan yr adfeilion urddasol a dirgel Palenque.
+Pan fyddwn wedi dweud bod y frenhinoedd hynafol oedd offeiriaid cyffredin hefyd, yr ydym yn bell o gael dihysbyddu yr agwedd crefyddol ar eu swydd. Yn y dyddiau hynny y diwinyddiaeth y gwrychoedd yn frenin oedd unrhyw ffurf wag o araith, ond mae'r mynegiant o gred sobr. Kings yn barchedig, mewn llawer o achosion nid dim ond fel offeiriaid, hynny yw, fel intercessors rhwng dyn a duw, ond fel duwiau eu hunain, yn gallu bestow ar eu pynciau ac yn addolwyr rhai bendithion sydd i fod yn gyffredin i fod tu hwnt i gyrraedd meidrolyn, a Ceisir, os o gwbl, dim ond trwy weddi ac aberth a gynigir i fodau superhuman ac anweledig. Felly disgwylir brenhinoedd yn aml i roi glaw a heulwen yn eu tymor o law, i wneud y cnydau yn tyfu, ac yn y blaen. Strange fel y disgwyliad hwn yn ymddangos i ni, mae'n eithaf o ddarn gyda dulliau gynnar o feddwl. Mae milain prin y mae'n ystyried gwahaniaeth tynnu gyffredin gan bobl fwy datblygedig rhwng y naturiol a'r goruwchnaturiol. Iddo ef y byd i raddau helaeth yn gweithio gan asiantau arallfydol, hynny yw, gan fodau personol weithredu ar ysgogiadau a chymhellion fel ei hun, yn agored fel yntau gael ei gynnig drwy apelio at eu drueni, eu gobeithion, ac yn eu hofnau. Mewn byd felly genhedlu wêl oes terfyn ar ei rym o ddylanwadu ar y cwrs o natur at ei fantais ei hun. Gall Gweddïau, addewidion, neu fygythiadau diogel iddo dywydd braf ac yn gnwd toreithiog gan y duwiau, ac os ddylai ddigwydd yn dduw, gan ei fod weithiau yn credu, i fod yn incarnate yn ei person ei hun, yna mae angen iddo apelio i ddim uwch yn cael ei; efe, y milain, meddu yn ei hun yr holl pwerau angenrheidiol i hyrwyddo ei hun les a gwaith ei gyd-ddynion.
+Mae hwn yn un ffordd y mae'r syniad o ddyn-duw yn cyrraedd. Ond mae un arall. Ynghyd â barn y byd yn treiddio fel y lluoedd ysbrydol, dyn milain mae gwahanol, ac yn ôl pob tebyg yn dal hŷn, beichiogi lle efallai y byddwn yn canfod yn germ o'r cysyniad modern o gyfraith naturiol neu farn natur fel cyfres o ddigwyddiadau yn digwydd mewn gorchymyn invariable heb ymyrraeth asiantaeth personol. Mae germ yr wyf yn siarad yn cymryd rhan mewn bod hud gydymdeimladol, gan y gallai gael ei alw, sy'n chwarae rhan fawr yn y systemau mwyaf o ofergoeliaeth. Yn y gymdeithas yn gynnar y brenin yn aml mae dewin yn ogystal ag yn offeiriad, yn wir mae'n ymddangos bod wedi cyrraedd yn aml i rym yn rhinwedd ei hyfedredd tybiedig yn y grefft du neu wyn. Felly er mwyn deall yr esblygiad y frenhiniaeth a chymeriad sanctaidd y mae gan y swyddfa wedi cyffredin cael ei fuddsoddi yn y llygaid ffyrnig neu bobloedd barbaraidd, mae'n hanfodol cael rhywfaint o gyfarwydd ag egwyddorion hud, ac i ffurfio rhai beichiogi o'r dal rhyfeddol sy'n bod system hynafol o ofergoeliaeth wedi'i chael ar y meddwl dynol ym bob oed a phob gwlad. Yn unol â hynny yr wyf yn bwriadu ystyried y pwnc yn eithaf manwl.
