@@ -194,6 +194,7 @@
     <tika:link>http://www.digitalpreservation.gov/formats/fdd/fdd000317.shtml</tika:link>
     <magic priority="50">
       <match value="SIMPLE  =                    T" type="string" offset="0"/>
+      <match value="SIMPLE  =                T" type="string" offset="0"/>
     </magic>
     <glob pattern="*.fits"/>
     <glob pattern="*.fit"/>
@@ -361,9 +362,20 @@
   <mime-type type="application/moss-signature"/>
   <mime-type type="application/mosskey-data"/>
   <mime-type type="application/mosskey-request"/>
-  <mime-type type="application/mp4">
-    <glob pattern="*.mp4s"/>
+
+  <mime-type type="application/quicktime">
+    <!-- The is the base QuickTime container -->
+    <!-- QuickTime video, and all MP4 formats, are based on it -->
+    <acronym>QTFF</acronym>
+    <_comment>QuickTime container format</_comment>
   </mime-type>
+  <mime-type type="application/mp4">
+    <!-- Arbitrary data stored in a MP4 container -->
+    <_comment>MP4 container format</_comment>
+    <glob pattern="*.mp4s"/>
+    <sub-class-of type="application/quicktime" />
+  </mime-type>
+
   <mime-type type="application/mpeg4-generic"/>
   <mime-type type="application/mpeg4-iod"/>
   <mime-type type="application/mpeg4-iod-xmt"/>
@@ -1505,9 +1517,8 @@
   </mime-type>
   <mime-type type="application/vnd.ms-asf"/>
   <mime-type type="application/vnd.ms-cab-compressed">
-   <magic priority="50">
-      <match value="MCSF" type="string" offset="0">
-      </match>
+    <magic priority="50">
+      <match value="MSCF\000\000\000\000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.cab"/>
   </mime-type>
@@ -3400,9 +3411,10 @@
   </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
-   <magic priority="50">
-      <match value="BOOKMOBI" type="string" offset="60"> 
-     </match>
+    <acronym>MOBI</acronym>
+    <_comment>Mobipocket Ebook</_comment>
+    <magic priority="60">
+      <match value="BOOKMOBI" type="string" offset="0:60" />
     </magic>
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
@@ -3602,6 +3614,10 @@
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>
+    <magic priority="50">
+      <match value="CDF\001" type="string" offset="0" />
+      <match value="CDF\002" type="string" offset="0" />
+    </magic>
   </mime-type>
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
@@ -3763,6 +3779,15 @@
 
   <mime-type type="application/x-shar">
     <glob pattern="*.shar"/>
+  </mime-type>
+
+  <mime-type type="application/x-shapefile">
+    <acronym>ESRI Shapefiles</acronym>
+    <_comment>ESRI Shapefiles</_comment>
+    <magic priority="60">
+      <match value="0x0000270a" type="big32" offset="2" />
+    </magic>
+    <glob pattern="*.shp"/>
   </mime-type>
 
   <mime-type type="application/x-shockwave-flash">
@@ -4245,6 +4270,7 @@
     <glob pattern="*.mp4a"/>
     <glob pattern="*.m4a"/>
     <glob pattern="*.m4b"/>
+    <sub-class-of type="application/quicktime" />
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
@@ -6377,6 +6403,7 @@
   <mime-type type="video/pointer"/>
 
   <mime-type type="video/quicktime">
+    <_comment>QuickTime Video</_comment>
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
@@ -6387,6 +6414,7 @@
     </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
+    <sub-class-of type="application/quicktime" />
   </mime-type>
 
   <mime-type type="video/raw"/>
