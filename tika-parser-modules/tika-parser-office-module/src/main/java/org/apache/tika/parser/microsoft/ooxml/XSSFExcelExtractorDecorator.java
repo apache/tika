@@ -187,6 +187,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             throws IOException, SAXException {
         InputSource sheetSource = new InputSource(sheetInputStream);
         SAXParserFactory saxFactory = SAXParserFactory.newInstance();
+        saxFactory.setNamespaceAware(true);
         try {
             SAXParser saxParser = saxFactory.newSAXParser();
             XMLReader sheetParser = saxParser.getXMLReader();
