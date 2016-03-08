@@ -35,9 +35,9 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.14-beta1</poi.version>
+    <poi.version>3.14</poi.version>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.9</codec.version>
+    <codec.version>1.10</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress -->
     <tukaani.version>1.5</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>

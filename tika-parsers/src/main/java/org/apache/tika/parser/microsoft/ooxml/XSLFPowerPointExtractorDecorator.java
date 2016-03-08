@@ -27,7 +27,7 @@ import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
-import org.apache.poi.sl.usermodel.SimpleShape;
+import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
@@ -151,7 +151,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         for (XSLFShape sh : shapes) {
             if (sh instanceof XSLFTextShape) {
                 XSLFTextShape txt = (XSLFTextShape) sh;
-                SimpleShape.Placeholder ph = txt.getTextType();
+                Placeholder ph = txt.getTextType();
                 if (skipPlaceholders && ph != null) {
                     continue;
                 }
