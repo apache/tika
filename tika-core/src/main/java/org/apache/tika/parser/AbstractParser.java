@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Properties;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -30,7 +31,12 @@ import org.xml.sax.SAXException;
  *
  * @since Apache Tika 0.10
  */
-public abstract class AbstractParser implements Parser {
+public abstract class AbstractParser implements ConfigurableParser {
+
+    /**
+     * Configuration supplied at runtime
+     */
+    protected ParseContext context;
 
     /**
      * Serial version UID.
@@ -53,4 +59,14 @@ public abstract class AbstractParser implements Parser {
         parse(stream, handler, metadata, new ParseContext());
     }
 
+    /**
+     * called by the framework to supply runtime parameters which may be
+     * required for initialization
+     * @param context the parser context at runtime
+     * @since Apache Tika 1.13
+     */
+    @Override
+    public void configure(ParseContext context) throws TikaException {
+        this.context = context;
+    }
 }

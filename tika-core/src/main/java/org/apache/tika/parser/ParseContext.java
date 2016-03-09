@@ -43,7 +43,11 @@ public class ParseContext implements Serializable {
 
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
- 
+    /**
+     * Map of configurable arguments
+     */
+    private final Map<String, String> params = new HashMap<>();
+
     /**
      * Adds the given value to the context as an implementation of the given
      * interface.
@@ -145,4 +149,37 @@ public class ParseContext implements Serializable {
         return factory;
     }
 
+    /**
+     * Stores a key=value parameter
+     * @param key parameter name
+     * @param value value
+     */
+    public void setParam(String key, String value){
+        this.params.put(key, value);
+    }
+
+    /**
+     * Gets the value associated with given parameter
+     * @param key parameter name
+     */
+    public void getParam(String key){
+        this.params.get(key);
+    }
+
+    /**
+     * Gets all the params
+     * @return map of key values
+     */
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    /**
+     * Checks if parameter is available
+     * @param key parameter name
+     * @return true if parameter is available, false otherwise
+     */
+    public boolean hasParam(String key){
+       return params.containsKey(key);
+    }
 }
