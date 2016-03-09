@@ -605,7 +605,6 @@ public class TikaConfig {
          * @return Map of key values read from xml
          */
         Map<String, String>  getParams(Element el){
-            //TODO: move this constant to static final
             Map<String, String> params = new HashMap<>();
             for (Node child = el.getFirstChild(); child != null;
                  child = child.getNextSibling()){
