@@ -174,7 +174,7 @@ public class TestMimeTypes {
 
     @Test
     public void testHFATypes() throws Exception {
-        assertTypeByData("application/x-erdas-hfa","39235201F864F0E1732D126BD35E6E4E2A634C6CF0B63594C6209AB86DB98C50");
+        assertTypeByData("application/x-erdas-hfa","testHFA.hfa");
     }
 
     @Test

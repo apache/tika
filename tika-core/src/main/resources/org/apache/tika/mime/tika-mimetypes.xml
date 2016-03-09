@@ -930,12 +930,6 @@
   <mime-type type="application/vnd.cups-ppd">
     <glob pattern="*.ppd"/>
   </mime-type>
-  <mime-type type="application/x-erdas-hfa">
-    <magic priority="50">
-      <match value="EHFA_HEADER_TAG" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.hfa"/>
-  </mime-type>
   <mime-type type="application/vnd.cups-raster"/>
   <mime-type type="application/vnd.cups-raw"/>
   <mime-type type="application/vnd.curl.car">
@@ -3121,6 +3115,13 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-erdas-hfa">
+    <magic priority="50">
+      <match value="EHFA_HEADER_TAG" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.hfa"/>
+  </mime-type>
+  
   <mime-type type="application/x-filemaker">
     <acronym>FP7</acronym>
     <_comment>FileMaker Pro 7</_comment>
