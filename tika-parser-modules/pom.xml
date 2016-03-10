@@ -35,9 +35,9 @@
   <url>http://tika.apache.org/</url>
   
   <properties>
-    <poi.version>3.14-beta1</poi.version>
+    <poi.version>3.14</poi.version>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.9</codec.version>
+    <codec.version>1.10</codec.version>
     <pdfbox.version>1.8.11</pdfbox.version>
   </properties>
 
@@ -56,9 +56,22 @@
     <module>tika-parser-scientific-module</module>
     <module>tika-parser-text-module</module>
     <module>tika-parser-web-module</module>
+    <module>tika-parser-xmp-module</module>
   </modules>
 
   <dependencies>
+      <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.compendium</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
     <!-- Test dependencies -->
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -68,10 +81,56 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-test-resources</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.7</version>
+      <scope>test</scope>
+    </dependency>
+     <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-junit4</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-container-native</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.framework</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-link-assembly</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.url</groupId>
+      <artifactId>pax-url-aether</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -111,6 +170,65 @@
                     <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
                   </artifactItem>
                 </artifactItems>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              <configuration>
+                <useDefaultManifestFile>true</useDefaultManifestFile>
+                <includes>
+                  <include>org/apache/tika/**</include>
+                  <include>META-INF/**</include>
+                </includes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <systemPropertyVariables>
+              <org.ops4j.pax.logging.DefaultServiceLog.level>
+                WARN
+              </org.ops4j.pax.logging.DefaultServiceLog.level>
+            </systemPropertyVariables>
+            <systemProperties>
+              <property>
+                <name>project.bundle.file</name>
+                <value>target/${project.build.finalName}-bundle.jar</value>
+              </property>
+            </systemProperties>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <executions>
+            <execution>
+              <phase>pre-integration-test</phase>
+              <goals>
+                <goal>single</goal>
+              </goals>
+              <configuration>
+                <descriptor>test-bundles.xml</descriptor>
+                <finalName>test</finalName>
+                <attach>false</attach>
               </configuration>
             </execution>
           </executions>

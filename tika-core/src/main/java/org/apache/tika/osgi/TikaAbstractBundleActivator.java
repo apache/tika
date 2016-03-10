@@ -20,6 +20,7 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.ServiceLoader;
 
 import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
@@ -37,8 +38,17 @@ public abstract class TikaAbstractBundleActivator implements BundleActivator {
         return serviceProps;
 
     }
+    
+    public void registerTikaParserServiceLoader(BundleContext context, ClassLoader loader)
+    {
+        ServiceLoader<Parser> serviceLoader = ServiceLoader.load(Parser.class, loader);
+        for(Parser currentParser: serviceLoader)
+        {
+            registerTikaService(context, currentParser, null);
+        }
+    }
 
-    public void registerTikaService(BundleContext context, Parser parserService,
+    void registerTikaService(BundleContext context, Parser parserService,
             Dictionary additionalServiceProperties) {
         String parserFullyClassifiedName = parserService.getClass().getCanonicalName().toLowerCase(Locale.US);
 

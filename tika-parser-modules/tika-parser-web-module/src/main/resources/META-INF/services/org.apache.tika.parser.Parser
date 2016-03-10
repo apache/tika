@@ -17,6 +17,4 @@
 org.apache.tika.parser.feed.FeedParser
 org.apache.tika.parser.html.HtmlParser
 org.apache.tika.parser.mail.RFC822Parser
-org.apache.tika.parser.mbox.MboxParser
-org.apache.tika.parser.mbox.OutlookPSTParser
 org.apache.tika.parser.iptc.IptcAnpaParser

@@ -60,6 +60,7 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-parser-modules</module>
+    <module>tika-parser-bundles</module>
   </modules>
 
   <profiles>

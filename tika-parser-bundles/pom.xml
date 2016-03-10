@@ -26,6 +26,7 @@
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
     <version>2.0-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-parser-bundles</artifactId>
@@ -40,10 +41,23 @@
     <pdfbox.version>1.8.10</pdfbox.version>
   </properties>
   
-  <!-- <modules>
-    <module>tika-multimedia-bundle</module>
+  <modules>
+    <module>tika-parser-advanced-bundle</module>
+    <module>tika-parser-cad-bundle</module>
+    <module>tika-parser-code-bundle</module>
+    <module>tika-parser-crypto-bundle</module>
+    <module>tika-parser-database-bundle</module>
+    <module>tika-parser-ebook-bundle</module>
+    <module>tika-parser-journal-bundle</module>
+    <module>tika-parser-multimedia-bundle</module>
+    <module>tika-parser-office-bundle</module>
+    <module>tika-parser-package-bundle</module>
+    <module>tika-parser-pdf-bundle</module>
+    <module>tika-parser-scientific-bundle</module>
+    <module>tika-parser-text-bundle</module>
+    <module>tika-parser-web-bundle</module>
   </modules>
-   -->
+  
   <dependencies>
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
@@ -113,4 +127,50 @@
       <scope>test</scope>
     </dependency>
   </dependencies> 
+  <build>
+    <pluginManagement>
+        <plugins>
+          <plugin>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <systemPropertyVariables>
+              <org.ops4j.pax.logging.DefaultServiceLog.level>
+                WARN
+              </org.ops4j.pax.logging.DefaultServiceLog.level>
+            </systemPropertyVariables>
+            <systemProperties>
+              <property>
+                <name>project.bundle.file</name>
+                <value>target/${project.build.finalName}.jar</value>
+              </property>
+            </systemProperties>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <executions>
+            <execution>
+              <phase>pre-integration-test</phase>
+              <goals>
+                <goal>single</goal>
+              </goals>
+              <configuration>
+                <descriptor>test-bundles.xml</descriptor>
+                <finalName>test</finalName>
+                <attach>false</attach>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>
