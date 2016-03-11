@@ -380,12 +380,14 @@ public class ImageMetadataExtractor {
 
             if (directory.containsTag(ExifSubIFDDirectory.TAG_FLASH)) {
                 String flash = directory.getDescription(ExifSubIFDDirectory.TAG_FLASH);
-                if (flash.contains("Flash fired")) {
-                    metadata.set(Metadata.FLASH_FIRED, Boolean.TRUE.toString());
-                } else if (flash.contains("Flash did not fire")) {
-                    metadata.set(Metadata.FLASH_FIRED, Boolean.FALSE.toString());
-                } else {
-                    metadata.set(Metadata.FLASH_FIRED, flash);
+                if (flash != null) {
+                    if (flash.contains("Flash fired")) {
+                        metadata.set(Metadata.FLASH_FIRED, Boolean.TRUE.toString());
+                    } else if (flash.contains("Flash did not fire")) {
+                        metadata.set(Metadata.FLASH_FIRED, Boolean.FALSE.toString());
+                    } else {
+                        metadata.set(Metadata.FLASH_FIRED, flash);
+                    }
                 }
             }
 
