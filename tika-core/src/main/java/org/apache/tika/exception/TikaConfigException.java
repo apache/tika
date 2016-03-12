@@ -14,30 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.base;
-
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.parser.ParseContext;
-
-import java.util.Map;
+package org.apache.tika.exception;
 
 /**
- * Defines contract for configurable services
+ * Tika Config Exception is an exception to occur when there is an error
+ * in Tika config file and/or one or more of the parsers failed to initialize
+ * from that erroneous config.
+ *
  * @since Apache Tika 1.13
  */
-public interface Configurable {
+public class TikaConfigException extends TikaException {
 
     /**
-     * Configure an instance with Tika Context
-     * @param context configuration instance in the form of context
-     * @throws TikaConfigException when an instance fails to work at the given context
-     * @since Apache Tika 1.13
+     * Creates an instance of exception
+     * @param msg message
      */
-    void configure(ParseContext context) throws TikaConfigException;
+    public TikaConfigException(String msg) {
+        super(msg);
+    }
 
-    /**
-     * Gets parameters of this configurable instance
-     * @return parameters in the form  of a map of key value pairs
-     */
-    Map<String, String> getParams();
+    public TikaConfigException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }
