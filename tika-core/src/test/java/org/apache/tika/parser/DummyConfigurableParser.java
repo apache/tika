@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -47,24 +48,16 @@ public class DummyConfigurableParser extends AbstractParser {
         MIMES.add(MediaType.OCTET_STREAM);
     }
 
-    private Map<String, String> params;
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return MIMES;
     }
 
     @Override
-    public void configure(ParseContext context) throws TikaException {
-        super.configure(context);
-        this.params = context.getParams();
-        // initialize here
-    }
-
-    @Override
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        for (Map.Entry<String, String> entry : this.params.entrySet()) {
+        for (Map.Entry<String, String> entry : getParams().entrySet()) {
             metadata.add(entry.getKey(), entry.getValue());
         }
     }
