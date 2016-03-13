@@ -846,15 +846,17 @@ public class TikaConfig {
         @Override
         ConfigurableThreadPoolExecutor decorate(ConfigurableThreadPoolExecutor created, Element element)
                 throws IOException, TikaException {
-            Element coreThreadElement = getChild(element, "core-threads");
-            if(coreThreadElement != null)
-            {
-                created.setCorePoolSize(Integer.parseInt(getText(coreThreadElement)));
-            }
+            
             Element maxThreadElement = getChild(element, "max-threads");
             if(maxThreadElement != null)
             {
                 created.setMaximumPoolSize(Integer.parseInt(getText(maxThreadElement)));
+            }
+            
+            Element coreThreadElement = getChild(element, "core-threads");
+            if(coreThreadElement != null)
+            {
+                created.setCorePoolSize(Integer.parseInt(getText(coreThreadElement)));
             }
             return created;
         }
