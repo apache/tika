@@ -45,7 +45,7 @@
               com.sun.xml.internal.bind.marshaller</_runsystempackages>
             <Embed-Dependency>
               tika-parser-multimedia-module;inline=true,
-              tika-parser-xmp-module;inline=true,
+              tika-parser-xmp-commons;inline=true,
               metadata-extractor;inline=true,
               xmpcore;inline=true,
               commons-codec;inline=true,

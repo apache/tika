@@ -56,7 +56,7 @@
     <module>tika-parser-scientific-module</module>
     <module>tika-parser-text-module</module>
     <module>tika-parser-web-module</module>
-    <module>tika-parser-xmp-module</module>
+    <module>tika-parser-xmp-commons</module>
   </modules>
 
   <dependencies>
