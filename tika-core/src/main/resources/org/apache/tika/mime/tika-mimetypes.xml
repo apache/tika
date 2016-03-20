@@ -4672,6 +4672,16 @@
   <mime-type type="image/g3fax">
     <glob pattern="*.g3"/>
   </mime-type>
+  
+  <mime-type type="image/icns">
+    <acronym>ICNS</acronym>
+    <_comment>Apple Icon Image Format</_comment>
+    <magic priority="50">
+      <match value="icns" type="string" offset="0">
+     </match>
+    </magic>
+          <glob pattern="*.icns"/>
+   </mime-type>
 
   <mime-type type="image/gif">
     <acronym>GIF</acronym>
