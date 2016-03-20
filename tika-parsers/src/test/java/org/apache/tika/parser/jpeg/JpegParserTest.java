@@ -27,7 +27,6 @@ import java.util.List;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
@@ -248,19 +247,4 @@ public class JpegParserTest {
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
     }
-
-    @Test
-    public void testJPEGXMPMM() throws Exception {
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
-
-        //TODO: when jempbox is fixed/xmpbox is used
-        //add tests for history...currently not extracted
-        assertEquals("xmp.did:49E997348D4911E1AB62EBF9B374B234",
-                metadata.get(XMPMM.DOCUMENTID));
-    }
-
 }

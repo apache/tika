@@ -377,6 +377,7 @@ public class TikaCLITest {
                 "    \"Character-Count-With-Spaces\": \"31\","));
         assertTrue(content.contains("\"X-TIKA:embedded_resource_path\": \"/embed1.zip\""));
         assertFalse(content.contains("X-TIKA:content"));
+
     }
 
     @Test
@@ -404,54 +405,5 @@ public class TikaCLITest {
         assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"59f626e09a8c16ab6dbc2800c685f772\","));
         assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"f9627095ef86c482e61d99f0cc1cf87d\""));
     }
-
-    @Test
-    public void testConfigSerializationStaticAndCurrent() throws Exception {
-        String[] params = new String[]{"--dump-static-config"};
-        TikaCLI.main(params);
-        String content = outContent.toString(UTF_8.name());
-        //make sure at least one detector is there
-        assertTrue(content.contains("<detector class=\"org.apache.tika.parser.microsoft.POIFSContainerDetector\"/>"));
-        //make sure Executable is there because follow on tests of custom config
-        //test that it has been turned off.
-        assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
-
-        params = new String[]{"--dump-current-config"};
-        TikaCLI.main(params);
-        content = outContent.toString(UTF_8.name());
-        //make sure at least one detector is there
-        assertTrue(content.contains("<detector class=\"org.apache.tika.parser.microsoft.POIFSContainerDetector\"/>"));
-        //and at least one parser
-        assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
-    }
-
-    @Test
-    public void testConfigSerializationCustomMinimal() throws Exception {
-        String[] params = new String[]{
-                "--config=" + testDataFile.toString() + "/tika-config2.xml",
-                "--dump-minimal-config"};
-        TikaCLI.main(params);
-        String content = outContent.toString(UTF_8.name()).replaceAll("[\r\n\t ]+", " ");
-
-        String expected =
-                "<parser class=\"org.apache.tika.parser.DefaultParser\">" +
-                        " <mime-exclude>application/pdf</mime-exclude>" +
-                        " <mime-exclude>image/jpeg</mime-exclude> " +
-                        "</parser> " +
-                        "<parser class=\"org.apache.tika.parser.EmptyParser\">" +
-                        " <mime>application/pdf</mime> " +
-                        "</parser>";
-        assertTrue(content.contains(expected));
-    }
-
-    @Test
-    public void testConfigSerializationCustomStatic() throws Exception {
-        String[] params = new String[]{
-                "--config=" + testDataFile.toString() + "/tika-config2.xml", "--dump-static-config"};
-        TikaCLI.main(params);
-        String content = outContent.toString(UTF_8.name());
-        assertFalse(content.contains("org.apache.tika.parser.executable.Executable"));
-    }
-
 
 }

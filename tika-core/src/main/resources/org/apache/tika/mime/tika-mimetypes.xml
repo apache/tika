@@ -2543,6 +2543,10 @@
   <mime-type type="application/vnd.wv.csp+xml"/>
   <mime-type type="application/vnd.wv.ssp+xml"/>
   <mime-type type="application/vnd.xara">
+     <magic priority="50">
+     <match value="xar!" type="string" offset="0"> 
+     </match>
+    </magic>
     <glob pattern="*.xar"/>
   </mime-type>
   <mime-type type="application/vnd.xfdl">
@@ -3410,7 +3414,7 @@
     <acronym>MOBI</acronym>
     <_comment>Mobipocket Ebook</_comment>
     <magic priority="60">
-      <match value="BOOKMOBI" type="string" offset="23" />
+      <match value="BOOKMOBI" type="string" offset="0:60" />
     </magic>
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
@@ -4668,6 +4672,16 @@
   <mime-type type="image/g3fax">
     <glob pattern="*.g3"/>
   </mime-type>
+  
+  <mime-type type="image/icns">
+    <acronym>ICNS</acronym>
+    <_comment>Apple Icon Image Format</_comment>
+    <magic priority="50">
+      <match value="icns" type="string" offset="0">
+     </match>
+    </magic>
+          <glob pattern="*.icns"/>
+   </mime-type>
 
   <mime-type type="image/gif">
     <acronym>GIF</acronym>
@@ -6403,6 +6417,8 @@
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
+      <match value="wide" type="string" offset="4"/>
+      <match value="free" type="string" offset="4"/>
       <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
     </magic>

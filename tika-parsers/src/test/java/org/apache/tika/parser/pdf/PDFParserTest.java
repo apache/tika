@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -25,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +45,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -1329,90 +1326,6 @@ public class PDFParserTest extends TikaTest {
         //TIKA-1678
         XMLResult r = getXML("testPDF_PDFEncodedStringInXMP.pdf");
         assertEquals("Microsoft", r.metadata.get(TikaCoreProperties.TITLE));
-    }
-
-    @Test
-    public void testXFAExtractionBasic() throws Exception {
-        XMLResult r = getXML("testPDF_XFA_govdocs1_258578.pdf");
-        //contains content existing only in the "regular" pdf
-        assertContains("Mount Rushmore National Memorial", r.xml);
-        //contains xfa fields and data
-        assertContains("<li fieldName=\"School_Name\">School Name: my_school</li>",
-            r.xml);
-    }
-
-    @Test
-    public void testXFAOnly() throws Exception {
-        ParseContext context = new ParseContext();
-
-        PDFParserConfig config = new PDFParserConfig();
-        config.setIfXFAExtractOnlyXFA(true);
-        context.set(PDFParserConfig.class, config);
-        ContentHandler handler = new ToXMLContentHandler(StandardCharsets.UTF_8.name());
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser();
-        try (InputStream is = getResourceAsStream("/test-documents/testPDF_XFA_govdocs1_258578.pdf")) {
-            parser.parse(is, handler, metadata, context);
-        }
-        String xml = handler.toString();
-        assertContains("<li fieldName=\"Room_1\">Room [1]: my_room1</li>", xml);
-        assertContains("</xfa_content></body></html>", xml);
-
-        assertNotContained("Mount Rushmore National Memorial", xml);
-    }
-
-    @Test
-    public void testXMPMM() throws Exception {
-//        XMLResult r = getXML("testPDF_Version.11.x.PDFA-1b.pdf");
-        Metadata m = getXML("testPDF_twoAuthors.pdf").metadata;
-        assertEquals("uuid:0e46913c-72b9-40c0-8232-69e362abcd1e",
-                m.get(XMPMM.DOCUMENTID));
-
-        m = getXML("testPDF_Version.11.x.PDFA-1b.pdf").metadata;
-        assertEquals("uuid:cccee1fc-51b3-4b52-ac86-672af3974d25",
-                m.get(XMPMM.DOCUMENTID));
-
-        //now test for 7 elements in each parallel array
-        //from the history section
-        assertArrayEquals(new String[]{
-                "uuid:0313504b-a0b0-4dac-a9f0-357221f2eadf",
-                "uuid:edc4279e-0d5f-465e-b13e-1298402fd11c",
-                "uuid:f565b775-43f3-4a9a-8541-e98c4115db6d",
-                "uuid:9fd5e0a8-14a5-4920-ad7f-870c0b8ee65f",
-                "uuid:09b6cfba-efde-4e07-a77f-70de858cc0aa",
-                "uuid:1e4ffbd7-dabc-4aae-801c-15b3404ade36",
-                "uuid:c1669773-a6ca-4bdd-aade-519030d0af00"
-        }, m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID));
-
-        assertArrayEquals(new String[]{
-                "converted",
-                "converted",
-                "converted",
-                "converted",
-                "converted",
-                "converted",
-                "converted"
-        }, m.getValues(XMPMM.HISTORY_ACTION));
-
-        assertArrayEquals(new String[]{
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight",
-                "Preflight"
-        }, m.getValues(XMPMM.HISTORY_SOFTWARE_AGENT));
-
-        assertArrayEquals(new String[]{
-                "2014-03-04T23:50:41Z",
-                "2014-03-04T23:50:42Z",
-                "2014-03-04T23:51:34Z",
-                "2014-03-04T23:51:36Z",
-                "2014-03-04T23:51:37Z",
-                "2014-03-04T23:52:22Z",
-                "2014-03-04T23:54:48Z"
-        }, m.getValues(XMPMM.HISTORY_WHEN));
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {

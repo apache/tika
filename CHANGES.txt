@@ -1,26 +1,13 @@
 Release 1.13 - ???
-
-  * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
-
-  * Move serialization of TikaConfig to tika-core and enable dumping
-    of the config file via tika-app (TIKA-1657).
-
-  * Tika now incorporates the Natural Language Toolkit (NLTK) from the
-    Python community as an option for Named Entity Recognition (TIKA-1876).
-
-  * Add support for XFA extraction via Pascal Essiembre (TIKA-1857).
-
   * Upgrade to sqlite-jdbc 3.8.11.2 (TIKA-1861).  NOTE: this dependency
     is still <scope>provided</scope>.  You need to include this dependency
-    in order to parse sqlite files.
+    in order to parser sqlite files.
 
-  * Upgrade to POI 3.14-final (TIKA-1853).
+  * Upgrade to POI 3.14-beta1 (TIKA-1799).
 
   * Upgrade to PDFBox 1.8.11 (TIKA-1830).
 
   * Upgrade to Jackson 2.7.1 (TIKA-1869).
-
-  * Upgrade to Apache SIS 0.6 (TIKA-1878).
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
 

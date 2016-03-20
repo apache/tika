@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.stream.XMLStreamException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -30,7 +28,6 @@ import java.util.Set;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPSchema;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
-import org.apache.jempbox.xmp.XMPSchemaMediaManagement;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
@@ -59,8 +56,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.image.xmp.JempboxExtractor;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -150,11 +145,7 @@ public class PDFParser extends AbstractParser {
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
-                if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
-                    handleXFAOnly(pdfDocument, handler, metadata);
-                } else {
-                    PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
-                }
+                PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
             }
 
         } catch (CryptographyException e) {
@@ -225,24 +216,19 @@ public class PDFParser extends AbstractParser {
                 Boolean.toString(ap.canPrintDegraded()));
 
 
-        //now go for the XMP
+        //now go for the XMP stuff
         org.apache.jempbox.xmp.XMPMetadata xmp = null;
         XMPSchemaDublinCore dcSchema = null;
-        XMPSchemaMediaManagement mmSchema = null;
         try {
             if (document.getDocumentCatalog().getMetadata() != null) {
                 xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
             }
-        } catch (IOException e) {}
-
-        if (xmp != null) {
-            try {
+            if (xmp != null) {
                 dcSchema = xmp.getDublinCoreSchema();
-            } catch (IOException e) {}
-
-            JempboxExtractor.extractXMPMM(xmp, metadata);
+            }
+        } catch (IOException e) {
+            //swallow
         }
-
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
@@ -507,32 +493,6 @@ public class PDFParser extends AbstractParser {
         else if (value != null && !(value instanceof COSDictionary)) {
             addMetadata(metadata, name, value.toString());
         }
-    }
-
-
-    private boolean shouldHandleXFAOnly(PDDocument pdDocument, PDFParserConfig config) {
-        if (config.getIfXFAExtractOnlyXFA() &&
-            pdDocument.getDocumentCatalog() != null &&
-            pdDocument.getDocumentCatalog().getAcroForm() != null &&
-            pdDocument.getDocumentCatalog().getAcroForm().getXFA() != null) {
-            return true;
-        }
-        return false;
-    }
-
-    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata)
-        throws SAXException, IOException, TikaException {
-        XFAExtractor ex = new XFAExtractor();
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        try {
-            ex.extract(new ByteArrayInputStream(
-                    pdDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes()),
-                xhtml, metadata);
-        } catch (XMLStreamException e) {
-            throw new TikaException("XML error in XFA", e);
-        }
-        xhtml.endDocument();
     }
 
     public PDFParserConfig getPDFParserConfig() {

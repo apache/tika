@@ -35,9 +35,9 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.14</poi.version>
+    <poi.version>3.14-beta1</poi.version>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.10</codec.version>
+    <codec.version>1.9</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress -->
     <tukaani.version>1.5</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
@@ -45,7 +45,6 @@
     <pdfbox.version>1.8.11</pdfbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <cxf.version>3.0.3</cxf.version>
-    <sis.version>0.6</sis.version>
   </properties>
 
   <dependencies>
@@ -336,17 +335,17 @@
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
-      <version>${sis.version}</version>
+      <version>0.5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.storage</groupId>
       <artifactId>sis-netcdf</artifactId>
-      <version>${sis.version}</version>
+      <version>0.5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-metadata</artifactId>
-      <version>${sis.version}</version>
+      <version>0.5</version>
     </dependency>
     <dependency>
       <groupId>org.opengis</groupId>
@@ -360,14 +359,6 @@
       <version>3.2.2</version>
       <scope>provided</scope>
     </dependency>
-
-    <!--Jackson parse String to JSON-->
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>2.7.1</version>
-    </dependency>
-
   </dependencies>
 
   <build>
