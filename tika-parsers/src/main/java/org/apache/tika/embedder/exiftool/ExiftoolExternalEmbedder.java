@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.tika.embedder.ExternalEmbedder;
 import org.apache.tika.metadata.Property;
-import org.apache.tika.parser.exiftool.ExecutableUtils;
+import org.apache.tika.parser.exiftool.ExiftoolExecutableUtils;
 import org.apache.tika.parser.exiftool.ExiftoolTikaMapper;
 import org.apache.tika.parser.external.ExternalParser;
 
@@ -75,7 +75,7 @@ public class ExiftoolExternalEmbedder extends ExternalEmbedder {
         setMetadataCommandArguments(metadataCommandArguments);
 
         setExiftoolExecutable(
-                ExecutableUtils.getExiftoolExecutable(runtimeExiftoolExecutable));
+                ExiftoolExecutableUtils.getExiftoolExecutable(runtimeExiftoolExecutable));
         setCommandAppendOperator(COMMAND_APPEND_OPERATOR);
     }
 

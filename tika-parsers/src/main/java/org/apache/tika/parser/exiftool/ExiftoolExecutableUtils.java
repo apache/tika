@@ -27,9 +27,9 @@ import java.util.Properties;
  * Class for getting the exiftool command line executable
  * path from properties or an override parameter.
  */
-public class ExecutableUtils {
+public class ExiftoolExecutableUtils {
 
-    private static final Log logger = LogFactory.getLog(ExecutableUtils.class);
+    private static final Log logger = LogFactory.getLog(ExiftoolExecutableUtils.class);
 
     private static final String DEFAULT_EXIFTOOL_EXECUTABLE = "exiftool";
 
@@ -55,9 +55,9 @@ public class ExecutableUtils {
         }
         String executable = DEFAULT_EXIFTOOL_EXECUTABLE;
         InputStream stream;
-        stream = ExecutableUtils.class.getResourceAsStream(PROPERTIES_OVERRIDE_FILE);
+        stream = ExiftoolExecutableUtils.class.getResourceAsStream(PROPERTIES_OVERRIDE_FILE);
         if (stream == null) {
-            stream = ExecutableUtils.class.getResourceAsStream(PROPERTIES_FILE);
+            stream = ExiftoolExecutableUtils.class.getResourceAsStream(PROPERTIES_FILE);
         }
         if (stream != null) {
             try {

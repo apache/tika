@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.exiftool;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,22 +32,38 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.external.ExternalParser;
+import org.junit.Before;
+import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class ExifToolImageParserTest extends TestCase {
+public class ExifToolImageParserTest extends TikaTest {
 
     private static final Log logger = LogFactory.getLog(ExifToolImageParserTest.class);
 
     private final Parser parser = new ExiftoolImageParser();
+    
+    public static boolean canRun() {
+        String exiftoolCmd = ExiftoolExecutableUtils.getExiftoolExecutable(null);
+        String[] checkCmd = { exiftoolCmd, "-ver"};
+        // If Exiftool is not on the path, do not run the test.
+        return ExternalParser.check(checkCmd);
+    }
+    
+    @Before
+    public void setup()
+    {
+        assumeTrue(canRun());
+    }
 
+    @Test
     public void testJPEGIPTC() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -294,6 +314,7 @@ public class ExifToolImageParserTest extends TestCase {
 
     }
 
+    @Test
     public void testJPEGCustomXmp() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -309,6 +330,7 @@ public class ExifToolImageParserTest extends TestCase {
         assertEquals("customMultilineField", metadata.get("XMP-custom:TextML"));
      }
 
+    @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -322,6 +344,7 @@ public class ExifToolImageParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testPNGIPTC() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -336,6 +359,7 @@ public class ExifToolImageParserTest extends TestCase {
         assertEquals("Cat in a garden", metadata.get(IPTC.HEADLINE));
     }
 
+    @Test
     public void testTIFFIPTC() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/tiff");

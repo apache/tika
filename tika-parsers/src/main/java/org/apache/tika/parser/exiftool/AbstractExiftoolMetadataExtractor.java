@@ -105,7 +105,7 @@ public abstract class AbstractExiftoolMetadataExtractor {
     protected Parser getFileParser() {
         ExternalParser parser = new ExternalParser();
         parser.setCommand(new String[] {
-                ExecutableUtils.getExiftoolExecutable(runtimeExiftoolExecutable),
+                ExiftoolExecutableUtils.getExiftoolExecutable(runtimeExiftoolExecutable),
                 "-X",
                 ExternalParser.INPUT_FILE_TOKEN });
         parser.setSupportedTypes(supportedTypes);
