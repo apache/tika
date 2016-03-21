@@ -93,9 +93,6 @@ public class ExiftoolIptcMetadataExtractor extends AbstractExiftoolMetadataExtra
     /**
      * Extension of <code>XMLParser</code> which provides a {@link ContentHandler} which
      * recognizes ExifTool's namespaces and elements.
-     *
-     * @author rgauss
-     *
      */
     public class ExiftoolIptcXmlParser extends AbstractExiftoolXmlParser {
 
