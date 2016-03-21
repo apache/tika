@@ -1,3 +1,10 @@
+Important
+=========
+
+This code has been contributed to Apache in TIKA-774 and this should only serve as a maintenance branch.
+Any changes should also make their way into Apache, likely through the `tika-exiftool` branch 
+and then as a pull request to Apache's master branch.
+
 Overview
 ========
 
