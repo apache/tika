@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2012 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -27,6 +25,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import junit.framework.TestCase;
@@ -40,11 +39,8 @@ import org.apache.tika.parser.Parser;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class ExifToolImageParserTest extends TestCase {
-    /**
-     * Logger for this class
-     */
-    private static final Log logger = LogFactory
-            .getLog(ExifToolImageParserTest.class);
+
+    private static final Log logger = LogFactory.getLog(ExifToolImageParserTest.class);
 
     private final Parser parser = new ExiftoolImageParser();
 
@@ -93,7 +89,7 @@ public class ExifToolImageParserTest extends TestCase {
         
         assertEquals("Rock Creek Park", metadata.get(IPTC.SUBLOCATION));
         
-        GregorianCalendar calendar = new GregorianCalendar();
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ENGLISH);
         calendar.set(Calendar.YEAR, 2011);
         calendar.set(Calendar.MONTH, 7);
         calendar.set(Calendar.DATE, 31);
@@ -101,7 +97,6 @@ public class ExifToolImageParserTest extends TestCase {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
         assertEquals(calendar.getTime(), metadata.getDate(IPTC.DATE_CREATED));
         
         assertEquals("Ray Gauss II", metadata.get(IPTC.DESCRIPTION_WRITER));

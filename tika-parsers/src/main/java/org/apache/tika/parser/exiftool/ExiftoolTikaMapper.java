@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -26,8 +24,6 @@ import org.apache.tika.metadata.Property;
 /**
  * Defines method to convert to and from Tika metadata properties
  * and ExifTool metadata fields.
- * 
- * @author rgauss
  */
 public interface ExiftoolTikaMapper {
 

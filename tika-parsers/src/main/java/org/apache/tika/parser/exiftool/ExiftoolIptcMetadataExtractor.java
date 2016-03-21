@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -34,7 +32,6 @@ import org.xml.sax.ContentHandler;
 
 /**
  * An IPTC extractor implementation of <code>AbstractExiftoolMetadataExtractor</code>
- *
  */
 public class ExiftoolIptcMetadataExtractor extends AbstractExiftoolMetadataExtractor {
 

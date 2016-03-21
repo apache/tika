@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -26,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -55,16 +52,14 @@ import org.xml.sax.SAXException;
  * ExifTool command line is required and the path to that executable is defined by <code>exiftool.executable</code>
  * in <code>tika.exiftool.properties</code> or <code>tika.exiftool.override.properties</code>.
  *
- * @author rgauss
  * @see <a href="http://www.sno.phy.queensu.ca/~phil/exiftool/">ExifTool</a>
- *
  */
 public abstract class AbstractExiftoolMetadataExtractor {
     
     private static final Log logger = LogFactory.getLog(AbstractExiftoolMetadataExtractor.class);
 
     private static final String DEFAULT_CHARSET = "UTF-8";
-    private static final MessageFormat FORMAT_EXIFTOOL_XMP_NAMESPACE = new MessageFormat("http://ns.exiftool.ca/XMP/{0}/1.0/");
+    private static final String FORMAT_EXIFTOOL_XMP_NAMESPACE = "http://ns.exiftool.ca/XMP/{0}/1.0/";
 
     private final Metadata metadata;
     private final Set<MediaType> supportedTypes;
@@ -208,7 +203,7 @@ public abstract class AbstractExiftoolMetadataExtractor {
             if (passthroughXmpProperties != null && isValidXmpPropertyName(exiftoolProperty.getName()) &&
                     passthroughXmpProperties.contains(exiftoolProperty)) {
                 prefix = exiftoolProperty.getName().split(ExifToolMetadata.PREFIX_DELIMITER)[0];
-                namespaceUrl = FORMAT_EXIFTOOL_XMP_NAMESPACE.format(new Object[] { prefix });
+                namespaceUrl = FORMAT_EXIFTOOL_XMP_NAMESPACE.replaceFirst("\\{0\\}", prefix);
                 name = exiftoolProperty.getName().split(ExifToolMetadata.PREFIX_DELIMITER)[1];
             }
         }

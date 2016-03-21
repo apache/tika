@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -23,7 +21,6 @@ import org.apache.tika.metadata.Property;
 /**
  * A collection of ExifTool metadata names.
  *
- * @author rgauss
  * @see <a href="http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/index.html">ExifTool Tag Names</a>
  */
 public interface ExifToolMetadata {

@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -28,13 +26,9 @@ import java.util.Properties;
 /**
  * Class for getting the exiftool command line executable
  * path from properties or an override parameter.
- * 
- * @author rgauss
  */
 public class ExecutableUtils {
-    /**
-     * Logger for this class
-     */
+
     private static final Log logger = LogFactory.getLog(ExecutableUtils.class);
 
     private static final String DEFAULT_EXIFTOOL_EXECUTABLE = "exiftool";
@@ -65,7 +59,7 @@ public class ExecutableUtils {
         if (stream == null) {
             stream = ExecutableUtils.class.getResourceAsStream(PROPERTIES_FILE);
         }
-        if(stream != null){
+        if (stream != null) {
             try {
                 Properties props = new Properties();
                 props.load(stream);

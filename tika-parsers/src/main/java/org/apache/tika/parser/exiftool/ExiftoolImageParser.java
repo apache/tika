@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -46,8 +44,6 @@ import org.xml.sax.SAXException;
 
 /**
  * A parser which uses the {@link ExiftoolIptcMetadataExtractor} to perform the work of metadata extraction.
- *
- * @author rgauss
  *
  */
 public class ExiftoolImageParser extends AbstractParser {

@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2005-2013 Alfresco Software Limited.
- *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -31,9 +29,7 @@ import org.apache.tika.parser.external.ExternalParser;
 /**
  * Convenience class to programmatically create an {@link ExternalEmbedder} which uses ExifTool.
  *
- * @author rgauss
  * @see <a href="http://www.sno.phy.queensu.ca/~phil/exiftool/">ExifTool</a>
- *
  */
 public class ExiftoolExternalEmbedder extends ExternalEmbedder {
 
