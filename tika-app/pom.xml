@@ -101,6 +101,21 @@
       <groupId>commons-io</groupId>
       <version>${commons.io.version}</version>
     </dependency>
+    <!-- test dependencies -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-test-resources</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

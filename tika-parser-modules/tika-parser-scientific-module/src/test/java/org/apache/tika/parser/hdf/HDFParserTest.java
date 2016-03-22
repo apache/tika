@@ -17,39 +17,27 @@
 package org.apache.tika.parser.hdf;
 
 //JDK imports
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.InputStream;
-
-
-
+import org.apache.tika.TikaTest;
+import org.junit.Test;
 
 //TIKA imports
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.hdf.HDFParser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * 
  * Test suite for the {@link HDFParser}.
  * 
  */
-public class HDFParserTest {
+public class HDFParserTest extends TikaTest {
 
     @Test
     public void testParseGlobalMetadata() throws Exception {
         if(System.getProperty("java.version").startsWith("1.5")) {
             return;
         }
-        Parser parser = new HDFParser();
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
         /*
          * this is a publicly available HDF5 file from the MLS mission:
          * 
@@ -57,12 +45,10 @@ public class HDFParserTest {
          * ftp://acdisc.gsfc.nasa.gov/data/s4pa///Aura_MLS_Level2/ML2O3.002//2009
          * /MLS-Aura_L2GP-O3_v02-23-c01_2009d122.he5
          */
-        try (InputStream stream = HDFParser.class.getResourceAsStream("/test-documents/test.he5")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
 
-        assertNotNull(metadata);
-        assertEquals("5", metadata.get("GranuleMonth"));
+        XMLResult r = getXML("test.he5", new HDFParser());
+        assertNotNull(r.metadata);
+        assertEquals("5", r.metadata.get("GranuleMonth"));
     }
 
     @Test
@@ -70,23 +56,17 @@ public class HDFParserTest {
        if(System.getProperty("java.version").startsWith("1.5")) {
           return;
       }
-      Parser parser = new HDFParser();
-      ContentHandler handler = new BodyContentHandler();
-      Metadata metadata = new Metadata();
 
       /*
        * this is a publicly available HDF4 file from the HD4 examples:
        * 
        * http://www.hdfgroup.org/training/hdf4_chunking/Chunkit/bin/input54kmdata.hdf
        */
-        try (InputStream stream = HDFParser.class.getResourceAsStream("/test-documents/test.hdf")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-
-      assertNotNull(metadata);
-      assertEquals("Direct read of HDF4 file through CDM library", metadata.get("_History"));
-      assertEquals("Ascending", metadata.get("Pass"));
+      XMLResult r = getXML("test.hdf", new HDFParser());
+      assertNotNull(r.metadata);
+      assertEquals("Direct read of HDF4 file through CDM library", r.metadata.get("_History"));
+      assertEquals("Ascending", r.metadata.get("Pass"));
       assertEquals("Hierarchical Data Format, version 4",
-      metadata.get("File-Type-Description"));
+      r.metadata.get("File-Type-Description"));
     }
 }

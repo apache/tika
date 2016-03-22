@@ -17,44 +17,72 @@
 
 package org.apache.tika.parser.isatab;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.TikaTest;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
-public class ISArchiveParserTest {
+public class ISArchiveParserTest extends TikaTest {
+
+	static Path tmpDir;
+    final static String ISA_SUBDIR = "testISATab_BII-I-1";
+    final static String[] ISA_FILES = {
+            "a_bii-s-2_metabolite profiling_NMR spectroscopy.txt",
+            "a_metabolome.txt",
+            "a_microarray.txt",
+            "a_proteome.txt",
+            "a_transcriptome.txt",
+            "i_investigation.txt"
+    };
+
+    @BeforeClass
+	public static void createTempDir() throws Exception {
+        tmpDir = Files.createTempDirectory(ISA_SUBDIR);
+        for (String isaFile : ISA_FILES) {
+            String isaPath = "test-documents/"+ISA_SUBDIR+"/"+isaFile;
+            Files.copy(ISArchiveParserTest.class.getClassLoader().getResourceAsStream(isaPath),
+                    tmpDir.resolve(isaFile));
+        }
+    }
+	@AfterClass
+    public static void deleteTempDir() throws Exception {
+        for (String isaFile : ISA_FILES) {
+            Path p = tmpDir.resolve(isaFile);
+            Files.delete(p);
+        }
+        Files.delete(tmpDir);
+    }
 
 	@Test
 	public void testParseArchive() throws Exception {
-		String path = "/test-documents/testISATab_BII-I-1/s_BII-S-1.txt";
-		
-		Parser parser = new ISArchiveParser(ISArchiveParserTest.class.getResource("/test-documents/testISATab_BII-I-1/").toURI().getPath());
-		//Parser parser = new AutoDetectParser();
-		
-		ContentHandler handler = new BodyContentHandler();
-		Metadata metadata = new Metadata();
-		ParseContext context = new ParseContext();
-		try (InputStream stream = ISArchiveParserTest.class.getResourceAsStream(path)) {
-			parser.parse(stream, handler, metadata, context);
-		}
-		
+
+		Parser parser = new ISArchiveParser(tmpDir.toString());
+		XMLResult r = getXML(ISA_SUBDIR+"/s_BII-S-1.txt",
+					parser);
+
 		// INVESTIGATION
-		assertEquals("Invalid Investigation Identifier", "BII-I-1", metadata.get("Investigation Identifier"));
-		assertEquals("Invalid Investigation Title", "Growth control of the eukaryote cell: a systems biology study in yeast", metadata.get("Investigation Title"));
+		assertEquals("Invalid Investigation Identifier", "BII-I-1",
+				r.metadata.get("Investigation Identifier"));
+		assertEquals("Invalid Investigation Title",
+				"Growth control of the eukaryote cell: a systems biology study in yeast",
+				r.metadata.get("Investigation Title"));
 		
 		// INVESTIGATION PUBLICATIONS
-		assertEquals("Invalid Investigation PubMed ID", "17439666", metadata.get("Investigation PubMed ID")); 
-		assertEquals("Invalid Investigation Publication DOI", "doi:10.1186/jbiol54", metadata.get("Investigation Publication DOI"));
+		assertEquals("Invalid Investigation PubMed ID", "17439666",
+				r.metadata.get("Investigation PubMed ID"));
+		assertEquals("Invalid Investigation Publication DOI", "doi:10.1186/jbiol54",
+				r.metadata.get("Investigation Publication DOI"));
 		
 		// INVESTIGATION CONTACTS
-		assertEquals("Invalid Investigation Person Last Name", "Oliver", metadata.get("Investigation Person Last Name")); 
-		assertEquals("Invalid Investigation Person First Name", "Stephen", metadata.get("Investigation Person First Name"));
+		assertEquals("Invalid Investigation Person Last Name", "Oliver",
+				r.metadata.get("Investigation Person Last Name"));
+		assertEquals("Invalid Investigation Person First Name", "Stephen",
+				r.metadata.get("Investigation Person First Name"));
 	}
 }

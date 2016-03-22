@@ -87,7 +87,7 @@ public class LanguageResourceTest extends CXFTestBase {
 		String url = endPoint + LANG_STREAM_PATH;
 		Response response = WebClient.create(url).type("text/plain")
 				.accept("text/plain")
-				.put(ClassLoader.getSystemResourceAsStream("english.txt"));
+				.put(getTestDocumentAsStream("english.txt"));
 		assertNotNull(response);
 		String readLang = getStringFromInputStream((InputStream) response
 				.getEntity());
@@ -99,7 +99,7 @@ public class LanguageResourceTest extends CXFTestBase {
 		String url = endPoint + LANG_STREAM_PATH;
 		Response response = WebClient.create(url).type("text/plain")
 				.accept("text/plain")
-				.put(ClassLoader.getSystemResourceAsStream("french.txt"));
+				.put(getTestDocumentAsStream("french.txt"));
 		assertNotNull(response);
 		String readLang = getStringFromInputStream((InputStream) response
 				.getEntity());

@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.DefaultProbDetector;
 import org.apache.tika.metadata.Metadata;
@@ -36,7 +37,7 @@ import org.apache.tika.mime.ProbabilisticMimeDetectionSelector.Builder;
 import org.junit.Before;
 import org.junit.Test;
 
-public class ProbabilisticMimeDetectionTestWithTika {
+public class ProbabilisticMimeDetectionTestWithTika extends TikaTest {
 
     private ProbabilisticMimeDetectionSelector proSelector;
     private MediaTypeRegistry registry;
@@ -151,12 +152,12 @@ public class ProbabilisticMimeDetectionTestWithTika {
 
     private void testUrl(String expected, String url, String file)
             throws IOException {
-        InputStream in = getClass().getResourceAsStream(file);
+        InputStream in = getTestDocumentAsStream(file);
         testStream(expected, url, in);
     }
 
     private void testFile(String expected, String filename) throws IOException {
-        InputStream in = getClass().getResourceAsStream(filename);
+        InputStream in = getTestDocumentAsStream(filename);
         testStream(expected, filename, in);
     }
 

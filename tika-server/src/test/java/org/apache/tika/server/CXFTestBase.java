@@ -18,8 +18,6 @@
 package org.apache.tika.server;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,14 +39,15 @@ import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.parser.digesting.CommonsDigester;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.junit.After;
 import org.junit.Before;
 
-public abstract class CXFTestBase {
+public abstract class CXFTestBase extends TikaTest {
     private final static int DIGESTER_READ_LIMIT = 20*1024*1024;
 
     protected static final String endPoint =
@@ -56,13 +55,6 @@ public abstract class CXFTestBase {
     protected Server server;
     private TikaConfig tika;
 
-    public static void assertContains(String needle, String haystack) {
-        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
-    }
-
-    public static void assertNotFound(String needle, String haystack) {
-        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
-    }
 
     protected static InputStream copy(InputStream in, int remaining) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

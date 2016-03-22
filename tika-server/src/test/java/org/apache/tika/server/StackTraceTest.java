@@ -84,7 +84,7 @@ public class StackTraceTest extends CXFTestBase {
                     .accept("*/*")
                     .header("Content-Disposition",
                             "attachment; filename=" + TEST_PASSWORD_PROTECTED)
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
+                    .put(getTestDocumentAsStream(TEST_PASSWORD_PROTECTED));
             assertNotNull("null response: " + path, response);
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
@@ -100,12 +100,12 @@ public class StackTraceTest extends CXFTestBase {
             Response response = WebClient
                     .create(endPoint + path)
                     .accept("*/*")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
+                    .put(getTestDocumentAsStream(TEST_NULL));
             assertNotNull("null response: " + path, response);
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
                     .getEntity());
-            assertContains("Caused by: java.lang.NullPointerException: null pointer message",
+            assertContains("Caused by: java.lang.NullPointerException: another null pointer exception",
                     msg);
         }
     }
@@ -135,7 +135,7 @@ public class StackTraceTest extends CXFTestBase {
     //exceptions as the others...
     @Test
     public void testMeta() throws Exception {
-        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+        InputStream stream = getTestDocumentAsStream(TikaResourceTest.TEST_DOC);
 
         Response response = WebClient.create(endPoint + "/meta" + "/Author").type("application/msword")
                 .accept(MediaType.TEXT_PLAIN).put(copy(stream, 8000));

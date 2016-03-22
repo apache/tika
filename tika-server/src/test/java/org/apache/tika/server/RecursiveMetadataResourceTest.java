@@ -73,8 +73,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Response response = WebClient
                 .create(endPoint + META_PATH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -92,8 +91,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .create(endPoint + META_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .put(getTestDocumentAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Won't work, no password given
         assertEquals(500, response.getStatus());
@@ -104,7 +102,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .type("application/vnd.ms-excel")
                 .accept("application/json")
                 .header("Password", "password")
-                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+                .put(getTestDocumentAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Will work
         assertEquals(200, response.getStatus());
@@ -122,8 +120,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Response response = WebClient
                 .create(endPoint+META_PATH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -135,8 +132,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         response = WebClient
                 .create(endPoint + META_PATH + SLASH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
@@ -147,8 +143,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         response = WebClient
                 .create(endPoint + META_PATH + UNPARSEABLE_PATH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
@@ -159,8 +154,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         response = WebClient
                 .create(endPoint + META_PATH + XML_PATH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
@@ -171,8 +165,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         response = WebClient
                 .create(endPoint + META_PATH + TEXT_PATH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
@@ -183,8 +176,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         response = WebClient
                 .create(endPoint + META_PATH + IGNORE_PATH)
                 .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
@@ -198,7 +190,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Attachment attachmentPart =
                 new Attachment("myworddocx",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                        getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         WebClient webClient = WebClient.create(endPoint + META_PATH + FORM_PATH);
 
         Response response = webClient.type("multipart/form-data")
@@ -214,7 +206,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         attachmentPart =
                 new Attachment("myworddocx",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                        getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         webClient = WebClient.create(endPoint + META_PATH + FORM_PATH + UNPARSEABLE_PATH);
 
         response = webClient.type("multipart/form-data")
@@ -230,7 +222,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         attachmentPart =
                 new Attachment("myworddocx",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                        getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         webClient = WebClient.create(endPoint + META_PATH + FORM_PATH + XML_PATH);
 
         response = webClient.type("multipart/form-data")
@@ -246,7 +238,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         attachmentPart =
                 new Attachment("myworddocx",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                        getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         webClient = WebClient.create(endPoint + META_PATH + FORM_PATH+TEXT_PATH);
 
         response = webClient.type("multipart/form-data")
@@ -262,7 +254,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         attachmentPart =
                 new Attachment("myworddocx",
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                        getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         webClient = WebClient.create(endPoint + META_PATH +FORM_PATH+IGNORE_PATH);
 
         response = webClient.type("multipart/form-data")

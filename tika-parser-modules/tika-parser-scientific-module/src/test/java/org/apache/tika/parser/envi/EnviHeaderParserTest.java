@@ -17,44 +17,26 @@
 
 package org.apache.tika.parser.envi;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.junit.Assert.assertNotNull;
-
-import java.io.InputStream;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.TikaTest;
 import org.junit.Test;
 
 /**
  * Test cases to exercise the {@link EnviHeaderParser}.
  */
-public class EnviHeaderParserTest {
+public class EnviHeaderParserTest extends TikaTest {
     @Test
     public void testParseGlobalMetadata() throws Exception {
         if (System.getProperty("java.version").startsWith("1.5")) {
             return;
         }
 
-        Parser parser = new EnviHeaderParser();
-        ToXMLContentHandler handler = new ToXMLContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = EnviHeaderParser.class.getResourceAsStream(
-                "/test-documents/envi_test_header.hdr")) {
-            assertNotNull("Test ENVI file not found", stream);
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-
+        XMLResult r = getXML("envi_test_header.hdr", new EnviHeaderParser());
         // Check content of test file
-        String content = handler.toString();
-        assertContains("<body><p>ENVI</p>", content);
-        assertContains("<p>samples = 2400</p>", content);
-        assertContains("<p>lines   = 2400</p>", content);
-        assertContains("<p>map info = {Sinusoidal, 1.5000, 1.5000, -10007091.3643, 5559289.2856, 4.6331271653e+02, 4.6331271653e+02, , units=Meters}</p>", content);
-        assertContains("content=\"application/envi.hdr\"", content);
-        assertContains("projection info = {16, 6371007.2, 0.000000, 0.0, 0.0, Sinusoidal, units=Meters}", content);
+        assertContains("<body><p>ENVI</p>", r.xml);
+        assertContains("<p>samples = 2400</p>", r.xml);
+        assertContains("<p>lines   = 2400</p>", r.xml);
+        assertContains("<p>map info = {Sinusoidal, 1.5000, 1.5000, -10007091.3643, 5559289.2856, 4.6331271653e+02, 4.6331271653e+02, , units=Meters}</p>", r.xml);
+        assertContains("content=\"application/envi.hdr\"", r.xml);
+        assertContains("projection info = {16, 6371007.2, 0.000000, 0.0, 0.0, Sinusoidal, units=Meters}", r.xml);
     }
 }

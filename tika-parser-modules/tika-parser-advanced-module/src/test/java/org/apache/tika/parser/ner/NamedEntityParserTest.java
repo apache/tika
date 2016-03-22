@@ -16,6 +16,13 @@
  */
 package org.apache.tika.parser.ner;
 
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.HashSet;
+
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -23,19 +30,12 @@ import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.HashSet;
-
-import static org.junit.Assert.assertTrue;
-
 /**
  *Test case for {@link NamedEntityParser}
  */
 public class NamedEntityParserTest {
 
-    public static final String CONFIG_FILE = "tika-config.xml";
+    public static final String CONFIG_FILE = "tika-config-for-ner.xml";
 
     @Test
     public void testParse() throws Exception {

@@ -20,11 +20,8 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -45,7 +43,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
-public class TestChmExtraction {
+public class TestChmExtraction extends TikaTest {
 
     private final Parser parser = new ChmParser();
 
@@ -196,12 +194,19 @@ public class TestChmExtraction {
     
     @Test
     public void test_TIKA_1446() throws Exception {
-        URL chmDir = TestChmExtraction.class.getResource("/test-documents/chm/");
-        File chmFolder = new File(chmDir.toURI());
-        for (String fileName : chmFolder.list()) {
-            File file = new File(chmFolder, fileName);
-            InputStream stream = new FileInputStream(file);
-            testingChm(stream);
+        String[] chemFiles = {
+                "admin.chm",
+                "cmak_ops.CHM",
+                "comexp.CHM",
+                "gpedit.CHM",
+                "IMJPCL.CHM",
+                "IMJPCLE.CHM",
+                "IMTCEN.CHM",
+                "tcpip.CHM",
+                "wmicontrol.CHM"
+        };
+        for (String fileName : chemFiles) {
+            testingChm(getTestDocumentAsStream("chm/"+fileName));
         }
     }
 }

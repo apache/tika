@@ -46,9 +46,10 @@
 
   <modules>
     <module>tika-parent</module>
-    <module>tika-core</module>
     <module>tika-test-resources</module>
-    <module>tika-parsers</module>
+    <module>tika-core</module>
+    <module>tika-parser-modules</module>
+    <module>tika-parser-bundles</module>
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
@@ -59,8 +60,6 @@
     <module>tika-langdetect</module>
     <module>tika-example</module>
     <module>tika-java7</module>
-    <module>tika-parser-modules</module>
-    <module>tika-parser-bundles</module>
   </modules>
 
   <profiles>

@@ -18,13 +18,13 @@ package org.apache.tika.parser.txt;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class TXTParserTest {
+public class TXTParserTest extends TikaTest {
 
     private Parser parser = new TXTParser();
 
@@ -233,39 +233,21 @@ public class TXTParserTest {
 
     @Test
     public void testCP866() throws Exception {
-        Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
-        parser.parse(
-                TXTParserTest.class.getResourceAsStream("/test-documents/russian.cp866.txt"),
-                new WriteOutContentHandler(writer),
-                metadata,
-                new ParseContext());
-
-        assertEquals("text/plain; charset=IBM866", metadata.get(Metadata.CONTENT_TYPE));
+        XMLResult r = getXML("russian.cp866.txt", parser);
+        assertEquals("text/plain; charset=IBM866", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
     public void testEBCDIC_CP500() throws Exception {
-        Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
-        parser.parse(
-                TXTParserTest.class.getResourceAsStream("/test-documents/english.cp500.txt"),
-                new WriteOutContentHandler(writer),
-                metadata,
-                new ParseContext());
-
-        assertEquals("text/plain; charset=IBM500", metadata.get(Metadata.CONTENT_TYPE));
+        XMLResult r = getXML("english.cp500.txt", parser);
+        assertEquals("text/plain; charset=IBM500", r.metadata.get(Metadata.CONTENT_TYPE));
 
         // Additional check that it isn't too eager on short blocks of text
-        metadata = new Metadata();
-        writer = new StringWriter();
-        parser.parse(
+        r = getXML(
                 new ByteArrayInputStream("<html><body>hello world</body></html>".getBytes(ISO_8859_1)),
-                new WriteOutContentHandler(writer),
-                metadata,
-                new ParseContext());
+                parser, new Metadata());
 
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
     /**
@@ -276,20 +258,17 @@ public class TXTParserTest {
     @Test
     public void testCharsetDetectionWithShortSnipet() throws Exception {
         final String text = "Hello, World!";
-
-        Metadata metadata = new Metadata();
-        parser.parse(
-                new ByteArrayInputStream(text.getBytes(UTF_8)),
-                new BodyContentHandler(), metadata, new ParseContext());
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        XMLResult r = getXML(
+                new ByteArrayInputStream(text.getBytes(UTF_8)), parser, new Metadata());
+        assertEquals("text/plain; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
 
         // Now verify that if we tell the parser the encoding is UTF-8, that's what
         // we get back (see TIKA-868)
-        metadata.set(Metadata.CONTENT_TYPE, "application/binary; charset=UTF-8");
+        r.metadata.set(Metadata.CONTENT_TYPE, "application/binary; charset=UTF-8");
         parser.parse(
                 new ByteArrayInputStream(text.getBytes(UTF_8)),
-                new BodyContentHandler(), metadata, new ParseContext());
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+                new BodyContentHandler(), r.metadata, new ParseContext());
+        assertEquals("text/plain; charset=UTF-8", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
 }

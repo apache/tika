@@ -27,12 +27,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
 import org.junit.Test;
 
-public class MimeDetectionTest {
+public class MimeDetectionTest extends TikaTest {
 
     private MimeTypes mimeTypes;
 
@@ -136,12 +137,12 @@ public class MimeDetectionTest {
     }
 
     private void testUrl(String expected, String url, String file) throws IOException{
-        InputStream in = getClass().getResourceAsStream(file);
+        InputStream in = getTestDocumentAsStream(file);
         testStream(expected, url, in);
     }
 
     private void testFile(String expected, String filename) throws IOException {
-        InputStream in = getClass().getResourceAsStream(filename);
+        InputStream in = getTestDocumentAsStream(filename);
         testStream(expected, filename, in);
     }
 

@@ -20,10 +20,14 @@ package org.apache.tika.parser.jdbc;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,13 +45,27 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
-    private final static String TEST_FILE1 = "/test-documents/" + TEST_FILE_NAME;
+    static Path tmp = null;
+    @BeforeClass
+    public static void createTMPFile() throws IOException {
+        tmp = Files.createTempFile("sqlite-", "");
+        Files.copy(
+                TikaTest.class.getClassLoader().getResourceAsStream("test-documents/"+TEST_FILE_NAME),
+                tmp, StandardCopyOption.REPLACE_EXISTING);
+
+    }
+
+    @AfterClass
+    public static void deleteTMPFile() throws IOException {
+        Files.delete(tmp);
+    }
 
     @Test
     public void testBasic() throws Exception {
@@ -56,18 +74,20 @@ public class SQLite3ParserTest extends TikaTest {
         //test different types of input streams
         //actual inputstream, memory buffered bytearray and literal file
         InputStream[] streams = new InputStream[3];
-        streams[0] = getResourceAsStream(TEST_FILE1);
+        streams[0] = getTestDocumentAsStream(TEST_FILE_NAME);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        IOUtils.copy(getResourceAsStream(TEST_FILE1), bos);
+        IOUtils.copy(getTestDocumentAsStream(TEST_FILE_NAME), bos);
         streams[1] = new ByteArrayInputStream(bos.toByteArray());
-        streams[2] = TikaInputStream.get(getResourceAsFile(TEST_FILE1));
+        streams[2] = TikaInputStream.get(tmp);
         int tests = 0;
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, p);
         for (InputStream stream : streams) {
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             //1) getXML closes the stream
             //2) getXML runs recursively on the contents, so the embedded docs should show up
-            XMLResult result = getXML(stream, p, metadata);
+            XMLResult result = getXML(stream, p, metadata, context);
             String x = result.xml;
             //first table name
             assertContains("<table name=\"my_table1\"><thead><tr>\t<th>INT_COL</th>", x);
@@ -106,7 +126,7 @@ public class SQLite3ParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler(-1);
         ParseContext ctx = new ParseContext();
         ctx.set(Parser.class, p);
-        try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
+        try (InputStream stream = getTestDocumentAsStream(TEST_FILE_NAME)) {
             p.parse(stream, handler, metadata, ctx);
         }
         String s = handler.toString();
@@ -118,14 +138,11 @@ public class SQLite3ParserTest extends TikaTest {
     //to handle embedded documents
     @Test
     public void testNotAddingEmbeddedParserToParseContext() throws Exception {
-        Parser p = new AutoDetectParser();
 
-        InputStream is = getResourceAsStream(TEST_FILE1);
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        ContentHandler handler = new ToXMLContentHandler();
-        p.parse(is, handler, metadata, new ParseContext());
-        String xml = handler.toString();
+        XMLResult r = getXML(TEST_FILE_NAME, new AutoDetectParser(), new Metadata(), new ParseContext());
+        String xml = r.xml;
         //just includes headers for embedded documents
         assertContains("<table name=\"my_table1\"><thead><tr>", xml);
         assertContains("<td><span type=\"blob\" column_name=\"BYTES_COL\" row_number=\"0\"><div class=\"package-entry\"><h1>BYTES_COL_0.doc</h1>", xml);
@@ -143,7 +160,7 @@ public class SQLite3ParserTest extends TikaTest {
         RecursiveParserWrapper wrapper =
                 new RecursiveParserWrapper(p, new BasicContentHandlerFactory(
                         BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
-        InputStream is = getResourceAsStream(TEST_FILE1);
+        InputStream is = getTestDocumentAsStream(TEST_FILE_NAME);
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
@@ -176,7 +193,7 @@ public class SQLite3ParserTest extends TikaTest {
 
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
-        InputStream is = getResourceAsStream(TEST_FILE1);
+        InputStream is = getTestDocumentAsStream(TEST_FILE_NAME);
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ex.extract(TikaInputStream.get(is), ex, byteCopier);
@@ -217,9 +234,12 @@ public class SQLite3ParserTest extends TikaTest {
         //4x word files, two docs and two docxs
         //4x png files, the same image embedded in each of the doc and docx
 
+        //not clear why we get an exception on reset if we try
+        //to get the test file directly
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
-        InputStream is = getResourceAsStream(TEST_FILE1);
+        InputStream is = new BufferedInputStream(
+                getResourceAsStream("/test-documents/"+TEST_FILE_NAME));
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ex.extract(TikaInputStream.get(is), ex, byteCopier);

@@ -21,25 +21,30 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import org.junit.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.SAXException;
 
-public class GeoParserTest {
+public class GeoParserTest extends TikaTest {
 	private Parser geoparser = new GeoParser();
 
 	@Test
-	public void testFunctions() throws UnsupportedEncodingException,
-			IOException, SAXException, TikaException {
+	public void testFunctions() throws Exception {
+
+		/* if it's not available no tests to run */
+		if (!((GeoParser) geoparser).isAvailable())
+			return;
+
 		String text = "The millennial-scale cooling trend that followed the HTM coincides with the decrease in China "
 				+ "summer insolation driven by slow changes in Earth's orbit. Despite the nearly linear forcing, the transition from the HTM to "
 				+ "the Little Ice Age (1500-1900 AD) was neither gradual nor uniform. To understand how feedbacks and perturbations result in rapid changes, "
@@ -53,13 +58,7 @@ public class GeoParserTest {
 		GeoParserConfig config = new GeoParserConfig();
 		context.set(GeoParserConfig.class, config);
 
-		InputStream s = new ByteArrayInputStream(text.getBytes(UTF_8));
-		/* if it's not available no tests to run */
-		if (!((GeoParser) geoparser).isAvailable())
-			return;
-
-		geoparser.parse(s, new BodyContentHandler(), metadata, context);
-
+		XMLResult r = getXML(new ByteArrayInputStream(text.getBytes(UTF_8)), geoparser, metadata, context);
 		assertNotNull(metadata.get("Geographic_NAME"));
 		assertNotNull(metadata.get("Geographic_LONGITUDE"));
 		assertNotNull(metadata.get("Geographic_LATITUDE"));

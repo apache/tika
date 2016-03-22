@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -74,6 +77,25 @@ public abstract class TikaTest {
        }
    }
 
+
+    /**
+     * Copies test file from "test-documents" to a temp file.
+     * Consumers are responsible for deleting the temp file after use.
+     *
+     * @param name
+     * @return
+     * @throws IOException
+     */
+   public Path getTestDocumentAsTempFile(String name) throws IOException{
+       Path tmp = Files.createTempFile("tika-test", "");
+       Files.copy(getResourceAsStream("/test-documents/"+name), tmp, StandardCopyOption.REPLACE_EXISTING);
+       return tmp;
+   }
+
+   public InputStream getTestDocumentAsStream(String name) {
+       return TikaInputStream.get(getResourceAsStream("/test-documents/"+name));
+   }
+
    public InputStream getResourceAsStream(String name) {
        InputStream stream = this.getClass().getResourceAsStream(name);
        if (stream == null) {
@@ -106,36 +128,50 @@ public abstract class TikaTest {
         }
     }
 
+    protected XMLResult getXML(String filePath, Parser parser, Metadata metadata, ParseContext context) throws Exception {
+        return getXML(getTestDocumentAsStream(filePath), parser, metadata, context);
+    }
+
     protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata);
+        return getXML(getTestDocumentAsStream(filePath), parser, metadata);
     }
 
     protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata);
+        Parser parser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+
+        return getXML(getTestDocumentAsStream(filePath), parser, metadata, context);
+    }
+
+    protected XMLResult getXML(String filePath, Parser parser) throws Exception {
+        //send in empty parse context so that only outer parser is used
+        return getXML(getTestDocumentAsStream(filePath), parser, new Metadata(), new ParseContext());
     }
 
     protected XMLResult getXML(String filePath) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), new Metadata());
+        return getXML(filePath, new Metadata());
     }
 
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata) throws Exception {
-      ParseContext context = new ParseContext();
-      context.set(Parser.class, parser);
+      return getXML(input, parser, metadata, new ParseContext());
+    }
 
-      try {
-          ContentHandler handler = new ToXMLContentHandler();
-          parser.parse(input, handler, metadata, context);
-          return new XMLResult(handler.toString(), metadata);
-      } finally {
-          input.close();
-      }
-  }
+    protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata, ParseContext context) throws Exception {
+        try {
+            ContentHandler handler = new ToXMLContentHandler();
+            parser.parse(input, handler, metadata, context);
+            return new XMLResult(handler.toString(), metadata);
+        } finally {
+            input.close();
+        }
+    }
 
-    /**
-     * Basic text extraction.
-     * <p>
-     * Tries to close input stream after processing.
-     */
+        /**
+         * Basic text extraction.
+         * <p>
+         * Tries to close input stream after processing.
+         */
     public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata) throws Exception{
         ContentHandler handler = new BodyContentHandler(1000000);
         try {

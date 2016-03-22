@@ -23,13 +23,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
+import org.apache.tika.TikaTest;
 import org.junit.Test;
 
-public class CharsetDetectorTest {
+public class CharsetDetectorTest extends TikaTest {
 
     @Test
     public void testTagDropper() throws IOException {
-        try (InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html")) {
+        try (InputStream in = getTestDocumentAsStream("resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             detector.enableInputFilter(true);
             detector.setText(in);
@@ -52,7 +53,7 @@ public class CharsetDetectorTest {
 
     @Test
     public void testEmptyOrNullDeclaredCharset() throws IOException {
-        try (InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html")) {
+        try (InputStream in = getTestDocumentAsStream("resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             Reader reader = detector.getReader(in, null);
             assertTrue(reader.ready());

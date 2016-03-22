@@ -20,26 +20,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.InputStream;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class DcXMLParserTest extends TikaTest {
 
     @Test
     public void testXMLParserAsciiChars() throws Exception {
-        try (InputStream input = DcXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML.xml")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            new DcXMLParser().parse(input, handler, metadata);
-
+        XMLResult result = getXML("testXML.xml", new DcXMLParser());
+        Metadata metadata = result.metadata;
             assertEquals(
                     "application/xml",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -74,22 +65,17 @@ public class DcXMLParserTest extends TikaTest {
             assertEquals("Fr", metadata.get(TikaCoreProperties.LANGUAGE));
             assertTrue(metadata.get(TikaCoreProperties.RIGHTS).contains("testing chars"));
 
-            String content = handler.toString();
-            assertContains("Tika test document", content);
+            assertContains("Tika test document", result.xml);
 
             assertEquals("2000-12-01T00:00:00.000Z", metadata.get(TikaCoreProperties.CREATED));
-        }
+
     }
     
     @Test
     public void testXMLParserNonAsciiChars() throws Exception {
-        try (InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml")) {
-            Metadata metadata = new Metadata();
-            new DcXMLParser().parse(input, new DefaultHandler(), metadata);
-
-            final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
-            assertEquals(expected, metadata.get(TikaCoreProperties.RIGHTS));
-        }
+        XMLResult r = getXML("testXML.xml", new DcXMLParser());
+        final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
+        assertEquals(expected, r.metadata.get(TikaCoreProperties.RIGHTS));
     }
 
     // TIKA-1048

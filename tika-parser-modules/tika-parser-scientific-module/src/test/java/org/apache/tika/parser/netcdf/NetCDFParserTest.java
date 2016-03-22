@@ -17,54 +17,42 @@
 package org.apache.tika.parser.netcdf;
 
 //JDK imports
-import java.io.InputStream;
 
-//TIKA imports
+import static org.junit.Assert.assertEquals;
+
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.junit.Assert.assertEquals;
+//TIKA imports
 
 /**
  * Test cases to exercise the {@link NetCDFParser}.
  */
-public class NetCDFParserTest {
+public class NetCDFParserTest extends TikaTest {
 
     @Test
     public void testParseGlobalMetadata() throws Exception {
-        Parser parser = new NetCDFParser();
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
 
-        try (InputStream stream = NetCDFParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-
-        assertEquals(metadata.get(TikaCoreProperties.TITLE),
+        XMLResult r = getXML("sresa1b_ncar_ccsm3_0_run1_200001.nc", new NetCDFParser());
+        assertEquals(r.metadata.get(TikaCoreProperties.TITLE),
                 "model output prepared for IPCC AR4");
-        assertEquals(metadata.get(Metadata.CONTACT), "ccsm@ucar.edu");
-        assertEquals(metadata.get(Metadata.PROJECT_ID),
+        assertEquals(r.metadata.get(Metadata.CONTACT), "ccsm@ucar.edu");
+        assertEquals(r.metadata.get(Metadata.PROJECT_ID),
                 "IPCC Fourth Assessment");
-        assertEquals(metadata.get(Metadata.CONVENTIONS), "CF-1.0");
-        assertEquals(metadata.get(Metadata.REALIZATION), "1");
-        assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
+        assertEquals(r.metadata.get(Metadata.CONVENTIONS), "CF-1.0");
+        assertEquals(r.metadata.get(Metadata.REALIZATION), "1");
+        assertEquals(r.metadata.get(Metadata.EXPERIMENT_ID),
                 "720 ppm stabilization experiment (SRESA1B)");
-        assertEquals(metadata.get("File-Type-Description"), 
+        assertEquals(r.metadata.get("File-Type-Description"),
                 "NetCDF-3/CDM");
 
-        String content = handler.toString();
-        assertContains("long_name = \"Surface area\"", content);
-        assertContains("float area(lat=128, lon=256)", content);
-        assertContains("float lat(lat=128)", content);
-        assertContains("double lat_bnds(lat=128, bnds=2)", content);
-        assertContains("double lon_bnds(lon=256, bnds=2)", content);
+        assertContains("long_name = \"Surface area\"", r.xml);
+        assertContains("float area(lat=128, lon=256)", r.xml);
+        assertContains("float lat(lat=128)", r.xml);
+        assertContains("double lat_bnds(lat=128, bnds=2)", r.xml);
+        assertContains("double lon_bnds(lon=256, bnds=2)", r.xml);
         
 
 

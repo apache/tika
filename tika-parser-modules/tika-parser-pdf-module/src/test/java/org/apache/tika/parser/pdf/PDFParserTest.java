@@ -60,6 +60,7 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -105,74 +106,55 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testPdfParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        Metadata metadata = new Metadata();
-
-        InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF.pdf");
-
-        String content = getText(stream, parser, metadata);
-
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(Metadata.AUTHOR));
-        assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
-        assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
+        XMLResult r = getXML("testPDF.pdf");
+        assertEquals("application/pdf", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Bertrand Delacr\u00e9taz", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Bertrand Delacr\u00e9taz", r.metadata.get(Metadata.AUTHOR));
+        assertEquals("Firefox", r.metadata.get(TikaCoreProperties.CREATOR_TOOL));
+        assertEquals("Apache Tika - Apache Tika", r.metadata.get(TikaCoreProperties.TITLE));
 
         // Can't reliably test dates yet - see TIKA-451
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.CREATION_DATE));
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.LAST_MODIFIED));
 
-        assertContains("Apache Tika", content);
-        assertContains("Tika - Content Analysis Toolkit", content);
-        assertContains("incubator", content);
-        assertContains("Apache Software Foundation", content);
+        assertContains("Apache Tika", r.xml);
+        assertContains("Tika - Content Analysis Toolkit", r.xml);
+        assertContains("incubator", r.xml);
+        assertContains("Apache Software Foundation", r.xml);
         // testing how the end of one paragraph is separated from start of the next one
-        assertTrue("should have word boundary after headline",
-                !content.contains("ToolkitApache"));
-        assertTrue("should have word boundary between paragraphs",
-                !content.contains("libraries.Apache"));
+
+        // should have word boundary after headline
+        assertNotContained("ToolkitApache", r.xml);
+        // should have word boundary between paragraphs
+        assertNotContained("libraries.Apache", r.xml);
     }
 
     @Test
     public void testPdfParsingMetadataOnly() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF.pdf")) {
-            parser.parse(stream, null, metadata, new ParseContext());
-        }
-
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
-        assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
+        XMLResult r = getXML("testPDF.pdf");
+        assertEquals("application/pdf", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Bertrand Delacr\u00e9taz", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Firefox", r.metadata.get(TikaCoreProperties.CREATOR_TOOL));
+        assertEquals("Apache Tika - Apache Tika", r.metadata.get(TikaCoreProperties.TITLE));
     }
 
     @Test
     public void testCustomMetadata() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        Metadata metadata = new Metadata();
+        XMLResult r = getXML("testPDF-custommetadata.pdf");
 
-        InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF-custommetadata.pdf");
+        assertEquals("application/pdf", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Document author", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Document author", r.metadata.get(Metadata.AUTHOR));
+        assertEquals("Document title", r.metadata.get(TikaCoreProperties.TITLE));
 
-        String content = getText(stream, parser, metadata);
+        assertEquals("Custom Value", r.metadata.get("Custom Property"));
 
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Document author", metadata.get(Metadata.AUTHOR));
-        assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Array Entry 1", r.metadata.get("Custom Array"));
+        assertEquals(2, r.metadata.getValues("Custom Array").length);
+        assertEquals("Array Entry 1", r.metadata.getValues("Custom Array")[0]);
+        assertEquals("Array Entry 2", r.metadata.getValues("Custom Array")[1]);
 
-        assertEquals("Custom Value", metadata.get("Custom Property"));
-
-        assertEquals("Array Entry 1", metadata.get("Custom Array"));
-        assertEquals(2, metadata.getValues("Custom Array").length);
-        assertEquals("Array Entry 1", metadata.getValues("Custom Array")[0]);
-        assertEquals("Array Entry 2", metadata.getValues("Custom Array")[1]);
-
-        assertContains("Hello World!", content);
+        assertContains("Hello World!", r.xml);
     }
 
     /**
@@ -182,16 +164,9 @@ public class PDFParserTest extends TikaTest {
      */
     @Test
     public void testProtectedPDF() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
 
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF_protected.pdf")) {
-            parser.parse(stream, handler, metadata, context);
-        }
-
+        XMLResult r = getXML("testPDF_protected.pdf");
+        Metadata metadata = r.metadata;
         assertEquals("true", metadata.get("pdf:encrypted"));
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
@@ -200,27 +175,23 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
         assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
-        String content = handler.toString();
+        String content = r.xml;
         assertContains("RETHINKING THE FINANCIAL NETWORK", content);
         assertContains("On 16 November 2002", content);
         assertContains("In many important respects", content);
 
 
         // Try again with an explicit empty password
-        handler = new BodyContentHandler();
         metadata = new Metadata();
 
-        context = new ParseContext();
+        ParseContext context = new ParseContext();
         context.set(PasswordProvider.class, new PasswordProvider() {
             public String getPassword(Metadata metadata) {
                 return "";
             }
         });
-
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF_protected.pdf")) {
-            parser.parse(stream, handler, metadata, context);
-        }
+        r = getXML("testPDF_protected.pdf", new AutoDetectParser(), metadata, context);
+        metadata = r.metadata;
         assertEquals("true", metadata.get("pdf:encrypted"));
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
@@ -234,7 +205,6 @@ public class PDFParserTest extends TikaTest {
         assertContains("In many important respects", content);
 
         //now test wrong password
-        handler = new BodyContentHandler();
         metadata = new Metadata();
         context = new ParseContext();
         context.set(PasswordProvider.class, new PasswordProvider() {
@@ -244,23 +214,20 @@ public class PDFParserTest extends TikaTest {
         });
 
         boolean ex = false;
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF_protected.pdf")) {
-            parser.parse(stream, handler, metadata, context);
+        try {
+            r = getXML("testPDF_protected.pdf", new AutoDetectParser(), metadata, context);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        content = handler.toString();
+        content = r.xml;
 
         assertTrue("encryption exception", ex);
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
         assertEquals("very little metadata should be parsed", 3, metadata.names().length);
-        assertEquals(0, content.length());
 
         //now test wrong password with non sequential parser
-        handler = new BodyContentHandler();
         metadata = new Metadata();
         context = new ParseContext();
         context.set(PasswordProvider.class, new PasswordProvider() {
@@ -272,22 +239,21 @@ public class PDFParserTest extends TikaTest {
         config.setUseNonSequentialParser(true);
         context.set(PDFParserConfig.class, config);
 
-        ;
         ex = false;
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF_protected.pdf")) {
-            parser.parse(stream, handler, metadata, context);
+        try {
+            r = getXML("testPDF_protected.pdf", new AutoDetectParser(), metadata, context);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
-        content = handler.toString();
+
+        content = r.xml;
         assertTrue("encryption exception", ex);
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
 
         //pdf:encrypted, X-Parsed-By and Content-Type
         assertEquals("very little metadata should be parsed", 3, metadata.names().length);
-        assertEquals(0, content.length());
+
     }
 
     @Test
@@ -619,6 +585,7 @@ public class PDFParserTest extends TikaTest {
      * TODO: more testing
      */
     @Test
+    @Ignore("this will be going away as soon as we upgrade to 2.0")
     public void testSequentialParser() throws Exception {
 
         Parser sequentialParser = new AutoDetectParser();
@@ -745,13 +712,13 @@ public class PDFParserTest extends TikaTest {
         //The current test doc does not contain any content in the signature area.
         //This just tests that a RuntimeException is not thrown.
         //TODO: find a better test file for this issue.
-        String xml = getXML("/testPDF_acroform3.pdf").xml;
+        String xml = getXML("testPDF_acroform3.pdf").xml;
         assertTrue("found", (xml.contains("<li>aTextField: TIKA-1226</li>")));
     }
 
     @Test // TIKA-1228, TIKA-1268
     public void testEmbeddedFilesInChildren() throws Exception {
-        String xml = getXML("/testPDF_childAttachments.pdf").xml;
+        String xml = getXML("testPDF_childAttachments.pdf").xml;
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
         assertTrue(xml.contains("regressiveness"));
 
@@ -785,7 +752,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedFilesInAnnotations() throws Exception {
-        String xml = getXML("/testPDFFileEmbInAnnotation.pdf").xml;
+        String xml = getXML("testPDFFileEmbInAnnotation.pdf").xml;
 
         assertTrue(xml.contains("This is a Excel"));
     }

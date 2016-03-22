@@ -79,9 +79,9 @@ public class TikaParsersTest extends CXFTestBase {
                 assertContains("audio/ogg", text);
             } else {
                 // Shouldn't do
-                assertNotFound("text/plain", text);
-                assertNotFound("application/pdf", text);
-                assertNotFound("audio/ogg", text);
+                assertNotContained("text/plain", text);
+                assertNotContained("application/pdf", text);
+                assertNotContained("audio/ogg", text);
             }
         }
     }
@@ -114,9 +114,9 @@ public class TikaParsersTest extends CXFTestBase {
                 assertContains("<li>audio/ogg", text);
             } else {
                 // Shouldn't do
-                assertNotFound("text/plain", text);
-                assertNotFound("application/pdf", text);
-                assertNotFound("audio/ogg", text);
+                assertNotContained("text/plain", text);
+                assertNotContained("application/pdf", text);
+                assertNotContained("audio/ogg", text);
             }
         }
     }

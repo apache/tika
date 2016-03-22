@@ -68,7 +68,7 @@ public class DetectorResourceTest extends CXFTestBase {
                 .accept("*/*")
                 .header("Content-Disposition",
                         "attachment; filename=" + FOO_CSV)
-                .put(ClassLoader.getSystemResourceAsStream(FOO_CSV));
+                .put(getTestDocumentAsStream(FOO_CSV));
         assertNotNull(response);
         String readMime = getStringFromInputStream((InputStream) response
                 .getEntity());
@@ -85,7 +85,7 @@ public class DetectorResourceTest extends CXFTestBase {
                 .accept("*/*")
                 .header("Content-Disposition",
                         "attachment; filename=" + CDEC_CSV_NO_EXT)
-                .put(ClassLoader.getSystemResourceAsStream(CDEC_CSV_NO_EXT));
+                .put(getTestDocumentAsStream(CDEC_CSV_NO_EXT));
         assertNotNull(response);
         String readMime = getStringFromInputStream((InputStream) response
                 .getEntity());
@@ -98,7 +98,7 @@ public class DetectorResourceTest extends CXFTestBase {
                 .accept("*/*")
                 .header("Content-Disposition",
                         "attachment; filename=" + CDEC_CSV_NO_EXT + ".csv")
-                .put(ClassLoader.getSystemResourceAsStream(CDEC_CSV_NO_EXT));
+                .put(getTestDocumentAsStream(CDEC_CSV_NO_EXT));
         assertNotNull(response);
         readMime = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("text/csv", readMime);

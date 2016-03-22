@@ -23,7 +23,7 @@ import java.util.Map;
 import org.apache.tika.batch.DigestingAutoDetectParserFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.parser.digesting.CommonsDigester;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.XMLDOMUtil;
 import org.w3c.dom.Node;

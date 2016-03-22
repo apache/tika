@@ -16,38 +16,29 @@
  */
 package org.apache.tika.parser.xml;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import org.apache.tika.TikaTest.TrackingHandler;
+import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
-public class FictionBookParserTest {
+public class FictionBookParserTest extends TikaTest {
   
     @Test
     public void testFB2() throws Exception {
-        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            new FictionBookParser().parse(input, handler, metadata, new ParseContext());
-            String content = handler.toString();
-
-            assertContains("1812", content);
-        }
+        XMLResult r = getXML("test.fb2", new FictionBookParser(), new Metadata(), new ParseContext());
+        assertContains("1812", r.xml);
     }
 
     @Test
     public void testEmbedded() throws Exception {
-        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
+        try (InputStream input = getTestDocumentAsStream("test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
             TikaInputStream stream = TikaInputStream.get(input);
 

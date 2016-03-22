@@ -14,21 +14,19 @@
 package org.apache.tika.parser.strings;
 
 import static org.apache.tika.parser.strings.StringsParser.getStringsProg;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
-import java.io.InputStream;
 import java.util.Arrays;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
-public class StringsParserTest {
+public class StringsParserTest extends TikaTest {
 	public static boolean canRun() {
 		StringsConfig config = new StringsConfig();
 		String[] checkCmd = {config.getStringsPath() + getStringsProg(), "--version"};
@@ -40,7 +38,7 @@ public class StringsParserTest {
 	public void testParse() throws Exception {
 		assumeTrue(canRun());
 		
-		String resource = "/test-documents/testOCTET_header.dbase3";
+		String resource = "testOCTET_header.dbase3";
 
 		String[] content = { "CLASSNO", "TITLE", "ITEMNO", "LISTNO", "LISTDATE" };
 		
@@ -50,22 +48,15 @@ public class StringsParserTest {
 		FileConfig fileConfig = new FileConfig();
 
 		Parser parser = new StringsParser();
-		ContentHandler handler = new BodyContentHandler();
-		Metadata metadata = new Metadata();
-
 		ParseContext context = new ParseContext();
 		context.set(StringsConfig.class, stringsConfig);
 		context.set(FileConfig.class, fileConfig);
-
-		try (InputStream stream = StringsParserTest.class.getResourceAsStream(resource)) {
-			parser.parse(stream, handler, metadata, context);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		Metadata metadata = new Metadata();
+		XMLResult r = getXML(resource, parser, metadata, context);
 
 		// Content
 		for (String word : content) {
-			assertTrue(handler.toString().contains(word));
+			assertTrue(r.xml.contains(word));
 		}
 		
 		// Metadata

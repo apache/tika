@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -25,6 +23,7 @@ import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.Locale;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -41,155 +40,139 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class ExcelParserTest {
+public class ExcelParserTest extends TikaTest {
     @Test
     @SuppressWarnings("deprecation") // Checks legacy Tika-1.0 style metadata keys
     public void testExcelParser() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xls")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OfficeParser().parse(input, handler, metadata, context);
 
-            assertEquals(
-                    "application/vnd.ms-excel",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+        XMLResult r = getXML("testEXCEL.xls", new OfficeParser(), new Metadata(), context);
 
-            // Mon Oct 01 17:13:56 BST 2007
-            assertEquals("2007-10-01T16:13:56Z", metadata.get(TikaCoreProperties.CREATED));
-            assertEquals("2007-10-01T16:13:56Z", metadata.get(Metadata.CREATION_DATE));
+        assertEquals(
+                "application/vnd.ms-excel",
+                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Simple Excel document", r.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Keith Bennett", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Keith Bennett", r.metadata.get(Metadata.AUTHOR));
 
-            // Mon Oct 01 17:31:43 BST 2007
-            assertEquals("2007-10-01T16:31:43Z", metadata.get(TikaCoreProperties.MODIFIED));
-            assertEquals("2007-10-01T16:31:43Z", metadata.get(Metadata.DATE));
+        // Mon Oct 01 17:13:56 BST 2007
+        assertEquals("2007-10-01T16:13:56Z", r.metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2007-10-01T16:13:56Z", r.metadata.get(Metadata.CREATION_DATE));
 
-            String content = handler.toString();
-            assertContains("Sample Excel Worksheet", content);
-            assertContains("Numbers and their Squares", content);
-            assertContains("\t\tNumber\tSquare", content);
-            assertContains("9", content);
-            assertNotContained("9.0", content);
-            assertContains("196", content);
-            assertNotContained("196.0", content);
-        }
+        // Mon Oct 01 17:31:43 BST 2007
+        assertEquals("2007-10-01T16:31:43Z", r.metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2007-10-01T16:31:43Z", r.metadata.get(Metadata.DATE));
+
+        String content = r.xml;
+        assertContains("Sample Excel Worksheet", content);
+        assertContains("Numbers and their Squares", content);
+        assertContains("<tr>\t<td />\t<td>Number</td>\t<td>Square", content);
+        assertContains("9", content);
+        assertNotContained("9.0", content);
+        assertContains("196", content);
+        assertNotContained("196.0", content);
+
     }
 
     @Test
     public void testExcelParserFormatting() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL-formats.xls")) {
-            Metadata metadata = new Metadata();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            ContentHandler handler = new BodyContentHandler();
-            new OfficeParser().parse(input, handler, metadata, context);
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+        XMLResult r = getXML("testEXCEL-formats.xls", new OfficeParser(), new Metadata(), context);
 
-            assertEquals(
-                    "application/vnd.ms-excel",
-                    metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(
+                "application/vnd.ms-excel",
+                r.metadata.get(Metadata.CONTENT_TYPE));
 
-            String content = handler.toString();
+        String content = r.xml;
 
-            // Number #,##0.00
-            assertContains("1,599.99", content);
-            assertContains("-1,599.99", content);
+        // Number #,##0.00
+        assertContains("1,599.99", content);
+        assertContains("-1,599.99", content);
 
-            // Currency $#,##0.00;[Red]($#,##0.00)
-            assertContains("$1,599.99", content);
-            assertContains("($1,599.99)", content);
+        // Currency $#,##0.00;[Red]($#,##0.00)
+        assertContains("$1,599.99", content);
+        assertContains("($1,599.99)", content);
 
-            // Scientific 0.00E+00
-            // poi <=3.8beta1 returns 1.98E08, newer versions return 1.98+E08
-            assertTrue(content.contains("1.98E08") || content.contains("1.98E+08"));
-            assertTrue(content.contains("-1.98E08") || content.contains("-1.98E+08"));
+        // Scientific 0.00E+00
+        // poi <=3.8beta1 returns 1.98E08, newer versions return 1.98+E08
+        assertTrue(content.contains("1.98E08") || content.contains("1.98E+08"));
+        assertTrue(content.contains("-1.98E08") || content.contains("-1.98E+08"));
 
-            // Percentage.
-            assertContains("2.50%", content);
-            // Excel rounds up to 3%, but that requires Java 1.6 or later
-            if (System.getProperty("java.version").startsWith("1.5")) {
-                assertContains("2%", content);
-            } else {
-                assertContains("3%", content);
-            }
-
-            // Time Format: h:mm
-            assertContains("6:15", content);
-            assertContains("18:15", content);
-
-            // Date Format: d-mmm-yy
-            assertContains("17-May-07", content);
-
-            // Date Format: m/d/yy
-            assertContains("10/3/09", content);
-
-            // Date/Time Format: m/d/yy h:mm
-            assertContains("1/19/08 4:35", content);
-
-            // Fraction (2.5): # ?/?
-            assertContains("2 1/2", content);
-
-
-            // Below assertions represent outstanding formatting issues to be addressed
-            // they are included to allow the issues to be progressed with the Apache POI
-            // team - See TIKA-103.
-
-            /*************************************************************************
-             // Custom Number (0 "dollars and" .00 "cents")
-             assertContains("19 dollars and .99 cents", content);
-
-             // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
-             assertContains("At 4:20 AM on Thursday May 17, 2007", content);
-             **************************************************************************/
-
+        // Percentage.
+        assertContains("2.50%", content);
+        // Excel rounds up to 3%, but that requires Java 1.6 or later
+        if (System.getProperty("java.version").startsWith("1.5")) {
+            assertContains("2%", content);
+        } else {
+            assertContains("3%", content);
         }
+
+        // Time Format: h:mm
+        assertContains("6:15", content);
+        assertContains("18:15", content);
+
+        // Date Format: d-mmm-yy
+        assertContains("17-May-07", content);
+
+        // Date Format: m/d/yy
+        assertContains("10/3/09", content);
+
+        // Date/Time Format: m/d/yy h:mm
+        assertContains("1/19/08 4:35", content);
+
+        // Fraction (2.5): # ?/?
+        assertContains("2 1/2", content);
+
+
+        // Below assertions represent outstanding formatting issues to be addressed
+        // they are included to allow the issues to be progressed with the Apache POI
+        // team - See TIKA-103.
+
+        /*************************************************************************
+         // Custom Number (0 "dollars and" .00 "cents")
+         assertContains("19 dollars and .99 cents", content);
+
+         // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
+         assertContains("At 4:20 AM on Thursday May 17, 2007", content);
+         **************************************************************************/
+
+
     }
 
     @Test
     public void testExcelParserPassword() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OfficeParser().parse(input, handler, metadata, context);
+        try {
+            XMLResult r = getXML("testEXCEL_protected_passtika.xls");
             fail("Document is encrypted, shouldn't parse");
         } catch (EncryptedDocumentException e) {
             // Good
         }
 
         // Try again, this time with the password
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            context.set(PasswordProvider.class, new PasswordProvider() {
-                @Override
-                public String getPassword(Metadata metadata) {
-                    return "tika";
-                }
-            });
-            new OfficeParser().parse(input, handler, metadata, context);
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "tika";
+            }
+        });
+        XMLResult r = getXML("testEXCEL_protected_passtika.xls", new OfficeParser(), new Metadata(), context);
 
-            assertEquals(
-                    "application/vnd.ms-excel",
-                    metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(
+                "application/vnd.ms-excel",
+                r.metadata.get(Metadata.CONTENT_TYPE));
 
-            assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Antoni", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("2011-11-25T09:52:48Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals(null, r.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Antoni", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("2011-11-25T09:52:48Z", r.metadata.get(TikaCoreProperties.CREATED));
 
-            String content = handler.toString();
-            assertContains("This is an Encrypted Excel spreadsheet", content);
-            assertNotContained("9.0", content);
-        }
+        String content = r.xml;
+        assertContains("This is an Encrypted Excel spreadsheet", content);
+        assertNotContained("9.0", content);
+
     }
 
     /**
@@ -197,70 +180,48 @@ public class ExcelParserTest {
      */
     @Test
     public void testExcelParserCharts() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL-charts.xls")) {
-            Metadata metadata = new Metadata();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            ContentHandler handler = new BodyContentHandler();
-            new OfficeParser().parse(input, handler, metadata, context);
 
-            assertEquals(
-                    "application/vnd.ms-excel",
-                    metadata.get(Metadata.CONTENT_TYPE));
+        XMLResult r = getXML("testEXCEL-charts.xls", new OfficeParser());
+        assertEquals(
+                "application/vnd.ms-excel",
+                r.metadata.get(Metadata.CONTENT_TYPE));
 
-            String content = handler.toString();
+        String content = r.xml;
 
-            // The first sheet has a pie chart
-            assertContains("charttabyodawg", content);
-            assertContains("WhamPuff", content);
+        // The first sheet has a pie chart
+        assertContains("charttabyodawg", content);
+        assertContains("WhamPuff", content);
 
-            // The second sheet has a bar chart and some text
-            assertContains("Sheet1", content);
-            assertContains("Test Excel Spreasheet", content);
-            assertContains("foo", content);
-            assertContains("bar", content);
-            assertContains("fizzlepuff", content);
-            assertContains("whyaxis", content);
-            assertContains("eksaxis", content);
+        // The second sheet has a bar chart and some text
+        assertContains("Sheet1", content);
+        assertContains("Test Excel Spreasheet", content);
+        assertContains("foo", content);
+        assertContains("bar", content);
+        assertContains("fizzlepuff", content);
+        assertContains("whyaxis", content);
+        assertContains("eksaxis", content);
 
-            // The third sheet has some text
-            assertContains("Sheet2", content);
-            assertContains("dingdong", content);
-        }
+        // The third sheet has some text
+        assertContains("Sheet2", content);
+        assertContains("dingdong", content);
+
     }
 
     @Test
     public void testJXL() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/jxl.xls")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OfficeParser().parse(input, handler, metadata, context);
 
-            assertEquals(
-                    "application/vnd.ms-excel",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            String content = handler.toString();
-            assertContains("Number Formats", content);
-        }
+        XMLResult r = getXML("jxl.xls", new OfficeParser());
+        assertEquals(
+                "application/vnd.ms-excel",
+                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("Number Formats", r.xml);
+
     }
 
     @Test
     public void testWorksSpreadsheet70() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testWORKSSpreadsheet7.0.xlr")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OfficeParser().parse(input, handler, metadata, context);
-
-            String content = handler.toString();
-            assertContains("Microsoft Works", content);
-        }
+        assertContains("Microsoft Works",
+                getXML("testWORKSSpreadsheet7.0.xlr", new OfficeParser()).xml);
     }
 
     /**
@@ -278,8 +239,7 @@ public class ExcelParserTest {
 
         // Should be detected correctly
         MediaType type;
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xlsb")) {
+        try (InputStream input = getTestDocumentAsStream("testEXCEL.xlsb")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
         }
@@ -291,15 +251,8 @@ public class ExcelParserTest {
         assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
 
         // AutoDetectParser doesn't break on it
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            parser.parse(input, handler, m, context);
+        assertContains("<body />", getXML("testEXCEL.xlsb").xml);
 
-            String content = handler.toString();
-            assertEquals("", content);
-        }
     }
 
     /**
@@ -315,7 +268,7 @@ public class ExcelParserTest {
         // First try detection of Excel 5
         m = new Metadata();
         m.add(Metadata.RESOURCE_NAME_KEY, "excel_5.xls");
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
+        try (InputStream input = getTestDocumentAsStream("testEXCEL_5.xls")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel", type.toString());
         }
@@ -323,7 +276,7 @@ public class ExcelParserTest {
         // Now Excel 95
         m = new Metadata();
         m.add(Metadata.RESOURCE_NAME_KEY, "excel_95.xls");
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
+        try (InputStream input = getTestDocumentAsStream("testEXCEL_95.xls")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel", type.toString());
         }
@@ -337,7 +290,7 @@ public class ExcelParserTest {
 
         // Parse the Excel 5 file
         m = new Metadata();
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
+        try (InputStream input = getTestDocumentAsStream("testEXCEL_5.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -364,7 +317,7 @@ public class ExcelParserTest {
 
         // Parse the Excel 95 file
         m = new Metadata();
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
+        try (InputStream input = getTestDocumentAsStream("testEXCEL_95.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -388,16 +341,11 @@ public class ExcelParserTest {
      */
     @Test
     public void testCustomProperties() throws Exception {
-        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
 
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_custom_props.xls")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OfficeParser().parse(input, handler, metadata, context);
-        }
-
+        XMLResult r = getXML("testEXCEL_custom_props.xls", new OfficeParser(), new Metadata(), context);
+        Metadata metadata = r.metadata;
         assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("", metadata.get(TikaCoreProperties.MODIFIER));
@@ -413,31 +361,30 @@ public class ExcelParserTest {
 
 	@Test
     public void testHeaderAndFooterExtraction() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_headers_footers.xls")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.UK);
-            new OfficeParser().parse(input, handler, metadata, context);
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.UK);
 
-            assertEquals(
-                    "application/vnd.ms-excel",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Internal spreadsheet", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Aeham Abushwashi", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Aeham Abushwashi", metadata.get(Metadata.AUTHOR));
+        XMLResult r = getXML("testEXCEL_headers_footers.xls", new OfficeParser(),
+                new Metadata(), context);
 
-            String content = handler.toString();
-            assertContains("John Smith1", content);
-            assertContains("John Smith50", content);
-            assertContains("1 Corporate HQ", content);
-            assertContains("Header - Corporate Spreadsheet", content);
-            assertContains("Header - For Internal Use Only", content);
-            assertContains("Header - Author: John Smith", content);
-            assertContains("Footer - Corporate Spreadsheet", content);
-            assertContains("Footer - For Internal Use Only", content);
-            assertContains("Footer - Author: John Smith", content);
-        }
+        Metadata metadata = r.metadata;
+        assertEquals(
+                "application/vnd.ms-excel",
+                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Internal spreadsheet", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Aeham Abushwashi", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Aeham Abushwashi", metadata.get(Metadata.AUTHOR));
+
+        String content = r.xml;
+        assertContains("John Smith1", content);
+        assertContains("John Smith50", content);
+        assertContains("1 Corporate HQ", content);
+        assertContains("Header - Corporate Spreadsheet", content);
+        assertContains("Header - For Internal Use Only", content);
+        assertContains("Header - Author: John Smith", content);
+        assertContains("Footer - Corporate Spreadsheet", content);
+        assertContains("Footer - For Internal Use Only", content);
+        assertContains("Footer - Author: John Smith", content);
+
     }
 }

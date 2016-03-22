@@ -18,36 +18,24 @@
 package org.apache.tika.parser.grib;
 
 //JDK imports
-import static org.junit.Assert.*;
-import java.io.InputStream;
+import static org.junit.Assert.assertNotNull;
+
+import org.apache.tika.TikaTest;
+import org.junit.Test;
 
 //TIKA imports
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import java.io.File;
 /**
  * Test cases to exercise the {@link org.apache.tika.parser.grib.GribParser}.
  */
 
-public class GribParserTest {
+public class GribParserTest extends TikaTest {
 
     @Test
     public void testParseGlobalMetadata() throws Exception {
-        Parser parser = new GribParser();
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        try (InputStream stream = GribParser.class.getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-        assertNotNull(metadata);
-        String content = handler.toString();
-        assertTrue(content.contains("dimensions:"));
-        assertTrue(content.contains("variables:"));
+        XMLResult r = getXML("gdas1.forecmwf.2014062612.grib2", new GribParser());
+        assertNotNull(r.metadata);
+        assertContains("dimensions:", r.xml);
+        assertContains("variables:", r.xml);
     }
 }
  

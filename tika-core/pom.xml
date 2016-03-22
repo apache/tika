@@ -33,8 +33,17 @@
   <packaging>bundle</packaging>
   <name>Apache Tika core</name>
   <url>http://tika.apache.org/</url>
+  <properties>
+    <!-- NOTE: sync codec version with POI -->
+    <codec.version>1.10</codec.version>
+  </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${codec.version}</version>
+    </dependency>
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
@@ -58,6 +67,13 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-test-resources</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
      <dependency>
@@ -108,6 +124,9 @@
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Bundle-Activator>org.apache.tika.config.TikaActivator</Bundle-Activator>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
+            <Embed-Dependency>
+              commons-codec
+            </Embed-Dependency>
           </instructions>
         </configuration>
       </plugin>

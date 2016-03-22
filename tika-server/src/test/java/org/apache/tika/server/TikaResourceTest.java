@@ -69,7 +69,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/msword")
                 .accept("text/plain")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+                .put(getTestDocumentAsStream(TEST_DOC));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
@@ -90,7 +90,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("text/plain")
-                .put(ClassLoader.getSystemResourceAsStream("password.xls"));
+                .put(getTestDocumentAsStream("password.xls"));
 
         assertEquals(UNPROCESSEABLE, response.getStatus());
     }
@@ -100,7 +100,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/msword")
                 .accept("text/html")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+                .put(getTestDocumentAsStream(TEST_DOC));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
@@ -113,7 +113,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("text/html")
-                .put(ClassLoader.getSystemResourceAsStream("password.xls"));
+                .put(getTestDocumentAsStream("password.xls"));
 
         assertEquals(UNPROCESSEABLE, response.getStatus());
     }
@@ -123,7 +123,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/msword")
                 .accept("text/xml")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+                .put(getTestDocumentAsStream(TEST_DOC));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
@@ -134,7 +134,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/vnd.ms-excel")
                 .accept("text/xml")
-                .put(ClassLoader.getSystemResourceAsStream("password.xls"));
+                .put(getTestDocumentAsStream("password.xls"));
 
         assertEquals(UNPROCESSEABLE, response.getStatus());
     }
@@ -143,7 +143,8 @@ public class TikaResourceTest extends CXFTestBase {
     public void testSimpleWordMultipartXML() throws Exception {
         ClassLoader.getSystemResourceAsStream(TEST_DOC);
         Attachment attachmentPart =
-                new Attachment("myworddoc", "application/msword", ClassLoader.getSystemResourceAsStream(TEST_DOC));
+                new Attachment("myworddoc", "application/msword",
+                        getTestDocumentAsStream(TEST_DOC));
         WebClient webClient = WebClient.create(endPoint + TIKA_PATH + "/form");
         Response response = webClient.type("multipart/form-data")
                 .accept("text/xml")
@@ -161,7 +162,7 @@ public class TikaResourceTest extends CXFTestBase {
         //first try text
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .accept("text/plain")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("Course of human events"));
@@ -169,7 +170,7 @@ public class TikaResourceTest extends CXFTestBase {
         //now go for xml -- different call than text
         response = WebClient.create(endPoint + TIKA_PATH)
                 .accept("text/xml")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                .put(getTestDocumentAsStream(TEST_RECURSIVE_DOC));
         responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("Course of human events"));
@@ -185,9 +186,9 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/rtf")
                 .accept("text/plain")
-                .put(ClassLoader.getSystemResourceAsStream("testRTF_npeFromWMFInTikaServer.rtf"));
+                .put(getTestDocumentAsStream("testRTF_npeFromWMFInTikaServer.rtf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
-        assertTrue(responseMsg.contains("Example text"));
+        assertContains("Example text", responseMsg);
     }
 }

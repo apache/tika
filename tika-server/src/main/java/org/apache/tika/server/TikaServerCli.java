@@ -39,7 +39,7 @@ import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.parser.digesting.CommonsDigester;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.MetadataResource;

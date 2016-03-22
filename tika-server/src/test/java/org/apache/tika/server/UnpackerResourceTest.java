@@ -87,7 +87,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testDocWAV() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD).accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+                .put(getTestDocumentAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(WAV1_MD5, data.get(WAV1_NAME));
@@ -99,7 +99,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testDocWAVText() throws Exception {
         Response response = WebClient.create(endPoint + ALL_PATH)
                 .type(APPLICATION_MSWORD).accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+                .put(getTestDocumentAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(WAV1_MD5, data.get(WAV1_NAME));
@@ -111,7 +111,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testDocPicture() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD).accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+                .put(getTestDocumentAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
 
@@ -122,7 +122,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testDocPictureNoOle() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD).accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("2pic.doc"));
+                .put(getTestDocumentAsStream("2pic.doc"));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(JPG2_MD5, data.get(JPG2_NAME));
@@ -132,7 +132,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testImageDOCX() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .accept("application/zip").put(
-                        ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
+                        getTestDocumentAsStream(TEST_DOCX_IMAGE));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(DOCX_IMAGE1_MD5, data.get(DOCX_IMAGE1_NAME));
@@ -144,7 +144,7 @@ public class UnpackerResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type("xxx/xxx")
                 .accept("*/*")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+                .put(getTestDocumentAsStream(TEST_DOC_WAV));
 
         assertEquals(415, response.getStatus());
     }
@@ -154,7 +154,7 @@ public class UnpackerResourceTest extends CXFTestBase {
         String TEST_DOCX_EXE = "2exe.docx";
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
+                .put(getTestDocumentAsStream(TEST_DOCX_EXE));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
 
@@ -166,7 +166,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testImageXSL() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("pic.xls"));
+                .put(getTestDocumentAsStream("pic.xls"));
 
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
         assertEquals(XSL_IMAGE1_MD5, data.get("0.jpg"));
@@ -177,7 +177,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     public void testTarDocPicture() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type(APPLICATION_MSWORD).accept("application/x-tar")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+                .put(getTestDocumentAsStream(TEST_DOC_WAV));
 
         Map<String, String> data = readArchiveFromStream(new TarArchiveInputStream((InputStream) response.getEntity()));
 
@@ -189,7 +189,7 @@ public class UnpackerResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + ALL_PATH)
                 .header(CONTENT_TYPE, APPLICATION_XML)
                 .accept("application/zip")
-                .put(ClassLoader.getSystemResourceAsStream("test.doc"));
+                .put(getTestDocumentAsStream("test.doc"));
 
         String responseMsg = readArchiveText((InputStream) response.getEntity());
         assertNotNull(responseMsg);

@@ -22,13 +22,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeDetectionTest;
 import org.junit.Before;
 import org.junit.Test;
 
-public class MimeDetectionWithNNTest {
+public class MimeDetectionWithNNTest extends TikaTest {
 
 	private Detector detector;
 
@@ -88,13 +88,13 @@ public class MimeDetectionWithNNTest {
 
 	private void testUrl(String expected, String url, String file)
 			throws IOException {
-		InputStream in = MimeDetectionTest.class.getResourceAsStream(file);
+		InputStream in = getTestDocumentAsStream(file);
 		testStream(expected, url, in);
 	}
 
 	private void testFile(String expected, String filename) throws IOException {
 
-		InputStream in = MimeDetectionTest.class.getResourceAsStream(filename);
+		InputStream in = getTestDocumentAsStream(filename);
 		testStream(expected, filename, in);
 	}
 

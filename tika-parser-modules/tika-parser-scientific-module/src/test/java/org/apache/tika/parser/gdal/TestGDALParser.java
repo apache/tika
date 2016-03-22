@@ -49,7 +49,7 @@ public class TestGDALParser extends TikaTest {
     }
 
   @Test
-  public void testParseBasicInfo() {
+  public void testParseBasicInfo() throws Exception {
     assumeTrue(canRun());
     final String expectedDriver = "netCDF/Network Common Data Format";
     final String expectedUpperRight = "512.0,    0.0";
@@ -59,18 +59,9 @@ public class TestGDALParser extends TikaTest {
     final String expectedCoordinateSystem = "`'";
     final String expectedSize = "512, 512";
 
-    GDALParser parser = new GDALParser();
-    InputStream stream = TestGDALParser.class
-        .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
-    Metadata met = new Metadata();
-    BodyContentHandler handler = new BodyContentHandler();
-    try {
-      parser.parse(stream, handler, met, new ParseContext());
-    } catch (Exception e) {
-      e.printStackTrace();
-      fail(e.getMessage());
-    }
 
+    XMLResult r = getXML("sresa1b_ncar_ccsm3_0_run1_200001.nc", new GDALParser());
+    Metadata met = r.metadata;
     assertNotNull(met);
     assertNotNull(met.get("Driver"));
     assertEquals(expectedDriver, met.get("Driver"));
@@ -91,7 +82,7 @@ public class TestGDALParser extends TikaTest {
   }
 
     @Test
-    public void testParseMetadata() {
+    public void testParseMetadata() throws Exception {
         assumeTrue(canRun());
         final String expectedNcInst = "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
         final String expectedModelNameEnglish = "NCAR CCSM";
@@ -102,14 +93,10 @@ public class TestGDALParser extends TikaTest {
         final String expectedSub8Name = "\":ua";
         final String expectedSub8Desc = "[1x17x128x256] eastward_wind (32-bit floating-point)";
 
-        GDALParser parser = new GDALParser();
-        InputStream stream = TestGDALParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
-        Metadata met = new Metadata();
-        BodyContentHandler handler = new BodyContentHandler();
-        try {
-            parser.parse(stream, handler, met, new ParseContext());
-            assertNotNull(met);
+        XMLResult r = getXML("sresa1b_ncar_ccsm3_0_run1_200001.nc");
+        Metadata met = r.metadata;
+
+        assertNotNull(met);
             assertNotNull(met.get("NC_GLOBAL#institution"));
             assertEquals(expectedNcInst, met.get("NC_GLOBAL#institution"));
             assertNotNull(met.get("NC_GLOBAL#model_name_english"));
@@ -129,14 +116,11 @@ public class TestGDALParser extends TikaTest {
             assertTrue(met.get("SUBDATASET_8_NAME").endsWith(expectedSub8Name));
             assertNotNull(met.get("SUBDATASET_8_DESC"));
             assertEquals(expectedSub8Desc, met.get("SUBDATASET_8_DESC"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
     }
 
     @Test
     public void testParseFITS() {
+        //TODO: fix this...add spooling to tmp file to TikaTest
         String fitsFilename = "/test-documents/WFPC2u5780205r_c0fx.fits";
 
         assumeTrue(canRun());
