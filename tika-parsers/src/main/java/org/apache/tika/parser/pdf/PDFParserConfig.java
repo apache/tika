@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
 
-import org.apache.pdfbox.util.PDFTextStripper;
+import org.apache.pdfbox.text.PDFTextStripper;
 
 /**
  * Config for PDFParser.
@@ -59,9 +59,6 @@ public class PDFParserConfig implements Serializable {
     // True if we should sort text tokens by position
     // (necessary for some PDFs, but messes up other PDFs):
     private boolean sortByPosition = false;
-
-    //True if we should use PDFBox's NonSequentialParser
-    private boolean useNonSequentialParser = false;
 
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
@@ -130,9 +127,6 @@ public class PDFParserConfig implements Serializable {
         setSortByPosition(
                 getProp(props.getProperty("sortByPosition"),
                         getSortByPosition()));
-        setUseNonSequentialParser(
-                getProp(props.getProperty("useNonSequentialParser"),
-                        getUseNonSequentialParser()));
         setExtractAcroFormContent(
                 getProp(props.getProperty("extractAcroFormContent"),
                         getExtractAcroFormContent()));
@@ -165,7 +159,6 @@ public class PDFParserConfig implements Serializable {
      * @param pdf2XHTML
      */
     public void configure(PDF2XHTML pdf2XHTML) {
-        pdf2XHTML.setForceParsing(true);
         pdf2XHTML.setSortByPosition(getSortByPosition());
         if (getEnableAutoSpace()) {
             pdf2XHTML.setWordSeparator(" ");
@@ -350,28 +343,6 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * @see #setUseNonSequentialParser(boolean)
-     */
-    public boolean getUseNonSequentialParser() {
-        return useNonSequentialParser;
-    }
-
-    /**
-     * If true, uses PDFBox's non-sequential parser.
-     * The non-sequential parser should be much faster than the traditional
-     * full doc parser.  However, until PDFBOX-XXX is fixed,
-     * the non-sequential parser fails
-     * to extract some document metadata.
-     * <p/>
-     * Default is false (use the traditional parser)
-     *
-     * @param useNonSequentialParser
-     */
-    public void setUseNonSequentialParser(boolean useNonSequentialParser) {
-        this.useNonSequentialParser = useNonSequentialParser;
-    }
-
-    /**
      * @see #setAverageCharTolerance(Float)
      */
     public Float getAverageCharTolerance() {
@@ -439,7 +410,6 @@ public class PDFParserConfig implements Serializable {
                 + ((spacingTolerance == null) ? 0 : spacingTolerance.hashCode());
         result = prime * result
                 + (suppressDuplicateOverlappingText ? 1231 : 1237);
-        result = prime * result + (useNonSequentialParser ? 1231 : 1237);
         result = prime * result + (ifXFAExtractOnlyXFA ? 1231 : 1237);
         return result;
     }
@@ -477,8 +447,6 @@ public class PDFParserConfig implements Serializable {
             return false;
         if (suppressDuplicateOverlappingText != other.suppressDuplicateOverlappingText)
             return false;
-        if (useNonSequentialParser != other.useNonSequentialParser)
-            return false;
         if (ifXFAExtractOnlyXFA != other.ifXFAExtractOnlyXFA)
             return false;
 
@@ -491,7 +459,6 @@ public class PDFParserConfig implements Serializable {
                 + ", suppressDuplicateOverlappingText="
                 + suppressDuplicateOverlappingText + ", extractAnnotationText="
                 + extractAnnotationText + ", sortByPosition=" + sortByPosition
-                + ", useNonSequentialParser=" + useNonSequentialParser
                 + ", extractAcroFormContent=" + extractAcroFormContent
                 + ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA
                 + ", extractInlineImages=" + extractInlineImages

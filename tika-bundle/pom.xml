@@ -127,7 +127,7 @@
               tika-parsers;inline=true,
               commons-compress, xz, commons-codec, commons-csv,
               commons-io, commons-exec, junrar,
-              pdfbox,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
+              pdfbox,pdfbox-tools,pdfbox-debugger,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               curvesapi,
               xmlbeans,

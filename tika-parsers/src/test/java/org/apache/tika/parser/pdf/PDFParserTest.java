@@ -22,14 +22,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +36,6 @@ import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -255,36 +251,6 @@ public class PDFParserTest extends TikaTest {
         assertTrue("encryption exception", ex);
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
-        //pdf:encrypted, X-Parsed-By and Content-Type
-        assertEquals("very little metadata should be parsed", 3, metadata.names().length);
-        assertEquals(0, content.length());
-
-        //now test wrong password with non sequential parser
-        handler = new BodyContentHandler();
-        metadata = new Metadata();
-        context = new ParseContext();
-        context.set(PasswordProvider.class, new PasswordProvider() {
-            public String getPassword(Metadata metadata) {
-                return "WRONG!!!!";
-            }
-        });
-        PDFParserConfig config = new PDFParserConfig();
-        config.setUseNonSequentialParser(true);
-        context.set(PDFParserConfig.class, config);
-
-        ;
-        ex = false;
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF_protected.pdf")) {
-            parser.parse(stream, handler, metadata, context);
-        } catch (EncryptedDocumentException e) {
-            ex = true;
-        }
-        content = handler.toString();
-        assertTrue("encryption exception", ex);
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("true", metadata.get("pdf:encrypted"));
-
         //pdf:encrypted, X-Parsed-By and Content-Type
         assertEquals("very little metadata should be parsed", 3, metadata.names().length);
         assertEquals(0, content.length());
@@ -611,85 +577,6 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_PDF, tracker.mediaTypes.get(1));
         assertEquals(TYPE_DOCX, tracker.mediaTypes.get(2));
     }
-
-    /**
-     * tests for equality between traditional sequential parser
-     * and newer nonsequential parser.
-     * <p/>
-     * TODO: more testing
-     */
-    @Test
-    public void testSequentialParser() throws Exception {
-
-        Parser sequentialParser = new AutoDetectParser();
-        Parser nonSequentialParser = new AutoDetectParser();
-
-        ParseContext seqContext = new ParseContext();
-        PDFParserConfig seqConfig = new PDFParserConfig();
-        seqConfig.setUseNonSequentialParser(false);
-        seqContext.set(PDFParserConfig.class, seqConfig);
-
-        ParseContext nonSeqContext = new ParseContext();
-        PDFParserConfig nonSeqConfig = new PDFParserConfig();
-        nonSeqConfig.setUseNonSequentialParser(true);
-        nonSeqContext.set(PDFParserConfig.class, nonSeqConfig);
-
-        File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
-        int pdfs = 0;
-        //empty as of PDFBox 1.8.11
-        //leave this in for the 1.8.x series in case something new happens
-        Set<String> knownMetadataDiffs = new HashSet<String>();
-
-        //empty for now
-        Set<String> knownContentDiffs = new HashSet<String>();
-
-        for (File f : testDocs.listFiles()) {
-            if (!f.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-                continue;
-            }
-
-            String sequentialContent = null;
-            Metadata sequentialMetadata = new Metadata();
-            try {
-                sequentialContent = getText(new FileInputStream(f),
-                        sequentialParser, seqContext, sequentialMetadata);
-            } catch (EncryptedDocumentException e) {
-                //silently skip a file that requires a user password
-                continue;
-            } catch (Exception e) {
-                throw new TikaException("Sequential Parser failed on test file " + f, e);
-            }
-
-            pdfs++;
-
-            String nonSequentialContent = null;
-            Metadata nonSequentialMetadata = new Metadata();
-            try {
-                nonSequentialContent = getText(new FileInputStream(f),
-                        nonSequentialParser, nonSeqContext, nonSequentialMetadata);
-            } catch (Exception e) {
-                throw new TikaException("Non-Sequential Parser failed on test file " + f, e);
-            }
-
-            if (knownContentDiffs.contains(f.getName())) {
-                assertFalse(f.getName(), sequentialContent.equals(nonSequentialContent));
-            } else {
-                assertEquals(f.getName(), sequentialContent, nonSequentialContent);
-            }
-
-            //skip this one file.
-            if (knownMetadataDiffs.contains(f.getName())) {
-                assertFalse(f.getName(), sequentialMetadata.equals(nonSequentialMetadata));
-            } else {
-                assertEquals(f.getName(), sequentialMetadata, nonSequentialMetadata);
-            }
-        }
-        //make sure nothing went wrong with getting the resource to test-documents
-        //must have tested >= 15 pdfs
-        boolean ge15 = (pdfs >= 15);
-        assertTrue("Number of pdf files tested >= 15 in non-sequential parser test", ge15);
-    }
-
 
     // TIKA-973
     //commented out until test documents that are unambiguously

@@ -42,7 +42,8 @@
     <tukaani.version>1.5</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>1.8.11</pdfbox.version>
+    <pdfbox.version>2.0.0</pdfbox.version>
+    <jempbox.version>1.8.11</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <cxf.version>3.0.3</cxf.version>
     <sis.version>0.6</sis.version>
@@ -132,6 +133,16 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
       <version>${pdfbox.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>pdfbox-tools</artifactId>
+      <version>${pdfbox.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>jempbox</artifactId>
+      <version>${jempbox.version}</version>
     </dependency>
     <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
          as optional, but we prefer to have them always to avoid
@@ -298,7 +309,15 @@
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
     </dependency>
-
+    <!-- Copied from PDFBox:
+    For legal reasons (incompatible license), jai-imageio-core is to be used
+    only in the tests and may not be distributed. See also LEGAL-195 -->
+    <dependency>
+      <groupId>com.github.jai-imageio</groupId>
+      <artifactId>jai-imageio-core</artifactId>
+      <version>1.3.1</version>
+      <scope>test</scope>
+    </dependency>
     <!-- edu.ucar dependencies -->
     <dependency>
       <groupId>edu.ucar</groupId>
