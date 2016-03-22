@@ -32,7 +32,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>jempbox</artifactId>
-      <version>${pdfbox.version}</version>
+      <version>${jempbox.version}</version>
     </dependency>
   </dependencies>
   

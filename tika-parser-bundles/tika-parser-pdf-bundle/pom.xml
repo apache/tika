@@ -50,6 +50,8 @@
               tika-parser-xmp-commons;inline=true,
               commons-io;inline=true,
               pdfbox;inline=true,
+              pdfbox-tools;inline=true,
+              pdfbox-debugger;inline=true,
               bcmail-jdk15on;inline=true,
               bcprov-jdk15on;inline=true,
               fontbox;inline=true,

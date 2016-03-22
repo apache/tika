@@ -18,12 +18,13 @@ package org.apache.tika.parser.font;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.fontbox.afm.AFMParser;
-import org.apache.fontbox.afm.FontMetric;
+import org.apache.fontbox.afm.FontMetrics;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -67,16 +68,19 @@ public class AdobeFontMetricParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context)
                       throws IOException, SAXException, TikaException { 
-       FontMetric fontMetrics;
+       FontMetrics fontMetrics;
        AFMParser  parser      = new AFMParser( stream );
 
        // Have FontBox process the file
-       parser.parse();
-       fontMetrics = parser.getResult();
+       fontMetrics = parser.parse();
 
        // Get the comments in the file to display in xhtml
-       List<String> comments = fontMetrics.getComments();
-
+       List<String> unModifiableComments = fontMetrics.getComments();
+       //have to copy because we modify list in extractCreationDate
+       List<String> comments = new ArrayList<>();
+        for (String comment : unModifiableComments) {
+            comments.add(comment);
+        }
        // Get the creation date
        extractCreationDate( metadata, comments );
 

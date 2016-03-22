@@ -10,6 +10,12 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Upgrade to PDFBox 2.0.0 (TIKA-1285). MAJOR CHANGES in PDFParser:
+    * The classic sequential parser is no longer available.
+    * Tiff files are no longer extracted by default.  See
+      https://pdfbox.apache.org/2.0/dependencies.html#optional-components
+      for optional components to process Tiff files.
+
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
   * Move serialization of TikaConfig to tika-core and enable dumping
