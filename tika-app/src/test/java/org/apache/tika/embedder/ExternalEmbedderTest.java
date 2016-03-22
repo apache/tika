@@ -127,7 +127,11 @@ public class ExternalEmbedderTest extends TikaTest {
      * @return a fresh input stream
      */
     protected InputStream getSourceStandardInputStream() {
-        return this.getClass().getResourceAsStream(TEST_TXT_PATH);
+        try {
+            return Files.newInputStream(TMP_TEST_TXT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
