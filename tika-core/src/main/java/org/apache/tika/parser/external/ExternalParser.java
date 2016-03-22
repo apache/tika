@@ -160,7 +160,13 @@ public class ExternalParser extends AbstractParser {
         File output = null;
 
         // Build our command
-        String[] cmd = command[0].split(" ");
+        String[] cmd;
+        if (command.length == 1) {
+            cmd = command[0].split(" ");
+        } else {
+            cmd = new String[command.length];
+            System.arraycopy(command, 0, cmd, 0, command.length);
+        }
         for(int i=0; i<cmd.length; i++) {
            if(cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
               cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
