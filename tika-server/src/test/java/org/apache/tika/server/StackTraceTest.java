@@ -105,7 +105,7 @@ public class StackTraceTest extends CXFTestBase {
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
                     .getEntity());
-            assertContains("Caused by: java.lang.NullPointerException: another null pointer exception",
+            assertContains("Caused by: java.lang.NullPointerException: null pointer message",
                     msg);
         }
     }

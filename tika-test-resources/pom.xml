@@ -65,6 +65,15 @@
   </profiles>
   <build>
     <plugins>
+      <!-- No code to check in tika-test-resources.
+            No need for forbidden API checking.-->
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>

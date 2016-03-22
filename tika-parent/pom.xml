@@ -395,8 +395,7 @@
           <execution>
             <goals>
               <goal>check</goal>
-   <!-- TODO: turn this back on!
-             <goal>testCheck</goal> -->
+              <goal>testCheck</goal>
             </goals>
           </execution>
         </executions>
