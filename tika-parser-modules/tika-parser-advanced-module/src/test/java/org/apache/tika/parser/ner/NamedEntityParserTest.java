@@ -39,6 +39,7 @@ public class NamedEntityParserTest {
 
     @Test
     public void testParse() throws Exception {
+        System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, OpenNLPNERecogniser.class.getName());
 
         //test config is added to resources directory
         TikaConfig config = new TikaConfig(getClass().getResourceAsStream(CONFIG_FILE));
