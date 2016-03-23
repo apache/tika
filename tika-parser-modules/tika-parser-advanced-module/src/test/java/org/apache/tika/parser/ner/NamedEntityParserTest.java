@@ -28,12 +28,19 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
+import org.junit.After;
 import org.junit.Test;
 
 /**
  *Test case for {@link NamedEntityParser}
  */
 public class NamedEntityParserTest {
+
+    @After
+    public void resetSysProp() {
+        //leave no trace behind
+        System.clearProperty(NamedEntityParser.SYS_PROP_NER_IMPL);
+    }
 
     public static final String CONFIG_FILE = "tika-config-for-ner.xml";
 

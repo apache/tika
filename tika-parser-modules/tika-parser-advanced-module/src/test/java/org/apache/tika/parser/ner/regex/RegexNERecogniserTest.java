@@ -29,9 +29,17 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ner.NamedEntityParser;
 import org.apache.tika.parser.ner.NamedEntityParserTest;
+import org.junit.After;
 import org.junit.Test;
 
 public class RegexNERecogniserTest {
+
+    @After
+    public void resetSysProp() {
+        //leave no trace behind
+        System.clearProperty(NamedEntityParser.SYS_PROP_NER_IMPL);
+    }
+
 
     @Test
     public void testGetEntityTypes() throws Exception {
