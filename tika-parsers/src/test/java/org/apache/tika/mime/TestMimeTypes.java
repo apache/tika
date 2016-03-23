@@ -1001,6 +1001,12 @@ public class TestMimeTypes {
     }
     
     @Test
+    public void testMIF() throws Exception {
+        assertType("application/vnd.mif", "testMIF.mif");
+        assertTypeByData("application/vnd.mif", "testMIF.mif");
+    }
+    
+    @Test
     public void testPKCSSignatures() throws Exception {
         // PKCS7 Signed XML files
         assertType("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
