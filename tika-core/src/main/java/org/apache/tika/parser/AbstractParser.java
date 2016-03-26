@@ -52,5 +52,16 @@ public abstract class AbstractParser implements Parser {
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
+    
+    /**
+     * Convenience method for creating ParserProxy instances
+     * with the current class' ClassLoader
+     * 
+     * @param parserClassName
+     * @return
+     */
+    public Parser createParserProxy(String parserClassName){
+        return new ParserProxy(parserClassName, getClass().getClassLoader());
+    }
 
 }

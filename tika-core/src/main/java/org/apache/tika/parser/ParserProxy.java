@@ -29,42 +29,33 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * This parser is a proxy for another detector 
- * this allows modules to use parsers from other modules
- * as optional dependencies since not including the classes
- * simply does nothing rather than throwing a ClassNotFoundException.
+ * This parser is a proxy for another detector this allows modules to use
+ * parsers from other modules as optional dependencies since not including the
+ * classes simply does nothing rather than throwing a ClassNotFoundException.
  *
  * @since Apache Tika 2.0
  */
-public class ParserProxy extends AbstractParser 
-{
-    
+public class ParserProxy extends AbstractParser {
+
     private static final long serialVersionUID = -4838436708916910179L;
     private Parser parser;
-    
-    public ParserProxy(String parserClassName) 
-    {
-        this(parserClassName, LoadErrorHandler.WARN);
+
+    public ParserProxy(String parserClassName, ClassLoader loader) {
+        this(parserClassName, loader, LoadErrorHandler.IGNORE);
     }
-    
-    public ParserProxy(String parserClassName, LoadErrorHandler handler) 
-    {
-            try 
-            {
-                this.parser = (Parser)Class.forName(parserClassName).newInstance();
-            } 
-            catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) 
-            {
-                handler.handleLoadError(parserClassName, e);
-            }
-        
+
+    public ParserProxy(String parserClassName, ClassLoader loader, LoadErrorHandler handler) {
+        try {
+            this.parser = (Parser) Class.forName(parserClassName, true, loader).newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+            handler.handleLoadError(parserClassName, e);
+        }
+
     }
-    
+
     @Override
-    public Set<MediaType> getSupportedTypes(ParseContext context) 
-    {
-        if (parser == null)
-        {
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        if (parser == null) {
             return Collections.emptySet();
         }
         return parser.getSupportedTypes(context);
@@ -72,12 +63,10 @@ public class ParserProxy extends AbstractParser
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException 
-    {
-        if(parser != null)
-        {
+            throws IOException, SAXException, TikaException {
+        if (parser != null) {
             parser.parse(stream, handler, metadata, context);
         }
-        //Otherwise do nothing
+        // Otherwise do nothing
     }
 }

@@ -33,6 +33,7 @@ public class ParserProxyTest
     public void testParserProxyExists() throws IOException, SAXException, TikaException 
     {
         Parser dummyParser = new ParserProxy("org.apache.tika.parser.DummyProxyParser",
+                getClass().getClassLoader(),
                 LoadErrorHandler.IGNORE);
         
         Metadata metadata = new Metadata();
@@ -48,6 +49,7 @@ public class ParserProxyTest
     public void testParserProxyNotExists() throws IOException, SAXException, TikaException 
     {
         Parser dummyParser = new ParserProxy("org.apache.tika.parser.NotExists",
+                getClass().getClassLoader(),
                 LoadErrorHandler.IGNORE);
         
         Metadata metadata = new Metadata();

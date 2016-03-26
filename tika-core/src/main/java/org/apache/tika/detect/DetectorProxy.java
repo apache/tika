@@ -37,16 +37,16 @@ public class DetectorProxy implements Detector
     
     private Detector detector;
     
-    public DetectorProxy(String detectorClassName) 
+    public DetectorProxy(String detectorClassName, ClassLoader loader) 
     {
-        this(detectorClassName, LoadErrorHandler.WARN);
+        this(detectorClassName, loader, LoadErrorHandler.IGNORE);
     }
     
-    public DetectorProxy(String detectorClassName, LoadErrorHandler handler) 
+    public DetectorProxy(String detectorClassName, ClassLoader loader, LoadErrorHandler handler) 
     {
         try 
         {
-            this.detector = (Detector)Class.forName(detectorClassName).newInstance();
+            this.detector = (Detector)Class.forName(detectorClassName, true, loader).newInstance();
         } 
         catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) 
         {

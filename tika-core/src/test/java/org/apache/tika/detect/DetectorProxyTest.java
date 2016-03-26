@@ -29,7 +29,8 @@ public class DetectorProxyTest
     @Test
     public void testDetectorProxyExists() throws IOException 
     {
-        Detector dummyDetector = new DetectorProxy("org.apache.tika.detect.DummyProxyDetector",
+        Detector dummyDetector = new DetectorProxy("org.apache.tika.detect.DummyProxyDetector", 
+                getClass().getClassLoader(),
                 LoadErrorHandler.IGNORE);
         
         MediaType result = dummyDetector.detect(null, null);
@@ -43,6 +44,7 @@ public class DetectorProxyTest
     public void testParserProxyNotExists() throws IOException 
     {
         Detector dummyDetector = new DetectorProxy("org.apache.tika.detect.DoesNotExist",
+                getClass().getClassLoader(),
                 LoadErrorHandler.IGNORE);
         
         MediaType result = dummyDetector.detect(null, null);
