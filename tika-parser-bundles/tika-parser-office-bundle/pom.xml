@@ -82,6 +82,7 @@
               org.apache.tika.parser.mbox.*,
               org.apache.tika.parser.microsoft.*,
               org.apache.tika.parser.microsoft.ooxml.*,
+              org.apache.tika.parser.opc.*,
               org.apache.tika.parser.odf.*,
               org.apache.tika.parser.opendocument.*,
               org.apache.tika.parser.rtf.*
@@ -122,6 +123,8 @@
               org.etsi.uri.x01903.v14;resolution:=optional,
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
+              org.apache.tika.parser.html.HtmlParser;resolution:=optional,
+              org.apache.tika.parser.pkg.ZipContainerDetector;resolution:=optional
             </Import-Package>
           </instructions>
         </configuration>

@@ -31,6 +31,7 @@ import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.hpsf.ClassID;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.DetectorProxy;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -43,7 +44,6 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
-import org.apache.tika.parser.pkg.ZipContainerDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -55,6 +55,7 @@ abstract class AbstractPOIFSExtractor {
     private MimeTypes mimeTypes;
     private Detector detector;
     private Metadata metadata;
+    private final Detector zipDetectorProxy;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         this(context, null);
@@ -74,6 +75,7 @@ abstract class AbstractPOIFSExtractor {
         this.mimeTypes = context.get(MimeTypes.class);
         this.detector = context.get(Detector.class);
         this.metadata = metadata;
+        this.zipDetectorProxy = new DetectorProxy("org.apache.tika.parser.pkg.ZipContainerDetector", getClass().getClassLoader());
     }
 
     // Note - these cache, but avoid creating the default TikaConfig if not needed
@@ -159,8 +161,7 @@ abstract class AbstractPOIFSExtractor {
 
             try (TikaInputStream stream = TikaInputStream.get(
                     new DocumentInputStream((DocumentEntry) ooxml))) {
-                ZipContainerDetector detector = new ZipContainerDetector();
-                MediaType type = detector.detect(stream, new Metadata());
+                MediaType type = zipDetectorProxy.detect(stream, new Metadata());
                 handleEmbeddedResource(stream, null, dir.getName(), dir.getStorageClsid(), type.toString(), xhtml, true);
                 return;
             }

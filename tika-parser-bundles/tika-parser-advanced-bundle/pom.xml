@@ -63,7 +63,6 @@
               *,
               opennlp.maxent;resolution:=optional,
               opennlp.tools.namefind;resolution:=optional,
-              org.apache.commons.io;resolution:=optional,
               org.json;resolution:=optional,
               org.osgi.framework;resolution:=optional,
               net.didion.jwnl;resolution:=optional

@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -44,14 +45,15 @@ import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.util.CodePageUtil;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.EncodingDetectorProxy;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.HtmlEncodingDetector;
-import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.parser.mbox.MboxParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserProxy;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
@@ -67,7 +69,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
     private static final Metadata EMPTY_METADATA = new Metadata();
-    HtmlEncodingDetector detector = new HtmlEncodingDetector();
+    private final SimpleDateFormat dateFormat;
+    private final EncodingDetector htmlEncodingDetectorProxy;
+    private final Parser htmlParserProxy;
 
     private final MAPIMessage msg;
 
@@ -77,7 +81,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
-
+        this.htmlEncodingDetectorProxy = new EncodingDetectorProxy("org.apache.tika.parser.html.HtmlEncodingDetector", getClass().getClassLoader());
+        this.htmlParserProxy = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
+        this.dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         try {
             this.msg = new MAPIMessage(root);
         } catch (IOException e) {
@@ -135,7 +141,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
                                 // See if we can parse it as a normal mail date
                                 try {
-                                    Date d = MboxParser.parseDate(date);
+                                    
+                                    Date d = dateFormat.parse(date);
                                     metadata.set(TikaCoreProperties.CREATED, d);
                                     metadata.set(TikaCoreProperties.MODIFIED, d);
                                 } catch (ParseException e) {
@@ -196,8 +203,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     data = ((StringChunk) htmlChunk).getRawValue();
                 }
                 if (data != null) {
-                    HtmlParser htmlParser = new HtmlParser();
-                    htmlParser.parse(
+                    htmlParserProxy.parse(
                             new ByteArrayInputStream(data),
                             new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                             new Metadata(), new ParseContext()
@@ -341,7 +347,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             if(html != null && html.length() > 0) {
                 Charset charset = null;
                 try {
-                    charset = detector.detect(new ByteArrayInputStream(
+                    charset = htmlEncodingDetectorProxy.detect(new ByteArrayInputStream(
                             html.getBytes(UTF_8)), EMPTY_METADATA);
                 } catch (IOException e) {
                     //swallow

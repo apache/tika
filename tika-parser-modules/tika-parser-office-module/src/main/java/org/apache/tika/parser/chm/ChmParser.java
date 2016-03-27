@@ -29,9 +29,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserProxy;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
-import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -49,6 +50,11 @@ public class ChmParser extends AbstractParser {
                     MediaType.application("chm"),
                     MediaType.application("x-chm"))));
 
+    private final Parser htmlProxy;
+    
+    public ChmParser() {
+        this.htmlProxy = createParserProxy("org.apache.tika.parser.html.HtmlParser");
+    }
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -91,12 +97,11 @@ public class ChmParser extends AbstractParser {
     private void parsePage(byte[] byteObject, ContentHandler xhtml) throws TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
-        HtmlParser htmlParser = new HtmlParser();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         ParseContext parser = new ParseContext();
         try {
             stream = new ByteArrayInputStream(byteObject);
-            htmlParser.parse(stream, handler, metadata, parser);
+            htmlProxy.parse(stream, handler, metadata, parser);
         } catch (SAXException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

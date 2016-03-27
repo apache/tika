@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -36,12 +35,7 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackageAccess;
-import org.apache.poi.openxml4j.opc.PackagePart;
-import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
-import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
+import org.apache.tika.detect.AbstractDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -57,18 +51,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * A detector that works on Zip documents and other archive and compression
  * formats to figure out exactly what the file is.
  */
-public class ZipContainerDetector implements Detector {
-    private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
+public class ZipContainerDetector extends AbstractDetector {
 
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
-    private static final String VISIO_DOCUMENT =
-            "http://schemas.microsoft.com/visio/2010/relationships/document";
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
-    private static final String STRICT_CORE_DOCUMENT = 
-            "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument";
-    
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
+    
+    private final Detector opcDetector;
+    
+    public ZipContainerDetector() {
+        this.opcDetector = createDetectorProxy("org.apache.tika.parser.opc.OPCDetector");
+    }
 
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
@@ -138,7 +130,7 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectZipFormat(TikaInputStream tis) {
+    private MediaType detectZipFormat(TikaInputStream tis) {
         try {
             ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
             try {
@@ -199,24 +191,11 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectOPCBased(ZipFile zip, TikaInputStream stream) {
+    private MediaType detectOPCBased(ZipFile zip, TikaInputStream stream) {
         try {
             if (zip.getEntry("_rels/.rels") != null
                     || zip.getEntry("[Content_Types].xml") != null) {
-                // Use POI to open and investigate it for us
-                OPCPackage pkg = OPCPackage.open(stream.getFile().getPath(), PackageAccess.READ);
-                stream.setOpenContainer(pkg);
-
-                // Is at an OOXML format?
-                MediaType type = detectOfficeOpenXML(pkg);
-                if (type != null) return type;
-                
-                // Is it XPS format?
-                type = detectXPSOPC(pkg);
-                if (type != null) return type;
-                
-                // Is it an AutoCAD format?
-                type = detectAutoCADOPC(pkg);
+                MediaType type = this.opcDetector.detect(stream, null);
                 if (type != null) return type;
                 
                 // We don't know what it is, sorry
@@ -228,77 +207,9 @@ public class ZipContainerDetector implements Detector {
             return null;
         } catch (RuntimeException e) {
             return null;
-        } catch (InvalidFormatException e) {
-            return null;
         }
     }
-    /**
-     * Detects the type of an OfficeOpenXML (OOXML) file from
-     *  opened Package 
-     */
-    public static MediaType detectOfficeOpenXML(OPCPackage pkg) {
-        // Check for the normal Office core document
-        PackageRelationshipCollection core = 
-               pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
-        // Otherwise check for some other Office core document types
-        if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(STRICT_CORE_DOCUMENT);
-        }
-        if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(VISIO_DOCUMENT);
-        }
-        
-        // If we didn't find a single core document of any type, skip detection
-        if (core.size() != 1) {
-            // Invalid OOXML Package received
-            return null;
-        }
-
-        // Get the type of the core document part
-        PackagePart corePart = pkg.getPart(core.getRelationship(0));
-        String coreType = corePart.getContentType();
-
-        // Turn that into the type of the overall document
-        String docType = coreType.substring(0, coreType.lastIndexOf('.'));
-
-        // The Macro Enabled formats are a little special
-        if(docType.toLowerCase(Locale.ROOT).endsWith("macroenabled")) {
-            docType = docType.toLowerCase(Locale.ROOT) + ".12";
-        }
-
-        if(docType.toLowerCase(Locale.ROOT).endsWith("macroenabledtemplate")) {
-            docType = MACRO_TEMPLATE_PATTERN.matcher(docType).replaceAll("macroenabled.12");
-        }
-
-        // Build the MediaType object and return
-        return MediaType.parse(docType);
-    }
-    /**
-     * Detects Open XML Paper Specification (XPS)
-     */
-    private static MediaType detectXPSOPC(OPCPackage pkg) {
-        PackageRelationshipCollection xps = 
-                pkg.getRelationshipsByType("http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
-        if (xps.size() == 1) {
-            return MediaType.application("vnd.ms-xpsdocument");
-        } else {
-            // Non-XPS Package received
-            return null;
-        }
-    }
-    /**
-     * Detects AutoCAD formats that live in OPC packaging
-     */
-    private static MediaType detectAutoCADOPC(OPCPackage pkg) {
-        PackageRelationshipCollection dwfxSeq = 
-                pkg.getRelationshipsByType("http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
-        if (dwfxSeq.size() == 1) {
-            return MediaType.parse("model/vnd.dwfx+xps");
-        } else {
-            // Non-AutoCAD Package received
-            return null;
-        }
-    }
+    
 
     private static MediaType detectIWork(ZipFile zip) {
         if (zip.getEntry(IWorkPackageParser.IWORK_COMMON_ENTRY) != null) {

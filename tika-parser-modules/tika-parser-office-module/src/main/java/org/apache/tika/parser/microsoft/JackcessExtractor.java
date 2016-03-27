@@ -47,7 +47,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserProxy;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -71,10 +72,11 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     final NumberFormat currencyFormatter;
     final DateFormat shortDateTimeFormatter;
 
-    final HtmlParser htmlParser = new HtmlParser();
+    private final Parser htmlParserProxy;
 
     protected JackcessExtractor(ParseContext context, Locale locale) {
         super(context);
+        this.htmlParserProxy = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
     }
@@ -200,7 +202,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 Metadata m = new Metadata();
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try {
-                    htmlParser.parse(new ByteArrayInputStream(v.getBytes(UTF_8)),
+                    htmlParserProxy.parse(new ByteArrayInputStream(v.getBytes(UTF_8)),
                             h,
                            m, EMPTY_PARSE_CONTEXT);
                     handler.characters(h.toString());

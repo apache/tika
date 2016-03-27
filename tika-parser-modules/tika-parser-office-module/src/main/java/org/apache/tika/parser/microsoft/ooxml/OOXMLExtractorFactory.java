@@ -39,7 +39,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pkg.ZipContainerDetector;
+import org.apache.tika.parser.opc.OPCDetector;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -74,7 +74,7 @@ public class OOXMLExtractorFactory {
             }
 
             // Get the type, and ensure it's one we handle
-            MediaType type = ZipContainerDetector.detectOfficeOpenXML(pkg);
+            MediaType type = OPCDetector.detectOfficeOpenXML(pkg);
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
                 // Not a supported type, delegate to Empty Parser
                 EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
