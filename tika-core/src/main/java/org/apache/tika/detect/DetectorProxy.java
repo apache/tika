@@ -39,7 +39,8 @@ public class DetectorProxy implements Detector
     
     public DetectorProxy(String detectorClassName, ClassLoader loader) 
     {
-        this(detectorClassName, loader, LoadErrorHandler.IGNORE);
+        this(detectorClassName, loader, Boolean.getBoolean("org.apache.tika.service.proxy.error.warn") 
+                ? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE);
     }
     
     public DetectorProxy(String detectorClassName, ClassLoader loader, LoadErrorHandler handler) 

@@ -13,7 +13,8 @@ private EncodingDetector detector;
     
     public EncodingDetectorProxy(String encodingDetectorClassName, ClassLoader loader) 
     {
-        this(encodingDetectorClassName, loader, LoadErrorHandler.IGNORE);
+        this(encodingDetectorClassName, loader, Boolean.getBoolean("org.apache.tika.service.proxy.error.warn") 
+                ? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE);
     }
     
     public EncodingDetectorProxy(String encodingDetectorClassName, ClassLoader loader, LoadErrorHandler handler) 

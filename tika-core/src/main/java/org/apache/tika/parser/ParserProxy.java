@@ -41,7 +41,9 @@ public class ParserProxy extends AbstractParser {
     private Parser parser;
 
     public ParserProxy(String parserClassName, ClassLoader loader) {
-        this(parserClassName, loader, LoadErrorHandler.IGNORE);
+        
+        this(parserClassName, loader, Boolean.getBoolean("org.apache.tika.service.proxy.error.warn") 
+                ? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE);
     }
 
     public ParserProxy(String parserClassName, ClassLoader loader, LoadErrorHandler handler) {
