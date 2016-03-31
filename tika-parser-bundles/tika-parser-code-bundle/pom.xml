@@ -47,8 +47,7 @@
               tagsoup;inline=true,
               jhighlight;inline=true,
               commons-io;inline=true,
-              commons-codec;inline=true,
-              poi;inline=true
+              commons-codec;inline=true
             </Embed-Dependency> 
             <Embed-Transitive>true</Embed-Transitive>
             <Export-Package>

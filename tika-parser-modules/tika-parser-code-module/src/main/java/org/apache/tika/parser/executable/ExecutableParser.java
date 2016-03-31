@@ -24,8 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.poi.util.IOUtils;
-import org.apache.poi.util.LittleEndian;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -95,7 +94,7 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
        IOUtils.readFully(stream, msdosSection);
        
        // Grab the PE header offset
-       int peOffset = LittleEndian.readInt(stream);
+       int peOffset = EndianUtils.readIntLE(stream);
        
        // Sanity check - while it may go anywhere, it's normally in the first few kb
        if (peOffset > 4096 || peOffset < 0x3f) return;
@@ -117,13 +116,13 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
        }
        
        // Read the header values
-       int machine    = LittleEndian.getUShort(pe, 4);
-       int numSectors = LittleEndian.getUShort(pe, 6);
-       long createdAt = LittleEndian.getInt(pe, 8);
-       long symbolTableOffset = LittleEndian.getInt(pe, 12);
-       long numSymbols = LittleEndian.getInt(pe, 16);
-       int sizeOptHdrs = LittleEndian.getUShort(pe, 20);
-       int characteristcs = LittleEndian.getUShort(pe, 22);
+       int machine    = EndianUtils.getUShortLE(pe, 4);
+       int numSectors = EndianUtils.getUShortLE(pe, 6);
+       long createdAt = EndianUtils.getIntLE(pe, 8);
+       long symbolTableOffset = EndianUtils.getIntLE(pe, 12);
+       long numSymbols = EndianUtils.getIntLE(pe, 16);
+       int sizeOptHdrs = EndianUtils.getUShortLE(pe, 20);
+       int characteristcs = EndianUtils.getUShortLE(pe, 22);
        
        // Turn this into helpful metadata
        Date createdAtD = new Date(createdAt*1000l);

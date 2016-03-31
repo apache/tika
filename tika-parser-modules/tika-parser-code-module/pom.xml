@@ -50,11 +50,6 @@
       <version>${commons.io.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>${poi.version}</version>
-    </dependency>
-    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
