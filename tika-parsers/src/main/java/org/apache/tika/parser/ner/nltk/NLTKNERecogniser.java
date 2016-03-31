@@ -52,6 +52,7 @@ public class NLTKNERecogniser implements NERecogniser {
      */
     public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
         add("NAMES");
+        add("UNITS");
     }};
 
 
@@ -127,7 +128,12 @@ public class NLTKNERecogniser implements NERecogniser {
                 String result = response.readEntity(String.class);
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
-                Set s = entities.put("NAMES", new HashSet((Collection) j.get("names")));
+                while (entity_types.hasNext()) {
+                    String key = entity_types.next().toString();
+                    if (j.containsKey(key.toLowerCase(Locale.ENGLISH))) {
+                        Set s = entities.put(key, new HashSet((Collection) j.get(key.toLowerCase(Locale.ENGLISH))));
+                    }
+                }
             }
         }
         catch (Exception e) {
