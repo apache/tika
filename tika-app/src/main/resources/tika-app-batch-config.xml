@@ -124,9 +124,13 @@
                 digest="md5" digestMarkLimit="1000000"/>
         <contenthandler builderClass="org.apache.tika.batch.builders.DefaultContentHandlerFactoryBuilder"
                         basicHandlerType="xml" writeLimit="-1"/>
-        <!-- overwritePolicy: "skip" a file if output file exists, "rename" a output file, "overwrite" -->
-        <!-- can include e.g. outputDir="output", but we don't want to include this in the default! -->
-        <outputstream class="FSOutputStreamFactory" encoding="UTF-8" outputSuffix="xml"/>
+        <!-- can specify custom output file suffix with:
+            suffix=".mysuffix"
+            if no suffix is specified, BasicTikaFSConsumersBuilder does its best to guess -->
+        <!-- can specify compression with
+            compression="bzip2|gzip|zip" -->
+
+        <outputstream class="FSOutputStreamFactory" encoding="UTF-8"/>
     </consumers>
 
     <!-- reporter and interrupter are optional -->
