@@ -52,7 +52,6 @@
               commons-io;inline=true,
               jempbox;inline=true,
               fontbox;inline=true,
-              poi;inline=true,
               isoparser;inline=true,
               aspectjrt;inline=true
             </Embed-Dependency> 

@@ -23,7 +23,7 @@ import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

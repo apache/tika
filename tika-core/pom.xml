@@ -36,6 +36,7 @@
   <properties>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.10</codec.version>
+    <commons-io.version>2.4</commons-io.version>
   </properties>
 
   <dependencies>
@@ -43,6 +44,11 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>${codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons-io.version}</version>
     </dependency>
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
@@ -125,7 +131,8 @@
             <Bundle-Activator>org.apache.tika.config.TikaActivator</Bundle-Activator>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Embed-Dependency>
-              commons-codec
+              commons-codec,
+              commons-io
             </Embed-Dependency>
           </instructions>
         </configuration>

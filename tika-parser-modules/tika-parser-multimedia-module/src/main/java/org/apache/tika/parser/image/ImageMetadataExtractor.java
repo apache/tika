@@ -49,7 +49,7 @@ import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import com.drew.metadata.xmp.XmpReader;
-import org.apache.poi.util.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;

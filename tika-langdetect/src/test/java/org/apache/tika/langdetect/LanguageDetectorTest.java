@@ -7,17 +7,19 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 public abstract class LanguageDetectorTest {
 
     protected String[] getTestLanguages() throws IOException {
     	List<String> result = new ArrayList<>();
     	
-    	List<String> lines = IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("language-codes.txt"));
+    	List<String> lines = IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("language-codes.txt"),
+    	        Charset.forName("UTF-8"));
     	for (String line : lines) {
     		line = line.trim();
     		if (line.isEmpty() || line.startsWith("#")) {

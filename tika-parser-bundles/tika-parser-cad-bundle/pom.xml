@@ -47,7 +47,7 @@
             <Bundle-Activator>org.apache.tika.module.cad.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-cad-module;inline=true,
-              poi;inline=true,
+              commons-io;inline=true,
               commons-codec;inline=true
             </Embed-Dependency> 
             <Embed-Transitive>true</Embed-Transitive>

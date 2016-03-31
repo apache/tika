@@ -18,6 +18,8 @@ package org.apache.tika.io;
 
 import java.io.IOException;
 
+import org.apache.commons.io.IOExceptionWithCause;
+
 /**
  * An {@link IOException} wrapper that tags the wrapped exception with
  * a given object reference. Both the tag and the wrapped original exception

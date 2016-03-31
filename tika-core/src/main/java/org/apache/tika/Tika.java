@@ -22,13 +22,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Properties;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
@@ -367,7 +368,7 @@ public class Tika {
      */
     public String translate(InputStream text, String sourceLanguage, String targetLanguage){
         try {
-            return translator.translate(IOUtils.toString(text), sourceLanguage, targetLanguage);
+            return translator.translate(IOUtils.toString(text, Charset.defaultCharset()), sourceLanguage, targetLanguage);
         } catch (Exception e){
             throw new IllegalStateException("Error translating data.", e);
         }
@@ -383,7 +384,7 @@ public class Tika {
      */
     public String translate(InputStream text, String targetLanguage){
         try {
-            return translator.translate(IOUtils.toString(text), targetLanguage);
+            return translator.translate(IOUtils.toString(text, Charset.defaultCharset()), targetLanguage);
         } catch (Exception e){
             throw new IllegalStateException("Error translating data.", e);
         }

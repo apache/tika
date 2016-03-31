@@ -29,11 +29,13 @@
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+    
     <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>${poi.version}</version>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.6</version>
     </dependency>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-text-module</artifactId>

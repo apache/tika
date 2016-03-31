@@ -6,12 +6,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -227,7 +228,8 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
     
 	private Map<String, String> getTestLanguages(String resourceName) throws IOException {
 		Map<String, String> result = new HashMap<>();
-		List<String> languages = IOUtils.readLines(OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName));
+		List<String> languages = IOUtils.readLines(OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName),
+		        Charset.forName("UTF-8"));
         for (String line : languages) {
         	line = line.trim();
         	if (line.isEmpty() || line.startsWith("#")) {

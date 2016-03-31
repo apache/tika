@@ -32,8 +32,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.NullOutputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.ner.corenlp;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.parser.ner.NERecogniser;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -159,7 +160,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
         }
 
         try (FileInputStream stream = new FileInputStream(args[0])) {
-            String text = IOUtils.toString(stream);
+            String text = IOUtils.toString(stream, Charset.defaultCharset());
             CoreNLPNERecogniser ner = new CoreNLPNERecogniser();
             Map<String, Set<String>> names = ner.recognise(text);
             JSONObject jNames = new JSONObject(names);

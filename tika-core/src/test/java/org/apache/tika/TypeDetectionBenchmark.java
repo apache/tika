@@ -22,7 +22,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Locale;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 public class TypeDetectionBenchmark {
 
