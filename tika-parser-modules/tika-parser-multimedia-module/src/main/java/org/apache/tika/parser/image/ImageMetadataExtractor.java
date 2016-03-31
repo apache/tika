@@ -467,6 +467,8 @@ public class ImageMetadataExtractor {
          */
         public void handleDateTags(Directory directory, Metadata metadata)
                 throws MetadataException {
+            //TODO: should we try to process ExifSubIFDDirectory.TAG_TIME_ZONE_OFFSET
+            //if it exists?
             // Date/Time Original overrides value from ExifDirectory.TAG_DATETIME
             Date original = null;
             if (directory.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)) {

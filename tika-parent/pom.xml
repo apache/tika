@@ -410,7 +410,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.18.1</version>
         <configuration>
-          <argLine>-Xmx2048m</argLine>
+          <argLine>-Xmx2048m -Duser.timezone=UTC</argLine>
         </configuration>
       </plugin>
       <plugin>
