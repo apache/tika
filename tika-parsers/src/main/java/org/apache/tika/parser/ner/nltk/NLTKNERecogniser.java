@@ -23,12 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collection;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Properties;
+import java.util.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -38,7 +33,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
  *  This class offers an implementation of {@link NERecogniser} based on
  *  ne_chunk() module of NLTK. This NER requires additional setup,
  *  due to Http requests to an endpoint server that runs NLTK.
- *  See <a href="http://wiki.apache.org/tika/TikaAndNER#NLTK">
+ *  See <a href="http://wiki.apache.org/tika/TikaAndNLTK">
  *
  */
 public class NLTKNERecogniser implements NERecogniser {
@@ -128,6 +123,7 @@ public class NLTKNERecogniser implements NERecogniser {
                 String result = response.readEntity(String.class);
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
+                Iterator<String> entity_types = ENTITY_TYPES.iterator();
                 while (entity_types.hasNext()) {
                     String key = entity_types.next().toString();
                     if (j.containsKey(key.toLowerCase(Locale.ENGLISH))) {
