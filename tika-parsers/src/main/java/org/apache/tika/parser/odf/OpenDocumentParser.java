@@ -152,7 +152,9 @@ public class OpenDocumentParser extends AbstractParser {
         ZipEntry entry = null;
         if (zipFile != null) {
             entry = zipFile.getEntry(META_NAME);
-            handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
+            if (entry != null) {
+                handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
+            }
 
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
