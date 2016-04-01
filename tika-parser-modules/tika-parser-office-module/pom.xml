@@ -68,6 +68,22 @@
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
       <version>2.1.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- PDFBox (in the tika-parser-pdf-module) and poi's ooxml
+         code relies on bouncy castle, as does jackcess-encrypt
+         Need to exclude the older library and include the newer one
+         if there is a conflict.
+         -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>com.pff</groupId>
