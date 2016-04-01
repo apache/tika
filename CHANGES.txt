@@ -10,11 +10,25 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Upgrade mp4parser's isoparser to 1.1.18 (TIKA-1924).
+
+  * Upgrade BouncyCastle to 1.54 (TIKA-1923).
+
+  * Upgrade Jackcess to 2.1.3 (TIKA-1922).
+
+  * Upgrade Drew Noakes' metadata-extractor to 2.8.1 (TIKA-1921).
+
+  * Upgrade Gson in tika-serialization to 2.6.2 (TIka-1920).
+
+  * Upgrade commons-cli in tika-batch to 1.3.1 (TIKA-1919).
+
   * Upgrade to PDFBox 2.0.0 (TIKA-1285). MAJOR CHANGES in PDFParser:
     * The classic sequential parser is no longer available.
     * Tiff files are no longer extracted by default.  See
       https://pdfbox.apache.org/2.0/dependencies.html#optional-components
       for optional components to process Tiff files.
+    * Some truncated/corrupted files that had some content extracted
+      with 1.8.11 may have no content extracted in 2.0.0.
 
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
@@ -28,8 +42,6 @@ Release 1.13 - ???
     in order to parse sqlite files.
 
   * Upgrade to POI 3.14-final (TIKA-1853).
-
-  * Upgrade to PDFBox 1.8.11 (TIKA-1830).
 
 Release 1.12 - 01/24/2016
 
