@@ -47,6 +47,8 @@
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <cxf.version>3.0.3</cxf.version>
     <sis.version>0.6</sis.version>
+    <!-- used by POI, PDFBox and Jackcess ...try to sync -->
+    <bouncycastle.version>1.54</bouncycastle.version>
   </properties>
 
   <dependencies>
@@ -88,6 +90,12 @@
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
       <version>2.1.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
@@ -150,12 +158,12 @@
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcmail-jdk15on</artifactId>
-      <version>1.52</version>
+      <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.52</version>
+      <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
