@@ -24,12 +24,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Locale;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -160,32 +163,54 @@ public class ExternalParser extends AbstractParser {
         File output = null;
 
         // Build our command
-        String[] cmd;
+        ArrayList<String> cmd;
         if (command.length == 1) {
-            cmd = command[0].split(" ");
+            cmd = new ArrayList<String>(Arrays.asList(command[0].split(" ")));
         } else {
-            cmd = new String[command.length];
+            cmd = new ArrayList<String>(command.length);
             System.arraycopy(command, 0, cmd, 0, command.length);
         }
-        for(int i=0; i<cmd.length; i++) {
-           if(cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
-              cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
+        for(int i=0; i<cmd.size(); i++) {
+           if(cmd.get(i).indexOf(INPUT_FILE_TOKEN) != -1) {
+              cmd.set(i,cmd.get(i).replace(INPUT_FILE_TOKEN, stream.getFile().getPath()));
               inputToStdIn = false;
            }
-           if(cmd[i].indexOf(OUTPUT_FILE_TOKEN) != -1) {
+           if(cmd.get(i).indexOf(OUTPUT_FILE_TOKEN) != -1) {
               output = tmp.createTemporaryFile();
               outputFromStdOut = false;
-              cmd[i] = cmd[i].replace(OUTPUT_FILE_TOKEN, output.getPath());
+              cmd.set(i,cmd.get(i).replace(OUTPUT_FILE_TOKEN, output.getPath()));
            }
         }
 
         // Execute
         Process process = null;
       try{
-        if(cmd.length == 1) {
-           process = Runtime.getRuntime().exec( cmd[0] );
+        if(cmd.size() == 1) {
+           process = Runtime.getRuntime().exec( cmd.get(0) );
         } else {
-           process = Runtime.getRuntime().exec( cmd );
+           
+           for (int i=0;i<cmd.size();i++)
+           {
+               // Check for windows 
+               if (System.getProperty("os.name").toLowerCase(Locale.ENGLISH).contains("windows"))
+               {
+                   if (cmd.get(i).equals("env"))
+                   {
+                       process = Runtime.getRuntime().exec("cmd /c set "+cmd.get(i+1));
+                       // Delete first two elements as they are already executed
+                       cmd.remove(i);
+                       cmd.remove(i);
+                       break;
+                   }
+               }
+           }     
+           
+           String[] cmds = new String[cmd.size()];
+           for(int i=0;i<cmd.size();i++)
+           {
+                cmds[i] = cmd.get(i);
+           }
+           process = Runtime.getRuntime().exec(cmds);
         }
       }
       catch(Exception e){
