@@ -324,6 +324,19 @@ public class SQLite3ParserTest extends TikaTest {
         ps.setBytes(9, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
 
         ps.executeUpdate();
+        ps.clearParameters();
+
+        ps.setInt(1, 3);
+        ps.setNull(2, Types.FLOAT);
+        ps.setNull(3, Types.DOUBLE);
+        ps.setNull(4, Types.CHAR);
+        ps.setNull(5, Types.VARCHAR);
+        ps.setNull(6, Types.BOOLEAN);
+        ps.setNull(7, Types.DATE);
+        ps.setNull(8, Types.TIMESTAMP);
+        ps.setNull(9, Types.BLOB);
+        ps.executeUpdate();
+        ps.clearParameters();
 
         //build table2
         sql = "DROP TABLE if exists my_table2";

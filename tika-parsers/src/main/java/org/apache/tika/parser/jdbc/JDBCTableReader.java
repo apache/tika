@@ -249,8 +249,10 @@ class JDBCTableReader {
     }
 
     protected void addAllCharacters(String s, ContentHandler handler) throws SAXException {
-        char[] chars = s.toCharArray();
-        handler.characters(chars, 0, chars.length);
+        if (s != null) {
+            char[] chars = s.toCharArray();
+            handler.characters(chars, 0, chars.length);
+        }
     }
 
     void reset() throws IOException {
