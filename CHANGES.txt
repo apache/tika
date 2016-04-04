@@ -1,5 +1,9 @@
 Release 1.13 - ???
 
+  * Fix NPE in Sqlite parser from Nick C (TIKA-1927).
+
+  * Fix NPE in Open Document parser from Nick C (TIKA-1916).
+
   * Upgrade mp4parser's isoparser (TIKA-1924).
 
   * Upgrade BouncyCastle to 1.54 (TIKA-1923).
