@@ -88,6 +88,8 @@ public class SQLite3ParserTest extends TikaTest {
             //1) getXML closes the stream
             //2) getXML runs recursively on the contents, so the embedded docs should show up
             XMLResult result = getXML(stream, p, metadata, context);
+            stream.close();
+
             String x = result.xml;
             //first table name
             assertContains("<table name=\"my_table1\"><thead><tr>\t<th>PK</th>", x);
@@ -160,10 +162,11 @@ public class SQLite3ParserTest extends TikaTest {
         RecursiveParserWrapper wrapper =
                 new RecursiveParserWrapper(p, new BasicContentHandlerFactory(
                         BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
-        InputStream is = getTestDocumentAsStream(TEST_FILE_NAME);
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
+        try(InputStream is = getTestDocumentAsStream(TEST_FILE_NAME)) {
+            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
+        }
         List<Metadata> metadataList = wrapper.getMetadata();
         int i = 0;
         assertEquals(5, metadataList.size());
@@ -193,11 +196,11 @@ public class SQLite3ParserTest extends TikaTest {
 
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
-        InputStream is = getTestDocumentAsStream(TEST_FILE_NAME);
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        ex.extract(TikaInputStream.get(is), ex, byteCopier);
-
+        try(InputStream is = getTestDocumentAsStream(TEST_FILE_NAME)) {
+            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            ex.extract(TikaInputStream.get(is), ex, byteCopier);
+        }
         assertEquals(4, byteCopier.bytes.size());
         String[] strings = new String[4];
         for (int i = 1; i < byteCopier.bytes.size(); i++) {
@@ -238,12 +241,13 @@ public class SQLite3ParserTest extends TikaTest {
         //to get the test file directly
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
-        InputStream is = new BufferedInputStream(
-                getResourceAsStream("/test-documents/"+TEST_FILE_NAME));
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        ex.extract(TikaInputStream.get(is), ex, byteCopier);
-        is.reset();
+        try(InputStream is = new BufferedInputStream(
+                getResourceAsStream("/test-documents/"+TEST_FILE_NAME))) {
+            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            ex.extract(TikaInputStream.get(is), ex, byteCopier);
+            is.reset();
+        }
         assertEquals(8, byteCopier.bytes.size());
     }
 
