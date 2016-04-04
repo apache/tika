@@ -18,7 +18,6 @@ package org.apache.tika.parser.odf;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -129,7 +128,7 @@ public class ODFParserTest extends TikaTest {
    }
 
    /**
-    * Similar to {@link #testXMLParser()}, but using a different
+    * Similar to {@link #testOO2()}, but using a different
     *  OO2 file with different metadata in it
     */
     @Test
@@ -184,7 +183,7 @@ public class ODFParserTest extends TikaTest {
    }
 
    /**
-    * Similar to {@link #testXMLParser()}, but using an OO3 file
+    * Similar to {@link #testOO2()} )}, but using an OO3 file
     */
     @Test
    public void testOO3Metadata() throws Exception {
@@ -332,5 +331,10 @@ public class ODFParserTest extends TikaTest {
         assertContains("Changer la langue", content);
         assertContains("La page d’accueil permet de faire une recherche simple", content);
 
+    }
+    @Test  //TIKA-1916
+    public void testMissingMeta() throws Exception {
+        String xml = getXML("testODTNoMeta.odt").xml;
+        assertContains("Test text", xml);
     }
 }

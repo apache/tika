@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.odf;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -40,8 +42,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * OpenOffice parser
@@ -146,28 +146,20 @@ public class OpenDocumentParser extends AbstractParser {
         EndDocumentShieldingContentHandler handler =
                 new EndDocumentShieldingContentHandler(xhtml);
 
-        // If we can, process the metadata first, then the
-        //  rest of the file afterwards
-        // Only possible to guarantee that when opened from a file not a stream
-        ZipEntry entry = null;
         if (zipFile != null) {
-            entry = zipFile.getEntry(META_NAME);
-            handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
-
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
-            while (entries.hasMoreElements()) {
-                entry = entries.nextElement();
-                if (!META_NAME.equals(entry.getName())) {
-                    handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
-                }
+            try {
+                handleZipFile(zipFile, metadata, context, handler);
+            } finally {
+                //Do we want to close silently == catch an exception here?
+                zipFile.close();
             }
-            zipFile.close();
         } else {
-            do {
-                entry = zipStream.getNextEntry();
-                handleZipEntry(entry, zipStream, metadata, context, handler);
-            } while (entry != null);
-            zipStream.close();
+            try {
+                handleZipStream(zipStream, metadata, context, handler);
+            } finally {
+                //Do we want to close silently == catch an exception here?
+                zipStream.close();
+            }
         }
 
         // Only now call the end document
@@ -176,6 +168,34 @@ public class OpenDocumentParser extends AbstractParser {
         }
     }
 
+    private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context, EndDocumentShieldingContentHandler handler) throws IOException, TikaException, SAXException {
+        ZipEntry entry = zipStream.getNextEntry();
+        while (entry != null) {
+            handleZipEntry(entry, zipStream, metadata, context, handler);
+            entry = zipStream.getNextEntry();
+        }
+    }
+
+    private void handleZipFile(ZipFile zipFile, Metadata metadata,
+                               ParseContext context, EndDocumentShieldingContentHandler handler)
+            throws IOException, TikaException, SAXException {
+        // If we can, process the metadata first, then the
+        //  rest of the file afterwards (TIKA-1353)
+        // Only possible to guarantee that when opened from a file not a stream
+
+        ZipEntry entry = zipFile.getEntry(META_NAME);
+        if (entry != null) {
+            handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
+        }
+
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            entry = entries.nextElement();
+            if (!META_NAME.equals(entry.getName())) {
+                handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
+            }
+        }
+    }
     private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata,
                                 ParseContext context, EndDocumentShieldingContentHandler handler)
             throws IOException, SAXException, TikaException {
