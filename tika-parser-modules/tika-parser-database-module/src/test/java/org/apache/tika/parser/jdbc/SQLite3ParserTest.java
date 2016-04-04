@@ -197,9 +197,10 @@ public class SQLite3ParserTest extends TikaTest {
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
         Metadata metadata = new Metadata();
-        try(InputStream is = getTestDocumentAsStream(TEST_FILE_NAME)) {
+        try(TikaInputStream is = TikaInputStream.cast(
+                getTestDocumentAsStream(TEST_FILE_NAME))) {
             metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            ex.extract(TikaInputStream.get(is), ex, byteCopier);
+            ex.extract(is, ex, byteCopier);
         }
         assertEquals(4, byteCopier.bytes.size());
         String[] strings = new String[4];
@@ -242,11 +243,13 @@ public class SQLite3ParserTest extends TikaTest {
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
         Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         try(InputStream is = new BufferedInputStream(
                 getResourceAsStream("/test-documents/"+TEST_FILE_NAME))) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            ex.extract(TikaInputStream.get(is), ex, byteCopier);
-            is.reset();
+            try (TikaInputStream tis = TikaInputStream.get(is)) {
+                ex.extract(tis, ex, byteCopier);
+                is.reset();
+            }
         }
         assertEquals(8, byteCopier.bytes.size());
     }
