@@ -64,7 +64,7 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
             throws IOException, SAXException, TikaException {
         // We only do metadata, for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-
+        xhtml.startDocument();
         // What kind is it?
         byte[] first4 = new byte[4];
         IOUtils.readFully(stream, first4);
