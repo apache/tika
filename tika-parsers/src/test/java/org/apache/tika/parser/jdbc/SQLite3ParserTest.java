@@ -70,7 +70,7 @@ public class SQLite3ParserTest extends TikaTest {
             XMLResult result = getXML(stream, p, metadata);
             String x = result.xml;
             //first table name
-            assertContains("<table name=\"my_table1\"><thead><tr>\t<th>INT_COL</th>", x);
+            assertContains("<table name=\"my_table1\"><thead><tr>\t<th>PK</th>", x);
             //non-ascii
             assertContains("<td>普林斯顿大学</td>", x);
             //boolean
@@ -227,6 +227,12 @@ public class SQLite3ParserTest extends TikaTest {
         assertEquals(8, byteCopier.bytes.size());
     }
 
+    @Test
+    public void testNulls() throws Exception {
+        String xml = getXML(TEST_FILE_NAME).xml.replaceAll("\\s+", "");
+        //everything except for the first key column should be empty
+        assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>", xml);
+    }
 
     public static class InputStreamResettingHandler implements EmbeddedResourceHandler {
 
@@ -274,12 +280,13 @@ public class SQLite3ParserTest extends TikaTest {
 
     @Test
     public void testCreateDB() throws Exception {
-        Connection c = getConnection("testSQLLite3b.db");
+        Connection c = getConnection("testSqlite3d.db");
         Statement st = c.createStatement();
         String sql = "DROP TABLE if exists my_table1";
         st.execute(sql);
         sql = "CREATE TABLE my_table1 (" +
-                "INT_COL INT PRIMARY KEY, "+
+                "PK INT PRIMARY KEY, "+
+                "INT_COL INTEGER, "+
                 "FLOAT_COL FLOAT, " +
                 "DOUBLE_COL DOUBLE, " +
                 "CHAR_COL CHAR(30), "+
@@ -287,12 +294,13 @@ public class SQLite3ParserTest extends TikaTest {
                 "BOOLEAN_COL BOOLEAN,"+
                 "DATE_COL DATE,"+
                 "TIME_STAMP_COL TIMESTAMP,"+
+                "CLOB_COL CLOB, "+
                 "BYTES_COL BYTES" +
         ")";
         st.execute(sql);
-        sql = "insert into my_table1 (INT_COL, FLOAT_COL, DOUBLE_COL, CHAR_COL, " +
-                "VARCHAR_COL, BOOLEAN_COL, DATE_COL, TIME_STAMP_COL, BYTES_COL) " +
-                "values (?,?,?,?,?,?,?,?,?)";
+        sql = "insert into my_table1 (PK, INT_COL, FLOAT_COL, DOUBLE_COL, CHAR_COL, " +
+                "VARCHAR_COL, BOOLEAN_COL, DATE_COL, TIME_STAMP_COL, CLOB_COL, BYTES_COL) " +
+                "values (?,?,?,?,?,?,?,?,?,?,?)";
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         java.util.Date d = f.parse("2015-01-03 15:17:03");
         System.out.println(d.getTime());
@@ -300,29 +308,44 @@ public class SQLite3ParserTest extends TikaTest {
         long d2Long = 1420316223000L;// 2015-01-03 15:17:03
         PreparedStatement ps = c.prepareStatement(sql);
         ps.setInt(1, 0);
-        ps.setFloat(2, 2.3f);
-        ps.setDouble(3, 2.4d);
-        ps.setString(4, "lorem");
-        ps.setString(5, "普林斯顿大学");
-        ps.setBoolean(6, true);
-        ps.setString(7, "2015-01-02");
-        ps.setString(8, "2015-01-03 15:17:03");
-//        ps.setClob(9, new StringReader(clobString));
-        ps.setBytes(9, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
+        ps.setInt(2, 10);
+        ps.setFloat(3, 2.3f);
+        ps.setDouble(4, 2.4d);
+        ps.setString(5, "lorem");
+        ps.setString(6, "普林斯顿大学");
+        ps.setBoolean(7, true);
+        ps.setString(8, "2015-01-02");
+        ps.setString(9, "2015-01-03 15:17:03");
+//        ps.setClob(10, new StringReader(sql));
+        ps.setBytes(10, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
         ps.executeUpdate();
         ps.clearParameters();
 
         ps.setInt(1, 1);
-        ps.setFloat(2, 4.6f);
-        ps.setDouble(3, 4.8d);
-        ps.setString(4, "dolor");
-        ps.setString(5, "sit");
-        ps.setBoolean(6, false);
-        ps.setString(7, "2015-01-04");
-        ps.setString(8, "2015-01-03 15:17:03");
+        ps.setInt(2, 20);
+        ps.setFloat(3, 4.6f);
+        ps.setDouble(4, 4.8d);
+        ps.setString(5, "dolor");
+        ps.setString(6, "sit");
+        ps.setBoolean(7, false);
+        ps.setString(8, "2015-01-04");
+        ps.setString(9, "2015-01-03 15:17:03");
         //ps.setClob(9, new StringReader("consectetur adipiscing elit"));
-        ps.setBytes(9, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
+        ps.setBytes(10, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
 
+        ps.executeUpdate();
+        //now add a fully null row
+        ps.clearParameters();
+        ps.setInt(1, 2);
+        ps.setNull(2, Types.INTEGER);
+        ps.setNull(3, Types.FLOAT);
+        ps.setNull(4, Types.DOUBLE);
+        ps.setNull(5, Types.CHAR);
+        ps.setNull(6, Types.VARCHAR);
+        ps.setNull(7, Types.BOOLEAN);
+        ps.setNull(8, Types.DATE);
+        ps.setNull(9, Types.TIMESTAMP);
+        ps.setNull(10, Types.BLOB);
         ps.executeUpdate();
 
         //build table2
@@ -351,6 +374,5 @@ public class SQLite3ParserTest extends TikaTest {
     }
 
 */
-
 
 }
