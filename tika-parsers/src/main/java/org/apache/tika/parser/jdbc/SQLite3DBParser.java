@@ -86,7 +86,7 @@ class SQLite3DBParser extends AbstractDBParser {
         //if this is a TikaInputStream, use that to spool is to disk or
         //use original underlying file.
         if (tis != null) {
-            Path dbFile = TikaInputStream.get(is).getPath();
+            Path dbFile = tis.getPath();
             return "jdbc:sqlite:" + dbFile.toAbsolutePath().toString();
         } else {
             //if not TikaInputStream, create own tmpResources.
