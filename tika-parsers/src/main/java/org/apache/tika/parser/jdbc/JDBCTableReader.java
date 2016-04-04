@@ -248,7 +248,7 @@ class JDBCTableReader {
             if (blob != null) {
                 try {
                     blob.free();
-                } catch (SQLException e) {
+                } catch (SQLException|UnsupportedOperationException e) {
                     //swallow
                 }
             }
