@@ -20,22 +20,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.InputStream;
 import java.util.List;
 
-import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Tests that the various POI powered parsers are
@@ -357,16 +350,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     @Test
     public void testEmbeddedStorageId() throws Exception {
 
-        Parser p = new AutoDetectParser();
-
-        RecursiveParserWrapper w = new RecursiveParserWrapper(p,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
-        try (InputStream is = getTestFile("testWORD_embeded.doc")) {
-            Metadata meta = new Metadata();
-            ParseContext c = new ParseContext();
-            w.parse(is, new DefaultHandler(), meta, c);
-        }
-        List<Metadata> list = w.getMetadata();
+        List<Metadata> list = getRecursiveJson("testWORD_embeded.doc");
         //.docx
         assertEquals("{F4754C9B-64F5-4B40-8AF4-679732AC0607}",
                 list.get(10).get(TikaMetadataKeys.EMBEDDED_STORAGE_CLASS_ID));
@@ -377,5 +361,22 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals("{00020820-0000-0000-C000-000000000046}",
                 list.get(16).get(TikaMetadataKeys.EMBEDDED_STORAGE_CLASS_ID));
 
+    }
+
+    @Test
+    public void testEmbeddedGraphChart() throws Exception {
+        //doc converts a chart to a actual xls file
+        //so we only need to look in ppt and xls
+        for (String suffix : new String[]{"ppt", "xls"}) {
+            List<Metadata> list = getRecursiveJson("testMSChart-govdocs-428996."+suffix);
+            boolean found = false;
+            for (Metadata m : list) {
+                if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
+                    found = true;
+                }
+                assertNull(m.get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
+            }
+            assertTrue("didn't find chart in "+suffix, found);
+        }
     }
 }

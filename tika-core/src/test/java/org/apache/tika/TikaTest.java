@@ -40,9 +40,12 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parent class of Tika tests
@@ -129,7 +132,17 @@ public abstract class TikaTest {
       } finally {
           input.close();
       }
-  }
+    }
+
+    protected List<Metadata> getRecursiveJson(String filePath) throws Exception {
+        Parser p = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
+            wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+        }
+        return wrapper.getMetadata();
+    }
 
     /**
      * Basic text extraction.
@@ -209,6 +222,18 @@ public abstract class TikaTest {
             } catch (IOException e) {
                 //swallow
             }
+        }
+    }
+
+    public static void debug(List<Metadata> list) {
+        int i = 0;
+        for (Metadata m : list) {
+            for (String n : m.names()) {
+                for (String v : m.getValues(n)) {
+                    System.out.println(i + ": "+n + " : "+v);
+                }
+            }
+            i++;
         }
     }
 }

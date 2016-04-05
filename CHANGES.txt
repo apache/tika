@@ -1,5 +1,7 @@
 Release 1.13 - ???
 
+  * Add detection for embedded MSChart.Graph files (TIKA-1033).
+
   * Fix NPE in Sqlite parser from Nick C (TIKA-1927).
 
   * Fix NPE in Open Document parser from Nick C (TIKA-1916).
