@@ -108,6 +108,9 @@ public abstract class TikaTest {
             this.metadata = metadata;
         }
     }
+    protected XMLResult getXML(String filePath, Parser parser) throws Exception {
+        return getXML(filePath, parser, new Metadata());
+    }
 
     protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata);
