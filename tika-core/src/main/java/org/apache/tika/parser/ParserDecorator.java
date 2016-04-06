@@ -124,8 +124,9 @@ public class ParserDecorator extends AbstractParser {
                 // Need to close internally created tstream to release resources
                 TemporaryResources tmp = (TikaInputStream.isTikaInputStream(stream)) ? null
                         : new TemporaryResources();
-                try (TikaInputStream tstream =
-                             TikaInputStream.get(stream, tmp)) {
+                try {
+                    TikaInputStream tstream =
+                            TikaInputStream.get(stream, tmp);
                     tstream.getFile();
                     // Try each parser in turn
                     for (Parser p : parsers) {
