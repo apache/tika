@@ -670,7 +670,6 @@ public class PDFParserTest extends TikaTest {
         pdfExtensionVersions.put("10.x", "1.7 Adobe Extension Level 8");
         pdfExtensionVersions.put("11.x.PDFA-1b", "1.7 Adobe Extension Level 8");
 
-        Parser p = new AutoDetectParser();
         for (Map.Entry<String, String> e : dcFormat.entrySet()) {
             String fName = "testPDF_Version." + e.getKey() + ".pdf";
 
@@ -749,21 +748,11 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
         config.setExtractUniqueInlineImagesOnly(false);
-
-        Parser defaultParser = new AutoDetectParser();
-
-        RecursiveParserWrapper p = new RecursiveParserWrapper(defaultParser,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         ParseContext context = new ParseContext();
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
-        context.set(org.apache.tika.parser.Parser.class, p);
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler(-1);
-        String path = "/test-documents/testPDF_childAttachments.pdf";
-        try (InputStream stream = TikaInputStream.get(this.getClass().getResource(path))) {
-            p.parse(stream, handler, metadata, context);
-        }
-        List<Metadata> metadatas = p.getMetadata();
+        context.set(org.apache.tika.parser.Parser.class, new AutoDetectParser());
+
+        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -779,20 +768,13 @@ public class PDFParserTest extends TikaTest {
         assertEquals(2, inline);
         assertEquals(2, attach);
 
-        p.reset();
-
         //now try turning off inline
 
         context.set(org.apache.tika.extractor.DocumentSelector.class, new AvoidInlineSelector());
         inline = 0;
         attach = 0;
-        handler = new BodyContentHandler(-1);
-        metadata = new Metadata();
-        try (InputStream stream = TikaInputStream.get(this.getClass().getResource(path))){
-            p.parse(stream, handler, metadata, context);
-        }
 
-        metadatas = p.getMetadata();
+        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -1084,7 +1066,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testXMPMM() throws Exception {
-//        XMLResult r = getXML("testPDF_Version.11.x.PDFA-1b.pdf");
+
         Metadata m = getXML("testPDF_twoAuthors.pdf").metadata;
         assertEquals("uuid:0e46913c-72b9-40c0-8232-69e362abcd1e",
                 m.get(XMPMM.DOCUMENTID));
