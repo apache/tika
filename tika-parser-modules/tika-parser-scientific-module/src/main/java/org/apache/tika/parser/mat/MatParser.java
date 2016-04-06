@@ -17,29 +17,30 @@
 package org.apache.tika.parser.mat;
 
 //JDK imports
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
+import com.jmatio.io.MatFileHeader;
+import com.jmatio.io.MatFileReader;
+import com.jmatio.types.MLArray;
+import com.jmatio.types.MLStructure;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 //JMatIO imports
-import com.jmatio.io.MatFileHeader;
-import com.jmatio.io.MatFileReader;
-import com.jmatio.types.MLArray;
-import com.jmatio.types.MLStructure;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 public class MatParser extends AbstractParser {
@@ -59,10 +60,12 @@ public class MatParser extends AbstractParser {
 
         //Set MIME type as Matlab
         metadata.set(Metadata.CONTENT_TYPE, MATLAB_MIME_TYPE);
-
+        TemporaryResources tmp =
+                TikaInputStream.isTikaInputStream(stream) ? null :
+                        new TemporaryResources();
         try {
             // Use TIS so we can spool a temp file for parsing.
-            TikaInputStream tis = TikaInputStream.get(stream);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp);
 
             //Extract information from header file
             MatFileReader mfr = new MatFileReader(tis.getFile()); //input .mat file
@@ -128,6 +131,10 @@ public class MatParser extends AbstractParser {
             xhtml.endDocument();
         } catch (IOException e) {
             throw new TikaException("Error parsing Matlab file with MatParser", e);
+        } finally {
+            if (tmp != null) {
+                tmp.dispose();
+            }
         }
     }
 }

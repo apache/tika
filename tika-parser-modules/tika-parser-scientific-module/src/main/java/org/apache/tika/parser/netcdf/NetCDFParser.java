@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -80,7 +81,9 @@ public class NetCDFParser extends AbstractParser {
                       Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
 
-        TikaInputStream tis = TikaInputStream.get(stream);
+        TemporaryResources tmp = TikaInputStream.isTikaInputStream(stream) ?
+                null : new TemporaryResources();
+        TikaInputStream tis = TikaInputStream.get(stream, tmp);
         NetcdfFile ncFile = null;
         try {
             ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath());
@@ -134,6 +137,9 @@ public class NetCDFParser extends AbstractParser {
         } finally {
             if (ncFile != null) {
                 ncFile.close();
+            }
+            if (tmp != null) {
+                tmp.dispose();
             }
         }
     }
