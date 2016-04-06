@@ -108,25 +108,40 @@ public abstract class TikaTest {
             this.metadata = metadata;
         }
     }
+
+    protected XMLResult getXML(String filePath, Parser parser, ParseContext context) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, new Metadata(), context);
+    }
+
+    protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata, null);
+    }
+
+    protected XMLResult getXML(String filePath, ParseContext parseContext) throws Exception {
+        return getXML(filePath, new AutoDetectParser(), parseContext);
+    }
+
+    protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata, null);
+    }
+
     protected XMLResult getXML(String filePath, Parser parser) throws Exception {
         return getXML(filePath, parser, new Metadata());
     }
 
-    protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata);
-    }
-
-    protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata);
-    }
-
     protected XMLResult getXML(String filePath) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), new Metadata());
+        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), new Metadata(), null);
     }
 
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata) throws Exception {
-      ParseContext context = new ParseContext();
-      context.set(Parser.class, parser);
+        return getXML(input, parser, metadata, null);
+    }
+
+    protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata, ParseContext context) throws Exception {
+      if (context == null) {
+          context = new ParseContext();
+          context.set(Parser.class, parser);
+      }
 
       try {
           ContentHandler handler = new ToXMLContentHandler();
@@ -138,11 +153,15 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveJson(String filePath) throws Exception {
+        return getRecursiveJson(filePath, new ParseContext());
+    }
+
+    protected List<Metadata> getRecursiveJson(String filePath, ParseContext context) throws Exception {
         Parser p = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+            wrapper.parse(is, new DefaultHandler(), new Metadata(), context);
         }
         return wrapper.getMetadata();
     }
