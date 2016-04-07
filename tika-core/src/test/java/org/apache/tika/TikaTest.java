@@ -54,31 +54,30 @@ import org.xml.sax.helpers.DefaultHandler;
  * Parent class of Tika tests
  */
 public abstract class TikaTest {
-   /**
-    * This method will give you back the filename incl. the absolute path name
-    * to the resource. If the resource does not exist it will give you back the
-    * resource name incl. the path.
-    *
-    * @param name
-    *            The named resource to search for.
-    * @return an absolute path incl. the name which is in the same directory as
-    *         the the class you've called it from.
-    */
-   public File getResourceAsFile(String name) throws URISyntaxException {
-       URL url = this.getClass().getResource(name);
-       if (url != null) {
-           return new File(url.toURI());
-       } else {
-           // We have a file which does not exists
-           // We got the path
-           url = this.getClass().getResource(".");
-           File file = new File(new File(url.toURI()), name);
-           if (file == null) {
-              fail("Unable to find requested file " + name);
-           }
-           return file;
-       }
-   }
+    /**
+     * This method will give you back the filename incl. the absolute path name
+     * to the resource. If the resource does not exist it will give you back the
+     * resource name incl. the path.
+     *
+     * @param name The named resource to search for.
+     * @return an absolute path incl. the name which is in the same directory as
+     * the the class you've called it from.
+     */
+    public File getResourceAsFile(String name) throws URISyntaxException {
+        URL url = this.getClass().getResource(name);
+        if (url != null) {
+            return new File(url.toURI());
+        } else {
+            // We have a file which does not exists
+            // We got the path
+            url = this.getClass().getResource(".");
+            File file = new File(new File(url.toURI()), name);
+            if (file == null) {
+                fail("Unable to find requested file " + name);
+            }
+            return file;
+        }
+    }
 
 
     /**
@@ -89,27 +88,28 @@ public abstract class TikaTest {
      * @return
      * @throws IOException
      */
-   public Path getTestDocumentAsTempFile(String name) throws IOException{
-       Path tmp = Files.createTempFile("tika-test", "");
-       Files.copy(getResourceAsStream("/test-documents/"+name), tmp, StandardCopyOption.REPLACE_EXISTING);
-       return tmp;
-   }
+    public Path getTestDocumentAsTempFile(String name) throws IOException {
+        Path tmp = Files.createTempFile("tika-test", "");
+        Files.copy(getResourceAsStream("/test-documents/" + name), tmp, StandardCopyOption.REPLACE_EXISTING);
+        return tmp;
+    }
 
-   public InputStream getTestDocumentAsStream(String name) {
-       return TikaInputStream.get(getResourceAsStream("/test-documents/"+name));
-   }
+    public InputStream getTestDocumentAsStream(String name) {
+        return TikaInputStream.get(getResourceAsStream("/test-documents/" + name));
+    }
 
-   public InputStream getResourceAsStream(String name) {
-       InputStream stream = this.getClass().getResourceAsStream(name);
-       if (stream == null) {
-          fail("Unable to find requested resource " + name);
-       }
-       return stream;
-   }
+    public InputStream getResourceAsStream(String name) {
+        InputStream stream = this.getClass().getResourceAsStream(name);
+        if (stream == null) {
+            fail("Unable to find requested resource " + name);
+        }
+        return stream;
+    }
 
     public static void assertContains(String needle, String haystack) {
-       assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
+
     public static <T> void assertContains(T needle, Collection<? extends T> haystack) {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
@@ -117,6 +117,7 @@ public abstract class TikaTest {
     public static void assertNotContained(String needle, String haystack) {
         assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
     }
+
     public static <T> void assertNotContained(T needle, Collection<? extends T> haystack) {
         assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
     }
@@ -165,10 +166,10 @@ public abstract class TikaTest {
     }
 
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata, ParseContext context) throws Exception {
-      if (context == null) {
-          context = new ParseContext();
-          context.set(Parser.class, parser);
-      }
+        if (context == null) {
+            context = new ParseContext();
+            context.set(Parser.class, parser);
+        }
         try {
             ContentHandler handler = new ToXMLContentHandler();
             parser.parse(input, handler, metadata, context);
@@ -178,12 +179,12 @@ public abstract class TikaTest {
         }
     }
 
-        /**
-         * Basic text extraction.
-         * <p>
-         * Tries to close input stream after processing.
-         */
-    public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata) throws Exception{
+    /**
+     * Basic text extraction.
+     * <p>
+     * Tries to close input stream after processing.
+     */
+    public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata) throws Exception {
         ContentHandler handler = new BodyContentHandler(1000000);
         try {
             parser.parse(is, handler, metadata, context);
@@ -193,15 +194,15 @@ public abstract class TikaTest {
         return handler.toString();
     }
 
-    public String getText(InputStream is, Parser parser, Metadata metadata) throws Exception{
+    public String getText(InputStream is, Parser parser, Metadata metadata) throws Exception {
         return getText(is, parser, new ParseContext(), metadata);
     }
 
-    public String getText(InputStream is, Parser parser, ParseContext context) throws Exception{
+    public String getText(InputStream is, Parser parser, ParseContext context) throws Exception {
         return getText(is, parser, context, new Metadata());
     }
 
-    public String getText(InputStream is, Parser parser) throws Exception{
+    public String getText(InputStream is, Parser parser) throws Exception {
         return getText(is, parser, new ParseContext(), new Metadata());
     }
 
@@ -221,25 +222,24 @@ public abstract class TikaTest {
 
     /**
      * Keeps track of media types and file names recursively.
-     *
      */
     public static class TrackingHandler implements EmbeddedResourceHandler {
         public List<String> filenames = new ArrayList<String>();
         public List<MediaType> mediaTypes = new ArrayList<MediaType>();
-        
+
         private final Set<MediaType> skipTypes;
-        
+
         public TrackingHandler() {
             skipTypes = new HashSet<MediaType>();
         }
-     
+
         public TrackingHandler(Set<MediaType> skipTypes) {
             this.skipTypes = skipTypes;
         }
 
         @Override
         public void handle(String filename, MediaType mediaType,
-                InputStream stream) {
+                           InputStream stream) {
             if (skipTypes.contains(mediaType)) {
                 return;
             }
@@ -247,7 +247,7 @@ public abstract class TikaTest {
             filenames.add(filename);
         }
     }
-    
+
     /**
      * Copies byte[] of embedded documents into a List.
      */
@@ -257,9 +257,9 @@ public abstract class TikaTest {
 
         @Override
         public void handle(String filename, MediaType mediaType,
-                InputStream stream) {
+                           InputStream stream) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            if (! stream.markSupported()) {
+            if (!stream.markSupported()) {
                 stream = TikaInputStream.get(stream);
             }
             stream.mark(0);
@@ -278,7 +278,7 @@ public abstract class TikaTest {
         for (Metadata m : list) {
             for (String n : m.names()) {
                 for (String v : m.getValues(n)) {
-                    System.out.println(i + ": "+n + " : "+v);
+                    System.out.println(i + ": " + n + " : " + v);
                 }
             }
             i++;
