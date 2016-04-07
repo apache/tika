@@ -16,6 +16,8 @@
  */
 package org.apache.tika.fork;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -29,11 +31,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 class ForkClient {
 
@@ -174,6 +174,12 @@ class ForkClient {
         }
         if (process != null) {
             process.destroy();
+            try {
+                //TIKA-1933
+                process.waitFor();
+            } catch (InterruptedException e) {
+
+            }
         }
         if (jar != null) {
             jar.delete();
