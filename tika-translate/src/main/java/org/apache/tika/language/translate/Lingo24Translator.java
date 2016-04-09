@@ -26,12 +26,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
+import org.apache.tika.language.translate.Lingo24Translator;
+import org.apache.tika.language.translate.Translator;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -43,72 +46,78 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class Lingo24Translator implements Translator {
 
-    private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
+	private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
 
-    private static final String DEFAULT_KEY = "dummy-key";
+	private static final String DEFAULT_KEY = "dummy-key";
 
-    private WebClient client;
+	private String userKey;
 
-    private String userKey;
+	public Lingo24Translator() {
+		Properties config = new Properties();
+		try {
+			config.load(Lingo24Translator.class
+					.getResourceAsStream(
+							"translator.lingo24.properties"));
+			this.userKey = config.getProperty("translator.user-key");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-    private boolean isAvailable;
+	@Override
+	public String translate(String text, String sourceLanguage,
+			String targetLanguage) throws TikaException, IOException {
+		if (!this.isAvailable()) {
+			return text;
+		}
+		WebClient client = WebClient.create(LINGO24_TRANSLATE_URL_BASE);
 
-    public Lingo24Translator() {
-        this.client = WebClient.create(LINGO24_TRANSLATE_URL_BASE);
-        this.isAvailable = true;
-        Properties config = new Properties();
-        try {
-            config.load(Lingo24Translator.class
-                    .getResourceAsStream(
-                            "translator.lingo24.properties"));
-            this.userKey = config.getProperty("translator.user-key");
-            if (this.userKey.equals(DEFAULT_KEY))
-                this.isAvailable = false;
-        } catch (Exception e) {
-            e.printStackTrace();
-            isAvailable = false;
-        }
-    }
+		Response response = client.accept(MediaType.APPLICATION_JSON)
+				.query("user_key", this.userKey).query("source", sourceLanguage)
+				.query("target", targetLanguage).query("q", text).get();
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				(InputStream) response.getEntity(), UTF_8));
+		String line = null;
+		StringBuffer responseText = new StringBuffer();
+		while ((line = reader.readLine()) != null) {
+			responseText.append(line);
+		}
 
-    @Override
-    public String translate(String text, String sourceLanguage,
-                            String targetLanguage) throws TikaException, IOException {
-        if (!this.isAvailable)
-            return text;
-        Response response = client.accept(MediaType.APPLICATION_JSON)
-                .query("user_key", userKey).query("source", sourceLanguage)
-                .query("target", targetLanguage).query("q", text).get();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8));
-        String line = null;
-        StringBuffer responseText = new StringBuffer();
-        while ((line = reader.readLine()) != null) {
-            responseText.append(line);
-        }
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode jsonResp = mapper.readTree(responseText.toString());
+			if (jsonResp.findValuesAsText("errors").isEmpty()) {
+				return jsonResp.findValuesAsText("translation").get(0);
+			} else {
+				throw new TikaException(jsonResp.findValue("errors").get(0).asText());
+			}
+		} catch (JsonParseException e) {
+			throw new TikaException("Error requesting translation from '" + sourceLanguage + "' to '" + targetLanguage + "', JSON response from Lingo24 is not well formatted: " + responseText.toString());
+		}
+	}
 
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonResp = mapper.readTree(responseText.toString());
-        if (jsonResp.findValuesAsText("errors").isEmpty()) {
-            return jsonResp.findValuesAsText("translation").get(0);
-        } else {
-            throw new TikaException(jsonResp.findValue("errors").get(0).asText());
-        }
-    }
+	public String getUserKey() {
+		return userKey;
+	}
 
-    @Override
-    public String translate(String text, String targetLanguage)
-            throws TikaException, IOException {
-        if (!this.isAvailable)
-            return text;
-        LanguageIdentifier language = new LanguageIdentifier(
-                new LanguageProfile(text));
-        String sourceLanguage = language.getLanguage();
-        return translate(text, sourceLanguage, targetLanguage);
-    }
+	public void setUserKey(String userKey) {
+		this.userKey = userKey;
+	}
 
-    @Override
-    public boolean isAvailable() {
-        return this.isAvailable;
-    }
+	@Override
+	public String translate(String text, String targetLanguage)
+			throws TikaException, IOException {
+		if (!this.isAvailable())
+			return text;
+		LanguageIdentifier language = new LanguageIdentifier(
+				new LanguageProfile(text));
+		String sourceLanguage = language.getLanguage();
+		return translate(text, sourceLanguage, targetLanguage);
+	}
+
+	@Override
+	public boolean isAvailable() {
+		return this.userKey!=null && !this.userKey.equals(DEFAULT_KEY);
+	}
 
 }
