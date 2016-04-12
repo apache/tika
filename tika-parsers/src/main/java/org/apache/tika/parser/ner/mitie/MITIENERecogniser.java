@@ -31,9 +31,9 @@ import java.util.*;
 
 /**
  *  This class offers an implementation of {@link NERecogniser} based on
- *  CRF classifiers from Stanford CoreNLP. This NER requires additional setup,
- *  due to runtime binding to Stanford CoreNLP.
- *  See <a href="http://wiki.apache.org/tika/TikaAndNER#CoreNLP">
+ *  trained models using state-of-the-art information extraction tools. This NER requires additional setup,
+ *  due to runtime binding to MIT Information Extraction.
+ *  See <a href="http://wiki.apache.org/tika/TikaAndMITIE">
  *      Tika NER Wiki</a> for configuring this recogniser.
  *  @see NERecogniser
  *
@@ -162,5 +162,5 @@ public class MITIENERecogniser implements NERecogniser {
         }
         return names;
     }
-    
+
 }
