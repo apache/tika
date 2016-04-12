@@ -10,6 +10,8 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Upgrade commons-compress to 1.11 (TIKA-1949).
+
   * Add detection for embedded MSChart.Graph files (TIKA-1033).
 
   * Fix NPE in Sqlite parser from Nick C (TIKA-1927).
