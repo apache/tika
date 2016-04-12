@@ -23,7 +23,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Properties;
+import java.util.Iterator;
+import java.util.Locale;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -42,7 +49,7 @@ public class NLTKNERecogniser implements NERecogniser {
     private static boolean available = false;
     private static final String NLTK_REST_HOST = "http://localhost:8881";
     private String restHostUrlStr;
-    /**
+     /**
      * some common entities identified by NLTK
      */
     public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
