@@ -10,6 +10,8 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Handle per page IOExceptions more robustly in PDFParser (TIKA-1948).
+
   * Upgrade commons-compress to 1.11 (TIKA-1949).
 
   * Add detection for embedded MSChart.Graph files (TIKA-1033).
@@ -36,7 +38,7 @@ Release 1.13 - ???
       https://pdfbox.apache.org/2.0/dependencies.html#optional-components
       for optional components to process Tiff files.
     * Some truncated/corrupted files that had some content extracted
-      with 1.8.11 may have no content extracted in 2.0.0.
+      with 1.8.11 may have no content extracted in 2.0.0 (see TIKA-1912).
 
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
