@@ -25,6 +25,7 @@
   
   <properties>
     <netcdf-java.version>4.5.5</netcdf-java.version>
+    <sis.version>0.6</sis.version>
   </properties>
   
   <dependencies>
@@ -52,17 +53,17 @@
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-utility</artifactId>
-      <version>0.5</version>
+      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.storage</groupId>
       <artifactId>sis-netcdf</artifactId>
-      <version>0.5</version>
+      <version>${sis.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.sis.core</groupId>
       <artifactId>sis-metadata</artifactId>
-      <version>0.5</version>
+      <version>${sis.version}</version>
     </dependency>
     <!-- edu.ucar dependencies -->
     <dependency>

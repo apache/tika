@@ -27,9 +27,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
+    @Test
     public void testDetachedSignature() throws Exception {
         try (InputStream input = Pkcs7ParserTest.class.getResourceAsStream(
                 "/test-documents/testDetached.p7s")) {

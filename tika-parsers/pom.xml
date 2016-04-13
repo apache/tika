@@ -35,7 +35,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <vorbis.version>0.6</vorbis.version>
+    <vorbis.version>0.8</vorbis.version>
   </properties>
 
   <dependencies>
