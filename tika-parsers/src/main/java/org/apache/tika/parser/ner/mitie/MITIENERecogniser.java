@@ -115,7 +115,7 @@ public class MITIENERecogniser implements NERecogniser {
                 possibleTags.add(t);
             }
             Method tokenize = globalClass.getMethod("tokenize", String.class);
-            text = "Hi, my name is Abraham Lincoln. I live in Los Angeles, California.";
+//            text = "Hi, my name is Abraham Lincoln. I live in Los Angeles, California.";
             stringVectorObject = tokenize.invoke(globalClass,text );
 
             ArrayList<String> stringVector = new ArrayList<>();
