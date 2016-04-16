@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.pdf;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -57,7 +59,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -97,6 +101,8 @@ public class PDFParser extends AbstractParser {
             Collections.singleton(MEDIA_TYPE);
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
+
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -127,13 +133,13 @@ public class PDFParser extends AbstractParser {
             metadata.set("pdf:encrypted", Boolean.toString(pdfDocument.isEncrypted()));
 
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
-            extractMetadata(pdfDocument, metadata);
+            extractMetadata(pdfDocument, metadata, context);
 
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
                 if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
-                    handleXFAOnly(pdfDocument, handler, metadata);
+                    handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else {
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 }
@@ -170,7 +176,7 @@ public class PDFParser extends AbstractParser {
     }
 
 
-    private void extractMetadata(PDDocument document, Metadata metadata)
+    private void extractMetadata(PDDocument document, Metadata metadata, ParseContext context)
             throws TikaException {
 
         //first extract AccessPermissions
@@ -194,7 +200,12 @@ public class PDFParser extends AbstractParser {
 
 
         //now go for the XMP
-        org.apache.jempbox.xmp.XMPMetadata xmp = null;
+        Document dom = loadDOM(document.getDocumentCatalog().getMetadata(), context);
+
+        XMPMetadata xmp = null;
+        if (dom != null) {
+            xmp = new XMPMetadata(dom);
+        }
         XMPSchemaDublinCore dcSchema = null;
         try {
             if (document.getDocumentCatalog().getMetadata() != null) {
@@ -480,15 +491,15 @@ public class PDFParser extends AbstractParser {
         return false;
     }
 
-    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata)
+    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler,
+                               Metadata metadata, ParseContext context)
         throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        try {
-            ex.extract(new ByteArrayInputStream(
-                    pdDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes()),
-                xhtml, metadata);
+        try (InputStream is = new ByteArrayInputStream(
+                pdDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes())) {
+            ex.extract(is, xhtml, metadata, context);
         } catch (XMLStreamException e) {
             throw new TikaException("XML error in XFA", e);
         }
@@ -585,6 +596,23 @@ public class PDFParser extends AbstractParser {
      */
     public void setSortByPosition(boolean v) {
         defaultConfig.setSortByPosition(v);
+    }
+
+
+    //can return null!
+    private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
+        if (pdMetadata == null) {
+            return null;
+        }
+        try (InputStream is = pdMetadata.exportXMPMetadata()) {
+            DocumentBuilder documentBuilder = context.getDocumentBuilder();
+            documentBuilder.setErrorHandler((ErrorHandler)null);
+            return documentBuilder.parse(is);
+        } catch (IOException|SAXException e) {
+            //swallow
+        }
+        return null;
+
     }
 
 }
