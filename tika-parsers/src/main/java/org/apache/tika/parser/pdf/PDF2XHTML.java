@@ -648,10 +648,11 @@ class PDF2XHTML extends PDFTextStripper {
         PDXFAResource pdxfa = form.getXFA();
 
         if (pdxfa != null) {
+            //if successful, return
             XFAExtractor xfaExtractor = new XFAExtractor();
-            try {
-                xfaExtractor.extract(new BufferedInputStream(
-                        new ByteArrayInputStream(pdxfa.getBytes())), handler, metadata);
+            try (InputStream is = new BufferedInputStream(
+                    new ByteArrayInputStream(pdxfa.getBytes()))) {
+                xfaExtractor.extract(is, handler, metadata, context);
                 return;
             } catch (XMLStreamException |IOException e) {
                 //if there was an xml parse exception in xfa, try the AcroForm
