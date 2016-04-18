@@ -133,7 +133,7 @@ public class ParseContext implements Serializable {
      * Returns the SAX parser factory specified in this parsing context.
      * If a factory is not explicitly specified, then a default factory
      * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to use
+     * configured to be namespace-aware, not validating, and to use
      * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      *
      * @since Apache Tika 0.8
@@ -144,6 +144,7 @@ public class ParseContext implements Serializable {
         if (factory == null) {
             factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(true);
+            factory.setValidating(false);
             try {
                 factory.setFeature(
                         XMLConstants.FEATURE_SECURE_PROCESSING, true);
@@ -170,7 +171,7 @@ public class ParseContext implements Serializable {
      * @since Apache Tika 1.13
      * @return DOM parser factory
      */
-    public DocumentBuilderFactory getDocumentBuilderFactory() {
+    private DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
         DocumentBuilderFactory documentBuilderFactory = get(DocumentBuilderFactory.class);
         if (documentBuilderFactory == null) {
@@ -185,28 +186,33 @@ public class ParseContext implements Serializable {
 
     /**
      * Returns the DOM builder specified in this parsing context.
-     * If a factory is not explicitly specified, then a builder
+     * If a builder is not explicitly specified, then a builder
      * instance is created and returned. The builder instance is
-     * configured to apply an {@link #IGNORING_ENTITY_RESOLVER}.
+     * configured to apply an {@link #IGNORING_ENTITY_RESOLVER},
+     * and it sets the ErrorHandler to <code>null</code>.
      *
      * @since Apache Tika 1.13
      * @return DOM Builder
      */
-    public DocumentBuilder getDocumentBuilder() {
+    public DocumentBuilder getDocumentBuilder() throws TikaException {
+        DocumentBuilder documentBuilder = get(DocumentBuilder.class);
+        if (documentBuilder != null) {
+            return documentBuilder;
+        }
         try {
             DocumentBuilderFactory documentBuilderFactory = getDocumentBuilderFactory();
-            DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+            documentBuilder = documentBuilderFactory.newDocumentBuilder();
             documentBuilder.setEntityResolver(IGNORING_ENTITY_RESOLVER);
             documentBuilder.setErrorHandler(null);
             return documentBuilder;
         } catch (ParserConfigurationException e) {
-            throw new IllegalStateException("cannot create a DocumentBuilder", e);
+            throw new TikaException("XML parser not available", e);
         }
     }
 
-    private static void trySetSAXFeature(DocumentBuilderFactory dbf, String feature, boolean enabled) {
+    private static void trySetSAXFeature(DocumentBuilderFactory dbf, String feature, boolean value) {
         try {
-            dbf.setFeature(feature, enabled);
+            dbf.setFeature(feature, value);
         } catch (Exception|AbstractMethodError e) {
         }
     }
@@ -241,16 +247,16 @@ public class ParseContext implements Serializable {
      */
     public XMLInputFactory getXMLInputFactory() {
         XMLInputFactory factory = get(XMLInputFactory.class);
-        if (factory == null) {
-            factory = XMLInputFactory.newFactory().newFactory();
+        if (factory != null) {
+            return factory;
         }
+        factory = XMLInputFactory.newFactory();
 
         tryToSetProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
         tryToSetProperty(factory, XMLInputFactory.IS_VALIDATING, false);
 
         tryToSetProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
         tryToSetProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-
         factory.setXMLResolver(new XMLResolver() {
             @Override
             public Object resolveEntity(String publicID, String systemID, String baseURI, String namespace) throws

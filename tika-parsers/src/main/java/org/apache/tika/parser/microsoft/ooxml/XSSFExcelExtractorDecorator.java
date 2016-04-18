@@ -16,9 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -70,11 +68,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final DataFormatter formatter;
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
     private Metadata metadata;
+    private ParseContext parseContext;
 
     public XSSFExcelExtractorDecorator(
             ParseContext context, XSSFEventBasedExcelExtractor extractor, Locale locale) {
         super(context, extractor);
 
+        this.parseContext = context;
         this.extractor = extractor;
         extractor.setFormulasNotResults(false);
         extractor.setLocale(locale);
@@ -92,6 +92,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             throws SAXException, XmlException, IOException, TikaException {
 
         this.metadata = metadata;
+        this.parseContext = context;
         metadata.set(TikaMetadataKeys.PROTECTED, "false");
 
         super.getXHTML(handler, metadata, context);
@@ -186,10 +187,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             InputStream sheetInputStream)
             throws IOException, SAXException {
         InputSource sheetSource = new InputSource(sheetInputStream);
-        SAXParserFactory saxFactory = SAXParserFactory.newInstance();
-        saxFactory.setNamespaceAware(true);
         try {
-            SAXParser saxParser = saxFactory.newSAXParser();
+            SAXParser saxParser = parseContext.getSAXParser();
             XMLReader sheetParser = saxParser.getXMLReader();
             XSSFSheetInterestingPartsCapturer handler =
                     new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
@@ -201,7 +200,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             if (handler.hasProtection) {
                 metadata.set(TikaMetadataKeys.PROTECTED, "true");
             }
-        } catch (ParserConfigurationException e) {
+        } catch (TikaException e) {
             throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
         }
     }
