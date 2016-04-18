@@ -51,7 +51,7 @@ Release 1.13 - ???
     is still <scope>provided</scope>.  You need to include this dependency
     in order to parse sqlite files.
 
-  * Upgrade to POI 3.14-final (TIKA-1853).
+  * Upgrade to POI 3.15-beta1 (TIKA-1895).
 
 Release 1.12 - 01/24/2016
 
