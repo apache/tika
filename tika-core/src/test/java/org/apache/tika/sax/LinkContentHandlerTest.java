@@ -56,4 +56,36 @@ public class LinkContentHandlerTest {
         assertEquals(" anchor ", linkContentHandler.getLinks().get(0).getText());
     }
 
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-1937">TIKA-1937</a>
+     */
+    @Test
+    public void testScriptTag() throws Exception {
+        LinkContentHandler linkContentHandler = new LinkContentHandler();
+
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "src", "src", "", "http://tika.apache.org/script.js");
+
+        linkContentHandler.startElement(XHTMLContentHandler.XHTML, "script", "", atts);
+        linkContentHandler.endElement(XHTMLContentHandler.XHTML, "script", "");
+
+        assertEquals("http://tika.apache.org/script.js", linkContentHandler.getLinks().get(0).getUri());
+    }
+
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-1937">TIKA-1937</a>
+     */
+    @Test
+    public void testEmbeddedScriptTag() throws Exception {
+        LinkContentHandler linkContentHandler = new LinkContentHandler();
+
+        AttributesImpl atts = new AttributesImpl();
+        // no "src" attribute implies it's an embedded script
+
+        linkContentHandler.startElement(XHTMLContentHandler.XHTML, "script", "", atts);
+        linkContentHandler.endElement(XHTMLContentHandler.XHTML, "script", "");
+
+        assert(linkContentHandler.getLinks().isEmpty());
+    }
+
 }

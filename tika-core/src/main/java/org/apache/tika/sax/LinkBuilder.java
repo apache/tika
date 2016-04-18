@@ -74,4 +74,8 @@ class LinkBuilder {
         return new Link(type, uri, title, anchor, rel);
     }
 
+    public String getType() {
+        return type;
+    }
+
 }

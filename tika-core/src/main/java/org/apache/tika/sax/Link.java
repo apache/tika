@@ -60,6 +60,9 @@ public class Link {
         return uri;
     }
 
+    public boolean isScript() {
+        return "script".equals(type);
+    }
     public String getTitle() {
         return title;
     }
