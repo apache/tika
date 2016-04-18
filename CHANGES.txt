@@ -1,5 +1,8 @@
 Release 1.13 - ???
 
+  * LinkContentHandler now extracts links from script tags
+    via Joseph Naegele (TIKA-1937).
+
   * Handle per page IOExceptions more robustly in PDFParser (TIKA-1948).
 
   * Upgrade commons-compress to 1.11 (TIKA-1949).
