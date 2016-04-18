@@ -20,7 +20,7 @@ Release 1.13 - ???
 
   * Fix NPE in Open Document parser from Nick C (TIKA-1916).
 
-  * Upgrade mp4parser's isoparser to 1.1.18 (TIKA-1924).
+  * Upgrade mp4parser's isoparser to 1.1.7 (TIKA-1924 and TIKA-1931).
 
   * Upgrade BouncyCastle to 1.54 (TIKA-1923).
 
