@@ -608,7 +608,7 @@ public class PDFParser extends AbstractParser {
             DocumentBuilder documentBuilder = context.getDocumentBuilder();
             documentBuilder.setErrorHandler((ErrorHandler)null);
             return documentBuilder.parse(is);
-        } catch (IOException|SAXException e) {
+        } catch (IOException|SAXException|TikaException e) {
             //swallow
         }
         return null;

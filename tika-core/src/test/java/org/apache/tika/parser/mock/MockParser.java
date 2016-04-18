@@ -21,8 +21,6 @@ package org.apache.tika.parser.mock;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -80,15 +79,12 @@ public class MockParser extends AbstractParser {
                       Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         Document doc = null;
-        DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
-        DocumentBuilder docBuilder = null;
         try {
-            docBuilder = fact.newDocumentBuilder();
+            DocumentBuilder docBuilder = context.getDocumentBuilder();
             doc = docBuilder.parse(stream);
-        } catch (ParserConfigurationException e) {
-            throw new IOException(e);
         } catch (SAXException e) {
-            throw new IOException(e);
+            //to distinguish between SAX on read vs SAX while writing
+            throw new IOExceptionWithCause(e);
         }
         Node root = doc.getDocumentElement();
         NodeList actions = root.getChildNodes();
