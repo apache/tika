@@ -1530,6 +1530,9 @@
       <match value="MSCF\000\000\000\000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.cab"/>
+    <magic priority="50">
+      <match value="MSCF" type="string" offset="0" />
+    </magic>
   </mime-type>
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-excel -->
@@ -3625,8 +3628,10 @@
     <magic priority="50">
       <match value="CDF\001" type="string" offset="0" />
       <match value="CDF\002" type="string" offset="0" />
+      <match value="0x43444601" type="string" offset="0"/>
     </magic>
   </mime-type>
+
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
@@ -4675,6 +4680,9 @@
 
   <mime-type type="image/fits">
     <sub-class-of type="application/fits"/>
+    <magic priority="50">
+      <match value="0x53494D504C4520203D2020" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/g3fax">
@@ -6425,6 +6433,7 @@
       <match value="mdat" type="string" offset="4"/>
       <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
+      <match value="wide" type="string" offset="4"/>
     </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
