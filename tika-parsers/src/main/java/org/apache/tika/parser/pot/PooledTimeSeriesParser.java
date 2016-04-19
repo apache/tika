@@ -150,6 +150,12 @@ public class PooledTimeSeriesParser extends AbstractParser {
           metadata.get("og_frames"), metadata.get("og_vecSize"));
       xhtml.endDocument();
 
+      // Temporary workaround for TIKA-1445 - until we can specify
+      //  composite parsers with strategies (eg Composite, Try In Turn),
+      //  always send the image onwards to the regular parser to have
+      //  the metadata for them extracted as well
+      _TMP_VIDEO_METADATA_PARSER.parse(tikaStream, handler, metadata, context);
+
     } finally {
       tmp.dispose();
       if (output != null) {
@@ -158,6 +164,17 @@ public class PooledTimeSeriesParser extends AbstractParser {
     }
   }
 
+    // TIKA-1445 workaround parser
+    private static Parser _TMP_VIDEO_METADATA_PARSER = new CompositeVideoParser();
+    private static class CompositeVideoParser extends CompositeParser {
+        private static final long serialVersionUID = -2398203965206381382L;
+        private static List<Parser> videoParsers = Arrays.asList(new Parser[]{
+          new MP4Parser()
+        });
+        CompositeVideoParser() {
+            super(new MediaTypeRegistry(), videoParsers);
+        }
+    }
   private String computePoT(File input)
       throws IOException, TikaException {
 
