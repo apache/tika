@@ -85,6 +85,9 @@ public class PooledTimeSeriesParser extends AbstractParser {
    */
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
+    if (!isAvailable()) {
+      return Collections.emptySet();
+    }
     return SUPPORTED_TYPES;
   }
 
