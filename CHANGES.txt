@@ -1,6 +1,9 @@
 Release 1.13 - ???
- 
-  * Improvements to MIME database for detection of Scientific 
+
+  * Fix NPE when trying to get embedded image identifier in
+    WordParser (TIKA-1956).
+
+  * Improvements to MIME database for detection of Scientific
     and other formats present in the TREC-DD-Polar dataset
     (TIKA-1881, GitHub-85, TIKA-1883, TIKA-1884, TIKA-1886,
      TIKA-1882).
