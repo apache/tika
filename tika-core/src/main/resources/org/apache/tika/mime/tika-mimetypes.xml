@@ -3825,6 +3825,12 @@
     <glob pattern="*.sz"/>
   </mime-type>
 
+  <mime-type type="application/x-sfdu">
+    <_comment>Standard Formatted Data Units (SFDUs) data</_comment>
+    <sub-class-of type="text/plain"/>
+    <glob pattern="*.sfdu"/>
+  </mime-type>  
+
   <mime-type type="application/x-sqlite3">
     <magic priority="50">
       <match value="SQLite format 3\x00" type="string" offset="0"/>
