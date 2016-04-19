@@ -10,6 +10,9 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Fix NPE when trying to get embedded image identifier in
+    WordParser (TIKA-1956).
+
   * Handle per page IOExceptions more robustly in PDFParser (TIKA-1948).
 
   * Upgrade commons-compress to 1.11 (TIKA-1949).

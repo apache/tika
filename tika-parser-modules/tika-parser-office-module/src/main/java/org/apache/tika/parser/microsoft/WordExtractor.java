@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -52,8 +54,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
@@ -308,7 +308,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                     // class="embedded" id="_X"/> so consumer can see where
                     // in the main text each embedded document
                     // occurred:
-                    String id = "_" + field.getMarkSeparatorCharacterRun(r).getPicOffset();
+                    String id = "_unknown_id";
+                    //this can return null (TIKA-1956)
+                    CharacterRun mscr = field.getMarkSeparatorCharacterRun(r);
+                    if (mscr != null) {
+                        id = "_" + mscr.getPicOffset();
+                    }
                     AttributesImpl attributes = new AttributesImpl();
                     attributes.addAttribute("", "class", "class", "CDATA", "embedded");
                     attributes.addAttribute("", "id", "id", "CDATA", id);
