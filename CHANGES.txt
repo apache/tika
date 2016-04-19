@@ -1,5 +1,5 @@
 Release 1.13 - ???
-
+ 
   * Improvements to MIME database for detection of Scientific 
     and other formats present in the TREC-DD-Polar dataset
     (TIKA-1881, GitHub-85, TIKA-1883).
