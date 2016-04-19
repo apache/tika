@@ -16,8 +16,10 @@
  */
 package org.apache.tika.parser.chm;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
@@ -27,11 +29,14 @@ import org.apache.tika.parser.chm.accessor.ChmLzxcControlData;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.lzx.ChmLzxState;
+import org.junit.Before;
+import org.junit.Test;
 
-public class TestChmLzxState extends TestCase {
+public class TestChmLzxState {
     private ChmLzxState chmLzxState;
     private int windowSize;
 
+    @Before
     public void setUp() throws Exception {
         byte[] data = TestParameters.chmData;
 
@@ -60,7 +65,7 @@ public class TestChmLzxState extends TestCase {
                 ChmConstants.CONTROL_DATA);
 
         int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes());
+                ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
@@ -78,20 +83,19 @@ public class TestChmLzxState extends TestCase {
         windowSize = (int) clcd.getWindowSize();
     }
 
+    @Test
     public void testChmLzxStateConstructor() throws TikaException {
         chmLzxState = new ChmLzxState(windowSize);
-        Assert.assertNotNull(chmLzxState);
+        assertNotNull(chmLzxState);
     }
 
+    @Test
     public void testToString() throws TikaException {
         if (chmLzxState == null)
             testChmLzxStateConstructor();
-        Assert.assertTrue(chmLzxState.toString().length() > 20);
+        assertTrue(chmLzxState.toString().length() > 20);
     }
 
     // TODO add more tests
-
-    public void tearDown() throws Exception {
-    }
 
 }

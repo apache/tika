@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+        <DIF xmlns="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/ http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/dif_v9.8.4.xsd">
+          <Entry_ID>0091cf0c-7ad3-11e2-851e-00c0f03d5b7c</Entry_ID>
+          <Entry_Title>Active Layer ARCSS grid Barrow, Alaska 2012</Entry_Title>
+
+          <Parameters>
+            <Category>EARTH SCIENCE</Category>
+            <Topic>CRYOSPHERE</Topic>
+            <Term>FROZEN GROUND</Term>
+            <Variable_Level_1>ACTIVE LAYER</Variable_Level_1>
+          </Parameters>
+
+          <Temporal_Coverage>
+            <Start_Date>2012-06-09</Start_Date>
+            <Stop_Date>2012-08-18</Stop_Date>
+          </Temporal_Coverage>
+
+          <Spatial_Coverage>
+            <Southernmost_Latitude>71</Southernmost_Latitude>
+            <Northernmost_Latitude>71.5</Northernmost_Latitude>
+            <Westernmost_Longitude>-156.6</Westernmost_Longitude>
+            <Easternmost_Longitude>-156.5</Easternmost_Longitude>
+          </Spatial_Coverage>
+
+          <Data_Center>
+            <Data_Center_Name>
+              <Short_Name>ACADIS</Short_Name>
+              <Long_Name>Advanced Cooperative Arctic Data and Information Service</Long_Name>
+            </Data_Center_Name>
+            <Data_Center_URL>http://www.aoncadis.org/</Data_Center_URL>
+            <Personnel>
+              <Role>DATA CENTER CONTACT</Role>
+              <First_Name>ACADIS</First_Name>
+              <Last_Name>User Services</Last_Name>
+              <Contact_Address>
+                <Address>NCAR/CISL</Address>
+                <Address>P.O. Box 3000</Address>
+                <City>Boulder</City>
+                <Province_or_State>CO</Province_or_State>
+                <Postal_Code>80307</Postal_Code>
+                <Country>USA</Country>
+              </Contact_Address>
+            </Personnel>
+          </Data_Center>
+
+          <Summary>
+            <Abstract>Active Layer measurements were taken on a 30 plot subset within the Arctic System Science (ARCSS) Grid in Barrow, Alaska. Each measurement was taken on the north eastern-most corner of each plot. The chosen subset was located from D2-D7 and H2-H7. The Systems Ecology Lab (SEL) lab&apos;s Circumpolar Active Layer Monitoring (CALM) depth probe was used. Depth was measured on the probe as the distance from the frozen active layer to the top of the surface of the vegetation. If water was present, then it was measured to the top of the biomass.</Abstract>
+          </Summary>
+
+          <Related_URL>
+            <URL_Content_Type>
+              <Type>GET DATA</Type>
+            </URL_Content_Type>
+            <URL>http://www.aoncadis.org/dataset/id/0091cf0c-7ad3-11e2-851e-00c0f03d5b7c.html</URL>
+            <Description>Data Center top-level access page for this resource</Description>
+          </Related_URL>
+
+          <Metadata_Name>ACADIS IDN DIF</Metadata_Name>
+          <Metadata_Version>9.8.4</Metadata_Version>
+          <Last_DIF_Revision_Date>2015-02-05</Last_DIF_Revision_Date>
+        </DIF>

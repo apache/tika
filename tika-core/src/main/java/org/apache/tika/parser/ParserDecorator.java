@@ -18,19 +18,25 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Decorator base class for the {@link Parser} interface. This class
- * simply delegates all parsing calls to an underlying decorated parser
- * instance. Subclasses can provide extra decoration by overriding the
+ * Decorator base class for the {@link Parser} interface. 
+ * <p>This class simply delegates all parsing calls to an underlying decorated 
+ * parser instance. Subclasses can provide extra decoration by overriding the
  * parse method.
+ * <p>To decorate several different parsers at the same time, wrap them in
+ *  a {@link CompositeParser} instance first.
  */
 public class ParserDecorator extends AbstractParser {
 
@@ -53,6 +59,97 @@ public class ParserDecorator extends AbstractParser {
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 return types;
             }
+            @Override
+            public String getDecorationName() {
+                return "With Types";
+            }            
+        };
+    }
+
+    /**
+     * Decorates the given parser so that it never claims to support
+     * parsing of the given media types, but will work for all others.
+     *
+     * @param parser the parser to be decorated
+     * @param excludeTypes excluded/ignored media types
+     * @return the decorated parser
+     */
+    public static final Parser withoutTypes(
+            Parser parser, final Set<MediaType> excludeTypes) {
+        return new ParserDecorator(parser) {
+            private static final long serialVersionUID = 7979614774021768609L;
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                // Get our own, writable copy of the types the parser supports
+                Set<MediaType> parserTypes = 
+                        new HashSet<MediaType>(super.getSupportedTypes(context));
+                // Remove anything on our excludes list
+                parserTypes.removeAll(excludeTypes);
+                // Return whatever is left
+                return parserTypes;
+            }
+            @Override
+            public String getDecorationName() {
+                return "Without Types";
+            }            
+        };
+    }
+    
+    /**
+     * Decorates the given parsers into a virtual parser, where they'll
+     *  be tried in preference order until one works without error.
+     * TODO Is this the right name?
+     * TODO Is this the right place to put this? Should it be in CompositeParser? Elsewhere?
+     * TODO Should we reset the Metadata if we try another parser?
+     * TODO Should we reset the ContentHandler if we try another parser?
+     * TODO Should we log/report failures anywhere?
+     * @deprecated Do not use until the TODOs are resolved, see TIKA-1509
+     */
+    public static final Parser withFallbacks(
+            final Collection<? extends Parser> parsers, final Set<MediaType> types) {
+        Parser parser = EmptyParser.INSTANCE;
+        if (!parsers.isEmpty()) parser = parsers.iterator().next();
+        
+        return new ParserDecorator(parser) {
+            private static final long serialVersionUID = 1625187131782069683L;
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return types;
+            }
+            @Override
+            public void parse(InputStream stream, ContentHandler handler,
+                    Metadata metadata, ParseContext context)
+                    throws IOException, SAXException, TikaException {
+                // Must have a TikaInputStream, so we can re-use it if parsing fails
+                // Need to close internally created tstream to release resources
+                TemporaryResources tmp = (TikaInputStream.isTikaInputStream(stream)) ? null
+                        : new TemporaryResources();
+                try {
+                    TikaInputStream tstream =
+                            TikaInputStream.get(stream, tmp);
+                    tstream.getFile();
+                    // Try each parser in turn
+                    for (Parser p : parsers) {
+                        tstream.mark(-1);
+                        try {
+                            p.parse(tstream, handler, metadata, context);
+                            return;
+                        } catch (Exception e) {
+                            // TODO How to log / record this failure?
+                        }
+                        // Prepare for the next parser, if present
+                        tstream.reset();
+                    }
+                } finally {
+                    if (tmp != null) {
+                        tmp.dispose();
+                    }
+                }
+            }
+            @Override
+            public String getDecorationName() {
+                return "With Fallback";
+            }            
         };
     }
 
@@ -91,13 +188,18 @@ public class ParserDecorator extends AbstractParser {
         parser.parse(stream, handler, metadata, context);
     }
 
+    /**
+     * @return A name/description of the decoration, or null if none available
+     */
+    public String getDecorationName() {
+        return null;
+    }
 
     /**
      * Gets the parser wrapped by this ParserDecorator
-     * @return
+     * @return the parser wrapped by this ParserDecorator
      */
     public Parser getWrappedParser() {
         return this.parser;
     }
-
 }

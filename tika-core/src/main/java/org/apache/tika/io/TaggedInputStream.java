@@ -77,7 +77,7 @@ public class TaggedInputStream extends ProxyInputStream {
     /**
      * Casts or wraps the given stream to a TaggedInputStream instance.
      *
-     * @param stream normal input stream
+     * @param proxy normal input stream
      * @return a TaggedInputStream instance
      */
     public static TaggedInputStream get(InputStream proxy) {

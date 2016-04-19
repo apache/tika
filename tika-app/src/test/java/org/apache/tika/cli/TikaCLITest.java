@@ -16,32 +16,41 @@
  */
 package org.apache.tika.cli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URI;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
+import org.apache.tika.exception.TikaException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests the Tika's cli
  */
-public class TikaCLITest extends TestCase{
+public class TikaCLITest {
 
     /* Test members */
     private File profile = null;
     private ByteArrayOutputStream outContent = null;
     private PrintStream stdout = null;
-    private URI testDataURI = new File("src/test/resources/test-data/").toURI();
-    private String resorcePrefix = testDataURI.toString();
+    private File testDataFile = new File("src/test/resources/test-data");
+    private URI testDataURI = testDataFile.toURI();
+    private String resourcePrefix;
 
+    @Before
     public void setUp() throws Exception {
         profile = new File("welsh.ngp");
         outContent = new ByteArrayOutputStream();
+        resourcePrefix = testDataURI.toString();
         stdout = System.out;
-        System.setOut(new PrintStream(outContent));
+        System.setOut(new PrintStream(outContent, true, UTF_8.name()));
     }
 
     /**
@@ -49,10 +58,11 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testCreateProfile() throws Exception {
-        String[] params = {"--create-profile=welsh", "-eUTF-8", resorcePrefix + "welsh_corpus.txt"};
+        String[] params = {"--create-profile=welsh", "-eUTF-8", resourcePrefix + "welsh_corpus.txt"};
         TikaCLI.main(params);
-        Assert.assertTrue(profile.exists());
+        assertTrue(profile.exists());
     }
 
     /**
@@ -60,10 +70,11 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testListParserDetail() throws Exception{
         String[] params = {"--list-parser-detail"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("application/vnd.oasis.opendocument.text-web"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("application/vnd.oasis.opendocument.text-web"));
     }
 
     /**
@@ -71,11 +82,12 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testListParsers() throws Exception{
         String[] params = {"--list-parser"};
         TikaCLI.main(params);
         //Assert was commented temporarily for finding the problem
-        //		Assert.assertTrue(outContent != null && outContent.toString().contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
+        //		Assert.assertTrue(outContent != null && outContent.toString("UTF-8").contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
     }
 
     /**
@@ -83,10 +95,17 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testXMLOutput() throws Exception{
-        String[] params = {"-x", resorcePrefix + "alice.cli.test"};
+        String[] params = {"-x", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
+
+        params = new String[]{"-x", "--digest=SHA256", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString(UTF_8.name())
+                .contains("<meta name=\"X-TIKA:digest:SHA256\" content=\"e90779adbac09c4ee"));
+
     }
 
     /**
@@ -94,10 +113,18 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testHTMLOutput() throws Exception{
-        String[] params = {"-h", resorcePrefix + "alice.cli.test"};
+        String[] params = {"-h", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
+        assertTrue(outContent.toString("UTF-8").contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
+        assertTrue("Expanded <title></title> element should be present",
+                outContent.toString(UTF_8.name()).contains("<title></title>"));
+
+        params = new String[]{"-h", "--digest=SHA384", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString("UTF-8")
+                .contains("<meta name=\"X-TIKA:digest:SHA384\" content=\"c69ea023f5da95a026"));
     }
 
     /**
@@ -105,20 +132,73 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testTextOutput() throws Exception{
-        String[] params = {"-t", resorcePrefix + "alice.cli.test"};
+        String[] params = {"-t", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("finished off the cake"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("finished off the cake"));
     }
 
     /**
      * Tests -m option of the cli
      * @throws Exception
      */
+    @Test
     public void testMetadataOutput() throws Exception{
-        String[] params = {"-m", resorcePrefix + "alice.cli.test"};
+        String[] params = {"-m", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("text/plain"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("text/plain"));
+
+        params = new String[]{"-m", "--digest=SHA512", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString(UTF_8.name()).contains("text/plain"));
+        assertTrue(outContent.toString(UTF_8.name())
+                .contains("X-TIKA:digest:SHA512: dd459d99bc19ff78fd31fbae46e0"));
+    }
+
+    /**
+     * Basic tests for -json option
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testJsonMetadataOutput() throws Exception {
+        String[] params = {"--json", "--digest=MD2", resourcePrefix + "testJsonMultipleInts.html"};
+        TikaCLI.main(params);
+        String json = outContent.toString(UTF_8.name());
+        //TIKA-1310
+        assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
+        
+        //test legacy alphabetic sort of keys
+        int enc = json.indexOf("\"Content-Encoding\"");
+        int fb = json.indexOf("fb:admins");
+        int title = json.indexOf("\"title\"");
+        assertTrue(enc > -1 && fb > -1 && enc < fb);
+        assertTrue (fb > -1 && title > -1 && fb < title);
+        assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
+    }
+
+    /**
+     * Test for -json with prettyprint option
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testJsonMetadataPrettyPrintOutput() throws Exception {
+        String[] params = {"--json", "-r", resourcePrefix + "testJsonMultipleInts.html"};
+        TikaCLI.main(params);
+        String json = outContent.toString(UTF_8.name());
+
+        assertTrue(json.contains("  \"X-Parsed-By\": [\n" +
+                "    \"org.apache.tika.parser.DefaultParser\",\n" +
+                "    \"org.apache.tika.parser.html.HtmlParser\"\n" +
+                "  ],\n"));
+        //test legacy alphabetic sort of keys
+        int enc = json.indexOf("\"Content-Encoding\"");
+        int fb = json.indexOf("fb:admins");
+        int title = json.indexOf("\"title\"");
+        assertTrue(enc > -1 && fb > -1 && enc < fb);
+        assertTrue (fb > -1 && title > -1 && fb < title);
     }
 
     /**
@@ -126,10 +206,11 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testLanguageOutput() throws Exception{
-        String[] params = {"-l", resorcePrefix + "alice.cli.test"};
+        String[] params = {"-l", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("en"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("en"));
     }
 
     /**
@@ -137,10 +218,11 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testDetectOutput() throws Exception{
-        String[] params = {"-d", resorcePrefix + "alice.cli.test"};
+        String[] params = {"-d", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("text/plain"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("text/plain"));
     }
 
     /**
@@ -148,10 +230,11 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testListMetModels() throws Exception{
-        String[] params = {"--list-met-models", resorcePrefix + "alice.cli.test"};
+        String[] params = {"--list-met-models", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("text/plain"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("text/plain"));
     }
 
     /**
@@ -159,21 +242,24 @@ public class TikaCLITest extends TestCase{
      * 
      * @throws Exception
      */
+    @Test
     public void testListSupportedTypes() throws Exception{
-        String[] params = {"--list-supported-types", resorcePrefix + "alice.cli.test"};
+        String[] params = {"--list-supported-types", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        Assert.assertTrue(outContent.toString().contains("supertype: application/octet-stream"));
+        assertTrue(outContent.toString(UTF_8.name()).contains("supertype: application/octet-stream"));
     }
 
     /**
      * Tears down the test. Returns the System.out
      */
+    @After
     public void tearDown() throws Exception {
         if(profile != null && profile.exists())
             profile.delete();
         System.setOut(stdout);
     }
 
+    @Test
     public void testExtract() throws Exception {
         File tempFile = File.createTempFile("tika-test-", "");
         tempFile.delete();
@@ -181,27 +267,191 @@ public class TikaCLITest extends TestCase{
                           // google guava library has better solution
 
         try {
-            String[] params = {"--extract-dir="+tempFile.getAbsolutePath(),"-z", resorcePrefix + "/coffee.xls"};
+            String[] params = {"--extract-dir="+tempFile.getAbsolutePath(),"-z", resourcePrefix + "/coffee.xls"};
             
             TikaCLI.main(params);
             
+            StringBuffer allFiles = new StringBuffer();
+            for (String f : tempFile.list()) {
+                if (allFiles.length() > 0) allFiles.append(" : ");
+                allFiles.append(f);
+            }
+            
             // ChemDraw file
-            File expected1 = new File(tempFile, "MBD002B040A.cdx");
+            File expectedCDX = new File(tempFile, "MBD002B040A.cdx");
+            // Image of the ChemDraw molecule
+            File expectedIMG = new File(tempFile, "file4.png");
             // OLE10Native
-            File expected2 = new File(tempFile, "file5");
+            File expectedOLE10 = new File(tempFile, "MBD002B0FA6_file5.bin");
+            // Something that really isnt a text file... Not sure what it is???
+            File expected262FE3 = new File(tempFile, "MBD00262FE3.txt");
             // Image of one of the embedded resources
-            File expected3 = new File(tempFile, "file0.emf");
+            File expectedEMF = new File(tempFile, "file0.emf");
             
-            assertTrue(expected1.exists());
-            assertTrue(expected2.exists());
-            assertTrue(expected3.exists());
-            
-            assertTrue(expected1.length()>0);
-            assertTrue(expected2.length()>0);
-            assertTrue(expected3.length()>0);
+            assertExtracted(expectedCDX, allFiles.toString());
+            assertExtracted(expectedIMG, allFiles.toString());
+            assertExtracted(expectedOLE10, allFiles.toString());
+            assertExtracted(expected262FE3, allFiles.toString());
+            assertExtracted(expectedEMF, allFiles.toString());
         } finally {
             FileUtils.deleteDirectory(tempFile);
         }
-
     }
+    protected static void assertExtracted(File f, String allFiles) {
+
+        assertTrue(
+                "File " + f.getName() + " not found in " + allFiles,
+                f.exists()
+        );
+
+        assertFalse(
+                "File " + f.getName() + " is a directory!", f.isDirectory()
+        );
+
+        assertTrue(
+                "File " + f.getName() + " wasn't extracted with contents",
+                f.length() > 0
+        );
+    }
+
+    // TIKA-920
+    @Test
+    public void testMultiValuedMetadata() throws Exception {
+        String[] params = {"-m", resourcePrefix + "testMultipleSheets.numbers"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("sheetNames: Checking"));
+        assertTrue(content.contains("sheetNames: Secon sheet"));
+        assertTrue(content.contains("sheetNames: Logical Sheet 3"));
+        assertTrue(content.contains("sheetNames: Sheet 4"));
+    }
+
+    // TIKA-1031
+    @Test
+    public void testZipWithSubdirs() throws Exception {
+        String[] params = {"-z", "--extract-dir=target", resourcePrefix + "testWithSubdirs.zip"};
+        new File("subdir/foo.txt").delete();
+        new File("subdir").delete();
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
+        // clean up. TODO: These should be in target.
+        new File("target/subdir/foo.txt").delete();
+        new File("target/subdir").delete();
+    }
+
+    @Test
+    public void testDefaultConfigException() throws Exception {
+        //default xml parser will throw TikaException
+        //this and TestConfig() are broken into separate tests so that
+        //setUp and tearDown() are called each time
+        String[] params = {resourcePrefix + "bad_xml.xml"};
+        boolean tikaEx = false;
+        try {
+            TikaCLI.main(params);
+        } catch (TikaException e) {
+            tikaEx = true;
+        }
+        assertTrue(tikaEx);
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        String[] params = new String[]{"--config="+testDataFile.toString()+"/tika-config1.xml", resourcePrefix+"bad_xml.xml"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("apple"));
+        assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
+    }
+
+    @Test
+    public void testJsonRecursiveMetadataParserMetadataOnly() throws Exception {
+        String[] params = new String[]{"-m", "-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("[\n" +
+                "  {\n" +
+                "    \"Application-Name\": \"Microsoft Office Word\",\n" +
+                "    \"Application-Version\": \"15.0000\",\n" +
+                "    \"Character Count\": \"28\",\n" +
+                "    \"Character-Count-With-Spaces\": \"31\","));
+        assertTrue(content.contains("\"X-TIKA:embedded_resource_path\": \"/embed1.zip\""));
+        assertFalse(content.contains("X-TIKA:content"));
+    }
+
+    @Test
+    public void testJsonRecursiveMetadataParserDefault() throws Exception {
+        String[] params = new String[]{"-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("\"X-TIKA:content\": \"\\u003chtml xmlns\\u003d\\\"http://www.w3.org/1999/xhtml"));
+    }
+
+    @Test
+    public void testJsonRecursiveMetadataParserText() throws Exception {
+        String[] params = new String[]{"-J", "-r", "-t", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("\\n\\nembed_4\\n"));
+        assertTrue(content.contains("\\n\\nembed_0"));
+    }
+
+    @Test
+    public void testDigestInJson() throws Exception {
+        String[] params = new String[]{"-J", "-r", "-t", "--digest=MD5", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"59f626e09a8c16ab6dbc2800c685f772\","));
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"f9627095ef86c482e61d99f0cc1cf87d\""));
+    }
+
+    @Test
+    public void testConfigSerializationStaticAndCurrent() throws Exception {
+        String[] params = new String[]{"--dump-static-config"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        //make sure at least one detector is there
+        assertTrue(content.contains("<detector class=\"org.apache.tika.parser.microsoft.POIFSContainerDetector\"/>"));
+        //make sure Executable is there because follow on tests of custom config
+        //test that it has been turned off.
+        assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
+
+        params = new String[]{"--dump-current-config"};
+        TikaCLI.main(params);
+        content = outContent.toString(UTF_8.name());
+        //make sure at least one detector is there
+        assertTrue(content.contains("<detector class=\"org.apache.tika.parser.microsoft.POIFSContainerDetector\"/>"));
+        //and at least one parser
+        assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
+    }
+
+    @Test
+    public void testConfigSerializationCustomMinimal() throws Exception {
+        String[] params = new String[]{
+                "--config=" + testDataFile.toString() + "/tika-config2.xml",
+                "--dump-minimal-config"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name()).replaceAll("[\r\n\t ]+", " ");
+
+        String expected =
+                "<parser class=\"org.apache.tika.parser.DefaultParser\">" +
+                        " <mime-exclude>application/pdf</mime-exclude>" +
+                        " <mime-exclude>image/jpeg</mime-exclude> " +
+                        "</parser> " +
+                        "<parser class=\"org.apache.tika.parser.EmptyParser\">" +
+                        " <mime>application/pdf</mime> " +
+                        "</parser>";
+        assertTrue(content.contains(expected));
+    }
+
+    @Test
+    public void testConfigSerializationCustomStatic() throws Exception {
+        String[] params = new String[]{
+                "--config=" + testDataFile.toString() + "/tika-config2.xml", "--dump-static-config"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertFalse(content.contains("org.apache.tika.parser.executable.Executable"));
+    }
+
+
 }

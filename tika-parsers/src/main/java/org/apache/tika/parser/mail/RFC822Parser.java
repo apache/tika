@@ -25,7 +25,7 @@ import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TaggedInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -37,15 +37,16 @@ import org.xml.sax.SAXException;
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
- * <p>
+ * <p/>
  * A {@link MimeEntityConfig} object can be passed in the parsing context
  * to better control the parsing process.
  *
  * @author jnioche@digitalpebble.com
  */
 public class RFC822Parser extends AbstractParser {
-
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -5504243905998074168L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
@@ -56,7 +57,7 @@ public class RFC822Parser extends AbstractParser {
     }
 
     public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
+                      Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         // Get the mime4j configuration, or use a default one
         MimeConfig config = new MimeConfig();
@@ -71,11 +72,12 @@ public class RFC822Parser extends AbstractParser {
                 xhtml, metadata, context, config.isStrictParsing());
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
-        TaggedInputStream tagged = TaggedInputStream.get(stream);
+        
+        TikaInputStream tstream = TikaInputStream.get(stream);
         try {
-            parser.parse(tagged);
+            parser.parse(tstream);
         } catch (IOException e) {
-            tagged.throwIfCauseOf(e);
+            tstream.throwIfCauseOf(e);
             throw new TikaException("Failed to parse an email message", e);
         } catch (MimeException e) {
             // Unwrap the exception in case it was not thrown by mime4j

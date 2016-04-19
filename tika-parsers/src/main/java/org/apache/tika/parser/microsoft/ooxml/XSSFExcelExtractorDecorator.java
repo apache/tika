@@ -16,15 +16,12 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import javax.xml.parsers.SAXParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -46,6 +43,8 @@ import org.apache.poi.xssf.model.CommentsTable;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
+import org.apache.poi.xssf.usermodel.XSSFShape;
+import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
 import org.apache.poi.xssf.usermodel.helpers.HeaderFooterHelper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -61,24 +60,42 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
+    /**
+     * Allows access to headers/footers from raw xml strings
+     */
+    private static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
     private final XSSFEventBasedExcelExtractor extractor;
     private final DataFormatter formatter;
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
-    private final List<Boolean> sheetProtected = new ArrayList<Boolean>();
-    
+    private Metadata metadata;
+    private ParseContext parseContext;
+
     public XSSFExcelExtractorDecorator(
             ParseContext context, XSSFEventBasedExcelExtractor extractor, Locale locale) {
         super(context, extractor);
 
+        this.parseContext = context;
         this.extractor = extractor;
         extractor.setFormulasNotResults(false);
         extractor.setLocale(locale);
-        
-        if(locale == null) {
-           formatter = new DataFormatter();
-        } else  {
-           formatter = new DataFormatter(locale);
+
+        if (locale == null) {
+            formatter = new DataFormatter();
+        } else {
+            formatter = new DataFormatter(locale);
         }
+    }
+
+    @Override
+    public void getXHTML(
+            ContentHandler handler, Metadata metadata, ParseContext context)
+            throws SAXException, XmlException, IOException, TikaException {
+
+        this.metadata = metadata;
+        this.parseContext = context;
+        metadata.set(TikaMetadataKeys.PROTECTED, "false");
+
+        super.getXHTML(handler, metadata, context);
     }
 
     /**
@@ -87,278 +104,292 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException,
             XmlException, IOException {
-       OPCPackage container = extractor.getPackage();
-       
-       ReadOnlySharedStringsTable strings;
-       XSSFReader.SheetIterator iter;
-       XSSFReader xssfReader;
-       StylesTable styles;
-       try {
-          xssfReader = new XSSFReader(container);
-          styles = xssfReader.getStylesTable();
-          iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-          strings = new ReadOnlySharedStringsTable(container);
-       } catch(InvalidFormatException e) {
-          throw new XmlException(e);
-       } catch (OpenXML4JException oe) {
-          throw new XmlException(oe);
-       }
+        OPCPackage container = extractor.getPackage();
 
-       while (iter.hasNext()) {
-           InputStream stream = iter.next();
-           sheetParts.add(iter.getSheetPart());
-           SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml, iter.getSheetComments());
+        ReadOnlySharedStringsTable strings;
+        XSSFReader.SheetIterator iter;
+        XSSFReader xssfReader;
+        StylesTable styles;
+        try {
+            xssfReader = new XSSFReader(container);
+            styles = xssfReader.getStylesTable();
+            iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
+            strings = new ReadOnlySharedStringsTable(container);
+        } catch (InvalidFormatException e) {
+            throw new XmlException(e);
+        } catch (OpenXML4JException oe) {
+            throw new XmlException(oe);
+        }
 
-           // Start, and output the sheet name
-           xhtml.startElement("div");
-           xhtml.element("h1", iter.getSheetName());
-           
-           // Extract the main sheet contents
-           xhtml.startElement("table");
-           xhtml.startElement("tbody");
-           
-           processSheet(sheetExtractor, styles, strings, stream);
+        while (iter.hasNext()) {
+            InputStream stream = iter.next();
+            sheetParts.add(iter.getSheetPart());
 
-           xhtml.endElement("tbody");
-           xhtml.endElement("table");
-           
-           // Output any headers and footers
-           // (Need to process the sheet to get them, so we can't
-           //  do the headers before the contents)
-           for(String header : sheetExtractor.headers) {
-              extractHeaderFooter(header, xhtml);
-           }
-           for(String footer : sheetExtractor.footers) {
-              extractHeaderFooter(footer, xhtml);
-           }
-           
-           // All done with this sheet
-           xhtml.endElement("div");
-       }
+            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
+            CommentsTable comments = iter.getSheetComments();
+
+            // Start, and output the sheet name
+            xhtml.startElement("div");
+            xhtml.element("h1", iter.getSheetName());
+
+            // Extract the main sheet contents
+            xhtml.startElement("table");
+            xhtml.startElement("tbody");
+
+            processSheet(sheetExtractor, comments, styles, strings, stream);
+
+            xhtml.endElement("tbody");
+            xhtml.endElement("table");
+
+            // Output any headers and footers
+            // (Need to process the sheet to get them, so we can't
+            //  do the headers before the contents)
+            for (String header : sheetExtractor.headers) {
+                extractHeaderFooter(header, xhtml);
+            }
+            for (String footer : sheetExtractor.footers) {
+                extractHeaderFooter(footer, xhtml);
+            }
+            processShapes(iter.getShapes(), xhtml);
+            // All done with this sheet
+            xhtml.endElement("div");
+        }
     }
 
     private void extractHeaderFooter(String hf, XHTMLContentHandler xhtml)
             throws SAXException {
         String content = ExcelExtractor._extractHeaderFooter(
-              new HeaderFooterFromString(hf));
+                new HeaderFooterFromString(hf));
         if (content.length() > 0) {
             xhtml.element("p", content);
         }
     }
-    
-    public void processSheet(
-          SheetContentsHandler sheetContentsExtractor,
-          StylesTable styles,
-          ReadOnlySharedStringsTable strings,
-          InputStream sheetInputStream)
-          throws IOException, SAXException {
-      InputSource sheetSource = new InputSource(sheetInputStream);
-      SAXParserFactory saxFactory = SAXParserFactory.newInstance();
-      try {
-         SAXParser saxParser = saxFactory.newSAXParser();
-         XMLReader sheetParser = saxParser.getXMLReader();
-         XSSFSheetInterestingPartsCapturer handler =  
-            new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
-               styles, strings, sheetContentsExtractor, formatter, false));
-         sheetParser.setContentHandler(handler);
-         sheetParser.parse(sheetSource);
-         sheetInputStream.close();
-         
-         sheetProtected.add(handler.hasProtection);
-      } catch(ParserConfigurationException e) {
-         throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
-      }
+
+    private void processShapes(List<XSSFShape> shapes, XHTMLContentHandler xhtml) throws SAXException {
+        if (shapes == null) {
+            return;
+        }
+        for (XSSFShape shape : shapes) {
+            if (shape instanceof XSSFSimpleShape) {
+                String sText = ((XSSFSimpleShape) shape).getText();
+                if (sText != null && sText.length() > 0) {
+                    xhtml.element("p", sText);
+                }
+            }
+        }
     }
-     
+
+    public void processSheet(
+            SheetContentsHandler sheetContentsExtractor,
+            CommentsTable comments,
+            StylesTable styles,
+            ReadOnlySharedStringsTable strings,
+            InputStream sheetInputStream)
+            throws IOException, SAXException {
+        InputSource sheetSource = new InputSource(sheetInputStream);
+        try {
+            SAXParser saxParser = parseContext.getSAXParser();
+            XMLReader sheetParser = saxParser.getXMLReader();
+            XSSFSheetInterestingPartsCapturer handler =
+                    new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
+                            styles, comments, strings, sheetContentsExtractor, formatter, false));
+            sheetParser.setContentHandler(handler);
+            sheetParser.parse(sheetSource);
+            sheetInputStream.close();
+
+            if (handler.hasProtection) {
+                metadata.set(TikaMetadataKeys.PROTECTED, "true");
+            }
+        } catch (TikaException e) {
+            throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
+        }
+    }
+
+    /**
+     * In Excel files, sheets have things embedded in them,
+     * and sheet drawings which have the images
+     */
+    @Override
+    protected List<PackagePart> getMainDocumentParts() throws TikaException {
+        List<PackagePart> parts = new ArrayList<PackagePart>();
+        for (PackagePart part : sheetParts) {
+            // Add the sheet
+            parts.add(part);
+
+            // If it has drawings, return those too
+            try {
+                for (PackageRelationship rel : part.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
+                    if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                        PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                        parts.add(rel.getPackage().getPart(relName));
+                    }
+                }
+                for (PackageRelationship rel : part.getRelationshipsByType(XSSFRelation.VML_DRAWINGS.getRelation())) {
+                    if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                        PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                        parts.add(rel.getPackage().getPart(relName));
+                    }
+                }
+            } catch (InvalidFormatException e) {
+                throw new TikaException("Broken OOXML file", e);
+            }
+        }
+
+        return parts;
+    }
+
     /**
      * Turns formatted sheet events into HTML
      */
     protected static class SheetTextAsHTML implements SheetContentsHandler {
-       private XHTMLContentHandler xhtml;
-       private CommentsTable comments;
-       private List<String> headers;
-       private List<String> footers;
-       
-       protected SheetTextAsHTML(XHTMLContentHandler xhtml, CommentsTable comments) {
-          this.xhtml = xhtml;
-          this.comments = comments;
-          headers = new ArrayList<String>();
-          footers = new ArrayList<String>();
-       }
-       
-       public void startRow(int rowNum) {
-          try {
-             xhtml.startElement("tr");
-          } catch(SAXException e) {}
-       }
-       
-       public void endRow() {
-          try {
-             xhtml.endElement("tr");
-          } catch(SAXException e) {}
-       }
+        private XHTMLContentHandler xhtml;
+        private List<String> headers;
+        private List<String> footers;
 
-       public void cell(String cellRef, String formattedValue) {
-          try {
-             xhtml.startElement("td");
+        protected SheetTextAsHTML(XHTMLContentHandler xhtml) {
+            this.xhtml = xhtml;
+            headers = new ArrayList<String>();
+            footers = new ArrayList<String>();
+        }
 
-             // Main cell contents
-             xhtml.characters(formattedValue);
+        public void startRow(int rowNum) {
+            try {
+                xhtml.startElement("tr");
+            } catch (SAXException e) {
+            }
+        }
 
-             // Comments
-             if(comments != null) {
-                XSSFComment comment = comments.findCellComment(cellRef);
-                if(comment != null) {
-                   xhtml.startElement("br");
-                   xhtml.endElement("br");
-                   xhtml.characters(comment.getAuthor());
-                   xhtml.characters(": ");
-                   xhtml.characters(comment.getString().getString());
+        public void endRow(int rowNum) {
+            try {
+                xhtml.endElement("tr");
+            } catch (SAXException e) {
+            }
+        }
+
+        public void cell(String cellRef, String formattedValue, XSSFComment comment) {
+            try {
+                xhtml.startElement("td");
+
+                // Main cell contents
+                if (formattedValue != null) {
+                    xhtml.characters(formattedValue);
                 }
-             }
 
-             xhtml.endElement("td");
-          } catch(SAXException e) {}
-       }
-       
-       public void headerFooter(String text, boolean isHeader, String tagName) {
-          if(isHeader) {
-             headers.add(text);
-          } else {
-             footers.add(text);
-          }
-       }
+                // Comments
+                if (comment != null) {
+                    xhtml.startElement("br");
+                    xhtml.endElement("br");
+                    xhtml.characters(comment.getAuthor());
+                    xhtml.characters(": ");
+                    xhtml.characters(comment.getString().getString());
+                }
+
+                xhtml.endElement("td");
+            } catch (SAXException e) {
+            }
+        }
+
+        public void headerFooter(String text, boolean isHeader, String tagName) {
+            if (isHeader) {
+                headers.add(text);
+            } else {
+                footers.add(text);
+            }
+        }
     }
-    
-    /**
-     * Allows access to headers/footers from raw xml strings
-     */
-    private static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
+
     protected static class HeaderFooterFromString implements HeaderFooter {
-      private String text;
-      protected HeaderFooterFromString(String text) {
-         this.text = text;
-      }
+        private String text;
 
-      public String getCenter() {
-         return hfHelper.getCenterSection(text);
-      }
-      public String getLeft() {
-         return hfHelper.getLeftSection(text);
-      }
-      public String getRight() {
-         return hfHelper.getRightSection(text);
-      }
+        protected HeaderFooterFromString(String text) {
+            this.text = text;
+        }
 
-      public void setCenter(String paramString) {}
-      public void setLeft(String paramString) {}
-      public void setRight(String paramString) {}
+        public String getCenter() {
+            return hfHelper.getCenterSection(text);
+        }
+
+        public void setCenter(String paramString) {
+        }
+
+        public String getLeft() {
+            return hfHelper.getLeftSection(text);
+        }
+
+        public void setLeft(String paramString) {
+        }
+
+        public String getRight() {
+            return hfHelper.getRightSection(text);
+        }
+
+        public void setRight(String paramString) {
+        }
     }
-    
+
     /**
      * Captures information on interesting tags, whilst
-     *  delegating the main work to the formatting handler
+     * delegating the main work to the formatting handler
      */
     protected static class XSSFSheetInterestingPartsCapturer implements ContentHandler {
-      private ContentHandler delegate;
-      private boolean hasProtection = false;
-      
-      protected XSSFSheetInterestingPartsCapturer(ContentHandler delegate) {
-         this.delegate = delegate;
-      }
-      
-      public void startElement(String uri, String localName, String qName,
-            Attributes atts) throws SAXException {
-         if("sheetProtection".equals(qName)) {
-            hasProtection = true;
-         }
-         delegate.startElement(uri, localName, qName, atts);
-      }
+        private ContentHandler delegate;
+        private boolean hasProtection = false;
 
-      public void characters(char[] ch, int start, int length)
-            throws SAXException {
-         delegate.characters(ch, start, length);
-      }
-      public void endDocument() throws SAXException {
-         delegate.endDocument();
-      }
-      public void endElement(String uri, String localName, String qName)
-            throws SAXException {
-         delegate.endElement(uri, localName, qName);
-      }
-      public void endPrefixMapping(String prefix) throws SAXException {
-         delegate.endPrefixMapping(prefix);
-      }
-      public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
-         delegate.ignorableWhitespace(ch, start, length);
-      }
-      public void processingInstruction(String target, String data)
-            throws SAXException {
-         delegate.processingInstruction(target, data);
-      }
-      public void setDocumentLocator(Locator locator) {
-         delegate.setDocumentLocator(locator);
-      }
-      public void skippedEntity(String name) throws SAXException {
-         delegate.skippedEntity(name);
-      }
-      public void startDocument() throws SAXException {
-         delegate.startDocument();
-      }
-      public void startPrefixMapping(String prefix, String uri)
-            throws SAXException {
-         delegate.startPrefixMapping(prefix, uri);
-      }
-    }
-    
-    /**
-     * In Excel files, sheets have things embedded in them,
-     *  and sheet drawings which have the images
-     */
-    @Override
-    protected List<PackagePart> getMainDocumentParts() throws TikaException {
-       List<PackagePart> parts = new ArrayList<PackagePart>();
-       for(PackagePart part : sheetParts) {
-          // Add the sheet
-          parts.add(part);
-          
-          // If it has drawings, return those too
-          try {
-             for(PackageRelationship rel : part.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
-                if(rel.getTargetMode() == TargetMode.INTERNAL) {
-                   PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                   parts.add( rel.getPackage().getPart(relName) );
-                }
-             }
-             for(PackageRelationship rel : part.getRelationshipsByType(XSSFRelation.VML_DRAWINGS.getRelation())) {
-                if(rel.getTargetMode() == TargetMode.INTERNAL) {
-                   PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                   parts.add( rel.getPackage().getPart(relName) );
-                }
-             }
-          } catch(InvalidFormatException e) {
-             throw new TikaException("Broken OOXML file", e);
-          }
-       }
+        protected XSSFSheetInterestingPartsCapturer(ContentHandler delegate) {
+            this.delegate = delegate;
+        }
 
-       return parts;
-    }
-
-    @Override
-    public MetadataExtractor getMetadataExtractor() {
-        return new MetadataExtractor(extractor) {
-            @Override
-            public void extract(Metadata metadata) throws TikaException {
-                super.extract(metadata);
-
-                metadata.set(TikaMetadataKeys.PROTECTED, "false");
-                for(boolean prot : sheetProtected) {
-                   if(prot) {
-                      metadata.set(TikaMetadataKeys.PROTECTED, "true");
-                   }
-                }
+        public void startElement(String uri, String localName, String qName,
+                                 Attributes atts) throws SAXException {
+            if ("sheetProtection".equals(qName)) {
+                hasProtection = true;
             }
-        };
+            delegate.startElement(uri, localName, qName, atts);
+        }
+
+        public void characters(char[] ch, int start, int length)
+                throws SAXException {
+            delegate.characters(ch, start, length);
+        }
+
+        public void endDocument() throws SAXException {
+            delegate.endDocument();
+        }
+
+        public void endElement(String uri, String localName, String qName)
+                throws SAXException {
+            delegate.endElement(uri, localName, qName);
+        }
+
+        public void endPrefixMapping(String prefix) throws SAXException {
+            delegate.endPrefixMapping(prefix);
+        }
+
+        public void ignorableWhitespace(char[] ch, int start, int length)
+                throws SAXException {
+            delegate.ignorableWhitespace(ch, start, length);
+        }
+
+        public void processingInstruction(String target, String data)
+                throws SAXException {
+            delegate.processingInstruction(target, data);
+        }
+
+        public void setDocumentLocator(Locator locator) {
+            delegate.setDocumentLocator(locator);
+        }
+
+        public void skippedEntity(String name) throws SAXException {
+            delegate.skippedEntity(name);
+        }
+
+        public void startDocument() throws SAXException {
+            delegate.startDocument();
+        }
+
+        public void startPrefixMapping(String prefix, String uri)
+                throws SAXException {
+            delegate.startPrefixMapping(prefix, uri);
+        }
     }
 }

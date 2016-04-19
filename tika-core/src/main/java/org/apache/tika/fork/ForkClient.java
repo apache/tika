@@ -16,6 +16,8 @@
  */
 package org.apache.tika.fork;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -24,14 +26,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
@@ -51,7 +51,7 @@ class ForkClient {
 
     private final InputStream error;
 
-    public ForkClient(ClassLoader loader, Object object, String java)
+    public ForkClient(ClassLoader loader, Object object, List<String> java)
             throws IOException, TikaException {
         boolean ok = false;
         try {
@@ -60,7 +60,7 @@ class ForkClient {
 
             ProcessBuilder builder = new ProcessBuilder();
             List<String> command = new ArrayList<String>();
-            command.addAll(Arrays.asList(java.split("\\s+")));
+            command.addAll(java);
             command.add("-jar");
             command.add(jar.getPath());
             builder.command(command);
@@ -174,6 +174,12 @@ class ForkClient {
         }
         if (process != null) {
             process.destroy();
+            try {
+                //TIKA-1933
+                process.waitFor();
+            } catch (InterruptedException e) {
+
+            }
         }
         if (jar != null) {
             jar.delete();
@@ -199,7 +205,7 @@ class ForkClient {
                     return (Throwable) ForkObjectInputStream.readObject(
                             input, loader);
                 } catch (ClassNotFoundException e) {
-                    throw new IOExceptionWithCause(
+                    throw new IOException(
                             "Unable to deserialize an exception", e);
                 }
             } else {
@@ -258,12 +264,12 @@ class ForkClient {
      * @throws IOException if the bootstrap archive could not be created
      */
     private static void fillBootstrapJar(File file) throws IOException {
-        JarOutputStream jar = new JarOutputStream(new FileOutputStream(file));
-        try {
+        try (JarOutputStream jar =
+                new JarOutputStream(new FileOutputStream(file))) {
             String manifest =
-                "Main-Class: " + ForkServer.class.getName() + "\n";
+                    "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
-            jar.write(manifest.getBytes("UTF-8"));
+            jar.write(manifest.getBytes(UTF_8));
 
             Class<?>[] bootstrap = {
                     ForkServer.class, ForkObjectInputStream.class,
@@ -276,16 +282,11 @@ class ForkClient {
             ClassLoader loader = ForkServer.class.getClassLoader();
             for (Class<?> klass : bootstrap) {
                 String path = klass.getName().replace('.', '/') + ".class";
-                InputStream input = loader.getResourceAsStream(path);
-                try {
+                try (InputStream input = loader.getResourceAsStream(path)) {
                     jar.putNextEntry(new JarEntry(path));
                     IOUtils.copy(input, jar);
-                } finally {
-                    input.close();
                 }
             }
-        } finally {
-            jar.close();
         }
     }
 

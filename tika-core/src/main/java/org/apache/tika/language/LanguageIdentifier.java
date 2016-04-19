@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Identifier of the language that best matches a given content profile.
  * The content profile is compared to generic language profiles based on
@@ -44,7 +46,6 @@ public class LanguageIdentifier {
     private static final Map<String, LanguageProfile> PROFILES =
         new HashMap<String, LanguageProfile>();
     private static final String PROFILE_SUFFIX = ".ngp";
-    private static final String PROFILE_ENCODING = "UTF-8";
 
     private static Properties props = new Properties();
     private static String errors = "";
@@ -72,11 +73,11 @@ public class LanguageIdentifier {
         try {
             LanguageProfile profile = new LanguageProfile();
 
-            InputStream stream =
-                LanguageIdentifier.class.getResourceAsStream(language + PROFILE_SUFFIX);
-            try {
+            try (InputStream stream =
+                    LanguageIdentifier.class.getResourceAsStream(
+                            language + PROFILE_SUFFIX)) {
                 BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(stream, PROFILE_ENCODING));
+                    new BufferedReader(new InputStreamReader(stream, UTF_8));
                 String line = reader.readLine();
                 while (line != null) {
                     if (line.length() > 0 && !line.startsWith("#")) {
@@ -87,8 +88,6 @@ public class LanguageIdentifier {
                     }
                     line = reader.readLine();
                 }
-            } finally {
-                stream.close();
             }
 
             addProfile(language, profile);

@@ -16,13 +16,14 @@
  */
 package org.apache.tika.sax;
 
-import junit.framework.TestCase;
-
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.AttributesImpl;
 
-public class SerializerTest extends TestCase {
+public class SerializerTest {
 
+    @Test
     public void testToTextContentHandler() throws Exception {
         assertStartDocument("", new ToTextContentHandler());
         assertCharacters("content", new ToTextContentHandler());
@@ -35,6 +36,7 @@ public class SerializerTest extends TestCase {
         assertElementWithAttributes("content", new ToTextContentHandler());
     }
 
+    @Test
     public void testToXMLContentHandler() throws Exception {
         assertStartDocument("", new ToXMLContentHandler());
         assertStartDocument(
@@ -56,6 +58,7 @@ public class SerializerTest extends TestCase {
                 new ToXMLContentHandler());
     }
 
+    @Test
     public void testToHTMLContentHandler() throws Exception {
         assertStartDocument("", new ToHTMLContentHandler());
         assertCharacters("content", new ToHTMLContentHandler());

@@ -23,6 +23,8 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * The Header 0000: char[4] 'ITSF' 0004: DWORD 3 (Version number) 0008: DWORD
  * Total header length, including header section table and following data. 000C:
@@ -42,7 +44,7 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
 /* structure of ITSF headers */
 public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
     private static final long serialVersionUID = 2215291838533213826L;
-    private byte[] signature = new String("ITSF").getBytes(); /* 0 (ITSF) */
+    private byte[] signature;
     private int version; /* 4 */
     private int header_len; /* 8 */
     private int unknown_000c; /* c */
@@ -60,12 +62,16 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
     private int dataRemained;
     private int currentPlace = 0;
 
+    public ChmItsfHeader() {
+        signature = ChmConstants.ITSF.getBytes(UTF_8); /* 0 (ITSF) */
+    }
+
     /**
      * Prints the values of ChmfHeader
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(new String(getSignature()) + " ");
+        sb.append(new String(getSignature(), UTF_8) + " ");
         sb.append(getVersion() + " ");
         sb.append(getHeaderLen() + " ");
         sb.append(getUnknown_000c() + " ");
@@ -376,10 +382,10 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
 
         if (4 > this.getDataRemained())
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -458,8 +464,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         chmItsfHeader.setUnknownLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
         chmItsfHeader.setDirOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
         chmItsfHeader.setDirLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirLen()));
-
-        if (!new String(chmItsfHeader.getSignature()).equals(ChmConstants.ITSF))
+        if (!new String(chmItsfHeader.getSignature(), UTF_8).equals(ChmConstants.ITSF))
             throw new TikaException("seems not valid file");
         if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_2) {
             if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V2_LEN)

@@ -16,8 +16,6 @@
  */
 package org.apache.tika.xmp;
 
-import static org.junit.Assert.*;
-
 import java.util.Date;
 import java.util.Properties;
 
@@ -36,6 +34,12 @@ import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;
 import com.adobe.xmp.XMPUtils;
 import com.adobe.xmp.properties.XMPProperty;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class XMPMetadataTest {
     private Metadata tikaMetadata;

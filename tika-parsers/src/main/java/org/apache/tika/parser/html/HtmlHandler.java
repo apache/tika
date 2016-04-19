@@ -39,21 +39,17 @@ class HtmlHandler extends TextContentHandler {
 
     // List of attributes that need to be resolved.
     private static final Set<String> URI_ATTRIBUTES =
-        new HashSet<String>(Arrays.asList("src", "href", "longdesc", "cite"));
-
+            new HashSet<String>(Arrays.asList("src", "href", "longdesc", "cite"));
+    private static final Pattern ICBM =
+            Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
     private final HtmlMapper mapper;
-
     private final XHTMLContentHandler xhtml;
-
     private final Metadata metadata;
-
-    private int bodyLevel = 0;
-
-    private int discardLevel = 0;
-
-    private int titleLevel = 0;
-
     private final StringBuilder title = new StringBuilder();
+    private int bodyLevel = 0;
+    private int discardLevel = 0;
+    private int titleLevel = 0;
+    private boolean isTitleSetToMetadata = false;
 
     private HtmlHandler(
             HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata) {
@@ -110,6 +106,11 @@ class HtmlHandler extends TextContentHandler {
                     addHtmlMetadata(
                             atts.getValue("name"),
                             atts.getValue("content"));
+                } else if (atts.getValue("property") != null) {
+                    // TIKA-983: Handle <meta property="og:xxx" content="yyy" /> tags
+                    metadata.add(
+                            atts.getValue("property"),
+                            atts.getValue("content"));
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 startElementWithSafeAttributes("base", atts);
@@ -133,9 +134,6 @@ class HtmlHandler extends TextContentHandler {
         title.setLength(0);
     }
 
-    private static final Pattern ICBM =
-        Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
-
     /**
      * Adds a metadata setting from the HTML <head/> to the Tika metadata
      * object. The name and value are normalized where possible.
@@ -152,15 +150,16 @@ class HtmlHandler extends TextContentHandler {
             } else {
                 metadata.set("ICBM", value);
             }
-        } else if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE)){
+        } else if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE)) {
+            //don't overwrite Metadata.CONTENT_TYPE!
             MediaType type = MediaType.parse(value);
             if (type != null) {
-                metadata.set(Metadata.CONTENT_TYPE, type.toString());
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_HINT, type.toString());
             } else {
-                metadata.set(Metadata.CONTENT_TYPE, value);
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_HINT, value);
             }
         } else {
-            metadata.set(name, value);
+            metadata.add(name, value);
         }
     }
 
@@ -200,7 +199,7 @@ class HtmlHandler extends TextContentHandler {
                     newAttributes.setValue(att, codebase);
                 } else if (isObject
                         && ("data".equals(normAttrName)
-                                || "classid".equals(normAttrName))) {
+                        || "classid".equals(normAttrName))) {
                     newAttributes.setValue(
                             att,
                             resolve(codebase, newAttributes.getValue(att)));
@@ -233,8 +232,9 @@ class HtmlHandler extends TextContentHandler {
 
         if (titleLevel > 0) {
             titleLevel--;
-            if (titleLevel == 0) {
+            if (titleLevel == 0 && !isTitleSetToMetadata) {
                 metadata.set(TikaCoreProperties.TITLE, title.toString().trim());
+                isTitleSetToMetadata = true;
             }
         }
         if (bodyLevel > 0) {

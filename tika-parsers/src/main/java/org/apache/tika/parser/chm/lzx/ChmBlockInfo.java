@@ -72,8 +72,10 @@ public class ChmBlockInfo {
                 % bytesPerBlock);
         // potential problem with casting long to int
         chmBlockInfo
-                .setIniBlock((chmBlockInfo.startBlock - chmBlockInfo.startBlock)
-                        % (int) clcd.getResetInterval());
+                .setIniBlock(chmBlockInfo.startBlock - 
+                        chmBlockInfo.startBlock % (int) clcd.getResetInterval());
+//                .setIniBlock((chmBlockInfo.startBlock - chmBlockInfo.startBlock)
+//                        % (int) clcd.getResetInterval());
         return chmBlockInfo;
     }
 
@@ -89,8 +91,10 @@ public class ChmBlockInfo {
                 (dle.getOffset() + dle.getLength()) % bytesPerBlock);
         // potential problem with casting long to int
         getChmBlockInfo().setIniBlock(
-                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
+                getChmBlockInfo().startBlock - getChmBlockInfo().startBlock
                         % (int) clcd.getResetInterval());
+//                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
+//                        % (int) clcd.getResetInterval());
         return getChmBlockInfo();
     }
 

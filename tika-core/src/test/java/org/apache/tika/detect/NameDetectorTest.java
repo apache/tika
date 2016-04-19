@@ -24,16 +24,20 @@ import java.util.regex.Pattern;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Test cases for the {@link NameDetector} class.
  */
-public class NameDetectorTest extends TestCase {
+public class NameDetectorTest {
 
     private Detector detector;
 
-    protected void setUp() {
+    @Before
+    public void setUp() {
         Map<Pattern, MediaType> patterns = new HashMap<Pattern, MediaType>();
         patterns.put(
                 Pattern.compile(".*\\.txt", Pattern.CASE_INSENSITIVE),
@@ -42,6 +46,7 @@ public class NameDetectorTest extends TestCase {
         detector = new NameDetector(patterns);
     }
 
+    @Test
     public void testDetect() {
         assertDetect(MediaType.TEXT_PLAIN, "text.txt");
         assertDetect(MediaType.TEXT_PLAIN, "text.txt ");    // trailing space

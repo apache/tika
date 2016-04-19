@@ -19,8 +19,9 @@ package org.apache.tika.io;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 
@@ -37,43 +38,65 @@ public class TemporaryResources implements Closeable {
     /**
      * Tracked resources in LIFO order.
      */
-    private final LinkedList<Closeable> resources = new LinkedList<Closeable>();
+    private final LinkedList<Closeable> resources = new LinkedList<>();
 
     /**
      * Directory for temporary files, <code>null</code> for the system default.
      */
-    private File tmp = null;
+    private Path tempFileDir = null;
 
     /**
      * Sets the directory to be used for the temporary files created by
-     * the {@link #createTemporaryFile()} method.
+     * the {@link #createTempFile()} method.
      *
-     * @param tmp temporary file directory,
-     *            or <code>null</code> for the system default
+     * @param tempFileDir temporary file directory,
+     *                    or <code>null</code> for the system default
      */
-    public void setTemporaryFileDirectory(File tmp) {
-        this.tmp = tmp;
+    public void setTemporaryFileDirectory(Path tempFileDir) {
+        this.tempFileDir = tempFileDir;
+    }
+
+    /**
+     * Sets the directory to be used for the temporary files created by
+     * the {@link #createTempFile()} method.
+     *
+     * @param tempFileDir temporary file directory,
+     *                    or <code>null</code> for the system default
+     * @see #setTemporaryFileDirectory(Path)
+     */
+    public void setTemporaryFileDirectory(File tempFileDir) {
+        this.tempFileDir = tempFileDir == null ? null : tempFileDir.toPath();
+    }
+
+    /**
+     * Creates a temporary file that will automatically be deleted when
+     * the {@link #close()} method is called, returning its path.
+     *
+     * @return Path to created temporary file that will be deleted after closing
+     * @throws IOException
+     */
+    public Path createTempFile() throws IOException {
+        final Path path = tempFileDir == null
+                ? Files.createTempFile("apache-tika-", ".tmp")
+                : Files.createTempFile(tempFileDir, "apache-tika-", ".tmp");
+        addResource(new Closeable() {
+            public void close() throws IOException {
+                Files.delete(path);
+            }
+        });
+        return path;
     }
 
     /**
      * Creates and returns a temporary file that will automatically be
      * deleted when the {@link #close()} method is called.
      *
-     * @return
+     * @return Created temporary file that'll be deleted after closing
      * @throws IOException
+     * @see #createTempFile()
      */
     public File createTemporaryFile() throws IOException {
-        final File file = File.createTempFile("apache-tika-", ".tmp", tmp);
-        addResource(new Closeable() {
-            public void close() throws IOException {
-                if (!file.delete()) {
-                    throw new IOException(
-                            "Could not delete temporary file "
-                            + file.getPath());
-                }
-            }
-        });
-        return file;
+        return createTempFile().toFile();
     }
 
     /**
@@ -107,33 +130,32 @@ public class TemporaryResources implements Closeable {
      * Closes all tracked resources. The resources are closed in reverse order
      * from how they were added.
      * <p>
-     * Any thrown exceptions from managed resources are collected and
-     * then re-thrown only once all the resources have been closed.
+     * Any suppressed exceptions from managed resources are collected and
+     * then added to the first thrown exception, which is re-thrown once
+     * all the resources have been closed.
      *
      * @throws IOException if one or more of the tracked resources
      *                     could not be closed
      */
     public void close() throws IOException {
         // Release all resources and keep track of any exceptions
-        List<IOException> exceptions = new LinkedList<IOException>();
+        IOException exception = null;
         for (Closeable resource : resources) {
             try {
                 resource.close();
             } catch (IOException e) {
-                exceptions.add(e);
+                if (exception == null) {
+                    exception = e;
+                } else {
+                    exception.addSuppressed(e);
+                }
             }
         }
         resources.clear();
 
         // Throw any exceptions that were captured from above
-        if (!exceptions.isEmpty()) {
-            if (exceptions.size() == 1) {
-                throw exceptions.get(0);
-            } else {
-                throw new IOExceptionWithCause(
-                        "Multiple IOExceptions" + exceptions,
-                        exceptions.get(0));
-            }
+        if (exception != null) {
+            throw exception;
         }
     }
 

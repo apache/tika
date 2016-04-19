@@ -23,6 +23,9 @@ import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * This is used to parse Lyrics3 tag information
  *  from an MP3 file, if available.
@@ -82,12 +85,12 @@ public class LyricsHandler {
             //  size including the LYRICSBEGIN but excluding the 
             //  length+LYRICS200 at the end.
             int length = Integer.parseInt(
-                    new String(tagData, lookat-6, 6)
+                    new String(tagData, lookat-6, 6, UTF_8)
             );
 
             String lyrics = new String(
                     tagData, lookat-length+5, length-11,
-                    "ASCII"
+                    US_ASCII
             );
 
             // Tags are a 3 letter code, 5 digit length, then data

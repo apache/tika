@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -101,13 +101,15 @@ public class HDFParser extends AbstractParser {
             group = ncFile.getRootGroup();
         }
 
+        // get file type
+        met.set("File-Type-Description", ncFile.getFileTypeDescription());
         // unravel its string attrs
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {
-                met.add(attribute.getName(), attribute.getStringValue());
+                met.add(attribute.getFullName(), attribute.getStringValue());
             } else {
                 // try and cast its value to a string
-                met.add(attribute.getName(), String.valueOf(attribute
+                met.add(attribute.getFullName(), String.valueOf(attribute
                         .getNumericValue()));
             }
         }

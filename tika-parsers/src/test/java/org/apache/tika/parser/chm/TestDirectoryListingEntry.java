@@ -16,10 +16,12 @@
  */
 package org.apache.tika.parser.chm;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests public methods of the DirectoryListingEntry class
@@ -27,48 +29,57 @@ import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
  * @author olegt
  * 
  */
-public class TestDirectoryListingEntry extends TestCase {
+public class TestDirectoryListingEntry {
     private DirectoryListingEntry dle = null;
 
+    @Before
     public void setUp() throws Exception {
         dle = new DirectoryListingEntry(TestParameters.nameLength,
                 TestParameters.entryName, TestParameters.entryType,
                 TestParameters.offset, TestParameters.length);
     }
 
+    @Test
     public void testDefaultConstructor() {
-        Assert.assertNotNull(dle);
+        assertNotNull(dle);
     }
 
+    @Test
     public void testParamConstructor() {
-        Assert.assertEquals(TestParameters.nameLength, dle.getNameLength());
-        Assert.assertEquals(TestParameters.entryName, dle.getName());
-        Assert.assertEquals(TestParameters.entryType, dle.getEntryType());
-        Assert.assertEquals(TestParameters.offset, dle.getOffset());
-        Assert.assertEquals(TestParameters.length, dle.getLength());
+        assertEquals(TestParameters.nameLength, dle.getNameLength());
+        assertEquals(TestParameters.entryName, dle.getName());
+        assertEquals(TestParameters.entryType, dle.getEntryType());
+        assertEquals(TestParameters.offset, dle.getOffset());
+        assertEquals(TestParameters.length, dle.getLength());
     }
 
+    @Test
     public void testToString() {
-        Assert.assertNotNull(dle.toString());
+        assertNotNull(dle.toString());
     }
 
+    @Test
     public void testGetNameLength() {
-        Assert.assertEquals(TestParameters.nameLength, dle.getNameLength());
+        assertEquals(TestParameters.nameLength, dle.getNameLength());
     }
 
+    @Test
     public void testGetName() {
-        Assert.assertEquals(TestParameters.entryName, dle.getName());
+        assertEquals(TestParameters.entryName, dle.getName());
     }
 
+    @Test
     public void testGetEntryType() {
-        Assert.assertEquals(TestParameters.entryType, dle.getEntryType());
+        assertEquals(TestParameters.entryType, dle.getEntryType());
     }
 
+    @Test
     public void testGetOffset() {
-        Assert.assertEquals(TestParameters.offset, dle.getOffset());
+        assertEquals(TestParameters.offset, dle.getOffset());
     }
 
+    @Test
     public void testGetLength() {
-        Assert.assertEquals(TestParameters.length, dle.getLength());
+        assertEquals(TestParameters.length, dle.getLength());
     }
 }

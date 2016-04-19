@@ -24,7 +24,7 @@ import java.util.Date;
  * properties defined in the XMP standard.
  *
  * @since Apache Tika 0.7
- * @see <a href="http://www.adobe.com/devnet/xmp/pdfs/XMPSpecificationPart2.pdf"
+ * @see <a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
  *        >XMP Specification, Part 2: Standard Schemas</a>
  */
 public interface XMPDM {
@@ -60,6 +60,11 @@ public interface XMPDM {
     Property ARTIST = Property.externalText("xmpDM:artist");
 
     /**
+     * "The name of the album artist or group for compilation albums."
+     */
+    Property ALBUM_ARTIST = Property.externalText("xmpDM:albumArtist");
+
+    /**
      * "The date and time when the audio was last modified."
      */
     Property AUDIO_MOD_DATE = Property.internalDate("xmpDM:audioModDate");
@@ -83,12 +88,13 @@ public interface XMPDM {
     Property AUDIO_CHANNEL_TYPE = Property.internalClosedChoise(
             "xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
     /**
-     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE} 
+     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE}
      * @deprecated Experimental method, will change shortly
      */
+    @Deprecated
     static class ChannelTypePropertyConverter {
        private static Property property = AUDIO_CHANNEL_TYPE;
-       
+
        /**
         * How a standalone converter might work
         */
@@ -141,6 +147,11 @@ public interface XMPDM {
 //    Property BEAT_SPLICE_PARAMS = "xmpDM:beatSpliceParams";
 
     /**
+     * "An album created by various artists."
+     */
+    Property COMPILATION = Property.externalInteger("xmpDM:compilation");
+
+    /**
      * "The composer's name."
      */
     Property COMPOSER = Property.externalText("xmpDM:composer");
@@ -155,10 +166,15 @@ public interface XMPDM {
      */
     Property COPYRIGHT = Property.externalText("xmpDM:copyright");
 
-//    /**
-//     * "The duration of the media file."
-//     */
-//    Property DURATION = "xmpDM:duration";
+    /**
+     * "The disc number for part of an album set."
+     */
+    Property DISC_NUMBER = Property.externalInteger("xmpDM:discNumber");
+
+    /**
+     * "The duration of the media file."
+     */
+    Property DURATION = Property.externalReal("xmpDM:duration");
 
     /**
      * "The engineer's name."
@@ -226,7 +242,7 @@ public interface XMPDM {
 //    /**
 //     * "A reference to the project that created this file."
 //     */
-//    Property PROJECT_REF = "xmpDM:projectRef"; 
+//    Property PROJECT_REF = "xmpDM:projectRef";
 
     /**
      * "The sampling phase of film to be converted to video (pull-down)."

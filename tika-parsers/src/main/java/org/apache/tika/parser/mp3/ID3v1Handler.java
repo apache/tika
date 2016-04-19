@@ -18,13 +18,14 @@ package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * This is used to parse ID3 Version 1 Tag information from an MP3 file, 
@@ -101,7 +102,7 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     public List<ID3Comment> getComments() {
-       return Arrays.asList(new ID3Comment[] {comment});
+       return Arrays.asList(comment);
     }
 
     public String getGenre() {
@@ -117,6 +118,30 @@ public class ID3v1Handler implements ID3Tags {
      *  so returns null;
      */
     public String getComposer() {
+        return null;
+    }
+
+    /**
+     * ID3v1 doesn't have album-wide artists,
+     *  so returns null;
+     */
+    public String getAlbumArtist() {
+        return null;
+    }
+
+    /**
+     * ID3v1 doesn't have disc numbers,
+     *  so returns null;
+     */
+    public String getDisc() {
+        return null;
+    }
+
+    /**
+     * ID3v1 doesn't have compilations,
+     *  so returns null;
+     */
+    public String getCompilation() {
         return null;
     }
 
@@ -153,10 +178,6 @@ public class ID3v1Handler implements ID3Tags {
         }
 
         // Return the remaining substring
-        try {
-            return new String(buffer, start, end - start, "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            throw new TikaException("ISO-8859-1 encoding is not available", e);
-        }
+        return new String(buffer, start, end - start, ISO_8859_1);
     }
 }

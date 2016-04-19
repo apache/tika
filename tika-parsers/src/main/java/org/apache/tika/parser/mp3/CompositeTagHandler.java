@@ -113,4 +113,30 @@ public class CompositeTagHandler implements ID3Tags {
         return null;
     }
 
+    public String getAlbumArtist() {
+        for (ID3Tags tag : tags) {
+            if (tag.getAlbumArtist() != null) {
+                return tag.getAlbumArtist();
+            }
+        }
+        return null;
+    }
+
+    public String getDisc() {
+        for (ID3Tags tag : tags) {
+            if (tag.getDisc() != null) {
+                return tag.getDisc();
+            }
+        }
+        return null;
+    }
+
+    public String getCompilation() {
+        for (ID3Tags tag : tags) {
+            if (tag.getCompilation() != null) {
+                return tag.getCompilation();
+            }
+        }
+        return null;
+    }
 }

@@ -16,24 +16,30 @@
  */
 package org.apache.tika.detect;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
+import org.junit.Test;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
  */
-public class TestContainerAwareDetector extends TestCase {
-
-    private final Detector detector = new DefaultDetector();
+public class TestContainerAwareDetector {
+    private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+    private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
+    private final Detector detector = new DefaultDetector(mimeTypes);
 
     private void assertTypeByData(String file, String type) throws Exception {
        assertTypeByNameAndData(file, null, type);
@@ -46,22 +52,30 @@ public class TestContainerAwareDetector extends TestCase {
        assertTypeByNameAndData(file, byNameAndData);
     }
     private void assertTypeByNameAndData(String dataFile, String name, String type) throws Exception {
-       TikaInputStream stream = TikaInputStream.get(
-               TestContainerAwareDetector.class.getResource(
-                       "/test-documents/" + dataFile));
-       try {
-           Metadata m = new Metadata();
-           if (name != null)
-              m.add(Metadata.RESOURCE_NAME_KEY, name);
-           
-           assertEquals(
-                   MediaType.parse(type),
-                   detector.detect(stream, m));
-       } finally {
-           stream.close();
-       }
+        assertTypeByNameAndData(dataFile, name, type, null);
+    }
+    private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector, String typeFromMagic) throws Exception {
+        try (TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource("/test-documents/" + dataFile))) {
+            Metadata m = new Metadata();
+            if (name != null)
+                m.add(Metadata.RESOURCE_NAME_KEY, name);
+
+            // Mime Magic version is likely to be less precise
+            if (typeFromMagic != null) {
+                assertEquals(
+                        MediaType.parse(typeFromMagic),
+                        mimeTypes.detect(stream, m));
+            }
+
+            // All being well, the detector should get it perfect
+            assertEquals(
+                    MediaType.parse(typeFromDetector),
+                    detector.detect(stream, m));
+        }
     }
 
+    @Test
     public void testDetectOLE2() throws Exception {
         // Microsoft office types known by POI
         assertTypeByData("testEXCEL.xls", "application/vnd.ms-excel");
@@ -74,6 +88,7 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testPUBLISHER.pub", "application/x-mspublisher");
         assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
+        
         // older Works Word Processor files can't be recognized
         // they were created with Works Word Processor 7.0 (hence the text inside)
         // and exported to the older formats with the "Save As" feature
@@ -82,11 +97,16 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testWORKSSpreadsheet7.0.xlr", "application/x-tika-msworks-spreadsheet");
         assertTypeByData("testPROJECT2003.mpp", "application/vnd.ms-project");
         assertTypeByData("testPROJECT2007.mpp", "application/vnd.ms-project");
+        
+        // Excel95 can be detected by not parsed
+        assertTypeByData("testEXCEL_95.xls", "application/vnd.ms-excel");
 
         // Try some ones that POI doesn't handle, that are still OLE2 based
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
         assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
         assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
+        
+        assertTypeByData("testHWP_5.0.hwp", "application/x-hwp-v5");
         
         
         // With the filename and data
@@ -112,6 +132,7 @@ public class TestContainerAwareDetector extends TestCase {
      * 
      * @throws Exception
      */
+    @Test
     public void testDetectStarOfficeFiles() throws Exception {
         assertType("testStarOffice-5.2-calc.sdc",
                 "application/vnd.stardivision.calc",
@@ -140,18 +161,15 @@ public class TestContainerAwareDetector extends TestCase {
 
     }
 
+    @Test
     public void testOpenContainer() throws Exception {
-        TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource(
-                        "/test-documents/testPPT.ppt"));
-        try {
+        try (TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource("/test-documents/testPPT.ppt"))) {
             assertNull(stream.getOpenContainer());
             assertEquals(
                     MediaType.parse("application/vnd.ms-powerpoint"),
                     detector.detect(stream, new Metadata()));
             assertTrue(stream.getOpenContainer() instanceof NPOIFSFileSystem);
-        } finally {
-            stream.close();
         }
     }
 
@@ -159,16 +177,26 @@ public class TestContainerAwareDetector extends TestCase {
      * EPub uses a similar mimetype entry to OpenDocument for storing
      *  the mimetype within the parent zip file
      */
+    @Test
     public void testDetectEPub() throws Exception {
        assertTypeByData("testEPUB.epub", "application/epub+zip");
        assertTypeByData("testiBooks.ibooks", "application/x-ibooks+zip");
     }
+    
+    @Test
+    public void testDetectLotusNotesEml() throws Exception {
+        // Lotus .eml files aren't guaranteed to have any of the magic 
+        // matches as the first line, but should have X-Notes-Item and Message-ID
+        assertTypeByData("testLotusEml.eml", "message/rfc822");
+     }
 
+    @Test
     public void testDetectODF() throws Exception {
         assertTypeByData("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
         assertTypeByData("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
     }
 
+    @Test
     public void testDetectOOXML() throws Exception {
         assertTypeByData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         assertTypeByData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
@@ -179,7 +207,16 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
         assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
+        assertTypeByData("testEXCEL.strict.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testPPT.xps", "application/vnd.ms-xpsdocument");
 
+        assertTypeByData("testVISIO.vsdm", "application/vnd.ms-visio.drawing.macroenabled.12");
+        assertTypeByData("testVISIO.vsdx", "application/vnd.ms-visio.drawing");
+        assertTypeByData("testVISIO.vssm", "application/vnd.ms-visio.stencil.macroenabled.12");
+        assertTypeByData("testVISIO.vssx", "application/vnd.ms-visio.stencil");
+        assertTypeByData("testVISIO.vstm", "application/vnd.ms-visio.template.macroenabled.12");
+        assertTypeByData("testVISIO.vstx", "application/vnd.ms-visio.template");
+        
         // .xlsb is an OOXML file containing the binary parts, and not
         //  an OLE2 file as you might initially expect!
         assertTypeByData("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");
@@ -203,6 +240,7 @@ public class TestContainerAwareDetector extends TestCase {
      *  have the same structure as regular OLE2 files. (Core streams may be encrypted
      *  however)
      */
+    @Test
     public void testDetectProtectedOLE2() throws Exception {
         assertTypeByData("testEXCEL_protected_passtika.xls", "application/vnd.ms-excel");
         assertTypeByData("testWORD_protected_passtika.doc", "application/msword");
@@ -219,6 +257,7 @@ public class TestContainerAwareDetector extends TestCase {
      *  OOXML structure within an encrypted stream.
      * This makes detecting them much harder...
      */
+    @Test
     public void testDetectProtectedOOXML() throws Exception {
         // Encrypted Microsoft Office OOXML files have OLE magic but
         //  special streams, so we can tell they're Protected OOXML
@@ -243,6 +282,7 @@ public class TestContainerAwareDetector extends TestCase {
      * Check that temporary files created by Tika are removed after
      * closing TikaInputStream.
      */
+    @Test
     public void testRemovalTempfiles() throws Exception {
         assertRemovalTempfiles("testWORD.docx");
         assertRemovalTempfiles("test-documents.zip");
@@ -260,28 +300,41 @@ public class TestContainerAwareDetector extends TestCase {
     private void assertRemovalTempfiles(String fileName) throws Exception {
         int numberOfTempFiles = countTemporaryFiles();
 
-        TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource(
-                        "/test-documents/" + fileName));
-        try {
+        try (TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource("/test-documents/" + fileName))) {
             detector.detect(stream, new Metadata());
-        } finally {
-            stream.close();
         }
 
         assertEquals(numberOfTempFiles, countTemporaryFiles());
     }
 
+    @Test
     public void testDetectIWork() throws Exception {
         assertTypeByData("testKeynote.key", "application/vnd.apple.keynote");
         assertTypeByData("testNumbers.numbers", "application/vnd.apple.numbers");
         assertTypeByData("testPages.pages", "application/vnd.apple.pages");
     }
 
+    @Test
     public void testDetectKMZ() throws Exception {
        assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
     }
     
+    @Test
+    public void testDetectIPA() throws Exception {
+        assertTypeByNameAndData("testIPA.ipa", "application/x-itunes-ipa");
+        assertTypeByData("testIPA.ipa", "application/x-itunes-ipa");
+    }
+    
+    @Test
+    public void testASiC() throws Exception {
+        assertTypeByData("testASiCE.asice", "application/vnd.etsi.asic-e+zip");
+        assertTypeByData("testASiCS.asics", "application/vnd.etsi.asic-s+zip");
+        assertTypeByNameAndData("testASiCE.asice", "application/vnd.etsi.asic-e+zip");
+        assertTypeByNameAndData("testASiCS.asics", "application/vnd.etsi.asic-s+zip");
+    }
+     
+    @Test
     public void testDetectZip() throws Exception {
         assertTypeByData("test-documents.zip", "application/zip");
         assertTypeByData("test-zip-of-zip.zip", "application/zip");
@@ -291,14 +344,16 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testWAR.war", "application/x-tika-java-web-archive");
         assertTypeByData("testEAR.ear", "application/x-tika-java-enterprise-archive");
         assertTypeByData("testAPK.apk", "application/vnd.android.package-archive");
+        
+        // JAR with HTML files in it
+        assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
+                                "application/java-archive", "application/java-archive");
     }
 
     private TikaInputStream getTruncatedFile(String name, int n)
             throws IOException {
-        InputStream input =
-            TestContainerAwareDetector.class.getResourceAsStream(
-                    "/test-documents/" + name);
-        try {
+        try (InputStream input = TestContainerAwareDetector.class.getResourceAsStream(
+                "/test-documents/" + name)) {
             byte[] bytes = new byte[n];
             int m = 0;
             while (m < bytes.length) {
@@ -310,59 +365,45 @@ public class TestContainerAwareDetector extends TestCase {
                 }
             }
             return TikaInputStream.get(bytes);
-        } finally {
-            input.close();
         }
     }
 
+    @Test
     public void testTruncatedFiles() throws Exception {
         // First up a truncated OOXML (zip) file
        
         // With only the data supplied, the best we can do is the container
-        TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
         Metadata m = new Metadata();
-        try {
+        try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
             assertEquals(
                     MediaType.application("x-tika-ooxml"),
                     detector.detect(xlsx, m));
-        } finally {
-            xlsx.close();
         }
         
         // With truncated data + filename, we can use the filename to specialise
-        xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
         m = new Metadata();
         m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
-        try {
+        try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
             assertEquals(
                     MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                     detector.detect(xlsx, m));
-        } finally {
-            xlsx.close();
         }
-        
 
         // Now a truncated OLE2 file 
-        TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400);
         m = new Metadata();
-        try {
+        try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
             assertEquals(
                     MediaType.application("x-tika-msoffice"),
                     detector.detect(xls, m));
-        } finally {
-            xls.close();
         }
         
         // Finally a truncated OLE2 file, with a filename available
-        xls = getTruncatedFile("testEXCEL.xls", 400);
         m = new Metadata();
         m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xls");
-        try {
+        try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
             assertEquals(
                     MediaType.application("vnd.ms-excel"),
                     detector.detect(xls, m));
-        } finally {
-            xls.close();
         }
    }
 

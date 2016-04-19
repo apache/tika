@@ -21,18 +21,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.Test;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Test cases for the {@link TextDetector} class.
  */
-public class TextDetectorTest extends TestCase {
+public class TextDetectorTest {
 
     private final Detector detector = new TextDetector();
 
+    @Test
     public void testDetectNull() throws Exception {
         assertEquals(
                 MediaType.OCTET_STREAM,
@@ -44,13 +48,15 @@ public class TextDetectorTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
      */
+    @Test
     public void testDetectEmpty() throws Exception {
         assertNotText(new byte[0]);
     }
 
+    @Test
     public void testDetectText() throws Exception {
-        assertText("Hello, World!".getBytes("UTF-8"));
-        assertText(" \t\r\n".getBytes("UTF-8"));
+        assertText("Hello, World!".getBytes(UTF_8));
+        assertText(" \t\r\n".getBytes(UTF_8));
         assertNotText(new byte[] { -1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B });
         assertNotText(new byte[] { 0 });
         assertNotText(new byte[] { 'H', 'e', 'l', 'l', 'o', 0 });

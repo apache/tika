@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.List;
 
+import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -44,13 +45,18 @@ public class AutoDetectReader extends BufferedReader {
 
     private static Charset detect(
             InputStream input, Metadata metadata,
-            List<EncodingDetector> detectors)
+            List<EncodingDetector> detectors, LoadErrorHandler handler)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
         for (EncodingDetector detector : detectors) {
-            Charset charset = detector.detect(input, metadata);
-            if (charset != null) {
-                return charset;
+            try {
+                Charset charset = detector.detect(input, metadata);
+                if (charset != null) {
+                    return charset;
+                }
+            } catch (NoClassDefFoundError e) {
+                // TIKA-1041: Detector dependencies not present.
+                handler.handleLoadError(detector.getClass().getName(), e);
             }
         }
 
@@ -87,16 +93,17 @@ public class AutoDetectReader extends BufferedReader {
 
     private AutoDetectReader(
             BufferedInputStream stream, Metadata metadata,
-            List<EncodingDetector> detectors)
+            List<EncodingDetector> detectors, LoadErrorHandler handler)
             throws IOException, TikaException {
-        this(stream, detect(stream, metadata, detectors));
+        this(stream, detect(stream, metadata, detectors, handler));
     }
 
     public AutoDetectReader(
             InputStream stream, Metadata metadata,
             ServiceLoader loader) throws IOException, TikaException {
         this(new BufferedInputStream(stream), metadata,
-                loader.loadServiceProviders(EncodingDetector.class));
+                loader.loadServiceProviders(EncodingDetector.class),
+                loader.getLoadErrorHandler());
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata)

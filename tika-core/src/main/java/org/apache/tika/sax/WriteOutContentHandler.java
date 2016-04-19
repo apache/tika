@@ -21,6 +21,7 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 import org.xml.sax.ContentHandler;
@@ -90,7 +91,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * @param stream output stream
      */
     public WriteOutContentHandler(OutputStream stream) {
-        this(new OutputStreamWriter(stream));
+        this(new OutputStreamWriter(stream, Charset.defaultCharset()));
     }
 
     /**

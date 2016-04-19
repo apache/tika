@@ -16,17 +16,19 @@
  */
 package org.apache.tika.parser.asm;
 
-import junit.framework.TestCase;
-
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.Test;
 
 /**
  * Test case for parsing Java class files.
  */
-public class ClassParserTest extends TestCase {
+public class ClassParserTest {
 
+    @Test
     public void testClassParsing() throws Exception {
         String path = "/test-documents/AutoDetectParser.class";
         Metadata metadata = new Metadata();

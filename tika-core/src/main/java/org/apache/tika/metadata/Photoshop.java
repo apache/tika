@@ -38,6 +38,14 @@ public interface Photoshop {
     Property AUTHORS_POSITION = Property.internalText(
             PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "AuthorsPosition");
 
+    // TODO Replace this with proper indexed choices support
+    String[] _COLOR_MODE_CHOICES_INDEXED = { "Bitmap", "Greyscale", "Indexed Colour", 
+            "RGB Color", "CMYK Colour", "Multi-Channel", "Duotone", "LAB Colour",
+            "reserved", "reserved", "YCbCr Colour", "YCgCo Colour", "YCbCrK Colour"};
+    Property COLOR_MODE = Property.internalClosedChoise(
+            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "ColorMode",
+            _COLOR_MODE_CHOICES_INDEXED);
+    
     Property CAPTION_WRITER = Property.internalText(
             PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "CaptionWriter");
 

@@ -21,6 +21,8 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * 
  * ::DataSpace/Storage/<SectionName>/ControlData This file contains $20 bytes of
@@ -40,11 +42,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     private static final long serialVersionUID = -7897854774939631565L;
     /* class' members */
     private long size; /* 0 */
-    private byte[] signature = new String(ChmConstants.LZXC).getBytes(); /*
-                                                                          * 4
-                                                                          * (LZXC
-                                                                          * )
-                                                                          */
+    private byte[] signature;
     private long version; /* 8 */
     private long resetInterval; /* c */
     private long windowSize; /* 10 */
@@ -54,6 +52,14 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     /* local usage */
     private int dataRemained;
     private int currentPlace = 0;
+
+    public ChmLzxcControlData() {
+        signature = ChmConstants.LZXC.getBytes(UTF_8); /*
+                                                        * 4
+                                                        * (LZXC
+                                                        * )
+                                                        */
+    }
 
     /**
      * Returns a remained data
@@ -248,7 +254,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
         StringBuilder sb = new StringBuilder();
         sb.append("size(unknown):=" + this.getSize() + ", ");
         sb.append("signature(Compression type identifier):="
-                + new String(this.getSignature()) + ", ");
+                + new String(this.getSignature(), UTF_8) + ", ");
         sb.append("version(Possibly numeric code for LZX):="
                 + this.getVersion() + System.getProperty("line.separator"));
         sb.append("resetInterval(The Huffman reset interval):="
@@ -299,7 +305,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
                     "window size / resetInterval should be more than 1");
 
         /* checks a signature */
-        if (!new String(chmLzxcControlData.getSignature())
+        if (!new String(chmLzxcControlData.getSignature(), UTF_8)
                 .equals(ChmConstants.LZXC))
             throw new ChmParsingException(
                     "the signature does not seem to be correct");

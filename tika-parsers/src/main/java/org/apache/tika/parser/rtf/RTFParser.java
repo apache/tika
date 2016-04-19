@@ -21,8 +21,8 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.input.TaggedInputStream;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -36,11 +36,39 @@ import org.xml.sax.SAXException;
  */
 public class RTFParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -4165069489372320313L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("rtf"));
+    /**
+     * maximum number of bytes per embedded object/pict (default: 20MB)
+     */
+    private static int EMB_OBJ_MAX_BYTES = 20 * 1024 * 1024; //20MB
+
+    /**
+     * See {@link #setMaxBytesForEmbeddedObject(int)}.
+     *
+     * @return maximum number of bytes allowed for an embedded object.
+     */
+    public static int getMaxBytesForEmbeddedObject() {
+        return EMB_OBJ_MAX_BYTES;
+    }
+
+    /**
+     * Bytes for embedded objects are currently cached in memory.
+     * If something goes wrong during the parsing of an embedded object,
+     * it is possible that a read length may be crazily too long
+     * and cause a heap crash.
+     *
+     * @param max maximum number of bytes to allow for embedded objects.  If
+     *            the embedded object has more than this number of bytes, skip it.
+     */
+    public static void setMaxBytesForEmbeddedObject(int max) {
+        EMB_OBJ_MAX_BYTES = max;
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -49,12 +77,14 @@ public class RTFParser extends AbstractParser {
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
-        throws IOException, SAXException, TikaException {
+            throws IOException, SAXException, TikaException {
+        metadata.set(Metadata.CONTENT_TYPE, "application/rtf");
         TaggedInputStream tagged = new TaggedInputStream(stream);
         try {
-            final TextExtractor ert = new TextExtractor(new XHTMLContentHandler(handler, metadata), metadata);
+            XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(handler, metadata);
+            RTFEmbObjHandler embObjHandler = new RTFEmbObjHandler(xhtmlHandler, metadata, context);
+            final TextExtractor ert = new TextExtractor(xhtmlHandler, metadata, embObjHandler);
             ert.extract(stream);
-            metadata.add(Metadata.CONTENT_TYPE, "application/rtf");
         } catch (IOException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("Error parsing an RTF document", e);

@@ -16,42 +16,43 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing Outlook files.
  */
-public class OutlookParserTest extends TestCase {
+public class OutlookParserTest extends TikaTest {
 
+    @Test
     public void testOutlookParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/test-outlook.msg");
-        try {
+        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/test-outlook.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(
@@ -69,18 +70,17 @@ public class OutlookParserTest extends TestCase {
         assertEquals(
                 "L'\u00C9quipe Microsoft Outlook Express",
                 metadata.get(Metadata.AUTHOR));
-        
+
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals(
                 "2007-04-05T16:26:06Z",
                 metadata.get(TikaCoreProperties.CREATED));
 
         String content = handler.toString();
-        assertTrue(content.contains(""));
-        assertTrue(content.contains("Microsoft Outlook Express 6"));
-        assertTrue(content.contains("L'\u00C9quipe Microsoft Outlook Express"));
-        assertTrue(content.contains("Nouvel utilisateur de Outlook Express"));
-        assertTrue(content.contains("Messagerie et groupes de discussion"));
+        assertContains("Microsoft Outlook Express 6", content);
+        assertContains("L'\u00C9quipe Microsoft Outlook Express", content);
+        assertContains("Nouvel utilisateur de Outlook Express", content);
+        assertContains("Messagerie et groupes de discussion", content);
     }
 
     /**
@@ -88,17 +88,15 @@ public class OutlookParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-197">TIKA-197</a>
      */
+    @Test
     public void testMultipleCopies() throws Exception {
         Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/testMSG.msg");
-        try {
+        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/testMSG.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(
@@ -113,21 +111,19 @@ public class OutlookParserTest extends TestCase {
     }
 
     /**
-     * Test case for TIKA-395, to ensure parser works for new Outlook formats. 
+     * Test case for TIKA-395, to ensure parser works for new Outlook formats.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-395">TIKA-395</a>
      */
+    @Test
     public void testOutlookNew() throws Exception {
         Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/test-outlook2003.msg");
-        try {
+        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/test-outlook2003.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(
@@ -138,108 +134,106 @@ public class OutlookParserTest extends TestCase {
                 metadata.get(TikaCoreProperties.TITLE));
 
         String content = handler.toString();
-        assertTrue(content.contains("Outlook 2003"));
-        assertTrue(content.contains("Streamlined Mail Experience"));
-        assertTrue(content.contains("Navigation Pane"));
+        assertContains("Outlook 2003", content);
+        assertContains("Streamlined Mail Experience", content);
+        assertContains("Navigation Pane", content);
     }
-     
+
+    @Test
     public void testOutlookHTMLVersion() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-       
+
         // Check the HTML version
         StringWriter sw = new StringWriter();
         SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
+                SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
         handler.setResult(new StreamResult(sw));
 
-        InputStream stream = OutlookParserTest.class.getResourceAsStream(
-               "/test-documents/testMSG_chinese.msg");
-        try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-           stream.close();
+        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/testMSG_chinese.msg")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
         }
-         
+
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString();
-        assertTrue(content.contains("<dd>tests.chang@fengttt.com</dd>"));
-        assertTrue(content.contains("<p>Alfresco MSG format testing"));
-        assertTrue(content.contains("<li>1"));
-        assertTrue(content.contains("<li>2"));
-        
+        assertContains("<dd>tests.chang@fengttt.com</dd>", content);
+        assertContains("<p>Alfresco MSG format testing", content);
+        assertContains("<li>1", content);
+        assertContains("<li>2", content);
+
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+
+        // Make sure that the Chinese actually came through
+        assertContains("\u5F35\u6BD3\u502B", metadata.get(TikaCoreProperties.CREATOR));
+        assertContains("\u9673\u60E0\u73CD", content);
     }
 
+    @Test
     public void testOutlookForwarded() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-       
+
         // Check the HTML version
         StringWriter sw = new StringWriter();
         SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
+                SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
         handler.setResult(new StreamResult(sw));
 
-        InputStream stream = OutlookParserTest.class.getResourceAsStream(
-               "/test-documents/testMSG_forwarded.msg");
-        try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-           stream.close();
+        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/testMSG_forwarded.msg")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
         }
-         
+
         // Make sure we don't have nested docs
         String content = sw.toString();
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
     }
-    
+
+    @Test
     public void testOutlookHTMLfromRTF() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-       
+
         // Check the HTML version
         StringWriter sw = new StringWriter();
         SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
+                SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
         handler.setResult(new StreamResult(sw));
 
-        InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/test-outlook2003.msg");
-        try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-           stream.close();
+        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/test-outlook2003.msg")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
         }
-         
+
         // As the HTML version should have been processed, ensure
         //  we got some of the links
-        String content = sw.toString().replaceAll("<p>\\s+","<p>");
-        assertTrue(content.contains("<dd>New Outlook User</dd>"));
-        assertTrue(content.contains("designed <i>to help you"));
-        assertTrue(content.contains("<p><a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>"));
-        
+        String content = sw.toString().replaceAll("<p>\\s+", "<p>");
+        assertContains("<dd>New Outlook User</dd>", content);
+        assertContains("designed <i>to help you", content);
+        assertContains("<p><a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>", content);
+
         // Link - check text around it, and the link itself
-        assertTrue(content.contains("sign up for a free subscription"));
-        assertTrue(content.contains("Office Newsletter"));
-        assertTrue(content.contains("newsletter will be sent to you"));
-        assertTrue(content.contains("http://r.office.microsoft.com/r/rlidNewsletterSignUp?clid=1033"));
-        
+        assertContains("sign up for a free subscription", content);
+        assertContains("Office Newsletter", content);
+        assertContains("newsletter will be sent to you", content);
+        assertContains("http://r.office.microsoft.com/r/rlidNewsletterSignUp?clid=1033", content);
+
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
-        //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
+        assertEquals(2, content.split("<\\/body>").length);
     }
 }

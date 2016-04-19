@@ -44,6 +44,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Parser that uses an external program (like catdoc or pdf2txt) to extract
  *  text content and metadata from a given document.
@@ -158,8 +160,13 @@ public class ExternalParser extends AbstractParser {
         File output = null;
 
         // Build our command
-        String[] cmd = new String[command.length];
-        System.arraycopy(command, 0, cmd, 0, command.length);
+        String[] cmd;
+        if (command.length == 1) {
+            cmd = command[0].split(" ");
+        } else {
+            cmd = new String[command.length];
+            System.arraycopy(command, 0, cmd, 0, command.length);
+        }
         for(int i=0; i<cmd.length; i++) {
            if(cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
               cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
@@ -168,16 +175,22 @@ public class ExternalParser extends AbstractParser {
            if(cmd[i].indexOf(OUTPUT_FILE_TOKEN) != -1) {
               output = tmp.createTemporaryFile();
               outputFromStdOut = false;
+              cmd[i] = cmd[i].replace(OUTPUT_FILE_TOKEN, output.getPath());
            }
         }
 
         // Execute
-        Process process;
+        Process process = null;
+      try{
         if(cmd.length == 1) {
            process = Runtime.getRuntime().exec( cmd[0] );
         } else {
            process = Runtime.getRuntime().exec( cmd );
         }
+      }
+      catch(Exception e){
+    	  e.printStackTrace();
+      }
 
         try {
             if(inputToStdIn) {
@@ -231,8 +244,7 @@ public class ExternalParser extends AbstractParser {
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml)
             throws SAXException, IOException {
-        Reader reader = new InputStreamReader(stream);
-        try {
+        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             xhtml.startDocument();
             xhtml.startElement("p");
             char[] buffer = new char[1024];
@@ -241,8 +253,6 @@ public class ExternalParser extends AbstractParser {
             }
             xhtml.endElement("p");
             xhtml.endDocument();
-        } finally {
-            reader.close();
         }
     }
 
@@ -257,7 +267,7 @@ public class ExternalParser extends AbstractParser {
      * @param stream input stream
      */
     private void sendInput(final Process process, final InputStream stream) {
-        new Thread() {
+        Thread t = new Thread() {
             public void run() {
                 OutputStream stdin = process.getOutputStream();
                 try {
@@ -265,7 +275,12 @@ public class ExternalParser extends AbstractParser {
                 } catch (IOException e) {
                 }
             }
-        }.start();
+        };
+        t.start();
+        try{
+     	   t.join();
+        }
+        catch(InterruptedException ignore){}        
     }
 
     /**
@@ -276,7 +291,7 @@ public class ExternalParser extends AbstractParser {
      * @param process process
      */
     private void ignoreStream(final InputStream stream) {
-        new Thread() {
+        Thread t = new Thread() {
             public void run() {
                 try {
                     IOUtils.copy(stream, new NullOutputStream());
@@ -285,30 +300,48 @@ public class ExternalParser extends AbstractParser {
                     IOUtils.closeQuietly(stream);
                 }
             }
-        }.start();
+        };
+        t.start();
+        try{
+     	   t.join();
+        }
+        catch(InterruptedException ignore){}
     }
     
     private void extractMetadata(final InputStream stream, final Metadata metadata) {
-       new Thread() {
+       Thread t = new Thread() {
           public void run() {
-             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+             BufferedReader reader;
+              reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
              try {
                 String line;
                 while ( (line = reader.readLine()) != null ) {
                    for(Pattern p : metadataPatterns.keySet()) {
                       Matcher m = p.matcher(line);
                       if(m.find()) {
-                         metadata.add( metadataPatterns.get(p), m.group(1) );
+                    	 if (metadataPatterns.get(p) != null && 
+                    			 !metadataPatterns.get(p).equals("")){
+                                   metadata.add( metadataPatterns.get(p), m.group(1) );
+                    	 }
+                    	 else{
+                    		 metadata.add( m.group(1), m.group(2));
+                    	 }
                       }
                    }
                 }
              } catch (IOException e) {
+                 // Ignore
              } finally {
                 IOUtils.closeQuietly(reader);
                 IOUtils.closeQuietly(stream);
             }
           }
-       }.start();
+       };
+	   t.start();
+       try{
+    	   t.join();
+       }
+       catch(InterruptedException ignore){}
     }
     
     /**
@@ -322,20 +355,15 @@ public class ExternalParser extends AbstractParser {
     public static boolean check(String checkCmd, int... errorValue) {
        return check(new String[] {checkCmd}, errorValue);
     }
+
     public static boolean check(String[] checkCmd, int... errorValue) {
        if(errorValue.length == 0) {
           errorValue = new int[] { 127 };
        }
        
        try {
-          Process process;
-          if(checkCmd.length == 1) {
-             process = Runtime.getRuntime().exec(checkCmd[0]);
-          } else {
-             process = Runtime.getRuntime().exec(checkCmd);
-          }
-          int result = process.waitFor();
-          
+          Process process= Runtime.getRuntime().exec(checkCmd);
+          int result = process.waitFor(); 
           for(int err : errorValue) {
              if(result == err) return false;
           }
@@ -346,6 +374,19 @@ public class ExternalParser extends AbstractParser {
        } catch (InterruptedException ie) {
           // Some problem, command is there or is broken
           return false;
-      }
+       } catch (SecurityException se) {
+          // External process execution is banned by the security manager
+          return false;
+       } catch (Error err) {
+           if (err.getMessage() != null && 
+               (err.getMessage().contains("posix_spawn") || 
+               err.getMessage().contains("UNIXProcess"))) {
+               //"Error forking command due to JVM locale bug 
+               //(see TIKA-1526 and SOLR-6387)"
+               return false;
+           }
+           //throw if a different kind of error
+           throw err;
+       }
     }
 }

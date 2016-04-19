@@ -16,71 +16,59 @@
  */
 package org.apache.tika.parser.executable;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
 
-import junit.framework.TestCase;
+import java.util.Arrays;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
+import org.junit.Test;
 
-public class ExecutableParserTest extends TestCase {
+public class ExecutableParserTest extends TikaTest {
 
+    @Test
     public void testWin32Parser() throws Exception {
-        InputStream input = ExecutableParserTest.class.getResourceAsStream(
-                "/test-documents/testWindows-x86-32.exe");
-        try {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            new ExecutableParser().parse(input, handler, metadata, new ParseContext());
+        XMLResult r = getXML("testWindows-x86-32.exe");
+        Metadata metadata = r.metadata;
 
-            assertEquals("application/x-msdownload",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("2012-05-13T13:40:11Z",
-                    metadata.get(Metadata.CREATION_DATE));
-            
-            assertEquals(ExecutableParser.MACHINE_x86_32, 
-                    metadata.get(ExecutableParser.MACHINE_TYPE));
-            assertEquals("Little", 
-                  metadata.get(ExecutableParser.ENDIAN));
-            assertEquals("32", 
-                  metadata.get(ExecutableParser.ARCHITECTURE_BITS));
-            assertEquals("Windows", 
-                  metadata.get(ExecutableParser.PLATFORM));
+        //not clear why ExecutableParser is adding instead of
+        //setting CONTENT_TYPE
+        assertContains("application/x-msdownload",
+                Arrays.asList(metadata.getValues(Metadata.CONTENT_TYPE)));
+        assertEquals("2012-05-13T13:40:11Z",
+                metadata.get(Metadata.CREATION_DATE));
 
-            String content = handler.toString();
-            assertEquals("", content); // No text yet
-        } finally {
-            input.close();
-        }
+        assertEquals(ExecutableParser.MACHINE_x86_32,
+                metadata.get(ExecutableParser.MACHINE_TYPE));
+        assertEquals("Little",
+                metadata.get(ExecutableParser.ENDIAN));
+        assertEquals("32",
+                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+        assertEquals("Windows",
+                metadata.get(ExecutableParser.PLATFORM));
+        assertContains("<body />", r.xml); //no text yet
+
     }
     
+    @Test
     public void testElfParser_x86_32() throws Exception {
-       InputStream input = ExecutableParserTest.class.getResourceAsStream(
-             "/test-documents/testLinux-x86-32");
-     try {
-         Metadata metadata = new Metadata();
-         ContentHandler handler = new BodyContentHandler();
-         new ExecutableParser().parse(input, handler, metadata, new ParseContext());
+        XMLResult r = getXML("testLinux-x86-32");
+        Metadata metadata = r.metadata;
+        assertEquals("application/x-executable",
+                metadata.get(Metadata.CONTENT_TYPE));
 
-         assertEquals("application/x-executable",
-                 metadata.get(Metadata.CONTENT_TYPE));
-         
-         assertEquals(ExecutableParser.MACHINE_x86_32, 
-                 metadata.get(ExecutableParser.MACHINE_TYPE));
-         assertEquals("Little", 
-               metadata.get(ExecutableParser.ENDIAN));
-         assertEquals("32", 
-               metadata.get(ExecutableParser.ARCHITECTURE_BITS));
-//         assertEquals("Linux", 
+        assertEquals(ExecutableParser.MACHINE_x86_32,
+                metadata.get(ExecutableParser.MACHINE_TYPE));
+        assertEquals("Little",
+                metadata.get(ExecutableParser.ENDIAN));
+        assertEquals("32",
+                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+
+//         assertEquals("Linux",
 //               metadata.get(ExecutableParser.PLATFORM));
 
-         String content = handler.toString();
-         assertEquals("", content); // No text yet
-     } finally {
-         input.close();
-     }       
+        assertContains("<body />", r.xml);
+
     }
 
 }

@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.fontbox.ttf.NameRecord;
+import org.apache.fontbox.ttf.NamingTable;
 import org.apache.fontbox.ttf.TTFParser;
 import org.apache.fontbox.ttf.TrueTypeFont;
 import org.apache.tika.exception.TikaException;
@@ -56,21 +58,51 @@ public class TrueTypeParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        TikaInputStream tis = TikaInputStream.cast(stream);
+        
+        // Ask FontBox to parse the file for us
         TrueTypeFont font;
         TTFParser parser = new TTFParser();
-        TikaInputStream tis = TikaInputStream.cast(stream);
         if (tis != null && tis.hasFile()) {
-            font = parser.parseTTF(tis.getFile());
+            font = parser.parse(tis.getFile());
         } else {
-            font = parser.parseTTF(stream);
+            font = parser.parse(stream);
         }
 
+        // Report the details of the font
         metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-        metadata.set(TikaCoreProperties.CREATED, font.getHeader().getCreated().getTime());
-        metadata.set(
-                TikaCoreProperties.MODIFIED,
-                font.getHeader().getModified().getTime());
-
+        metadata.set(TikaCoreProperties.CREATED, 
+                font.getHeader().getCreated());
+        metadata.set(TikaCoreProperties.MODIFIED,
+                font.getHeader().getModified());
+        metadata.set(AdobeFontMetricParser.MET_DOC_VERSION,
+                Float.toString(font.getHeader().getVersion()));
+        
+        // Pull out the naming info
+        NamingTable fontNaming = font.getNaming();
+        for (NameRecord nr : fontNaming.getNameRecords()) {
+            if (nr.getNameId() == NameRecord.NAME_FONT_FAMILY_NAME) {
+                metadata.set(AdobeFontMetricParser.MET_FONT_FAMILY_NAME, nr.getString());
+            }
+            if (nr.getNameId() == NameRecord.NAME_FONT_SUB_FAMILY_NAME) {
+                metadata.set(AdobeFontMetricParser.MET_FONT_SUB_FAMILY_NAME, nr.getString());
+            }
+            if (nr.getNameId() == NameRecord.NAME_FULL_FONT_NAME) {
+                metadata.set(AdobeFontMetricParser.MET_FONT_NAME, nr.getString());
+                metadata.set(TikaCoreProperties.TITLE, nr.getString());
+            }
+            if (nr.getNameId() == NameRecord.NAME_POSTSCRIPT_NAME) {
+                metadata.set(AdobeFontMetricParser.MET_PS_NAME, nr.getString());
+            }
+            if (nr.getNameId() == NameRecord.NAME_COPYRIGHT) {
+                metadata.set("Copyright", nr.getString());
+            }
+            if (nr.getNameId() == NameRecord.NAME_TRADEMARK) {
+                metadata.set("Trademark", nr.getString());
+            }
+        }
+        
+        // For now, we only output metadata, no textual contents
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();

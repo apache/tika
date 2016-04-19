@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -76,14 +76,14 @@ public class XMLParser extends AbstractParser {
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
+        } finally {
+            xhtml.endElement("p");
+            xhtml.endDocument();
         }
-
-        xhtml.endElement("p");
-        xhtml.endDocument();
     }
 
     protected ContentHandler getContentHandler(
             ContentHandler handler, Metadata metadata, ParseContext context) {
-        return new TextContentHandler(handler);
+        return new TextContentHandler(handler, true);
     }
 }

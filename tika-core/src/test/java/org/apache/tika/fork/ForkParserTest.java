@@ -23,31 +23,36 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.concurrent.Semaphore;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class ForkParserTest extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class ForkParserTest {
+
+    @Test
     public void testHelloWorld() throws Exception {
         ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
                 new ForkTestParser());
         try {
+            Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
             InputStream stream = new ByteArrayInputStream(new byte[0]);
             ParseContext context = new ParseContext();
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(stream, output, metadata, context);
             assertEquals("Hello, World!", output.toString().trim());
+            assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         } finally {
             parser.close();
         }
     }
 
+    @Test
     public void testSerialParsing() throws Exception {
         ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
@@ -65,6 +70,7 @@ public class ForkParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testParallelParsing() throws Exception {
         final ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
@@ -100,6 +106,7 @@ public class ForkParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testPoolSizeReached() throws Exception {
         final ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),

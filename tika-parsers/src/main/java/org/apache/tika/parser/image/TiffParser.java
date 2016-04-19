@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.image;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -34,11 +35,13 @@ import org.xml.sax.SAXException;
 
 public class TiffParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -3941143576535464926L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.image("tiff"));
+            Collections.singleton(MediaType.image("tiff"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -48,18 +51,14 @@ public class TiffParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-
-        // read stream twice - exif and xmp extractors
-        stream.mark(Integer.MAX_VALUE);
-        FilterInputStream first = new FilterInputStream(stream) {
-            @Override
-            public void close() throws IOException {
-            }
-        };
-        new ImageMetadataExtractor(metadata).parseTiff(first);
-        stream.reset();
-        
-        new JempboxExtractor(metadata).parse(stream);
+        TemporaryResources tmp = new TemporaryResources();
+        try {
+            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            new ImageMetadataExtractor(metadata).parseTiff(tis.getFile());
+            new JempboxExtractor(metadata).parse(tis);
+        } finally {
+            tmp.dispose();
+        }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();

@@ -30,7 +30,21 @@ class GroupState {
     public boolean ignore;
     // Default is 1 if no uc control has been seen yet:
     public int ucSkip = 1;
+    public int list;
+    public int listLevel;
     public Charset fontCharset;
+    //in objdata
+    public boolean objdata;
+    //depth in pict, 1 = at pict level
+    public int pictDepth;
+    //in picprop key/value pair
+    public boolean sp;
+    //in picprop's name 
+    public boolean sn;
+    //in picprop's value
+    public boolean sv;
+    //in embedded object or not
+    public boolean object;
 
     // Create default (root) GroupState
     public GroupState() {
@@ -42,7 +56,12 @@ class GroupState {
         italic = other.italic;
         ignore = other.ignore;
         ucSkip = other.ucSkip;
+        list = other.list;
+        listLevel = other.listLevel;
         fontCharset = other.fontCharset;
-        depth = 1+other.depth;
+        depth = 1 + other.depth;
+        pictDepth = other.pictDepth > 0 ? other.pictDepth + 1 : 0;
+        //do not inherit object, sn, sv or sp
+
     }
 }

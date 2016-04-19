@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Content type detection based on the resource name. An instance of this
  * class contains a set of regular expression patterns that are matched
@@ -119,7 +121,7 @@ public class NameDetector implements Detector {
             int percent = name.indexOf('%');
             if (percent != -1) {
                 try {
-                    name = URLDecoder.decode(name, "UTF-8");
+                    name = URLDecoder.decode(name, UTF_8.name());
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException("UTF-8 not supported", e);
                 }

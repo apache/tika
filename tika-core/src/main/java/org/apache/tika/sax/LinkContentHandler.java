@@ -42,6 +42,27 @@ public class LinkContentHandler extends DefaultHandler {
 
     /** Collected links */
     private final List<Link> links = new ArrayList<Link>();
+    
+    /** Whether to collapse whitespace in anchor text */
+    private boolean collapseWhitespaceInAnchor;
+    
+    /**
+     * Default constructor
+     */
+    public LinkContentHandler() { 
+        this(false);
+    }
+    
+    /**
+     * Default constructor
+     *
+     * @boolean collapseWhitespaceInAnchor
+     */
+    public LinkContentHandler(boolean collapseWhitespaceInAnchor) {
+      super();
+      
+      this.collapseWhitespaceInAnchor = collapseWhitespaceInAnchor;
+    }
 
     /**
      * Returns the list of collected links.
@@ -63,6 +84,21 @@ public class LinkContentHandler extends DefaultHandler {
                 builder.setURI(attributes.getValue("", "href"));
                 builder.setTitle(attributes.getValue("", "title"));
                 builder.setRel(attributes.getValue("", "rel"));
+                builderStack.addFirst(builder);
+            } else if ("link".equals(local)) {
+                LinkBuilder builder = new LinkBuilder("link");
+                builder.setURI(attributes.getValue("", "href"));
+                builder.setRel(attributes.getValue("", "rel"));
+                builderStack.addFirst(builder);
+            } else if ("script".equals(local)) {
+                if (attributes.getValue("", "src") != null) {
+                    LinkBuilder builder = new LinkBuilder("script");
+                    builder.setURI(attributes.getValue("", "src"));
+                    builderStack.addFirst(builder);
+                }
+            } else if ("iframe".equals(local)) {
+                LinkBuilder builder = new LinkBuilder("iframe");
+                builder.setURI(attributes.getValue("", "src"));
                 builderStack.addFirst(builder);
             } else if ("img".equals(local)) {
                 LinkBuilder builder = new LinkBuilder("img");
@@ -94,9 +130,15 @@ public class LinkContentHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String local, String name) {
-        if (XHTML.equals(uri)) {
-            if ("a".equals(local) || "img".equals(local)) {
-                links.add(builderStack.removeFirst().getLink());
+        if (!builderStack.isEmpty() && XHTML.equals(uri)) {
+            if ("a".equals(local) || "img".equals(local) || "link".equals(local) ||
+                    "script".equals(local) || "iframe".equals(local)) {
+                // ensure this is the correct builder. not all </script> tags correspond
+                // to a LinkBuilder, e.g. for embedded scripts
+                if (builderStack.getFirst().getType().equals(local)) {
+                    LinkBuilder builder = builderStack.removeFirst();
+                    links.add(builder.getLink(collapseWhitespaceInAnchor));
+                }
             }
         }
     }

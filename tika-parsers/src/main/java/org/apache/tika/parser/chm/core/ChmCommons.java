@@ -19,7 +19,6 @@ package org.apache.tika.parser.chm.core;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
@@ -211,10 +210,9 @@ public class ChmCommons {
                 && !ChmCommons.isEmpty(fileToBeSaved)) {
             try {
                 output = new FileOutputStream(fileToBeSaved);
-                if (output != null)
-                    for (int i = 0; i < buffer.length; i++) {
-                        output.write(buffer[i]);
-                    }
+                for (byte[] bufferEntry : buffer) {
+                    output.write(bufferEntry);
+                }
             } catch (FileNotFoundException e) {
                 throw new TikaException(e.getMessage());
             } catch (IOException e) {
@@ -324,12 +322,9 @@ public class ChmCommons {
      */
     public static int indexOf(List<DirectoryListingEntry> list, String pattern) {
         int place = 0;
-        for (Iterator<DirectoryListingEntry> iterator = list.iterator(); iterator.hasNext();) {
-            DirectoryListingEntry directoryListingEntry = iterator.next();
-            if (directoryListingEntry.toString().contains(pattern)) {
-                return place;
-            } else
-                ++place;
+        for (DirectoryListingEntry directoryListingEntry : list) {
+            if (directoryListingEntry.toString().contains(pattern)) return place;
+            ++place;
         }
         return -1;// not found
     }
@@ -361,12 +356,6 @@ public class ChmCommons {
      */
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
     }
 
 }

@@ -16,25 +16,33 @@
  */
 package org.apache.tika.sax;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.metadata.Metadata;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import junit.framework.TestCase;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Unit tests for the {@link XHTMLContentHandler} class.
  */
-public class XHTMLContentHandlerTest extends TestCase {
+public class XHTMLContentHandlerTest {
 
     private ContentHandler output;
 
     private XHTMLContentHandler xhtml;
 
-    protected void setUp() {
+    @Before
+    public void setUp() {
         output = new BodyContentHandler();
         xhtml = new XHTMLContentHandler(output, new Metadata());
     }
@@ -45,6 +53,7 @@ public class XHTMLContentHandlerTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-188">TIKA-188</a>
      */
+    @Test
     public void testExtraWhitespace() throws SAXException {
         xhtml.startDocument();
 
@@ -83,6 +92,7 @@ public class XHTMLContentHandlerTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-394">TIKA-394</a>
      */
+    @Test
     public void testWhitespaceWithOptions() throws Exception {
         xhtml.startDocument();
         xhtml.startElement("form");
@@ -99,6 +109,7 @@ public class XHTMLContentHandlerTest extends TestCase {
         assertEquals("opt2", words[1]);
     }
     
+    @Test
     public void testWhitespaceWithMenus() throws Exception {
         xhtml.startDocument();
         xhtml.startElement("menu");
@@ -111,6 +122,40 @@ public class XHTMLContentHandlerTest extends TestCase {
         assertEquals(2, words.length);
         assertEquals("one", words[0]);
         assertEquals("two", words[1]);
+    }
+
+    @Test
+    public void testAttributesOnBody() throws Exception {
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+        AttributesImpl attributes = new AttributesImpl();
+
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
+
+        xhtmlContentHandler.startDocument();
+        xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "body", "body", attributes);
+        xhtmlContentHandler.endElement("body");
+        xhtmlContentHandler.endDocument();
+
+        assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
+    }
+    
+    @Test
+    public void testAttributesOnHtml() throws Exception {
+        ToHTMLContentHandler toHTMLContentHandler = new ToHTMLContentHandler();
+        XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(toHTMLContentHandler, new Metadata());
+        AttributesImpl attributes = new AttributesImpl();
+
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemscope", "itemscope", "", "");
+        attributes.addAttribute(XHTMLContentHandler.XHTML, "itemtype", "itemtype", "", "http://schema.org/Event");
+
+        xhtmlContentHandler.startDocument();
+        xhtmlContentHandler.startElement(XHTMLContentHandler.XHTML, "html", "html", attributes);
+        xhtmlContentHandler.endElement("html");
+        xhtmlContentHandler.endDocument();
+
+        assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
     }
 
     /**

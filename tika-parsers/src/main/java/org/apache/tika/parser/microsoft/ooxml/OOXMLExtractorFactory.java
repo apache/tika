@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -33,14 +34,12 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
-import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -57,7 +56,7 @@ public class OOXMLExtractorFactory {
             throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, Locale.getDefault());
         ExtractorFactory.setThreadPrefersEventExtractors(true);
-        
+
         try {
             OOXMLExtractor extractor;
             OPCPackage pkg;
@@ -67,34 +66,34 @@ public class OOXMLExtractorFactory {
             if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
                 pkg = (OPCPackage) tis.getOpenContainer();
             } else if (tis != null && tis.hasFile()) {
-                pkg = OPCPackage.open( tis.getFile().getPath(), PackageAccess.READ );
+                pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
                 tis.setOpenContainer(pkg);
             } else {
                 InputStream shield = new CloseShieldInputStream(stream);
-                pkg = OPCPackage.open(shield); 
+                pkg = OPCPackage.open(shield);
             }
-            
+
             // Get the type, and ensure it's one we handle
             MediaType type = ZipContainerDetector.detectOfficeOpenXML(pkg);
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
-               // Not a supported type, delegate to Empty Parser 
-               EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
-               return;
+                // Not a supported type, delegate to Empty Parser
+                EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
+                return;
             }
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
             // Have the appropriate OOXML text extractor picked
             POIXMLTextExtractor poiExtractor = ExtractorFactory.createExtractor(pkg);
-            
+
             POIXMLDocument document = poiExtractor.getDocument();
             if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
-               extractor = new XSSFExcelExtractorDecorator(
-                   context, (XSSFEventBasedExcelExtractor)poiExtractor, locale);
+                extractor = new XSSFExcelExtractorDecorator(
+                        context, (XSSFEventBasedExcelExtractor) poiExtractor, locale);
             } else if (document == null) {
-               throw new TikaException(
-                     "Expecting UserModel based POI OOXML extractor with a document, but none found. " +
-                     "The extractor returned was a " + poiExtractor
-               );
+                throw new TikaException(
+                        "Expecting UserModel based POI OOXML extractor with a document, but none found. " +
+                                "The extractor returned was a " + poiExtractor
+                );
             } else if (document instanceof XMLSlideShow) {
                 extractor = new XSLFPowerPointExtractorDecorator(
                         context, (XSLFPowerPointExtractor) poiExtractor);
@@ -104,23 +103,19 @@ public class OOXMLExtractorFactory {
             } else {
                 extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
             }
-            
-            // We need to get the content first, but not end 
-            //  the document just yet
-            EndDocumentShieldingContentHandler handler = 
-               new EndDocumentShieldingContentHandler(baseHandler);
-            extractor.getXHTML(handler, metadata, context);
 
-            // Now we can get the metadata
+            // Get the bulk of the metadata first, so that it's accessible during
+            //  parsing if desired by the client (see TIKA-1109)
             extractor.getMetadataExtractor().extract(metadata);
-            
-            // Then finish up
-            handler.reallyEndDocument();
+
+            // Extract the text, along with any in-document metadata
+            extractor.getXHTML(baseHandler, metadata, context);
         } catch (IllegalArgumentException e) {
-            if (e.getMessage().startsWith("No supported documents found")) {
+            if (e.getMessage() != null &&
+                    e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(
                         "TIKA-418: RuntimeException while getting content"
-                        + " for thmx and xps file types", e);
+                                + " for thmx and xps file types", e);
             } else {
                 throw new TikaException("Error creating OOXML extractor", e);
             }

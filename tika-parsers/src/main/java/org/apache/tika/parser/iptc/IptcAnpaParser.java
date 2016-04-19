@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -35,6 +36,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Parser for IPTC ANPA New Wire Feeds
@@ -160,7 +163,7 @@ public class IptcAnpaParser implements Parser {
          }
          int msgsize = is.read(buf);                // read in at least the full data
 
-         String message = (new String(buf)).toLowerCase();
+         String message = (new String(buf, UTF_8)).toLowerCase(Locale.ROOT);
          // these are not if-then-else, because we want to go from most common
          // and fall through to least.  this is imperfect, as these tags could
          // show up in other agency stories, but i can't find a spec or any
@@ -590,7 +593,7 @@ public class IptcAnpaParser implements Parser {
                      --read;
                   }
                }
-               if (tmp_line.toLowerCase().startsWith("by") || longline.equals("bdy_author")) {
+               if (tmp_line.toLowerCase(Locale.ROOT).startsWith("by") || longline.equals("bdy_author")) {
                   longkey = "bdy_author";
 
                   // prepend a space to subsequent line, so it gets parsed consistent with the lead line
@@ -598,30 +601,30 @@ public class IptcAnpaParser implements Parser {
 
                   // we have an author candidate
                   int term = tmp_line.length();
-                  term = Math.min(term, (tmp_line.indexOf("<")  > -1 ? tmp_line.indexOf("<")  : term));
-                  term = Math.min(term, (tmp_line.indexOf("=")  > -1 ? tmp_line.indexOf("=")  : term));
-                  term = Math.min(term, (tmp_line.indexOf("\n") > -1 ? tmp_line.indexOf("\n") : term));
+                  term = Math.min(term, (tmp_line.contains("<") ? tmp_line.indexOf("<")  : term));
+                  term = Math.min(term, (tmp_line.contains("=") ? tmp_line.indexOf("=")  : term));
+                  term = Math.min(term, (tmp_line.contains("\n") ? tmp_line.indexOf("\n") : term));
                   term = (term > 0 ) ? term : tmp_line.length();
                   bdy_author += tmp_line.substring(tmp_line.indexOf(" "), term);
                   metastarted = true;
-                  longline = ((tmp_line.indexOf("=")  > -1) && (!longline.equals(longkey)) ? longkey : "");
+                  longline = ((tmp_line.contains("=")) && (!longline.equals(longkey)) ? longkey : "");
                }
                else if (FORMAT == this.FMT_IPTC_BLM) {
                   String byline = "   by ";
-                  if (tmp_line.toLowerCase().contains(byline)) {
+                  if (tmp_line.toLowerCase(Locale.ROOT).contains(byline)) {
                      longkey = "bdy_author";
 
                      int term = tmp_line.length();
-                     term = Math.min(term, (tmp_line.indexOf("<")  > -1 ? tmp_line.indexOf("<")  : term));
-                     term = Math.min(term, (tmp_line.indexOf("=")  > -1 ? tmp_line.indexOf("=")  : term));
-                     term = Math.min(term, (tmp_line.indexOf("\n") > -1 ? tmp_line.indexOf("\n") : term));
+                     term = Math.min(term, (tmp_line.contains("<") ? tmp_line.indexOf("<")  : term));
+                     term = Math.min(term, (tmp_line.contains("=") ? tmp_line.indexOf("=")  : term));
+                     term = Math.min(term, (tmp_line.contains("\n") ? tmp_line.indexOf("\n") : term));
                      term = (term > 0 ) ? term : tmp_line.length();
                      // for bloomberg, the author line sits below their copyright statement
-                     bdy_author += tmp_line.substring(tmp_line.toLowerCase().indexOf(byline) + byline.length(), term) + " ";
+                     bdy_author += tmp_line.substring(tmp_line.toLowerCase(Locale.ROOT).indexOf(byline) + byline.length(), term) + " ";
                      metastarted = true;
-                     longline = ((tmp_line.indexOf("=")  > -1) && (!longline.equals(longkey)) ? longkey : "");
+                     longline = ((tmp_line.contains("=")) && (!longline.equals(longkey)) ? longkey : "");
                   }
-                  else if(tmp_line.toLowerCase().startsWith("c.")) {
+                  else if(tmp_line.toLowerCase(Locale.ROOT).startsWith("c.")) {
                      // the author line for bloomberg is a multiline starting with c.2011 Bloomberg News
                      // then containing the author info on the next line
                      if (val_next == TB) {
@@ -629,7 +632,7 @@ public class IptcAnpaParser implements Parser {
                         continue;
                      }
                   }
-                  else if(tmp_line.toLowerCase().trim().startsWith("(") && tmp_line.toLowerCase().trim().endsWith(")")) {
+                  else if(tmp_line.toLowerCase(Locale.ROOT).trim().startsWith("(") && tmp_line.toLowerCase(Locale.ROOT).trim().endsWith(")")) {
                      // the author line may have one or more comment lines between the copyright
                      // statement, and the By AUTHORNAME line
                      if (val_next == TB) {
@@ -639,15 +642,15 @@ public class IptcAnpaParser implements Parser {
                   }
                }
 
-               else if (tmp_line.toLowerCase().startsWith("eds") || longline.equals("bdy_source")) {
+               else if (tmp_line.toLowerCase(Locale.ROOT).startsWith("eds") || longline.equals("bdy_source")) {
                   longkey = "bdy_source";
                   // prepend a space to subsequent line, so it gets parsed consistent with the lead line
                   tmp_line = (longline.equals(longkey) ? " " : "") + tmp_line;
 
                   // we have a source candidate
                   int term = tmp_line.length();
-                  term = Math.min(term, (tmp_line.indexOf("<")  > -1 ? tmp_line.indexOf("<")  : term));
-                  term = Math.min(term, (tmp_line.indexOf("=")  > -1 ? tmp_line.indexOf("=")  : term));
+                  term = Math.min(term, (tmp_line.contains("<") ? tmp_line.indexOf("<")  : term));
+                  term = Math.min(term, (tmp_line.contains("=") ? tmp_line.indexOf("=")  : term));
 //                  term = Math.min(term, (tmp_line.indexOf("\n") > -1 ? tmp_line.indexOf("\n") : term));
                   term = (term > 0 ) ? term : tmp_line.length();
                   bdy_source += tmp_line.substring(tmp_line.indexOf(" ") + 1, term) + " ";
@@ -736,14 +739,14 @@ public class IptcAnpaParser implements Parser {
                   // standard reuters format
                   format_in = "HH:mm MM-dd-yy";
                }
-               SimpleDateFormat dfi =   new SimpleDateFormat(format_in);
+               SimpleDateFormat dfi = new SimpleDateFormat(format_in, Locale.ROOT);
                dfi.setTimeZone(TimeZone.getTimeZone("UTC"));
                dateunix = dfi.parse(ftr_datetime);
             }
             catch (ParseException ep) {
                // failed, but this will just fall through to setting the date to now
             }
-            SimpleDateFormat dfo =   new SimpleDateFormat(format_out);
+            SimpleDateFormat dfo = new SimpleDateFormat(format_out, Locale.ROOT);
             dfo.setTimeZone(TimeZone.getTimeZone("UTC"));
             ftr_datetime = dfo.format(dateunix);
          }

@@ -32,17 +32,20 @@ public class Activator implements BundleActivator {
 
     private ServiceRegistration parserService;
 
+    @Override
     public void start(BundleContext context) throws Exception {
         detectorService = context.registerService(
                 Detector.class.getName(),
                 new DefaultDetector(Activator.class.getClassLoader()),
                 new Properties());
+        Parser parser = new DefaultParser(Activator.class.getClassLoader());
         parserService = context.registerService(
                 Parser.class.getName(),
-                new DefaultParser(Activator.class.getClassLoader()),
+                parser,
                 new Properties());
     }
 
+    @Override
     public void stop(BundleContext context) throws Exception {
         parserService.unregister();
         detectorService.unregister();

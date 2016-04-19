@@ -16,6 +16,7 @@
  */
 package org.apache.tika.sax;
 
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -29,10 +30,23 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class TextContentHandler extends DefaultHandler {
 
+    private static final char[] SPACE = new char[] {' '};
+
     private final ContentHandler delegate;
+    private final boolean addSpaceBetweenElements;
 
     public TextContentHandler(ContentHandler delegate) {
+        this(delegate, false);
+    }
+
+    public TextContentHandler(ContentHandler delegate, boolean addSpaceBetweenElements) {
         this.delegate = delegate;
+        this.addSpaceBetweenElements = addSpaceBetweenElements;
+    }
+
+    @Override
+    public void setDocumentLocator(org.xml.sax.Locator locator) {
+	    delegate.setDocumentLocator(locator);
     }
 
     @Override
@@ -45,6 +59,14 @@ public class TextContentHandler extends DefaultHandler {
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
         delegate.ignorableWhitespace(ch, start, length);
+    }
+
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes attributes)
+             throws SAXException {
+        if (addSpaceBetweenElements) {
+            delegate.characters(SPACE, 0, SPACE.length);
+        }
     }
 
     @Override

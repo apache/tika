@@ -17,87 +17,217 @@
 
 package org.apache.tika.server;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.Response;
-
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
+import au.com.bytecode.opencsv.CSVReader;
+import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.server.resource.MetadataResource;
+import org.apache.tika.server.writer.CSVMessageBodyWriter;
+import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.writer.TextMessageBodyWriter;
+import org.apache.tika.server.writer.XMPMessageBodyWriter;
+import org.junit.Assert;
 import org.junit.Test;
 
-import au.com.bytecode.opencsv.CSVReader;
-
 public class MetadataResourceTest extends CXFTestBase {
-	private static final String META_PATH = "/meta";
+    private static final String META_PATH = "/meta";
 
-	private static final String endPoint = "http://localhost:"
-			+ TikaServerCli.DEFAULT_PORT;
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(MetadataResource.class);
+        sf.setResourceProvider(MetadataResource.class,
+                new SingletonResourceProvider(new MetadataResource()));
+    }
 
-	private Server server;
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new JSONMessageBodyWriter());
+        providers.add(new CSVMessageBodyWriter());
+        providers.add(new XMPMessageBodyWriter());
+        providers.add(new TextMessageBodyWriter());
+        sf.setProviders(providers);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
-	@Override
-	protected void setUp() throws Exception {
-		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-		sf.setResourceClasses(MetadataResource.class);
-		sf.setResourceProvider(MetadataResource.class,
-				new SingletonResourceProvider(new MetadataResource()));
-		sf.setAddress(endPoint + "/");
-		BindingFactoryManager manager = sf.getBus().getExtension(
-				BindingFactoryManager.class);
-		JAXRSBindingFactory factory = new JAXRSBindingFactory();
-		factory.setBus(sf.getBus());
-		manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
-				factory);
-		server = sf.create();
-	}
+    @Test
+    public void testSimpleWord() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .accept("text/csv")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#tearDown()
-	 */
-	@Override
-	protected void tearDown() throws Exception {
-		server.stop();
-		server.destroy();
-	}
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
-	@Test
-	public void testSimpleWord() throws Exception {
-		Response response = WebClient
-				.create(endPoint + META_PATH)
-				.type("application/msword")
-				.accept("text/csv")
-				.put(ClassLoader
-						.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        CSVReader csvReader = new CSVReader(reader);
 
-		Reader reader = new InputStreamReader(
-				(InputStream) response.getEntity());
+        Map<String, String> metadata = new HashMap<String, String>();
 
-		CSVReader csvReader = new CSVReader(reader);
+        String[] nextLine;
+        while ((nextLine = csvReader.readNext()) != null) {
+            metadata.put(nextLine[0], nextLine[1]);
+        }
+        csvReader.close();
 
-		Map<String, String> metadata = new HashMap<String, String>();
+        assertNotNull(metadata.get("Author"));
+        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        assertEquals("X-TIKA:digest:MD5", "f8be45c34e8919eedba48cc8d207fbf0",
+                metadata.get("X-TIKA:digest:MD5"));
+    }
 
-		String[] nextLine;
-		while ((nextLine = csvReader.readNext()) != null) {
-			metadata.put(nextLine[0], nextLine[1]);
-		}
+    @Test
+    public void testPasswordProtected() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/vnd.ms-excel")
+                .accept("text/csv")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
-		assertNotNull(metadata.get("Author"));
-		assertEquals("Maxim Valyanskiy", metadata.get("Author"));
-	}
+        // Won't work, no password given
+        assertEquals(500, response.getStatus());
+
+        // Try again, this time with the wrong password
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/vnd.ms-excel")
+                .accept("text/csv")
+                .header("Password", "wrong password")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+
+        assertEquals(500, response.getStatus());
+
+        // Try again, this time with the password
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/vnd.ms-excel")
+                .accept("text/csv")
+                .header("Password", "password")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+
+        // Will work
+        assertEquals(200, response.getStatus());
+
+        // Check results
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        CSVReader csvReader = new CSVReader(reader);
+
+        Map<String, String> metadata = new HashMap<String, String>();
+
+        String[] nextLine;
+        while ((nextLine = csvReader.readNext()) != null) {
+            metadata.put(nextLine[0], nextLine[1]);
+        }
+        csvReader.close();
+
+        assertNotNull(metadata.get("Author"));
+        assertEquals("pavel", metadata.get("Author"));
+    }
+
+    @Test
+    public void testJSON() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+
+        Metadata metadata = JsonMetadata.fromJson(reader);
+        assertNotNull(metadata.get("Author"));
+        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+    }
+
+    @Test
+    public void testXMP() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .accept("application/rdf+xml")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+
+        String result = IOUtils.readStringFromStream((InputStream) response.getEntity());
+        assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", result);
+    }
+
+    //Now test requesting one field
+    @Test
+    public void testGetField_XXX_NotFound() throws Exception {
+        Response response = WebClient.create(endPoint + META_PATH + "/xxx").type("application/msword")
+                .accept(MediaType.APPLICATION_JSON).put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        Assert.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void testGetField_Author_TEXT_Partial_BAD_REQUEST() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 8000));
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void testGetField_Author_TEXT_Partial_Found() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 12000));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
+        assertEquals("Maxim Valyanskiy", s);
+    }
+
+    @Test
+    public void testGetField_Author_JSON_Partial_Found() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                .accept(MediaType.APPLICATION_JSON).put(copy(stream, 12000));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), UTF_8));
+        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        assertEquals(1, metadata.names().length);
+    }
+
+    @Test
+    public void testGetField_Author_XMP_Partial_Found() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/dc:creator").type("application/msword")
+                .accept("application/rdf+xml").put(copy(stream, 12000));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
+        assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", s);
+    }
+
 
 }
+

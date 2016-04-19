@@ -36,11 +36,13 @@ import org.xml.sax.SAXException;
 
 public class JpegParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -1355028253756234603L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.image("jpeg"));
+            Collections.singleton(MediaType.image("jpeg"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;

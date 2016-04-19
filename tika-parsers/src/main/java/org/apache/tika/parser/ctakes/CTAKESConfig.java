@@ -1,0 +1,336 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.parser.ctakes;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.Properties;
+
+import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
+
+/**
+ * Configuration for {@see CTAKESContentHandler}.
+ * 
+ * This class allows to enable cTAKES and set its parameters.
+ */
+public class CTAKESConfig implements Serializable {
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -1599741171775528923L;
+
+    // Path to XML descriptor for AnalysisEngine
+    private String aeDescriptorPath = "/ctakes-core/desc/analysis_engine/SentencesAndTokensAggregate.xml";
+
+    // UMLS username
+    private String UMLSUser = "";
+
+    // UMLS password
+    private String UMLSPass = "";
+
+    // Enables formatted output
+    private boolean prettyPrint = true; 
+
+    // Type of cTAKES (UIMA) serializer
+    private CTAKESSerializer serializerType = CTAKESSerializer.XMI;
+
+    // OutputStream object used for CAS serialization
+    private OutputStream stream = NULL_OUTPUT_STREAM;
+
+    // Enables CAS serialization
+    private boolean serialize = false;
+
+    // Enables text analysis using cTAKES
+    private boolean text = true;
+
+    // List of metadata to analyze using cTAKES
+    private String[] metadata = null;
+
+    // List of annotation properties to add to metadata in addition to text covered by an annotation
+    private CTAKESAnnotationProperty[] annotationProps = null;
+
+    // Character used to separate the annotation properties into metadata
+    private char separatorChar = ':';
+
+    /**
+     * Default constructor.
+     */
+    public CTAKESConfig() {
+        init(this.getClass().getResourceAsStream("CTAKESConfig.properties"));
+    }
+
+    /**
+     * Loads properties from InputStream and then tries to close InputStream.
+     * @param stream {@see InputStream} object used to read properties.
+     */
+    public CTAKESConfig(InputStream stream) {
+        init(stream);
+    }
+
+    private void init(InputStream stream) {
+        if (stream == null) {
+            return;
+        }
+        Properties props = new Properties();
+
+        try {
+            props.load(stream);
+        } catch (IOException e) {
+            // TODO warning
+        } finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                } catch (IOException ioe) {
+                    // TODO warning
+                }
+            }
+        }
+
+        setAeDescriptorPath(props.getProperty("aeDescriptorPath", getAeDescriptorPath()));
+        setUMLSUser(props.getProperty("UMLSUser", getUMLSUser()));
+        setUMLSPass(props.getProperty("UMLSPass", getUMLSPass()));
+        setText(Boolean.valueOf(props.getProperty("text", Boolean.toString(isText()))));
+        setMetadata(props.getProperty("metadata", getMetadataAsString()).split(","));
+        setAnnotationProps(props.getProperty("annotationProps", getAnnotationPropsAsString()).split(","));
+        setSeparatorChar(props.getProperty("separatorChar", Character.toString(getSeparatorChar())).charAt(0));
+    }
+
+    /**
+     * Returns the path to XML descriptor for AnalysisEngine.
+     * @return the path to XML descriptor for AnalysisEngine.
+     */
+    public String getAeDescriptorPath() {
+        return aeDescriptorPath;
+    }
+
+    /**
+     * Returns the UMLS username.
+     * @return the UMLS username.
+     */
+    public String getUMLSUser() {
+        return UMLSUser;
+    }
+
+    /**
+     * Returns the UMLS password.
+     * @return the UMLS password.
+     */
+    public String getUMLSPass() {
+        return UMLSPass;
+    }
+
+    /**
+     * Returns {@code true} if formatted output is enabled, {@code false} otherwise.
+     * @return {@code true} if formatted output is enabled, {@code false} otherwise.
+     */
+    public boolean isPrettyPrint() {
+        return prettyPrint;
+    }
+
+    /**
+     * Returns the type of cTAKES (UIMA) serializer used to write the CAS.
+     * @return the type of cTAKES serializer.
+     */
+    public CTAKESSerializer getSerializerType() {
+        return serializerType;
+    }
+
+    /**
+     * Returns an {@see OutputStream} object used write the CAS.
+     * @return {@see OutputStream} object used write the CAS.
+     */
+    public OutputStream getOutputStream() {
+        return stream;
+    }
+
+    /**
+     * Returns {@code true} if CAS serialization is enabled, {@code false} otherwise.
+     * @return {@code true} if CAS serialization output is enabled, {@code false} otherwise.
+     */
+    public boolean isSerialize() {
+        return serialize;
+    }
+
+    /**
+     * Returns {@code true} if content text analysis is enabled {@code false} otherwise.
+     * @return {@code true} if content text analysis is enabled {@code false} otherwise.
+     */
+    public boolean isText() {
+        return text;
+    }
+
+    /**
+     * Returns an array of metadata whose values will be analyzed using cTAKES.
+     * @return an array of metadata whose values will be analyzed using cTAKES.
+     */
+    public String[] getMetadata() {
+        return metadata;
+    }
+
+    /**
+     * Returns a string containing a comma-separated list of metadata whose values will be analyzed using cTAKES.
+     * @return a string containing a comma-separated list of metadata whose values will be analyzed using cTAKES.
+     */
+    public String getMetadataAsString() {
+        if (metadata == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < metadata.length; i++) {
+            sb.append(metadata[i]);
+            if (i < metadata.length-1) {
+                sb.append(",");
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Returns an array of {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * @return an array of {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     */
+    public CTAKESAnnotationProperty[] getAnnotationProps() {
+        return annotationProps;
+    }
+
+    /**
+     * Returns a string containing a comma-separated list of {@see CTAKESAnnotationProperty} names that will be included into cTAKES metadata.
+     * @return
+     */
+    public String getAnnotationPropsAsString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("coveredText");
+        if (annotationProps != null) {
+            for (CTAKESAnnotationProperty property : annotationProps) {
+                sb.append(separatorChar);
+                sb.append(property.getName());
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Returns the separator character used for annotation properties.
+     * @return the separator character used for annotation properties.
+     */
+    public char getSeparatorChar() {
+        return separatorChar;
+    }
+
+    /**
+     * Sets the path to XML descriptor for AnalysisEngine.
+     * @param aeDescriptorPath the path to XML descriptor for AnalysisEngine.
+     */
+    public void setAeDescriptorPath(String aeDescriptorPath) {
+        this.aeDescriptorPath = aeDescriptorPath;
+    }
+
+    /**
+     * Sets the UMLS username.
+     * @param uMLSUser the UMLS username.
+     */
+    public void setUMLSUser(String uMLSUser) {
+        this.UMLSUser = uMLSUser;
+    }
+
+    /**
+     * Sets the UMLS password.
+     * @param uMLSPass the UMLS password.
+     */
+    public void setUMLSPass(String uMLSPass) {
+        this.UMLSPass = uMLSPass;
+    }
+
+    /**
+     * Enables the formatted output for serializer.
+     * @param prettyPrint {@true} to enable formatted output, {@code false} otherwise.
+     */
+    public void setPrettyPrint(boolean prettyPrint) {
+        this.prettyPrint = prettyPrint;
+    }
+
+    /**
+     * Sets the type of cTAKES (UIMA) serializer used to write CAS. 
+     * @param serializerType the type of cTAKES serializer.
+     */
+    public void setSerializerType(CTAKESSerializer serializerType) {
+        this.serializerType = serializerType;
+    }
+
+    /**
+     * Sets the {@see OutputStream} object used to write the CAS.
+     * @param stream the {@see OutputStream} object used to write the CAS.
+     */
+    public void setOutputStream(OutputStream stream) {
+        this.stream = stream;
+    }
+
+    /**
+     * Enables CAS serialization.
+     * @param serialize {@true} to enable CAS serialization, {@code false} otherwise.
+     */
+    public void setSerialize(boolean serialize) {
+        this.serialize = serialize;
+    }
+
+    /**
+     * Enables content text analysis using cTAKES.
+     * @param text {@true} to enable content text analysis, {@code false} otherwise.
+     */
+    public void setText(boolean text) {
+        this.text = text;
+    }
+
+    /**
+     * Sets the metadata whose values will be analyzed using cTAKES.
+     * @param metadata the metadata whose values will be analyzed using cTAKES.
+     */
+    public void setMetadata(String[] metadata) {
+        this.metadata = metadata;
+    }
+
+    /**
+     * Sets the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * @param annotationProps the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     */
+    public void setAnnotationProps(CTAKESAnnotationProperty[] annotationProps) {
+        this.annotationProps = annotationProps;
+    }
+
+    /**
+     * ets the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * @param annotationProps the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     */
+    public void setAnnotationProps(String[] annotationProps) {
+        CTAKESAnnotationProperty[] properties = new CTAKESAnnotationProperty[annotationProps.length];
+        for (int i = 0; i < annotationProps.length; i++) {
+            properties[i] = CTAKESAnnotationProperty.valueOf(annotationProps[i]);
+        }
+        setAnnotationProps(properties);
+    }
+
+    /**
+     * Sets the separator character used for annotation properties.
+     * @param separatorChar the separator character used for annotation properties.
+     */
+    public void setSeparatorChar(char separatorChar) {
+        this.separatorChar = separatorChar;
+    }
+}

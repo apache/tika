@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.2</version>
+    <version>1.13-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -42,6 +42,21 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-logging</groupId>
+          <artifactId>commons-logging-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -49,25 +64,37 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-batch</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.5.6</version>
     </dependency>
     <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>1.7.1</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <artifactId>commons-io</artifactId>
       <groupId>commons-io</groupId>
-      <version>2.1</version>
-      <scope>test</scope>
+      <version>${commons.io.version}</version>
     </dependency>
   </dependencies>
 
@@ -105,10 +132,15 @@
                     <exclude>CHANGES</exclude>
                     <exclude>README</exclude>
                     <exclude>builddef.lst</exclude>
+                    <!-- clutter not needed in jar -->
+                    <exclude>resources/grib1/nasa/README*.pdf</exclude>
+                    <exclude>resources/grib1/**/readme*.txt</exclude>
+                    <exclude>resources/grib2/**/readme*.txt</exclude>
                     <!-- TIKA-763: Workaround to avoid including LGPL classes -->
                     <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
                     <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
                     <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
+
                   </excludes>
                 </filter>
               </filters>
@@ -129,10 +161,33 @@
                   <resource>META-INF/DEPENDENCIES</resource>
                   <file>target/classes/META-INF/DEPENDENCIES</file>
                 </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/cxf/bus-extensions.txt</resource>
+                </transformer>
               </transformers>
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>src/test/resources/test-data/**</exclude>
+          </excludes>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -208,4 +263,16 @@
     </profile>
   </profiles>
 
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
 </project>

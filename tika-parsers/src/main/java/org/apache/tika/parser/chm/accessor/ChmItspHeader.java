@@ -22,6 +22,8 @@ import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Directory header The directory starts with a header; its format is as
  * follows: 0000: char[4] 'ITSP' 0004: DWORD Version number 1 0008: DWORD Length
@@ -45,11 +47,7 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
 public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     // TODO: refactor all unmarshals
     private static final long serialVersionUID = 1962394421998181341L;
-    private byte[] signature = new String(ChmConstants.ITSP).getBytes(); /*
-                                                                          * 0
-                                                                          * (ITSP
-                                                                          * )
-                                                                          */
+    private byte[] signature;
     private int version; /* 4 */
     private int header_len; /* 8 */
     private int unknown_000c; /* c */
@@ -69,9 +67,17 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     private int dataRemained;
     private int currentPlace = 0;
 
+    public ChmItspHeader() {
+        signature = ChmConstants.ITSP.getBytes(UTF_8); /*
+                                                        * 0
+                                                        * (ITSP
+                                                        * )
+                                                        */
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("[ signature:=" + new String(getSignature())
+        sb.append("[ signature:=" + new String(getSignature(), UTF_8)
                 + System.getProperty("line.separator"));
         sb.append("version:=\t" + getVersion()
                 + System.getProperty("line.separator"));
@@ -133,10 +139,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > this.getDataRemained())
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -147,10 +153,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > dataLenght)
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -530,19 +536,13 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
                         ChmConstants.BYTE_ARRAY_LENGHT));
 
         /* Checks validity of the itsp header */
-        if (!new String(chmItspHeader.getSignature()).equals(ChmConstants.ITSP))
-            throw new ChmParsingException("seems not valid signature");
+        if (!new String(chmItspHeader.getSignature(), UTF_8).equals(ChmConstants.ITSP))
+                throw new ChmParsingException("seems not valid signature");
 
         if (chmItspHeader.getVersion() != ChmConstants.CHM_VER_1)
             throw new ChmParsingException("!=ChmConstants.CHM_VER_1");
 
         if (chmItspHeader.getHeader_len() != ChmConstants.CHM_ITSP_V1_LEN)
             throw new ChmParsingException("!= ChmConstants.CHM_ITSP_V1_LEN");
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
     }
 }

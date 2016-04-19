@@ -17,91 +17,100 @@
 
 package org.apache.tika.parser.pkg;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class ArParserTest extends AbstractPkgTest {
-	public void testArParsing() throws Exception {
-		Parser parser = new AutoDetectParser();
+    @Test
+    public void testArParsing() throws Exception {
+        Parser parser = new AutoDetectParser();
 
-		ContentHandler handler = new BodyContentHandler();
-		Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
-		InputStream stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testARofText.ar");
-		try {
-			parser.parse(stream, handler, metadata, recursingContext);
-		} finally {
-			stream.close();
-		}
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofText.ar")) {
+            parser.parse(stream, handler, metadata, recursingContext);
+        }
 
-		assertEquals("application/x-archive",
-				metadata.get(Metadata.CONTENT_TYPE));
-		String content = handler.toString();
-		assertTrue(content.contains("testTXT.txt"));
-		assertTrue(content.contains("Test d'indexation de Txt"));
-		assertTrue(content.contains("http://www.apache.org"));
+        assertEquals("application/x-archive",
+                metadata.get(Metadata.CONTENT_TYPE));
+        String content = handler.toString();
+        assertContains("testTXT.txt", content);
+        assertContains("Test d'indexation de Txt", content);
+        assertContains("http://www.apache.org", content);
 
-		stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testARofSND.ar");
-		try {
-			parser.parse(stream, handler, metadata, recursingContext);
-		} finally {
-			stream.close();
-		}
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofSND.ar")) {
+            parser.parse(stream, handler, metadata, recursingContext);
+        }
 
-		assertEquals("application/x-archive",
-				metadata.get(Metadata.CONTENT_TYPE));
-		content = handler.toString();
-		assertTrue(content.contains("testAU.au"));
-	}
+        assertEquals("application/x-archive",
+                     metadata.get(Metadata.CONTENT_TYPE));
+        content = handler.toString();
+        assertContains("testAU.au", content);
+    }
 
-	/**
-	 * Tests that the ParseContext parser is correctly fired for all the
-	 * embedded entries.
-	 */
-	public void testEmbedded() throws Exception {
-		Parser parser = new AutoDetectParser(); // Should auto-detect!
-		ContentHandler handler = new BodyContentHandler();
-		Metadata metadata = new Metadata();
+    /**
+     * Tests that the ParseContext parser is correctly fired for all the
+     * embedded entries.
+     */
+    @Test
+    public void testEmbedded() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
-		InputStream stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testARofText.ar");
-		try {
-			parser.parse(stream, handler, metadata, trackingContext);
-		} finally {
-			stream.close();
-		}
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofText.ar")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
 
-		assertEquals(1, tracker.filenames.size());
-		assertEquals(1, tracker.mediatypes.size());
+        assertEquals(1, tracker.filenames.size());
+        assertEquals(1, tracker.mediatypes.size());
+        assertEquals(1, tracker.modifiedAts.size());
 
-		assertEquals("testTXT.txt", tracker.filenames.get(0));
+        assertEquals("testTXT.txt", tracker.filenames.get(0));
 
-		for (String type : tracker.mediatypes) {
-			assertNull(type);
-		}
+        String modifiedAt = tracker.modifiedAts.get(0);
+        assertTrue("Modified at " + modifiedAt, modifiedAt.startsWith("201"));
 
-		tracker.reset();
-		stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testARofSND.ar");
-		try {
-			parser.parse(stream, handler, metadata, trackingContext);
-		} finally {
-			stream.close();
-		}
+        for (String type : tracker.mediatypes) {
+            assertNull(type);
+        }
+        for(String crt : tracker.createdAts) {
+            assertNull(crt);
+        }
 
-		assertEquals(1, tracker.filenames.size());
-		assertEquals(1, tracker.mediatypes.size());
-		assertEquals("testAU.au", tracker.filenames.get(0));
+        tracker.reset();
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofSND.ar")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
 
-		for (String type : tracker.mediatypes) {
-			assertNull(type);
-		}
-	}
+        assertEquals(1, tracker.filenames.size());
+        assertEquals(1, tracker.mediatypes.size());
+        assertEquals(1, tracker.modifiedAts.size());
+        assertEquals("testAU.au", tracker.filenames.get(0));
+
+        modifiedAt = tracker.modifiedAts.get(0);
+        assertTrue("Modified at " + modifiedAt, modifiedAt.startsWith("201"));
+        
+        for (String type : tracker.mediatypes) {
+            assertNull(type);
+        }
+        for(String crt : tracker.createdAts) {
+            assertNull(crt);
+        }
+    }
 }

@@ -16,10 +16,15 @@
  */
 package org.apache.tika.language;
 
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Language profile based on ngram counts.
@@ -37,6 +42,12 @@ public class LanguageProfile {
      */
     private final Map<String, Counter> ngrams =
         new HashMap<String, Counter>();
+
+    /**
+     * Sorted ngram cache for faster distance calculation.
+     */
+    private Interleaved interleaved = new Interleaved();
+    public static boolean useInterleaved = true; // For testing purposes
 
     /**
      * The sum of all ngram counts in this profile.
@@ -123,6 +134,10 @@ public class LanguageProfile {
      * @return distance between the profiles
      */
     public double distance(LanguageProfile that) {
+        return useInterleaved ? distanceInterleaved(that) : distanceStandard(that);
+    }
+
+    private double distanceStandard(LanguageProfile that) {
         if (length != that.length) {
             throw new IllegalArgumentException(
                     "Unable to calculage distance of language profiles"
@@ -152,4 +167,148 @@ public class LanguageProfile {
         return ngrams.toString();
     }
 
+    /* Code for interleaved distance calculation below */
+
+    private double distanceInterleaved(LanguageProfile that) {
+        if (length != that.length) {
+            throw new IllegalArgumentException(
+                    "Unable to calculage distance of language profiles"
+                    + " with different ngram lengths: "
+                    + that.length + " != " + length);
+        }
+       
+        double sumOfSquares = 0.0;
+        double thisCount = Math.max(this.count, 1.0);
+        double thatCount = Math.max(that.count, 1.0);
+        
+        Interleaved.Entry thisEntry = updateInterleaved().firstEntry();
+        Interleaved.Entry thatEntry = that.updateInterleaved().firstEntry();
+
+        // Iterate the lists in parallel, until both lists has been depleted
+        while (thisEntry.hasNgram() || thatEntry.hasNgram()) {
+            if (!thisEntry.hasNgram()) { // Depleted this
+                sumOfSquares += square(thatEntry.count / thatCount);
+                thatEntry.next();
+                continue;
+            }
+
+            if (!thatEntry.hasNgram()) { // Depleted that
+                sumOfSquares += square(thisEntry.count / thisCount);
+                thisEntry.next();
+                continue;
+            }
+
+            final int compare = thisEntry.compareTo(thatEntry);
+
+            if (compare == 0) { // Term exists both in this and that
+                double difference = thisEntry.count/thisCount - thatEntry.count/thatCount;
+                sumOfSquares += square(difference);
+                thisEntry.next();
+                thatEntry.next();
+            } else if (compare < 0) { // Term exists only in this
+                sumOfSquares += square(thisEntry.count/thisCount);
+                thisEntry.next();
+            } else { // Term exists only in that
+                sumOfSquares += square(thatEntry.count/thatCount);
+                thatEntry.next();
+            }
+        }
+        return Math.sqrt(sumOfSquares);
+    }
+    private double square(double count) {
+        return count * count;
+    }
+
+    private class Interleaved {
+
+        private char[] entries = null; // <ngram(length chars)><count(2 chars)>*
+        private int size = 0; // Number of entries (one entry = length+2 chars)
+        private long entriesGeneratedAtCount = -1; // Keeps track of when the sequential structure was current
+
+        /**
+         * Ensure that the entries array is in sync with the ngrams.
+         */
+        public void update() {
+            if (count == entriesGeneratedAtCount) { // Already up to date
+                return;
+            }
+            size = ngrams.size();
+            final int numChars = (length+2)*size;
+            if (entries == null || entries.length < numChars) {
+                entries = new char[numChars];
+            }
+            int pos = 0;
+            for (Map.Entry<String, Counter> entry: getSortedNgrams()) {
+                for (int l = 0 ; l < length ; l++) {
+                    entries[pos + l] = entry.getKey().charAt(l);
+                }
+                entries[pos + length] = (char)(entry.getValue().count / 65536); // Upper 16 bit
+                entries[pos + length + 1] = (char)(entry.getValue().count % 65536); // lower 16 bit
+                pos += length + 2;
+            }
+            entriesGeneratedAtCount = count;
+        }
+
+        public Entry firstEntry() {
+            Entry entry = new Entry();
+            if (size > 0) {
+                entry.update(0);
+            }
+            return entry;
+        }
+        
+        private List<Map.Entry<String, Counter>> getSortedNgrams() {
+            List<Map.Entry<String, Counter>> entries = new ArrayList<Map.Entry<String, Counter>>(ngrams.size());
+            entries.addAll(ngrams.entrySet());
+            Collections.sort(entries, new Comparator<Map.Entry<String, Counter>>() {
+                @Override
+                public int compare(Map.Entry<String, Counter> o1, Map.Entry<String, Counter> o2) {
+                    return o1.getKey().compareTo(o2.getKey());
+                }
+            });
+            return entries;
+        }
+        
+        private class Entry implements Comparable<Entry> {
+            char[] ngram = new char[length];
+            int count = 0;
+            int pos = 0;
+
+            private void update(int pos) {
+                this.pos = pos;
+                if (pos >= size) { // Reached the end
+                    return;
+                }
+                final int origo = pos*(length+2);
+                System.arraycopy(entries, origo, ngram, 0, length);
+                count = entries[origo+length] * 65536 + entries[origo+length+1];
+            }
+
+            @Override
+            public int compareTo(Entry other) {
+                for (int i = 0 ; i < ngram.length ; i++) {
+                    if (ngram[i] != other.ngram[i]) {
+                        return ngram[i] - other.ngram[i];
+                    }
+                }
+                return 0;
+            }
+            public boolean hasNext() {
+                return pos < size-1;
+            }
+            public boolean hasNgram() {
+                return pos < size;
+            }
+            public void next() {
+                update(pos+1);
+            }
+            public String toString() {
+                return new String(ngram) + "(" + count + ")";
+            }
+        }
+    }
+    private Interleaved updateInterleaved() {
+        interleaved.update();
+        return interleaved;
+    }
 }

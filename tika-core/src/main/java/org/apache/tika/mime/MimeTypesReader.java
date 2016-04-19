@@ -16,14 +16,7 @@
  */
 package org.apache.tika.mime;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -32,6 +25,14 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
@@ -89,28 +90,34 @@ import org.xml.sax.helpers.DefaultHandler;
  *         type CDATA #REQUIRED&gt;
  *  ]&gt;
  * </pre>
+ * 
+ * In addition to the standard fields, this will also read two Tika specific fields:
+ *  - link
+ *  - uti
+ * 
  *
- * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
+ * @see <a href="http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec">http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec</a>
  */
-class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
-
-    private final MimeTypes types;
+public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
+    protected final MimeTypes types;
 
     /** Current type */
-    private MimeType type = null;
+    protected MimeType type = null;
 
-    private int priority;
+    protected int priority;
 
-    private StringBuilder characters = null;
+    protected StringBuilder characters = null;
 
-    MimeTypesReader(MimeTypes types) {
+    protected MimeTypesReader(MimeTypes types) {
         this.types = types;
     }
 
-    void read(InputStream stream) throws IOException, MimeTypeException {
+    public void read(InputStream stream) throws IOException, MimeTypeException {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(false);
+            factory.setFeature(
+                    XMLConstants.FEATURE_SECURE_PROCESSING, true);
             SAXParser parser = factory.newSAXParser();
             parser.parse(stream, this);
         } catch (ParserConfigurationException e) {
@@ -120,7 +127,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         }
     }
 
-    void read(Document document) throws MimeTypeException {
+    public void read(Document document) throws MimeTypeException {
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
             Transformer transformer = factory.newTransformer();
@@ -145,7 +152,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
                 try {
                     type = types.forName(name);
                 } catch (MimeTypeException e) {
-                    throw new SAXException(e);
+                    handleMimeError(name, e, qName, attributes);
                 }
             }
         } else if (ALIAS_TAG.equals(qName)) {
@@ -154,7 +161,10 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         } else if (SUB_CLASS_OF_TAG.equals(qName)) {
             String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
             types.setSuperType(type, MediaType.parse(parent));
-        } else if (COMMENT_TAG.equals(qName)) {
+        } else if (ACRONYM_TAG.equals(qName)||
+                   COMMENT_TAG.equals(qName)||
+                   TIKA_LINK_TAG.equals(qName)||
+                   TIKA_UTI_TAG.equals(qName)) {
             characters = new StringBuilder();
         } else if (GLOB_TAG.equals(qName)) {
             String pattern = attributes.getValue(PATTERN_ATTR);
@@ -163,7 +173,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
                 try {
                     types.addPattern(type, pattern, Boolean.valueOf(isRegex));
                 } catch (MimeTypeException e) {
-                    throw new SAXException(e);
+                  handleGlobError(type, pattern, e, qName, attributes);
                 }
             }
         } else if (ROOT_XML_TAG.equals(qName)) {
@@ -199,6 +209,20 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
             } else if (COMMENT_TAG.equals(qName)) {
                 type.setDescription(characters.toString().trim());
                 characters = null;
+            } else if (ACRONYM_TAG.equals(qName)) {
+                type.setAcronym(characters.toString().trim());
+                characters = null;
+            } else if (TIKA_UTI_TAG.equals(qName)) {
+                type.setUniformTypeIdentifier(characters.toString().trim());
+                characters = null;
+            } else if (TIKA_LINK_TAG.equals(qName)) {
+                try {
+                    type.addLink(new URI(characters.toString().trim()));
+                } 
+                catch (URISyntaxException e) {
+                    throw new IllegalArgumentException("unable to parse link: "+characters, e);
+                }
+                characters = null;
             } else if (MATCH_TAG.equals(qName)) {
                 current.stop();
             } else if (MAGIC_TAG.equals(qName)) {
@@ -215,6 +239,14 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         if (characters != null) {
             characters.append(ch, start, length);
         }
+    }
+
+    protected void handleMimeError(String input, MimeTypeException ex, String qName, Attributes attributes) throws SAXException {
+      throw new SAXException(ex);
+    }
+    
+    protected void handleGlobError(MimeType type, String pattern, MimeTypeException ex, String qName, Attributes attributes) throws SAXException {
+      throw new SAXException(ex);
     }
 
     private ClauseRecord current = new ClauseRecord(null);

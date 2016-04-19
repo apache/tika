@@ -16,22 +16,24 @@
  */
 package org.apache.tika.parser.epub;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
+import static org.apache.tika.TikaTest.assertContains;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class EpubParserTest extends TestCase {
+public class EpubParserTest {
 
+    @Test
     public void testXMLParser() throws Exception {
-        InputStream input = EpubParserTest.class.getResourceAsStream(
-                "/test-documents/testEPUB.epub");
-        try {
+        try (InputStream input = EpubParserTest.class.getResourceAsStream(
+                "/test-documents/testEPUB.epub")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new EpubParser().parse(input, handler, metadata, new ParseContext());
@@ -46,12 +48,10 @@ public class EpubParserTest extends TestCase {
                     metadata.get(TikaCoreProperties.PUBLISHER));
 
             String content = handler.toString();
-            assertTrue(content.contains("Plus a simple div"));
-            assertTrue(content.contains("First item"));
-            assertTrue(content.contains("The previous headings were subchapters"));
-            assertTrue(content.contains("Table data"));
-        } finally {
-            input.close();
+            assertContains("Plus a simple div", content);
+            assertContains("First item", content);
+            assertContains("The previous headings were subchapters", content);
+            assertContains("Table data", content);
         }
     }
 

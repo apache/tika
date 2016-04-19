@@ -18,12 +18,13 @@ package org.apache.tika.parser.font;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.fontbox.afm.AFMParser;
-import org.apache.fontbox.afm.FontMetric;
+import org.apache.fontbox.afm.FontMetrics;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -46,7 +47,20 @@ public class AdobeFontMetricParser extends AbstractParser {
          MediaType.application( "x-font-adobe-metric" );
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(AFM_TYPE);
-        
+
+    // TIKA-1325 Replace these with properties, from a well known standard
+    static final String MET_AVG_CHAR_WIDTH = "AvgCharacterWidth";
+    static final String MET_DOC_VERSION = "DocVersion";
+    static final String MET_PS_NAME = "PSName";
+    static final String MET_FONT_NAME = "FontName";
+    static final String MET_FONT_FULL_NAME = "FontFullName";
+    static final String MET_FONT_FAMILY_NAME = "FontFamilyName";
+    static final String MET_FONT_SUB_FAMILY_NAME = "FontSubFamilyName";
+    static final String MET_FONT_VERSION = "FontVersion";
+    static final String MET_FONT_WEIGHT = "FontWeight";
+    static final String MET_FONT_NOTICE = "FontNotice";
+    static final String MET_FONT_UNDERLINE_THICKNESS = "FontUnderlineThickness";
+    
     public Set<MediaType> getSupportedTypes( ParseContext context ) { 
        return SUPPORTED_TYPES;
     }
@@ -54,16 +68,19 @@ public class AdobeFontMetricParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context)
                       throws IOException, SAXException, TikaException { 
-       FontMetric fontMetrics;
+       FontMetrics fontMetrics;
        AFMParser  parser      = new AFMParser( stream );
 
        // Have FontBox process the file
-       parser.parse();
-       fontMetrics = parser.getResult();
+       fontMetrics = parser.parse();
 
        // Get the comments in the file to display in xhtml
-       List<String> comments = fontMetrics.getComments();
-
+       List<String> unModifiableComments = fontMetrics.getComments();
+       //have to copy because we modify list in extractCreationDate
+       List<String> comments = new ArrayList<>();
+        for (String comment : unModifiableComments) {
+            comments.add(comment);
+        }
        // Get the creation date
        extractCreationDate( metadata, comments );
 
@@ -71,15 +88,15 @@ public class AdobeFontMetricParser extends AbstractParser {
        metadata.set( TikaCoreProperties.TITLE, fontMetrics.getFullName() );
 
        // Add metadata associated with the font type
-       addMetadataByString( metadata, "AvgCharacterWidth", Float.toString( fontMetrics.getAverageCharacterWidth() ) );
-       addMetadataByString( metadata, "DocVersion", Float.toString( fontMetrics.getAFMVersion() ) );
-       addMetadataByString( metadata, "FontName", fontMetrics.getFontName() );
-       addMetadataByString( metadata, "FontFullName", fontMetrics.getFullName() );
-       addMetadataByString( metadata, "FontFamilyName", fontMetrics.getFamilyName() );
-       addMetadataByString( metadata, "FontVersion", fontMetrics.getFontVersion() );
-       addMetadataByString( metadata, "FontWeight", fontMetrics.getWeight() );
-       addMetadataByString( metadata, "FontNotice", fontMetrics.getNotice() );
-       addMetadataByString( metadata, "FontUnderlineThickness", Float.toString( fontMetrics.getUnderlineThickness() ) );
+       addMetadataByString( metadata, MET_AVG_CHAR_WIDTH, Float.toString( fontMetrics.getAverageCharacterWidth() ) );
+       addMetadataByString( metadata, MET_DOC_VERSION, Float.toString( fontMetrics.getAFMVersion() ) );
+       addMetadataByString( metadata, MET_FONT_NAME, fontMetrics.getFontName() );
+       addMetadataByString( metadata, MET_FONT_FULL_NAME, fontMetrics.getFullName() );
+       addMetadataByString( metadata, MET_FONT_FAMILY_NAME, fontMetrics.getFamilyName() );
+       addMetadataByString( metadata, MET_FONT_VERSION, fontMetrics.getFontVersion() );
+       addMetadataByString( metadata, MET_FONT_WEIGHT, fontMetrics.getWeight() );
+       addMetadataByString( metadata, MET_FONT_NOTICE, fontMetrics.getNotice() );
+       addMetadataByString( metadata, MET_FONT_UNDERLINE_THICKNESS, Float.toString( fontMetrics.getUnderlineThickness() ) );
 
        // Output the remaining comments as text
        XHTMLContentHandler xhtml = new XHTMLContentHandler( handler, metadata );

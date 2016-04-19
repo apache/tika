@@ -31,7 +31,8 @@ import org.xml.sax.ContentHandler;
  * for unknown document types.
  */
 public class ErrorParser extends AbstractParser {
-
+    private static final long serialVersionUID = 7727423956957641824L;
+    
     /**
      * Singleton instance of this class.
      */
@@ -47,5 +48,4 @@ public class ErrorParser extends AbstractParser {
             throws TikaException {
         throw new TikaException("Parse error");
     }
-
 }

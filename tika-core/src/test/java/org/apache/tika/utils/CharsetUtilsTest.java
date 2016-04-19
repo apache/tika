@@ -16,10 +16,15 @@
  */
 package org.apache.tika.utils;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class CharsetUtilsTest extends TestCase {
+import org.junit.Test;
 
+public class CharsetUtilsTest {
+
+    @Test
     public void testInvalidCharset() {
         assertFalse(CharsetUtils.isSupported(" utf-8"));
         assertFalse(CharsetUtils.isSupported("my charset name"));
@@ -28,11 +33,13 @@ public class CharsetUtilsTest extends TestCase {
         assertFalse(CharsetUtils.isSupported(""));
     }
     
+    @Test
     public void testValidCharset() {
         assertTrue(CharsetUtils.isSupported("UTF-8"));
         assertFalse(CharsetUtils.isSupported("bogus"));
     }
     
+    @Test
     public void testCleaningCharsetName() {
         assertEquals("UTF-8", CharsetUtils.clean("utf-8"));
         assertEquals(null, CharsetUtils.clean(""));
@@ -42,6 +49,7 @@ public class CharsetUtilsTest extends TestCase {
         assertEquals("ISO-8859-1", CharsetUtils.clean("ISO-8859-1, latin1"));
     }
     
+    @Test
     public void testFunkyNames() {
         assertEquals(null, CharsetUtils.clean("none"));
         assertEquals(null, CharsetUtils.clean("no"));

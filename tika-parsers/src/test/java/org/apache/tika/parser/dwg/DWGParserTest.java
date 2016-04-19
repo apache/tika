@@ -16,46 +16,77 @@
  */
 package org.apache.tika.parser.dwg;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.apache.tika.TikaTest.assertContains;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class DWGParserTest extends TestCase {
+public class DWGParserTest {
+  
+    @Test
     public void testDWG2000Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2000.dwg");
         testParserAlt(input);
     }
 
+    @Test
     public void testDWG2004Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2004.dwg");
         testParser(input);
     }
 
+    @Test
     public void testDWG2004ParserNoHeaderAddress() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2004_no_header.dwg");
         testParserNoHeader(input);
     }
 
+    @Test
     public void testDWG2007Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2007.dwg");
         testParser(input);
     }
 
+    @Test
     public void testDWG2010Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2010.dwg");
         testParser(input);
     }
+    
+    @Test
+    public void testDWG2010CustomPropertiesParser() throws Exception {
+        // Check that standard parsing works
+        InputStream testInput = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2010_custom_props.dwg");
+        testParser(testInput);
+        
+        // Check that custom properties with alternate padding work
+        try (InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2010_custom_props.dwg")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new DWGParser().parse(input, handler, metadata, null);
 
+            assertEquals("valueforcustomprop1",
+                    metadata.get("customprop1"));
+            assertEquals("valueforcustomprop2",
+                    metadata.get("customprop2"));
+        }
+    }
+
+    @Test
     public void testDWGMechParser() throws Exception {
         String[] types = new String[] {
               "6", "2004", "2004DX", "2005", "2006",
@@ -68,6 +99,7 @@ public class DWGParserTest extends TestCase {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void testParser(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
@@ -98,14 +130,15 @@ public class DWGParserTest extends TestCase {
                   metadata.get(Metadata.SUBJECT));
 
             String content = handler.toString();
-            assertTrue(content.contains("The quick brown fox jumps over the lazy dog"));
-            assertTrue(content.contains("Gym class"));
-            assertTrue(content.contains("www.alfresco.com"));
+            assertContains("The quick brown fox jumps over the lazy dog", content);
+            assertContains("Gym class", content);
+            assertContains("www.alfresco.com", content);
         } finally {
             input.close();
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void testParserNoHeader(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
@@ -123,12 +156,13 @@ public class DWGParserTest extends TestCase {
             assertNull(metadata.get(TikaCoreProperties.RELATION));
 
             String content = handler.toString();
-            assertTrue(content.contains(""));
+            assertEquals("", content);
         } finally {
             input.close();
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void testParserAlt(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
@@ -151,14 +185,16 @@ public class DWGParserTest extends TestCase {
                     metadata.get(TikaCoreProperties.COMMENTS));
             assertEquals("bejanpol",
                     metadata.get(TikaCoreProperties.MODIFIER));
+            assertEquals("bejanpol",
+                    metadata.get(Metadata.LAST_AUTHOR));
             assertEquals("http://mycompany/drawings",
                     metadata.get(TikaCoreProperties.RELATION));
             assertEquals("MyCustomPropertyValue",
                   metadata.get("MyCustomProperty"));
 
             String content = handler.toString();
-            assertTrue(content.contains("This is a comment"));
-            assertTrue(content.contains("mycompany"));
+            assertContains("This is a comment", content);
+            assertContains("mycompany", content);
         } finally {
             input.close();
         }

@@ -25,32 +25,26 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-//Junit imports
-import junit.framework.TestCase;
+import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test cases to exercise the {@link NetCDFParser}.
- * 
  */
-public class NetCDFParserTest extends TestCase {
+public class NetCDFParserTest {
 
+    @Test
     public void testParseGlobalMetadata() throws Exception {
-        if(System.getProperty("java.version").startsWith("1.5")) {
-            return;
-        }
-
         Parser parser = new NetCDFParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = NetCDFParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
-        try {
+        try (InputStream stream = NetCDFParser.class
+                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(metadata.get(TikaCoreProperties.TITLE),
@@ -62,6 +56,17 @@ public class NetCDFParserTest extends TestCase {
         assertEquals(metadata.get(Metadata.REALIZATION), "1");
         assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
                 "720 ppm stabilization experiment (SRESA1B)");
+        assertEquals(metadata.get("File-Type-Description"), 
+                "NetCDF-3/CDM");
+
+        String content = handler.toString();
+        assertContains("long_name = \"Surface area\"", content);
+        assertContains("float area(lat=128, lon=256)", content);
+        assertContains("float lat(lat=128)", content);
+        assertContains("double lat_bnds(lat=128, bnds=2)", content);
+        assertContains("double lon_bnds(lon=256, bnds=2)", content);
+        
+
 
     }
 

@@ -40,6 +40,9 @@ public class ID3v24Handler implements ID3Tags {
     private String composer;
     private String genre;
     private String trackNumber;
+    private String albumArtist;
+    private String disc;
+    private String compilation;
     private List<ID3Comment> comments = new ArrayList<ID3Comment>();
 
     public ID3v24Handler(ID3v2Frame frame)
@@ -51,6 +54,8 @@ public class ID3v24Handler implements ID3Tags {
                 title = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TPE1")) {
                 artist = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TPE2")) {
+                albumArtist = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TALB")) {
                 album = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TYER")) {
@@ -65,6 +70,10 @@ public class ID3v24Handler implements ID3Tags {
                 comments.add( getComment(tag.data, 0, tag.data.length) ); 
             } else if (tag.name.equals("TRCK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TPOS")) {
+                disc = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TCMP")) {
+                compilation = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCON")) {
                genre = ID3v22Handler.extractGenre( getTagString(tag.data, 0, tag.data.length) );
             }
@@ -114,10 +123,21 @@ public class ID3v24Handler implements ID3Tags {
         return trackNumber;
     }
 
+    public String getAlbumArtist() {
+        return albumArtist;
+    }
+
+    public String getDisc() {
+        return disc;
+    }
+
+    public String getCompilation() {
+        return compilation;
+    }
+
     private class RawV24TagIterator extends RawTagIterator {
         private RawV24TagIterator(ID3v2Frame frame) {
             frame.super(4, 4, 1, 2);
         }
     }
-
 }

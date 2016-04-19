@@ -22,10 +22,10 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -40,20 +40,22 @@ import org.xml.sax.SAXException;
  * beginning of the stream and the given document metadata, most
  * notably the <code>charset</code> parameter of a
  * {@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE} value.
- * <p>
+ * <p/>
  * This parser sets the following output metadata entries:
  * <dl>
- *   <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
- *   <dd><code>text/plain; charset=...</code></dd>
+ * <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
+ * <dd><code>text/plain; charset=...</code></dd>
  * </dl>
  */
 public class TXTParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -6656102320836888910L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.TEXT_PLAIN);
+            Collections.singleton(MediaType.TEXT_PLAIN);
 
     private static final ServiceLoader LOADER =
             new ServiceLoader(TXTParser.class.getClassLoader());
@@ -67,9 +69,9 @@ public class TXTParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
-        AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, LOADER);
-        try {
+        try (AutoDetectReader reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata,
+                context.get(ServiceLoader.class, LOADER))) {
             Charset charset = reader.getCharset();
             MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
@@ -90,8 +92,6 @@ public class TXTParser extends AbstractParser {
             xhtml.endElement("p");
 
             xhtml.endDocument();
-        } finally {
-            reader.close();
         }
     }
 

@@ -39,6 +39,8 @@ public class ID3v22Handler implements ID3Tags {
     private String composer;
     private String genre;
     private String trackNumber;
+    private String albumArtist;
+    private String disc;
     private List<ID3Comment> comments = new ArrayList<ID3Comment>();
 
     public ID3v22Handler(ID3v2Frame frame)
@@ -50,6 +52,8 @@ public class ID3v22Handler implements ID3Tags {
                 title = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TP1")) {
                 artist = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TP2")) {
+                albumArtist = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TAL")) {
                 album = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TYE")) {
@@ -60,6 +64,8 @@ public class ID3v22Handler implements ID3Tags {
                 comments.add( getComment(tag.data, 0, tag.data.length) ); 
             } else if (tag.name.equals("TRK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TPA")) {
+                disc = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCO")) {
                 genre = extractGenre( getTagString(tag.data, 0, tag.data.length) );
             }
@@ -129,10 +135,25 @@ public class ID3v22Handler implements ID3Tags {
         return trackNumber;
     }
 
+    public String getAlbumArtist() {
+        return albumArtist;
+    }
+
+    public String getDisc() {
+        return disc;
+    }
+
+    /**
+     * ID3v22 doesn't have compilations,
+     *  so returns null;
+     */
+    public String getCompilation() {
+        return null;
+    }
+
     private class RawV22TagIterator extends RawTagIterator {
         private RawV22TagIterator(ID3v2Frame frame) {
             frame.super(3, 3, 1, 0);
         }
     }
-
 }

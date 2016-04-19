@@ -16,49 +16,48 @@
  */
 package org.apache.tika.parser.xml;
 
-import junit.framework.TestCase;
+import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
+import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-import java.io.InputStream;
-
-public class FictionBookParserTest extends TestCase {
+public class FictionBookParserTest {
+  
+    @Test
     public void testFB2() throws Exception {
-        InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2");
-        try {
+        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new FictionBookParser().parse(input, handler, metadata);
+            new FictionBookParser().parse(input, handler, metadata, new ParseContext());
             String content = handler.toString();
 
-            assertTrue(content.contains("1812"));
-        } finally {
-            input.close();
+            assertContains("1812", content);
         }
     }
 
+    @Test
     public void testEmbedded() throws Exception {
-        InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2");
-        try {
+        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
             TikaInputStream stream = TikaInputStream.get(input);
 
             assertEquals(true, extractor.isSupported(stream));
 
             // Process it
-            AbstractPOIContainerExtractionTest.TrackingHandler handler = new AbstractPOIContainerExtractionTest.TrackingHandler();
+            TrackingHandler handler = new TrackingHandler();
             extractor.extract(stream, null, handler);
 
             assertEquals(2, handler.filenames.size());
-        } finally {
-            input.close();
         }
     }
 }

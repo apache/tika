@@ -18,6 +18,7 @@ package org.apache.tika.parser.odf;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Locale;
 
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;
@@ -35,13 +36,13 @@ import org.xml.sax.helpers.AttributesImpl;
 public class NSNormalizerContentHandler extends ContentHandlerDecorator {
 
     private static final String OLD_NS =
-        "http://openoffice.org/2000/";
+            "http://openoffice.org/2000/";
 
     private static final String NEW_NS =
-        "urn:oasis:names:tc:opendocument:xmlns:";
+            "urn:oasis:names:tc:opendocument:xmlns:";
 
     private static final String DTD_PUBLIC_ID =
-        "-//OpenOffice.org//DTD OfficeDocument 1.0//EN";
+            "-//OpenOffice.org//DTD OfficeDocument 1.0//EN";
 
     public NSNormalizerContentHandler(ContentHandler handler) {
         super(handler);
@@ -87,7 +88,7 @@ public class NSNormalizerContentHandler extends ContentHandlerDecorator {
     @Override
     public InputSource resolveEntity(String publicId, String systemId)
             throws IOException, SAXException {
-        if ((systemId != null && systemId.toLowerCase().endsWith(".dtd"))
+        if ((systemId != null && systemId.toLowerCase(Locale.ROOT).endsWith(".dtd"))
                 || DTD_PUBLIC_ID.equals(publicId)) {
             return new InputSource(new StringReader(""));
         } else {

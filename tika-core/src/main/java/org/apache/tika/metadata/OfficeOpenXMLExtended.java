@@ -38,11 +38,10 @@ public interface OfficeOpenXMLExtended
     Property TEMPLATE = Property.externalText(
     		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Template");
     
-    Property MANAGER = Property.externalText(
+    Property MANAGER = Property.externalTextBag(
     		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Manager");
     
-    Property COMPANY = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Company");
+    Property COMPANY = Property.externalText(    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Company");
     
     Property PRESENTATION_FORMAT = Property.externalText(
     		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "PresentationFormat");

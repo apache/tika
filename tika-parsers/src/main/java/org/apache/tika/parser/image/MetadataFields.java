@@ -30,9 +30,15 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * ImageMetadataExtractor, but it can be generalized.
  */
 public abstract class MetadataFields {
-    
+
     private static HashSet<String> known;
-    
+
+    static {
+        known = new HashSet<String>();
+        setKnownForClass(TikaCoreProperties.class);
+        setKnownForClass(Metadata.class);
+    }
+
     private static void setKnownForClass(Class<?> clazz) {
         Field[] fields = clazz.getFields();
         for (Field f : fields) {
@@ -66,19 +72,13 @@ public abstract class MetadataFields {
             }
         }
     }
-    
-    static {
-        known = new HashSet<String>();
-        setKnownForClass(TikaCoreProperties.class);
-        setKnownForClass(Metadata.class);
-    }
-    
+
     public static boolean isMetadataField(String name) {
         return known.contains(name);
     }
-    
+
     public static boolean isMetadataField(Property property) {
         return known.contains(property.getName());
     }
-    
+
 }

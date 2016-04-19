@@ -16,9 +16,8 @@
  */
 package org.apache.tika.parser.html;
 
-import java.util.Locale;
-
 import javax.xml.XMLConstants;
+import java.util.Locale;
 
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;

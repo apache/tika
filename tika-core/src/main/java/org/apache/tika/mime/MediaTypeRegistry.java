@@ -82,6 +82,23 @@ public class MediaTypeRegistry implements Serializable {
         }
         return aliases;
     }
+    
+    /**
+     * Returns the set of known children of the given canonical media type
+     * 
+     * @since Apache Tika 1.8
+     * @param type canonical media type
+     * @return known children
+     */
+    public SortedSet<MediaType> getChildTypes(MediaType type) {
+        SortedSet<MediaType> children = new TreeSet<MediaType>();
+        for (Map.Entry<MediaType, MediaType> entry : inheritance.entrySet()) {
+            if (entry.getValue().equals(type)) {
+                children.add(entry.getKey());
+            }
+        }
+        return children;
+    }
 
     public void addType(MediaType type) {
         registry.put(type, type);
@@ -153,12 +170,12 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     /**
-     * Returns the supertype of the given type. If the given type has any
-     * parameters, then the respective base type is returned. Otherwise
-     * built-in heuristics like text/... -&gt; text/plain and
-     * .../...+xml -&gt; application/xml are used in addition to explicit
-     * type inheritance rules read from the media type database. Finally
-     * application/octet-stream is returned for all types for which no other
+     * Returns the supertype of the given type. If the media type database
+     * has an explicit inheritance rule for the type, then that is used. 
+     * Next, if the given type has any parameters, then the respective base 
+     * type (parameter-less) is returned. Otherwise built-in heuristics like 
+     * text/... -&gt; text/plain and .../...+xml -&gt; application/xml are used. 
+     * Finally application/octet-stream is returned for all types for which no other
      * supertype is known, and the return value for application/octet-stream
      * is <code>null</code>.
      *
@@ -169,10 +186,10 @@ public class MediaTypeRegistry implements Serializable {
     public MediaType getSupertype(MediaType type) {
         if (type == null) {
             return null;
-        } else if (type.hasParameters()) {
-            return type.getBaseType();
         } else if (inheritance.containsKey(type)) {
             return inheritance.get(type);
+        } else if (type.hasParameters()) {
+            return type.getBaseType();
         } else if (type.getSubtype().endsWith("+xml")) {
             return MediaType.APPLICATION_XML;
         } else if (type.getSubtype().endsWith("+zip")) {

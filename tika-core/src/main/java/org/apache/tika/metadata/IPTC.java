@@ -172,7 +172,7 @@ public interface IPTC {
     * Note: Only Scene values from this IPTC taxonomy should be used here. More
     * about the IPTC Scene-NewsCodes at www.newscodes.org.
     */
-   Property SCENE_CODE = Property.internalText(
+   Property SCENE_CODE = Property.internalTextBag(
          PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "Scene");
 
    /**
@@ -369,7 +369,7 @@ public interface IPTC {
     * <p>
     * Maps to this IIM property: 2:110 Credit
     * 
-    * @see Photoshop#CREDIT_LINE
+    * @see Photoshop#CREDIT
     */
    Property CREDIT_LINE = Photoshop.CREDIT;
 
@@ -406,7 +406,7 @@ public interface IPTC {
     * "Contact information" group on the form.
     * Note 2: the ContactInfo naming aligns with the vCard specification RFC 2426.
     */
-   Property CONTACT_INFO_ADDRESS = Property.internalText(
+   Property CONTACT_INFO_ADDRESS = Property.internalTextBag(
          PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiAdrExtadr");
 
    /**
@@ -443,7 +443,7 @@ public interface IPTC {
     * Note 3: the ContactInfo naming aligns with the vCard
     * specification RFC 2426.
     */
-   Property CONTACT_INFO_EMAIL = Property.internalText(
+   Property CONTACT_INFO_EMAIL = Property.internalTextBag(
          PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiEmailWork");
 
    /**
@@ -460,7 +460,7 @@ public interface IPTC {
     * Note 3: the ContactInfo naming aligns with the vCard
     * specification RFC 2426.
     */
-   Property CONTACT_INFO_PHONE = Property.internalText(
+   Property CONTACT_INFO_PHONE = Property.internalTextBag(
          PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiTelWork");
 
    /**
@@ -493,7 +493,7 @@ public interface IPTC {
     * Note 3: the ContactInfo naming aligns with the vCard
     * specification RFC 2426.
     */
-   Property CONTACT_INFO_WEB_URL = Property.internalText(
+   Property CONTACT_INFO_WEB_URL = Property.internalTextBag(
          PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiUrlWork");
 
    /**
@@ -695,8 +695,14 @@ public interface IPTC {
     * This is a PLUS version 1.2 property included in the IPTC Extension
     * schema.
     */
-   Property IMAGE_SUPPLIER_ID = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierId");
+   Property IMAGE_SUPPLIER_ID = Property.composite(
+           Property.internalText(
+                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierID"),
+           new Property[] { Property.internalText(IPTC.IMAGE_SUPPLIER_ID_WRONG_CASE) });
+   
+   /** @deprecated use {@link IPTC#IMAGE_SUPPLIER_ID} */
+   public static final String IMAGE_SUPPLIER_ID_WRONG_CASE = 
+         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierId";
 
    /**
     * Identifies the most recent supplier of the item, who is not necessarily
@@ -794,8 +800,14 @@ public interface IPTC {
     * This is a PLUS version 1.2 property included in the IPTC Extension
     * schema.
     */
-   Property COPYRIGHT_OWNER_ID = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerId");
+   Property COPYRIGHT_OWNER_ID = Property.composite(
+           Property.internalTextBag(
+                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerID"),
+           new Property[] { Property.internalTextBag(IPTC.COPYRIGHT_OWNER_ID_WRONG_CASE) });
+   
+   /** @deprecated use {@link IPTC#COPYRIGHT_OWNER_ID} */
+   public static final String COPYRIGHT_OWNER_ID_WRONG_CASE = 
+         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerId";
 
    /**
     * The name of the owner or owners of the copyright in the licensed image.
@@ -836,8 +848,14 @@ public interface IPTC {
     * This is a PLUS version 1.2 property included in the IPTC Extension
     * schema.
     */
-   Property IMAGE_CREATOR_ID = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorId");
+   Property IMAGE_CREATOR_ID = Property.composite(
+           Property.internalTextBag(
+                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorID"),
+           new Property[] { Property.internalTextBag(IPTC.IMAGE_CREATOR_ID_WRONG_CASE) });
+   
+   /** @deprecated use {@link IPTC#IMAGE_CREATOR_ID} */
+   public static final String IMAGE_CREATOR_ID_WRONG_CASE = 
+         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorId";
 
    /**
     * The name of the creator or creators of the image.
@@ -871,8 +889,14 @@ public interface IPTC {
     * This is a PLUS version 1.2 property included in the IPTC Extension
     * schema.
     */
-   Property LICENSOR_ID = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorId");
+   Property LICENSOR_ID = Property.composite(
+           Property.internalTextBag(
+                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorID"),
+           new Property[] { Property.internalTextBag(IPTC.LICENSOR_ID_WRONG_CASE) });
+   
+   /** @deprecated use {@link IPTC#LICENSOR_ID} */
+   public static final String LICENSOR_ID_WRONG_CASE = 
+         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorId";
 
    /**
     * The name of the person or company that should be contacted to obtain a licence for
@@ -1049,13 +1073,13 @@ public interface IPTC {
     * current owner of the copyright of this work with associated intellectual
     * property rights.
     */
-   Property ARTWORK_OR_OBJECT_DETAIL_COPYRIGHT_NOTICE = Property.internalText(
+   Property ARTWORK_OR_OBJECT_DETAIL_COPYRIGHT_NOTICE = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOCopyrightNotice");
 
    /**
     * Contains the name of the artist who has created artwork or an object in the image.
     */
-   Property ARTWORK_OR_OBJECT_DETAIL_CREATOR = Property.internalText(
+   Property ARTWORK_OR_OBJECT_DETAIL_CREATOR = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOCreator");
 
    /**
@@ -1063,34 +1087,34 @@ public interface IPTC {
     * image was created. This relates to artwork or objects with associated
     * intellectual property rights.
     */
-   Property ARTWORK_OR_OBJECT_DETAIL_DATE_CREATED = Property.internalDate(
+   Property ARTWORK_OR_OBJECT_DETAIL_DATE_CREATED = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AODateCreated");
 
    /**
     * The organisation or body holding and registering the artwork or object in
     * the image for inventory purposes.
     */
-   Property ARTWORK_OR_OBJECT_DETAIL_SOURCE = Property.internalText(
+   Property ARTWORK_OR_OBJECT_DETAIL_SOURCE = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOSource");
 
    /**
     * The inventory number issued by the organisation or body holding and
     * registering the artwork or object in the image.
     */
-   Property ARTWORK_OR_OBJECT_DETAIL_SOURCE_INVENTORY_NUMBER = Property.internalText(
+   Property ARTWORK_OR_OBJECT_DETAIL_SOURCE_INVENTORY_NUMBER = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOSourceInvNo");
 
    /**
     * A reference for the artwork or object in the image.
     */
-   Property ARTWORK_OR_OBJECT_DETAIL_TITLE = Property.internalText(
+   Property ARTWORK_OR_OBJECT_DETAIL_TITLE = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOTitle");
 
    /**
     * Name of the city of a location. This element is at the fourth level of a
     * top-down geographical hierarchy.
     */
-   Property LOCATION_SHOWN_CITY = Property.internalText(
+   Property LOCATION_SHOWN_CITY = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownCity");
 
    /**
@@ -1101,14 +1125,14 @@ public interface IPTC {
     * string whether this is the country code from the two or three letter
     * scheme as no explicit indication can be provided.
     */
-   Property LOCATION_SHOWN_COUNTRY_CODE = Property.internalText(
+   Property LOCATION_SHOWN_COUNTRY_CODE = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownCountryCode");
 
    /**
     * The name of a country of a location. This element is at the second level
     * of a top-down geographical hierarchy.
     */
-   Property LOCATION_SHOWN_COUNTRY_NAME = Property.internalText(
+   Property LOCATION_SHOWN_COUNTRY_NAME = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownCountryName");
 
    /**
@@ -1116,7 +1140,7 @@ public interface IPTC {
     * location. This element is at the third level of a top-down geographical
     * hierarchy.
     */
-   Property LOCATION_SHOWN_PROVINCE_OR_STATE = Property.internalText(
+   Property LOCATION_SHOWN_PROVINCE_OR_STATE = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownProvinceState");
 
    /**
@@ -1125,14 +1149,14 @@ public interface IPTC {
     * monument outside a city. In the sense of a sublocation to a city this
     * element is at the fifth level of a top-down geographical hierarchy.
     */
-   Property LOCATION_SHOWN_SUBLOCATION = Property.internalText(
+   Property LOCATION_SHOWN_SUBLOCATION = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownSublocation");
 
    /**
     * The name of a world region of a location. This element is at the first
     * (topI) level of a top- down geographical hierarchy.
     */
-   Property LOCATION_SHOWN_WORLD_REGION = Property.internalText(
+   Property LOCATION_SHOWN_WORLD_REGION = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownWorldRegion");
 
    /**
@@ -1189,13 +1213,13 @@ public interface IPTC {
     * the item. This value shall not be changed after being applied. This
     * identifier is linked to a corresponding Registry Organisation Identifier.
     */
-   Property REGISTRY_ENTRY_CREATED_ITEM_ID = Property.internalText(
+   Property REGISTRY_ENTRY_CREATED_ITEM_ID = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "RegItemId");
 
    /**
     * An identifier for the registry which issued the corresponding Registry Image Id.
     */
-   Property REGISTRY_ENTRY_CREATED_ORGANISATION_ID = Property.internalText(
+   Property REGISTRY_ENTRY_CREATED_ORGANISATION_ID = Property.internalTextBag(
          PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "RegOrgId");
 
 

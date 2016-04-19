@@ -36,6 +36,55 @@ package org.apache.tika.metadata;
  */
 @SuppressWarnings("deprecation")
 public interface TikaCoreProperties {
+
+    /**
+     * A file might contain different types of embedded documents.
+     * The most common is the ATTACHEMENT.
+     * An INLINE embedded resource should be used for embedded image
+     * files that are used to render the page image (as in PDXObjImages in PDF files).
+     * <p>
+     * Not all parsers have yet implemented this. 
+     *
+     */
+    public enum EmbeddedResourceType {
+        INLINE,
+        ATTACHMENT
+    };
+
+    /**
+     * Use this to prefix metadata properties that store information
+     * about the parsing process.  Users should be able to distinguish
+     * between metadata that was contained within the document and
+     * metadata about the parsing process.
+     * In Tika 2.0 (or earlier?), let's change X-ParsedBy to X-TIKA-Parsed-By.
+     */
+    public static String TIKA_META_PREFIX = "X-TIKA"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+
+    /**
+     * Use this to store parse exception information in the Metadata object.
+     */
+    public static String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX+"EXCEPTION"+
+            Metadata.NAMESPACE_PREFIX_DELIMITER;
+
+    /**
+     * Use this to store exceptions caught during a parse that are
+     * non-fatal, e.g. if a parser is in lenient mode and more
+     * content can be extracted if we ignore an exception thrown by
+     * a dependency.
+     */
+    public static final Property TIKA_META_EXCEPTION_WARNING =
+            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"warn");
+
+    /**
+     * This is currently used to identify Content-Type that may be
+     * included within a document, such as in html documents
+     * (e.g. <meta http-equiv="content-type" content="text/html; charset=UTF-8">)
+     , or the value might come from outside the document.  This information
+     * may be faulty and should be treated only as a hint.
+     */
+    public static final Property CONTENT_TYPE_HINT =
+            Property.internalText(HttpHeaders.CONTENT_TYPE+"-Hint");
+
     /**
      * @see DublinCore#FORMAT
      */
@@ -73,7 +122,8 @@ public interface TikaCoreProperties {
     /**
      * @see Office#LAST_AUTHOR
      */
-     public static final Property MODIFIER = Office.LAST_AUTHOR;
+     public static final Property MODIFIER = Property.composite(Office.LAST_AUTHOR, 
+             new Property[] { Property.internalText(Metadata.LAST_AUTHOR) });
     
     /**
      * @see XMP#CREATOR_TOOL
@@ -151,16 +201,17 @@ public interface TikaCoreProperties {
      public static final Property CREATED = Property.composite(DublinCore.CREATED,
              new Property[] { 
                      Office.CREATION_DATE, 
-                     MSOffice.CREATION_DATE, 
-                     Metadata.DATE
+                     MSOffice.CREATION_DATE
              });
      
      /** 
       * @see DublinCore#MODIFIED
+      * @see Metadata#DATE
       * @see Office#SAVE_DATE 
       */
      public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED,
              new Property[] { 
+                     Metadata.DATE,
                      Office.SAVE_DATE, 
                      MSOffice.LAST_SAVED, 
                      Property.internalText(Metadata.MODIFIED),
@@ -244,5 +295,13 @@ public interface TikaCoreProperties {
     @Deprecated
     public static final Property TRANSITION_SUBJECT_TO_OO_SUBJECT = Property.composite(OfficeOpenXMLCore.SUBJECT, 
             new Property[] { Property.internalText(Metadata.SUBJECT) });
+
+    /**
+     * See {@link #EMBEDDED_RESOURCE_TYPE}
+     */
+    public static final Property EMBEDDED_RESOURCE_TYPE = 
+            Property.internalClosedChoise(TikaMetadataKeys.EMBEDDED_RESOURCE_TYPE, 
+                    new String[]{EmbeddedResourceType.ATTACHMENT.toString(), EmbeddedResourceType.INLINE.toString()});
+
     
 }

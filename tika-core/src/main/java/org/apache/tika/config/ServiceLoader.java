@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Internal utility class that Tika uses to look up service providers.
  *
@@ -43,14 +45,33 @@ public class ServiceLoader {
      */
     private static volatile ClassLoader contextClassLoader = null;
 
+    private static class RankedService implements Comparable<RankedService> {
+        private Object service;
+        private int rank;
+
+        public RankedService(Object service, int rank) {
+            this.service = service;
+            this.rank = rank;
+        }
+
+        public boolean isInstanceOf(Class<?> iface) {
+            return iface.isAssignableFrom(service.getClass());
+        }
+
+        public int compareTo(RankedService that) {
+            return that.rank - rank; // highest number first
+        }
+
+    }
+
     /**
      * The dynamic set of services available in an OSGi environment.
      * Managed by the {@link TikaActivator} class and used as an additional
      * source of service instances in the {@link #loadServiceProviders(Class)}
      * method.
      */
-    private static final Map<Object, Object> services =
-            new HashMap<Object, Object>();
+    private static final Map<Object, RankedService> services =
+            new HashMap<Object, RankedService>();
 
     /**
      * Returns the context class loader of the current thread. If such
@@ -84,9 +105,9 @@ public class ServiceLoader {
         contextClassLoader = loader;
     }
 
-    static void addService(Object reference, Object service) {
+    static void addService(Object reference, Object service, int rank) {
         synchronized (services) {
-            services.put(reference, service);
+            services.put(reference, new RankedService(service, rank));
         }
     }
 
@@ -101,7 +122,7 @@ public class ServiceLoader {
     private final LoadErrorHandler handler;
 
     private final boolean dynamic;
-
+    
     public ServiceLoader(
             ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
         this.loader = loader;
@@ -114,11 +135,33 @@ public class ServiceLoader {
     }
 
     public ServiceLoader(ClassLoader loader) {
-        this(loader, LoadErrorHandler.IGNORE);
+    	this(loader, Boolean.getBoolean("org.apache.tika.service.error.warn") 
+    			? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE);
     }
 
     public ServiceLoader() {
-        this(getContextClassLoader(), LoadErrorHandler.IGNORE, true);
+    	this(getContextClassLoader(), Boolean.getBoolean("org.apache.tika.service.error.warn") 
+    			? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE, true);
+    }
+    
+    /**
+     * Returns if the service loader is static or dynamic
+     * 
+     * @return dynamic or static loading
+     * @since Apache Tika 1.10
+     */
+    public boolean isDynamic() {
+        return dynamic;
+    }
+
+    /**
+     * Returns the load error handler used by this loader.
+     *
+     * @return load error handler
+     * @since Apache Tika 1.3
+     */
+    public LoadErrorHandler getLoadErrorHandler() {
+        return handler;
     }
 
     /**
@@ -141,6 +184,10 @@ public class ServiceLoader {
     /**
      * Loads and returns the named service class that's expected to implement
      * the given interface.
+     * 
+     * Note that this class does not use the {@link LoadErrorHandler}, a
+     *  {@link ClassNotFoundException} is always returned for unknown
+     *  classes or classes of the wrong type
      *
      * @param iface service interface
      * @param name service class name
@@ -177,7 +224,7 @@ public class ServiceLoader {
      *  service files.
      */
     public Enumeration<URL> findServiceResources(String filePattern) {
-       try {
+       try {    	  
           Enumeration<URL> resources = loader.getResources(filePattern);
           return resources;
        } catch (IOException ignore) {
@@ -211,19 +258,52 @@ public class ServiceLoader {
      */
     @SuppressWarnings("unchecked")
     public <T> List<T> loadDynamicServiceProviders(Class<T> iface) {
-        List<T> providers = new ArrayList<T>();
-
         if (dynamic) {
             synchronized (services) {
-                for (Object service : services.values()) {
-                    if (iface.isAssignableFrom(service.getClass())) {
-                        providers.add((T) service);
+                List<RankedService> list =
+                        new ArrayList<RankedService>(services.values());
+                Collections.sort(list);
+
+                List<T> providers = new ArrayList<T>(list.size());
+                for (RankedService service : list) {
+                    if (service.isInstanceOf(iface)) {
+                        providers.add((T) service.service);
                     }
+                }
+                return providers;
+            }
+        } else {
+            return new ArrayList<T>(0);
+        }
+    }
+
+    /**
+     * Returns the defined static service providers of the given type, without
+     * attempting to load them.
+     * The providers are loaded using the service provider mechanism using
+     * the configured class loader (if any).
+     *
+     * @since Apache Tika 1.6
+     * @param iface service provider interface
+     * @return static list of uninitialised service providers
+     */
+    protected <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
+        List<String> names = new ArrayList<String>();
+
+        if (loader != null) {
+            String serviceName = iface.getName();
+            Enumeration<URL> resources =
+                    findServiceResources("META-INF/services/" + serviceName);
+            for (URL resource : Collections.list(resources)) {
+                try {
+                    collectServiceClassNames(resource, names);
+                } catch (IOException e) {
+                    handler.handleLoadError(serviceName, e);
                 }
             }
         }
-
-        return providers;
+        
+        return names;
     }
 
     /**
@@ -241,18 +321,7 @@ public class ServiceLoader {
         List<T> providers = new ArrayList<T>();
 
         if (loader != null) {
-            List<String> names = new ArrayList<String>();
-
-            String serviceName = iface.getName();
-            Enumeration<URL> resources =
-                    findServiceResources("META-INF/services/" + serviceName);
-            for (URL resource : Collections.list(resources)) {
-                try {
-                    collectServiceClassNames(resource, names);
-                } catch (IOException e) {
-                    handler.handleLoadError(serviceName, e);
-                }
-            }
+            List<String> names = identifyStaticServiceProviders(iface);
 
             for (String name : names) {
                 try {
@@ -265,7 +334,6 @@ public class ServiceLoader {
                 }
             }
         }
-
         return providers;
     }
 
@@ -275,10 +343,9 @@ public class ServiceLoader {
 
     private void collectServiceClassNames(URL resource, Collection<String> names)
             throws IOException {
-        InputStream stream = resource.openStream();
-        try {
+        try (InputStream stream = resource.openStream()) {
             BufferedReader reader =
-                new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                    new BufferedReader(new InputStreamReader(stream, UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");
@@ -288,8 +355,6 @@ public class ServiceLoader {
                 }
                 line = reader.readLine();
             }
-        } finally {
-            stream.close();
         }
     }
 

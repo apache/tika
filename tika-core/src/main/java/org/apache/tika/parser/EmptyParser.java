@@ -32,7 +32,6 @@ import org.xml.sax.SAXException;
  * for unknown document types.
  */
 public class EmptyParser extends AbstractParser {
-
     /**
      * Serial version UID.
      */
@@ -55,5 +54,4 @@ public class EmptyParser extends AbstractParser {
         xhtml.startDocument();
         xhtml.endDocument();
     }
-
 }

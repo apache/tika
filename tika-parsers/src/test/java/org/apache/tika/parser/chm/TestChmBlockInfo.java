@@ -16,10 +16,8 @@
  */
 package org.apache.tika.parser.chm;
 
-import java.util.Iterator;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
@@ -30,18 +28,22 @@ import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests major functionality of ChmBlockInfo
  * 
  */
-public class TestChmBlockInfo extends TestCase {
+public class TestChmBlockInfo {
     private byte[] data;
     private ChmBlockInfo chmBlockInfo;
     private ChmDirectoryListingSet chmDirListCont = null;
     private ChmLzxcResetTable clrt = null;
     private ChmLzxcControlData chmLzxcControlData = null;
 
+    @Before
     public void setUp() throws Exception {
         data = TestParameters.chmData;
         /* Creates and parses itsf header */
@@ -66,7 +68,7 @@ public class TestChmBlockInfo extends TestCase {
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
         int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes());
+                ChmConstants.LZXC.getBytes(UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
@@ -95,26 +97,27 @@ public class TestChmBlockInfo extends TestCase {
         clrt.parse(dir_chunk, clrt);
     }
 
+    @Test
     public void testToString() {
         if (chmBlockInfo == null)
             testGetChmBlockInfo();
-        Assert.assertTrue(chmBlockInfo.toString().length() > 0);
+        assertTrue(chmBlockInfo.toString().length() > 0);
     }
 
+    @Test
     public void testGetChmBlockInfo() {
-        for (Iterator<DirectoryListingEntry> it = chmDirListCont
-                .getDirectoryListingEntryList().iterator(); it.hasNext();) {
-            DirectoryListingEntry directoryListingEntry = it.next();
+        for (DirectoryListingEntry directoryListingEntry : chmDirListCont.getDirectoryListingEntryList()) {
             chmBlockInfo = ChmBlockInfo.getChmBlockInfoInstance(
                     directoryListingEntry, (int) clrt.getBlockLen(),
                     chmLzxcControlData);
             // Assert.assertTrue(!directoryListingEntry.getName().isEmpty() &&
             // chmBlockInfo.toString() != null);
-            Assert.assertTrue(!ChmCommons.isEmpty(directoryListingEntry
+            assertTrue(!ChmCommons.isEmpty(directoryListingEntry
                     .getName()) && chmBlockInfo.toString() != null);
         }
     }
 
+    @After
     public void tearDown() throws Exception {
         data = null;
         chmBlockInfo = null;

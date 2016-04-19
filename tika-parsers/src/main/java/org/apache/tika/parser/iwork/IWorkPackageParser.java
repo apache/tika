@@ -30,9 +30,9 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -103,12 +103,9 @@ public class IWorkPackageParser extends AbstractParser {
                  return null;
              }
 
-             InputStream stream = zip.getInputStream(entry);
-             try {
-                return detectType(stream);
-             } finally {
-                 stream.close();
-             }
+              try (InputStream stream = zip.getInputStream(entry)) {
+                  return detectType(stream);
+              }
           } catch (IOException e) {
              return null;
           }
@@ -216,7 +213,7 @@ public class IWorkPackageParser extends AbstractParser {
             
             entry = zip.getNextZipEntry();
         }
-        zip.close();
+        // Don't close the zip InputStream (TIKA-1117).
     }
 
 }

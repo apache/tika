@@ -155,6 +155,15 @@ class NumbersContentHandler extends DefaultHandler {
             xhtml.element("td", menuItems.get(attributes.getValue("sfa:IDREF")));
             currentColumn++;
         }
+
+        if ("sf:chart-name".equals(qName)) {
+            // Extract chart name:
+            xhtml.startElement("div", "class", "chart");
+            xhtml.startElement("h1");
+            xhtml.characters(attributes.getValue("sfa:string"));
+            xhtml.endElement("h1");
+            xhtml.endElement("div");
+        }
     }
 
     @Override

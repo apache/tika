@@ -50,10 +50,8 @@ public class UniversalEncodingDetector implements EncodingDetector {
             }
 
             return listener.dataEnd();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) { // if juniversalchardet is not available
-            return null;
+        } catch (LinkageError e) {
+            return null; // juniversalchardet is not available
         } finally {
             input.reset();
         }

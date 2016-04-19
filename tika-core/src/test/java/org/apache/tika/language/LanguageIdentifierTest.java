@@ -16,15 +16,21 @@
  */
 package org.apache.tika.language;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.util.HashMap;
-
-import junit.framework.TestCase;
+import java.util.Locale;
 
 import org.apache.tika.io.IOUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * JUnit based test of class {@link LanguageIdentifier}.
@@ -32,7 +38,7 @@ import org.apache.tika.io.IOUtils;
  * @author Sami Siren
  * @author Jerome Charron - http://frutch.free.fr/
  */
-public class LanguageIdentifierTest extends TestCase {
+public class LanguageIdentifierTest {
 
     private static final String[] languages = new String[] {
         // TODO - currently Estonian and Greek fail these tests.
@@ -41,10 +47,12 @@ public class LanguageIdentifierTest extends TestCase {
         "lt", "nl", "pt", "sv"
     };
 
+    @Before
     public void setUp() {
         LanguageIdentifier.initProfiles();
     }
-    
+
+    @Test
     public void testLanguageDetection() throws IOException {
         for (String language : languages) {
             ProfilingWriter writer = new ProfilingWriter();
@@ -59,6 +67,7 @@ public class LanguageIdentifierTest extends TestCase {
         }
     }
 
+    @Test
     public void testClearAddAndInitProfiles() throws IOException {
         // Prepare english and german language profiles
         ProfilingWriter enWriter = new ProfilingWriter();
@@ -98,7 +107,43 @@ public class LanguageIdentifierTest extends TestCase {
         assertTrue(identifier.isReasonablyCertain());
   }
 
-  public void testMixedLanguages() throws IOException {
+    // Enable this to compare performance
+    public void testPerformance() throws IOException {
+        final int MRUNS = 8;
+        final int IRUNS = 10;
+        int detected = 0; // To avoid code removal by JVM or compiler
+        String lastResult = null;
+        for (int m = 0 ; m < MRUNS ; m++) {
+            LanguageProfile.useInterleaved = (m & 1) == 1; // Alternate between standard and interleaved
+            String currentResult = "";
+            final long start = System.nanoTime();
+            for (int i = 0 ; i < IRUNS ; i++) {
+                for (String language : languages) {
+                    ProfilingWriter writer = new ProfilingWriter();
+                    writeTo(language, writer);
+                    LanguageIdentifier identifier = new LanguageIdentifier(writer.getProfile());
+                    if (identifier.isReasonablyCertain()) {
+                        currentResult += identifier.getLanguage();
+                        detected++;
+                    }
+                }
+            }
+            System.out.println(String.format(Locale.ROOT, 
+                    "Performed %d detections at %2d ms/test with interleaved=%b",
+                    languages.length*IRUNS, (System.nanoTime()-start)/1000000/(languages.length*IRUNS),
+					     LanguageProfile.useInterleaved));
+            if (lastResult != null) { // Might as well test that they behave the same while we're at it
+                assertEquals("This result should be equal to the last", lastResult, currentResult);
+            }
+            lastResult = currentResult;
+        }
+        if (detected == -1) {
+            System.out.println("Never encountered but keep it to guard against over-eager optimization");
+        }
+    }
+
+    @Test
+    public void testMixedLanguages() throws IOException {
         for (String language : languages) {
             for (String other : languages) {
                 if (!language.equals(other)) {
@@ -117,6 +162,7 @@ public class LanguageIdentifierTest extends TestCase {
     }
 
     // TIKA-453: Fix up language identifier used for Estonian
+    @Test
     public void testEstonia() throws Exception {
         final String estonian = "et";
         ProfilingWriter writer = new ProfilingWriter();
@@ -127,12 +173,10 @@ public class LanguageIdentifierTest extends TestCase {
     }
 
     private void writeTo(String language, Writer writer) throws IOException {
-        InputStream stream =
-            LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
-        try {
-            IOUtils.copy(new InputStreamReader(stream, "UTF-8"), writer);
-        } finally {
-            stream.close();
+        try (InputStream stream =
+                LanguageIdentifierTest.class.getResourceAsStream(
+                        language + ".test")) {
+            IOUtils.copy(new InputStreamReader(stream, UTF_8), writer);
         }
     }
 

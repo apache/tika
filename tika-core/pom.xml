@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.2</version>
+    <version>1.13-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -60,7 +60,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -86,8 +85,21 @@
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/**</exclude>
+            <exclude>src/main/resources/org/apache/tika/language/*.ngp</exclude>
+            <exclude>src/main/resources/org/apache/tika/detect/*.nnmodel</exclude>
           </excludes>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -142,4 +154,19 @@
     </plugins>
   </build>
 
+  <description>This is the core Apache Tika™ toolkit library from which all other modules inherit functionality. It also
+    includes the core facades for the Tika API.
+  </description>
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
 </project>

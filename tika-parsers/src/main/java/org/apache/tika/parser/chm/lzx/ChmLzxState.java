@@ -17,15 +17,14 @@
 package org.apache.tika.parser.chm.lzx;
 
 import java.util.concurrent.CancellationException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
-import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.core.ChmCommons.IntelState;
 import org.apache.tika.parser.chm.core.ChmCommons.LzxState;
+import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
-public class ChmLzxState {
+public class ChmLzxState implements Cloneable {
     /* Class' members */
     private int window; /* the actual decoding window */
     private long window_size; /* window size (32Kb through 2Mb) */
@@ -53,6 +52,22 @@ public class ChmLzxState {
     protected short[] alignedLenTable;
     protected short[] alignedTreeTable;
 
+    @Override
+    public ChmLzxState clone() {
+        try {
+          ChmLzxState clone = (ChmLzxState)super.clone();
+          clone.mainTreeLengtsTable = arrayClone(mainTreeLengtsTable);
+          clone.mainTreeTable = arrayClone(mainTreeTable);
+          clone.lengthTreeTable = arrayClone(lengthTreeTable);
+          clone.lengthTreeLengtsTable = arrayClone(lengthTreeLengtsTable);
+          clone.alignedLenTable = arrayClone(alignedLenTable);
+          clone.alignedTreeTable = arrayClone(alignedTreeTable);
+          return clone;
+        } catch (CloneNotSupportedException ex) {
+           return null;
+        }
+    }
+    
     protected short[] getMainTreeTable() {
         return mainTreeTable;
     }
@@ -147,7 +162,7 @@ public class ChmLzxState {
                 position_slots = 50;
             else
                 position_slots = win << 1;
-
+            //TODO: position_slots is not used ?
             setR0(1);
             setR1(1);
             setR2(1);
@@ -290,9 +305,6 @@ public class ChmLzxState {
         return R2;
     }
 
-    public static void main(String[] args) {
-    }
-
     public void setMainTreeLengtsTable(short[] mainTreeLengtsTable) {
         this.mainTreeLengtsTable = mainTreeLengtsTable;
     }
@@ -307,5 +319,9 @@ public class ChmLzxState {
 
     public short[] getLengthTreeLengtsTable() {
         return lengthTreeLengtsTable;
+    }
+    
+    private static short[] arrayClone(short[] a) {
+        return a==null ? null : (short[]) a.clone();
     }
 }

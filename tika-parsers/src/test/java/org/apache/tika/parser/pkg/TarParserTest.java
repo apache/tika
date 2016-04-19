@@ -16,12 +16,18 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -29,61 +35,58 @@ import org.xml.sax.ContentHandler;
  */
 public class TarParserTest extends AbstractPkgTest {
 
+    @Test
     public void testTarParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = TarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tar");
-        try {
+        try (InputStream stream = TarParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.tar")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-tar", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
-        assertTrue(content.contains("test-documents/testEXCEL.xls"));
-        assertTrue(content.contains("Sample Excel Worksheet"));
-        assertTrue(content.contains("test-documents/testHTML.html"));
-        assertTrue(content.contains("Test Indexation Html"));
-        assertTrue(content.contains("test-documents/testOpenOffice2.odt"));
-        assertTrue(content.contains("This is a sample Open Office document"));
-        assertTrue(content.contains("test-documents/testPDF.pdf"));
-        assertTrue(content.contains("Apache Tika"));
-        assertTrue(content.contains("test-documents/testPPT.ppt"));
-        assertTrue(content.contains("Sample Powerpoint Slide"));
-        assertTrue(content.contains("test-documents/testRTF.rtf"));
-        assertTrue(content.contains("indexation Word"));
-        assertTrue(content.contains("test-documents/testTXT.txt"));
-        assertTrue(content.contains("Test d'indexation de Txt"));
-        assertTrue(content.contains("test-documents/testWORD.doc"));
-        assertTrue(content.contains("This is a sample Microsoft Word Document"));
-        assertTrue(content.contains("test-documents/testXML.xml"));
-        assertTrue(content.contains("Rida Benjelloun"));
+        assertContains("test-documents/testEXCEL.xls", content);
+        assertContains("Sample Excel Worksheet", content);
+        assertContains("test-documents/testHTML.html", content);
+        assertContains("Test Indexation Html", content);
+        assertContains("test-documents/testOpenOffice2.odt", content);
+        assertContains("This is a sample Open Office document", content);
+        assertContains("test-documents/testPDF.pdf", content);
+        assertContains("Apache Tika", content);
+        assertContains("test-documents/testPPT.ppt", content);
+        assertContains("Sample Powerpoint Slide", content);
+        assertContains("test-documents/testRTF.rtf", content);
+        assertContains("indexation Word", content);
+        assertContains("test-documents/testTXT.txt", content);
+        assertContains("Test d'indexation de Txt", content);
+        assertContains("test-documents/testWORD.doc", content);
+        assertContains("This is a sample Microsoft Word Document", content);
+        assertContains("test-documents/testXML.xml", content);
+        assertContains("Rida Benjelloun", content);
     }
 
     /**
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.
      */
+    @Test
     public void testEmbedded() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.tar");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.tar")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should have found all 9 documents, but not the directory
        assertEquals(9, tracker.filenames.size());
        assertEquals(9, tracker.mediatypes.size());
+       assertEquals(9, tracker.modifiedAts.size());
        
        // Should have names but not content types, as tar doesn't
        //  store the content types
@@ -99,6 +102,13 @@ public class TarParserTest extends AbstractPkgTest {
        
        for(String type : tracker.mediatypes) {
           assertNull(type);
+       }
+       for(String crt : tracker.createdAts) {
+           assertNull(crt);
+       }
+       for(String mod : tracker.modifiedAts) {
+           assertNotNull(mod);
+           assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
     }
 }

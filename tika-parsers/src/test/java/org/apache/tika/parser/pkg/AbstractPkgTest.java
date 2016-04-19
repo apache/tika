@@ -22,31 +22,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.Before;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
  * Parent class for all Package based Test cases
  */
-public abstract class AbstractPkgTest extends TestCase {
+public abstract class AbstractPkgTest extends TikaTest {
    protected ParseContext trackingContext;
    protected ParseContext recursingContext;
    
    protected Parser autoDetectParser;
    protected EmbeddedTrackingParser tracker;
 
-   protected void setUp() throws Exception {
-      super.setUp();
-      
+   @Before
+   public void setUp() throws Exception {
       tracker = new EmbeddedTrackingParser();
       trackingContext = new ParseContext();
       trackingContext.set(Parser.class, tracker);
@@ -61,11 +61,15 @@ public abstract class AbstractPkgTest extends TestCase {
    protected static class EmbeddedTrackingParser extends AbstractParser {
       protected List<String> filenames = new ArrayList<String>();
       protected List<String> mediatypes = new ArrayList<String>();
+      protected List<String> createdAts = new ArrayList<String>();
+      protected List<String> modifiedAts = new ArrayList<String>();
       protected byte[] lastSeenStart;
       
       public void reset() {
          filenames.clear();
          mediatypes.clear();
+         createdAts.clear();
+         modifiedAts.clear();
       }
       
       public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -78,6 +82,8 @@ public abstract class AbstractPkgTest extends TestCase {
             SAXException, TikaException {
          filenames.add(metadata.get(Metadata.RESOURCE_NAME_KEY));
          mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
+         createdAts.add(metadata.get(TikaCoreProperties.CREATED));
+         modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));
          
          lastSeenStart = new byte[32];
          stream.read(lastSeenStart);

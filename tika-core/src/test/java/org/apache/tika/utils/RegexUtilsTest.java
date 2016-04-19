@@ -16,20 +16,26 @@
  */
 package org.apache.tika.utils;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.List;
-import junit.framework.TestCase;
+
+import org.junit.Test;
 
 /**
  * Test case for {@link RegexUtils}.
  *
  * @version $Revision$ $Date$
  */
-public class RegexUtilsTest extends TestCase {
+public class RegexUtilsTest {
 
     /** 
      * Test {@link RegexUtils#extractLinks(String)} with no links.
      */
 
+    @Test
     public void testExtractLinksNone() {
         List<String> links = null;
                 
@@ -52,6 +58,7 @@ public class RegexUtilsTest extends TestCase {
     /** 
      * Test {@link RegexUtils#extractLinks(String)} for http.
      */
+    @Test
     public void testExtractLinksHttp() {
         List<String> links = RegexUtils.extractLinks(
                 "Test with http://www.nutch.org/index.html is it found? " +
@@ -67,6 +74,7 @@ public class RegexUtilsTest extends TestCase {
     /** 
      * Test {@link RegexUtils#extractLinks(String)} for ftp.
      */
+    @Test
     public void testExtractLinksFtp() {
         List<String> links = RegexUtils.extractLinks(
                 "Test with ftp://www.nutch.org is it found? " +

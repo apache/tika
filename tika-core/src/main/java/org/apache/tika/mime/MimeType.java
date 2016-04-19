@@ -17,6 +17,7 @@
 package org.apache.tika.mime;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -74,6 +75,21 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      */
     private final MediaType type;
 
+    /**
+     * The MimeType acronym
+     */
+    private String acronym = "";
+
+    /**
+     * The http://en.wikipedia.org/wiki/Uniform_Type_Identifier
+     */
+    private String uti = "";
+    
+    /**
+     * Documentation Links
+     */
+    private List<URI> links = Collections.emptyList();
+    
     /**
      * Description of this media type.
      */
@@ -148,6 +164,75 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         }
         this.description = description;
     }
+    
+
+    /**
+     * Returns an acronym for this mime type.
+     *
+     * @return mime type acronym
+     */
+    public String getAcronym() {
+        return acronym;
+    }
+
+    /**
+     * Set an acronym for the mime type
+     *
+     * @param acronym
+     */
+    void setAcronym(String v) {
+        if (v == null) {
+            throw new IllegalArgumentException("Acronym is missing");
+        }
+        acronym = v;
+    }
+    
+    /**
+     * Get the UTI for this mime type.
+     * 
+     * @see <a href="http://en.wikipedia.org/wiki/Uniform_Type_Identifier">http://en.wikipedia.org/wiki/Uniform_Type_Identifier</a>
+     * 
+     * @return The Uniform Type Identifier
+     */
+    public String getUniformTypeIdentifier() {
+        return uti;
+    }
+
+    /**
+     * Set The Uniform Type Identifier
+     *
+     * @param uti
+     */
+    void setUniformTypeIdentifier(String v) {
+        if (v == null) {
+            throw new IllegalArgumentException("Uniform Type Identifier is missing");
+        }
+        uti = v;
+    }
+
+    /**
+     * Get a list of links to help document this mime type
+     * 
+     * @return an array of links (will never be null)
+     */
+    public List<URI> getLinks() {
+      return links; // this is already unmodifiable
+    }
+
+    /**
+     * Add a link to this mime type
+     * @param link
+     */
+    void addLink(URI link) {
+        if(link==null) {
+            throw new IllegalArgumentException("Missing Link");
+        }
+        List<URI> copy = new ArrayList<URI>(links.size()+1);
+        copy.addAll(links);
+        copy.add(link);
+        links = Collections.unmodifiableList(copy);
+    }
+
 
     /**
      * Add some rootXML info to this mime-type

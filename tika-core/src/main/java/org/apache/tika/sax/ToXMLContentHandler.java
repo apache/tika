@@ -126,6 +126,13 @@ public class ToXMLContentHandler extends ToTextContentHandler {
     @Override
     public void startPrefixMapping(String prefix, String uri)
             throws SAXException {
+        try {
+            if (currentElement != null
+                    && prefix.equals(currentElement.getPrefix(uri))) {
+                return;
+            }
+        } catch (SAXException ignore) {
+        }
         namespaces.put(uri, prefix);
     }
 
@@ -182,6 +189,10 @@ public class ToXMLContentHandler extends ToTextContentHandler {
         }
 
         namespaces.clear();
+
+        // Reset the position in the tree, to avoid endless stack overflow
+        // chains (see TIKA-1070)
+        currentElement = currentElement.parent;
     }
 
     @Override

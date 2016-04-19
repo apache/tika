@@ -16,41 +16,48 @@
  */
 package org.apache.tika.sax;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Before;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for the {@link SafeContentHandler} class.
  */
-public class SafeContentHandlerTest extends TestCase {
+public class SafeContentHandlerTest {
 
     private ContentHandler output;
 
     private ContentHandler safe;
 
-    protected void setUp() {
+    @Before
+    public void setUp() {
         output = new WriteOutContentHandler();
         safe = new SafeContentHandler(output);
     }
 
+    @Test
     public void testEmptyInput() throws SAXException {
         safe.characters(new char[0], 0, 0);
         safe.ignorableWhitespace(new char[0], 0, 0);
         assertEquals("", output.toString());
     }
 
+    @Test
     public void testNormalCharacters() throws SAXException {
         safe.characters("abc".toCharArray(), 0, 3);
         assertEquals("abc", output.toString());
     }
 
+    @Test
     public void testNormalWhitespace() throws SAXException {
         safe.ignorableWhitespace("abc".toCharArray(), 0, 3);
         assertEquals("abc", output.toString());
     }
 
+    @Test
     public void testInvalidCharacters() throws SAXException {
         safe.characters("ab\u0007".toCharArray(), 0, 3);
         safe.characters("a\u000Bc".toCharArray(), 0, 3);
@@ -58,6 +65,7 @@ public class SafeContentHandlerTest extends TestCase {
         assertEquals("ab\ufffda\ufffdc\ufffdbc", output.toString());
     }
 
+    @Test
     public void testInvalidWhitespace() throws SAXException {
         safe.ignorableWhitespace("ab\u0000".toCharArray(), 0, 3);
         safe.ignorableWhitespace("a\u0001c".toCharArray(), 0, 3);
@@ -65,6 +73,7 @@ public class SafeContentHandlerTest extends TestCase {
         assertEquals("ab\ufffda\ufffdc\ufffdbc", output.toString());
     }
 
+    @Test
     public void testInvalidSurrogates() throws SAXException {
         safe.ignorableWhitespace("\udb00\ubfff".toCharArray(), 0, 2);
         assertEquals("\ufffd\ubfff", output.toString());

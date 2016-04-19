@@ -72,4 +72,48 @@ public interface XMPMM {
     Property RENDITION_PARAMS = Property.externalText(
             PREFIX_ + "RenditionParams");
 
+    /**
+     * Instance id in the XMPMM's history section
+     */
+    Property HISTORY_EVENT_INSTANCEID = Property.externalTextBag(
+            PREFIX_+"History:InstanceID"
+    );
+
+    /**
+     * Action in the XMPMM's history section
+     */
+    Property HISTORY_ACTION = Property.externalTextBag(
+            PREFIX_+"History:Action"
+    );
+    /**
+     * When the action occurred in the XMPMM's history section
+     */
+    Property HISTORY_WHEN = Property.externalTextBag(
+            PREFIX_+"History:When"
+    );
+
+    /**
+     * Software agent that created the action in the XMPMM's
+     * history section
+     */
+    Property HISTORY_SOFTWARE_AGENT = Property.externalTextBag(
+            PREFIX_+"History:SoftwareAgent"
+    );
+
+    /**
+     * Document id for the document that this document
+     * was derived from
+     */
+    Property DERIVED_FROM_DOCUMENTID = Property.externalText(
+            PREFIX_+"DerivedFrom:DocumentID"
+    );
+
+    /**
+     * Instance id for the document instance that this
+     * document was derived from
+     */
+    Property DERIVED_FROM_INSTANCEID = Property.externalText(
+            PREFIX_+"DerivedFrom:InstanceID"
+    );
+
 }

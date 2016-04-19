@@ -18,7 +18,6 @@ package org.apache.tika.parser.mp3;
 
 import java.util.List;
 
-
 /**
  * Interface that defines the common interface for ID3 tag parsers,
  *  such as ID3v1 and ID3v2.3.
@@ -172,12 +171,22 @@ public interface ID3Tags {
 
     String getTitle();
 
+    /**
+     * The Artist for the track
+     */
     String getArtist();
+
+    /**
+     * The Artist for the overall album / compilation of albums
+     */
+    String getAlbumArtist();
 
     String getAlbum();
     
     String getComposer();
 
+    String getCompilation();
+    
     /**
      * Retrieves the comments, if any.
      * Files may have more than one comment, but normally only 
@@ -189,7 +198,15 @@ public interface ID3Tags {
 
     String getYear();
 
+    /**
+     * The number of the track within the album / recording
+     */
     String getTrackNumber();
+
+    /**
+     * The number of the disc this belongs to, within the set
+     */
+    String getDisc();
 
     /**
      * Represents a comments in ID3 (especially ID3 v2), where are 

@@ -62,13 +62,10 @@ public class ExternalParsersFactory {
    public static List<ExternalParser> create(URL... urls) throws IOException, TikaException {
       List<ExternalParser> parsers = new ArrayList<ExternalParser>();
       for(URL url : urls) {
-         InputStream stream = url.openStream();
-         try {
+         try (InputStream stream = url.openStream()) {
             parsers.addAll(
                   ExternalParsersConfigReader.read(stream)
             );
-         } finally {
-            stream.close();
          }
       }
       return parsers;

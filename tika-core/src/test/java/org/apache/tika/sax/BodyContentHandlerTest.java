@@ -16,17 +16,19 @@
  */
 package org.apache.tika.sax;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
+import org.junit.Test;
 
 /**
  * Test cases for the {@link BodyContentHandler} class.
  */
-public class BodyContentHandlerTest extends TestCase {
+public class BodyContentHandlerTest {
 
     /**
      * Test that the conversion to an {@link OutputStream} doesn't leave
@@ -34,6 +36,7 @@ public class BodyContentHandlerTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
      */
+    @Test
     public void testOutputStream() throws Exception {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
@@ -43,7 +46,7 @@ public class BodyContentHandlerTest extends TestCase {
         xhtml.element("p", "Test text");
         xhtml.endDocument();
 
-        assertEquals("Test text\n", buffer.toString());
+        assertEquals("Test text\n", buffer.toString(UTF_8.name()));
     }
 
 }
