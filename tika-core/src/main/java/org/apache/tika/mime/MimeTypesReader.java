@@ -16,15 +16,7 @@
  */
 package org.apache.tika.mime;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -33,6 +25,14 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
@@ -116,6 +116,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(false);
+            factory.setFeature(
+                    XMLConstants.FEATURE_SECURE_PROCESSING, true);
             SAXParser parser = factory.newSAXParser();
             parser.parse(stream, this);
         } catch (ParserConfigurationException e) {

@@ -39,7 +39,11 @@ import org.xml.sax.SAXException;
  * pom.xml, but it is currently set to "provided."
  * <p/>
  * Note that this family of jdbc parsers is designed to treat each CLOB and each BLOB
- * as embedded documents.
+ * as an embedded document; i.e. it will recursively process documents that are stored
+ * in a sqlite db as "bytes".
+ * <p/>
+ * If using a TikaInputStream, make sure to close it to delete the temp file
+ * that has to be created.
  */
 public class SQLite3Parser extends AbstractParser {
     /**

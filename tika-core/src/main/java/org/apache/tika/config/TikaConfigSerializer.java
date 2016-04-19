@@ -17,7 +17,6 @@
 package org.apache.tika.config;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -61,8 +60,7 @@ public class TikaConfigSerializer {
      */
     public static void serialize(TikaConfig config, Mode mode, Writer writer, Charset charset)
             throws Exception {
-        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
 
         // root elements
         Document doc = docBuilder.newDocument();

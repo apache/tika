@@ -69,6 +69,10 @@ public class POIFSContainerDetector implements Detector {
     public static final MediaType COMP_OBJ =
             new MediaType(GENERAL_EMBEDDED, "format", "comp_obj");
     /**
+     * Graph/Charts embedded in PowerPoint and Excel
+     */
+    public static final MediaType MS_GRAPH_CHART = application("vnd.ms-graph");
+    /**
      * Microsoft Excel
      */
     public static final MediaType XLS = application("vnd.ms-excel");
@@ -150,6 +154,15 @@ public class POIFSContainerDetector implements Detector {
     private static final byte[] WORKS_QUILL96 = new byte[]{
             0x51, 0x75, 0x69, 0x6c, 0x6c, 0x39, 0x36
     };
+
+    /**
+     * An ASCII String "MSGraph.Chart" for embedded MSGraph files
+     * The full designator includes a version, e.g. MSGraph.Chart.8
+     */
+    private static final byte[] MS_GRAPH_CHART_BYTES = new byte[]{
+            0x4D, 0x53, 0x47, 0x72, 0x61, 0x70, 0x68,
+            0x2E, 0x43, 0x68, 0x61, 0x72, 0x74,
+    };
     /**
      * Regexp for matching the MPP Project Data stream
      */
@@ -209,6 +222,10 @@ public class POIFSContainerDetector implements Detector {
                 // we want to avoid classifying this as Excel
                 return XLR;
             } else if (names.contains("Workbook") || names.contains("WORKBOOK")) {
+                MediaType tmp = processCompObjFormatType(root);
+                if (tmp.equals(MS_GRAPH_CHART)) {
+                    return MS_GRAPH_CHART;
+                }
                 return XLS;
             } else if (names.contains("Book")) {
                 // Excel 95 or older, we won't be able to parse this....
@@ -309,7 +326,9 @@ public class POIFSContainerDetector implements Detector {
                  * application used to create this file. We want to search for that
                  * name.
                  */
-                if (arrayContains(bytes, STAR_DRAW)) {
+                if (arrayContains(bytes, MS_GRAPH_CHART_BYTES)) {
+                    return MS_GRAPH_CHART;
+                } else if (arrayContains(bytes, STAR_DRAW)) {
                     return SDA;
                 } else if (arrayContains(bytes, STAR_IMPRESS)) {
                     return SDD;

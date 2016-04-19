@@ -41,6 +41,7 @@ import org.apache.tika.batch.fs.FSOutputStreamFactory;
 import org.apache.tika.batch.fs.FSUtil;
 import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.PropsUtil;
@@ -125,7 +126,9 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         }
         ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(contentHandlerFactoryNode, runtimeAttributes);
         ParserFactory parserFactory = getParserFactory(parserFactoryNode, runtimeAttributes);
-        OutputStreamFactory outputStreamFactory = getOutputStreamFactory(outputStreamFactoryNode, runtimeAttributes);
+        OutputStreamFactory outputStreamFactory = getOutputStreamFactory(
+                outputStreamFactoryNode, runtimeAttributes,
+                contentHandlerFactory, recursiveParserWrapper);
 
         if (recursiveParserWrapper) {
             for (int i = 0; i < numConsumers; i++) {
@@ -147,7 +150,6 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         return manager;
     }
 
-
     private ContentHandlerFactory getContentHandlerFactory(Node node, Map<String, String> runtimeAttributes) {
 
         Map<String, String> localAttrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
@@ -166,7 +168,10 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         return builder.build(node, runtimeAttributes);
     }
 
-    private OutputStreamFactory getOutputStreamFactory(Node node, Map<String, String> runtimeAttributes) {
+    private OutputStreamFactory getOutputStreamFactory(Node node,
+                                                       Map<String, String> runtimeAttributes,
+                                                       ContentHandlerFactory contentHandlerFactory,
+                                                       boolean useRecursiveParserWrapper) {
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
 
         Path outputDir = PropsUtil.getPath(attrs.get("outputDir"), null);
@@ -196,12 +201,52 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             compression = FSOutputStreamFactory.COMPRESSION.ZIP;
         }
         String suffix = attrs.get("outputSuffix");
+        //suffix should not start with "."
+        if (suffix == null) {
+            StringBuilder sb = new StringBuilder();
+            if (useRecursiveParserWrapper) {
+                sb.append("json");
+            } else if (contentHandlerFactory instanceof BasicContentHandlerFactory) {
+                appendSuffix(((BasicContentHandlerFactory) contentHandlerFactory).getType(), sb);
+            }
+            appendCompression(compression, sb);
+            suffix = sb.toString();
+        }
 
         //TODO: possibly open up the different handle-existings in the future
         //but for now, lock it down to require skip.  Too dangerous otherwise
         //if the driver restarts and this is set to overwrite...
         return new FSOutputStreamFactory(outputDir, FSUtil.HANDLE_EXISTING.SKIP,
                 compression, suffix);
+    }
+
+    private void appendCompression(FSOutputStreamFactory.COMPRESSION compression, StringBuilder sb) {
+        switch (compression) {
+            case NONE:
+                break;
+            case ZIP:
+                sb.append(".zip");
+                break;
+            case BZIP2:
+                sb.append(".bz2");
+                break;
+            case GZIP:
+                sb.append(".gz");
+                break;
+        }
+    }
+
+    private void appendSuffix(BasicContentHandlerFactory.HANDLER_TYPE type, StringBuilder sb) {
+        switch (type) {
+            case XML:
+                sb.append("xml");
+                break;
+            case HTML:
+                sb.append("html");
+                break;
+            default :
+                sb.append("txt");
+        }
     }
 
 }

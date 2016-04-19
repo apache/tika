@@ -113,7 +113,6 @@ public class TikaCLIBatchCommandLineTest {
         Map<String, String> attrs = mapify(commandLine);
         assertEquals("true", attrs.get("-recursiveParserWrapper"));
         assertEquals("html", attrs.get("-basicHandlerType"));
-        assertEquals("json", attrs.get("-outputSuffix"));
         assertEquals("batch-config.xml", attrs.get("-bc"));
         assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
     }
