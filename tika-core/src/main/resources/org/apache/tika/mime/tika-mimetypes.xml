@@ -2559,6 +2559,10 @@
   <mime-type type="application/vnd.wv.ssp+xml"/>
   <mime-type type="application/vnd.xara">
     <glob pattern="*.xar"/>
+    <magic priority="50">
+      <match value="xar!" type="string" offset="0"> 
+      </match>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.xfdl">
     <glob pattern="*.xfdl"/>
@@ -3432,7 +3436,7 @@
     <acronym>MOBI</acronym>
     <_comment>Mobipocket Ebook</_comment>
     <magic priority="60">
-      <match value="BOOKMOBI" type="string" offset="23" />
+      <match value="BOOKMOBI" type="string" offset="0:60" />
     </magic>
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
@@ -6444,6 +6448,7 @@
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
+      <match value="free" type="string" offset="4"/>
       <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
       <match value="wide" type="string" offset="4"/>
