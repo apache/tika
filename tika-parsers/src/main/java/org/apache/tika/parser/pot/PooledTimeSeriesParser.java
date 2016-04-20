@@ -22,9 +22,13 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.mp4.MP4Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -46,6 +50,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 
