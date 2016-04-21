@@ -1,5 +1,9 @@
 Release 1.13 - ???
 
+  * Extract metadata from MP4 videos whether or not the
+    PooledTimeSeries parser is available via Aditya Dhulipala
+    (TIKA-1844).
+
   * Fix NPE when trying to get embedded image identifier in
     WordParser (TIKA-1956).
 
