@@ -219,6 +219,12 @@
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
       <version>1.5.1</version>
+      <exclusions>
+        <exclusion>
+        <groupId>org.jdom</groupId>
+        <artifactId>jdom</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.gagravarr</groupId>
