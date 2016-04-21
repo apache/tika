@@ -1,12 +1,31 @@
 Release 1.13 - ???
 
+  * Extract metadata from MP4 videos whether or not the
+    PooledTimeSeries parser is available via Aditya Dhulipala
+    (TIKA-1844).
+
+  * Fix NPE when trying to get embedded image identifier in
+    WordParser (TIKA-1956).
+
+  * Improvements to MIME database for detection of Scientific
+    and other formats present in the TREC-DD-Polar dataset
+    (TIKA-1881, GitHub-85, TIKA-1883, TIKA-1884, TIKA-1886,
+     TIKA-1882).
+
+  * LinkContentHandler now extracts links from script tags
+    via Joseph Naegele (TIKA-1937).
+
+  * Handle per page IOExceptions more robustly in PDFParser (TIKA-1948).
+
+  * Upgrade commons-compress to 1.11 (TIKA-1949).
+
   * Add detection for embedded MSChart.Graph files (TIKA-1033).
 
   * Fix NPE in Sqlite parser from Nick C (TIKA-1927).
 
   * Fix NPE in Open Document parser from Nick C (TIKA-1916).
 
-  * Upgrade mp4parser's isoparser (TIKA-1924).
+  * Upgrade mp4parser's isoparser to 1.1.7 (TIKA-1924 and TIKA-1931).
 
   * Upgrade BouncyCastle to 1.54 (TIKA-1923).
 
@@ -24,7 +43,7 @@ Release 1.13 - ???
       https://pdfbox.apache.org/2.0/dependencies.html#optional-components
       for optional components to process Tiff files.
     * Some truncated/corrupted files that had some content extracted
-      with 1.8.11 may have no content extracted in 2.0.0.
+      with 1.8.11 may have no content extracted in 2.0.0 (see TIKA-1912).
 
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
@@ -40,7 +59,7 @@ Release 1.13 - ???
     is still <scope>provided</scope>.  You need to include this dependency
     in order to parse sqlite files.
 
-  * Upgrade to POI 3.14-final (TIKA-1853).
+  * Upgrade to POI 3.15-beta1 (TIKA-1895).
 
   * Upgrade to Jackson 2.7.1 (TIKA-1869).
 

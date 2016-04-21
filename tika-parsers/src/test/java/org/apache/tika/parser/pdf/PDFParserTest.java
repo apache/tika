@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -1118,6 +1119,44 @@ public class PDFParserTest extends TikaTest {
         }, m.getValues(XMPMM.HISTORY_WHEN));
     }
 
+    @Test
+    public void testSkipBadPage() throws Exception {
+        //test file comes from govdocs1
+        //can't use TikaTest shortcuts because of exception
+        Parser p = new AutoDetectParser();
+        ContentHandler handler = new BodyContentHandler(-1);
+        Metadata m = new Metadata();
+        ParseContext context = new ParseContext();
+        boolean tikaEx = false;
+        try (InputStream is = getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
+            p.parse(is, handler, m, context);
+        } catch (TikaException e) {
+            tikaEx = true;
+        }
+        String content = handler.toString();
+        assertTrue("Should have thrown exception", tikaEx);
+        assertEquals(1, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+        assertContains("Unknown dir", m.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("1309.61", content);
+
+        //now try throwing exception immediately
+        PDFParserConfig config = new PDFParserConfig();
+        config.setCatchIntermediateIOExceptions(false);
+        context.set(PDFParserConfig.class, config);
+
+        handler = new BodyContentHandler(-1);
+        m = new Metadata();
+        tikaEx = false;
+        try (InputStream is = getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
+            p.parse(is, handler, m, context);
+        } catch (TikaException e) {
+            tikaEx = true;
+        }
+        content = handler.toString();
+        assertTrue("Should have thrown exception", tikaEx);
+        assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
+        assertNotContained("1309.61", content);
+    }
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);

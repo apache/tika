@@ -35,10 +35,10 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.14</poi.version>
+    <poi.version>3.15-beta1</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.10</codec.version>
-    <!-- NOTE: sync tukaani version with commons-compress -->
+    <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.5</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
@@ -203,7 +203,7 @@
     <dependency>
       <groupId>com.googlecode.mp4parser</groupId>
       <artifactId>isoparser</artifactId>
-      <version>1.1.18</version>
+      <version>1.1.7</version>
     </dependency>
     <dependency>
       <groupId>com.drewnoakes</groupId>
@@ -219,6 +219,12 @@
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
       <version>1.5.1</version>
+      <exclusions>
+        <exclusion>
+        <groupId>org.jdom</groupId>
+        <artifactId>jdom</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.gagravarr</groupId>

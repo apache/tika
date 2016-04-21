@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -107,6 +108,7 @@ class PDF2XHTML extends PDFTextStripper {
     private final XHTMLContentHandler handler;
     private final PDFParserConfig config;
     private final Metadata metadata;
+    private final List<IOException> exceptions = new ArrayList<>();
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.
@@ -140,17 +142,18 @@ class PDF2XHTML extends PDFTextStripper {
      * @param handler  SAX content handler
      * @param metadata PDF metadata
      * @throws SAXException  if the content handler fails to process SAX events
-     * @throws TikaException if the PDF document can not be processed
+     * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(
             PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
             PDFParserConfig config)
             throws SAXException, TikaException {
+        PDF2XHTML pdf2XHTML = null;
         try {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content
             // handler.
-            PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, context, metadata, config);
+            pdf2XHTML = new PDF2XHTML(handler, context, metadata, config);
 
             config.configure(pdf2XHTML);
 
@@ -174,6 +177,11 @@ class PDF2XHTML extends PDFTextStripper {
             } else {
                 throw new TikaException("Unable to extract PDF content", e);
             }
+        }
+        if (pdf2XHTML.exceptions.size() > 0) {
+            //throw the first
+            throw new TikaException("Unable to extract all PDF content",
+                    pdf2XHTML.exceptions.get(0));
         }
     }
 
@@ -201,6 +209,15 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     @Override
+    public void processPage(PDPage page) throws IOException {
+        try {
+            super.processPage(page);
+        } catch (IOException e) {
+            handleCatchableIOE(e);
+        }
+    }
+
+    @Override
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             handler.startDocument();
@@ -214,11 +231,19 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             // Extract text for any bookmarks:
             extractBookmarkText();
-            extractEmbeddedDocuments(pdf, originalHandler);
+            try {
+                extractEmbeddedDocuments(pdf, originalHandler);
+            } catch (IOException e) {
+                handleCatchableIOE(e);
+            }
 
             //extract acroform data at end of doc
             if (config.getExtractAcroFormContent() == true) {
-                extractAcroForm(pdf, handler);
+                try {
+                    extractAcroForm(pdf, handler);
+                } catch (IOException e) {
+                    handleCatchableIOE(e);
+                }
             }
             handler.endDocument();
         } catch (TikaException e) {
@@ -242,8 +267,11 @@ class PDF2XHTML extends PDFTextStripper {
     protected void endPage(PDPage page) throws IOException {
         try {
             writeParagraphEnd();
-
-            extractImages(page.getResources(), new HashSet<COSBase>());
+            try {
+                extractImages(page.getResources(), new HashSet<COSBase>());
+            } catch (IOException e) {
+                handleCatchableIOE(e);
+            }
 
             EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
             for (PDAnnotation annotation : page.getAnnotations()) {
@@ -257,6 +285,8 @@ class PDF2XHTML extends PDFTextStripper {
                         throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
                     } catch (TikaException e) {
                         throw new IOExceptionWithCause("file embedded in annotation tika exception", e);
+                    } catch (IOException e) {
+                        handleCatchableIOE(e);
                     }
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
@@ -314,6 +344,8 @@ class PDF2XHTML extends PDFTextStripper {
             handler.endElement("div");
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
+        } catch (IOException e) {
+            exceptions.add(e);
         }
     }
 
@@ -395,7 +427,7 @@ class PDF2XHTML extends PDFTextStripper {
                                 new EmbeddedContentHandler(handler),
                                 metadata, false);
                     } catch (IOException e) {
-                        // could not extract this image, so just skip it...
+                        handleCatchableIOE(e);
                     }
                 }
             }
@@ -616,10 +648,11 @@ class PDF2XHTML extends PDFTextStripper {
         PDXFAResource pdxfa = form.getXFA();
 
         if (pdxfa != null) {
+            //if successful, return
             XFAExtractor xfaExtractor = new XFAExtractor();
-            try {
-                xfaExtractor.extract(new BufferedInputStream(
-                        new ByteArrayInputStream(pdxfa.getBytes())), handler, metadata);
+            try (InputStream is = new BufferedInputStream(
+                    new ByteArrayInputStream(pdxfa.getBytes()))) {
+                xfaExtractor.extract(is, handler, metadata, context);
                 return;
             } catch (XMLStreamException |IOException e) {
                 //if there was an xml parse exception in xfa, try the AcroForm
@@ -747,6 +780,19 @@ class PDF2XHTML extends PDFTextStripper {
             }
             handler.endElement("ol");
             handler.endElement("li");
+        }
+    }
+
+    private void handleCatchableIOE(IOException e) throws IOException {
+        if (config.isCatchIntermediateIOExceptions()) {
+            String msg = e.getMessage();
+            if (msg == null) {
+                msg = "IOException, no message";
+            }
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
+            exceptions.add(e);
+        } else {
+            throw e;
         }
     }
 }

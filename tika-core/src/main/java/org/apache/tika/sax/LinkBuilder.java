@@ -32,6 +32,10 @@ class LinkBuilder {
         this.type = type;
     }
 
+    public String getType() {
+        return this.type;
+    }
+
     public void setURI(String uri) {
         if (uri != null) {
             this.uri = uri;
