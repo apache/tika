@@ -17,6 +17,27 @@
 
 package org.apache.tika.parser.pot;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Logger;
+
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -32,29 +53,7 @@ import org.apache.tika.parser.mp4.MP4Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.BufferedReader;
-import java.util.logging.Logger;
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.xml.sax.helpers.AttributesImpl;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Uses the Pooled Time Series algorithm + command line tool, to
@@ -66,17 +65,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class PooledTimeSeriesParser extends AbstractParser {
 
   private static final long serialVersionUID = -2855917932512164988L;
-  private static final Set<MediaType> SUPPORTED_TYPES = Collections
-      .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(new MediaType[] {
-          MediaType.video("avi"), MediaType.video("mp4")
-      // TODO: Add all supported video types
-          })));
+
+  static final boolean isAvailable = ExternalParser.check(
+          new String[] { "pooled-time-series", "--help" }, -1);
+
+  private static final Set<MediaType> SUPPORTED_TYPES =
+          isAvailable ? Collections.unmodifiableSet(
+                  new HashSet<>(Arrays.asList(new MediaType[]{
+                                  MediaType.video("avi"), MediaType.video("mp4")
+                          }))) : Collections.EMPTY_SET;;
+                          // TODO: Add all supported video types
 
   private static final Logger LOG = Logger.getLogger(PooledTimeSeriesParser.class.getName());
 
   public boolean isAvailable() {
-    return ExternalParser.check(
-        new String[] { "pooled-time-series", "--help" }, -1);
+    return isAvailable;
   }
 
   /**
@@ -90,9 +93,6 @@ public class PooledTimeSeriesParser extends AbstractParser {
    */
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
-    if (!isAvailable()) {
-      return Collections.emptySet();
-    }
     return SUPPORTED_TYPES;
   }
 
