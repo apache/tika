@@ -22,9 +22,13 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.mp4.MP4Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -46,6 +50,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -85,6 +90,9 @@ public class PooledTimeSeriesParser extends AbstractParser {
    */
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
+    if (!isAvailable()) {
+      return Collections.emptySet();
+    }
     return SUPPORTED_TYPES;
   }
 
@@ -147,6 +155,12 @@ public class PooledTimeSeriesParser extends AbstractParser {
           metadata.get("og_frames"), metadata.get("og_vecSize"));
       xhtml.endDocument();
 
+      // Temporary workaround for TIKA-1445 - until we can specify
+      //  composite parsers with strategies (eg Composite, Try In Turn),
+      //  always send the image onwards to the regular parser to have
+      //  the metadata for them extracted as well
+      _TMP_VIDEO_METADATA_PARSER.parse(tikaStream, handler, metadata, context);
+
     } finally {
       tmp.dispose();
       if (output != null) {
@@ -155,6 +169,17 @@ public class PooledTimeSeriesParser extends AbstractParser {
     }
   }
 
+    // TIKA-1445 workaround parser
+    private static Parser _TMP_VIDEO_METADATA_PARSER = new CompositeVideoParser();
+    private static class CompositeVideoParser extends CompositeParser {
+        private static final long serialVersionUID = -2398203965206381382L;
+        private static List<Parser> videoParsers = Arrays.asList(new Parser[]{
+          new MP4Parser()
+        });
+        CompositeVideoParser() {
+            super(new MediaTypeRegistry(), videoParsers);
+        }
+    }
   private String computePoT(File input)
       throws IOException, TikaException {
 
