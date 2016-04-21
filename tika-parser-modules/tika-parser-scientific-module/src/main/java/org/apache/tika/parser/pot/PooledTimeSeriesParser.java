@@ -17,62 +17,73 @@
 
 package org.apache.tika.parser.pot;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.BufferedReader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
+
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.environment.EnvironmentUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.mp4.MP4Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-
+/**
+ * Uses the Pooled Time Series algorithm + command line tool, to
+ * generate a numeric representation of the video suitable for
+ * similarity searches.
+ * <p>See https://wiki.apache.org/tika/PooledTimeSeriesParser for
+ * more details and setup instructions.
+ */
 public class PooledTimeSeriesParser extends AbstractParser {
 
   private static final long serialVersionUID = -2855917932512164988L;
-  private static final Set<MediaType> SUPPORTED_TYPES = Collections
-      .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(new MediaType[] {
-          MediaType.video("avi"), MediaType.video("mp4")
-      // TODO: Add all supported video types
-          })));
+
+  static final boolean isAvailable = ExternalParser.check(
+          new String[]{"pooled-time-series", "--help"}, -1);
+
+  private static final Set<MediaType> SUPPORTED_TYPES =
+          isAvailable ? Collections.unmodifiableSet(
+                  new HashSet<>(Arrays.asList(new MediaType[]{
+                          MediaType.video("avi"), MediaType.video("mp4")
+                  }))) : Collections.EMPTY_SET;
+  ;
+  // TODO: Add all supported video types
 
   private static final Logger LOG = Logger.getLogger(PooledTimeSeriesParser.class.getName());
-
-  public boolean isAvailable() {
-    return ExternalParser.check(
-        new String[] { "pooled-time-series", "--help" }, -1);
-  }
 
   /**
    * Returns the set of media types supported by this parser when used with the
    * given parse context.
    *
-   * @param context
-   *          parse context
+   * @param context parse context
    * @return immutable set of media types
    * @since Apache Tika 0.7
    */
@@ -92,64 +103,75 @@ public class PooledTimeSeriesParser extends AbstractParser {
    * parameter. See the parser implementations for the kinds of context
    * information they expect.
    *
-   * @param stream
-   *          the document stream (input)
-   * @param handler
-   *          handler for the XHTML SAX events (output)
-   * @param metadata
-   *          document metadata (input and output)
-   * @param context
-   *          parse context
-   * @throws IOException
-   *           if the document stream could not be read
-   * @throws SAXException
-   *           if the SAX events could not be processed
-   * @throws TikaException
-   *           if the document could not be parsed
+   * @param stream   the document stream (input)
+   * @param handler  handler for the XHTML SAX events (output)
+   * @param metadata document metadata (input and output)
+   * @param context  parse context
+   * @throws IOException   if the document stream could not be read
+   * @throws SAXException  if the SAX events could not be processed
+   * @throws TikaException if the document could not be parsed
    * @since Apache Tika 0.5
    */
   @Override
   public void parse(InputStream stream, ContentHandler handler,
-      Metadata metadata, ParseContext context) throws IOException,
-      SAXException, TikaException {
+                    Metadata metadata, ParseContext context) throws IOException,
+          SAXException, TikaException {
 
-    if (!isAvailable()) {
+    if (!isAvailable) {
       LOG.warning(
-          "PooledTimeSeries not installed!");
+              "PooledTimeSeries not installed!");
       return;
     }
 
     XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
     TemporaryResources tmp = new TemporaryResources();
-    File output = null;
     try {
       TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
       File input = tikaStream.getFile();
       String cmdOutput = computePoT(input);
-      FileInputStream ofStream = new FileInputStream(new File(
-          input.getAbsoluteFile() + ".of.txt"));
-      FileInputStream ogStream = new FileInputStream(new File(
-          input.getAbsoluteFile() + ".hog.txt"));
-      extractHeaderOutput(ofStream, metadata, "of");
-      extractHeaderOutput(ogStream, metadata, "og");
-      xhtml.startDocument();
-      doExtract(ofStream, xhtml, "Histogram of Optical Flows (HOF)",
-          metadata.get("of_frames"), metadata.get("of_vecSize"));
-      doExtract(ogStream, xhtml, "Histogram of Oriented Gradients (HOG)",
-          metadata.get("og_frames"), metadata.get("og_vecSize"));
-      xhtml.endDocument();
+      try(InputStream ofStream = new FileInputStream(new File(
+              input.getAbsoluteFile() + ".of.txt"))) {
+        try(InputStream ogStream = new FileInputStream(new File(
+                input.getAbsoluteFile() + ".hog.txt"))) {
+
+          extractHeaderOutput(ofStream, metadata, "of");
+          extractHeaderOutput(ogStream, metadata, "og");
+          xhtml.startDocument();
+          doExtract(ofStream, xhtml, "Histogram of Optical Flows (HOF)",
+                  metadata.get("of_frames"), metadata.get("of_vecSize"));
+          doExtract(ogStream, xhtml, "Histogram of Oriented Gradients (HOG)",
+                  metadata.get("og_frames"), metadata.get("og_vecSize"));
+          xhtml.endDocument();
+        }
+      }
+      // Temporary workaround for TIKA-1445 - until we can specify
+      //  composite parsers with strategies (eg Composite, Try In Turn),
+      //  always send the image onwards to the regular parser to have
+      //  the metadata for them extracted as well
+      _TMP_VIDEO_METADATA_PARSER.parse(tikaStream, handler, metadata, context);
 
     } finally {
       tmp.dispose();
-      if (output != null) {
-        output.delete();
-      }
+    }
+  }
+
+  // TIKA-1445 workaround parser
+  private static Parser _TMP_VIDEO_METADATA_PARSER = new CompositeVideoParser();
+
+  private static class CompositeVideoParser extends CompositeParser {
+    private static final long serialVersionUID = -2398203965206381382L;
+    private static List<Parser> videoParsers = Arrays.asList(new Parser[]{
+            new MP4Parser()
+    });
+
+    CompositeVideoParser() {
+      super(new MediaTypeRegistry(), videoParsers);
     }
   }
 
   private String computePoT(File input)
-      throws IOException, TikaException {
+          throws IOException, TikaException {
 
     CommandLine cmdLine = new CommandLine("pooled-time-series");
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -163,7 +185,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
     PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
     exec.setStreamHandler(streamHandler);
     int exitValue = exec
-        .execute(cmdLine, EnvironmentUtils.getProcEnvironment());
+            .execute(cmdLine, EnvironmentUtils.getProcEnvironment());
     return outputStream.toString("UTF-8");
 
   }
@@ -172,61 +194,56 @@ public class PooledTimeSeriesParser extends AbstractParser {
    * Reads the contents of the given stream and write it to the given XHTML
    * content handler. The stream is closed once fully processed.
    *
-   * @param stream
-   *          Stream where is the result of ocr
-   * @param xhtml
-   *          XHTML content handler
-   * @param tableTitle
-   *          The name of the matrix/table to display.
-   * @param frames
-   *          Number of frames read from the video.
-   * @param vecSize
-   *          Size of the OF or HOG vector.
-   * @throws SAXException
-   *           if the XHTML SAX events could not be handled
-   * @throws IOException
-   *           if an input error occurred
+   * @param stream     Stream where is the result of ocr
+   * @param xhtml      XHTML content handler
+   * @param tableTitle The name of the matrix/table to display.
+   * @param frames     Number of frames read from the video.
+   * @param vecSize    Size of the OF or HOG vector.
+   * @throws SAXException if the XHTML SAX events could not be handled
+   * @throws IOException  if an input error occurred
    */
   private void doExtract(InputStream stream, XHTMLContentHandler xhtml,
-      String tableTitle, String frames, String vecSize) throws SAXException,
-      IOException {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
-        UTF_8));
-    String line = null;
-    AttributesImpl attributes = new AttributesImpl();
-    attributes.addAttribute("", "", "rows", "CDATA", frames);
-    attributes.addAttribute("", "", "cols", "CDATA", vecSize);
+                         String tableTitle, String frames, String vecSize) throws SAXException,
+          IOException {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
+            UTF_8))) {
+      String line = null;
+      AttributesImpl attributes = new AttributesImpl();
+      attributes.addAttribute("", "", "rows", "CDATA", frames);
+      attributes.addAttribute("", "", "cols", "CDATA", vecSize);
 
-    xhtml.startElement("h3");
-    xhtml.characters(tableTitle);
-    xhtml.endElement("h3");
-    xhtml.startElement("table", attributes);
-    while ((line = reader.readLine()) != null) {
-      xhtml.startElement("tr");
-      for (String val : line.split(" ")) {
-        xhtml.startElement("td");
-        xhtml.characters(val);
-        xhtml.endElement("td");
+      xhtml.startElement("h3");
+      xhtml.characters(tableTitle);
+      xhtml.endElement("h3");
+      xhtml.startElement("table", attributes);
+      while ((line = reader.readLine()) != null) {
+        xhtml.startElement("tr");
+        for (String val : line.split(" ")) {
+          xhtml.startElement("td");
+          xhtml.characters(val);
+          xhtml.endElement("td");
+        }
+        xhtml.endElement("tr");
       }
-      xhtml.endElement("tr");
+      xhtml.endElement("table");
     }
-    xhtml.endElement("table");
   }
 
   private void extractHeaderOutput(InputStream stream, Metadata metadata,
-      String prefix) throws IOException {
-    BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
-        UTF_8));
-    String line = reader.readLine();
-    String[] firstLine = line.split(" ");
-    String frames = firstLine[0];
-    String vecSize = firstLine[1];
+                                   String prefix) throws IOException {
+    try(BufferedReader reader = new BufferedReader(new InputStreamReader(stream,
+            UTF_8))) {
+      String line = reader.readLine();
+      String[] firstLine = line.split(" ");
+      String frames = firstLine[0];
+      String vecSize = firstLine[1];
 
-    if (prefix == null) {
-      prefix = "";
+      if (prefix == null) {
+        prefix = "";
+      }
+      metadata.add(prefix + "_frames", frames);
+      metadata.add(prefix + "_vecSize", vecSize);
     }
-    metadata.add(prefix + "_frames", frames);
-    metadata.add(prefix + "_vecSize", vecSize);
   }
 
 }
