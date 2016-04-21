@@ -16,16 +16,13 @@
  */
 package org.apache.tika.parser.ner.mitie;
 
-import org.apache.commons.logging.Log;
-import org.apache.tika.io.IOUtils;
+
 import org.apache.tika.parser.ner.NERecogniser;
-import org.json.JSONObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.lang.reflect.Field;
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -34,7 +31,7 @@ import java.util.*;
  *  trained models using state-of-the-art information extraction tools. This NER requires additional setup,
  *  due to runtime binding to MIT Information Extraction.
  *  See <a href="http://wiki.apache.org/tika/TikaAndMITIE">
- *      Tika NER Wiki</a> for configuring this recogniser.
+ *      Tika MITIE Wiki</a> for configuring this recogniser.
  *  @see NERecogniser
  *
  */
@@ -65,11 +62,13 @@ public class MITIENERecogniser implements NERecogniser {
      */
     public MITIENERecogniser(String modelPath) {
         try {
-            LOG.info("model: " + modelPath);
-            Class<?> namedEntityExtractorClass = Class.forName(NamedEntityExtractor_Class);
-            extractorInstance = namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class}).newInstance("/Users/manali/cs599_dr/MITIE/MITIE-models/english/ner_model.dat");
-
-            this.available = true;
+            if(!(new File(modelPath)).exists()) {
+                LOG.warn("{} does not exist", modelPath);
+            }else {
+                Class<?> namedEntityExtractorClass = Class.forName(NamedEntityExtractor_Class);
+                extractorInstance = namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class}).newInstance("/Users/manali/cs599_dr/MITIE/MITIE-models/english/ner_model.dat");
+                this.available = true;
+            }
         } catch (Exception e) {
             LOG.warn("{} while trying to load the model from {}", e.getMessage(), modelPath);
         }
@@ -102,6 +101,7 @@ public class MITIENERecogniser implements NERecogniser {
         Map<String, Set<String>> names = new HashMap<>();
 
         try {
+
             Class<?> stringVectorClass = Class.forName("edu.mit.ll.mitie.StringVector");
             Class<?> entityMentionVectorClass = Class.forName("edu.mit.ll.mitie.EntityMentionVector");
             Class<?> entityMentionClass = Class.forName("edu.mit.ll.mitie.EntityMention");
@@ -115,7 +115,6 @@ public class MITIENERecogniser implements NERecogniser {
                 possibleTags.add(t);
             }
             Method tokenize = globalClass.getMethod("tokenize", String.class);
-//            text = "Hi, my name is Abraham Lincoln. I live in Los Angeles, California.";
             stringVectorObject = tokenize.invoke(globalClass,text );
 
             ArrayList<String> stringVector = new ArrayList<>();
@@ -131,33 +130,24 @@ public class MITIENERecogniser implements NERecogniser {
                 entityMentionObject = entityMentionVectorClass.getMethod("get", Integer.TYPE).invoke(entities, (int)i);
                 int tag_index = (Integer)entityMentionClass.getMethod("getTag").invoke(entityMentionObject);
                 String tag = possibleTags.get(tag_index);
-
-                Set x = new HashSet<>();
-
-                if(names.containsKey(tag)){
+                Set<String> x = new HashSet<String>();
+                if(names.containsKey(tag)) {
                     x = names.get(tag);
                 }
-                else{
+                else {
                     names.put(tag,x);
                 }
-
                 int start = (Integer)entityMentionClass.getMethod("getStart").invoke(entityMentionObject);
                 int end = (Integer)entityMentionClass.getMethod("getEnd").invoke(entityMentionObject);
-
                 String match = "";
-                for(;start<end; start++){
-                    match += stringVector.get(start);
+                for(;start<end; start++) {
+                    match += stringVector.get(start) + " ";
                 }
                 x.add(match.trim());
             }
-
-            for(Map.Entry<String, Set<String>> entry : names.entrySet()) {
-                LOG.info(entry.getKey()+ "\t" +entry.getValue().toString());
-            }
-
-
+            
         } catch (Exception e) {
-            e.printStackTrace();
+
             LOG.debug(e.getMessage(), e);
         }
         return names;
