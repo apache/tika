@@ -19,70 +19,41 @@ package org.apache.tika.langdetect;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 
-import java.io.*;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+import javax.ws.rs.core.Response;
+import java.io.CharArrayWriter;
+import java.io.IOException;
 import java.util.*;
+
 
 /**
  * Created by trevorlewis on 3/7/16.
  */
 /**
  * Language Detection using MIT Lincoln Lab’s Text.jl library
- * https://github.com/trevorlewis/TEXT-Language-REST
+ * https://github.com/trevorlewis/TextREST.jl
  *
- * Please run the Julia lidHttpServer.jl before using this.
+ * Please run the TextREST.jl server before using this.
  */
 public class TextLangDetector extends LanguageDetector {
+
+    private static final String TEXT_REST_HOST = "http://localhost:8000";
+    private static final String TEXT_LID_PATH = "/lid";
+
+    private static String restHostUrlStr;
 
     private Set<String> languages;
     private CharArrayWriter writer;
 
-    private static URL url;
-    private static HttpURLConnection con = null;
-    private static OutputStreamWriter out = null;
-    private static InputStreamReader in = null;
-
     public TextLangDetector(){
         super();
-
+        restHostUrlStr = TEXT_REST_HOST;
+        languages = getAllLanguages();
         writer = new CharArrayWriter();
-
-        try {
-            url = new URL("http://127.0.0.1:8000");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("GET");
-
-            int responseCode = con.getResponseCode();
-            if (responseCode == 200) {
-                languages = new HashSet<String>();
-                in = new InputStreamReader(con.getInputStream());
-                String json = getStringFromInputStreamReader(in);
-                JsonArray jsonArray = new JsonParser().parse(json).getAsJsonArray();
-                for (JsonElement jsonElement: jsonArray) {
-                    languages.add(jsonElement.toString());
-                }
-                in.close();
-            }
-
-            con.disconnect();
-        } catch (ConnectException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -119,63 +90,57 @@ public class TextLangDetector extends LanguageDetector {
     @Override
     public List<LanguageResult> detectAll() {
         List<LanguageResult> result = new ArrayList<>();
-
-        result.add(new LanguageResult(detect(writer.toString()), LanguageConfidence.MEDIUM, 0));
-
+        String language = detect(writer.toString());
+        if (language != null) {
+            result.add(new LanguageResult(language, LanguageConfidence.MEDIUM, 1));
+        } else {
+            result.add(new LanguageResult(language, LanguageConfidence.NONE, 0));
+        }
         return result;
     }
 
-    private String detect(String content){
-        String language = "error";
-
+    private Set<String> getAllLanguages() {
+        Set<String> languages = new HashSet<>();
         try {
-            con = (HttpURLConnection) url.openConnection();
-            con.setRequestMethod("PUT");
-            con.setDoOutput(true);
-
-            out = new OutputStreamWriter(con.getOutputStream());
-            out.write(content);
-            out.close();
-
-            int responseCode = con.getResponseCode();
-            if (responseCode == 200) {
-                in = new InputStreamReader(con.getInputStream());
-                String json = getStringFromInputStreamReader(in);
-                language = new JsonParser().parse(json).getAsJsonObject().get("lang").getAsString();
-                in.close();
+            Response response = WebClient
+                    .create(restHostUrlStr + TEXT_LID_PATH)
+                    .get();
+            String json = response.readEntity(String.class);
+            JsonArray jsonArray = new JsonParser().parse(json).getAsJsonObject().get("all_languages").getAsJsonArray();
+            for (JsonElement jsonElement : jsonArray) {
+                languages.add(jsonElement.toString());
             }
-
-            con.disconnect();
-        } catch (ConnectException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
+        return languages;
+    }
 
+    private String detect(String content) {
+        String language = null;
+        try {
+            Response response = WebClient
+                    .create(restHostUrlStr + TEXT_LID_PATH)
+                    .put(content);
+            String json = response.readEntity(String.class);
+            language = new JsonParser().parse(json).getAsJsonObject().get("language").getAsString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return language;
     }
 
-    // convert InputStreamReader to String
-    private String getStringFromInputStreamReader(InputStreamReader in) {
-        BufferedReader br = null;
-        StringBuilder sb = new StringBuilder();
-        String line;
+    protected static boolean canRun() {
         try {
-            br = new BufferedReader(in);
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-        } catch (IOException e) {
+            Response response = WebClient
+                    .create(TEXT_REST_HOST + TEXT_LID_PATH)
+                    .get();
+            String json = response.readEntity(String.class);
+            JsonArray jsonArray = new JsonParser().parse(json).getAsJsonObject().get("all_languages").getAsJsonArray();
+            return jsonArray.size() != 0;
+        } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            return false;
         }
-        return sb.toString();
     }
 }
