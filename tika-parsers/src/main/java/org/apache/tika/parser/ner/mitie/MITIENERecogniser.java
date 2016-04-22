@@ -24,7 +24,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  *  This class offers an implementation of {@link NERecogniser} based on
@@ -145,7 +149,7 @@ public class MITIENERecogniser implements NERecogniser {
                 }
                 x.add(match.trim());
             }
-            
+
         } catch (Exception e) {
 
             LOG.debug(e.getMessage(), e);
