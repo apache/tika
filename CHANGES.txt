@@ -1,4 +1,9 @@
 Release 1.13 - ???
+
+  * Refactored Language Detector into tika-landetect module,
+    added default N-Gram implementation, Optimiaze Lang 
+    Detector and MIT Text.jl implementation 
+    (TIKA-1872, TIKA-1696, TIKA-1723).
  
   * Improvements to MIME database for detection of Scientific 
     and other formats present in the TREC-DD-Polar dataset
