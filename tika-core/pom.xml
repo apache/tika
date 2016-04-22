@@ -113,6 +113,11 @@
             <configuration>
               <excludes>
                 <exlude>org/apache/tika/config/TikaActivator</exlude>
+                <exlude>org/apache/tika/language/LanguageIdentifier</exlude>
+                <exlude>org/apache/tika/language/LanguageProfile</exlude>
+                <exlude>org/apache/tika/language/LanguageProfilerBuilder</exlude>
+                <exlude>org/apache/tika/language/ProfilingHandler</exlude>
+                <exlude>org/apache/tika/language/ProfilingWriter</exlude>
                 <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
                 <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
                 <exlude>org/apache/tika/metadata/DublinCore</exlude>
