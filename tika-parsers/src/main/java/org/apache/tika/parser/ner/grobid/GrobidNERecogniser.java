@@ -150,8 +150,8 @@ public class GrobidNERecogniser implements NERecogniser{
         Set<String> normalizedMeasurementSet = new HashSet<String>();
         
         try {
-            String url = restHostUrlStr + readRestEndpoint()+ "?text=" + URLEncoder.encode(text,"UTF-8");
-            Response response = WebClient.create(url).accept(MediaType.APPLICATION_JSON).get();
+            String url = restHostUrlStr + readRestEndpoint();
+            Response response = WebClient.create(url).accept(MediaType.APPLICATION_JSON).post("text=" + text);
             int responseCode = response.getStatus();
     
             if (responseCode == 200) {
@@ -168,14 +168,14 @@ public class GrobidNERecogniser implements NERecogniser{
                 	if(quantity.containsKey("rawValue")){
                 		String measurementNumber = (String) convertToJSONObject(quantity.toString()).get("rawValue");
                 		measurementString.append(measurementNumber);
-                    	measurementString.append(" ");
-                    	measurementNumberSet.add(measurementNumber);
+                    		measurementString.append(" ");
+                    		measurementNumberSet.add(measurementNumber);
                 	}
                 	
                 	if(quantity.containsKey("normalizedQuantity")){
-                		Long normalizedMeasurementNumber = (Long) convertToJSONObject(quantity.toString()).get("normalizedQuantity");
-                		normalizedMeasurementString.append(normalizedMeasurementNumber.toString());
-                    	normalizedMeasurementString.append(" ");
+                		String normalizedMeasurementNumber = convertToJSONObject(quantity.toString()).get("normalizedQuantity").toString();
+                		normalizedMeasurementString.append(normalizedMeasurementNumber);
+                    		normalizedMeasurementString.append(" ");
                 	}
                 	
                 	JSONObject jsonObj = (JSONObject) convertToJSONObject(quantity.toString());
