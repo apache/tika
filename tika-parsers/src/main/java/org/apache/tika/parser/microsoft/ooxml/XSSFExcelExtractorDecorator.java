@@ -190,6 +190,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             SAXParser saxParser = parseContext.getSAXParser();
             XMLReader sheetParser = saxParser.getXMLReader();
+            sheetParser.setEntityResolver(ParseContext.IGNORING_SAX_ENTITY_RESOLVER);
             XSSFSheetInterestingPartsCapturer handler =
                     new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
                             styles, comments, strings, sheetContentsExtractor, formatter, false));
