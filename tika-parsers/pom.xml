@@ -203,7 +203,7 @@
     <dependency>
       <groupId>com.googlecode.mp4parser</groupId>
       <artifactId>isoparser</artifactId>
-      <version>1.1.7</version>
+      <version>1.1.18</version>
     </dependency>
     <dependency>
       <groupId>com.drewnoakes</groupId>
@@ -219,6 +219,12 @@
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
       <version>1.5.1</version>
+      <exclusions>
+        <exclusion>
+        <groupId>org.jdom</groupId>
+        <artifactId>jdom</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.gagravarr</groupId>
