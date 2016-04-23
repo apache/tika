@@ -1,12 +1,13 @@
 Release 1.13 - ???
 
+  * Fixed JournalParser to handle null responses from 
+    GROBID and to log a message (TIKA-1925).
+
   * Refactored Language Detector into tika-landetect module,
     added default N-Gram implementation, Optimiaze Lang 
     Detector and MIT Text.jl implementation 
     (TIKA-1872, TIKA-1696, TIKA-1723).
  
-  * Improvements to MIME database for detection of Scientific 
-
   * Extract metadata from MP4 videos whether or not the
     PooledTimeSeries parser is available via Aditya Dhulipala
     (TIKA-1844).
