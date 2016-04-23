@@ -1,5 +1,9 @@
 Release 1.13 - ???
 
+  * The MIT-NLP Information Extraction (MITIE) Named Entity
+    Recognition (NER) system is now supported in Tika
+    (TIKA-1913, GitHub-108).
+
   * Tika now supports the use of the Yandex translation 
     service (TIKA-1943, GitHub-106).
 
