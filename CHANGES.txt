@@ -1,6 +1,7 @@
 Release 1.13 - ???
 
-  * Enable Measurement
+  * Tika now supports the use of the Yandex translation 
+    service (TIKA-1943, GitHub-106).
 
   * Tika now uses NER to extract scientific measurements
     from text using either GROBID Quantities which uses 
