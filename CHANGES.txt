@@ -1,5 +1,9 @@
 Release 1.13 - ???
 
+  * Added GROBID Quantities measurement NER to one of
+    the NER recognisers allowing measurements to automatically
+    be extracted from Tika (GitHub-104).
+
   * Fixed JournalParser to handle null responses from 
     GROBID and to log a message (TIKA-1925).
 
