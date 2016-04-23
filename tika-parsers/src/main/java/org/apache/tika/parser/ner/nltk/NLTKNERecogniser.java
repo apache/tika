@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Properties;
+import java.util.Iterator;
+import java.util.Locale;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -38,7 +40,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
  *  This class offers an implementation of {@link NERecogniser} based on
  *  ne_chunk() module of NLTK. This NER requires additional setup,
  *  due to Http requests to an endpoint server that runs NLTK.
- *  See <a href="http://wiki.apache.org/tika/TikaAndNER#NLTK">
+ *  See <a href="http://wiki.apache.org/tika/TikaAndNLTK">
  *
  */
 public class NLTKNERecogniser implements NERecogniser {
@@ -70,9 +72,6 @@ public class NLTKNERecogniser implements NERecogniser {
             } else {
                 this.restHostUrlStr = restHostUrlStr;
             }
-
-
-
 
             Response response = WebClient.create(restHostUrlStr).accept(MediaType.TEXT_HTML).get();
             int responseCode = response.getStatus();
@@ -127,14 +126,20 @@ public class NLTKNERecogniser implements NERecogniser {
                 String result = response.readEntity(String.class);
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
-                Set s = entities.put("NAMES", new HashSet((Collection) j.get("names")));
+                Iterator<?> keys = j.keySet().iterator();
+                while( keys.hasNext() ) {
+                    String key = (String)keys.next();
+                    if ( !key.equals("result") ) {
+                        ENTITY_TYPES.add(key);
+                        entities.put(key.toUpperCase(Locale.ENGLISH), new HashSet((Collection) j.get(key)));
+                    }
+                }
             }
         }
         catch (Exception e) {
             LOG.debug(e.getMessage(), e);
         }
-        ENTITY_TYPES.clear();
-        ENTITY_TYPES.addAll(entities.keySet());
+
         return entities;
     }
 
