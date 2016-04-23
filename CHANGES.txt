@@ -1,8 +1,11 @@
 Release 1.13 - ???
 
-  * Added GROBID Quantities measurement NER to one of
-    the NER recognisers allowing measurements to automatically
-    be extracted from Tika (GitHub-104).
+  * Enable Measurement
+
+  * Tika now uses NER to extract scientific measurements
+    from text using either GROBID Quantities which uses 
+    conditional random fields and NLTK which uses regular 
+    expressesions (TIKA-1917, GitHub-104).
 
   * Fixed JournalParser to handle null responses from 
     GROBID and to log a message (TIKA-1925).
