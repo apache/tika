@@ -70,7 +70,7 @@ public class MITIENERecogniser implements NERecogniser {
                 LOG.warn("{} does not exist", modelPath);
             }else {
                 Class<?> namedEntityExtractorClass = Class.forName(NamedEntityExtractor_Class);
-                extractorInstance = namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class}).newInstance("/Users/manali/cs599_dr/MITIE/MITIE-models/english/ner_model.dat");
+                extractorInstance = namedEntityExtractorClass.getDeclaredConstructor(new Class[]{String.class}).newInstance(modelPath);
                 this.available = true;
             }
         } catch (Exception e) {
