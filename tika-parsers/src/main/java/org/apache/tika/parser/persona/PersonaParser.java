@@ -69,7 +69,7 @@ public class PersonaParser extends AbstractParser {
 		catch(Exception e)
 		{
 			e.printStackTrace();
-			System.out.println("Config properties not found");
+			System.out.println("Error Config properties");
 		}
 		
 		String user = prop.getProperty("user");
