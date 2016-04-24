@@ -33,7 +33,7 @@ import org.apache.tika.mime.MediaType;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class NNExampleModelDetector extends TrainedModelDetector {
-    private static final String EXAMPLE_NNMODEL_FILE = "tika-example.nnmodel";
+    private static final String EXAMPLE_NNMODEL_FILE = "tika.model";
 
     private static final long serialVersionUID = 1L;
 
