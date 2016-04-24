@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.apache.tika.parser.jdbc.SQLite3ParserTest
--------------------------------------------------------------------------------
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.089 sec - in org.apache.tika.parser.jdbc.SQLite3ParserTest

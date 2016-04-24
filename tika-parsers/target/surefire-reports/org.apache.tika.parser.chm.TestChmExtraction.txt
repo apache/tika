@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.apache.tika.parser.chm.TestChmExtraction
--------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 46.991 sec - in org.apache.tika.parser.chm.TestChmExtraction

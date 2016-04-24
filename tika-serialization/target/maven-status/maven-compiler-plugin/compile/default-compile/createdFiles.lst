@@ -1,9 +1,0 @@
-org\apache\tika\metadata\serialization\JsonMetadataDeserializer.class
-org\apache\tika\metadata\serialization\JsonMetadataSerializer.class
-org\apache\tika\metadata\serialization\JsonMetadataBase$SortedJsonMetadataSerializer.class
-org\apache\tika\metadata\serialization\JsonMetadataList$1.class
-org\apache\tika\metadata\serialization\JsonMetadataBase.class
-org\apache\tika\metadata\serialization\JsonMetadataBase$1.class
-org\apache\tika\metadata\serialization\JsonMetadataList.class
-org\apache\tika\metadata\serialization\JsonMetadata.class
-org\apache\tika\metadata\serialization\PrettyMetadataKeyComparator.class

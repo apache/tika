@@ -1,5 +1,0 @@
-org\apache\tika\language\translate\GoogleTranslatorTest.class
-org\apache\tika\language\translate\CachedTranslatorTest.class
-org\apache\tika\language\translate\Lingo24TranslatorTest.class
-org\apache\tika\language\translate\MicrosoftTranslatorTest.class
-org\apache\tika\language\translate\MosesTranslatorTest.class

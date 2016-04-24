@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.apache.tika.parser.microsoft.WordParserTest
--------------------------------------------------------------------------------
-Tests run: 21, Failures: 0, Errors: 0, Skipped: 2, Time elapsed: 0.745 sec - in org.apache.tika.parser.microsoft.WordParserTest

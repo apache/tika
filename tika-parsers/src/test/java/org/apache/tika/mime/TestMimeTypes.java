@@ -69,6 +69,11 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testNetCDF() throws Exception {
+        assertTypeByData("application/x-netcdf", "sresa1b_ncar_ccsm3_0_run1_200001.nc");
+    }
+
+    @Test
     public void testLoadMimeTypes() throws MimeTypeException {
         assertNotNull(repo.forName("application/octet-stream"));
         assertNotNull(repo.forName("text/x-tex"));
@@ -171,7 +176,12 @@ public class TestMimeTypes {
                 // no need for the name-based detection to refine it
                 "application/x-tika-msworks-spreadsheet");
     }
-    
+
+    @Test
+    public void testHFATypes() throws Exception {
+        assertTypeByData("application/x-erdas-hfa","testHFA.hfa");
+    }
+
     @Test
     public void testStarOfficeDetection() throws Exception {
         assertTypeDetection("testVORCalcTemplate.vor",
@@ -348,6 +358,7 @@ public class TestMimeTypes {
        assertTypeByName("application/x-tar",  "test.tar");
        assertTypeByName("application/gzip", "test.tgz"); // See GZIP, not tar contents of it
        assertTypeByName("application/x-cpio", "test.cpio");
+       assertTypeByName("application/vnd.ms-cab-compressed", "test.cab");
        
        // TODO Add an example .deb and .udeb, then check these
        
@@ -358,6 +369,7 @@ public class TestMimeTypes {
        assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
        assertTypeByData("application/gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
        assertTypeByData("application/x-cpio", "test-documents.cpio");
+       assertTypeByData("application/vnd.ms-cab-compressed", "test-documents.cab");
        
        // For spanned zip files, the .zip file doesn't have the header, it's the other parts
        assertTypeByData("application/octet-stream", "test-documents-spanned.zip");
@@ -380,6 +392,8 @@ public class TestMimeTypes {
         assertType("application/fits", "testFITS.fits");
         assertTypeByData("application/fits", "testFITS.fits");
         assertTypeByName("application/fits", "testFITS.fits");
+        // Shorter Header pattern (16 rather than 20 spaces)
+        assertTypeByData("application/fits", "testFITS_ShorterHeader.fits");
     }
 
     @Test
@@ -989,6 +1003,12 @@ public class TestMimeTypes {
     public void testWebVTT() throws Exception {
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
+    }
+    
+    @Test
+    public void testMIF() throws Exception {
+        assertType("application/vnd.mif", "testMIF.mif");
+        assertTypeByData("application/vnd.mif", "testMIF.mif");
     }
     
     @Test

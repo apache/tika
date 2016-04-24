@@ -1,4 +1,0 @@
--------------------------------------------------------------------------------
-Test set: org.apache.tika.server.UnpackerResourceTest
--------------------------------------------------------------------------------
-Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.192 sec - in org.apache.tika.server.UnpackerResourceTest

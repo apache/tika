@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.tika.metadata.Metadata;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.json.XML;
 
 public class TEIParser {
@@ -37,9 +38,10 @@ public class TEIParser {
     return metadata;
   }
 
-  private void createGrobidMetadata(String source, JSONObject obj,
+private void createGrobidMetadata(String source, JSONObject obj,
       Metadata metadata) {
     if (obj != null) {
+    try{
       JSONObject teiHeader = obj.getJSONObject("TEI")
           .getJSONObject("teiHeader");
       if (teiHeader.has("text")) {
@@ -52,6 +54,10 @@ public class TEIParser {
       }
       if (teiHeader.has("profileDesc")) {
         parseProfileDesc(teiHeader.getJSONObject("profileDesc"), metadata);
+      }
+      }
+      catch(JSONException e){
+        System.out.println("No TEI Object found.");
       }
     }
 

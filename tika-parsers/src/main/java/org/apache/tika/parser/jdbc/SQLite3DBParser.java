@@ -16,9 +16,11 @@ package org.apache.tika.parser.jdbc;
  * limitations under the License.
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -43,6 +45,8 @@ import org.sqlite.SQLiteConfig;
 class SQLite3DBParser extends AbstractDBParser {
 
     protected static final String SQLITE_CLASS_NAME = "org.sqlite.JDBC";
+    //If the InputStream wasn't a TikaInputStream, copy to this tmp file
+    Path tmpFile = null;
 
     /**
      * @param context context
@@ -78,8 +82,29 @@ class SQLite3DBParser extends AbstractDBParser {
 
     @Override
     protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context) throws IOException {
-        File dbFile = TikaInputStream.get(is).getFile();
-        return "jdbc:sqlite:" + dbFile.getAbsolutePath();
+        TikaInputStream tis = TikaInputStream.cast(is);
+        //if this is a TikaInputStream, use that to spool is to disk or
+        //use original underlying file.
+        if (tis != null) {
+            Path dbFile = tis.getPath();
+            return "jdbc:sqlite:" + dbFile.toAbsolutePath().toString();
+        } else {
+            //if not TikaInputStream, create own tmpResources.
+            tmpFile = Files.createTempFile("tika-sqlite-tmp", "");
+            Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+            return "jdbc:sqlite:"+ tmpFile.toAbsolutePath().toString();
+        }
+    }
+
+    @Override
+    public void close() throws SQLException, IOException {
+        try {
+            super.close();
+        } finally {
+            if (tmpFile != null) {
+                Files.delete(tmpFile);
+            }
+        }
     }
 
     @Override

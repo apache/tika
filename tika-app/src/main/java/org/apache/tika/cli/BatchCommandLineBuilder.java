@@ -160,35 +160,28 @@ class BatchCommandLineBuilder {
             map.remove("-h");
             map.remove("--html");
             map.put("-basicHandlerType", "html");
-            map.put("-outputSuffix", "html");
         } else if (map.containsKey("-x") || map.containsKey("--xml")) {
             map.remove("-x");
             map.remove("--xml");
             map.put("-basicHandlerType", "xml");
-            map.put("-outputSuffix", "xml");
         } else if (map.containsKey("-t") || map.containsKey("--text")) {
             map.remove("-t");
             map.remove("--text");
             map.put("-basicHandlerType", "text");
-            map.put("-outputSuffix", "txt");
         } else if (map.containsKey("-m") || map.containsKey("--metadata")) {
             map.remove("-m");
             map.remove("--metadata");
             map.put("-basicHandlerType", "ignore");
-            map.put("-outputSuffix", "json");
         } else if (map.containsKey("-T") || map.containsKey("--text-main")) {
             map.remove("-T");
             map.remove("--text-main");
             map.put("-basicHandlerType", "body");
-            map.put("-outputSuffix", "txt");
         }
 
         if (map.containsKey("-J") || map.containsKey("--jsonRecursive")) {
             map.remove("-J");
             map.remove("--jsonRecursive");
             map.put("-recursiveParserWrapper", "true");
-            //overwrite outputSuffix
-            map.put("-outputSuffix", "json");
         }
 
         if (map.containsKey("--inputDir") || map.containsKey("-i")) {
