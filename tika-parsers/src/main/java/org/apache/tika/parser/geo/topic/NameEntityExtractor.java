@@ -17,7 +17,9 @@
 
 package org.apache.tika.parser.geo.topic;
 
-import java.io.FileInputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -28,100 +30,93 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import opennlp.tools.namefind.NameFinderME;
-import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.util.InvalidFormatException;
-import opennlp.tools.util.Span;
-
 import org.apache.commons.io.IOUtils;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.util.Span;
 
 public class NameEntityExtractor {
-	private String nerModelPath = null;
-	ArrayList<String> locationNameEntities;
-	String bestNameEntity;
-	private HashMap<String, Integer> tf;
+    ArrayList<String> locationNameEntities;
+    String bestNameEntity;
+    private HashMap<String, Integer> tf;
+    private final NameFinderME nameFinder;
 
-	public NameEntityExtractor(String nerModelpath) {
-		this.locationNameEntities = new ArrayList<String>();
-		this.bestNameEntity = null;
-		this.nerModelPath = nerModelpath;
-		tf = new HashMap<String, Integer>();
+    public NameEntityExtractor(NameFinderME nameFinder) throws IOException {
+        this.locationNameEntities = new ArrayList<String>();
+        this.bestNameEntity = null;
+        this.nameFinder = nameFinder;
+        this.tf = new HashMap<String, Integer>();
+    }
 
-	}
+    /*
+     * Use OpenNLP to extract location names that's appearing in the steam.
+     * OpenNLP's default Name Finder accuracy is not very good, please refer to
+     * its documentation.
+     * 
+     * @param stream stream that passed from this.parse()
+     */
+    public void getAllNameEntitiesfromInput(InputStream stream) throws IOException {
+        String[] in = IOUtils.toString(stream, UTF_8).split(" ");
+        Span nameE[];
+        
+        //name finder is not thread safe https://opennlp.apache.org/documentation/1.5.2-incubating/manual/opennlp.html#tools.namefind
+        synchronized (nameFinder) {
+            nameE = nameFinder.find(in);
+            //the same name finder is reused, so clear adaptive data
+            nameFinder.clearAdaptiveData();
+        }
 
-	/*
-	 * Use OpenNLP to extract location names that's appearing in the steam.
-	 * OpenNLP's default Name Finder accuracy is not very good, please refer to
-	 * its documentation.
-	 * 
-	 * @param stream stream that passed from this.parse()
-	 */
+        String spanNames = Arrays.toString(Span.spansToStrings(nameE, in));
+        spanNames = spanNames.substring(1, spanNames.length() - 1);
+        String[] tmp = spanNames.split(",");
 
-	public void getAllNameEntitiesfromInput(InputStream stream)
-			throws InvalidFormatException, IOException {
+        for (String name : tmp) {
+            name = name.trim();
+            this.locationNameEntities.add(name);
+        }
 
-		InputStream modelIn = new FileInputStream(nerModelPath);
-		TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
-		NameFinderME nameFinder = new NameFinderME(model);
-		String[] in = IOUtils.toString(stream, UTF_8).split(" ");
 
-		Span nameE[] = nameFinder.find(in);
+    }
 
-		String spanNames = Arrays.toString(Span.spansToStrings(nameE, in));
-		spanNames = spanNames.substring(1, spanNames.length() - 1);
-		modelIn.close();
-		String[] tmp = spanNames.split(",");
+    /*
+     * Get the best location entity extracted from the input stream. Simply
+     * return the most frequent entity, If there several highest frequent
+     * entity, pick one randomly. May not be the optimal solution, but works.
+     * 
+     * @param locationNameEntities OpenNLP name finder's results, stored in
+     * ArrayList
+     */
+    public void getBestNameEntity() {
+        if (this.locationNameEntities.size() == 0)
+            return;
 
-		for (String name : tmp) {
-			name = name.trim();
-			this.locationNameEntities.add(name);
-		}
+        for (int i = 0; i < this.locationNameEntities.size(); ++i) {
+            if (tf.containsKey(this.locationNameEntities.get(i)))
+                tf.put(this.locationNameEntities.get(i),
+                        tf.get(this.locationNameEntities.get(i)) + 1);
+            else
+                tf.put(this.locationNameEntities.get(i), 1);
+        }
+        int max = 0;
+        List<Map.Entry<String, Integer>> list = new ArrayList<Map.Entry<String, Integer>>(
+                tf.entrySet());
+        Collections.shuffle(list);
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+            public int compare(Map.Entry<String, Integer> o1,
+                    Map.Entry<String, Integer> o2) {
+                // Descending Order
+                return o2.getValue().compareTo(o1.getValue());
+            }
+        });
 
-	}
-
-	/*
-	 * Get the best location entity extracted from the input stream. Simply
-	 * return the most frequent entity, If there several highest frequent
-	 * entity, pick one randomly. May not be the optimal solution, but works.
-	 * 
-	 * @param locationNameEntities OpenNLP name finder's results, stored in
-	 * ArrayList
-	 */
-	public void getBestNameEntity() {
-		if (this.locationNameEntities.size() == 0)
-			return;
-
-		for (int i = 0; i < this.locationNameEntities.size(); ++i) {
-			if (tf.containsKey(this.locationNameEntities.get(i)))
-				tf.put(this.locationNameEntities.get(i),
-						tf.get(this.locationNameEntities.get(i)) + 1);
-			else
-				tf.put(this.locationNameEntities.get(i), 1);
-		}
-		int max = 0;
-		List<Map.Entry<String, Integer>> list = new ArrayList<Map.Entry<String, Integer>>(
-				tf.entrySet());
-		Collections.shuffle(list);
-		Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
-			public int compare(Map.Entry<String, Integer> o1,
-					Map.Entry<String, Integer> o2) {
-				return o2.getValue().compareTo(o1.getValue()); // descending
-				// order
-
-			}
-		});
-
-		this.locationNameEntities.clear();// update so that they are in
-											// descending order
-		for (Map.Entry<String, Integer> entry : list) {
-			this.locationNameEntities.add(entry.getKey());
-			if (entry.getValue() > max) {
-				max = entry.getValue();
-				this.bestNameEntity = entry.getKey();
-			}
-		}
-	}
-
+        this.locationNameEntities.clear();// update so that they are in
+                                          // descending order
+        for (Map.Entry<String, Integer> entry : list) {
+            this.locationNameEntities.add(entry.getKey());
+            if (entry.getValue() > max) {
+                max = entry.getValue();
+                this.bestNameEntity = entry.getKey();
+            }
+        }
+    }
 }

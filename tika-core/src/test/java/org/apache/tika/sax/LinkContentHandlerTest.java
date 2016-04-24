@@ -55,5 +55,38 @@ public class LinkContentHandlerTest {
 
         assertEquals(" anchor ", linkContentHandler.getLinks().get(0).getText());
     }
+    
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-1835">TIKA-1835</a>
+     */
+    @Test
+    public void testLinkTag() throws Exception {
+        LinkContentHandler linkContentHandler = new LinkContentHandler();
+        
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "href", "href", "", "http://tika.apache.org/stylesheet.css");
+        atts.addAttribute("", "rel", "rel", "", "stylesheet");
+        
+        linkContentHandler.startElement(XHTMLContentHandler.XHTML, "link", "", atts);
+        linkContentHandler.endElement(XHTMLContentHandler.XHTML, "link", "");
 
+        assertEquals("http://tika.apache.org/stylesheet.css", linkContentHandler.getLinks().get(0).getUri());
+        assertEquals("stylesheet", linkContentHandler.getLinks().get(0).getRel());
+    }
+    
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-1835">TIKA-1835</a>
+     */
+    @Test
+    public void testIframeTag() throws Exception {
+        LinkContentHandler linkContentHandler = new LinkContentHandler();
+        
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "src", "src", "", "http://tika.apache.org/iframe.html");
+        
+        linkContentHandler.startElement(XHTMLContentHandler.XHTML, "iframe", "", atts);
+        linkContentHandler.endElement(XHTMLContentHandler.XHTML, "iframe", "");
+
+        assertEquals("http://tika.apache.org/iframe.html", linkContentHandler.getLinks().get(0).getUri());
+    }
 }

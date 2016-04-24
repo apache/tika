@@ -1,3 +1,68 @@
+Release 1.13 - ???
+
+  * Move serialization of TikaConfig to tika-core and enable dumping
+    of the config file via tika-app (TIKA-1657).
+
+  * Tika now incorporates the Natural Language Toolkit (NLTK) from the
+    Python community as an option for Named Entity Recognition (TIKA-1876).
+
+  * Add support for XFA extraction via Pascal Essiembre (TIKA-1857).
+
+  * Upgrade to sqlite-jdbc 3.8.11.2 (TIKA-1861).  NOTE: this dependency
+    is still <scope>provided</scope>.  You need to include this dependency
+    in order to parser sqlite files.
+
+  * Upgrade to POI 3.14-beta1 (TIKA-1799).
+
+  * Upgrade to PDFBox 1.8.11 (TIKA-1830).
+
+  * Upgrade to Jackson 2.7.1 (TIKA-1869).
+
+  * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
+
+Release 1.12 - 01/24/2016
+
+  * Support for iFrames and element link extraction is provided in
+    the link Content Handler (TIKA-1835).
+
+  * Slide notes are now linked to the slide XHTML in the PPT output
+    (TIKA-1840).
+
+  * JSON tests in Tika server were updated to remove impossible casts
+    (Github-73).
+
+  * Fix bug in GeoTopicParser where NER is reused instead of instantiated
+    with each request (TIKA-1834).
+
+  * Upgrade rome to 1.5.1 && Downgrade Rome dependency to 0.9 to avoid 
+    nasty NPE (TIKA-1820, TIKA-1516)
+
+  * The NamedEntityParser was enhanced to generate text content
+    in addition to metadata (TIKA-1815, TIKA-1816).
+
+  * A significant speed-up is made to the GeoTopicParser by
+    using the new REST server capabilities from Lucene Geo
+    Gazetteer (TIKA-1803).
+
+  * A parser to compute motion properties in Videos, e.g., 
+    Histogram of Oriented Gradients and Histogram of Optical Flows
+    using the Pooled Time Series algorithm, was added (TIKA-1798).
+
+  * Provide NamedEntityParser which exposes Named Entity Recognition
+    from OpenNLP and Stanford NER providers (TIKA-1787, GitHub-61,
+    GitHub-62).
+
+  * Allow XHTMLContentHandler to pass attributes of html element 
+    via Markus Jelsma (TIKA-1782).
+
+  * Fix regression with spacing in PPT via Andreas Beeker (TIKA-1777).
+
+  * Tika Facade parse methods for Path and File added which take a
+    Metadata object, to mirror the existing InputStream one (GitHub-60)
+
+  * GeoParser fix for loading the NER model from a jar file (TIKA-1791)
+
+
 Release 1.11 - 10/18/2015
 
   * Java7 API support for allowing java.nio.file.Path as method arguments

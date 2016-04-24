@@ -178,4 +178,16 @@ public class TikaResourceTest extends CXFTestBase {
 
     }
 
+    //TIKA-1845
+    @Test
+    public void testWMFInRTF() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/rtf")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream("testRTF_npeFromWMFInTikaServer.rtf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Example text"));
+    }
+
 }

@@ -324,7 +324,15 @@ public class TestContainerAwareDetector {
     public void testDetectIPA() throws Exception {
         assertTypeByNameAndData("testIPA.ipa", "application/x-itunes-ipa");
         assertTypeByData("testIPA.ipa", "application/x-itunes-ipa");
-     }
+    }
+    
+    @Test
+    public void testASiC() throws Exception {
+        assertTypeByData("testASiCE.asice", "application/vnd.etsi.asic-e+zip");
+        assertTypeByData("testASiCS.asics", "application/vnd.etsi.asic-s+zip");
+        assertTypeByNameAndData("testASiCE.asice", "application/vnd.etsi.asic-e+zip");
+        assertTypeByNameAndData("testASiCS.asics", "application/vnd.etsi.asic-s+zip");
+    }
      
     @Test
     public void testDetectZip() throws Exception {

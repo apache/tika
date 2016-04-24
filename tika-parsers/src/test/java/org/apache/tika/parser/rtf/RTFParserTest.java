@@ -75,6 +75,7 @@ public class RTFParserTest extends TikaTest {
         String content = writer.toString();
 
         assertEquals("application/rtf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("Test", content);
         assertContains("indexation Word", content);
     }
@@ -489,6 +490,7 @@ public class RTFParserTest extends TikaTest {
     }
 
     //TIKA-1010 test regular (not "embedded") images/picts
+    @Test
     public void testRegularImages() throws Exception {
         Parser base = new AutoDetectParser();
         ParseContext ctx = new ParseContext();
@@ -503,8 +505,8 @@ public class RTFParserTest extends TikaTest {
         }
         List<Metadata> metadatas = parser.getMetadata();
 
-        Metadata meta_jpg_exif = metadatas.get(0);//("testJPEG_EXIF_\u666E\u6797\u65AF\u987F.jpg");
-        Metadata meta_jpg = metadatas.get(2);//("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
+        Metadata meta_jpg_exif = metadatas.get(1);//("testJPEG_EXIF_\u666E\u6797\u65AF\u987F.jpg");
+        Metadata meta_jpg = metadatas.get(3);//("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
 
         assertTrue(meta_jpg_exif != null);
         assertTrue(meta_jpg != null);
@@ -515,8 +517,8 @@ public class RTFParserTest extends TikaTest {
         assertEquals("false", meta_jpg.get(RTFMetadata.THUMBNAIL));
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
-        assertEquals(40, meta_jpg.names().length);
-        assertEquals(105, meta_jpg.names().length);
+        assertEquals(46, meta_jpg.names().length);
+        assertEquals(110, meta_jpg_exif.names().length);
     }
 
     @Test

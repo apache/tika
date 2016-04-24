@@ -51,6 +51,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -233,6 +234,18 @@ public class BundleIT {
             }
         }
         assertEquals(rawParsers, osgiParsers);
+    }
+    
+    @Test
+    public void testTesseractParser() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        Parser tesseractParser = new TesseractOCRParser();
+        try(InputStream stream = new FileInputStream("src/test/resources/testOCR.jpg"))
+        {
+            tesseractParser.parse(stream, handler, new Metadata(), context);
+        }
+        
     }
 
 

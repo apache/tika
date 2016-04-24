@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.11</version>
+    <version>1.13-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -129,16 +129,17 @@
               commons-io, commons-exec, junrar,
               pdfbox,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
+              curvesapi,
               xmlbeans,
               jackcess,
-              commons-lang,              
+              commons-lang,
               tagsoup,
               asm,
               juniversalchardet,
               vorbis-java-core, vorbis-java-tika,
               isoparser, aspectjrt,
               metadata-extractor, xmpcore, json-simple,
-              boilerpipe, rome, opennlp-tools, opennlp-maxent,
+              boilerpipe, rome, rome-utils, opennlp-tools, opennlp-maxent,
               geoapi, sis-metadata, sis-netcdf, sis-utility,
               sis-storage, apache-mime4j-core, apache-mime4j-dom,
               jsr-275, jhighlight, java-libpst, jwnl,
@@ -182,10 +183,7 @@
               javax.servlet;resolution:=optional,
               javax.servlet.http;resolution:=optional,
               javax.measure.converter;resolution:=optional,
-              javax.xml.stream;version="[1.0,2)";resolution:=optional,
-              javax.xml.stream.events;version="[1.0,2)";resolution:=optional,
-              javax.xml.stream.util;version="[1.0,2)";resolution:=optional,
-	      javax.ws.rs.core;resolution:=optional,
+              javax.ws.rs.core;resolution:=optional,
               net.sf.ehcache;resolution:=optional,
               nu.xom;resolution:=optional,
               opendap.dap.http;resolution:=optional,
@@ -194,8 +192,8 @@
               opennlp.maxent;resolution:=optional,
               opennlp.tools.namefind;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
-	      org.apache.cxf.jaxrs.client;resolution:=optional,
-	      org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
+              org.apache.cxf.jaxrs.client;resolution:=optional,
+              org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
               org.apache.commons.exec;resolution:=optional,
               org.apache.commons.io;resolution:=optional,
               org.apache.commons.httpclient;resolution:=optional,
@@ -246,9 +244,11 @@
               org.jdom.output;resolution:=optional,
               org.jdom2;resolution:=optional,
               org.jdom2.input;resolution:=optional,
+              org.jdom2.input.sax;resolution:=optional,
               org.jdom2.output;resolution:=optional,
+              org.jdom2.filter;resolution:=optional,
               org.json.simple;resolution:=optional,
-	      org.json;resolution:=optional,
+              org.json;resolution:=optional,
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
               org.osgi.framework;resolution:=optional,
@@ -262,9 +262,8 @@
               org.xml.sax.ext;resolution:=optional,
               org.xml.sax.helpers;resolution:=optional,
               org.xmlpull.v1;resolution:=optional,
-              schemasMicrosoftComOfficePowerpoint;resolution:=optional,
-              schemasMicrosoftComOfficeWord;resolution:=optional,
-              sun.misc;resolution:=optional,
+              com.microsoft.schemas.office.powerpoint;resolution:=optional,
+              com.microsoft.schemas.office.word;resolution:=optional,              sun.misc;resolution:=optional,
               ucar.units;resolution:=optional,
               ucar.httpservices;resolution:=optional,
               ucar.nc2.util;resolution:=optional,
@@ -295,6 +294,7 @@
               ucar.unidata.io;resolution:=optional,
               ucar.unidata.util;resolution:=optional,
               com.jmatio.io;resolution:=optional,
+              com.google.gson;resolution:=optional,
               visad;resolution:=optional,
               visad.data;resolution:=optional,
               visad.data.vis5d;resolution:=optional,
@@ -330,6 +330,7 @@
               com.google.common.base;resolution:=optional,
               com.google.common.math;resolution:=optional,
               org.apache.http;resolution:=optional,
+              org.apache.http.client.utils;resolution:=optional,
               org.joda.time;resolution:=optional,
               org.joda.time.chrono;resolution:=optional,
               org.joda.time.field;resolution:=optional,
@@ -431,11 +432,6 @@
     <name>The Apache Software Founation</name>
     <url>http://www.apache.org</url>
   </organization>
-  <scm>
-    <url>http://svn.apache.org/viewvc/tika/tags/1.11-rc1/tika-bundle</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.11-rc1/tika-bundle</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.11-rc1/tika-bundle</developerConnection>
-  </scm>
   <issueManagement>
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/TIKA</url>

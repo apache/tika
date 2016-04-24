@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.11</version>
+    <version>1.13-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -35,14 +35,14 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.13</poi.version>
+    <poi.version>3.14-beta1</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.9</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress -->
     <tukaani.version>1.5</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
-    <vorbis.version>0.6</vorbis.version>
-    <pdfbox.version>1.8.10</pdfbox.version>
+    <vorbis.version>0.8</vorbis.version>
+    <pdfbox.version>1.8.11</pdfbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <cxf.version>3.0.3</cxf.version>
   </properties>
@@ -196,9 +196,9 @@
       <version>1.1.0</version>
     </dependency>
     <dependency>
-      <groupId>rome</groupId>
+      <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
-      <version>1.0</version>
+      <version>1.5.1</version>
     </dependency>
     <dependency>
       <groupId>org.gagravarr</groupId>
@@ -236,7 +236,7 @@
     <dependency>
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
-      <version>3.8.10.1</version> 
+      <version>3.8.11.2</version>
       <scope>provided</scope>
     </dependency>
 
@@ -275,7 +275,11 @@
       <artifactId>json</artifactId>
       <version>20140107</version>
     </dependency>
-    
+	<dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.2.4</version>
+    </dependency>    
 
     <!-- Test dependencies -->
     <dependency>
@@ -355,6 +359,14 @@
       <version>3.2.2</version>
       <scope>provided</scope>
     </dependency>
+
+    <!--Jackson parse String to JSON-->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.7.1</version>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -437,11 +449,6 @@
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org</url>
   </organization>
-  <scm>
-    <url>http://svn.apache.org/viewvc/tika/tags/1.11-rc1/tika-parsers</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.11-rc1/tika-parsers</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.11-rc1/tika-parsers</developerConnection>
-  </scm>
   <issueManagement>
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/TIKA</url>
@@ -450,4 +457,48 @@
     <system>Jenkins</system>
     <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
+
+  <profiles>
+    <profile>
+      <id>testSetup</id>
+      <activation>
+        <!-- auto activate -->
+        <file>
+          <missing>${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ner-person.bin</missing>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>groovy-maven-plugin</artifactId>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
+                <version>3.3.3</version>
+              </dependency>
+              <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>2.4.4</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <id>testSetup</id>
+                <phase>generate-test-resources</phase>
+                <goals>
+                  <goal>execute</goal>
+                </goals>
+                <configuration>
+                  <source>${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ModelGetter.groovy</source>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

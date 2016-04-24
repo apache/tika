@@ -58,12 +58,12 @@ public class PowerPointParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String xml = getXML("testPPT_various.ppt", metadata).xml;
         assertContains("<p>Footnote appears here", xml);
-        assertContains("<p>[1]This is a footnote.", xml);
+        assertContains("<p>[1] This is a footnote.", xml);
         assertContains("<p>This is the header text.</p>", xml);
         assertContains("<p>This is the footer text.</p>", xml);
         assertContains("<p>Here is a text box</p>", xml);
-        //TODO: fix this spacing: assertContains("<p>Bold ", xml);
-        assertContains("italic", xml);
+        assertContains("<p>Bold ", xml);
+        assertContains("italic underline superscript subscript", xml);
         assertContains("underline", xml);
         assertContains("superscript", xml);
         assertContains("subscript", xml);
@@ -79,14 +79,14 @@ public class PowerPointParserTest extends TikaTest {
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
-            assertContains("<p>Bullet " + row, xml);
+            assertContains("<li>Bullet " + row, xml);
         }
         assertContains("Here is a numbered list:", xml);
         for(int row=1;row<=3;row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             //assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
-            assertContains("<p>Number bullet " + row, xml);
+            assertContains("<li>Number bullet " + row, xml);
         }
 
         for(int row=1;row<=2;row++) {

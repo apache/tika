@@ -370,3 +370,11 @@ JUnRAR (https://github.com/edmund-wagner/junrar/)
 Sqlite (bundled in org.xerial's sqlite-jdbc)
     This product bundles Sqlite, which is in the Public Domain.  For details
     see: https://www.sqlite.org/copyright.html
+
+Sample DXF file testDXF.dxf (in tika-parsers/src/test/resources/test-documents)
+     Copyright 2012 Ho Thanh Tam, www.cadkit.net
+
+     Permission to use, copy, modify, and distribute this software and its 
+     documentation for any purpose is hereby granted without fee, provided 
+     that the above copyright notice, author statement appear in all copies 
+     of this software and related documentation.

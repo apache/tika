@@ -49,10 +49,10 @@ public class MimeDetectionWithNNTest {
 	@Test
 	public void testDetection() throws Exception {
 		String octetStream_str = MediaType.OCTET_STREAM.toString();
-		String grb_str = "application/xhtml+xml";
+		String grb_str = "application/x-grib";
 
-		//testFile(grb_str, "gdas1.forecmwf.2014062612.grib2");
-		//testFile(grb_str, "GLDAS_CLM10SUBP_3H.A19790202.0000.001.grb");
+		testFile(grb_str, "gdas1.forecmwf.2014062612.grib2");
+		testFile(grb_str, "GLDAS_CLM10SUBP_3H.A19790202.0000.001.grb");
 
 		testFile(octetStream_str, "circles.svg");
 		testFile(octetStream_str, "circles-with-prefix.svg");

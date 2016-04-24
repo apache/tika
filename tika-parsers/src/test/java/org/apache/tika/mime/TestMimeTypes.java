@@ -531,11 +531,22 @@ public class TestMimeTypes {
     }
 
     @Test
-    public void testDwgDetection() throws Exception {
+    public void testAutoCADDetection() throws Exception {
         assertTypeByName("image/vnd.dwg", "x.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2004.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2007.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2010.dwg");
+        
+        // From name, gets the common parent type
+        assertTypeByName("model/vnd.dwf", "x.dwf");
+        // With the data, can work out it's the v6 zip-based flavour
+        assertTypeByData("model/vnd.dwf; version=6", "testDWF2010.dwf");
+        
+        // From name, gets the common parent type
+        assertTypeByName("image/vnd.dxf", "x.dxf");
+        // With the data, can work out it's the ASCII flavour
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
+        // TODO Get a sample Binary DXF file and test
     }
 
     @Test
@@ -960,12 +971,37 @@ public class TestMimeTypes {
         assertTypeByData("text/x-matlab", "testMATLAB.m");
         assertTypeByData("text/x-matlab", "testMATLAB_wtsgaus.m");
         assertTypeByData("text/x-matlab", "testMATLAB_barcast.m");
+        
+        // By name, or by name+data, gets it as JS
+        assertTypeByName("application/javascript", "testJS.js");
+        assertTypeByName("application/javascript", "testJS_HTML.js");
+        assertType("application/javascript", "testJS.js");
+        assertType("application/javascript", "testJS_HTML.js");
+        
+        // With data only, because we have no JS file magic, can't be
+        //  detected. One will come through as plain text, the other
+        //  as HTML due to <html> in it. TODO Add JS magic. See TIKA-1141 
+        //assertTypeByData("application/javascript", "testJS.js");
+        //assertTypeByData("application/javascript", "testJS_HTML.js");
     }
 
     @Test
     public void testWebVTT() throws Exception {
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
+    }
+    
+    @Test
+    public void testPKCSSignatures() throws Exception {
+        // PKCS7 Signed XML files
+        assertType("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
+        assertType("application/pkcs7-signature", "testPKCS17Sig-v2.xml.p7m");
+        assertType("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
+        assertType("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v2.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
     }
     
     private void assertText(byte[] prefix) throws IOException {

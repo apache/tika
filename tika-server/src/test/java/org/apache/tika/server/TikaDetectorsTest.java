@@ -100,7 +100,7 @@ public class TikaDetectorsTest extends CXFTestBase {
                 .get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Map<String, Object>> json = (Map<String, Map<String, Object>>) JSON.parse(jsonStr);
+        Map<String, Object> json = (Map<String, Object>) JSON.parse(jsonStr);
 
         // Should have a nested structure
         assertTrue(json.containsKey("name"));
@@ -110,7 +110,7 @@ public class TikaDetectorsTest extends CXFTestBase {
         assertEquals(Boolean.TRUE, json.get("composite"));
 
         // At least 4 child detectors, none of them composite
-        Object[] children = (Object[]) (Object) json.get("children");
+        Object[] children = (Object[]) json.get("children");
         assertTrue(children.length >= 4);
         boolean hasOgg = false, hasPOIFS = false, hasZIP = false, hasMime = false;
         for (Object o : children) {

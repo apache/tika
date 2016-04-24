@@ -51,6 +51,14 @@ public class Link {
     public boolean isImage() {
         return "img".equals(type);
     }
+    
+    public boolean isLink() {
+        return "link".equals(type);
+    }
+
+    public boolean isIframe() {
+        return "iframe".equals(type);
+    }
 
     public String getType() {
         return type;

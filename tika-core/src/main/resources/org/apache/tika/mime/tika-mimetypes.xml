@@ -194,7 +194,6 @@
     <tika:link>http://www.digitalpreservation.gov/formats/fdd/fdd000317.shtml</tika:link>
     <magic priority="50">
       <match value="SIMPLE  =                    T" type="string" offset="0"/>
-      <match value="0x53494D504C452020" type="string" offset="0"/>
     </magic>
     <glob pattern="*.fits"/>
     <glob pattern="*.fit"/>
@@ -420,9 +419,6 @@
   <mime-type type="application/nss"/>
   <mime-type type="application/ocsp-request"/>
   <mime-type type="application/ocsp-response"/>
-  <mime-type type="application/zerosize">
-          
-   </mime-type>
 
   <mime-type type="application/octet-stream">
     <magic priority="50">
@@ -528,11 +524,29 @@
   <mime-type type="application/pkcs7-signature">
     <glob pattern="*.p7s"/>
     <magic priority="50">
+      <!-- PEM encoded -->
       <match value="-----BEGIN PKCS7" type="string" offset="0"/>
-      <match value="0x3082FFFF06092a864886f70d0107FFa0" type="string"
-              mask="0xFFFF0000FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
-      <match value="0x308006092a864886f70d0107FFa0" type="string"
-              mask="0xFFFFFFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
+      <!-- DER encoded, sequence+length, object=pkcs7-signedData -->
+      <match value="0x3080" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="2"/>
+      </match>
+      <match value="0x3081" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="3"/>
+      </match>
+      <match value="0x3082" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="4"/>
+      </match>
+      <match value="0x3083" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="5"/>
+      </match>
+      <match value="0x3084" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="6"/>
+      </match>
     </magic>
   </mime-type>
 
@@ -996,6 +1010,33 @@
     <glob pattern="*.es3"/>
     <glob pattern="*.et3"/>
   </mime-type>
+
+  <mime-type type="application/vnd.etsi.asic-e+zip">
+    <acronym>ASiC-E</acronym>
+    <_comment>Extended Associated Signature Container</_comment>
+    <sub-class-of type="application/zip"/>
+    <!-- Spec says the Mimetype entry should be the first in the zip -->
+    <magic priority="60">
+      <match value="PK\003\004" type="string" offset="0">
+        <match value="mimetypeapplication/vnd.etsi.asic-e+zip" type="string" offset="30" />
+      </match>
+    </magic>
+    <glob pattern="*.asice" />
+  </mime-type>
+
+  <mime-type type="application/vnd.etsi.asic-s+zip">
+    <acronym>ASiC-S</acronym>
+    <_comment>Simple Associated Signature Container</_comment>
+    <sub-class-of type="application/zip"/>
+    <!-- Spec says the Mimetype entry should be the first in the zip -->
+    <magic priority="60">
+      <match value="PK\003\004" type="string" offset="0">
+        <match value="mimetypeapplication/vnd.etsi.asic-s+zip" type="string" offset="30" />
+      </match>
+    </magic>
+    <glob pattern="*.asics" />
+  </mime-type>
+
   <mime-type type="application/vnd.etsi.aoc+xml"/>
   <mime-type type="application/vnd.etsi.cug+xml"/>
   <mime-type type="application/vnd.etsi.iptvcommand+xml"/>
@@ -2475,9 +2516,6 @@
   <mime-type type="application/vnd.wordperfect">
     <alias type="application/wordperfect"/>
     <glob pattern="*.wpd"/>
-      <magic priority="100">
-      <match value="0xFF575043" type="string" offset="0"/>
-      </magic>
   </mime-type>
   <mime-type type="application/vnd.wqd">
     <glob pattern="*.wqd"/>
@@ -2491,9 +2529,6 @@
   <mime-type type="application/vnd.wv.ssp+xml"/>
   <mime-type type="application/vnd.xara">
     <glob pattern="*.xar"/>
-    <magic priority="40">
-      <match value="xar!" type="string" offset="0"/>
-    </magic>
   </mime-type>
   <mime-type type="application/vnd.xfdl">
     <glob pattern="*.xfdl"/>
@@ -3555,9 +3590,6 @@
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>
-    <magic priority="100">
-      <match value="CDF" type="string" offset="0"/>
-    </magic>
   </mime-type>
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
@@ -3847,6 +3879,7 @@
   <!-- =================================================================== -->
   <mime-type type="application/x-tika-ooxml">
     <sub-class-of type="application/zip"/>
+    <!-- Only works if the Content Types file is the first zip entry -->
     <magic priority="50">
       <match value="PK\003\004" type="string" offset="0">
         <match value="[Content_Types].xml" type="string" offset="30"/>
@@ -4050,7 +4083,6 @@
       <match value="PK\003\004" type="string" offset="0"/>
       <match value="PK\005\006" type="string" offset="0"/>
       <match value="PK\x07\x08" type="string" offset="0"/>
-      <match value="0x504B0304" type="string" offset="0"/>
     </magic>
     <glob pattern="*.zip"/>
   </mime-type>
@@ -4599,7 +4631,6 @@
     <sub-class-of type="application/fits"/>
   </mime-type>
 
-
   <mime-type type="image/g3fax">
     <glob pattern="*.g3"/>
   </mime-type>
@@ -4641,8 +4672,6 @@
       <!-- FFD8 is the SOI (Start Of Image) marker.              -->
       <!-- It is followed by another marker that starts with FF. -->
       <match value="0xffd8ff" type="string" offset="0"/>
-      <match value="IF." type="string" offset="0"/>
-      <match value="if." type="string" offset="0"/>
     </magic>
     <glob pattern="*.jpg"/>
     <glob pattern="*.jpeg"/>
@@ -4784,12 +4813,41 @@
     </magic>
   </mime-type>
 
+  <mime-type type="image/vnd.dxb">
+    <acronym>DXB</acronym>
+    <_comment>AutoCAD DXF simplified Binary</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/AutoCAD_DXF</tika:link>
+    <magic priority="50">
+      <match value="AutoCAD DXB 1.0\r\n0x1A00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.dxb"/>
+  </mime-type>
+
   <mime-type type="image/vnd.dxf">
     <acronym>DXF</acronym>
     <_comment>AutoCAD DXF</_comment>
     <tika:link>http://en.wikipedia.org/wiki/AutoCAD_DXF</tika:link>
+    <!-- DXF can be the text or binary representation -->
     <glob pattern="*.dxf"/>
   </mime-type>
+  <mime-type type="image/vnd.dxf;format=binary">
+    <sub-class-of type="image/vnd.dxf"/>
+    <_comment>AutoCAD DXF in Binary form</_comment>
+    <magic priority="50">
+      <match value="AutoCAD Binary DXF\r\n0x1A00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="image/vnd.dxf;format=ascii">
+    <sub-class-of type="image/vnd.dxf"/>
+    <_comment>AutoCAD DXF in ASCII Text form</_comment>
+    <magic priority="50">
+      <!-- Variable number of spaces before the code groups -->
+      <match value="0\r\nSECTION\r\n" offset="0:3">
+        <match value="2\r\nHEADER\r\n" offset="12:18"/>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="image/vnd.fastbidsheet">
     <glob pattern="*.fbs"/>
   </mime-type>
@@ -5146,6 +5204,8 @@
   <mime-type type="message/rfc822">
     <magic priority="50">
       <match value="Status:" type="string" offset="0"/>
+      <match value="X-Mozilla-Status:" type="string" offset="0"/>
+      <match value="X-Mozilla-Status2:" type="string" offset="0"/>
       <match value="Relay-Version:" type="stringignorecase" offset="0"/>
       <match value="#!\ rnews" type="string" offset="0"/>
       <match value="N#!\ rnews" type="string" offset="0"/>
@@ -5156,6 +5216,7 @@
       <match value="Received:" type="stringignorecase" offset="0"/>
       <match value="Message-ID:" type="stringignorecase" offset="0"/>
       <match value="Date:" type="string" offset="0"/>
+      <match value="User-Agent:" type="string" offset="0"/>
       <match value="MIME-Version:" type="stringignorecase" offset="0"/>
       <match value="X-Notes-Item:" type="string" offset="0">
         <match value="Message-ID:" type="string" offset="0:8192"/>
@@ -5189,8 +5250,38 @@
   </mime-type>
 
   <mime-type type="model/vnd.dwf">
+    <acronym>DWF</acronym>
+    <_comment>AutoCAD Design Web Format</_comment>
+    <alias type="drawing/x-dwf"/>
+    <magic priority="50">
+      <match type="string" offset="0" value="(DWF V">
+         <match type="string" offset="8" value=".">
+            <match type="string" offset="11" value=")" />
+         </match>
+      </match>
+    </magic>
     <glob pattern="*.dwf"/>
   </mime-type>
+  <mime-type type="model/vnd.dwf;version=6">
+    <!-- Zip file with DWF header on the front -->
+    <magic priority="60">
+      <match type="string" offset="0" value="(DWF V06.">
+         <match type="string" offset="11" value=")PK" />
+      </match>
+    </magic>
+    <sub-class-of type="model/vnd.dwf"/>
+  </mime-type>
+  <mime-type type="model/vnd.dwf;version=5">
+    <magic priority="60">
+      <match type="string" offset="0" value="(DWF V00.55)"/>
+    </magic>
+  </mime-type>
+  <mime-type type="model/vnd.dwf;version=2">
+    <magic priority="60">
+      <match type="string" offset="0" value="(DWF V00.22)"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="model/vnd.dwfx+xps">
     <_comment>AutoCAD Design Web Format</_comment>
     <glob pattern="*.dwfx"/>
@@ -5341,12 +5432,6 @@
       <match value="&lt;head" type="string" offset="0:64"/>
       <match value="&lt;TITLE" type="string" offset="0:64"/>
       <match value="&lt;title" type="string" offset="0:64"/>
-      <!-- note on the offset value here: this can only be as big as
-           MimeTypes#getMinLength(). If you set the offset value to larger
-           than that size, the magic will only be compared to up to
-           MimeTypes#getMinLength() bytes.
-       -->
-      <match value="&lt;html" type="string" offset="0:8192"/>
       <match value="&lt;HTML" type="string" offset="0:64"/>
       <match value="&lt;BODY" type="string" offset="0"/>
       <match value="&lt;body" type="string" offset="0"/>
@@ -5358,6 +5443,17 @@
       <match value="&lt;H1" type="string" offset="0"/>
       <match value="&lt;!doctype HTML" type="string" offset="0"/>
       <match value="&lt;!DOCTYPE html" type="string" offset="0"/>
+      <match value="&lt;html" type="string" offset="0:128"/>
+    </magic>
+    <magic priority="20">
+      <!-- Lower priority match for <html anywhere near the top of the file -->
+      <!-- note on the offset value here: this can only be as big as
+           MimeTypes#getMinLength(). If you set the offset value to larger
+           than that size, the magic will only be compared to up to
+           MimeTypes#getMinLength() bytes. It should also only start after
+           the higher priority "start of file" one above
+       -->
+      <match value="&lt;html" type="string" offset="128:8192"/>
     </magic>
     <glob pattern="*.html"/>
     <glob pattern="*.htm"/>
@@ -6154,8 +6250,6 @@
     <magic priority="60">
       <match value="ftypmp41" type="string" offset="4"/>
       <match value="ftypmp42" type="string" offset="4"/>
-      <match value="ftypMSNV" type="string" offset="4"/>
-      <match value="ftyp3gp5" type="string" offset="4"/>
     </magic>
     <glob pattern="*.mp4"/>
     <glob pattern="*.mp4v"/>
@@ -6276,7 +6370,6 @@
       <match value="mdat" type="string" offset="4"/>
       <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
-       <match value="wide" type="string" offset="4"/>
     </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
@@ -6479,5 +6572,4 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  
 </mime-info>

@@ -33,7 +33,7 @@ import java.io.InputStream;
  * a stream with custom pre-, post- or error processing functionality.
  *
  * @author Stephen Colebourne
- * @version $Id: ProxyInputStream.java 934061 2010-04-14 17:56:37Z jukka $
+ * @version $Id$
  */
 public abstract class ProxyInputStream extends FilterInputStream {
 
