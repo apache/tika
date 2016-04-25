@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.mp4;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -36,7 +36,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Test case for parsing mp4 files.
  */
-public class MP4ParserTest {
+public class MP4ParserTest extends TikaTest {
     /**
      * Test that we can extract information from
      *  a M4A MP4 Audio file
@@ -105,4 +105,12 @@ public class MP4ParserTest {
     
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
+    @Test(timeout = 30000)
+    public void testInfiniteLoop() throws Exception {
+        //test that a truncated mp4 doesn't cause an infinite loop
+        //TIKA-1931 and TIKA-1924
+        XMLResult r = getXML("testMP4_truncated.m4a");
+        assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
+    }
 }

@@ -23,19 +23,39 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class JpegParserTest {
 
     private final Parser parser = new JpegParser();
+    static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
 
+    //As of Drew Noakes' metadata-extractor 2.8.1,
+    //unspecified timezones appear to be set to
+    //TimeZone.getDefault().  We need to normalize this
+    //for testing across different time zones.
+    //We also appear to have to specify it in the surefire config:
+    //<argLine>-Duser.timezone=UTC</argLine>
+    @BeforeClass
+    public static void setDefaultTimeZone() {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+    }
+
+    @AfterClass
+    public static void resetDefaultTimeZone() {
+        TimeZone.setDefault(CURR_TIME_ZONE);
+    }
     @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
@@ -69,7 +89,7 @@ public class JpegParserTest {
         assertEquals("Canon EOS 40D", metadata.get("Model"));
 
         // Common tags
-        //assertEquals("2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
+        assertEquals("2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
                 "2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED));
         List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS));
@@ -247,4 +267,19 @@ public class JpegParserTest {
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
     }
+
+    @Test
+    public void testJPEGXMPMM() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        InputStream stream =
+                getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+
+        //TODO: when jempbox is fixed/xmpbox is used
+        //add tests for history...currently not extracted
+        assertEquals("xmp.did:49E997348D4911E1AB62EBF9B374B234",
+                metadata.get(XMPMM.DOCUMENTID));
+    }
+
 }

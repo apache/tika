@@ -21,8 +21,8 @@ package org.apache.tika.parser.netcdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -37,11 +37,10 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
 import ucar.nc2.Attribute;
+import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
-import ucar.nc2.Dimension;
 
 /**
  * A {@link Parser} for <a
@@ -82,9 +81,12 @@ public class NetCDFParser extends AbstractParser {
                       Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
 
-        TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources());
+        TemporaryResources tmp = TikaInputStream.isTikaInputStream(stream) ?
+                null : new TemporaryResources();
+        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        NetcdfFile ncFile = null;
         try {
-            NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath());
+            ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath());
             metadata.set("File-Type-Description", ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
@@ -129,9 +131,15 @@ public class NetCDFParser extends AbstractParser {
             xhtml.endElement("ul");
 
             xhtml.endDocument();
-
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
+        } finally {
+            if (ncFile != null) {
+                ncFile.close();
+            }
+            if (tmp != null) {
+                tmp.dispose();
+            }
         }
     }
 

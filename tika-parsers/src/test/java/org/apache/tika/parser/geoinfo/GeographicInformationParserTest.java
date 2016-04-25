@@ -17,45 +17,29 @@
 
 package org.apache.tika.parser.geoinfo;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.geoinfo.GeographicInformationParser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.ContentHandler;
-import java.io.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.junit.Test;
 
 
-public class GeographicInformationParserTest {
+public class GeographicInformationParserTest extends TikaTest {
 
     @Test
     public void testISO19139() throws Exception{
-        String path ="/test-documents/sampleFile.iso19139";
-		
-        Metadata metadata = new Metadata();
-        Parser parser=new org.apache.tika.parser.geoinfo.GeographicInformationParser();
-        ContentHandler contentHandler=new BodyContentHandler();
-        ParseContext parseContext=new ParseContext();
-        
-        InputStream inputStream = GeographicInformationParser.class.getResourceAsStream(path);
-       
-        parser.parse(inputStream, contentHandler, metadata, parseContext);
+        XMLResult r = getXML("sampleFile.iso19139", new GeographicInformationParser());
+        assertEquals("text/iso19139+xml", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("UTF-8", r.metadata.get("CharacterSet"));
+        assertEquals("https", r.metadata.get("TransferOptionsOnlineProtocol "));
+        assertEquals("browser", r.metadata.get("TransferOptionsOnlineProfile "));
+        assertEquals("Barrow Atqasuk ARCSS Plant", r.metadata.get("TransferOptionsOnlineName "));
 
-        assertEquals("text/iso19139+xml", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("UTF-8", metadata.get("CharacterSet"));
-        assertEquals("https", metadata.get("TransferOptionsOnlineProtocol "));
-        assertEquals("browser", metadata.get("TransferOptionsOnlineProfile "));
-        assertEquals("Barrow Atqasuk ARCSS Plant", metadata.get("TransferOptionsOnlineName "));
-
-        String content = contentHandler.toString();
-        assertTrue(content.contains("Barrow Atqasuk ARCSS Plant"));
-        assertTrue(content.contains("GeographicElementWestBoundLatitude	-157.24"));
-        assertTrue(content.contains("GeographicElementEastBoundLatitude	-156.4"));
-        assertTrue(content.contains("GeographicElementNorthBoundLatitude	71.18"));
-        assertTrue(content.contains("GeographicElementSouthBoundLatitude	70.27"));
+        assertContains("Barrow Atqasuk ARCSS Plant", r.xml);
+        assertContains("<td>GeographicElementWestBoundLatitude</td>\t<td>-157.24</td>", r.xml);
+        assertContains("<td>GeographicElementEastBoundLatitude</td>\t<td>-156.4</td>", r.xml);
+        assertContains("<td>GeographicElementNorthBoundLatitude</td>\t<td>71.18</td>", r.xml);
+        assertContains("<td>GeographicElementSouthBoundLatitude</td>\t<td>70.27</td>", r.xml);
 
     }
 

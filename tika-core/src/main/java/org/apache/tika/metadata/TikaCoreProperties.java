@@ -67,6 +67,15 @@ public interface TikaCoreProperties {
             Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     /**
+     * Use this to store exceptions caught during a parse that are
+     * non-fatal, e.g. if a parser is in lenient mode and more
+     * content can be extracted if we ignore an exception thrown by
+     * a dependency.
+     */
+    public static final Property TIKA_META_EXCEPTION_WARNING =
+            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"warn");
+
+    /**
      * This is currently used to identify Content-Type that may be
      * included within a document, such as in html documents
      * (e.g. <meta http-equiv="content-type" content="text/html; charset=UTF-8">)

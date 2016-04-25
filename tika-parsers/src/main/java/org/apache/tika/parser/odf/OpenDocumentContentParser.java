@@ -16,12 +16,10 @@
  */
 package org.apache.tika.parser.odf;
 
-import javax.xml.XMLConstants;
-import javax.xml.namespace.QName;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
+import javax.xml.namespace.QName;
+import javax.xml.parsers.SAXParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.BitSet;
@@ -38,17 +36,14 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ElementMappingContentHandler;
+import org.apache.tika.sax.ElementMappingContentHandler.TargetElement;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.sax.ElementMappingContentHandler.TargetElement;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
-
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
  * Parser for ODF <code>content.xml</code> files.
@@ -490,26 +485,12 @@ public class OpenDocumentContentParser extends AbstractParser {
 
         DefaultHandler dh = new OpenDocumentElementMappingContentHandler(handler, MAPPINGS);
 
-        try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setValidating(false);
-            factory.setNamespaceAware(true);
-            try {
-                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (SAXNotRecognizedException e) {
-                // TIKA-329: Some XML parsers do not support the secure-processing
-                // feature, even though it's required by JAXP in Java 5. Ignoring
-                // the exception is fine here, deployments without this feature
-                // are inherently vulnerable to XML denial-of-service attacks.
-            }
-            SAXParser parser = factory.newSAXParser();
-            parser.parse(
-                    new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(
-                            new NSNormalizerContentHandler(dh)));
-        } catch (ParserConfigurationException e) {
-            throw new TikaException("XML parser configuration error", e);
-        }
+
+        SAXParser parser = context.getSAXParser();
+        parser.parse(
+            new CloseShieldInputStream(stream),
+            new OfflineContentHandler(
+                    new NSNormalizerContentHandler(dh)));
     }
 
 }

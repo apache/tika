@@ -42,7 +42,13 @@
   <mime-type type="application/andrew-inset">
     <glob pattern="*.ez"/>
   </mime-type>
-  <mime-type type="application/applefile"/>
+
+  <mime-type type="application/applefile">
+    <magic priority="50">
+      <match value="0x00051600" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/applixware">
     <glob pattern="*.aw"/>
   </mime-type>
@@ -58,6 +64,7 @@
   <mime-type type="application/atom+xml">
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
     <root-XML localName="feed" namespaceURI="http://www.w3.org/2005/Atom"/>
+
     <glob pattern="*.atom"/>
   </mime-type>
 
@@ -194,6 +201,7 @@
     <tika:link>http://www.digitalpreservation.gov/formats/fdd/fdd000317.shtml</tika:link>
     <magic priority="50">
       <match value="SIMPLE  =                    T" type="string" offset="0"/>
+      <match value="SIMPLE  =                T" type="string" offset="0"/>
     </magic>
     <glob pattern="*.fits"/>
     <glob pattern="*.fit"/>
@@ -361,9 +369,20 @@
   <mime-type type="application/moss-signature"/>
   <mime-type type="application/mosskey-data"/>
   <mime-type type="application/mosskey-request"/>
-  <mime-type type="application/mp4">
-    <glob pattern="*.mp4s"/>
+
+  <mime-type type="application/quicktime">
+    <!-- The is the base QuickTime container -->
+    <!-- QuickTime video, and all MP4 formats, are based on it -->
+    <acronym>QTFF</acronym>
+    <_comment>QuickTime container format</_comment>
   </mime-type>
+  <mime-type type="application/mp4">
+    <!-- Arbitrary data stored in a MP4 container -->
+    <_comment>MP4 container format</_comment>
+    <glob pattern="*.mp4s"/>
+    <sub-class-of type="application/quicktime" />
+  </mime-type>
+
   <mime-type type="application/mpeg4-generic"/>
   <mime-type type="application/mpeg4-iod"/>
   <mime-type type="application/mpeg4-iod-xmt"/>
@@ -574,6 +593,7 @@
       <match value="\004%!" type="string" offset="0" />
       <!-- Windows format EPS -->
       <match value="0xc5d0d3c6" type="string" offset="0"/>
+      <match value="%!PS-Adobe-3.0 EPSF-3.0" type="string" offset="0"/> <!-- %!PS-Adobe-3.0 EPSF-3.0 (0x252150532D41646F)-->
     </magic>
     <glob pattern="*.ps"/>
     <glob pattern="*.eps"/>
@@ -595,6 +615,7 @@
     <sub-class-of type="application/xml"/>
     <acronym>RDF/XML</acronym>
     <_comment>XML syntax for RDF graphs</_comment>
+
     <glob pattern="*.rdf"/>
     <glob pattern="*.owl"/>
     <glob pattern="^rdf$" isregex="true"/>
@@ -629,6 +650,7 @@
     <alias type="text/rss"/>
     <root-XML localName="rss"/>
     <root-XML namespaceURI="http://purl.org/rss/1.0/"/>
+
     <glob pattern="*.rss"/>
   </mime-type>
 
@@ -1437,14 +1459,13 @@
     <alias type="application/x-mif"/>
     <alias type="application/x-frame"/>
     <magic priority="50">
-      <match value="\&lt;MakerFile" type="string" offset="0" />
-      <match value="\&lt;MIFFile" type="string" offset="0" />
-      <match value="\&lt;MakerDictionary" type="string" offset="0" />
-      <match value="\&lt;MakerScreenFont" type="string" offset="0" />
-      <match value="\&lt;MML" type="string" offset="0" />
-      <match value="\&lt;Book" type="string" offset="0" />
-      <match value="\&lt;Maker" type="string" offset="0" />
-      <match value="\x3c\x4d\x49\x46\x46\x69\x6c\x65\x20" type="string" offset="0" />
+      <match value="&lt;MakerFile" type="string" offset="0" />
+      <match value="&lt;MIFFile" type="string" offset="0" />
+      <match value="&lt;MakerDictionary" type="string" offset="0" />
+      <match value="&lt;MakerScreenFont" type="string" offset="0" />
+      <match value="&lt;MML" type="string" offset="0" />
+      <match value="&lt;Book" type="string" offset="0" />
+      <match value="&lt;Maker" type="string" offset="0" />
     </magic>
     <glob pattern="*.mif"/>
   </mime-type>
@@ -1505,7 +1526,13 @@
   </mime-type>
   <mime-type type="application/vnd.ms-asf"/>
   <mime-type type="application/vnd.ms-cab-compressed">
+    <magic priority="50">
+      <match value="MSCF\000\000\000\000" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.cab"/>
+    <magic priority="50">
+      <match value="MSCF" type="string" offset="0" />
+    </magic>
   </mime-type>
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-excel -->
@@ -2515,6 +2542,9 @@
   <mime-type type="application/vnd.wmf.bootstrap"/>
   <mime-type type="application/vnd.wordperfect">
     <alias type="application/wordperfect"/>
+    <magic priority="50">
+      <match value="0xFF575043" type="string" offset="0:3"/> <!-- ÿWPC -->
+    </magic>
     <glob pattern="*.wpd"/>
   </mime-type>
   <mime-type type="application/vnd.wqd">
@@ -2529,6 +2559,10 @@
   <mime-type type="application/vnd.wv.ssp+xml"/>
   <mime-type type="application/vnd.xara">
     <glob pattern="*.xar"/>
+    <magic priority="50">
+      <match value="xar!" type="string" offset="0"> 
+      </match>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.xfdl">
     <glob pattern="*.xfdl"/>
@@ -3115,6 +3149,13 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-erdas-hfa">
+    <magic priority="50">
+      <match value="EHFA_HEADER_TAG" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.hfa"/>
+  </mime-type>
+  
   <mime-type type="application/x-filemaker">
     <acronym>FP7</acronym>
     <_comment>FileMaker Pro 7</_comment>
@@ -3392,6 +3433,11 @@
   </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
+    <acronym>MOBI</acronym>
+    <_comment>Mobipocket Ebook</_comment>
+    <magic priority="60">
+      <match value="BOOKMOBI" type="string" offset="0:60" />
+    </magic>
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
   </mime-type>
@@ -3590,7 +3636,13 @@
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>
+    <magic priority="50">
+      <match value="CDF\001" type="string" offset="0" />
+      <match value="CDF\002" type="string" offset="0" />
+      <match value="0x43444601" type="string" offset="0"/>
+    </magic>
   </mime-type>
+
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
@@ -3753,6 +3805,15 @@
     <glob pattern="*.shar"/>
   </mime-type>
 
+  <mime-type type="application/x-shapefile">
+    <acronym>ESRI Shapefiles</acronym>
+    <_comment>ESRI Shapefiles</_comment>
+    <magic priority="60">
+      <match value="0x0000270a" type="big32" offset="2" />
+    </magic>
+    <glob pattern="*.shp"/>
+  </mime-type>
+
   <mime-type type="application/x-shockwave-flash">
     <acronym>Flash</acronym>
     <_comment>Adobe Flash</_comment>
@@ -3774,6 +3835,12 @@
     </magic>
     <glob pattern="*.sz"/>
   </mime-type>
+
+  <mime-type type="application/x-sfdu">
+    <_comment>Standard Formatted Data Units (SFDUs) data</_comment>
+    <sub-class-of type="text/plain"/>
+    <glob pattern="*.sfdu"/>
+  </mime-type>  
 
   <mime-type type="application/x-sqlite3">
     <magic priority="50">
@@ -4233,6 +4300,7 @@
     <glob pattern="*.mp4a"/>
     <glob pattern="*.m4a"/>
     <glob pattern="*.m4b"/>
+    <sub-class-of type="application/quicktime" />
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
@@ -4629,6 +4697,9 @@
 
   <mime-type type="image/fits">
     <sub-class-of type="application/fits"/>
+    <magic priority="50">
+      <match value="0x53494D504C4520203D2020" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/g3fax">
@@ -4753,6 +4824,8 @@
       <match value="MM\x00\x2a" type="string" offset="0"/>
       <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
       <match value="II\x2a\x00" type="string" offset="0"/>
+      <!-- MM.+ = Big endian (M=Motorola) and 0x002a in big endian-->
+      <match value="MM\x00\x2b" type="string" offset="0"/>  
     </magic>
     <glob pattern="*.tiff"/>
     <glob pattern="*.tif"/>
@@ -5313,7 +5386,13 @@
   </mime-type>
 
   <mime-type type="multipart/alternative"/>
-  <mime-type type="multipart/appledouble"/>
+
+  <mime-type type="multipart/appledouble">
+    <magic priority="50">
+      <match value="0x00051607" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="multipart/byteranges"/>
   <mime-type type="multipart/digest"/>
   <mime-type type="multipart/encrypted"/>
@@ -6365,14 +6444,18 @@
   <mime-type type="video/pointer"/>
 
   <mime-type type="video/quicktime">
+    <_comment>QuickTime Video</_comment>
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
+      <match value="free" type="string" offset="4"/>
       <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
+      <match value="wide" type="string" offset="4"/>
     </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
+    <sub-class-of type="application/quicktime" />
   </mime-type>
 
   <mime-type type="video/raw"/>

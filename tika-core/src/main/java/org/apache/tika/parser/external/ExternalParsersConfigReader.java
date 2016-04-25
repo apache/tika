@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.external;
 
+import javax.xml.parsers.DocumentBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -27,13 +28,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.parser.ParseContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -56,12 +54,9 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
    
    public static List<ExternalParser> read(InputStream stream) throws TikaException, IOException {
       try {
-          DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-          DocumentBuilder builder = factory.newDocumentBuilder();
+          DocumentBuilder builder = new ParseContext().getDocumentBuilder();
           Document document = builder.parse(new InputSource(stream));
           return read(document);
-      } catch (ParserConfigurationException e) {
-          throw new TikaException("Unable to create an XML parser", e);
       } catch (SAXException e) {
           throw new TikaException("Invalid parser configuration", e);
       }

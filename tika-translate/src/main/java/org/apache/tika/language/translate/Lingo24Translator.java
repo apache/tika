@@ -17,8 +17,7 @@
 
 package org.apache.tika.language.translate;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,14 +25,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.LanguageIdentifier;
-import org.apache.tika.language.LanguageProfile;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * An implementation of a REST client for the
@@ -41,7 +40,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * You can sign up for an access plan online on the <a href="https://developer.lingo24.com/plans">Lingo24 Developer Portal</a>
  * and set your Application's User Key in the <code>translator.lingo24.properties</code> file.
  */
-public class Lingo24Translator implements Translator {
+public class Lingo24Translator extends AbstractTranslator {
 
     private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
 
@@ -100,9 +99,8 @@ public class Lingo24Translator implements Translator {
             throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
-        LanguageIdentifier language = new LanguageIdentifier(
-                new LanguageProfile(text));
-        String sourceLanguage = language.getLanguage();
+        
+        String sourceLanguage = detectLanguage(text).getLanguage();
         return translate(text, sourceLanguage, targetLanguage);
     }
 
