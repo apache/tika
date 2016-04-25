@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.image;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,13 +49,16 @@ import com.drew.metadata.exif.GpsDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
-import com.drew.metadata.xmp.XmpReader;
+import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.image.xmp.JempboxExtractor;
+import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
@@ -173,15 +177,22 @@ public class ImageMetadataExtractor {
 
     public void parseRawXMP(byte[] xmpData)
             throws IOException, SAXException, TikaException {
-        com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
-        XmpReader reader = new XmpReader();
-        reader.extract(xmpData, metadata);
-
-        try {
-            handle(metadata);
-        } catch (MetadataException e) {
-            throw new TikaException("Can't process the XMP Data", e);
+        XMPMetadata xmp = null;
+        try (InputStream decoded =
+                     new ByteArrayInputStream(xmpData)
+        ) {
+            Document dom = new ParseContext().getDocumentBuilder().parse(decoded);
+            if (dom != null) {
+                xmp = new XMPMetadata(dom);
+            }
+        } catch (IOException|SAXException e) {
+            //
         }
+        if (xmp != null) {
+            JempboxExtractor.extractDublinCore(xmp, metadata);
+            JempboxExtractor.extractXMPMM(xmp, metadata);
+        }
+
     }
 
     /**

@@ -38,6 +38,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.XMLReader;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -53,13 +54,13 @@ public class ParseContext implements Serializable {
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
 
-    public static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
+    private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
             return new InputSource(new StringReader(""));
         }
     };
 
-    public static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
+    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
             new XMLResolver() {
                 @Override
                 public Object resolveEntity(String publicID, String systemID, String baseURI, String namespace) throws
@@ -111,6 +112,30 @@ public class ParseContext implements Serializable {
         } else {
             return defaultValue;
         }
+    }
+
+    /**
+     * Returns the XMLReader specified in this parsing context. If a reader
+     * is not explicitly specified, then one is created using the specified
+     * or the default SAX parser.
+     *
+     * @see #getSAXParser()
+     * @since Apache Tika 1.13
+     * @return XMLReader
+     * @throws TikaException
+     */
+    public XMLReader getXMLReader() throws TikaException {
+        XMLReader reader = get(XMLReader.class);
+        if (reader != null) {
+            return reader;
+        }
+        try {
+            reader = getSAXParser().getXMLReader();
+        } catch (SAXException e) {
+            throw new TikaException("Unable to create an XMLReader", e);
+        }
+        reader.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
+        return reader;
     }
 
     /**
