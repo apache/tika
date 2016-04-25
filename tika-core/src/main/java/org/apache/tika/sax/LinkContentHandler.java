@@ -90,12 +90,6 @@ public class LinkContentHandler extends DefaultHandler {
                 builder.setURI(attributes.getValue("", "href"));
                 builder.setRel(attributes.getValue("", "rel"));
                 builderStack.addFirst(builder);
-            } else if ("script".equals(local)) {
-                if (attributes.getValue("", "src") != null) {
-                    LinkBuilder builder = new LinkBuilder("script");
-                    builder.setURI(attributes.getValue("", "src"));
-                    builderStack.addFirst(builder);
-                }
             } else if ("iframe".equals(local)) {
                 LinkBuilder builder = new LinkBuilder("iframe");
                 builder.setURI(attributes.getValue("", "src"));
@@ -130,15 +124,9 @@ public class LinkContentHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String local, String name) {
-        if (!builderStack.isEmpty() && XHTML.equals(uri)) {
-            if ("a".equals(local) || "img".equals(local) || "link".equals(local) ||
-                    "script".equals(local) || "iframe".equals(local)) {
-                // ensure this is the correct builder. not all </script> tags correspond
-                // to a LinkBuilder, e.g. for embedded scripts
-                if (builderStack.getFirst().getType().equals(local)) {
-                    LinkBuilder builder = builderStack.removeFirst();
-                    links.add(builder.getLink(collapseWhitespaceInAnchor));
-                }
+        if (XHTML.equals(uri)) {
+            if ("a".equals(local) || "img".equals(local) || "link".equals(local) || "iframe".equals(local)) {
+                links.add(builderStack.removeFirst().getLink(collapseWhitespaceInAnchor));
             }
         }
     }

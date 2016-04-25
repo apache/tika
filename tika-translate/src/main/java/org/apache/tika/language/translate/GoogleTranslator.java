@@ -17,7 +17,8 @@
 
 package org.apache.tika.language.translate;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,14 +27,14 @@ import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.exception.TikaException;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.LanguageIdentifier;
+import org.apache.tika.language.LanguageProfile;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * An implementation of a REST client to the <a
@@ -45,7 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * 
  * 
  */
-public class GoogleTranslator extends AbstractTranslator {
+public class GoogleTranslator implements Translator {
 
 	private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
 
@@ -103,8 +104,9 @@ public class GoogleTranslator extends AbstractTranslator {
 			throws TikaException, IOException {
 		if (!this.isAvailable)
 			return text;
-		
-		String sourceLanguage = detectLanguage(text).getLanguage();
+		LanguageIdentifier language = new LanguageIdentifier(
+				new LanguageProfile(text));
+		String sourceLanguage = language.getLanguage();
 		return translate(text, sourceLanguage, targetLanguage);
 	}
 

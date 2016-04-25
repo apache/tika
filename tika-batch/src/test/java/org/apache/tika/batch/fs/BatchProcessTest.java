@@ -276,6 +276,7 @@ public class BatchProcessTest extends FSBatchTestBase {
                 Paths.get(this.getClass().getResource("/testFileList.txt").toURI()).toString());
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
+        args.put("outputSuffix", "json");
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");
         ex.execute();
         Path test1 = outputDir.resolve("test1.xml.json");
@@ -301,6 +302,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         args.put("numConsumers", "1");
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
+        args.put("outputSuffix", "json");
 
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
                 "/tika-batch-config-MockConsumersBuilder.xml",
@@ -308,23 +310,6 @@ public class BatchProcessTest extends FSBatchTestBase {
         StreamStrings ss = ex.execute();
         assertFalse(ss.getOutString().contains("error writing xml stream for"));
         assertContains("parse_ex resourceId=\"test0_bad_chars.xml\"", ss.getOutString());
-    }
-
-    @Test
-    public void testOverrideOutputSuffix() throws Exception {
-        Path outputDir = getNewOutputDir("outputSuffixTest");
-
-        Map<String, String> args = getDefaultArgs("basic", outputDir);
-        args.put("numConsumers", "1");
-        args.put("recursiveParserWrapper", "true");
-        args.put("basicHandlerType", "text");
-
-        BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args,
-                "/tika-batch-config-test-suffix-override.xml",
-                "/log4j-on.properties");
-        ex.execute();
-        Path targ = outputDir.resolve("test0.xml.mysuffix");
-        assertTrue(Files.isRegularFile(targ));
     }
 
     private class BatchProcessTestExecutor {

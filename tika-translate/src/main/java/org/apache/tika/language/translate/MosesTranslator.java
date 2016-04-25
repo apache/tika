@@ -17,17 +17,20 @@
 
 package org.apache.tika.language.translate;
 
+import org.apache.tika.exception.TikaException;
+
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Properties;
-
-import org.apache.tika.exception.TikaException;
 
 /**
  * Translator that uses the Moses decoder for translation.

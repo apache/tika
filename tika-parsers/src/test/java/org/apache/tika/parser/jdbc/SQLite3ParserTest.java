@@ -68,10 +68,9 @@ public class SQLite3ParserTest extends TikaTest {
             //1) getXML closes the stream
             //2) getXML runs recursively on the contents, so the embedded docs should show up
             XMLResult result = getXML(stream, p, metadata);
-            stream.close();
             String x = result.xml;
             //first table name
-            assertContains("<table name=\"my_table1\"><thead><tr>\t<th>PK</th>", x);
+            assertContains("<table name=\"my_table1\"><thead><tr>\t<th>INT_COL</th>", x);
             //non-ascii
             assertContains("<td>普林斯顿大学</td>", x);
             //boolean
@@ -120,13 +119,12 @@ public class SQLite3ParserTest extends TikaTest {
     @Test
     public void testNotAddingEmbeddedParserToParseContext() throws Exception {
         Parser p = new AutoDetectParser();
-        ContentHandler handler = new ToXMLContentHandler();
-        Metadata metadata = new Metadata();
 
-        try (InputStream is = getResourceAsStream(TEST_FILE1)) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            p.parse(is, handler, metadata, new ParseContext());
-        }
+        InputStream is = getResourceAsStream(TEST_FILE1);
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+        ContentHandler handler = new ToXMLContentHandler();
+        p.parse(is, handler, metadata, new ParseContext());
         String xml = handler.toString();
         //just includes headers for embedded documents
         assertContains("<table name=\"my_table1\"><thead><tr>", xml);
@@ -145,11 +143,10 @@ public class SQLite3ParserTest extends TikaTest {
         RecursiveParserWrapper wrapper =
                 new RecursiveParserWrapper(p, new BasicContentHandlerFactory(
                         BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
+        InputStream is = getResourceAsStream(TEST_FILE1);
         Metadata metadata = new Metadata();
-        try (InputStream is = getResourceAsStream(TEST_FILE1)) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
-        }
+        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+        wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
         List<Metadata> metadataList = wrapper.getMetadata();
         int i = 0;
         assertEquals(5, metadataList.size());
@@ -179,11 +176,11 @@ public class SQLite3ParserTest extends TikaTest {
 
         ParserContainerExtractor ex = new ParserContainerExtractor();
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
+        InputStream is = getResourceAsStream(TEST_FILE1);
         Metadata metadata = new Metadata();
-        try (TikaInputStream is = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            ex.extract(is, ex, byteCopier);
-        }
+        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+        ex.extract(TikaInputStream.get(is), ex, byteCopier);
+
         assertEquals(4, byteCopier.bytes.size());
         String[] strings = new String[4];
         for (int i = 1; i < byteCopier.bytes.size(); i++) {
@@ -222,23 +219,14 @@ public class SQLite3ParserTest extends TikaTest {
 
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
+        InputStream is = getResourceAsStream(TEST_FILE1);
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        try (InputStream is = getResourceAsStream(TEST_FILE1)) {
-            try (TikaInputStream tis = TikaInputStream.get(is)) {
-                ex.extract(tis, ex, byteCopier);
-                is.reset();
-            }
-        }
+        ex.extract(TikaInputStream.get(is), ex, byteCopier);
+        is.reset();
         assertEquals(8, byteCopier.bytes.size());
     }
 
-    @Test
-    public void testNulls() throws Exception {
-        String xml = getXML(TEST_FILE_NAME).xml.replaceAll("\\s+", "");
-        //everything except for the first key column should be empty
-        assertContains("<tr><td>2</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr>", xml);
-    }
 
     public static class InputStreamResettingHandler implements EmbeddedResourceHandler {
 
@@ -286,13 +274,12 @@ public class SQLite3ParserTest extends TikaTest {
 
     @Test
     public void testCreateDB() throws Exception {
-        Connection c = getConnection("testSqlite3d.db");
+        Connection c = getConnection("testSQLLite3b.db");
         Statement st = c.createStatement();
         String sql = "DROP TABLE if exists my_table1";
         st.execute(sql);
         sql = "CREATE TABLE my_table1 (" +
-                "PK INT PRIMARY KEY, "+
-                "INT_COL INTEGER, "+
+                "INT_COL INT PRIMARY KEY, "+
                 "FLOAT_COL FLOAT, " +
                 "DOUBLE_COL DOUBLE, " +
                 "CHAR_COL CHAR(30), "+
@@ -300,13 +287,12 @@ public class SQLite3ParserTest extends TikaTest {
                 "BOOLEAN_COL BOOLEAN,"+
                 "DATE_COL DATE,"+
                 "TIME_STAMP_COL TIMESTAMP,"+
-                "CLOB_COL CLOB, "+
                 "BYTES_COL BYTES" +
         ")";
         st.execute(sql);
-        sql = "insert into my_table1 (PK, INT_COL, FLOAT_COL, DOUBLE_COL, CHAR_COL, " +
-                "VARCHAR_COL, BOOLEAN_COL, DATE_COL, TIME_STAMP_COL, CLOB_COL, BYTES_COL) " +
-                "values (?,?,?,?,?,?,?,?,?,?,?)";
+        sql = "insert into my_table1 (INT_COL, FLOAT_COL, DOUBLE_COL, CHAR_COL, " +
+                "VARCHAR_COL, BOOLEAN_COL, DATE_COL, TIME_STAMP_COL, BYTES_COL) " +
+                "values (?,?,?,?,?,?,?,?,?)";
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         java.util.Date d = f.parse("2015-01-03 15:17:03");
         System.out.println(d.getTime());
@@ -314,44 +300,29 @@ public class SQLite3ParserTest extends TikaTest {
         long d2Long = 1420316223000L;// 2015-01-03 15:17:03
         PreparedStatement ps = c.prepareStatement(sql);
         ps.setInt(1, 0);
-        ps.setInt(2, 10);
-        ps.setFloat(3, 2.3f);
-        ps.setDouble(4, 2.4d);
-        ps.setString(5, "lorem");
-        ps.setString(6, "普林斯顿大学");
-        ps.setBoolean(7, true);
-        ps.setString(8, "2015-01-02");
-        ps.setString(9, "2015-01-03 15:17:03");
-//        ps.setClob(10, new StringReader(sql));
-        ps.setBytes(10, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
+        ps.setFloat(2, 2.3f);
+        ps.setDouble(3, 2.4d);
+        ps.setString(4, "lorem");
+        ps.setString(5, "普林斯顿大学");
+        ps.setBoolean(6, true);
+        ps.setString(7, "2015-01-02");
+        ps.setString(8, "2015-01-03 15:17:03");
+//        ps.setClob(9, new StringReader(clobString));
+        ps.setBytes(9, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.doc")));//contains "quick brown fox"
         ps.executeUpdate();
         ps.clearParameters();
 
         ps.setInt(1, 1);
-        ps.setInt(2, 20);
-        ps.setFloat(3, 4.6f);
-        ps.setDouble(4, 4.8d);
-        ps.setString(5, "dolor");
-        ps.setString(6, "sit");
-        ps.setBoolean(7, false);
-        ps.setString(8, "2015-01-04");
-        ps.setString(9, "2015-01-03 15:17:03");
+        ps.setFloat(2, 4.6f);
+        ps.setDouble(3, 4.8d);
+        ps.setString(4, "dolor");
+        ps.setString(5, "sit");
+        ps.setBoolean(6, false);
+        ps.setString(7, "2015-01-04");
+        ps.setString(8, "2015-01-03 15:17:03");
         //ps.setClob(9, new StringReader("consectetur adipiscing elit"));
-        ps.setBytes(10, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
+        ps.setBytes(9, getByteArray(this.getClass().getResourceAsStream("/test-documents/testWORD_1img.docx")));//contains "The end!"
 
-        ps.executeUpdate();
-        //now add a fully null row
-        ps.clearParameters();
-        ps.setInt(1, 2);
-        ps.setNull(2, Types.INTEGER);
-        ps.setNull(3, Types.FLOAT);
-        ps.setNull(4, Types.DOUBLE);
-        ps.setNull(5, Types.CHAR);
-        ps.setNull(6, Types.VARCHAR);
-        ps.setNull(7, Types.BOOLEAN);
-        ps.setNull(8, Types.DATE);
-        ps.setNull(9, Types.TIMESTAMP);
-        ps.setNull(10, Types.BLOB);
         ps.executeUpdate();
 
         //build table2
@@ -380,5 +351,6 @@ public class SQLite3ParserTest extends TikaTest {
     }
 
 */
+
 
 }

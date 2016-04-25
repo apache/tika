@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -121,29 +120,19 @@ public class ParserDecorator extends AbstractParser {
                     Metadata metadata, ParseContext context)
                     throws IOException, SAXException, TikaException {
                 // Must have a TikaInputStream, so we can re-use it if parsing fails
-                // Need to close internally created tstream to release resources
-                TemporaryResources tmp = (TikaInputStream.isTikaInputStream(stream)) ? null
-                        : new TemporaryResources();
-                try {
-                    TikaInputStream tstream =
-                            TikaInputStream.get(stream, tmp);
-                    tstream.getFile();
-                    // Try each parser in turn
-                    for (Parser p : parsers) {
-                        tstream.mark(-1);
-                        try {
-                            p.parse(tstream, handler, metadata, context);
-                            return;
-                        } catch (Exception e) {
-                            // TODO How to log / record this failure?
-                        }
-                        // Prepare for the next parser, if present
-                        tstream.reset();
+                TikaInputStream tstream = TikaInputStream.get(stream);
+                tstream.getFile();
+                // Try each parser in turn
+                for (Parser p : parsers) {
+                    tstream.mark(-1);
+                    try {
+                        p.parse(tstream, handler, metadata, context);
+                        return;
+                    } catch (Exception e) {
+                        // TODO How to log / record this failure?
                     }
-                } finally {
-                    if (tmp != null) {
-                        tmp.dispose();
-                    }
+                    // Prepare for the next parser, if present
+                    tstream.reset();
                 }
             }
             @Override

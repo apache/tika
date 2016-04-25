@@ -21,14 +21,15 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.LanguageIdentifier;
+import org.apache.tika.language.LanguageProfile;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
 
 /**
  * CachedTranslator. Saves a map of previous translations in order to prevent repetitive translation requests.
  */
-public class CachedTranslator extends AbstractTranslator {
+public class CachedTranslator implements Translator {
     private static final int INITIAL_ENTRIES = 100;
     private static final int MAX_ENTRIES = 1000;
     private Translator translator;
@@ -85,7 +86,8 @@ public class CachedTranslator extends AbstractTranslator {
 
     @Override
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
-        LanguageResult language = detectLanguage(text);
+        LanguageIdentifier language = new LanguageIdentifier(
+                new LanguageProfile(text));
         String sourceLanguage = language.getLanguage();
         return translate(text, sourceLanguage, targetLanguage);
     }
@@ -147,14 +149,10 @@ public class CachedTranslator extends AbstractTranslator {
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String targetLanguage) {
-		try {
-			LanguageResult language = detectLanguage(text);
-	        String sourceLanguage = language.getLanguage();
-	        return contains(text, sourceLanguage, targetLanguage);
-		} catch (IOException e) {
-			// TODO what to do if we get an error?
-			return false;
-		}
+        LanguageIdentifier language = new LanguageIdentifier(
+                new LanguageProfile(text));
+        String sourceLanguage = language.getLanguage();
+        return contains(text, sourceLanguage, targetLanguage);
     }
 
     /**

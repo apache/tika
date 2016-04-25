@@ -36,6 +36,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
         Path outputDir = getNewOutputDir("handler-xml-");
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "xml");
+        args.put("outputSuffix", "xml");
 
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
@@ -53,6 +54,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "html");
+        args.put("outputSuffix", "html");
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
         Path outputFile = outputDir.resolve("test0.xml.html");
@@ -68,6 +70,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "txt");
+        args.put("outputSuffix", "txt");
 
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
@@ -102,6 +105,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "txt");
+        args.put("outputSuffix", "json");
         args.put("recursiveParserWrapper", "true");
 
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);

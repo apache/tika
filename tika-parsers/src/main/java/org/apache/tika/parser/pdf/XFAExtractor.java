@@ -16,19 +16,19 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLResolver;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -62,6 +62,20 @@ class XFAExtractor {
     private static final String FIELD_LN = "field";
     private static final QName XFA_DATA = new QName(XFA_DATA_NS, "data");
 
+    private static final XMLInputFactory factory;
+
+    static {
+        factory = XMLInputFactory.newFactory();
+        factory.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, true);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        factory.setProperty(XMLInputFactory.IS_VALIDATING, false);
+        factory.setXMLResolver(new XMLResolver() {
+            @Override
+            public Object resolveEntity(String publicID, String systemID, String baseURI, String namespace) throws XMLStreamException {
+                return null;
+            }
+        });
+    }
     private final Matcher xfaTemplateMatcher;//namespace any version
     private final Matcher textMatcher;
 
@@ -70,7 +84,7 @@ class XFAExtractor {
         textMatcher = TEXT_PATTERN.matcher("");
     }
 
-    void extract(InputStream xfaIs, XHTMLContentHandler xhtml, Metadata m, ParseContext context)
+    void extract(InputStream xfaIs, XHTMLContentHandler xhtml, Metadata m)
             throws XMLStreamException, SAXException {
         xhtml.startElement("div", "class", "xfa_content");
 
@@ -85,7 +99,7 @@ class XFAExtractor {
         //
         //As a final step, dump the merged fields and the values.
 
-        XMLStreamReader reader = context.getXMLInputFactory().createXMLStreamReader(xfaIs);
+        XMLStreamReader reader = factory.createXMLStreamReader(xfaIs);
         while (reader.hasNext()) {
             switch (reader.next()) {
                 case XMLStreamConstants.START_ELEMENT :

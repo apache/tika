@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.mp4;
 
-import static com.googlecode.mp4parser.util.CastUtils.l2i;
+import com.googlecode.mp4parser.DataSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +24,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
-import com.googlecode.mp4parser.DataSource;
+import static com.googlecode.mp4parser.util.CastUtils.l2i;
 
 /**
  * A {@link DataSource} implementation that relies on direct reads from a {@link RandomAccessFile}.
@@ -58,9 +58,6 @@ public class DirectFileReadDataSource implements DataSource {
                 totalRead += bytesRead;
             }
             byteBuffer.put(buf, 0, bytesRead);
-        }
-        if (bytesRead < 0 && position() == size() && byteBuffer.hasRemaining()) {
-            throw new IOException("End of stream reached earlier than expected");
         }
         return ((bytesRead < 0) && (totalRead == 0)) ? -1 : totalRead;
     }

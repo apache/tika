@@ -153,12 +153,4 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         }
     }
 
-    /**
-     *
-     * @return handler type used by this factory
-     */
-    public HANDLER_TYPE getType() {
-        return type;
-    }
-
 }

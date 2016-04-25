@@ -17,8 +17,6 @@
 
 package org.apache.tika.example;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.File;
 import java.io.InputStream;
 
@@ -26,9 +24,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.langdetect.OptimaizeLangDetector;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.LanguageIdentifier;
+import org.apache.tika.language.LanguageProfile;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
@@ -37,6 +34,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Demonstrates how to call the different components within Tika: its
@@ -97,8 +96,8 @@ public class MyFirstTika {
         System.out.println("The MIME type (based on the Detector interface) is: ["
                 + detector.detect(stream, metadata) + "]");
 
-        LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
-        LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(filename), UTF_8));
+        LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
+                FileUtils.readFileToString(new File(filename), UTF_8)));
 
         System.out.println("The language of this content is: ["
                 + lang.getLanguage() + "]");

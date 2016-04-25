@@ -18,17 +18,12 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
-import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -303,20 +298,4 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
         assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
     }
 
-    @Test
-    public void testEmbeddedGraphChart() throws Exception {
-        //docx converts a chart to a actual xlsx file
-        //so we only need to look in pptx and xlsx
-        for (String suffix : new String[]{"pptx", "xlsx"}) {
-            List<Metadata> list = getRecursiveJson("testMSChart-govdocs-428996."+suffix);
-            boolean found = false;
-            for (Metadata m : list) {
-                if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
-                    found = true;
-                }
-                assertNull(m.get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
-            }
-            assertTrue("didn't find chart in "+suffix, found);
-        }
-    }
 }

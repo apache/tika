@@ -43,9 +43,8 @@ public class ImageParserTest {
         assertEquals("100", metadata.get("width"));
         assertEquals("8 8 8", metadata.get("Data BitsPerSample"));
         assertEquals("1.0", metadata.get("Dimension PixelAspectRatio"));
-        //TODO: figure out why we're getting 0.35273367 in Ubuntu, but not Windows
-        //assertEquals("0", metadata.get("Dimension VerticalPhysicalPixelSpacing"));
-        //assertEquals("0", metadata.get("Dimension HorizontalPhysicalPixelSpacing"));
+        assertEquals("0", metadata.get("Dimension VerticalPhysicalPixelSpacing"));
+        assertEquals("0", metadata.get("Dimension HorizontalPhysicalPixelSpacing"));
         assertEquals("BI_RGB", metadata.get("Compression CompressionTypeName"));
         assertEquals("image/bmp", metadata.get("Content-Type"));
 

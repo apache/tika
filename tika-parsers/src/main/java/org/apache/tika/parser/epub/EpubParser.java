@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.epub;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -41,6 +39,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Epub parser
@@ -96,10 +96,6 @@ public class EpubParser extends AbstractParser {
         while (entry != null) {
             if (entry.getName().equals("mimetype")) {
                 String type = IOUtils.toString(zip, UTF_8);
-                //often has trailing new lines
-                if (type != null) {
-                    type = type.trim();
-                }
                 metadata.set(Metadata.CONTENT_TYPE, type);
             } else if (entry.getName().equals("metadata.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);

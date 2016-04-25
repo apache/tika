@@ -19,42 +19,40 @@ package org.apache.tika.example;
 
 import java.io.IOException;
 
-import org.apache.tika.langdetect.OptimaizeLangDetector;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageHandler;
-import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.language.detect.LanguageWriter;
+import org.apache.tika.language.LanguageIdentifier;
+import org.apache.tika.language.LanguageProfile;
+import org.apache.tika.language.ProfilingHandler;
+import org.apache.tika.language.ProfilingWriter;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 
 public class Language {
     public static void languageDetection() throws IOException {
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        LanguageResult result = detector.detect("Alla människor är födda fria och lika i värde och rättigheter.");
-        
-        System.out.println(result.getLanguage());
+        LanguageProfile profile = new LanguageProfile(
+                "Alla människor är födda fria och lika i värde och rättigheter.");
+
+        LanguageIdentifier identifier = new LanguageIdentifier(profile);
+        System.out.println(identifier.getLanguage());
     }
 
     public static void languageDetectionWithWriter() throws IOException {
-    	// TODO support version of LanguageWriter that doesn't need a detector.
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        LanguageWriter writer = new LanguageWriter(detector);
+        ProfilingWriter writer = new ProfilingWriter();
         writer.append("Minden emberi lény");
         writer.append(" szabadon születik és");
         writer.append(" egyenlő méltósága és");
         writer.append(" joga van.");
 
-        LanguageResult result = writer.getLanguage();
-        System.out.println(result.getLanguage());
+        LanguageIdentifier identifier = writer.getLanguage();
+        System.out.println(identifier.getLanguage());
         writer.close();
     }
 
     public static void languageDetectionWithHandler() throws Exception {
-        LanguageHandler handler = new LanguageHandler();
+        ProfilingHandler handler = new ProfilingHandler();
         new AutoDetectParser().parse(System.in, handler, new Metadata(), new ParseContext());
 
-        LanguageResult result = handler.getLanguage();
-        System.out.println(result.getLanguage());
+        LanguageIdentifier identifier = handler.getLanguage();
+        System.out.println(identifier.getLanguage());
     }
 }

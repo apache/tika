@@ -23,11 +23,10 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -126,8 +125,8 @@ public abstract class CXFTestBase {
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
         Map<String, String> data = new HashMap<String, String>();
-        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ZipFile zip = new ZipFile(tempFile.toFile());
+        File tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+        ZipFile zip = new ZipFile(tempFile);
         Enumeration<ZipArchiveEntry> entries = zip.getEntries();
         while (entries.hasMoreElements()) {
             ZipArchiveEntry entry = entries.nextElement();
@@ -135,20 +134,21 @@ public abstract class CXFTestBase {
             IOUtils.copy(zip.getInputStream(entry), bos);
             data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
         }
+
         zip.close();
-        Files.delete(tempFile);
+        tempFile.delete();
         return data;
     }
 
     protected String readArchiveText(InputStream inputStream) throws IOException {
-        Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-        ZipFile zip = new ZipFile(tempFile.toFile());
+        File tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+        ZipFile zip = new ZipFile(tempFile);
         zip.getEntry(UnpackerResource.TEXT_FILENAME);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
 
         zip.close();
-        Files.delete(tempFile);
+        tempFile.delete();
         return bos.toString(UTF_8.name());
     }
 
@@ -168,10 +168,10 @@ public abstract class CXFTestBase {
         return data;
     }
 
-    private Path writeTemporaryArchiveFile(InputStream inputStream, String archiveType) throws IOException {
-        Path tmp = Files.createTempFile("apache-tika-server-test-tmp-", "."+archiveType);
-        Files.copy(inputStream, tmp, StandardCopyOption.REPLACE_EXISTING);
-        return tmp;
+    private File writeTemporaryArchiveFile(InputStream inputStream, String archiveType) throws IOException {
+        File tempFile = File.createTempFile("tmp-", "." + archiveType);
+        IOUtils.copy(inputStream, new FileOutputStream(tempFile));
+        return tempFile;
     }
 
 }

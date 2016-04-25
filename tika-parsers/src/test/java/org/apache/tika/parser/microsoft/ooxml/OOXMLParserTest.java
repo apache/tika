@@ -969,8 +969,13 @@ public class OOXMLParserTest extends TikaTest {
     //TIKA-1100:
     @Test
     public void testExcelTextBox() throws Exception {
-        XMLResult r = getXML("testEXCEL_textbox.xlsx", parser);
-        assertContains("some autoshape", r.xml);
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        InputStream input = getTestDocument("testEXCEL_textbox.xlsx");
+        parser.parse(input, handler, metadata, context);
+        String content = handler.toString();
+        assertContains("some autoshape", content);
     }
 
     //TIKA-792; with room for future missing bean tests

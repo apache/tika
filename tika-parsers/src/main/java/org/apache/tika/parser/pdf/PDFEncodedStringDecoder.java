@@ -17,16 +17,14 @@
 
 package org.apache.tika.parser.pdf;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.pdfbox.cos.COSString;
-import org.apache.pdfbox.io.RandomAccessBuffer;
-import org.apache.pdfbox.io.RandomAccessRead;
-import org.apache.pdfbox.pdfparser.COSParser;
+import org.apache.pdfbox.pdfparser.BaseParser;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 /**
  * In fairly rare cases, a PDF's XMP will contain a string that
@@ -83,7 +81,7 @@ class PDFEncodedStringDecoder {
         try {
             byte[] bytes = new String("(" + value + ")").getBytes(ISO_8859_1);
             InputStream is = new ByteArrayInputStream(bytes);
-            COSStringParser p = new COSStringParser(new RandomAccessBuffer(is));
+            COSStringParser p = new COSStringParser(is);
             String parsed = p.myParseCOSString();
             if (parsed != null) {
                 return parsed;
@@ -95,9 +93,9 @@ class PDFEncodedStringDecoder {
         return value;
     }
 
-    class COSStringParser extends COSParser {
+    class COSStringParser extends BaseParser {
 
-        COSStringParser(RandomAccessRead buffer) throws IOException {
+        COSStringParser(InputStream buffer) throws IOException {
             super(buffer);
         }
 

@@ -18,15 +18,14 @@ package org.apache.tika.batch.builders;
  */
 
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOExceptionWithCause;
-import org.apache.tika.parser.ParseContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -42,13 +41,16 @@ public class CommandLineParserBuilder {
 
     public Options build(InputStream is) throws IOException {
         Document doc = null;
+        DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = null;
         try {
-            DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
+            docBuilder = fact.newDocumentBuilder();
             doc = docBuilder.parse(is);
-        } catch (TikaException|SAXException e) {
-            throw new IOExceptionWithCause(e);
+        } catch (ParserConfigurationException e) {
+            throw new IOException(e);
+        } catch (SAXException e) {
+            throw new IOException(e);
         }
-
         Node docElement = doc.getDocumentElement();
         NodeList children = docElement.getChildNodes();
         Node commandlineNode = null;

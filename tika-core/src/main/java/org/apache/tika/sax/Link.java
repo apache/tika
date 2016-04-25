@@ -60,10 +60,6 @@ public class Link {
         return "iframe".equals(type);
     }
 
-    public boolean isScript() {
-        return "script".equals(type);
-    }
-
     public String getType() {
         return type;
     }

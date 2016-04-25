@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -29,7 +28,6 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchema;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
@@ -38,11 +36,14 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.exceptions.CryptographyException;
+import org.apache.pdfbox.io.RandomAccess;
+import org.apache.pdfbox.io.RandomAccessBuffer;
+import org.apache.pdfbox.io.RandomAccessFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
-import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
-import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -57,11 +58,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -101,8 +99,6 @@ public class PDFParser extends AbstractParser {
             Collections.singleton(MEDIA_TYPE);
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
-
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -121,36 +117,64 @@ public class PDFParser extends AbstractParser {
             // PDFBox can process entirely in memory, or can use a temp file
             //  for unpacked / processed resources
             // Decide which to do based on if we're reading from a file or not already
-            //TODO: make this configurable via MemoryUsageSetting
             TikaInputStream tstream = TikaInputStream.cast(stream);
             password = getPassword(metadata, context);
             if (tstream != null && tstream.hasFile()) {
-                // File based -- send file directly to PDFBox
-                pdfDocument = PDDocument.load(tstream.getPath().toFile(), password);
+                // File based, take that as a cue to use a temporary file
+                RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
+                if (localConfig.getUseNonSequentialParser() == true) {
+                    pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), scratchFile, password);
+                } else {
+                    pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
+                }
             } else {
-                pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), password);
+                // Go for the normal, stream based in-memory parsing
+                if (localConfig.getUseNonSequentialParser() == true) {
+                    pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), new RandomAccessBuffer(), password);
+                } else {
+                    pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
+                }
             }
             metadata.set("pdf:encrypted", Boolean.toString(pdfDocument.isEncrypted()));
 
+            //if using the classic parser and the doc is encrypted, we must manually decrypt
+            if (!localConfig.getUseNonSequentialParser() && pdfDocument.isEncrypted()) {
+                pdfDocument.decrypt(password);
+            }
+
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
-            extractMetadata(pdfDocument, metadata, context);
+            extractMetadata(pdfDocument, metadata);
 
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
                 if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
-                    handleXFAOnly(pdfDocument, handler, metadata, context);
+                    handleXFAOnly(pdfDocument, handler, metadata);
                 } else {
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 }
             }
-        } catch (InvalidPasswordException e) {
-            metadata.set("pdf:encrypted", "true");
+
+        } catch (CryptographyException e) {
+            //seq parser throws CryptographyException for bad password
             throw new EncryptedDocumentException(e);
+        } catch (IOException e) {
+            //nonseq parser throws IOException for bad password
+            //At the Tika level, we want the same exception to be thrown
+            if (e.getMessage() != null &&
+                    e.getMessage().contains("Error (CryptographyException)")) {
+                metadata.set("pdf:encrypted", Boolean.toString(true));
+                throw new EncryptedDocumentException(e);
+            }
+            //rethrow any other IOExceptions
+            throw e;
         } finally {
             if (pdfDocument != null) {
                 pdfDocument.close();
             }
+            tmp.dispose();
+            //TODO: once we migrate to PDFBox 2.0, remove this (PDFBOX-2200)
+            PDFont.clearResources();
         }
     }
 
@@ -176,7 +200,7 @@ public class PDFParser extends AbstractParser {
     }
 
 
-    private void extractMetadata(PDDocument document, Metadata metadata, ParseContext context)
+    private void extractMetadata(PDDocument document, Metadata metadata)
             throws TikaException {
 
         //first extract AccessPermissions
@@ -199,23 +223,19 @@ public class PDFParser extends AbstractParser {
                 Boolean.toString(ap.canPrintDegraded()));
 
 
-        //now go for the XMP
-        Document dom = loadDOM(document.getDocumentCatalog().getMetadata(), context);
-
-        XMPMetadata xmp = null;
-        if (dom != null) {
-            xmp = new XMPMetadata(dom);
-        }
+        //now go for the XMP stuff
+        org.apache.jempbox.xmp.XMPMetadata xmp = null;
         XMPSchemaDublinCore dcSchema = null;
-
-        if (xmp != null) {
-            try {
+        try {
+            if (document.getDocumentCatalog().getMetadata() != null) {
+                xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
+            }
+            if (xmp != null) {
                 dcSchema = xmp.getDublinCoreSchema();
-            } catch (IOException e) {}
-
-            JempboxExtractor.extractXMPMM(xmp, metadata);
+            }
+        } catch (IOException e) {
+            //swallow
         }
-
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
@@ -229,21 +249,29 @@ public class PDFParser extends AbstractParser {
         // TODO: Move to description in Tika 2.0
         addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
+        try {
             // TODO Remove these in Tika 2.0
-        addMetadata(metadata, "created", info.getCreationDate());
-        addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
-        Calendar modified = info.getModificationDate();
-        addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
-        addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
+            addMetadata(metadata, "created", info.getCreationDate());
+            addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
+        } catch (IOException e) {
+            // Invalid date format, just ignore
+        }
+        try {
+            Calendar modified = info.getModificationDate();
+            addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
+            addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
+        } catch (IOException e) {
+            // Invalid date format, just ignore
+        }
 
         // All remaining metadata is custom
         // Copy this over as-is
         List<String> handledMetadata = Arrays.asList("Author", "Creator", "CreationDate", "ModDate",
                 "Keywords", "Producer", "Subject", "Title", "Trapped");
-        for (COSName key : info.getCOSObject().keySet()) {
+        for (COSName key : info.getDictionary().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
+                addMetadata(metadata, name, info.getDictionary().getDictionaryObject(key));
             }
         }
 
@@ -280,7 +308,7 @@ public class PDFParser extends AbstractParser {
         }
         //TODO: Let's try to move this into PDFBox.
         //Attempt to determine Adobe extension level, if present:
-        COSDictionary root = document.getDocumentCatalog().getCOSObject();
+        COSDictionary root = document.getDocumentCatalog().getCOSDictionary();
         COSDictionary extensions = (COSDictionary) root.getDictionaryObject(COSName.getPDFName("Extensions"));
         if (extensions != null) {
             for (COSName extName : extensions.keySet()) {
@@ -485,15 +513,15 @@ public class PDFParser extends AbstractParser {
         return false;
     }
 
-    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler,
-                               Metadata metadata, ParseContext context)
+    private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata)
         throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        try (InputStream is = new ByteArrayInputStream(
-                pdDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes())) {
-            ex.extract(is, xhtml, metadata, context);
+        try {
+            ex.extract(new ByteArrayInputStream(
+                    pdDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes()),
+                xhtml, metadata);
         } catch (XMLStreamException e) {
             throw new TikaException("XML error in XFA", e);
         }
@@ -506,6 +534,25 @@ public class PDFParser extends AbstractParser {
 
     public void setPDFParserConfig(PDFParserConfig config) {
         this.defaultConfig = config;
+    }
+
+    /**
+     * @see #setUseNonSequentialParser(boolean)
+     * @deprecated use {@link #getPDFParserConfig()}
+     */
+    public boolean getUseNonSequentialParser() {
+        return defaultConfig.getUseNonSequentialParser();
+    }
+
+    /**
+     * If true, the parser will use the NonSequentialParser.  This may
+     * be faster than the full doc parser.
+     * If false (default), this will use the full doc parser.
+     *
+     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
+     */
+    public void setUseNonSequentialParser(boolean v) {
+        defaultConfig.setUseNonSequentialParser(v);
     }
 
     /**
@@ -590,23 +637,6 @@ public class PDFParser extends AbstractParser {
      */
     public void setSortByPosition(boolean v) {
         defaultConfig.setSortByPosition(v);
-    }
-
-
-    //can return null!
-    private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
-        if (pdMetadata == null) {
-            return null;
-        }
-        try (InputStream is = pdMetadata.exportXMPMetadata()) {
-            DocumentBuilder documentBuilder = context.getDocumentBuilder();
-            documentBuilder.setErrorHandler((ErrorHandler)null);
-            return documentBuilder.parse(is);
-        } catch (IOException|SAXException|TikaException e) {
-            //swallow
-        }
-        return null;
-
     }
 
 }

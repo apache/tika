@@ -21,7 +21,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.net.URL;
 
-import org.apache.tika.TikaTest;
+import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
@@ -30,7 +30,7 @@ import org.apache.tika.mime.MediaType;
  * Parent class of tests that the various POI powered parsers are
  * able to extract their embedded contents.
  */
-public abstract class AbstractPOIContainerExtractionTest extends TikaTest {
+public abstract class AbstractPOIContainerExtractionTest {
     public static final MediaType TYPE_DOC = MediaType.application("msword");
     public static final MediaType TYPE_PPT = MediaType.application("vnd.ms-powerpoint");
     public static final MediaType TYPE_XLS = MediaType.application("vnd.ms-excel");

@@ -17,16 +17,6 @@
 
 package org.apache.tika.parser.geoinfo;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Set;
-
 import org.apache.sis.internal.util.CheckedArrayList;
 import org.apache.sis.internal.util.CheckedHashSet;
 import org.apache.sis.metadata.iso.DefaultMetadata;
@@ -68,6 +58,12 @@ import org.opengis.util.InternationalString;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.*;
+
 
 public class GeographicInformationParser extends AbstractParser{
 
@@ -88,24 +84,20 @@ public class GeographicInformationParser extends AbstractParser{
         DefaultMetadata defaultMetadata=null;
         XHTMLContentHandler xhtmlContentHandler=new XHTMLContentHandler(contentHandler,metadata);
 
-        TemporaryResources tmp = TikaInputStream.isTikaInputStream(inputStream) ? null
-                : new TemporaryResources();
         try {
-            TikaInputStream tikaInputStream = TikaInputStream.get(inputStream,tmp);
+            TemporaryResources tmp = new TemporaryResources();
+            TikaInputStream tikaInputStream=TikaInputStream.get(inputStream,tmp);
             File file= tikaInputStream.getFile();
             dataStore = DataStores.open(file);
             defaultMetadata=new DefaultMetadata(dataStore.getMetadata());
             if(defaultMetadata!=null)
                 extract(xhtmlContentHandler, metadata, defaultMetadata);
 
-        } catch (UnsupportedStorageException e) {
+        }catch (UnsupportedStorageException e) {
             throw new TikaException("UnsupportedStorageException",e);
-        } catch (DataStoreException e) {
+        }
+        catch (DataStoreException e) {
             throw new TikaException("DataStoreException",e);
-        } finally {
-            if (tmp != null) {
-                tmp.dispose();
-            }
         }
     }
 

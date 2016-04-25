@@ -40,12 +40,9 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parent class of Tika tests
@@ -109,39 +106,21 @@ public abstract class TikaTest {
         }
     }
 
-    protected XMLResult getXML(String filePath, Parser parser, ParseContext context) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, new Metadata(), context);
-    }
-
     protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata, null);
-    }
-
-    protected XMLResult getXML(String filePath, ParseContext parseContext) throws Exception {
-        return getXML(filePath, new AutoDetectParser(), parseContext);
+        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata);
     }
 
     protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata, null);
-    }
-
-    protected XMLResult getXML(String filePath, Parser parser) throws Exception {
-        return getXML(filePath, parser, new Metadata());
+        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata);
     }
 
     protected XMLResult getXML(String filePath) throws Exception {
-        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), new Metadata(), null);
+        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), new Metadata());
     }
 
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata) throws Exception {
-        return getXML(input, parser, metadata, null);
-    }
-
-    protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata, ParseContext context) throws Exception {
-      if (context == null) {
-          context = new ParseContext();
-          context.set(Parser.class, parser);
-      }
+      ParseContext context = new ParseContext();
+      context.set(Parser.class, parser);
 
       try {
           ContentHandler handler = new ToXMLContentHandler();
@@ -150,21 +129,7 @@ public abstract class TikaTest {
       } finally {
           input.close();
       }
-    }
-
-    protected List<Metadata> getRecursiveJson(String filePath) throws Exception {
-        return getRecursiveJson(filePath, new ParseContext());
-    }
-
-    protected List<Metadata> getRecursiveJson(String filePath, ParseContext context) throws Exception {
-        Parser p = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
-        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, new DefaultHandler(), new Metadata(), context);
-        }
-        return wrapper.getMetadata();
-    }
+  }
 
     /**
      * Basic text extraction.
@@ -244,18 +209,6 @@ public abstract class TikaTest {
             } catch (IOException e) {
                 //swallow
             }
-        }
-    }
-
-    public static void debug(List<Metadata> list) {
-        int i = 0;
-        for (Metadata m : list) {
-            for (String n : m.names()) {
-                for (String v : m.getValues(n)) {
-                    System.out.println(i + ": "+n + " : "+v);
-                }
-            }
-            i++;
         }
     }
 }

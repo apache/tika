@@ -45,7 +45,6 @@
     <module>tika-bundle</module>
     <module>tika-server</module>
     <module>tika-translate</module>
-    <module>tika-langdetect</module>
     <module>tika-example</module>
     <module>tika-java7</module>
   </modules>

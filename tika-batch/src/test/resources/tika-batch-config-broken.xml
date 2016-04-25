@@ -97,7 +97,7 @@
                         basicHandlerType="xml" writeLimit="-1"/>
 
 		<outputstream class="FSOutputStreamFactory"
-                encoding="UTF-8"/>
+                encoding="UTF-8" outputSuffix="xml"/>
 	</consumers>
 	
 	<!-- reporter and interrupter are optional -->

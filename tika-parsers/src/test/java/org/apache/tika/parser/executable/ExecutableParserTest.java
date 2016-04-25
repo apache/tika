@@ -18,57 +18,66 @@ package org.apache.tika.parser.executable;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
+import java.io.InputStream;
 
-import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
+import org.xml.sax.ContentHandler;
 
-public class ExecutableParserTest extends TikaTest {
+public class ExecutableParserTest {
 
     @Test
     public void testWin32Parser() throws Exception {
-        XMLResult r = getXML("testWindows-x86-32.exe");
-        Metadata metadata = r.metadata;
+        try (InputStream input = ExecutableParserTest.class.getResourceAsStream(
+                "/test-documents/testWindows-x86-32.exe")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new ExecutableParser().parse(input, handler, metadata, new ParseContext());
 
-        //not clear why ExecutableParser is adding instead of
-        //setting CONTENT_TYPE
-        assertContains("application/x-msdownload",
-                Arrays.asList(metadata.getValues(Metadata.CONTENT_TYPE)));
-        assertEquals("2012-05-13T13:40:11Z",
-                metadata.get(Metadata.CREATION_DATE));
+            assertEquals("application/x-msdownload",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("2012-05-13T13:40:11Z",
+                    metadata.get(Metadata.CREATION_DATE));
 
-        assertEquals(ExecutableParser.MACHINE_x86_32,
-                metadata.get(ExecutableParser.MACHINE_TYPE));
-        assertEquals("Little",
-                metadata.get(ExecutableParser.ENDIAN));
-        assertEquals("32",
-                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
-        assertEquals("Windows",
-                metadata.get(ExecutableParser.PLATFORM));
-        assertContains("<body />", r.xml); //no text yet
+            assertEquals(ExecutableParser.MACHINE_x86_32,
+                    metadata.get(ExecutableParser.MACHINE_TYPE));
+            assertEquals("Little",
+                  metadata.get(ExecutableParser.ENDIAN));
+            assertEquals("32",
+                  metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+            assertEquals("Windows",
+                  metadata.get(ExecutableParser.PLATFORM));
 
+            String content = handler.toString();
+            assertEquals("", content); // No text yet
+        }
     }
     
     @Test
     public void testElfParser_x86_32() throws Exception {
-        XMLResult r = getXML("testLinux-x86-32");
-        Metadata metadata = r.metadata;
-        assertEquals("application/x-executable",
-                metadata.get(Metadata.CONTENT_TYPE));
+        try (InputStream input = ExecutableParserTest.class.getResourceAsStream(
+                "/test-documents/testLinux-x86-32")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new ExecutableParser().parse(input, handler, metadata, new ParseContext());
 
-        assertEquals(ExecutableParser.MACHINE_x86_32,
-                metadata.get(ExecutableParser.MACHINE_TYPE));
-        assertEquals("Little",
-                metadata.get(ExecutableParser.ENDIAN));
-        assertEquals("32",
-                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+            assertEquals("application/x-executable",
+                    metadata.get(Metadata.CONTENT_TYPE));
 
+            assertEquals(ExecutableParser.MACHINE_x86_32,
+                    metadata.get(ExecutableParser.MACHINE_TYPE));
+            assertEquals("Little",
+                    metadata.get(ExecutableParser.ENDIAN));
+            assertEquals("32",
+                    metadata.get(ExecutableParser.ARCHITECTURE_BITS));
 //         assertEquals("Linux",
 //               metadata.get(ExecutableParser.PLATFORM));
 
-        assertContains("<body />", r.xml);
-
+            String content = handler.toString();
+            assertEquals("", content); // No text yet
+        }
     }
 
 }

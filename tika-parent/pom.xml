@@ -119,8 +119,8 @@
       <id>kkrugler</id>
       <email>kkrugler@apache.org</email>
       <url>http://ken-blog.krugler.org</url>
-      <organization>Scale Unlimited</organization>
-      <organizationUrl>http://www.scaleunlimited.com</organizationUrl>
+      <organization>Bixo Labs</organization>
+      <organizationUrl>http://bixolabs.com</organizationUrl>
       <roles>
         <role>committer</role>
       </roles>
@@ -300,10 +300,8 @@
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <commons.compress.version>1.11</commons.compress.version>
+    <commons.compress.version>1.10</commons.compress.version>
     <commons.io.version>2.4</commons.io.version>
     <slf4j.version>1.7.12</slf4j.version>
   </properties>
@@ -352,7 +350,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.18.1</version>
         <configuration>
-          <argLine>-Xmx2048m -Duser.timezone=UTC</argLine>
+          <argLine>-Xmx2048m</argLine>
         </configuration>
       </plugin>
       <plugin>
@@ -406,23 +404,6 @@
               <excludes>
                 <exclude>**/ForkParser*Test.java</exclude>
               </excludes>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>doclint-java8-disable</id>
-      <activation>
-        <jdk>[1.8,)</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-              <additionalparam>-Xdoclint:none</additionalparam>
             </configuration>
           </plugin>
         </plugins>

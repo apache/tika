@@ -28,7 +28,6 @@ import java.util.List;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.AutoDetectParser;
@@ -204,16 +203,13 @@ public class ParsingExample {
      */
     public List<Path> extractEmbeddedDocumentsExample(Path outputPath) throws IOException,
             SAXException, TikaException {
+        InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
         ExtractEmbeddedFiles ex = new ExtractEmbeddedFiles();
+        ex.extract(stream, outputPath);
         List<Path> ret = new ArrayList<>();
-        try (TikaInputStream stream =
-                     TikaInputStream.get(
-                             ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx"))) {
-            ex.extract(stream, outputPath);
-            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
-                for (Path entry : dirStream) {
-                    ret.add(entry);
-                }
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
+            for (Path entry : dirStream) {
+                ret.add(entry);
             }
         }
         return ret;
