@@ -50,14 +50,14 @@ public class PersonaParser extends AbstractParser {
     }
 	@Override
 	public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
-		// TODO Auto-generated method stub
+		
 		return MEDIA_TYPES;
 	}
 
 	@Override
 	public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext)
 			throws IOException, SAXException, TikaException {
-		// TODO Auto-generated method stub
+	
 		
 		//Reading the property file containing the authentication information.
 		Properties prop = new Properties();
@@ -105,10 +105,10 @@ public class PersonaParser extends AbstractParser {
 		        builder.append("\n");
 		    }
 		} catch (FailingHttpStatusCodeException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 		} catch (SolrServerException e) {
-			// TODO Auto-generated catch block
+		
 			e.printStackTrace();
 		}
 		
