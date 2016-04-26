@@ -21,6 +21,7 @@ import static com.googlecode.mp4parser.util.CastUtils.l2i;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
@@ -66,6 +67,9 @@ public class DirectFileReadDataSource implements DataSource {
     }
 
     public int readAllInOnce(ByteBuffer byteBuffer) throws IOException {
+        if (byteBuffer.remaining() > raf.length()) {
+            throw new IOException("trying to readAllInOnce past end of stream");
+        }
         byte[] buf = new byte[byteBuffer.remaining()];
         int read = raf.read(buf);
         byteBuffer.put(buf, 0, read);
@@ -81,6 +85,9 @@ public class DirectFileReadDataSource implements DataSource {
     }
 
     public void position(long nuPos) throws IOException {
+        if (nuPos > raf.length()) {
+            throw new IOException("requesting seek past end of stream");
+        }
         raf.seek(nuPos);
     }
 
@@ -89,12 +96,30 @@ public class DirectFileReadDataSource implements DataSource {
     }
 
     public ByteBuffer map(long startPosition, long size) throws IOException {
+        if (startPosition < 0 || size < 0) {
+            throw new IOException("startPosition and size must both be >= 0");
+        }
+        //make sure that start+size aren't greater than avail size
+        //in raf.
+        BigInteger end = BigInteger.valueOf(startPosition);
+        end.add(BigInteger.valueOf(size));
+        if (end.compareTo(BigInteger.valueOf(raf.length())) > 0) {
+            throw new IOException("requesting read past end of stream");
+        }
+
         raf.seek(startPosition);
-        byte[] payload = new byte[l2i(size)];
+        int payLoadSize = l2i(size);
+        //hack to check for potential overflow
+        if (Long.MAX_VALUE-payLoadSize < startPosition ||
+                Long.MAX_VALUE-payLoadSize > raf.length()) {
+            throw new IOException("requesting read past end of stream");
+        }
+        byte[] payload = new byte[payLoadSize];
         raf.readFully(payload);
         return ByteBuffer.wrap(payload);
     }
 
+    @Override
     public void close() throws IOException {
         raf.close();
     }
