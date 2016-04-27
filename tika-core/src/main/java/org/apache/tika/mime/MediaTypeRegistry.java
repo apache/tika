@@ -197,7 +197,11 @@ public class MediaTypeRegistry implements Serializable {
         } else if ("text".equals(type.getType())
                 && !MediaType.TEXT_PLAIN.equals(type)) {
             return MediaType.TEXT_PLAIN;
-        } else if (!MediaType.OCTET_STREAM.equals(type)) {
+        }else if(type.getType().contains("zero") && !MediaType.ZeroSize.equals(type)){
+            return MediaType.ZeroSize;
+        }
+
+ else if (!MediaType.OCTET_STREAM.equals(type)) {
             return MediaType.OCTET_STREAM;
         } else {
             return null;
