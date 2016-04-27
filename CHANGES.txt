@@ -19,6 +19,8 @@ Release 1.13 - ???
     * Some truncated/corrupted files that had some content extracted
       with 1.8.x may have no content extracted in 2.0.x (see TIKA-1912).
 
+  * Upgrade MP4 isoparser to 1.1.18 (TIKA-1924).
+
   * Extract metadata from MP4 videos whether or not the
     PooledTimeSeries parser is available via Aditya Dhulipala
     (TIKA-1844).
