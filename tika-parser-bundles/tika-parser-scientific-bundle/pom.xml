@@ -31,11 +31,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-multimedia-module</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.ctakes</groupId>
       <artifactId>ctakes-core</artifactId>
       <version>3.2.2</version>
@@ -58,7 +53,6 @@
             <Bundle-Activator>org.apache.tika.module.scientific.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-scientific-module;inline=true,
-              tika-parser-multimedia-module;inline=true,
               commons-csv;inline=true,
               commons-exec;inline=true,
               commons-codec;inline=true,
@@ -95,30 +89,10 @@
               org.apache.sis;resolution:=optional,
               org.apache.sis.distance;resolution:=optional,
               org.apache.sis.geometry;resolution:=optional,
-              org.apache.fontbox.afm;resolution:=optional,
-              org.apache.fontbox.ttf;resolution:=optional,
-              org.apache.tika.parser.xmp;resolution:=optional,
               com.beust.jcommander;resolution:=optional,
-              com.coremedia.iso;resolution:=optional,
-              com.coremedia.iso.boxes;resolution:=optional,
-              com.coremedia.iso.boxes.apple;resolution:=optional,
-              com.coremedia.iso.boxes.sampleentry;resolution:=optional,
-              com.drew.imaging.jpeg;resolution:=optional,
-              com.drew.imaging.riff;resolution:=optional,
-              com.drew.imaging.tiff;resolution:=optional,
-              com.drew.imaging.webp;resolution:=optional,
-              com.drew.lang;resolution:=optional,
-              com.drew.metadata;resolution:=optional,
-              com.drew.metadata.exif;resolution:=optional,
-              com.drew.metadata.iptc;resolution:=optional,
-              com.drew.metadata.jpeg;resolution:=optional,
-              com.drew.metadata.xmp;resolution:=optional,
               com.google.common.base;resolution:=optional,
               com.google.common.math;resolution:=optional,
               com.google.protobuf;resolution:=optional,
-              com.googlecode.mp4parser;resolution:=optional,
-              com.googlecode.mp4parser.boxes.apple;resolution:=optional,
-              com.googlecode.mp4parser.util;resolution:=optional,
               ucar.units;resolution:=optional,
               ucar.httpservices;resolution:=optional,
               ucar.nc2.util;resolution:=optional,

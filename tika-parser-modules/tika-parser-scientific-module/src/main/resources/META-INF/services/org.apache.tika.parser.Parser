@@ -24,5 +24,4 @@ org.apache.tika.parser.hdf.HDFParser
 org.apache.tika.parser.isatab.ISArchiveParser
 org.apache.tika.parser.mat.MatParser
 org.apache.tika.parser.netcdf.NetCDFParser
-org.apache.tika.parser.pot.PooledTimeSeriesParser
 #org.apache.tika.parser.envi.EnviHeaderParser

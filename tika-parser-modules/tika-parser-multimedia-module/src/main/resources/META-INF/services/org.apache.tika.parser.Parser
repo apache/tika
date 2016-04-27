@@ -27,4 +27,5 @@ org.apache.tika.parser.audio.MidiParser
 org.apache.tika.parser.ocr.TesseractOCRParser
 org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.mp4.MP4Parser
+org.apache.tika.parser.pot.PooledTimeSeriesParser
 org.apache.tika.parser.video.FLVParser

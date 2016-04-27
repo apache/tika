@@ -56,6 +56,11 @@
       <version>${commons.io.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-exec</artifactId>
+      <version>${commons.exec}</version>
+    </dependency>
+    <dependency>
       <groupId>com.googlecode.mp4parser</groupId>
       <artifactId>isoparser</artifactId>
       <version>${isoparser.version}</version>

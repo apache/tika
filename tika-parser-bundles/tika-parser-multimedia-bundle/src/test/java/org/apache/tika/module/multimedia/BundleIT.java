@@ -17,22 +17,19 @@
 package org.apache.tika.module.multimedia;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 
 import javax.inject.Inject;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.Dictionary;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -90,7 +87,7 @@ public class BundleIT {
     @Test
     public void testServicesCreated() throws Exception {
         ServiceReference[] services = bc.getAllServiceReferences(Parser.class.getName(), null);
-        assertEquals("Not all Services have started", 14, services.length);
+        assertEquals("Not all Services have started", 15, services.length);
     }
 
     @Test

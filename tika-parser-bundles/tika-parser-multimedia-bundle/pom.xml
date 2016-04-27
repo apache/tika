@@ -50,6 +50,7 @@
               xmpcore;inline=true,
               commons-codec;inline=true,
               commons-io;inline=true,
+              commons-exec;inline=true,
               jempbox;inline=true,
               fontbox;inline=true,
               isoparser;inline=true,
