@@ -137,7 +137,7 @@
               asm,
               juniversalchardet,
               vorbis-java-core, vorbis-java-tika,
-              isoparser, aspectjrt,
+              isoparser,
               metadata-extractor, xmpcore, json-simple,
               boilerpipe, rome, rome-utils, opennlp-tools, opennlp-maxent,
               geoapi, sis-metadata, sis-netcdf, sis-utility,

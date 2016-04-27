@@ -54,8 +54,7 @@
               jempbox;inline=true,
               fontbox;inline=true,
               isoparser;inline=true,
-              aspectjrt;inline=true
-            </Embed-Dependency> 
+            </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Export-Package>
               org.apache.tika.parser.image.*,
