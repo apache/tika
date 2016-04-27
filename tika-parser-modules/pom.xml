@@ -38,8 +38,8 @@
     <poi.version>3.15-beta1</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.10</codec.version>
-    <pdfbox.version>2.0.0</pdfbox.version>
-    <jempbox.version>1.8.11</jempbox.version>
+    <pdfbox.version>2.0.1</pdfbox.version>
+    <jempbox.version>1.8.12</jempbox.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.54</bouncycastle.version>
     <commons.exec>1.3</commons.exec>

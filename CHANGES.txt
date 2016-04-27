@@ -10,6 +10,15 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Upgrade to PDFBox 2.0.1/JempBox 1.8.12 (TIKA-1285/TIKA-1959).
+    MAJOR CHANGES in PDFParser:
+    * The classic sequential parser is no longer available.
+    * Tiff files are no longer extracted by default.  See
+      https://pdfbox.apache.org/2.0/dependencies.html#optional-components
+      for optional components to process Tiff files.
+    * Some truncated/corrupted files that had some content extracted
+      with 1.8.x may have no content extracted in 2.0.x (see TIKA-1912).
+
   * Extract metadata from MP4 videos whether or not the
     PooledTimeSeries parser is available via Aditya Dhulipala
     (TIKA-1844).
@@ -38,14 +47,6 @@ Release 1.13 - ???
   * Upgrade Gson in tika-serialization to 2.6.2 (TIka-1920).
 
   * Upgrade commons-cli in tika-batch to 1.3.1 (TIKA-1919).
-
-  * Upgrade to PDFBox 2.0.0 (TIKA-1285). MAJOR CHANGES in PDFParser:
-    * The classic sequential parser is no longer available.
-    * Tiff files are no longer extracted by default.  See
-      https://pdfbox.apache.org/2.0/dependencies.html#optional-components
-      for optional components to process Tiff files.
-    * Some truncated/corrupted files that had some content extracted
-      with 1.8.11 may have no content extracted in 2.0.0 (see TIKA-1912).
 
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
