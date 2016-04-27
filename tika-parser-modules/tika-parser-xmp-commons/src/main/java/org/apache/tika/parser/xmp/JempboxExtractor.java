@@ -22,8 +22,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Calendar;
 import java.util.List;
 
@@ -37,8 +35,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
-import org.xml.sax.InputSource;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 public class JempboxExtractor {
 
@@ -57,47 +57,59 @@ public class JempboxExtractor {
             return;
         }
 
-        Reader decoded = new InputStreamReader(
-                new ByteArrayInputStream(xmpraw.toByteArray()),
-                DEFAULT_XMP_CHARSET);
         XMPMetadata xmp = null;
-        try {
-            xmp = XMPMetadata.load(new InputSource(decoded));
-        } catch (IOException e) {
+        try (InputStream decoded =
+                     new ByteArrayInputStream(xmpraw.toByteArray())
+        ) {
+            Document dom = new ParseContext().getDocumentBuilder().parse(decoded);
+            if (dom != null) {
+                xmp = new XMPMetadata(dom);
+            }
+        } catch (IOException|SAXException e) {
             //
         }
+        extractDublinCore(xmp, metadata);
+        extractXMPMM(xmp, metadata);
+    }
 
-        if (xmp == null) {
+    /**
+     * Tries to extract Dublin Core schema from XMP.  If XMPMetadata is null
+     * or if the DC schema is null, this will return without throwing an exception.
+     *
+     * @param xmpMetadata XMPMetadata to process
+     * @param metadata Tika's metadata to write to
+     */
+    public static void extractDublinCore(XMPMetadata xmpMetadata, Metadata metadata) {
+        if (xmpMetadata == null) {
             return;
         }
         XMPSchemaDublinCore dc = null;
         try {
-            dc = xmp.getDublinCoreSchema();
+            dc = xmpMetadata.getDublinCoreSchema();
         } catch (IOException e) {
         }
-
-        if (dc != null) {
-            if (dc.getTitle() != null) {
-                metadata.set(TikaCoreProperties.TITLE, dc.getTitle());
-            }
-            if (dc.getDescription() != null) {
-                metadata.set(TikaCoreProperties.DESCRIPTION, dc.getDescription());
-            }
-            if (dc.getCreators() != null && dc.getCreators().size() > 0) {
-                metadata.set(TikaCoreProperties.CREATOR, joinCreators(dc.getCreators()));
-            }
-            if (dc.getSubjects() != null && dc.getSubjects().size() > 0) {
-                for (String keyword : dc.getSubjects()) {
-                    metadata.add(TikaCoreProperties.KEYWORDS, keyword);
-                }
-                // TODO should we set KEYWORDS too?
-                // All tested photo managers set the same in Iptc.Application2.Keywords and Xmp.dc.subject
-            }
+        if (dc == null) {
+            return;
         }
-        extractXMPMM(xmp, metadata);
+        if (dc.getTitle() != null) {
+            metadata.set(TikaCoreProperties.TITLE, dc.getTitle());
+        }
+        if (dc.getDescription() != null) {
+            metadata.set(TikaCoreProperties.DESCRIPTION, dc.getDescription());
+        }
+        if (dc.getCreators() != null && dc.getCreators().size() > 0) {
+            metadata.set(TikaCoreProperties.CREATOR, joinCreators(dc.getCreators()));
+        }
+        if (dc.getSubjects() != null && dc.getSubjects().size() > 0) {
+            for (String keyword : dc.getSubjects()) {
+                metadata.add(TikaCoreProperties.KEYWORDS, keyword);
+            }
+            // TODO should we set KEYWORDS too?
+            // All tested photo managers set the same in Iptc.Application2.Keywords and Xmp.dc.subject
+        }
     }
 
-    protected String joinCreators(List<String> creators) {
+    protected static String joinCreators(List<String> creators) {
         if (creators == null || creators.size() == 0) {
             return "";
         }
@@ -158,7 +170,7 @@ public class JempboxExtractor {
 
                         //instanceid can throw npe; getWhen can throw IOException
                     } catch (NullPointerException|IOException e) {
-                       //swallow
+                        //swallow
                     }
                     if (instanceId != null && instanceId.trim().length() > 0) {
                         //for absent data elements, pass in empty strings so

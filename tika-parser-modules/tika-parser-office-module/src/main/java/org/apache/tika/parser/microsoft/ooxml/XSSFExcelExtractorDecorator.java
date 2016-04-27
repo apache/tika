@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import javax.xml.parsers.SAXParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -188,8 +187,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             throws IOException, SAXException {
         InputSource sheetSource = new InputSource(sheetInputStream);
         try {
-            SAXParser saxParser = parseContext.getSAXParser();
-            XMLReader sheetParser = saxParser.getXMLReader();
+            XMLReader sheetParser = parseContext.getXMLReader();
             XSSFSheetInterestingPartsCapturer handler =
                     new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
                             styles, comments, strings, sheetContentsExtractor, formatter, false));
