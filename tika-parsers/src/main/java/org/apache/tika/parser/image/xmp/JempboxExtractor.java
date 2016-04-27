@@ -131,6 +131,9 @@ public class JempboxExtractor {
      * @param metadata
      */
     public static void extractXMPMM(XMPMetadata xmp, Metadata metadata) {
+        if (xmp == null) {
+            return;
+        }
         XMPSchemaMediaManagement mmSchema = null;
         try {
             mmSchema = xmp.getMediaManagementSchema();
