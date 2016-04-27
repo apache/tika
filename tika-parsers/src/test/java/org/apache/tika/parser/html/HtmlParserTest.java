@@ -1111,4 +1111,42 @@ public class HtmlParserTest {
         assertEquals("application/xhtml+xml; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
 
     }
+
+    @Test
+    public void testScriptSrc() throws Exception {
+        String url = "http://domain.com/logic.js";
+        String scriptInBody =
+                "<html><body><script src=\"" + url + "\"></script></body></html>";
+        String scriptInHead =
+                "<html><head><script src=\"" + url + "\"></script></head></html>";
+
+        assertScriptLink(scriptInBody, url);
+        assertScriptLink(scriptInHead, url);
+    }
+
+    private void assertScriptLink(String html, String url) throws Exception {
+        // IdentityHtmlMapper is needed to extract <script> tags
+        ParseContext context = new ParseContext();
+        context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+
+        final List<String> links = new ArrayList<String>();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(html.getBytes(UTF_8)),
+                new DefaultHandler() {
+                    @Override
+                    public void startElement(
+                            String u, String l, String name, Attributes atts) {
+                        if (name.equals("script") && atts.getValue("", "src") != null) {
+                            links.add(atts.getValue("", "src"));
+                        }
+                    }
+                },
+                metadata,
+                context);
+
+        assertEquals(1, links.size());
+        assertEquals(url, links.get(0));
+    }
 }
