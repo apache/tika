@@ -102,7 +102,7 @@ public class DirectFileReadDataSource implements DataSource {
         //make sure that start+size aren't greater than avail size
         //in raf.
         BigInteger end = BigInteger.valueOf(startPosition);
-        end.add(BigInteger.valueOf(size));
+        end = end.add(BigInteger.valueOf(size));
         if (end.compareTo(BigInteger.valueOf(raf.length())) > 0) {
             throw new IOException("requesting read past end of stream");
         }
