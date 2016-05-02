@@ -28,6 +28,7 @@ public class GrobidNERecogniser implements NERecogniser{
         add("MEASUREMENT_UNITS");
         add("MEASUREMENTS");
         add("NORMALIZED_MEASUREMENTS");
+        add("MEASUREMENT_TYPES");
     }};
 
 
@@ -140,6 +141,7 @@ public class GrobidNERecogniser implements NERecogniser{
         Set<String> unitSet = new HashSet<String>();
         Set<String> measurementSet = new HashSet<String>();
         Set<String> normalizedMeasurementSet = new HashSet<String>();
+        Set<String> measurementTypeSet = new HashSet<String>();
         
         try {
             String url = restHostUrlStr + readRestEndpoint();
@@ -169,9 +171,12 @@ public class GrobidNERecogniser implements NERecogniser{
 							normalizedMeasurementString.append(normalizedMeasurementNumber);
 							normalizedMeasurementString.append(" ");
 						}
+						if (quantity.containsKey("type")) {
+							String measurementType = (String) convertToJSONObject(quantity.toString()).get("type");
+							measurementTypeSet.add(measurementType);
+						}
 
 						JSONObject jsonObj = (JSONObject) convertToJSONObject(quantity.toString());
-
 						if (jsonObj.containsKey("rawUnit")) {
 							JSONObject rawUnit = (JSONObject) jsonObj.get("rawUnit");
 							String unitName = (String) convertToJSONObject(rawUnit.toString()).get("name");
@@ -195,10 +200,12 @@ public class GrobidNERecogniser implements NERecogniser{
 					}
                 	
                 }
+                
                 entities.put("MEASUREMENT_NUMBERS",measurementNumberSet);
                 entities.put("MEASUREMENT_UNITS",unitSet); 
                 entities.put("MEASUREMENTS",measurementSet);
                 entities.put("NORMALIZED_MEASUREMENTS",normalizedMeasurementSet);
+                entities.put("MEASUREMENT_TYPES",measurementTypeSet);
                 
             }
         }
