@@ -18,11 +18,9 @@ package org.apache.tika.parser.image;
 import java.io.UnsupportedEncodingException;
 
 /**
- *
- * @author Manisha Kampasi
+ * Holds details on Apple ICNS icons
  */
 public class ICNSType {
-
     private final int type;
     private final int width;
     private final int height;
@@ -169,5 +167,4 @@ public class ICNSType {
         }
         return null;
     }
-
 }

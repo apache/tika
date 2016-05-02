@@ -32,13 +32,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- *
- * @author Manisha Kampasi
+ * A basic parser class for Apple ICNS icon files
  */
-//Create a basic parser class to parse ICNS files
 public class ICNSParser extends AbstractParser {
+    private static final long serialVersionUID = 922010233654248327L;
 
-    //private static final long serialVersionUID = 261736541253892772L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image("icns"));
     public static final String ICNS_MIME_TYPE = "image/icns";
 
@@ -116,5 +114,4 @@ public class ICNSParser extends AbstractParser {
         xhtml.startDocument();
         xhtml.endDocument();
     }
-
 }
