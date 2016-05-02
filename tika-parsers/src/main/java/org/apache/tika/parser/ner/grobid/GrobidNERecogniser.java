@@ -171,6 +171,7 @@ public class GrobidNERecogniser implements NERecogniser{
 							normalizedMeasurementString.append(normalizedMeasurementNumber);
 							normalizedMeasurementString.append(" ");
 						}
+						
 						if (quantity.containsKey("type")) {
 							String measurementType = (String) convertToJSONObject(quantity.toString()).get("type");
 							measurementTypeSet.add(measurementType);
