@@ -135,9 +135,9 @@ public class MP4Parser extends AbstractParser {
                 if (fileType != null) {
                     // Identify the type
                     MediaType type = MediaType.application("mp4");
-                    for (MediaType t : typesMap.keySet()) {
-                        if (typesMap.get(t).contains(fileType.getMajorBrand())) {
-                            type = t;
+                    for (Map.Entry<MediaType, List<String>> e : typesMap.entrySet()) {
+                        if (e.getValue().contains(fileType.getMajorBrand())) {
+                            type = e.getKey();
                             break;
                         }
                     }
@@ -301,12 +301,7 @@ public class MP4Parser extends AbstractParser {
         }
 
     }
-    
-    private static void addMetadata(String key, Metadata m, Utf8AppleDataBox metadata) {
-       if (metadata != null) {
-          m.add(key, metadata.getValue());
-       }
-    }
+
     private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {
        if (metadata != null) {
           m.set(prop, metadata.getValue());

@@ -4718,6 +4718,14 @@
     <glob pattern="*.gif"/>
   </mime-type>
 
+  <mime-type type="image/icns">
+    <_comment>Apple Icon Image Format</_comment>
+    <magic priority="50">
+      <match value="icns" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.icns"/>
+  </mime-type>
+
   <mime-type type="image/ief">
     <glob pattern="*.ief"/>
   </mime-type>
