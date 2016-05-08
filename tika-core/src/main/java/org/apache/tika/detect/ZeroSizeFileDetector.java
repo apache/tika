@@ -31,7 +31,7 @@ public class ZeroSizeFileDetector implements Detector
 	{
         if (stream != null) {
             if(stream.read() == -1) {
-                return MediaType.ZERO_SIZE;
+                return MediaType.EMPTY;
             }
         }
         return MediaType.OCTET_STREAM;

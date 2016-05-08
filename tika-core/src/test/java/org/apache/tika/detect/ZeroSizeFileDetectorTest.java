@@ -41,7 +41,7 @@ public class ZeroSizeFileDetectorTest {
     @Test
     public void testDetectZeroValue() {
         byte[] data = "".getBytes(UTF_8);
-        detect(data, MediaType.ZERO_SIZE);
+        detect(data, MediaType.EMPTY);
         System.out.println();
     }
 
