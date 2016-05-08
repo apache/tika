@@ -29,10 +29,11 @@ public class ZeroSizeFileDetector implements Detector
 {
 	public MediaType detect(InputStream stream, Metadata metadata) throws IOException
 	{
-        if(stream != null && stream.available() == 0) {
-            return MediaType.ZERO_SIZE;
-        } else {
-            return MediaType.OCTET_STREAM;
+        if (stream != null) {
+            if(stream.read() == -1) {
+                return MediaType.ZERO_SIZE;
+            }
         }
+        return MediaType.OCTET_STREAM;
 	}
 }
