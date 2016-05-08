@@ -88,6 +88,12 @@ Release 1.13 - ???
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
 
+  * Added ZeroSizeFileDetector to support application/x-zerovalue via
+    Adesh Gupta (TIKA-1885).  
+  
+  * Addition of types information to Grobid quantities parser via 
+    Can Menekse (TIKA-1965).
+
 Release 1.12 - 01/24/2016
 
   * Support for iFrames and element link extraction is provided in
