@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -39,14 +40,14 @@ public class ZeroSizeFileDetectorTest {
 
     @Test
     public void testDetectZeroValue() {
-        byte[] data = "".getBytes();
+        byte[] data = "".getBytes(UTF_8);
         detect(data, MediaType.ZERO_SIZE);
         System.out.println();
     }
 
     @Test
     public void testDetectNonZeroValue() {
-        byte[] data = "Testing 1...2...3".getBytes();
+        byte[] data = "Testing 1...2...3".getBytes(UTF_8);
         detect(data, MediaType.OCTET_STREAM);
         System.out.println();
     }
