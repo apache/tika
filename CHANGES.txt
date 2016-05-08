@@ -1,4 +1,4 @@
-Release 1.13 - ???
+Release 1.13 - 05/08/2016
 
   * Upgrade to PDFBox 2.0.1 (TIKA-1285/TIKA-1959).
     MAJOR CHANGES in PDFParser:
