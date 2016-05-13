@@ -14,19 +14,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.language.translate;
+package org.apache.tika.detect;
 
+import java.io.InputStream;
 import java.io.IOException;
 
-import org.apache.tika.langdetect.OptimaizeLangDetector;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 
-
-public abstract class AbstractTranslator implements Translator {
-
-	protected LanguageResult detectLanguage(String text) throws IOException {
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        return detector.detect(text);
+/**
+ * Detector to identify zero length files as application/x-zerovalue
+ */
+public class ZeroSizeFileDetector implements Detector
+{
+	public MediaType detect(InputStream stream, Metadata metadata) throws IOException
+	{
+        if (stream != null) {
+            try {
+                stream.mark(1);
+                if (stream.read() == -1) {
+                    return MediaType.EMPTY;
+                }
+            }
+            finally {
+                stream.reset();
+            }
+        }
+        return MediaType.OCTET_STREAM;
 	}
 }

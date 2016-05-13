@@ -1,4 +1,4 @@
-Release 1.13 - ???
+Release 1.13 - 05/08/2016
 
   * Upgrade to PDFBox 2.0.1 (TIKA-1285/TIKA-1959).
     MAJOR CHANGES in PDFParser:
@@ -87,6 +87,12 @@ Release 1.13 - ???
   * Upgrade to Apache SIS 0.6 (TIKA-1878).
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
+
+  * Added ZeroSizeFileDetector to support application/x-zerovalue via
+    Adesh Gupta (TIKA-1885).  
+  
+  * Addition of types information to Grobid quantities parser via 
+    Can Menekse (TIKA-1965).
 
 Release 1.12 - 01/24/2016
 
