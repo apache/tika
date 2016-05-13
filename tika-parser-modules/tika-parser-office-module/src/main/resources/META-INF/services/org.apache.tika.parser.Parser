@@ -20,6 +20,8 @@ org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.OldExcelParser
 org.apache.tika.parser.microsoft.TNEFParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
+org.apache.tika.parser.microsoft.xml.WordMLParser
+org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
 #org.apache.tika.parser.odf.OpenDocumentContentParser
 #org.apache.tika.parser.odf.OpenDocumentMetaParser
 org.apache.tika.parser.odf.OpenDocumentParser
@@ -27,3 +29,4 @@ org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.mbox.OutlookPSTParser
+
