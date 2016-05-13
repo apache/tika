@@ -141,7 +141,6 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
                     xhtml.startElement("p");
-                    p.getText();
 
                     for (XSLFTextRun run : p.getTextRuns()) {
                         //TODO: add check for targetmode=external into POI

@@ -58,7 +58,7 @@ public class PowerPointParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String xml = getXML("testPPT_various.ppt", metadata).xml;
         assertContains("<p>Footnote appears here", xml);
-        assertContains("<p><a href=\"_ftnref1\">[1]</a> This is a footnote.", xml);
+        assertContains("<p>[1] This is a footnote.", xml);
         assertContains("<p>This is the header text.</p>", xml);
         assertContains("<p>This is the footer text.</p>", xml);
         assertContains("<p>Here is a text box</p>", xml);

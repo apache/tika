@@ -1,3 +1,7 @@
+Release 1.14 - ???
+
+  * Extract hyperlinks from PPT, PPTX, XSLX (TIKA-1454).
+
 Release 1.13 - 05/08/2016
 
   * Upgrade to PDFBox 2.0.1 (TIKA-1285/TIKA-1959).

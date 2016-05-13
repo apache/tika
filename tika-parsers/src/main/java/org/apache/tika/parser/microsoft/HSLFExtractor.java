@@ -273,9 +273,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     Hyperlink link = htr.getHyperlink();
                     if (link != null) {
                         String address = link.getAddress();
-                        //consider ignoring footnote refs:
-                        // e.g. && ! address.startsWith("_ftnref")
-                        if (address != null) {
+                        if (address != null && ! address.startsWith("_ftn")) {
                             xhtml.startElement("a", "href", link.getAddress());
                             runIsHyperLink = true;
                         }
