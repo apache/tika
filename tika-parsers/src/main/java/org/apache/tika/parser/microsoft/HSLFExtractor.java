@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.model.OLEShape;
@@ -267,7 +268,18 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 String paraTag = showBullet ? "li" : "p";
 
                 xhtml.startElement(paraTag);
+                boolean runIsHyperLink = false;
                 for (HSLFTextRun htr : textRuns) {
+                    Hyperlink link = htr.getHyperlink();
+                    if (link != null) {
+                        String address = link.getAddress();
+                        //consider ignoring footnote refs:
+                        // e.g. && ! address.startsWith("_ftnref")
+                        if (address != null) {
+                            xhtml.startElement("a", "href", link.getAddress());
+                            runIsHyperLink = true;
+                        }
+                    }
                     String line = htr.getRawText();
                     if (line != null) {
                         boolean isfirst = true;
@@ -284,6 +296,10 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             xhtml.endElement("br");
                         }
                     }
+                    if (runIsHyperLink) {
+                        xhtml.endElement("a");
+                    }
+                    runIsHyperLink = false;
                 }
                 xhtml.endElement(paraTag);
             }
