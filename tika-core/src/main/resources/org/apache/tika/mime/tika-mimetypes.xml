@@ -609,6 +609,21 @@
   <mime-type type="application/prs.plucker"/>
   <mime-type type="application/qsig"/>
 
+  <mime-type type="application/vnd.ms-spreadsheetml">
+    <root-XML localName="Workbook" namespaceURI="urn:schemas-microsoft-com:office:spreadsheet"/>
+    <root-XML localName="Workbook"/>
+    <sub-class-of type="application/xml"/>
+    <_comment>Excel 2003 xml format, pre-ooxml</_comment>
+    <_comment>glob pattern typically *.xls</_comment>
+  </mime-type>
+  <mime-type type="application/vnd.ms-wordml">
+    <root-XML localName="wordDocument" namespaceURI="http://schemas.microsoft.com/office/word/2003/wordml"/>
+    <root-XML localName="wordDocument"/>
+    <sub-class-of type="application/xml"/>
+    <_comment>Word 2003 xml format, pre-ooxml</_comment>
+    <_comment>glob pattern typically *.doc</_comment>
+  </mime-type>
+
   <mime-type type="application/rdf+xml">
     <root-XML localName="RDF"/>
     <root-XML localName="RDF" namespaceURI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>

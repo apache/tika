@@ -1,5 +1,8 @@
 Release 1.14 - ???
 
+  * Add mime detection and parsers for MSOffice 2003 XML Word
+    and Excel formats (TIKA-1958).
+
   * Extract hyperlinks from PPT, PPTX, XSLX (TIKA-1454).
 
 Release 1.13 - 05/08/2016
