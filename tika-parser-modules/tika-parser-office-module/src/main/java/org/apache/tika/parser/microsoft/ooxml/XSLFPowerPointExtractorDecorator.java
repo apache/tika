@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
@@ -29,25 +30,7 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
-import org.apache.poi.xslf.usermodel.XMLSlideShow;
-import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
-import org.apache.poi.xslf.usermodel.XSLFComments;
-import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
-import org.apache.poi.xslf.usermodel.XSLFGroupShape;
-import org.apache.poi.xslf.usermodel.XSLFNotes;
-import org.apache.poi.xslf.usermodel.XSLFNotesMaster;
-import org.apache.poi.xslf.usermodel.XSLFPictureShape;
-import org.apache.poi.xslf.usermodel.XSLFRelation;
-import org.apache.poi.xslf.usermodel.XSLFShape;
-import org.apache.poi.xslf.usermodel.XSLFSheet;
-import org.apache.poi.xslf.usermodel.XSLFSlide;
-import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
-import org.apache.poi.xslf.usermodel.XSLFSlideShow;
-import org.apache.poi.xslf.usermodel.XSLFTable;
-import org.apache.poi.xslf.usermodel.XSLFTableCell;
-import org.apache.poi.xslf.usermodel.XSLFTableRow;
-import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
-import org.apache.poi.xslf.usermodel.XSLFTextShape;
+import org.apache.poi.xslf.usermodel.*;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -155,8 +138,27 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 if (skipPlaceholders && ph != null) {
                     continue;
                 }
+                boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
-                    xhtml.element("p", p.getText());
+                    xhtml.startElement("p");
+                    for (XSLFTextRun run : p.getTextRuns()) {
+                        //TODO: add check for targetmode=external into POI
+                        //then check to confirm that the urls are actually
+                        //external and not footnote refs via the current hack
+                        Hyperlink hyperlink = run.getHyperlink();
+
+                        if (hyperlink != null && hyperlink.getAddress() != null
+                                && !hyperlink.getAddress().contains("#_ftn")) {
+                            xhtml.startElement("a", "href", hyperlink.getAddress());
+                            inHyperlink = true;
+                        }
+                        xhtml.characters(run.getRawText());
+                        if (inHyperlink == true) {
+                            xhtml.endElement("a");
+                        }
+                        inHyperlink = false;
+                    }
+                    xhtml.endElement("p");
                 }
             } else if (sh instanceof XSLFGroupShape) {
                 // recurse into groups of shapes
@@ -213,7 +215,21 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             List<XSLFTableCell> cells = row.getCells();
             for (XSLFTableCell c : row.getCells()) {
                 xhtml.startElement("td");
+                //TODO: Need to wait for fix in POI to test for hyperlink first
+                //shouldn't need to catch NPE...
+                XSLFHyperlink hyperlink = null;
+                try {
+                    hyperlink = c.getHyperlink();
+                } catch (NullPointerException e) {
+                    //swallow
+                }
+                if (hyperlink != null && hyperlink.getAddress() != null) {
+                    xhtml.startElement("a", "href", hyperlink.getAddress());
+                }
                 xhtml.characters(c.getText());
+                if (hyperlink != null && hyperlink.getAddress() != null) {
+                    xhtml.endElement("a");
+                }
                 xhtml.endElement("td");
             }
             xhtml.endElement("tr");

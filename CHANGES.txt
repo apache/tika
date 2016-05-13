@@ -8,7 +8,11 @@ Release 2.0 - Future Development
 
   * (Something about more specific parser bundles, plus an overall one)
 
-Release 1.13 - ???
+Release 1.14 - ???
+
+  * Extract hyperlinks from PPT, PPTX, XSLX (TIKA-1454).
+
+Release 1.13 - 05/08/2016
 
   * Upgrade to PDFBox 2.0.1/JempBox 1.8.12 (TIKA-1285/TIKA-1959).
     MAJOR CHANGES in PDFParser:

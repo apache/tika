@@ -27,11 +27,13 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class ArParserTest extends AbstractPkgTest {
     @Test
+    @Ignore
     public void testArParsing() throws Exception {
         Parser parser = new AutoDetectParser();
 
@@ -60,6 +62,7 @@ public class ArParserTest extends AbstractPkgTest {
      * embedded entries.
      */
     @Test
+    @Ignore
     public void testEmbedded() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();

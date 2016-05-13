@@ -387,4 +387,19 @@ public class ExcelParserTest extends TikaTest {
         assertContains("Footer - Author: John Smith", content);
 
     }
+
+    @Test
+    public void testHyperlinksInXLS() throws Exception {
+        String xml = getXML("testEXCEL_hyperlinks.xls").xml;
+        //external url
+        assertContains("<a href=\"http://tika.apache.org/\">", xml);
+        //mail url
+        assertContains("<a href=\"mailto:user@tika.apache.org?subject=help\">", xml);
+        //external linked file
+        assertContains("<a href=\"linked_file.txt.htm\">", xml);
+
+        //TODO: not extracting these yet
+        //link on textbox
+//        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+    }
 }
