@@ -97,14 +97,10 @@ public class NameDetector implements Detector {
         // Look for a resource name in the input metadata
         String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
         if (name != null) {
-            // If the name is a URL, skip the trailing query and fragment parts
+            // If the name is a URL, skip the trailing query
             int question = name.indexOf('?');
             if (question != -1) {
                 name = name.substring(0, question);
-            }
-            int hash = name.indexOf('#');
-            if (hash != -1) {
-                name = name.substring(0, hash);
             }
 
             // If the name is a URL or a path, skip all but the last component
@@ -115,6 +111,15 @@ public class NameDetector implements Detector {
             int backslash = name.lastIndexOf('\\');
             if (backslash != -1) {
                 name = name.substring(backslash + 1);
+            }
+
+            // Strip any fragments from the end, but only ones after the extension
+            int hash = name.lastIndexOf('#');
+            int dot = name.indexOf('.');
+            if (hash != -1) {
+                if (dot == -1 || hash > dot) {
+                    name = name.substring(0, hash);
+                }
             }
 
             // Decode any potential URL encoding
