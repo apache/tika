@@ -18,6 +18,15 @@ package org.apache.tika.parser.mail;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.codec.DecodeMonitor;
@@ -46,12 +55,33 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
+import static org.apache.tika.utils.DateUtils.UTC;
+
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
  * used by Tika. See
  * http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/ContentHandler.html
  */
 class MailContentHandler implements ContentHandler {
+
+    //TIKA-1970 Mac Mail's format
+    private static final Pattern GENERAL_TIME_ZONE_NO_MINUTES_PATTERN =
+            Pattern.compile("(?:UTC|GMT)([+-])(\\d?\\d)\\Z");
+
+    private static final DateFormat[] ALTERNATE_DATE_FORMATS = new DateFormat[] {
+            //16 May 2016 at 09:30:32  GMT+1
+            createDateFormat("dd MMM yyyy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
+    };
+
+    private static DateFormat createDateFormat(String format, TimeZone timezone) {
+        SimpleDateFormat sdf =
+                new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        if (timezone != null) {
+            sdf.setTimeZone(timezone);
+        }
+        return sdf;
+    }
+
 
     private boolean strictParsing = false;
 
@@ -152,7 +182,8 @@ class MailContentHandler implements ContentHandler {
     /**
      * Header for the whole message or its parts
      *
-     * @see http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
+     * @see <a href="http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/">
+     *     http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a>
      * Field.html
      */
     public void field(Field field) throws MimeException {
@@ -197,13 +228,36 @@ class MailContentHandler implements ContentHandler {
                 processAddressList(parsedField, "Bcc:", Metadata.MESSAGE_BCC);
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 DateTimeField dateField = (DateTimeField) parsedField;
-                metadata.set(TikaCoreProperties.CREATED, dateField.getDate());
+                Date date = dateField.getDate();
+                if (date == null) {
+                    date = tryOtherDateFormats(field.getBody());
+                }
+                metadata.set(TikaCoreProperties.CREATED, date);
             }
         } catch (RuntimeException me) {
             if (strictParsing) {
                 throw me;
             }
         }
+    }
+
+    private static synchronized Date tryOtherDateFormats(String text) {
+        if (text == null) {
+            return null;
+        }
+        text = text.replaceAll("\\s+", " ").trim();
+        Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
+        if (matcher.find()) {
+            text = matcher.replaceFirst("GMT$1$2:00");
+        }
+
+        for (DateFormat format : ALTERNATE_DATE_FORMATS) {
+            try {
+                return format.parse(text);
+            } catch (ParseException e) {
+            }
+        }
+        return null;
     }
 
     private void processAddressList(ParsedField field, String addressListType,

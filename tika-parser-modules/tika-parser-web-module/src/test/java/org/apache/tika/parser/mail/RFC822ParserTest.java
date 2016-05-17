@@ -384,4 +384,15 @@ public class RFC822ParserTest extends TikaTest {
         r = getXML("testRFC822_eml");
         assertEquals("message/rfc822", r.metadata.get(Metadata.CONTENT_TYPE));
     }
+
+    @Test
+    public void testDates() throws Exception {
+
+        //tests non-standard dates that mime4j can't parse
+        XMLResult r = getXML("testRFC822_date_utf8");
+        assertEquals("2016-05-16T08:30:32Z", r.metadata.get(TikaCoreProperties.CREATED));
+
+        r = getXML("testRFC822_eml");
+        assertEquals("2016-05-16T08:30:32Z", r.metadata.get(TikaCoreProperties.CREATED));
+    }
 }
