@@ -381,4 +381,15 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(MediaType.TEXT_HTML, tracker.mediaTypes.get(1));
         assertEquals(MediaType.image("gif"), tracker.mediaTypes.get(2));
     }
+
+    @Test
+    public void testDetection() throws Exception {
+        //test simple text file
+        XMLResult r = getXML("testRFC822_date_utf8");
+        assertEquals("message/rfc822", r.metadata.get(Metadata.CONTENT_TYPE));
+
+        //test without extension
+        r = getXML("testRFC822_eml");
+        assertEquals("message/rfc822", r.metadata.get(Metadata.CONTENT_TYPE));
+    }
 }

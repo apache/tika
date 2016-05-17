@@ -1,0 +1,33 @@
+Delivered-To: philipp.steinkrueger@gmail.com
+Received: by 10.114.185.229 with SMTP id ff5csp1359148ldc;
+        Mon, 16 May 2016 01:30:35 -0700 (PDT)
+X-Received: by 10.194.165.226 with SMTP id zb2mr30717859wjb.172.1463387435671;
+        Mon, 16 May 2016 01:30:35 -0700 (PDT)
+Return-Path: <philipp.steinkrueger@uni-koeln.de>
+Received: from smtp-out.rrz.uni-koeln.de (smtp-out.rrz.uni-koeln.de. [2a00:a200:0:12::25])
+        by mx.google.com with ESMTPS id tk4si20973899wjb.25.2016.05.16.01.30.35
+        for <philipp.steinkrueger@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 16 May 2016 01:30:35 -0700 (PDT)
+Received-SPF: pass (google.com: domain of philipp.steinkrueger@uni-koeln.de designates 2a00:a200:0:12::25 as permitted sender) client-ip=2a00:a200:0:12::25;
+Authentication-Results: mx.google.com;
+       spf=pass (google.com: domain of philipp.steinkrueger@uni-koeln.de designates 2a00:a200:0:12::25 as permitted sender) smtp.mailfrom=philipp.steinkrueger@uni-koeln.de
+Received: from smtp-auth.rrz.uni-koeln.de (smtp-auth.rrz.uni-koeln.de [IPv6:2a00:a200:0:10::27] (may be forged))
+	by smtp-out.rrz.uni-koeln.de (8.14.4/8.14.4) with ESMTP id u4G8UYXw029242
+	for <philipp.steinkrueger@googlemail.com>; Mon, 16 May 2016 10:30:34 +0200
+Received: from [192.168.1.10] (79-66-108-216.dynamic.dsl.as9105.com [79.66.108.216])
+	(authenticated as user altj4 using DIGEST-MD5 bits=0)
+	by smtp-auth.uni-koeln.de (8.13.8/8.13.8) with ESMTP id u4G8UXlP028450
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <philipp.steinkrueger@googlemail.com>; Mon, 16 May 2016 10:30:34 +0200
+From: =?utf-8?Q?Philipp_Steinkr=C3=BCger?= <philipp.steinkrueger@uni-koeln.de>
+Content-Type: text/plain
+Content-Transfer-Encoding: 7bit
+Subject: Testemail
+Message-Id: <0BF9DF4B-195A-43D6-AC7D-F2AD710F237E@uni-koeln.de>
+Date: Mon, 16 May 2016 09:30:32 +0100
+To: =?utf-8?Q?Philipp_Steinkr=C3=BCger?= <philipp.steinkrueger@googlemail.com>
+Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
+X-Mailer: Apple Mail (2.3124)
+X-Scanned-By: MIMEDefang 2.75
+
