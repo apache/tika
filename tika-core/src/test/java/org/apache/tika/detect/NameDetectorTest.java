@@ -65,6 +65,16 @@ public class NameDetectorTest {
         assertDetect(MediaType.OCTET_STREAM, "ReadMe");     // case sensitive
         assertDetect(MediaType.OCTET_STREAM, "README.NOW");
 
+        // TIKA-1928 # in the filename
+        assertDetect(MediaType.TEXT_PLAIN, "text.txt");
+        assertDetect(MediaType.TEXT_PLAIN, "text#.txt");   // # before extension
+        assertDetect(MediaType.TEXT_PLAIN, "text#123.txt");// # before extension
+        assertDetect(MediaType.TEXT_PLAIN, "text.txt#pdf");// # after extension
+
+        // Check # as URL fragment too
+        assertDetect(MediaType.TEXT_PLAIN, "http://foo/test.txt?1=2#pdf");
+        assertDetect(MediaType.TEXT_PLAIN, "http://foo/test.txt#pdf");
+
         // tough one
         assertDetect(
                 MediaType.TEXT_PLAIN,

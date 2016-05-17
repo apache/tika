@@ -77,6 +77,9 @@ public class MimeDetectionTest extends TikaTest {
         testFile("image/cgm", "plotutils-bin-cgm-v3.cgm");
         // test HTML detection of malformed file, previously identified as image/cgm (TIKA-1170)
         testFile("text/html", "test-malformed-header.html.bin");
+        // file contains a # in the name (TIKA-1928)
+        testFile("application/xml", "test-utf8.xml", "test#.xml");
+        testFile("application/xml", "test-utf8.xml", "test#123.xml");
         
         //test GCMD Directory Interchange Format (.dif) TIKA-1561
         testFile("application/dif+xml", "brwNIMS_2014.dif");
@@ -142,7 +145,10 @@ public class MimeDetectionTest extends TikaTest {
     }
 
     private void testFile(String expected, String filename) throws IOException {
-        InputStream in = getTestDocumentAsStream(filename);
+        testFile(expected, filename, filename);
+    }
+    private void testFile(String expected, String resourcename, String filename) throws IOException {
+        InputStream in = getTestDocumentAsStream(resourcename);
         testStream(expected, filename, in);
     }
 
