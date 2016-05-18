@@ -454,7 +454,8 @@ public class RFC822ParserTest extends TikaTest {
     private void testDate(String dateString, String expected) throws Exception {
         Date parsedDate = getDate(dateString);
         assertNotNull("couldn't parse " + dateString, parsedDate);
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'",
+                new DateFormatSymbols(Locale.US));
         String parsedDateString = df.format(parsedDate);
         assertEquals("failed to match: "+dateString, expected, parsedDateString);
     }
