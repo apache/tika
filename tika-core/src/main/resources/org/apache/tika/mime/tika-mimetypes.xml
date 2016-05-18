@@ -679,17 +679,6 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="application/x-dbf">
-    <_comment>DBF/dbase 3 File</_comment>
-    <magic priority="100">
-      <match value="(?s)^[\x02\x03\x30\x31\x32\x43\x63\x83\x8B\xCB\xF5\xE5\xFB].[\x01-\x0C][\x01-\x1F].{4}(?:.[^\x00]|[\x41-\xFF].)(?:[^\x00\x01].|.[^\x00]).{31}([\x00][^\x00]{0,10})[BCDFGILMNOPQTVWXY@+]" type="regex" offset="0"/>
-    </magic>
-    <glob pattern="*.dbf"/>
-    <glob pattern="*.dbase"/>
-    <glob pattern="*.dbase3"/>
-    <sub-class-of type="text/plain"/>
-  </mime-type>
-
   <mime-type type="application/rtx"/>
   <mime-type type="application/samlassertion+xml"/>
   <mime-type type="application/samlmetadata+xml"/>
