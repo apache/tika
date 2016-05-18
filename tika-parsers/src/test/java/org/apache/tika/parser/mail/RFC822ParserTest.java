@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verify;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -415,7 +416,7 @@ public class RFC822ParserTest extends TikaTest {
                 "Subject: I Urge You to Require Notice of Mercury";
         Parser p = new RFC822Parser();
         Metadata m = new Metadata();
-        p.parse(TikaInputStream.get(s.getBytes()), new DefaultHandler(), m, new ParseContext());
+        p.parse(TikaInputStream.get(s.getBytes(StandardCharsets.UTF_8)), new DefaultHandler(), m, new ParseContext());
         assertEquals("I Urge You to Require Notice of Mercury", m.get(TikaCoreProperties.TITLE));
     }
 
