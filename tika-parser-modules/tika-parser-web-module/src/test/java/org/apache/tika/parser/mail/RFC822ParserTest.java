@@ -395,4 +395,16 @@ public class RFC822ParserTest extends TikaTest {
         r = getXML("testRFC822_eml");
         assertEquals("2016-05-16T08:30:32Z", r.metadata.get(TikaCoreProperties.CREATED));
     }
+
+    @Test
+    public void testMultipleSubjects() throws Exception {
+        //adapted from govdocs1 303710.txt
+        String s = "From: Shawn Jones [chiroshawn@yahoo.com]\n" +
+                "Subject: 2006N-3502\n" +
+                "Subject: I Urge You to Require Notice of Mercury";
+        Parser p = new RFC822Parser();
+        Metadata m = new Metadata();
+        p.parse(TikaInputStream.get(s.getBytes()), new DefaultHandler(), m, new ParseContext());
+        assertEquals("I Urge You to Require Notice of Mercury", m.get(TikaCoreProperties.TITLE));
+    }
 }

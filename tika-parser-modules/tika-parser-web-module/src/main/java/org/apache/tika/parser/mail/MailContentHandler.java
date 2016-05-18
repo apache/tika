@@ -82,7 +82,6 @@ class MailContentHandler implements ContentHandler {
         return sdf;
     }
 
-
     private boolean strictParsing = false;
 
     private XHTMLContentHandler handler;
@@ -218,7 +217,7 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.add(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
+                metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
                         ((UnstructuredField) parsedField).getValue());
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
