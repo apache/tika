@@ -58,7 +58,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
-import static org.apache.tika.utils.DateUtils.MIDDAY;
 import static org.apache.tika.utils.DateUtils.UTC;
 
 /**
@@ -85,9 +84,6 @@ class MailContentHandler implements ContentHandler {
         }
         return sdf;
     }
-
-
-
 
     private boolean strictParsing = false;
 
@@ -188,7 +184,8 @@ class MailContentHandler implements ContentHandler {
     /**
      * Header for the whole message or its parts
      *
-     * @see http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
+     * @see <a href="http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/">
+     *     http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a>
      * Field.html
      */
     public void field(Field field) throws MimeException {
@@ -223,7 +220,7 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.add(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
+                metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
                         ((UnstructuredField) parsedField).getValue());
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
@@ -240,7 +237,6 @@ class MailContentHandler implements ContentHandler {
                 metadata.set(TikaCoreProperties.CREATED, date);
             }
         } catch (RuntimeException me) {
-            me.printStackTrace();
             if (strictParsing) {
                 throw me;
             }
