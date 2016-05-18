@@ -55,6 +55,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
+import static org.apache.tika.utils.DateUtils.MIDDAY;
 import static org.apache.tika.utils.DateUtils.UTC;
 
 /**
@@ -68,17 +69,56 @@ class MailContentHandler implements ContentHandler {
     private static final Pattern GENERAL_TIME_ZONE_NO_MINUTES_PATTERN =
             Pattern.compile("(?:UTC|GMT)([+-])(\\d?\\d)\\Z");
 
+    //find a time ending in am/pm without a space: 10:30am and
+    //use this pattern to insert space: 10:30 am
+    private static final Pattern AM_PM = Pattern.compile("(?i)(\\d)([ap]m)\\b");
+
     private static final DateFormat[] ALTERNATE_DATE_FORMATS = new DateFormat[] {
-            //16 May 2016 at 09:30:32  GMT+1
-            createDateFormat("dd MMM yyyy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
+            //note that the string is "cleaned" before processing:
+            //1) condense multiple whitespace to single space
+            //2) trim()
+            //3) strip out commas
+            //4) insert space before am/pm
+
+            //May 16 2016 1:32am
+            createDateFormat("MMM dd yy hh:mm a", null),
+
+            //this is a standard pattern handled by mime4j;
+            //but mime4j fails with leading whitespace
+            createDateFormat("EEE d MMM yy HH:mm:ss Z", UTC),
+
+            createDateFormat("EEE d MMM yy HH:mm:ss z", UTC),
+
+            createDateFormat("EEE d MMM yy HH:mm:ss", null),// no timezone
+
+            createDateFormat("EEEEE MMM d yy hh:mm a", null),// Sunday, May 15 2016 1:32 PM
+
+            //16 May 2016 at 09:30:32  GMT+1 (Mac Mail TIKA-1970)
+            createDateFormat("d MMM yy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
+
+            createDateFormat("yy-MM-dd HH:mm:ss", null),
+
+            createDateFormat("MM/dd/yy hh:mm a", null, false),
+
+            //now dates without times
+            createDateFormat("MMM d yy", MIDDAY, false),
+            createDateFormat("EEE d MMM yy", MIDDAY, false),
+            createDateFormat("d MMM yy", MIDDAY, false),
+            createDateFormat("yy/MM/dd", MIDDAY, false),
+            createDateFormat("MM/dd/yy", MIDDAY, false)
     };
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {
+        return createDateFormat(format, timezone, true);
+    }
+
+    private static DateFormat createDateFormat(String format, TimeZone timezone, boolean isLenient) {
         SimpleDateFormat sdf =
                 new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
         if (timezone != null) {
             sdf.setTimeZone(timezone);
         }
+        sdf.setLenient(isLenient);
         return sdf;
     }
 
@@ -244,10 +284,19 @@ class MailContentHandler implements ContentHandler {
         if (text == null) {
             return null;
         }
+        //strip out additional spaces and trim
         text = text.replaceAll("\\s+", " ").trim();
+
+        //strip out commas
+        text = text.replaceAll(",", "");
         Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
         if (matcher.find()) {
             text = matcher.replaceFirst("GMT$1$2:00");
+        }
+
+        matcher = AM_PM.matcher(text);
+        if (matcher.find()) {
+            text = matcher.replaceFirst("$1 $2");
         }
 
         for (DateFormat format : ALTERNATE_DATE_FORMATS) {
