@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -1166,6 +1167,37 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals(1, links.size());
         assertEquals(url, links.get(0));
+    }
+
+    @Test
+    public void testAllHeadElements() throws Exception {
+        // IdentityHtmlMapper is needed to extract <script> tags
+        ParseContext context = new ParseContext();
+        context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+
+        final Map<String, Integer> tagFrequencies = new HashMap<>();
+
+        String path = "/test-documents/head.html";
+        try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
+            ContentHandler tagCounter = new DefaultHandler() {
+                @Override
+                public void startElement(
+                        String uri, String local, String name, Attributes attributes)
+                        throws SAXException {
+
+                    int count = tagFrequencies.containsKey(name) ? tagFrequencies.get(name) : 0;
+                    tagFrequencies.put(name, count + 1);
+                }
+            };
+            new HtmlParser().parse(stream, tagCounter, metadata, context);
+        }
+
+        assert(1 == tagFrequencies.get("title"));
+        assert(9 == tagFrequencies.get("meta"));
+        assert(12 == tagFrequencies.get("link"));
+        assert(6 == tagFrequencies.get("script"));
     }
 
     @Test

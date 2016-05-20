@@ -53,7 +53,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * The elements that are in the <head> section.
      */
     private static final Set<String> HEAD =
-        unmodifiableSet("title", "link", "base", "meta");
+        unmodifiableSet("title", "link", "base", "meta", "script");
 
     /**
      * The elements that are automatically emitted by lazyStartHead, so
@@ -74,7 +74,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
     public static final Set<String> ENDLINE = unmodifiableSet(
             "p", "h1", "h2", "h3", "h4", "h5", "h6", "div", "ul", "ol", "dl",
             "pre", "hr", "blockquote", "address", "fieldset", "table", "form",
-            "noscript", "li", "dt", "dd", "noframes", "br", "tr", "select", "option");
+            "noscript", "li", "dt", "dd", "noframes", "br", "tr", "select",
+            "option", "link", "script");
 
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
 
