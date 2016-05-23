@@ -30,7 +30,9 @@ import java.util.Comparator;
  * Language profile based on ngram counts.
  *
  * @since Apache Tika 0.5
+ * @deprecated
  */
+@Deprecated
 public class LanguageProfile {
 
     public static final int DEFAULT_NGRAM_LENGTH = 3;

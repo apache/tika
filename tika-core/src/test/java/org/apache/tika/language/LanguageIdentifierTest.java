@@ -38,6 +38,7 @@ import org.junit.Test;
  * @author Sami Siren
  * @author Jerome Charron - http://frutch.free.fr/
  */
+@Deprecated
 public class LanguageIdentifierTest {
 
     private static final String[] languages = new String[] {

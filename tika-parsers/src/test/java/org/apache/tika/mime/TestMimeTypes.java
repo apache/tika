@@ -176,7 +176,12 @@ public class TestMimeTypes {
                 // no need for the name-based detection to refine it
                 "application/x-tika-msworks-spreadsheet");
     }
-    
+
+    @Test
+    public void testHFATypes() throws Exception {
+        assertTypeByData("application/x-erdas-hfa","testHFA.hfa");
+    }
+
     @Test
     public void testStarOfficeDetection() throws Exception {
         assertTypeDetection("testVORCalcTemplate.vor",
@@ -417,6 +422,14 @@ public class TestMimeTypes {
         assertTypeByName("image/x-bpg", "x.bpg");
     }
     
+    @Test
+    public void testIcnsDetection() throws Exception {
+        assertType("image/icns", "testICNS.icns");
+        assertTypeByData("image/icns", "testICNS_basic.icns");
+        assertTypeByData("image/icns", "testICNS.icns");
+        assertTypeByName("image/icns", "testICNS.icns");
+    }
+	
     @Test
     public void testTiffDetection() throws Exception {
         assertType("image/tiff", "testTIFF.tif");
@@ -998,6 +1011,12 @@ public class TestMimeTypes {
     public void testWebVTT() throws Exception {
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
+    }
+    
+    @Test
+    public void testMIF() throws Exception {
+        assertType("application/vnd.mif", "testMIF.mif");
+        assertTypeByData("application/vnd.mif", "testMIF.mif");
     }
     
     @Test

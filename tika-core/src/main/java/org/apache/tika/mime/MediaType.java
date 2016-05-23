@@ -71,6 +71,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     public static final MediaType OCTET_STREAM =
             parse("application/octet-stream");
 
+	public static final MediaType EMPTY =
+            parse("application/x-empty");
+
     public static final MediaType TEXT_PLAIN = parse("text/plain");
 
     public static final MediaType TEXT_HTML = parse("text/html");

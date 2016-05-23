@@ -17,11 +17,17 @@
 
 package org.apache.tika.example;
 
-import org.apache.tika.language.LanguageIdentifier;
+import java.io.IOException;
 
-public class LanguageIdentifierExample {
-    public String identifyLanguage(String text) {
-        LanguageIdentifier identifier = new LanguageIdentifier(text);
-        return identifier.getLanguage();
+import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+
+public class LanguageDetectorExample {
+	
+    public String detectLanguage(String text) throws IOException {
+    	LanguageDetector detector = new OptimaizeLangDetector().loadModels();
+        LanguageResult result = detector.detect(text);
+        return result.getLanguage();
     }
 }

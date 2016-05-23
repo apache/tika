@@ -14,9 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.language.translate;
 
-/**
- * Language detection.
- */
-@aQute.bnd.annotation.Version("1.0.0")
-package org.apache.tika.language;
+import java.io.IOException;
+
+import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+
+
+public abstract class AbstractTranslator implements Translator {
+
+	protected LanguageResult detectLanguage(String text) throws IOException {
+        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
+        return detector.detect(text);
+	}
+}

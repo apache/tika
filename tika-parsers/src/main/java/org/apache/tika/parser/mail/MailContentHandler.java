@@ -18,6 +18,15 @@ package org.apache.tika.parser.mail;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.codec.DecodeMonitor;
@@ -35,9 +44,12 @@ import org.apache.james.mime4j.field.LenientFieldParser;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
+import org.apache.james.mime4j.util.ByteSequence;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -46,12 +58,72 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
+import static org.apache.tika.utils.DateUtils.MIDDAY;
+import static org.apache.tika.utils.DateUtils.UTC;
+
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
  * used by Tika. See
  * http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/ContentHandler.html
  */
 class MailContentHandler implements ContentHandler {
+
+    //TIKA-1970 Mac Mail's format
+    private static final Pattern GENERAL_TIME_ZONE_NO_MINUTES_PATTERN =
+            Pattern.compile("(?:UTC|GMT)([+-])(\\d?\\d)\\Z");
+
+    //find a time ending in am/pm without a space: 10:30am and
+    //use this pattern to insert space: 10:30 am
+    private static final Pattern AM_PM = Pattern.compile("(?i)(\\d)([ap]m)\\b");
+
+    private static final DateFormat[] ALTERNATE_DATE_FORMATS = new DateFormat[] {
+            //note that the string is "cleaned" before processing:
+            //1) condense multiple whitespace to single space
+            //2) trim()
+            //3) strip out commas
+            //4) insert space before am/pm
+
+            //May 16 2016 1:32am
+            createDateFormat("MMM dd yy hh:mm a", null),
+
+            //this is a standard pattern handled by mime4j;
+            //but mime4j fails with leading whitespace
+            createDateFormat("EEE d MMM yy HH:mm:ss Z", UTC),
+
+            createDateFormat("EEE d MMM yy HH:mm:ss z", UTC),
+
+            createDateFormat("EEE d MMM yy HH:mm:ss", null),// no timezone
+
+            createDateFormat("EEEEE MMM d yy hh:mm a", null),// Sunday, May 15 2016 1:32 PM
+
+            //16 May 2016 at 09:30:32  GMT+1 (Mac Mail TIKA-1970)
+            createDateFormat("d MMM yy 'at' HH:mm:ss z", UTC),   // UTC/Zulu
+
+            createDateFormat("yy-MM-dd HH:mm:ss", null),
+
+            createDateFormat("MM/dd/yy hh:mm a", null, false),
+
+            //now dates without times
+            createDateFormat("MMM d yy", MIDDAY, false),
+            createDateFormat("EEE d MMM yy", MIDDAY, false),
+            createDateFormat("d MMM yy", MIDDAY, false),
+            createDateFormat("yy/MM/dd", MIDDAY, false),
+            createDateFormat("MM/dd/yy", MIDDAY, false)
+    };
+
+    private static DateFormat createDateFormat(String format, TimeZone timezone) {
+        return createDateFormat(format, timezone, true);
+    }
+
+    private static DateFormat createDateFormat(String format, TimeZone timezone, boolean isLenient) {
+        SimpleDateFormat sdf =
+                new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        if (timezone != null) {
+            sdf.setTimeZone(timezone);
+        }
+        sdf.setLenient(isLenient);
+        return sdf;
+    }
 
     private boolean strictParsing = false;
 
@@ -152,7 +224,8 @@ class MailContentHandler implements ContentHandler {
     /**
      * Header for the whole message or its parts
      *
-     * @see http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
+     * @see <a href="http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/">
+     *     http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/</a>
      * Field.html
      */
     public void field(Field field) throws MimeException {
@@ -187,7 +260,7 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.add(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
+                metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
                         ((UnstructuredField) parsedField).getValue());
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
@@ -197,13 +270,44 @@ class MailContentHandler implements ContentHandler {
                 processAddressList(parsedField, "Bcc:", Metadata.MESSAGE_BCC);
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 DateTimeField dateField = (DateTimeField) parsedField;
-                metadata.set(TikaCoreProperties.CREATED, dateField.getDate());
+                Date date = dateField.getDate();
+                if (date == null) {
+                    date = tryOtherDateFormats(field.getBody());
+                }
+                metadata.set(TikaCoreProperties.CREATED, date);
             }
         } catch (RuntimeException me) {
             if (strictParsing) {
                 throw me;
             }
         }
+    }
+
+    private static synchronized Date tryOtherDateFormats(String text) {
+        if (text == null) {
+            return null;
+        }
+        text = text.replaceAll("\\s+", " ").trim();
+        //strip out commas
+        text = text.replaceAll(",", "");
+
+        Matcher matcher = GENERAL_TIME_ZONE_NO_MINUTES_PATTERN.matcher(text);
+        if (matcher.find()) {
+            text = matcher.replaceFirst("GMT$1$2:00");
+        }
+
+        matcher = AM_PM.matcher(text);
+        if (matcher.find()) {
+            text = matcher.replaceFirst("$1 $2");
+        }
+
+        for (DateFormat format : ALTERNATE_DATE_FORMATS) {
+            try {
+                return format.parse(text);
+            } catch (ParseException e) {
+            }
+        }
+        return null;
     }
 
     private void processAddressList(ParsedField field, String addressListType,

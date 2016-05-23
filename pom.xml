@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.13-SNAPSHOT</version>
+    <version>1.14-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -45,6 +45,7 @@
     <module>tika-bundle</module>
     <module>tika-server</module>
     <module>tika-translate</module>
+    <module>tika-langdetect</module>
     <module>tika-example</module>
     <module>tika-java7</module>
   </modules>

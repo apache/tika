@@ -64,6 +64,11 @@ abstract class AbstractDBParser extends AbstractParser {
         try {
             tableNames = getTableNames(connection, metadata, context);
         } catch (SQLException e) {
+            try {
+                close();
+            } catch (SQLException sqlE) {
+                //swallow
+            }
             throw new IOExceptionWithCause(e);
         }
         for (String tableName : tableNames) {
@@ -94,13 +99,13 @@ abstract class AbstractDBParser extends AbstractParser {
                 xHandler.endElement("table");
             }
         } finally {
-            if (xHandler != null) {
-                xHandler.endDocument();
-            }
             try {
                 close();
-            } catch (SQLException e) {
+            } catch (IOException|SQLException e) {
                 //swallow
+            }
+            if (xHandler != null) {
+                xHandler.endDocument();
             }
         }
     }

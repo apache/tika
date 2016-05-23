@@ -14,24 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.language.detect;
 
-package org.apache.tika.example;
+public enum LanguageConfidence {
 
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-
-public class LanguageIdentifierExampleTest {
-    LanguageIdentifierExample languageIdentifierExample;
-    @Before
-    public void setUp() {
-        languageIdentifierExample = new LanguageIdentifierExample();
-    }
-
-    @Test
-    public void testIdentifyLanguage() {
-        String text = "This is some text that should be identified as English.";
-        assertEquals("en", languageIdentifierExample.identifyLanguage(text));
-    }
+	HIGH,
+	MEDIUM,
+	LOW,
+	NONE		// Special value when no language is detected
 }

@@ -37,7 +37,6 @@ import org.junit.Test;
 public class TikaCLITest {
 
     /* Test members */
-    private File profile = null;
     private ByteArrayOutputStream outContent = null;
     private PrintStream stdout = null;
     private File testDataFile = new File("src/test/resources/test-data");
@@ -46,23 +45,10 @@ public class TikaCLITest {
 
     @Before
     public void setUp() throws Exception {
-        profile = new File("welsh.ngp");
         outContent = new ByteArrayOutputStream();
         resourcePrefix = testDataURI.toString();
         stdout = System.out;
         System.setOut(new PrintStream(outContent, true, UTF_8.name()));
-    }
-
-    /**
-     * Creates a welsh language profile
-     * 
-     * @throws Exception
-     */
-    @Test
-    public void testCreateProfile() throws Exception {
-        String[] params = {"--create-profile=welsh", "-eUTF-8", resourcePrefix + "welsh_corpus.txt"};
-        TikaCLI.main(params);
-        assertTrue(profile.exists());
     }
 
     /**
@@ -254,8 +240,6 @@ public class TikaCLITest {
      */
     @After
     public void tearDown() throws Exception {
-        if(profile != null && profile.exists())
-            profile.delete();
         System.setOut(stdout);
     }
 

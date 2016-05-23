@@ -64,9 +64,9 @@ public class TrueTypeParser extends AbstractParser {
         TrueTypeFont font;
         TTFParser parser = new TTFParser();
         if (tis != null && tis.hasFile()) {
-            font = parser.parseTTF(tis.getFile());
+            font = parser.parse(tis.getFile());
         } else {
-            font = parser.parseTTF(stream);
+            font = parser.parse(stream);
         }
 
         // Report the details of the font

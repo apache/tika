@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import java.io.InputStream;
 import java.util.Locale;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -41,7 +42,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class ExcelParserTest {
+public class ExcelParserTest extends TikaTest {
     @Test
     @SuppressWarnings("deprecation") // Checks legacy Tika-1.0 style metadata keys
     public void testExcelParser() throws Exception {
@@ -439,5 +440,20 @@ public class ExcelParserTest {
             assertContains("Footer - For Internal Use Only", content);
             assertContains("Footer - Author: John Smith", content);
         }
+    }
+
+    @Test
+    public void testHyperlinksInXLS() throws Exception {
+        String xml = getXML("testEXCEL_hyperlinks.xls").xml;
+        //external url
+        assertContains("<a href=\"http://tika.apache.org/\">", xml);
+        //mail url
+        assertContains("<a href=\"mailto:user@tika.apache.org?subject=help\">", xml);
+        //external linked file
+        assertContains("<a href=\"linked_file.txt.htm\">", xml);
+
+        //TODO: not extracting these yet
+        //link on textbox
+//        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
 }

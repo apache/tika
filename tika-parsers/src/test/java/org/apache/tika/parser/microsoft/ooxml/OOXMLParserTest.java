@@ -637,7 +637,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<td>Row 2 Col 2</td>\t<td>Row 2 Col 3</td></tr>", xml);
         assertContains("<p>Row 1 column 1</p>", xml);
         assertContains("<p>Row 2 column 2</p>", xml);
-        assertContains("<p>This is a hyperlink", xml);
+        assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
         assertContains("<p>Here is a list:", xml);
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
@@ -969,13 +969,8 @@ public class OOXMLParserTest extends TikaTest {
     //TIKA-1100:
     @Test
     public void testExcelTextBox() throws Exception {
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        ParseContext context = new ParseContext();
-        InputStream input = getTestDocument("testEXCEL_textbox.xlsx");
-        parser.parse(input, handler, metadata, context);
-        String content = handler.toString();
-        assertContains("some autoshape", content);
+        XMLResult r = getXML("testEXCEL_textbox.xlsx", parser);
+        assertContains("some autoshape", r.xml);
     }
 
     //TIKA-792; with room for future missing bean tests
@@ -1200,6 +1195,19 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals(2, managers.length);
         assertEquals("manager1", managers[0]);
         assertEquals("manager2", managers[1]);
+    }
+
+    @Test
+    public void testHyperlinksInXLSX() throws Exception {
+        String xml = getXML("testEXCEL_hyperlinks.xlsx").xml;
+        //external url
+        assertContains("<a href=\"http://tika.apache.org/\">", xml);
+        //mail url
+        assertContains("<a href=\"mailto:user@tika.apache.org?subject=help\">", xml);
+        //external linked file
+        assertContains("<a href=\"linked_file.txt.htm\">", xml);
+        //link on textbox
+        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
 }
 

@@ -17,6 +17,8 @@
 package org.apache.tika.language;
 
 // JDK imports
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -36,8 +38,6 @@ import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * This class runs a ngram analysis over submitted text, results might be used
  * for automatic language identification.
@@ -48,7 +48,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * 
  * @author Sami Siren
  * @author Jerome Charron - http://frutch.free.fr/
+ * @deprecated
  */
+@Deprecated
 public class LanguageProfilerBuilder {
 
     // public static final Log LOG =
@@ -174,8 +176,7 @@ public class LanguageProfilerBuilder {
     /**
      * Adds ngrams from a single word in this profile
      * 
-     * @param word is the word to add
-     * @param n is the ngram size
+     * @param cs char sequence to add
      */
     private void add(CharSequence cs) {
 

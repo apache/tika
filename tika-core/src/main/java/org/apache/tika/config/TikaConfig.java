@@ -16,6 +16,8 @@
  */
 package org.apache.tika.config;
 
+import javax.imageio.spi.ServiceRegistry;
+import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,12 +37,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import javax.imageio.spi.ServiceRegistry;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.apache.tika.base.Configurable;
+
 import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
 import org.apache.tika.concurrent.SimpleThreadPoolExecutor;
 import org.apache.tika.detect.CompositeDetector;
@@ -355,11 +353,7 @@ public class TikaConfig {
     }
 
     private static DocumentBuilder getBuilder() throws TikaException {
-        try {
-            return DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            throw new TikaException("XML parser not available", e);
-        }
+        return new ParseContext().getDocumentBuilder();
     }
 
     private static Element getChild(Element element, String name) {
@@ -884,15 +878,17 @@ public class TikaConfig {
         @Override
         ConfigurableThreadPoolExecutor decorate(ConfigurableThreadPoolExecutor created, Element element)
                 throws IOException, TikaException {
-            Element coreThreadElement = getChild(element, "core-threads");
-            if(coreThreadElement != null)
-            {
-                created.setCorePoolSize(Integer.parseInt(getText(coreThreadElement)));
-            }
+            
             Element maxThreadElement = getChild(element, "max-threads");
             if(maxThreadElement != null)
             {
                 created.setMaximumPoolSize(Integer.parseInt(getText(maxThreadElement)));
+            }
+            
+            Element coreThreadElement = getChild(element, "core-threads");
+            if(coreThreadElement != null)
+            {
+                created.setCorePoolSize(Integer.parseInt(getText(coreThreadElement)));
             }
             return created;
         }

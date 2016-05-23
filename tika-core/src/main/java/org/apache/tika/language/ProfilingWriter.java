@@ -23,7 +23,9 @@ import java.io.Writer;
  * Writer that builds a language profile based on all the written content.
  *
  * @since Apache Tika 0.5
+ * @deprecated use {@link org.apache.tika.language.detect.LanguageWriter}
  */
+@Deprecated
 public class ProfilingWriter extends Writer {
 
     private final LanguageProfile profile;

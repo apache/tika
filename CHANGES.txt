@@ -1,4 +1,77 @@
-Release 1.13 - ???
+Release 1.14 - ???
+
+  * Add mime detection and parsers for MSOffice 2003 XML Word
+    and Excel formats (TIKA-1958).
+
+  * Extract hyperlinks from PPT, PPTX, XSLX (TIKA-1454).
+
+Release 1.13 - 05/08/2016
+
+  * Upgrade to PDFBox 2.0.1 (TIKA-1285/TIKA-1959).
+    MAJOR CHANGES in PDFParser:
+    * The classic sequential parser is no longer available.
+    * Tiff files are no longer extracted by default.  See
+      https://pdfbox.apache.org/2.0/dependencies.html#optional-components
+      for optional components to process Tiff files.
+    * Some truncated/corrupted files that had some content extracted
+      with 1.8.x may have no content extracted in 2.0.x (see TIKA-1912).
+
+  * The MIT-NLP Information Extraction (MITIE) Named Entity
+    Recognition (NER) system is now supported in Tika
+    (TIKA-1913, GitHub-108).
+
+  * Tika now supports the use of the Yandex translation 
+    service (TIKA-1943, GitHub-106).
+
+  * Tika now uses NER to extract scientific measurements
+    from text using either GROBID Quantities which uses 
+    conditional random fields and NLTK which uses regular 
+    expressesions (TIKA-1917, GitHub-104).
+
+  * Fixed JournalParser to handle null responses from 
+    GROBID and to log a message (TIKA-1925).
+
+  * Refactored Language Detector into tika-landetect module,
+    added default N-Gram implementation, Optimaize Lang
+    Detector and MIT Text.jl implementation 
+    (TIKA-1872, TIKA-1696, TIKA-1723).
+ 
+  * Extract metadata from MP4 videos whether or not the
+    PooledTimeSeries parser is available via Aditya Dhulipala
+    (TIKA-1844).
+
+  * Fix NPE when trying to get embedded image identifier in
+    WordParser (TIKA-1956).
+
+  * Improvements to MIME database for detection of Scientific
+    and other formats present in the TREC-DD-Polar dataset
+    (TIKA-1881, GitHub-85, TIKA-1883, TIKA-1884, TIKA-1886,
+     TIKA-1882).
+
+  * LinkContentHandler now extracts links from script tags
+    via Joseph Naegele (TIKA-1937).
+
+  * Handle per page IOExceptions more robustly in PDFParser (TIKA-1948).
+
+  * Upgrade commons-compress to 1.11 (TIKA-1949).
+
+  * Add detection for embedded MSChart.Graph files (TIKA-1033).
+
+  * Fix NPE in Sqlite parser from Nick C (TIKA-1927).
+
+  * Fix NPE in Open Document parser from Nick C (TIKA-1916).
+
+  * Upgrade mp4parser's isoparser to 1.1.7 (TIKA-1924 and TIKA-1931).
+
+  * Upgrade BouncyCastle to 1.54 (TIKA-1923).
+
+  * Upgrade Jackcess to 2.1.3 (TIKA-1922).
+
+  * Upgrade Drew Noakes' metadata-extractor to 2.8.1 (TIKA-1921).
+
+  * Upgrade Gson in tika-serialization to 2.6.2 (TIka-1920).
+
+  * Upgrade commons-cli in tika-batch to 1.3.1 (TIKA-1919).
 
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
@@ -14,15 +87,19 @@ Release 1.13 - ???
     is still <scope>provided</scope>.  You need to include this dependency
     in order to parse sqlite files.
 
-  * Upgrade to POI 3.14-final (TIKA-1853).
-
-  * Upgrade to PDFBox 1.8.11 (TIKA-1830).
+  * Upgrade to POI 3.15-beta1 (TIKA-1895).
 
   * Upgrade to Jackson 2.7.1 (TIKA-1869).
 
   * Upgrade to Apache SIS 0.6 (TIKA-1878).
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
+
+  * Added ZeroSizeFileDetector to support application/x-zerovalue via
+    Adesh Gupta (TIKA-1885).  
+  
+  * Addition of types information to Grobid quantities parser via 
+    Can Menekse (TIKA-1965).
 
 Release 1.12 - 01/24/2016
 
