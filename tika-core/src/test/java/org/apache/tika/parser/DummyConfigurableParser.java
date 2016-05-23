@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;

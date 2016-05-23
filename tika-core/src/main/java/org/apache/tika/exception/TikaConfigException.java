@@ -21,7 +21,7 @@ package org.apache.tika.exception;
  * in Tika config file and/or one or more of the parsers failed to initialize
  * from that erroneous config.
  *
- * @since Apache Tika 1.13
+ * @since Apache Tika 1.14
  */
 public class TikaConfigException extends TikaException {
 

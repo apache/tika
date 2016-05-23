@@ -65,7 +65,7 @@ public abstract class AbstractParser implements ConfigurableParser {
      * called by the framework to supply runtime parameters which may be
      * required for initialization
      * @param context the parser context at runtime
-     * @since Apache Tika 1.13
+     * @since Apache Tika 1.14
      */
     @Override
     public void configure(ParseContext context) throws TikaConfigException {
@@ -76,6 +76,8 @@ public abstract class AbstractParser implements ConfigurableParser {
     /**
      * Gets Parameters of this configurable instance
      * @return a map of key value pairs
+     *
+     * @since Apache Tika 1.14
      */
     @Override
     public Map<String, String> getParams() {

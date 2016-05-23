@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * Defines contract for configurable services
- * @since Apache Tika 1.13
+ * @since Apache Tika 1.14
  */
 public interface Configurable {
 
@@ -31,7 +31,7 @@ public interface Configurable {
      * Configure an instance with Tika Context
      * @param context configuration instance in the form of context
      * @throws TikaConfigException when an instance fails to work at the given context
-     * @since Apache Tika 1.13
+     * @since Apache Tika 1.14
      */
     void configure(ParseContext context) throws TikaConfigException;
 

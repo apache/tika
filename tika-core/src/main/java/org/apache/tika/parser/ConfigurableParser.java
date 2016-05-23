@@ -24,6 +24,8 @@ import java.io.Serializable;
  * Extension of {@link Parser} with {@link Configurable} contract.
  * This interface shall be implemented to create parsers which accepts runtime parameters
  * from tika configuration file
+ *
+ * @since Tika 1.14
  */
 public interface ConfigurableParser extends Parser,
         Configurable, Serializable {
