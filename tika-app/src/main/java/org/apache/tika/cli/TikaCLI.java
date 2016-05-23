@@ -1093,14 +1093,21 @@ public class TikaCLI {
     private class TikaServer extends Thread {
 
         private final ServerSocket server;
-
+        private final int port;
         public TikaServer(int port) throws IOException {
             super("Tika server at port " + port);
             server = new ServerSocket(port);
+            this.port = port;
         }
 
         @Override
         public void run() {
+            System.out.println("Successfully started tika-app's server on port: "+port);
+            System.err.println("WARNING: The server option in tika-app is deprecated and will be removed ");
+            System.err.println("by Tika 2.0 if not shortly after Tika 1.14.");
+            System.err.println("Please migrate to the JAX-RS tika-server package.");
+            System.err.println("See https://wiki.apache.org/tika/TikaJAXRS for usage.");
+
             try {
                 try {
                     while (true) {
