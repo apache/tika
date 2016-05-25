@@ -140,7 +140,7 @@ class DBFCell {
             DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
             return df.format(baseCalendar.getTime());
         } catch (IOException|EndianUtils.BufferUnderrunException e) {
-            e.printStackTrace();
+
         }
         return "";
     }
