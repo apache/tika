@@ -19,6 +19,7 @@ package org.apache.tika.parser.geo.topic;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,9 +67,12 @@ public class GeoParser extends AbstractParser {
      * @param modelUrl the URL to NER model
      */
     public void initialize(URL modelUrl) {
-        if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
-            // Previously initialized for the same URL, no initialization needed
-            return;
+        try {
+          if (this.modelUrl != null && this.modelUrl.toURI().equals(modelUrl.toURI())) {
+              return;
+          }
+        } catch (URISyntaxException e1) {
+              throw new RuntimeException(e1.getMessage());
         }
         
         this.modelUrl = modelUrl;
@@ -79,8 +83,8 @@ public class GeoParser extends AbstractParser {
         this.available = modelUrl != null && gazetteerClient.checkAvail();
         
         if (this.available) {
-        	try {
-        		TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
+            try {
+                TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
                 this.nameFinder = new NameFinderME(model);
             } catch (Exception e) {
                 LOG.warning("Named Entity Extractor setup failed: " + e);
