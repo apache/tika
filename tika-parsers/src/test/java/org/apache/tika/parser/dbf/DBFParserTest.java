@@ -22,12 +22,17 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -135,6 +140,19 @@ public class DBFParserTest extends TikaTest {
                     DBFParser.DBF_VERSION_MIME_ATTRIBUTE+"="+version.getName(), r.metadata.get(Metadata.CONTENT_TYPE));
         }
     }
+
+/*
+commented out until we get permission to add the test file
+    @Test
+    public void testEncodingInHeaderAndDateTime() throws Exception {
+        XMLResult r = getXML("prem2007_2.dbf");
+        String xml = r.xml.replaceAll("[\\r\\n\\t]", " ");
+        assertEquals("application/x-dbf; dbf_version=Visual_FoxPro", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("<th>莉こ晤鎢</th>", xml);//header
+        assertContains("<td>齠褕</td>", xml);//content
+        assertContains("<td>2010-04-20T00:00:00Z</td>", xml);
+    }
+    */
 
     InputStream truncate(String testFileName, int length) throws IOException {
         byte[] bytes = new byte[length];

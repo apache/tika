@@ -16,7 +16,10 @@
  */
 package org.apache.tika.parser.dbf;
 
+import org.apache.fontbox.encoding.Encoding;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -24,10 +27,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -91,7 +96,7 @@ public class DBFParser extends AbstractParser {
         xhtml.startElement("thead");
         for (DBFColumnHeader col : header.getCols()) {
             xhtml.startElement("th");
-            xhtml.characters(col.name);
+            xhtml.characters(col.getName(charset));
             xhtml.endElement("th");
         }
         xhtml.endElement("thead");
@@ -132,7 +137,9 @@ public class DBFParser extends AbstractParser {
         }
         byte[] bytes = bos.toByteArray();
         if (bytes.length > 20) {
-            charset = new AutoDetectReader(TikaInputStream.get(bytes)).getCharset();
+            EncodingDetector detector = new Icu4jEncodingDetector();
+            detector.detect(TikaInputStream.get(bytes), new Metadata());
+            charset = detector.detect(new ByteArrayInputStream(bytes), new Metadata());
         }
         return charset;
     }

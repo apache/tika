@@ -16,11 +16,14 @@
  */
 package org.apache.tika.parser.dbf;
 
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.AT;
+import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.NULL;
 import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.PLUS;
+import static org.json.zip.JSONzip.end;
 
 class DBFColumnHeader {
 
@@ -41,6 +44,7 @@ class DBFColumnHeader {
         PLUS, //autoincrement
         AT, //timestamp dbase level 7
         O, //double
+        NULL //null
     }
     private final static Map<Integer, ColType> COL_TYPE_MAP =
             new ConcurrentHashMap<>();
@@ -48,16 +52,18 @@ class DBFColumnHeader {
     static {
         for (ColType type : ColType.values()) {
             if (type.equals(PLUS)) {
-                COL_TYPE_MAP.put((int)'+', PLUS);
+                COL_TYPE_MAP.put((int) '+', PLUS);
             } else if (type.equals(AT)) {
-                COL_TYPE_MAP.put((int)'@', AT);
+                COL_TYPE_MAP.put((int) '@', AT);
+            } else if (type.equals(NULL)) {
+                COL_TYPE_MAP.put((int)'0', NULL);
             } else {
                 COL_TYPE_MAP.put((int) type.toString().charAt(0), type);
             }
         }
     }
 
-    String name;
+    byte[] name;
     private ColType colType = null;
     int fieldLength = -1;
     int decimalCount = -1;
@@ -72,6 +78,10 @@ class DBFColumnHeader {
 
     ColType getColType() {
         return colType;
+    }
+
+    String getName(Charset charset) {
+        return new String(name, charset).trim();
     }
 
     @Override

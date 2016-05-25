@@ -65,12 +65,21 @@ class DBFFileHeader {
         header.numBytesInRecord = EndianUtils.readShortLE(is);
         IOUtils.skipFully(is, 20);//TODO: can get useful info out of here
 
-        int numCols = (header.numBytesInHeader - 32) / 32;
-
-        header.cols = new DBFColumnHeader[numCols];
-        for (int i = 0; i < numCols; i++) {
-            header.cols[i] = readCol(is);
+        int numCols = 0;//(header.numBytesInHeader - 32) / 32;
+        List<DBFColumnHeader> headers = new LinkedList<>();
+        int bytesAccountedFor = 0;
+        while (true) {
+            DBFColumnHeader colHeader = readCol(is);
+            bytesAccountedFor += colHeader.fieldLength;
+            numCols++;
+            headers.add(colHeader);
+            if (bytesAccountedFor >= header.numBytesInRecord-1) {
+                break;
+            }
         }
+
+        header.cols = headers.toArray(new DBFColumnHeader[headers.size()]);
+
         int endOfHeader = is.read();
         if (endOfHeader != 13) {
             throw new TikaException("Expected new line at end of header");
@@ -83,26 +92,26 @@ class DBFFileHeader {
     }
 
     private static DBFColumnHeader readCol(InputStream is) throws IOException, TikaException {
-        byte[] headerName = new byte[11];
-        IOUtils.readFully(is, headerName);
+        byte[] fieldRecord = new byte[32];
+        IOUtils.readFully(is, fieldRecord);
+
         DBFColumnHeader col = new DBFColumnHeader();
-        headerName = DBFReader.trim(headerName);
-        col.name = new String(headerName, StandardCharsets.US_ASCII);
-        int colType = is.read();
+        col.name = new byte[11];
+        System.arraycopy(fieldRecord, 0, col.name, 0, 10);
+
+        int colType = fieldRecord[11] & 0xFF;
         if (colType < 0) {
             throw new IOException("File truncated before coltype in header");
         }
         col.setType(colType);
-        IOUtils.skipFully(is, 4);//field data address
-        col.fieldLength = is.read();
+        col.fieldLength = fieldRecord[16] & 0xFF;
         if (col.fieldLength < 0) {
-            throw new TikaException("Field length for column "+headerName+"is < 0");
+            throw new TikaException("Field length for column "+col.getName(StandardCharsets.US_ASCII)+" is < 0");
         } else if (col.fieldLength > DBFReader.MAX_FIELD_LENGTH) {
             throw new TikaException("Field length ("+col.fieldLength+") is greater than DBReader.MAX_FIELD_LENGTH ("+
                     DBFReader.MAX_FIELD_LENGTH+")");
         }
-        col.decimalCount = is.read();
-        IOUtils.skipFully(is, 14); //TODO: might have useful info in some versions
+        col.decimalCount = fieldRecord[17] & 0xFF;
         return col;
     }
 
