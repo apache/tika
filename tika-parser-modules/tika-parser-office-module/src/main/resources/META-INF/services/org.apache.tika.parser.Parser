@@ -29,4 +29,5 @@ org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.mbox.OutlookPSTParser
+org.apache.tika.parser.dbf.DBFParser
 
