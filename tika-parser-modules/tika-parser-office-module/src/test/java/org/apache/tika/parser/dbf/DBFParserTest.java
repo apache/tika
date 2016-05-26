@@ -135,6 +135,17 @@ public class DBFParserTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testEncodingInHeaderAndDateTime() throws Exception {
+        XMLResult r = getXML("prem2007_2.dbf");
+        String xml = r.xml.replaceAll("[\\r\\n\\t]", " ");
+        assertEquals(DBFReader.Version.VISUAL_FOXPRO.getFullMimeString(),
+                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("<th>莉こ晤鎢</th>", xml);//header
+        assertContains("<td>齠褕</td>", xml);//content
+        assertContains("<td>2010-04-20T00:00:00Z</td>", xml);
+    }
+
     InputStream truncate(String testFileName, int length) throws IOException {
         byte[] bytes = new byte[length];
         try (InputStream is = getResourceAsStream("/test-documents/"+testFileName)) {
