@@ -39,7 +39,7 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
         XMLResult r = getXML("testDBF.dbf");
-        assertEquals("application/x-dbf; dbf_version=FoxBASE_plus", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2016-05-24T00:00:00Z", r.metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("UTF-8", r.metadata.get(Metadata.CONTENT_ENCODING));
 
@@ -64,7 +64,7 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testGB18030Encoded() throws Exception {
         XMLResult r = getXML("testDBF_gb18030.dbf");
-        assertEquals("application/x-dbf; dbf_version=FoxBASE_plus", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("虽然该", r.xml);
     }
 
@@ -131,8 +131,7 @@ public class DBFParserTest extends TikaTest {
             //this cast happens to work because of the range of possible values
             bytes[0] = (byte)version.getId();
             XMLResult r = getXML(TikaInputStream.get(bytes), new AutoDetectParser(), new Metadata());
-            assertEquals("application/x-dbf; "+
-                    DBFParser.DBF_VERSION_MIME_ATTRIBUTE+"="+version.getName(), r.metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals(version.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         }
     }
 

@@ -49,7 +49,6 @@ import java.util.Set;
  */
 public class DBFParser extends AbstractParser {
 
-    public static final String DBF_VERSION_MIME_ATTRIBUTE = "dbf_version";
     private static final int ROWS_TO_BUFFER_FOR_CHARSET_DETECTION = 10;
     private static final int MAX_CHARS_FOR_CHARSET_DETECTION = 20000;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
@@ -67,9 +66,7 @@ public class DBFParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         DBFReader reader = DBFReader.open(stream);
         DBFFileHeader header = reader.getHeader();
-
-        metadata.set(Metadata.CONTENT_TYPE, "application/x-dbf; "+
-                DBF_VERSION_MIME_ATTRIBUTE+"="+header.getVersion().getName());
+        metadata.set(Metadata.CONTENT_TYPE, header.getVersion().getFullMimeString());
 
         //insert metadata here
         Calendar lastModified = header.getLastModified();
@@ -81,7 +78,7 @@ public class DBFParser extends AbstractParser {
         List<DBFRow> firstRows = new LinkedList<>();
         DBFRow row = reader.next();
         int i = 0;
-        while(row != null && i++ < ROWS_TO_BUFFER_FOR_CHARSET_DETECTION) {
+        while (row != null && i++ < ROWS_TO_BUFFER_FOR_CHARSET_DETECTION) {
             firstRows.add(row.deepCopy());
             row = reader.next();
         }

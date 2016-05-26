@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * is mutable and will change as the reader iterates over new rows.
  * <p>
  * This is based on: <a href="http://web.archive.org/web/20150323061445/http://ulisse.elettra.trieste.it/services/doc/dbase/DBFstruct.htm">
- *     http://ulisse.elettra.trieste.it/services/doc/dbase/DBFstruct.htm</a>
+ * http://ulisse.elettra.trieste.it/services/doc/dbase/DBFstruct.htm</a>
  * <p>
  * This is designed to separate out Tika-specific code so that it can
  * be copied/pasted as a standalone if desired.
@@ -46,39 +46,56 @@ class DBFReader {
 
 
     enum Version {
-
-        FOXBASE(0x02, "FoxBASE"),
-        FOXBASE_PLUS(0x03, "FoxBASE_plus"),
-        VISUAL_FOXPRO(0x30, "Visual_FoxPro"),
-        VISUAL_FOXPRO_AUTOINCREMENT(0x31, "Visual_FoxPro_autoincrement"),
-        VISUAL_FOXPRO_VAR(0x32, "Visual_FoxPro_with_Varchar_or_Varbinary"),
-        DBASE_IV_SQL_TABLE(0x43, "dBASE_IV_SQL_table"),
-        DBASE_IV_SQL_SYSTEM(0x63, "dBASE_IV_SQL_system"),
-        FOX_BASE_PLUS_WITH_MEMO(0x83, "FoxBASE_plus_with_memo"),
-        DBASE_IV_WITH_MEMO(0x8B, "dBASE_IV_with_memo"),
-        DBASE_IV_SQL_TABLE_WITH_MEMO(0xCB, "dBASE_IV_SQL_table_with_memo"),
-        FOXPRO_2x_WITH_MEMO(0xF5, "FoxPro_2.x_with_memo"),
-        HIPER_SIZ_WITH_SMT_MEMO(0xE5, "HiPer-Siz_with_SMT_memo"),
-        FOXBASE2(0xFB, "FoxBASE");
+        FOXBASE(0x02, "FoxBASE", ""),
+        FOXBASE_PLUS(0x03, "FoxBASE_plus", ""),
+        VISUAL_FOXPRO(0x30, "Visual_FoxPro", ""),
+        VISUAL_FOXPRO_AUTOINCREMENT(0x31, "Visual_FoxPro", "autoincrement"),
+        VISUAL_FOXPRO_VAR(0x32, "Visual_FoxPro", "Varchar_or_Varbinary"),
+        DBASE_IV_SQL_TABLE(0x43, "dBASE_IV_SQL", "table"),
+        DBASE_IV_SQL_SYSTEM(0x63, "dBASE_IV_SQL", "system"),
+        FOX_BASE_PLUS_WITH_MEMO(0x83, "FoxBASE_plus", "memo"),
+        DBASE_IV_WITH_MEMO(0x8B, "dBASE_IV", "memo"),
+        DBASE_IV_SQL_TABLE_WITH_MEMO(0xCB, "dBASE_IV_SQL", "table_with_memo"),
+        FOXPRO_2x_WITH_MEMO(0xF5, "FoxPro_2.x", "memo"),
+        HIPER_SIZ_WITH_SMT_MEMO(0xE5, "HiPer-Siz", "SMT_memo"),
+        FOXBASE2(0xFB, "FoxBASE", "");
 
         private final int id;
-        private final String name;
+        private final String format;
+        private final String type;
 
-        Version(int id, String name) {
+        Version(int id, String format, String type) {
             this.id = id;
-            this.name = name;
+            this.format = format;
+            this.type = type;
         }
 
         int getId() {
             return id;
         }
 
-        String getName() {
-            return name;
+        String getFormat() {
+            return format;
         }
-    };
+
+        String getType() {
+            return type;
+        }
+
+        String getFullMimeString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("application/x-dbf; ").append("format=").append(getFormat());
+            if (!"".equals(type)) {
+                sb.append("; type=").append(getType());
+            }
+            return sb.toString();
+        }
+    }
+
+    ;
 
     private static final Map<Integer, Version> VERSION_MAP = new ConcurrentHashMap<>();
+
     static {
         for (Version version : Version.values()) {
             VERSION_MAP.put(version.id, version);
