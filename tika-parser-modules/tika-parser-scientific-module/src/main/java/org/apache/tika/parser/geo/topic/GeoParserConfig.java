@@ -30,7 +30,7 @@ public class GeoParserConfig implements Serializable {
         this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
     }
 
-    public void setNERModelPath(String path) {
+    public void setNERModelPath(String path) throws MalformedURLException {
         if (path == null)
             return;
         File file = new File(path);
@@ -40,7 +40,7 @@ public class GeoParserConfig implements Serializable {
         try {
             this.nerModelUrl = file.toURI().toURL();
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            throw new MalformedURLException(e.getMessage());
         }
     }
 
