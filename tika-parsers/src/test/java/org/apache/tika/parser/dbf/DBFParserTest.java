@@ -22,17 +22,12 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -44,7 +39,7 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
         XMLResult r = getXML("testDBF.dbf");
-        assertEquals("application/x-dbf; dbf_version=FoxBASE_plus", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2016-05-24T00:00:00Z", r.metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("UTF-8", r.metadata.get(Metadata.CONTENT_ENCODING));
 
@@ -69,7 +64,7 @@ public class DBFParserTest extends TikaTest {
     @Test
     public void testGB18030Encoded() throws Exception {
         XMLResult r = getXML("testDBF_gb18030.dbf");
-        assertEquals("application/x-dbf; dbf_version=FoxBASE_plus", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("虽然该", r.xml);
     }
 
@@ -80,8 +75,8 @@ public class DBFParserTest extends TikaTest {
         for (int i = 1; i < 129; i++) {
             try {
                 XMLResult r = getXML(truncate("testDBF.dbf", i), p, new Metadata());
-                fail("Should have thrown exception for truncation in header: "+i);
-            } catch (IOException|TikaException e) {
+                fail("Should have thrown exception for truncation in header: " + i);
+            } catch (IOException | TikaException e) {
                 //ok -- expected
             } catch (Throwable e) {
                 fail("Should only throw IOExceptions or TikaExceptions");
@@ -91,8 +86,8 @@ public class DBFParserTest extends TikaTest {
         for (int i = 129; i < 204; i++) {
             try {
                 XMLResult r = getXML(truncate("testDBF.dbf", i), p, new Metadata());
-            } catch (IOException|TikaException e) {
-                fail("Shouldn't have thrown exception for truncation while reading cells: "+i);
+            } catch (IOException | TikaException e) {
+                fail("Shouldn't have thrown exception for truncation while reading cells: " + i);
                 e.printStackTrace();
             }
         }
@@ -134,10 +129,9 @@ public class DBFParserTest extends TikaTest {
 
         for (DBFReader.Version version : DBFReader.Version.values()) {
             //this cast happens to work because of the range of possible values
-            bytes[0] = (byte)version.getId();
+            bytes[0] = (byte) version.getId();
             XMLResult r = getXML(TikaInputStream.get(bytes), new AutoDetectParser(), new Metadata());
-            assertEquals("application/x-dbf; "+
-                    DBFParser.DBF_VERSION_MIME_ATTRIBUTE+"="+version.getName(), r.metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals(version.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         }
     }
 
@@ -156,7 +150,7 @@ commented out until we get permission to add the test file
 
     InputStream truncate(String testFileName, int length) throws IOException {
         byte[] bytes = new byte[length];
-        try (InputStream is = getResourceAsStream("/test-documents/"+testFileName)) {
+        try (InputStream is = getResourceAsStream("/test-documents/" + testFileName)) {
             IOUtils.readFully(is, bytes);
         }
         return new ByteArrayInputStream(bytes);

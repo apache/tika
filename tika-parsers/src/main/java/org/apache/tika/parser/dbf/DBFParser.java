@@ -16,9 +16,6 @@
  */
 package org.apache.tika.parser.dbf;
 
-import org.apache.fontbox.encoding.Encoding;
-import org.apache.tika.detect.AutoDetectReader;
-import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -38,7 +35,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This is a Tika wrapper around the DBFReader.
@@ -50,7 +51,6 @@ import java.util.*;
  */
 public class DBFParser extends AbstractParser {
 
-    public static final String DBF_VERSION_MIME_ATTRIBUTE = "dbf_version";
     private static final int ROWS_TO_BUFFER_FOR_CHARSET_DETECTION = 10;
     private static final int MAX_CHARS_FOR_CHARSET_DETECTION = 20000;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
@@ -68,9 +68,7 @@ public class DBFParser extends AbstractParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         DBFReader reader = DBFReader.open(stream);
         DBFFileHeader header = reader.getHeader();
-
-        metadata.set(Metadata.CONTENT_TYPE, "application/x-dbf; "+
-                DBF_VERSION_MIME_ATTRIBUTE+"="+header.getVersion().getName());
+        metadata.set(Metadata.CONTENT_TYPE, header.getVersion().getFullMimeString());
 
         //insert metadata here
         Calendar lastModified = header.getLastModified();
@@ -82,7 +80,7 @@ public class DBFParser extends AbstractParser {
         List<DBFRow> firstRows = new LinkedList<>();
         DBFRow row = reader.next();
         int i = 0;
-        while(row != null && i++ < ROWS_TO_BUFFER_FOR_CHARSET_DETECTION) {
+        while (row != null && i++ < ROWS_TO_BUFFER_FOR_CHARSET_DETECTION) {
             firstRows.add(row.deepCopy());
             row = reader.next();
         }
