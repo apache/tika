@@ -17,13 +17,13 @@
 package org.apache.tika.parser.dbf;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.AT;
 import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.NULL;
 import static org.apache.tika.parser.dbf.DBFColumnHeader.ColType.PLUS;
-import static org.json.zip.JSONzip.end;
 
 class DBFColumnHeader {
 
@@ -71,7 +71,8 @@ class DBFColumnHeader {
     public void setType(int type) {
         colType = COL_TYPE_MAP.get(type);
         if (colType == null) {
-            throw new IllegalArgumentException("Unrecognized column type for column: " + name +
+            throw new IllegalArgumentException("Unrecognized column type for column: " +
+                    getName(StandardCharsets.US_ASCII) +
                     ". I regret I don't recognize: " + (char) type);
         }
     }
