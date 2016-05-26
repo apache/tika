@@ -19,7 +19,6 @@ package org.apache.tika.parser.html;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -34,11 +33,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaTest;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
@@ -58,7 +60,7 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class HtmlParserTest {
+public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testParseAscii() throws Exception {
@@ -1110,5 +1112,20 @@ public class HtmlParserTest {
         assertEquals("text/html; charset=iso-NUMBER_SEVEN", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
         assertEquals("application/xhtml+xml; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
 
+    }
+
+    @Test
+    public void testSkippingCommentsInEncodingDetection() throws Exception {
+
+        byte[] bytes = new String("<html><head>" +
+                "<!--<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"> -->\n" +
+                "   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"+
+                "</head>"+
+                "<body>"+
+                "有什么需要我帮你的" +
+                "</body></html>").getBytes(StandardCharsets.UTF_8);
+        EncodingDetector htmlEncodingDetector = new HtmlEncodingDetector();
+        XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
+        assertContains("有什么需要我帮你的", r.xml);
     }
 }
