@@ -22,7 +22,13 @@ import org.apache.tika.metadata.Metadata;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+import java.math.BigInteger;
+import java.net.URI;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 public class ConfigurableParserTest {
 
@@ -40,5 +46,31 @@ public class ConfigurableParserTest {
         tika.parse(configFileUrl.openStream(), md);
         Assert.assertEquals(TEST_PARAM_VAL, md.get(TEST_PARAM));
         //assert that param from configuration file is read, given to parser and it copied to metadata
+    }
+
+    @Test
+    public void testConfigurableParserTypes() throws Exception {
+        URL configFileUrl = getClass().getClassLoader().getResource(TIKA_CFG_FILE);
+        assert configFileUrl != null;
+        TikaConfig config = new TikaConfig(configFileUrl);
+        Tika tika = new Tika(config);
+        Metadata md = new Metadata();
+        tika.parse(configFileUrl.openStream(), md);
+        HashMap<String, Class> expct = new HashMap<String, Class>() {{
+            put("xint", Integer.class);
+            put("xfile", File.class);
+            put("xlong", Long.class);
+            put("xshort", Short.class);
+            put("xfloat", Float.class);
+            put("xdouble", Double.class);
+            put("xbigint", BigInteger.class);
+            put("xurl", URL.class);
+            put("xuri", URI.class);
+            put("xbool", Boolean.class);
+        }};
+
+        for (Map.Entry<String, Class> entry : expct.entrySet()) {
+            Assert.assertEquals(entry.getValue().getName(), md.get(entry.getKey()+"-type"));
+        }
     }
 }

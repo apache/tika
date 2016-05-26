@@ -58,7 +58,9 @@ public class DummyConfigurableParser extends AbstractParser {
                       Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         for (Map.Entry<String, Param<?>> entry : getParams().entrySet()) {
-            metadata.add(entry.getKey(), entry.getValue().getValue().toString());
+            Param<?> param = entry.getValue();
+            metadata.add(entry.getKey(), param.getValue().toString());
+            metadata.add(entry.getKey()+"-type", param.getValue().getClass().getName());
         }
     }
 

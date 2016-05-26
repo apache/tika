@@ -20,6 +20,16 @@
         <parser class="org.apache.tika.parser.DummyConfigurableParser">
             <params>
                 <param name="testparam" type="string">testparamval</param>
+                <param name="xshort" type="short">1000</param>
+                <param name="xint" type="int">999999999</param>
+                <param name="xlong" type="long">9999999999999</param>
+                <param name="xbigint" type="bigint">99999999999999999999999999999999999999999999999</param>
+                <param name="xfloat" type="float">10.2</param>
+                <param name="xbool" type="bool">true</param>
+                <param name="xdouble" type="double">4.6</param>
+                <param name="xurl" type="url">http://apache.org</param>
+                <param name="xfile" type="file">/</param>
+                <param name="xuri" type="uri">tika://customuri?param=value</param>
             </params>
         </parser>
 
