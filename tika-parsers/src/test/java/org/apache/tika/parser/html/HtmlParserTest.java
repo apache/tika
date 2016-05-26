@@ -34,11 +34,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
@@ -57,8 +59,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.helpers.XMLReaderAdapter;
 
-public class HtmlParserTest {
+public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testParseAscii() throws Exception {
@@ -1148,5 +1151,22 @@ public class HtmlParserTest {
 
         assertEquals(1, links.size());
         assertEquals(url, links.get(0));
+    }
+
+    @Test
+    public void testSkippingCommentsInEncodingDetection() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10000; i++) {
+            sb.append(" ");
+        }
+        byte[] bytes = new String("<html><head>" +
+                "<!--<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\"> -->\n" +
+                "   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />"+
+                "</head>"+sb.toString()+
+                "<body>"+
+                "有什么需要我帮你的" +
+                "</body></html>").getBytes(StandardCharsets.UTF_8);
+        XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
+        assertContains("有什么需要我帮你的", r.xml);
     }
 }

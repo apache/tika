@@ -83,8 +83,22 @@ public class HtmlEncodingDetector implements EncodingDetector {
         // a possible character encoding hint
 
         String head = ASCII.decode(ByteBuffer.wrap(buffer, 0, n)).toString();
+        //strip out comments
+        String headNoComments = head.replaceAll("<!--.*?(-->|$)", " ");
+        //try to find the encoding in head without comments
+        Charset charset = findCharset(headNoComments);
+        //if nothing is found, back off to find any encoding
+        if (charset == null) {
+            return findCharset(head);
+        }
+        return charset;
 
-        Matcher equiv = HTTP_META_PATTERN.matcher(head);
+    }
+
+    //returns null if no charset was found
+    private Charset findCharset(String s) {
+
+        Matcher equiv = HTTP_META_PATTERN.matcher(s);
         Matcher charsetMatcher = FLEXIBLE_CHARSET_ATTR_PATTERN.matcher("");
         //iterate through meta tags
         while (equiv.find()) {
