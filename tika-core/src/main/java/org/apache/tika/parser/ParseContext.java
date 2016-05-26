@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -57,7 +58,7 @@ public class ParseContext implements Serializable {
     /**
      * Map of configurable arguments
      */
-    private final Map<String, String> params = new HashMap<>();
+    private final Map<String, Param<?>> params = new HashMap<>();
 
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
@@ -205,7 +206,7 @@ public class ParseContext implements Serializable {
      * @param key parameter name
      * @param value value
      */
-    public void setParam(String key, String value){
+    public void setParam(String key, Param<?> value){
         this.params.put(key, value);
     }
 
@@ -221,7 +222,7 @@ public class ParseContext implements Serializable {
      * Gets all the params
      * @return map of key values
      */
-    public Map<String, String> getParams() {
+    public Map<String, Param<?>> getParams() {
         return params;
     }
 

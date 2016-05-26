@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -80,7 +81,7 @@ public abstract class AbstractParser implements ConfigurableParser {
      * @since Apache Tika 1.14
      */
     @Override
-    public Map<String, String> getParams() {
+    public Map<String, Param<?>> getParams() {
         return this.context.getParams();
     }
 }

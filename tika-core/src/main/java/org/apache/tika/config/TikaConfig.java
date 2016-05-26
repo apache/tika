@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import javax.imageio.spi.ServiceRegistry;
+import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -598,8 +599,8 @@ public class TikaConfig {
          * @param el xml node which has {@link #PARAMS_TAG_NAME} child
          * @return Map of key values read from xml
          */
-        Map<String, String>  getParams(Element el){
-            Map<String, String> params = new HashMap<>();
+        Map<String, Param<?>>  getParams(Element el){
+            Map<String, Param<?>> params = new HashMap<>();
             for (Node child = el.getFirstChild(); child != null;
                  child = child.getNextSibling()){
                 if (PARAMS_TAG_NAME.equals(child.getNodeName())){ //found the node
@@ -608,7 +609,12 @@ public class TikaConfig {
                         for (int i = 0; i < childNodes.getLength(); i++) {
                             Node item = childNodes.item(i);
                             if (item.getNodeType() == Node.ELEMENT_NODE){
-                                params.put(item.getNodeName().trim(), item.getTextContent().trim());
+                                try {
+                                    Param<?> param = Param.load(item);
+                                    params.put(param.getName(), param);
+                                } catch (JAXBException e) {
+                                    throw new RuntimeException(e);
+                                }
                             }
                         }
                     }

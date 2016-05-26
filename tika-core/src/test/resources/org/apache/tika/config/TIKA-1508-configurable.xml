@@ -19,7 +19,7 @@
     <parsers>
         <parser class="org.apache.tika.parser.DummyConfigurableParser">
             <params>
-                <testparam>testparamval</testparam>
+                <param name="testparam" type="string">testparamval</param>
             </params>
         </parser>
 

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser;
 
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -56,8 +57,8 @@ public class DummyConfigurableParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        for (Map.Entry<String, String> entry : getParams().entrySet()) {
-            metadata.add(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Param<?>> entry : getParams().entrySet()) {
+            metadata.add(entry.getKey(), entry.getValue().getValue().toString());
         }
     }
 

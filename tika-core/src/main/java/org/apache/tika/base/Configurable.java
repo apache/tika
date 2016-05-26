@@ -16,6 +16,7 @@
  */
 package org.apache.tika.base;
 
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
@@ -39,5 +40,5 @@ public interface Configurable {
      * Gets parameters of this configurable instance
      * @return parameters in the form  of a map of key value pairs
      */
-    Map<String, String> getParams();
+    Map<String, Param<?>> getParams();
 }
