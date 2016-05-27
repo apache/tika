@@ -213,9 +213,10 @@ public class ParseContext implements Serializable {
     /**
      * Gets the value associated with given parameter
      * @param key parameter name
+     * @return param value
      */
-    public void getParam(String key){
-        this.params.get(key);
+    public Param<?> getParam(String key){
+        return this.params.get(key);
     }
 
     /**
