@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -98,6 +99,10 @@ class PDF2XHTML extends PDFTextStripper {
      * Prevents theoretical AcroForm recursion bomb.
      */
     private final static int MAX_ACROFORM_RECURSIONS = 10;
+
+    private static final List<String> JPEG = Arrays.asList(
+            COSName.DCT_DECODE.getName(),
+            COSName.DCT_DECODE_ABBREVIATION.getName());
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -109,6 +114,7 @@ class PDF2XHTML extends PDFTextStripper {
     private final PDFParserConfig config;
     private final Metadata metadata;
     private final List<IOException> exceptions = new ArrayList<>();
+
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.
@@ -447,9 +453,7 @@ class PDF2XHTML extends PDFTextStripper {
                 if (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
                         PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName)) {
                     // RGB or Gray colorspace: get and write the unmodifiedJPEG stream
-                    //TODO: shouldn't need to do this: should be able to call createInputStream directly?!
-                    //version clash somewhere?!
-                    InputStream data = pdImage.getStream().createInputStream();
+                    InputStream data = pdImage.getStream().createInputStream(JPEG);
                     org.apache.pdfbox.io.IOUtils.copy(data, out);
                     org.apache.pdfbox.io.IOUtils.closeQuietly(data);
                 } else {
