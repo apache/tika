@@ -16,6 +16,8 @@
  */
 package org.apache.tika.config;
 
+import org.apache.tika.exception.TikaConfigException;
+
 import java.lang.reflect.*;
 import java.util.HashMap;
 import java.util.Locale;
@@ -54,7 +56,7 @@ public class ParamField {
      * Creates a ParamField object
      * @param member a field or method which has {@link Field} annotation
      */
-    public ParamField(AccessibleObject member){
+    public ParamField(AccessibleObject member) throws TikaConfigException {
         if (member instanceof java.lang.reflect.Field) {
             field = (java.lang.reflect.Field) member;
         } else {
@@ -113,20 +115,19 @@ public class ParamField {
         }
     }
 
-    private Class retrieveType() {
+    private Class retrieveType() throws TikaConfigException {
         Class type;
         if (field != null) {
             type = field.getType();
         } else {
             Class[] params = setter.getParameterTypes();
             if (params.length != 1) {
-                //todo:Tika config exception
                 String msg = "Invalid setter method. Must have one and only one parameter. ";
                 if (setter.getName().startsWith("get")) {
                     msg += "Perhaps the annotation is misplaced on " +
-                            setter.getName() +" while a set'X' is expected?";
+                            setter.getName() + " while a set'X' is expected?";
                 }
-                throw new RuntimeException(msg);
+                throw new TikaConfigException(msg);
             }
             type = params[0];
         }
