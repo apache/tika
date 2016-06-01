@@ -59,6 +59,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.utils.AnnotationUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -567,8 +568,12 @@ public class TikaConfig {
                 loaded = decorate(loaded, element);
                 //if the instance is configurable, then call configure()
                 if (loaded instanceof Configurable){
+                    Map<String, Param<?>> params = getParams(element);
+                    //Assigning the params to bean fields/setters
+                    AnnotationUtils.assignFieldParams(loaded, params);
+                    //invoking the configure() hook
                     ParseContext context = new ParseContext();
-                    context.getParams().putAll(getParams(element));
+                    context.getParams().putAll(params);
                     ((Configurable) loaded).configure(context); // initialize here
                 }
                 // All done with setup
