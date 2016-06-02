@@ -42,6 +42,7 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -126,7 +127,7 @@ class PDF2XHTML extends PDFTextStripper {
      * This is used across the document.  To avoid infinite recursion
      * TIKA-1742, we're limiting the export to one image per page.
      */
-    private Map<String, Integer> processedInlineImages = new HashMap<>();
+    private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
     private int inlineImageCounter = 0;
     private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config)
@@ -274,7 +275,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             writeParagraphEnd();
             try {
-                extractImages(page.getResources(), new HashSet<COSBase>());
+                extractImages(page.getResources(), new HashSet<COSStream>());
             } catch (IOException e) {
                 handleCatchableIOE(e);
             }
@@ -355,7 +356,7 @@ class PDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void extractImages(PDResources resources, Set<COSBase> seenThisPage) throws SAXException, IOException {
+    private void extractImages(PDResources resources, Set<COSStream> seenThisPage) throws SAXException, IOException {
         if (resources == null || config.getExtractInlineImages() == false) {
             return;
         }
@@ -366,12 +367,12 @@ class PDF2XHTML extends PDFTextStripper {
             if (object == null) {
                 continue;
             }
-            COSBase cosObject = object.getCOSObject();
-            if (seenThisPage.contains(cosObject)) {
+            COSStream cosStream = object.getCOSObject();
+            if (seenThisPage.contains(cosStream)) {
                 //avoid infinite recursion TIKA-1742
                 continue;
             }
-            seenThisPage.add(cosObject);
+            seenThisPage.add(cosStream);
 
             if (object instanceof PDFormXObject) {
                 extractImages(((PDFormXObject) object).getResources(), seenThisPage);
@@ -394,7 +395,7 @@ class PDF2XHTML extends PDFTextStripper {
                     //throw new RuntimeException("EXTEN:" + extension);
                 }
 
-                Integer imageNumber = processedInlineImages.get(name.getName());
+                Integer imageNumber = processedInlineImages.get(object.getCOSObject());
                 if (imageNumber == null) {
                     imageNumber = inlineImageCounter++;
                 }
@@ -411,11 +412,10 @@ class PDF2XHTML extends PDFTextStripper {
                 //Do we only want to process unique COSObject ids?
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
-                    String cosObjectId = name.getName();
-                    if (processedInlineImages.containsKey(cosObjectId)) {
+                    if (processedInlineImages.containsKey(cosStream)) {
                         continue;
                     }
-                    processedInlineImages.put(cosObjectId, imageNumber);
+                    processedInlineImages.put(cosStream, imageNumber);
                 }
 
                 metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,

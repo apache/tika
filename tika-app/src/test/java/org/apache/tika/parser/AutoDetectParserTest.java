@@ -393,7 +393,7 @@ public class AutoDetectParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveJson("testPDF_childAttachments.pdf", context);
         //sanity check
-        assertEquals(4, metadataList.size());
+        assertEquals(5, metadataList.size());
 
         //inlined jpeg metadata
         Metadata jpegMetadata = metadataList.get(1);
