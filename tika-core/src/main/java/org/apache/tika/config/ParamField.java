@@ -65,16 +65,6 @@ public class ParamField {
 
         Field annotation = member.getAnnotation(Field.class);
         required = annotation.required();
-        if (annotation.name().equals(DEFAULT)) {
-            if (field != null){
-                name = field.getName();
-            } else {
-                String funcName = setter.getName();
-                if (funcName.startsWith("set")) {
-                    name = funcName.replaceFirst("^set", "");
-                }
-            }
-        }
         name = retrieveParamName(annotation);
         type = retrieveType();
     }
