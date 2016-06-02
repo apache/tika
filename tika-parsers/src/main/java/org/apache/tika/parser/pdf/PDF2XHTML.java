@@ -42,6 +42,7 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -126,7 +127,7 @@ class PDF2XHTML extends PDFTextStripper {
      * This is used across the document.  To avoid infinite recursion
      * TIKA-1742, we're limiting the export to one image per page.
      */
-    private Map<String, Integer> processedInlineImages = new HashMap<>();
+    private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
     private int inlineImageCounter = 0;
     private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config)
@@ -411,11 +412,11 @@ class PDF2XHTML extends PDFTextStripper {
                 //Do we only want to process unique COSObject ids?
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
-                    String cosObjectId = name.getName();
-                    if (processedInlineImages.containsKey(cosObjectId)) {
+                    COSStream cosStream = object.getCOSObject();
+                    if (processedInlineImages.containsKey(cosStream)) {
                         continue;
                     }
-                    processedInlineImages.put(cosObjectId, imageNumber);
+                    processedInlineImages.put(cosStream, imageNumber);
                 }
 
                 metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
