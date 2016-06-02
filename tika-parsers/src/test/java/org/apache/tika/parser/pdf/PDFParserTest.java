@@ -1157,6 +1157,24 @@ public class PDFParserTest extends TikaTest {
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertNotContained("1309.61", content);
     }
+    @Test
+    public void testEmbeddedJPEG() throws Exception {
+        //TIKA-1990, test that an embedded jpeg is correctly decoded
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        List<Metadata> metadataList = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        //sanity check
+        assertEquals(5, metadataList.size());
+        //inlined jpeg metadata
+        Metadata jpegMetadata = metadataList.get(1);
+        assertEquals("image/jpeg", jpegMetadata.get(Metadata.CONTENT_TYPE));
+        //the metadata parse will fail if the stream is not correctly decoded
+        assertEquals("1425", jpegMetadata.get(Metadata.IMAGE_LENGTH));
+    }
+
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);

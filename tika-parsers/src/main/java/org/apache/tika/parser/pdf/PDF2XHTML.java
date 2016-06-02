@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +42,7 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -98,6 +100,10 @@ class PDF2XHTML extends PDFTextStripper {
      * Prevents theoretical AcroForm recursion bomb.
      */
     private final static int MAX_ACROFORM_RECURSIONS = 10;
+
+    private static final List<String> JPEG = Arrays.asList(
+            COSName.DCT_DECODE.getName(),
+            COSName.DCT_DECODE_ABBREVIATION.getName());
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -109,6 +115,7 @@ class PDF2XHTML extends PDFTextStripper {
     private final PDFParserConfig config;
     private final Metadata metadata;
     private final List<IOException> exceptions = new ArrayList<>();
+
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.
@@ -120,7 +127,7 @@ class PDF2XHTML extends PDFTextStripper {
      * This is used across the document.  To avoid infinite recursion
      * TIKA-1742, we're limiting the export to one image per page.
      */
-    private Map<String, Integer> processedInlineImages = new HashMap<>();
+    private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
     private int inlineImageCounter = 0;
     private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config)
@@ -360,12 +367,12 @@ class PDF2XHTML extends PDFTextStripper {
             if (object == null) {
                 continue;
             }
-            COSBase cosObject = object.getCOSObject();
-            if (seenThisPage.contains(cosObject)) {
+            COSStream cosStream = object.getCOSObject();
+            if (seenThisPage.contains(cosStream)) {
                 //avoid infinite recursion TIKA-1742
                 continue;
             }
-            seenThisPage.add(cosObject);
+            seenThisPage.add(cosStream);
 
             if (object instanceof PDFormXObject) {
                 extractImages(((PDFormXObject) object).getResources(), seenThisPage);
@@ -388,7 +395,7 @@ class PDF2XHTML extends PDFTextStripper {
                     //throw new RuntimeException("EXTEN:" + extension);
                 }
 
-                Integer imageNumber = processedInlineImages.get(name.getName());
+                Integer imageNumber = processedInlineImages.get(cosStream);
                 if (imageNumber == null) {
                     imageNumber = inlineImageCounter++;
                 }
@@ -405,11 +412,10 @@ class PDF2XHTML extends PDFTextStripper {
                 //Do we only want to process unique COSObject ids?
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
-                    String cosObjectId = name.getName();
-                    if (processedInlineImages.containsKey(cosObjectId)) {
+                    if (processedInlineImages.containsKey(cosStream)) {
                         continue;
                     }
-                    processedInlineImages.put(cosObjectId, imageNumber);
+                    processedInlineImages.put(cosStream, imageNumber);
                 }
 
                 metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
@@ -447,9 +453,7 @@ class PDF2XHTML extends PDFTextStripper {
                 if (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
                         PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName)) {
                     // RGB or Gray colorspace: get and write the unmodifiedJPEG stream
-                    //TODO: shouldn't need to do this: should be able to call createInputStream directly?!
-                    //version clash somewhere?!
-                    InputStream data = pdImage.getStream().createInputStream();
+                    InputStream data = pdImage.getStream().createInputStream(JPEG);
                     org.apache.pdfbox.io.IOUtils.copy(data, out);
                     org.apache.pdfbox.io.IOUtils.closeQuietly(data);
                 } else {

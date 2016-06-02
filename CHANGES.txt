@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Add mime detection via Nick C and parser for DBF files (TIKA-1513).
+  
   * Add mime detection and parsers for MSOffice 2003 XML Word
     and Excel formats (TIKA-1958).
 
