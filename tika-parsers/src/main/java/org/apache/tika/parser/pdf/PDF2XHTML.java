@@ -367,12 +367,12 @@ class PDF2XHTML extends PDFTextStripper {
             if (object == null) {
                 continue;
             }
-            COSBase cosObject = object.getCOSObject();
-            if (seenThisPage.contains(cosObject)) {
+            COSStream cosStream = object.getCOSObject();
+            if (seenThisPage.contains(cosStream)) {
                 //avoid infinite recursion TIKA-1742
                 continue;
             }
-            seenThisPage.add(cosObject);
+            seenThisPage.add(cosStream);
 
             if (object instanceof PDFormXObject) {
                 extractImages(((PDFormXObject) object).getResources(), seenThisPage);
@@ -395,7 +395,7 @@ class PDF2XHTML extends PDFTextStripper {
                     //throw new RuntimeException("EXTEN:" + extension);
                 }
 
-                Integer imageNumber = processedInlineImages.get(name.getName());
+                Integer imageNumber = processedInlineImages.get(cosStream);
                 if (imageNumber == null) {
                     imageNumber = inlineImageCounter++;
                 }
@@ -412,7 +412,6 @@ class PDF2XHTML extends PDFTextStripper {
                 //Do we only want to process unique COSObject ids?
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
-                    COSStream cosStream = object.getCOSObject();
                     if (processedInlineImages.containsKey(cosStream)) {
                         continue;
                     }
