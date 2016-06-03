@@ -27,16 +27,20 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.osgi.util.measurement.Unit.s;
 
 /**
  * A test Parsers to test {@link Field}
  * @since Apache Tika 1.14
  */
-public class DummyParametrizedParser extends AbstractParser
+public class DummyParameterizedParser extends AbstractParser
         implements ConfigurableParser {
 
     private static Set<MediaType> MIMES = new HashSet<>();
@@ -47,14 +51,14 @@ public class DummyParametrizedParser extends AbstractParser
         MIMES.add(MediaType.OCTET_STREAM);
     }
 
-    @Field(name = "testparam") private String testParam;
-    @Field private short xshort;
-    @Field private int xint;
-    @Field private long xlong;
+    @Field(name = "testparam") private String testParam = "init_string";
+    @Field private short xshort = -2;
+    @Field private int xint = -3;
+    @Field private long xlong = -4;
     @Field(name = "xbigint") private BigInteger xbigInt;
-    @Field private float xfloat;
-    @Field private double xdouble;
-    @Field private boolean xbool;
+    @Field private float xfloat = -5.0f;
+    @Field private double xdouble = -6.0d;
+    @Field private boolean xbool = true;
     @Field private URL xurl;
     @Field private URI xuri;
 
@@ -63,6 +67,18 @@ public class DummyParametrizedParser extends AbstractParser
     private String inner = "inner";
     private File xfile;
 
+    public DummyParameterizedParser() {
+        try {
+            xurl = new URL("http://tika.apache.org/url");
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
+        try {
+            xuri = new URI("http://tika.apache.org/uri");
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
     @Field
     public void setXfile(File xfile){
         this.xfile = xfile;

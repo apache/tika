@@ -27,7 +27,6 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 public class ConfigurableParserTest {
