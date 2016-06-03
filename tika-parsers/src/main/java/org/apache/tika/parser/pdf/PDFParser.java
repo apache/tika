@@ -43,6 +43,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -55,6 +56,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ConfigurableParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
@@ -64,6 +66,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
 
 /**
  * PDF parser.
@@ -83,7 +86,7 @@ import org.xml.sax.SAXException;
  * turn this feature on, see
  * {@link PDFParserConfig#setExtractInlineImages(boolean)}.
  */
-public class PDFParser extends AbstractParser {
+public class PDFParser extends AbstractParser implements ConfigurableParser {
 
 
     /**
@@ -102,11 +105,12 @@ public class PDFParser extends AbstractParser {
             Collections.singleton(MEDIA_TYPE);
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
-
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
+
+    @Field
+    private boolean sortByPosition = false;
 
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -117,6 +121,8 @@ public class PDFParser extends AbstractParser {
         TemporaryResources tmp = new TemporaryResources();
         //config from context, or default if not set via context
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+        //TODO: get rid of this after dev of TIKA-1508!!!
+        localConfig.setSortByPosition(sortByPosition);
         String password = "";
         try {
             // PDFBox can process entirely in memory, or can use a temp file
@@ -582,7 +588,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getSortByPosition() {
-        return defaultConfig.getSortByPosition();
+        return sortByPosition;
     }
 
     /**
@@ -595,8 +601,9 @@ public class PDFParser extends AbstractParser {
      *
      * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
+    @Field
     public void setSortByPosition(boolean v) {
-        defaultConfig.setSortByPosition(v);
+        sortByPosition = v;
     }
 
 

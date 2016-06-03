@@ -16,9 +16,11 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.bouncycastle.crypto.tls.CipherType.stream;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -33,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -1212,6 +1215,19 @@ public class PDFParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testInitializationViaConfig() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+        text = text.replaceAll("\\s+", " ");
+
+        // Column text is now interleaved:
+        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+
+    }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
