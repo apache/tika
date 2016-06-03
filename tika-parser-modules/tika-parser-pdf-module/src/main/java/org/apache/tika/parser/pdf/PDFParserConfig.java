@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 /**
@@ -43,6 +44,26 @@ import org.apache.pdfbox.text.PDFTextStripper;
  * org/apache/tika/parser/pdf
  */
 public class PDFParserConfig implements Serializable {
+
+    public enum OCR_STRATEGY {
+        NO_OCR,
+        OCR_ONLY,
+        OCR_AND_TEXT_EXTRACTION;
+
+        private static OCR_STRATEGY parse(String s) {
+            if (s == null) {
+                return NO_OCR;
+            } else if ("no_ocr".equals(s.toLowerCase(Locale.ROOT))) {
+                return NO_OCR;
+            } else if ("ocr_only".equals(s.toLowerCase(Locale.ROOT))) {
+                return OCR_ONLY;
+            } else if (s.toLowerCase(Locale.ROOT).contains("ocr_and_text")) {
+                return OCR_AND_TEXT_EXTRACTION;
+            }
+            //default -- no ocr
+            return NO_OCR;
+        }
+    }
 
     private static final long serialVersionUID = 6492570218190936986L;
 
@@ -79,6 +100,12 @@ public class PDFParserConfig implements Serializable {
     //If the PDF has an XFA element, process only that and skip extracting
     //content from elsewhere in the document.
     private boolean ifXFAExtractOnlyXFA = false;
+
+    private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.NO_OCR;
+
+    private int ocrDPI = 200;
+    private ImageType ocrImageType = ImageType.GRAY;
+    private String ocrImageFormatName = "png";
 
     private AccessChecker accessChecker;
 
@@ -123,36 +150,45 @@ public class PDFParserConfig implements Serializable {
             }
         }
         setEnableAutoSpace(
-                getProp(props.getProperty("enableAutoSpace"), getEnableAutoSpace()));
+                getBooleanProp(props.getProperty("enableAutoSpace"), getEnableAutoSpace()));
         setSuppressDuplicateOverlappingText(
-                getProp(props.getProperty("suppressDuplicateOverlappingText"),
+                getBooleanProp(props.getProperty("suppressDuplicateOverlappingText"),
                         getSuppressDuplicateOverlappingText()));
         setExtractAnnotationText(
-                getProp(props.getProperty("extractAnnotationText"),
+                getBooleanProp(props.getProperty("extractAnnotationText"),
                         getExtractAnnotationText()));
         setSortByPosition(
-                getProp(props.getProperty("sortByPosition"),
+                getBooleanProp(props.getProperty("sortByPosition"),
                         getSortByPosition()));
         setExtractAcroFormContent(
-                getProp(props.getProperty("extractAcroFormContent"),
+                getBooleanProp(props.getProperty("extractAcroFormContent"),
                         getExtractAcroFormContent()));
         setExtractInlineImages(
-                getProp(props.getProperty("extractInlineImages"),
+                getBooleanProp(props.getProperty("extractInlineImages"),
                         getExtractInlineImages()));
         setExtractUniqueInlineImagesOnly(
-                getProp(props.getProperty("extractUniqueInlineImagesOnly"),
+                getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
                         getExtractUniqueInlineImagesOnly()));
 
         setIfXFAExtractOnlyXFA(
-            getProp(props.getProperty("ifXFAExtractOnlyXFA"),
+            getBooleanProp(props.getProperty("ifXFAExtractOnlyXFA"),
                 getIfXFAExtractOnlyXFA()));
 
         setCatchIntermediateIOExceptions(
-                getProp(props.getProperty("catchIntermediateIOExceptions"),
+                getBooleanProp(props.getProperty("catchIntermediateIOExceptions"),
                 isCatchIntermediateIOExceptions()));
 
-        boolean checkExtractAccessPermission = getProp(props.getProperty("checkExtractAccessPermission"), false);
-        boolean allowExtractionForAccessibility = getProp(props.getProperty("allowExtractionForAccessibility"), true);
+        setOCRStrategy(OCR_STRATEGY.parse(props.getProperty("ocrStrategy")));
+
+        setOCRDPI(getIntProp(props.getProperty("ocrDPI"), getOCRDPI()));
+
+        setOCRImageFormatName(props.getProperty("ocrImageFormatName"));
+
+        setOCRImageType(parseImageType(props.getProperty("ocrImageType")));
+
+
+        boolean checkExtractAccessPermission = getBooleanProp(props.getProperty("checkExtractAccessPermission"), false);
+        boolean allowExtractionForAccessibility = getBooleanProp(props.getProperty("allowExtractionForAccessibility"), true);
 
         if (checkExtractAccessPermission == false) {
             //silently ignore the crazy configuration of checkExtractAccessPermission = false,
@@ -408,7 +444,23 @@ public class PDFParserConfig implements Serializable {
         isCatchIntermediateIOExceptions = catchIntermediateIOExceptions;
     }
 
-    private boolean getProp(String p, boolean defaultMissing) {
+    /**
+     * Which strategy to use for OCR
+     * @param ocrStrategy
+     */
+    public void setOCRStrategy(OCR_STRATEGY ocrStrategy) {
+        this.ocrStrategy = ocrStrategy;
+    }
+
+    /**
+     *
+     * @return strategy to use for OCR
+     */
+    public OCR_STRATEGY getOCRStrategy() {
+        return ocrStrategy;
+    }
+
+    private boolean getBooleanProp(String p, boolean defaultMissing) {
         if (p == null) {
             return defaultMissing;
         }
@@ -420,83 +472,143 @@ public class PDFParserConfig implements Serializable {
             return defaultMissing;
         }
     }
+    //throws NumberFormatException if there's a non-null unparseable
+    //string passed in
+    private int getIntProp(String p, int defaultMissing) {
+        if (p == null) {
+            return defaultMissing;
+        }
+
+        return Integer.parseInt(p);
+    }
+
+    /**
+     * String representation of the image format used to render
+     * the page image for OCR (examples: png, tiff, jpeg)
+     * @return
+     */
+    public String getOCRImageFormatName() {
+        return ocrImageFormatName;
+    }
+
+    /**
+     * @see #getOCRImageFormatName()
+     *
+     * @param ocrImageFormatName name of image format used to render
+     *                           page image
+     */
+    public void setOCRImageFormatName(String ocrImageFormatName) {
+        this.ocrImageFormatName = ocrImageFormatName;
+    }
+
+    /**
+     * Image type used to render the page image for OCR.
+     * @see #setOCRImageType(ImageType)
+     * @return image type
+     */
+    public ImageType getOCRImageType() {
+        return ocrImageType;
+    }
+
+    /**
+     * Image type used to render the page image for OCR.
+     * @param ocrImageType
+     */
+    public void setOCRImageType(ImageType ocrImageType) {
+        this.ocrImageType = ocrImageType;
+    }
+
+    /**
+     * Dots per inch used to render the page image for OCR
+     * @return dots per inch
+     */
+    public int getOCRDPI() {
+        return ocrDPI;
+    }
+
+    /**
+     * Dots per inche used to render the page image for OCR
+     * @param ocrDPI
+     */
+    public void setOCRDPI(int ocrDPI) {
+        this.ocrDPI = ocrDPI;
+    }
+
+    private ImageType parseImageType(String ocrImageType) {
+        for (ImageType t : ImageType.values()) {
+            if (ocrImageType.equalsIgnoreCase(t.toString())) {
+                return t;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PDFParserConfig)) return false;
+
+        PDFParserConfig config = (PDFParserConfig) o;
+
+        if (getEnableAutoSpace() != config.getEnableAutoSpace()) return false;
+        if (getSuppressDuplicateOverlappingText() != config.getSuppressDuplicateOverlappingText()) return false;
+        if (getExtractAnnotationText() != config.getExtractAnnotationText()) return false;
+        if (getSortByPosition() != config.getSortByPosition()) return false;
+        if (getExtractAcroFormContent() != config.getExtractAcroFormContent()) return false;
+        if (getExtractInlineImages() != config.getExtractInlineImages()) return false;
+        if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
+        if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
+        if (getOCRDPI() != config.getOCRDPI()) return false;
+        if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) return false;
+        if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) return false;
+        if (!getSpacingTolerance().equals(config.getSpacingTolerance())) return false;
+        if (!getOCRStrategy().equals(config.getOCRStrategy())) return false;
+        if (getOCRImageType() != config.getOCRImageType()) return false;
+        if (!getOCRImageFormatName().equals(config.getOCRImageFormatName())) return false;
+        return getAccessChecker().equals(config.getAccessChecker());
+
+    }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime
-                * result
-                + ((averageCharTolerance == null) ? 0 : averageCharTolerance
-                .hashCode());
-        result = prime * result + (enableAutoSpace ? 1231 : 1237);
-        result = prime * result + (extractAcroFormContent ? 1231 : 1237);
-        result = prime * result + (extractAnnotationText ? 1231 : 1237);
-        result = prime * result + (extractInlineImages ? 1231 : 1237);
-        result = prime * result + (extractUniqueInlineImagesOnly ? 1231 : 1237);
-        result = prime * result + (sortByPosition ? 1231 : 1237);
-        result = prime
-                * result
-                + ((spacingTolerance == null) ? 0 : spacingTolerance.hashCode());
-        result = prime * result
-                + (suppressDuplicateOverlappingText ? 1231 : 1237);
-        result = prime * result + (ifXFAExtractOnlyXFA ? 1231 : 1237);
+        int result = (getEnableAutoSpace() ? 1 : 0);
+        result = 31 * result + (getSuppressDuplicateOverlappingText() ? 1 : 0);
+        result = 31 * result + (getExtractAnnotationText() ? 1 : 0);
+        result = 31 * result + (getSortByPosition() ? 1 : 0);
+        result = 31 * result + (getExtractAcroFormContent() ? 1 : 0);
+        result = 31 * result + (getExtractInlineImages() ? 1 : 0);
+        result = 31 * result + (getExtractUniqueInlineImagesOnly() ? 1 : 0);
+        result = 31 * result + getAverageCharTolerance().hashCode();
+        result = 31 * result + getSpacingTolerance().hashCode();
+        result = 31 * result + (getIfXFAExtractOnlyXFA() ? 1 : 0);
+        result = 31 * result + ocrStrategy.hashCode();
+        result = 31 * result + getOCRDPI();
+        result = 31 * result + getOCRImageType().hashCode();
+        result = 31 * result + getOCRImageFormatName().hashCode();
+        result = 31 * result + getAccessChecker().hashCode();
+        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
         return result;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        PDFParserConfig other = (PDFParserConfig) obj;
-        if (averageCharTolerance == null) {
-            if (other.averageCharTolerance != null)
-                return false;
-        } else if (!averageCharTolerance.equals(other.averageCharTolerance))
-            return false;
-        if (enableAutoSpace != other.enableAutoSpace)
-            return false;
-        if (extractAcroFormContent != other.extractAcroFormContent)
-            return false;
-        if (extractAnnotationText != other.extractAnnotationText)
-            return false;
-        if (extractInlineImages != other.extractInlineImages)
-            return false;
-        if (extractUniqueInlineImagesOnly != other.extractUniqueInlineImagesOnly)
-            return false;
-        if (sortByPosition != other.sortByPosition)
-            return false;
-        if (spacingTolerance == null) {
-            if (other.spacingTolerance != null)
-                return false;
-        } else if (!spacingTolerance.equals(other.spacingTolerance))
-            return false;
-        if (suppressDuplicateOverlappingText != other.suppressDuplicateOverlappingText)
-            return false;
-        if (ifXFAExtractOnlyXFA != other.ifXFAExtractOnlyXFA)
-            return false;
-
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return "PDFParserConfig [enableAutoSpace=" + enableAutoSpace
-                + ", suppressDuplicateOverlappingText="
-                + suppressDuplicateOverlappingText + ", extractAnnotationText="
-                + extractAnnotationText + ", sortByPosition=" + sortByPosition
-                + ", extractAcroFormContent=" + extractAcroFormContent
-                + ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA
-                + ", extractInlineImages=" + extractInlineImages
-                + ", extractUniqueInlineImagesOnly="
-                + extractUniqueInlineImagesOnly + ", averageCharTolerance="
-                + averageCharTolerance + ", spacingTolerance="
-                + spacingTolerance + "]";
+        return "PDFParserConfig{" +
+                "enableAutoSpace=" + enableAutoSpace +
+                ", suppressDuplicateOverlappingText=" + suppressDuplicateOverlappingText +
+                ", extractAnnotationText=" + extractAnnotationText +
+                ", sortByPosition=" + sortByPosition +
+                ", extractAcroFormContent=" + extractAcroFormContent +
+                ", extractInlineImages=" + extractInlineImages +
+                ", extractUniqueInlineImagesOnly=" + extractUniqueInlineImagesOnly +
+                ", averageCharTolerance=" + averageCharTolerance +
+                ", spacingTolerance=" + spacingTolerance +
+                ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA +
+                ", ocrStrategy=" + ocrStrategy +
+                ", ocrDPI=" + ocrDPI +
+                ", ocrImageType=" + ocrImageType +
+                ", ocrImageFormatName='" + ocrImageFormatName + '\'' +
+                ", accessChecker=" + accessChecker +
+                ", isCatchIntermediateIOExceptions=" + isCatchIntermediateIOExceptions +
+                '}';
     }
-
-
 }

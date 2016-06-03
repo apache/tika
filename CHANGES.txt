@@ -10,6 +10,8 @@ Release 2.0 - Future Development
 
 Release 1.14 - ???
 
+  * Integrate TesseractOCR with full page image rendering for PDFs (TIKA-1994).
+
   * Add mime detection via Nick C and parser for DBF files (TIKA-1513).
 
   * Add mime detection and parsers for MSOffice 2003 XML Word

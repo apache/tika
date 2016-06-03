@@ -35,6 +35,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-multimedia-module</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-xmp-commons</artifactId>
       <version>${project.version}</version>
     </dependency>

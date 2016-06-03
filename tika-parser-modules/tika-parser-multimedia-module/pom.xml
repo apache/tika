@@ -83,12 +83,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-pdf-module</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-office-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
