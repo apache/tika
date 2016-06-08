@@ -42,14 +42,20 @@ import org.xml.sax.SAXException;
 
 public class JempboxExtractor {
 
+
+    private static int MAX_EVENT_HISTORY_IN_XMPMM = 1024;
+
     // The XMP spec says it must be unicode, but for most file formats it specifies "must be encoded in UTF-8"
     private static final String DEFAULT_XMP_CHARSET = UTF_8.name();
+
     private XMPPacketScanner scanner = new XMPPacketScanner();
     private Metadata metadata;
+    private static int maxXMPMMHistory;
 
     public JempboxExtractor(Metadata metadata) {
         this.metadata = metadata;
     }
+
 
     public void parse(InputStream file) throws IOException, TikaException {
         ByteArrayOutputStream xmpraw = new ByteArrayOutputStream();
@@ -160,7 +166,11 @@ public class JempboxExtractor {
                 //in DerivedFrom section
             }
             if (mmSchema.getHistory() != null) {
+                int eventsAdded = 0;
                 for (ResourceEvent stevt : mmSchema.getHistory()) {
+                    if (eventsAdded >= MAX_EVENT_HISTORY_IN_XMPMM) {
+                        break;
+                    }
                     String instanceId = null;
                     String action = null;
                     Calendar when = null;
@@ -188,6 +198,7 @@ public class JempboxExtractor {
                         metadata.add(XMPMM.HISTORY_ACTION, action);
                         metadata.add(XMPMM.HISTORY_WHEN, dateString);
                         metadata.add(XMPMM.HISTORY_SOFTWARE_AGENT, softwareAgent);
+                        eventsAdded++;
                     }
                 }
             }
@@ -198,5 +209,25 @@ public class JempboxExtractor {
         if (value != null) {
             m.add(p, value);
         }
+    }
+
+    /**
+     * Maximum number of events to extract from the
+     * event history in the XMP Media Management (XMPMM) section.
+     * The extractor will silently stop adding events after it
+     * has reached this threshold.
+     * <p>
+     * The default is 1024.
+     */
+    public static void setMaxXMPMMHistory(int maxEvents) {
+        MAX_EVENT_HISTORY_IN_XMPMM = maxEvents;
+    }
+
+    /**
+     *
+     * @return maximum number of events to extract from the XMPMM history.
+     */
+    public static int getMaxXMPMMHistory() {
+        return maxXMPMMHistory;
     }
 }
