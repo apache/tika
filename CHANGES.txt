@@ -10,6 +10,9 @@ Release 2.0 - Future Development
 
 Release 1.14 - ???
 
+  * Add configurable maximum threshold for number of events extracted
+    from the XMP Media Management Schema in JempboxExtractor (TIKA-1999).
+
   * Integrate TesseractOCR with full page image rendering for PDFs (TIKA-1994).
 
   * Add mime detection via Nick C and parser for DBF files (TIKA-1513).
