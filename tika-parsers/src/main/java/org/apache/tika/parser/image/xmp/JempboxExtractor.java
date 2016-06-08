@@ -43,14 +43,13 @@ import org.xml.sax.SAXException;
 public class JempboxExtractor {
 
 
-    private static int MAX_EVENT_HISTORY_IN_XMPMM = 1024;
+    private static volatile int MAX_EVENT_HISTORY_IN_XMPMM = 1024;
 
     // The XMP spec says it must be unicode, but for most file formats it specifies "must be encoded in UTF-8"
     private static final String DEFAULT_XMP_CHARSET = UTF_8.name();
 
     private XMPPacketScanner scanner = new XMPPacketScanner();
     private Metadata metadata;
-    private static int maxXMPMMHistory;
 
     public JempboxExtractor(Metadata metadata) {
         this.metadata = metadata;
@@ -228,6 +227,6 @@ public class JempboxExtractor {
      * @return maximum number of events to extract from the XMPMM history.
      */
     public static int getMaxXMPMMHistory() {
-        return maxXMPMMHistory;
+        return MAX_EVENT_HISTORY_IN_XMPMM;
     }
 }
