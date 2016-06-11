@@ -563,9 +563,7 @@ public class TikaConfig {
                     // TODO Support arguments, needed for Translators etc
                     // See the thread "Configuring parsers and translators" for details 
                 }
-                
-                // Have any decoration performed, eg explicit mimetypes
-                loaded = decorate(loaded, element);
+
                 //if the instance is configurable, then call configure()
                 if (loaded instanceof Configurable){
                     Map<String, Param<?>> params = getParams(element);
@@ -576,6 +574,8 @@ public class TikaConfig {
                     context.getParams().putAll(params);
                     ((Configurable) loaded).configure(context); // initialize here
                 }
+                // Have any decoration performed, eg explicit mimetypes
+                loaded = decorate(loaded, element);
                 // All done with setup
                 return loaded;
             } catch (ClassNotFoundException e) {

@@ -67,6 +67,15 @@ public class ParameterizedParserTest {
     }
 
     @Test
+    public void testConfigurableParserTypesDecorated() throws Exception {
+        Metadata md = getMetadata("TIKA-1986-parameterized-decorated.xml");
+        for (Map.Entry<String, String> entry : expcted.entrySet()) {
+            assertEquals("mismatch for " + entry.getKey(), entry.getValue(), md.get(entry.getKey()));
+        }
+    }
+
+
+    @Test
     public void testSomeParams() throws Exception {
         //test that a parameterized parser can read a config file
         //with only some changes to the initial values
