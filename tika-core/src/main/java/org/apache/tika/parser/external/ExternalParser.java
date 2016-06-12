@@ -51,6 +51,29 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *  text content and metadata from a given document.
  */
 public class ExternalParser extends AbstractParser {
+
+    /**
+     * Consumer contract
+     * @since Apache Tika 1.14
+     */
+    public interface LineConsumer {
+        /**
+         * Consume a line
+         * @param line a line of string
+         */
+        void consume(String line);
+
+        /**
+         * A null consumer
+         */
+        LineConsumer NULL = new LineConsumer() {
+            @Override
+            public void consume(String line) {
+               //ignore
+            }
+        };
+    }
+
     private static final long serialVersionUID = -1079128990650687037L;
     
     /**
@@ -83,6 +106,11 @@ public class ExternalParser extends AbstractParser {
      */
     private String[] command = new String[] { "cat" };
 
+    /**
+     * A consumer for ignored Lines
+     */
+    private LineConsumer ignoredLineConsumer = LineConsumer.NULL;
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return getSupportedTypes();
     }
@@ -110,8 +138,23 @@ public class ExternalParser extends AbstractParser {
     public void setCommand(String... command) {
         this.command = command;
     }
-    
-    
+
+    /**
+     * Gets lines consumer
+     * @return consumer instance
+     */
+    public LineConsumer getIgnoredLineConsumer() {
+        return ignoredLineConsumer;
+    }
+
+    /**
+     * Set a consumer for the lines ignored by the parse functions
+     * @param ignoredLineConsumer consumer instance
+     */
+    public void setIgnoredLineConsumer(LineConsumer ignoredLineConsumer) {
+        this.ignoredLineConsumer = ignoredLineConsumer;
+    }
+
     public Map<Pattern,String> getMetadataExtractionPatterns() {
        return metadataPatterns;
     }
@@ -283,14 +326,27 @@ public class ExternalParser extends AbstractParser {
         catch(InterruptedException ignore){}        
     }
 
+
     /**
      * Starts a thread that reads and discards the contents of the
      * standard stream of the given process. Potential exceptions
      * are ignored, and the stream is closed once fully processed.
-     *
-     * @param process process
+     * Note: calling this starts a new thread and blocks the current(caller) thread until the new thread dies
+     * @param stream stream to be ignored
      */
-    private void ignoreStream(final InputStream stream) {
+    private static void ignoreStream(final InputStream stream) {
+        ignoreStream(stream, true);
+    }
+
+    /**
+     * Starts a thread that reads and discards the contents of the
+     * standard stream of the given process. Potential exceptions
+     * are ignored, and the stream is closed once fully processed.
+     * @param stream stream to sent to black hole (a k a null)
+     * @param waitForDeath when {@code true} the caller thread will be blocked till the death of new thread.
+     * @return The thread that is created and started
+     */
+    private static Thread ignoreStream(final InputStream stream, boolean waitForDeath) {
         Thread t = new Thread() {
             public void run() {
                 try {
@@ -302,10 +358,12 @@ public class ExternalParser extends AbstractParser {
             }
         };
         t.start();
-        try{
-     	   t.join();
+        if (waitForDeath) {
+            try {
+                t.join();
+            } catch (InterruptedException ignore) {}
         }
-        catch(InterruptedException ignore){}
+        return t;
     }
     
     private void extractMetadata(final InputStream stream, final Metadata metadata) {
@@ -316,9 +374,11 @@ public class ExternalParser extends AbstractParser {
              try {
                 String line;
                 while ( (line = reader.readLine()) != null ) {
+                    boolean consumed = false;
                    for(Pattern p : metadataPatterns.keySet()) {
                       Matcher m = p.matcher(line);
                       if(m.find()) {
+                          consumed = true;
                     	 if (metadataPatterns.get(p) != null && 
                     			 !metadataPatterns.get(p).equals("")){
                                    metadata.add( metadataPatterns.get(p), m.group(1) );
@@ -328,6 +388,9 @@ public class ExternalParser extends AbstractParser {
                     	 }
                       }
                    }
+                    if (!consumed) {
+                        ignoredLineConsumer.consume(line);
+                    }
                 }
              } catch (IOException e) {
                  // Ignore
@@ -363,7 +426,11 @@ public class ExternalParser extends AbstractParser {
        
        try {
           Process process= Runtime.getRuntime().exec(checkCmd);
-          int result = process.waitFor(); 
+          Thread stdErrSuckerThread = ignoreStream(process.getErrorStream(), false);
+          Thread stdOutSuckerThread = ignoreStream(process.getInputStream(), false);
+          stdErrSuckerThread.join();
+          stdOutSuckerThread.join();
+          int result = process.waitFor();
           for(int err : errorValue) {
              if(result == err) return false;
           }
