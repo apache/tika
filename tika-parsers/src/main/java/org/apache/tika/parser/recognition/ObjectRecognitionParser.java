@@ -67,6 +67,8 @@ public class ObjectRecognitionParser extends AbstractParser {
 
     public static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
     public static final String MD_KEY = "OBJECT";
+    public static final String MD_REC_IMPL_KEY =
+            ObjectRecognitionParser.class.getPackage().getName() + ".object.rec.impl";
     private static final Comparator<RecognisedObject> DESC_CONFIDENCE_SORTER =
             new Comparator<RecognisedObject>() {
                 @Override
@@ -108,7 +110,7 @@ public class ObjectRecognitionParser extends AbstractParser {
             LOG.warn("{} is not available for service", recogniser.getClass());
             return;
         }
-        metadata.set("object.rec.impl", recogniser.getClass().getSimpleName());
+        metadata.set(MD_REC_IMPL_KEY, recogniser.getClass().getName());
         long start = System.currentTimeMillis();
         List<RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
         LOG.debug("Found {} objects", objects != null ? objects.size() : 0);
@@ -123,7 +125,9 @@ public class ObjectRecognitionParser extends AbstractParser {
                 if (object.getConfidence() >= minConfidence) {
                     LOG.debug("Add {}", object);
                     count++;
-                    metadata.add(MD_KEY, object.getLabel());
+                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
+                            object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY, mdValue);
                     //writing to handler
                     xhtml.startElement("li", "id", object.getId());
                     String text = String.format(Locale.ENGLISH, " %s [%s](confidence = %f )",

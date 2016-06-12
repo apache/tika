@@ -43,7 +43,8 @@ public class ObjectRecognitionParserTest {
     private static final String CAT_IMAGE = "test-documents/testJPEG.jpg";
     private static final ClassLoader loader = ObjectRecognitionParserTest.class.getClassLoader();
 
-   @Ignore("If tensorflow not available Ignore") @Test
+    @Ignore("If tensorflow not available Ignore")
+    @Test
     public void jpegTesorflowTest() throws IOException, TikaException, SAXException {
 
         try(InputStream stream = loader.getResourceAsStream(CONFIG_FILE)){
@@ -55,13 +56,13 @@ public class ObjectRecognitionParserTest {
                 List<String> lines = IOUtils.readLines(reader);
                 String text = StringUtils.join(lines, " ");
                 String[] expectedObjects = {"Egyptian cat", "Border collie"};
-                HashSet<String> objects = new HashSet<>();
-                objects.addAll(Arrays.asList(metadata.getValues(ObjectRecognitionParser.MD_KEY)));
+                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
                     Assert.assertTrue(message, text.contains(expectedObject));
-                    Assert.assertTrue(message, objects.contains(expectedObject));
+                    Assert.assertTrue(message, metaValues.contains(expectedObject));
                 }
+                System.out.println(metadata);
             }
         }
     }
