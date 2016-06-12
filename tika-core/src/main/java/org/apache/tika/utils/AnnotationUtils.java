@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -110,7 +111,7 @@ public class AnnotationUtils {
                         throw new TikaConfigException(e.getMessage(), e);
                     }
                 } else {
-                    String msg = String.format("Value '%s' of type '%s' cant be" +
+                    String msg = String.format(Locale.ENGLISH, "Value '%s' of type '%s' cant be" +
                             " assigned to field '%s' of defined type '%s'",
                             param.getValue(), param.getValue().getClass(),
                             field.getName(), field.getType());
@@ -118,7 +119,7 @@ public class AnnotationUtils {
                 }
             } else if (field.isRequired()){
                 //param not supplied but field is declared as required?
-                String msg = String.format("Param %s is required for %s," +
+                String msg = String.format(Locale.ENGLISH, "Param %s is required for %s," +
                         " but it is not given in config.", field.getName(),
                         bean.getClass().getName());
                 throw new TikaConfigException(msg);

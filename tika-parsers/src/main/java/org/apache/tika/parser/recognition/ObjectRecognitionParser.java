@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 
@@ -125,7 +126,7 @@ public class ObjectRecognitionParser extends AbstractParser {
                     metadata.add(MD_KEY, object.getLabel());
                     //writing to handler
                     xhtml.startElement("li", "id", object.getId());
-                    String text = String.format(" %s [%s](confidence = %f )",
+                    String text = String.format(Locale.ENGLISH, " %s [%s](confidence = %f )",
                             object.getLabel(), object.getLabelLang(), object.getConfidence());
                     xhtml.characters(text);
                     xhtml.endElement("li");
