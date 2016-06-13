@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 /**
  * Field annotation is a contract for binding {@link Param} value from
- * Tika Configuration to any instance of {@link org.apache.tika.base.Configurable}
+ * Tika Configuration to an object.
  * services
  * @since Apache Tika 1.14
  */

@@ -38,8 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.tika.base.Configurable;
-
 import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
 import org.apache.tika.concurrent.SimpleThreadPoolExecutor;
 import org.apache.tika.detect.CompositeDetector;

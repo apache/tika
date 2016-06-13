@@ -25,6 +25,7 @@ import java.util.Properties;
 
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.tika.config.Field;
 
 /**
  * Config for PDFParser.
@@ -79,6 +80,7 @@ public class PDFParserConfig implements Serializable {
 
     // True if we should sort text tokens by position
     // (necessary for some PDFs, but messes up other PDFs):
+    @Field
     private boolean sortByPosition = false;
 
     //True if acroform content should be extracted

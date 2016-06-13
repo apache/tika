@@ -52,17 +52,16 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ConfigurableParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.AnnotationUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
 
 /**
  * PDF parser.
@@ -105,26 +104,22 @@ public class PDFParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    @Field
-    private boolean sortByPosition = false;
-
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
+        //step 1, check to see if there are params for the PDFParser class
+        Map<String, Param<?>> params = context.getParams(PDFParser.class);
+        PDFParserConfig localConfig = new PDFParserConfig();
+        if (params != null) {
+            AnnotationUtils.assignFieldParams(localConfig, params);
+        } else if (context.get(PDFParserConfig.class) != null) {
+            localConfig = context.get(PDFParserConfig.class, defaultConfig);
+        }
         PDDocument pdfDocument = null;
         TemporaryResources tmp = new TemporaryResources();
-        //config from context, or default if not set via context
-        PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
-        //TODO: get rid of this after dev of TIKA-1508!!!
-        localConfig.setSortByPosition(sortByPosition);
 
-        //TODO: this is just a mockup...move elsewhere
-        Map<String, Param<?>> params = context.getParams(PDFParser.class);
-        if (params != null && params.containsKey("sortByPosition")) {
-            localConfig.setSortByPosition((Boolean)params.get("sortByPosition").getValue());
-        }
         String password = "";
         try {
             // PDFBox can process entirely in memory, or can use a temp file
@@ -590,7 +585,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getSortByPosition() {
-        return sortByPosition;
+        return defaultConfig.getSortByPosition();
     }
 
     /**
@@ -605,7 +600,7 @@ public class PDFParser extends AbstractParser {
      */
     @Field
     public void setSortByPosition(boolean v) {
-        sortByPosition = v;
+        defaultConfig.setSortByPosition(v);
     }
 
 
