@@ -564,10 +564,10 @@ public class TikaConfig {
                     // See the thread "Configuring parsers and translators" for details 
                 }
 
-                //if the instance is configurable, then call configure()
                 Map<String, Param<?>> params = getParams(element);
                 //Assigning the params to bean fields/setters
                 AnnotationUtils.assignFieldParams(loaded, params);
+
                 // Have any decoration performed, eg explicit mimetypes
                 loaded = decorate(loaded, element);
                 // All done with setup
