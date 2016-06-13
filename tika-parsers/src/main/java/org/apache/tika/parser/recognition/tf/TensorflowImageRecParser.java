@@ -16,9 +16,6 @@
  */
 package org.apache.tika.parser.recognition.tf;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -34,9 +31,16 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.*;
-import java.net.URI;
-import java.util.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -59,23 +63,21 @@ import java.util.regex.Pattern;
 public class TensorflowImageRecParser extends ExternalParser implements ObjectRecogniser {
 
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowImageRecParser.class);
-
-    private static final URI defaultScriptUri = URI.create("https://raw.githubusercontent.com/tensorflow/tensorflow/122cdce33e3e0a01a7f82645617317530aa571fb/tensorflow/models/image/imagenet/classify_image.py");
-    private static final Set<MediaType> supportedMimes = Collections.singleton(MediaType.image("jpeg"));
-    private static final File defaultScriptFile = new File("tensorflow/tf-objectrec.py");
-    private static final File defaultModelFile = new File("tensorflow/tf-objectrec-model");
-    private static final LineConsumer ignoredLineLogger = new LineConsumer() {
+    private static final String SCRIPT_FILE_NAME = "classify_image.py";
+    private static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
+    private static final File DEFAULT_SCRIPT_FILE = new File("tensorflow" + File.separator + SCRIPT_FILE_NAME);
+    private static final File DEFAULT_MODEL_FILE = new File("tensorflow" + File.separator + "tf-objectrec-model");
+    private static final LineConsumer IGNORED_LINE_LOGGER = new LineConsumer() {
         @Override
         public void consume(String line) {
             LOG.debug(line);
         }
     };
 
-    @Field private URI scriptUri = defaultScriptUri;
     @Field private String executor = "python";
-    @Field private File scriptFile = defaultScriptFile;
+    @Field private File scriptFile = DEFAULT_SCRIPT_FILE;
     @Field private String modelArg = "--model_dir";
-    @Field private File modelFile = defaultModelFile;
+    @Field private File modelFile = DEFAULT_MODEL_FILE;
     @Field private String imageArg = "--image_file";
     @Field private String outPattern = "(.*) \\(score = ([0-9]+\\.[0-9]+)\\)$";
     @Field private String availabilityTestArgs = ""; //when no args are given, the script will test itself!
@@ -83,7 +85,7 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
     private boolean available = false;
 
     public Set<MediaType> getSupportedMimes() {
-        return supportedMimes;
+        return SUPPORTED_MIMES;
     }
 
     @Override
@@ -101,14 +103,13 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
             }
             if (!scriptFile.exists()) {
                 scriptFile.getParentFile().mkdirs();
-                LOG.info("GET : {} -> {}", scriptUri, scriptFile);
-                DefaultHttpClient httpClient = new DefaultHttpClient();
-                HttpGet getMethod = new HttpGet(scriptUri);
-                try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(scriptFile))) {
-                    HttpResponse response = httpClient.execute(getMethod);
-                    IOUtils.copy(response.getEntity().getContent(), stream);
+                LOG.info("Copying script to : {}", scriptFile);
+                try (InputStream sourceStream = getClass().getResourceAsStream(SCRIPT_FILE_NAME)) {
+                    try (OutputStream destStream = new FileOutputStream(scriptFile)) {
+                        IOUtils.copy(sourceStream, destStream);
+                    }
                 }
-                LOG.debug("Downloaded..");
+                LOG.debug("Copied..");
             }
             String[] availabilityCheckArgs = {executor, scriptFile.getAbsolutePath(),
                     modelArg, modelFile.getAbsolutePath(), availabilityTestArgs};
@@ -126,7 +127,7 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
             HashMap<Pattern, String> patterns = new HashMap<>();
             patterns.put(Pattern.compile(outPattern), null);
             setMetadataExtractionPatterns(patterns);
-            setIgnoredLineConsumer(ignoredLineLogger);
+            setIgnoredLineConsumer(IGNORED_LINE_LOGGER);
         } catch (Exception e) {
             throw new TikaConfigException(e.getMessage(), e);
         }
