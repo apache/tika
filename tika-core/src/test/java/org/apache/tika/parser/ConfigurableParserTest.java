@@ -20,6 +20,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -36,6 +37,7 @@ public class ConfigurableParserTest {
     public static final String TEST_PARAM_VAL = "testparamval";
 
     @Test
+    @Ignore
     public void testConfigurableParser() throws Exception {
         URL configFileUrl = getClass().getClassLoader().getResource(TIKA_CFG_FILE);
         assert configFileUrl != null;
@@ -48,6 +50,7 @@ public class ConfigurableParserTest {
     }
 
     @Test
+    @Ignore
     public void testConfigurableParserTypes() throws Exception {
         URL configFileUrl = getClass().getClassLoader().getResource(TIKA_CFG_FILE);
         assert configFileUrl != null;

@@ -40,8 +40,7 @@ import static org.osgi.util.measurement.Unit.s;
  * A test Parsers to test {@link Field}
  * @since Apache Tika 1.14
  */
-public class DummyParameterizedParser extends AbstractParser
-        implements ConfigurableParser {
+public class DummyParameterizedParser extends AbstractParser {
 
     private static Set<MediaType> MIMES = new HashSet<>();
     static {

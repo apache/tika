@@ -39,8 +39,8 @@ import java.util.Set;
  * 3. parameters were available at parse
  *
  */
-public class DummyConfigurableParser extends AbstractParser {
-
+public class DummyConfigurableParser {
+/*
     private static Set<MediaType> MIMES = new HashSet<>();
     static {
         MIMES.add(MediaType.TEXT_PLAIN);
@@ -63,5 +63,5 @@ public class DummyConfigurableParser extends AbstractParser {
             metadata.add(entry.getKey()+"-type", param.getValue().getClass().getName());
         }
     }
-
+*/
 }

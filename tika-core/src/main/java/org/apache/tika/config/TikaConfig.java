@@ -567,15 +567,9 @@ public class TikaConfig {
                 // Have any decoration performed, eg explicit mimetypes
                 loaded = decorate(loaded, element);
                 //if the instance is configurable, then call configure()
-                if (loaded instanceof Configurable){
-                    Map<String, Param<?>> params = getParams(element);
-                    //Assigning the params to bean fields/setters
-                    AnnotationUtils.assignFieldParams(loaded, params);
-                    //invoking the configure() hook
-                    ParseContext context = new ParseContext();
-                    context.getParams().putAll(params);
-                    ((Configurable) loaded).configure(context); // initialize here
-                }
+                Map<String, Param<?>> params = getParams(element);
+                //Assigning the params to bean fields/setters
+                AnnotationUtils.assignFieldParams(loaded, params);
                 // All done with setup
                 return loaded;
             } catch (ClassNotFoundException e) {

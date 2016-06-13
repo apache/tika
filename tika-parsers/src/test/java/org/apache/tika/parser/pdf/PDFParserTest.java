@@ -35,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.Param;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -469,7 +470,7 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("\\s+", " ");
         assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
 
-        parser.getPDFParserConfig().setSortByPosition(true);
+        parser.setSortByPosition(true);
         stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
@@ -1222,6 +1223,22 @@ public class PDFParserTest extends TikaTest {
         TikaConfig tikaConfig = new TikaConfig(is);
         Parser p = new AutoDetectParser(tikaConfig);
         String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+        text = text.replaceAll("\\s+", " ");
+
+        // Column text is now interleaved:
+        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+
+    }
+
+    @Test
+    public void testParameterizationViaContext() throws Exception {
+        ParseContext context = new ParseContext();
+
+        Param<Boolean> paramVal = new Param<>("sortByPosition", new Boolean(true));
+        context.setParam(PDFParser.class, paramVal);
+
+        Parser p = new AutoDetectParser();
+        String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p, context);
         text = text.replaceAll("\\s+", " ");
 
         // Column text is now interleaved:

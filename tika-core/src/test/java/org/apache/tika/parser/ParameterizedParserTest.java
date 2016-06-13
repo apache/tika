@@ -77,7 +77,6 @@ public class ParameterizedParserTest {
     }
 
     @Test
-    @Ignore("can we get this to work, somehow?")
     public void testBadParam() throws Exception {
         try {
             Metadata m = getMetadata("TIKA-1986-bad-parameters.xml");

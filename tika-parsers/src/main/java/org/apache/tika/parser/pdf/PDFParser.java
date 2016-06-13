@@ -21,12 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
@@ -44,6 +39,7 @@ import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -86,7 +82,7 @@ import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
  * turn this feature on, see
  * {@link PDFParserConfig#setExtractInlineImages(boolean)}.
  */
-public class PDFParser extends AbstractParser implements ConfigurableParser {
+public class PDFParser extends AbstractParser {
 
 
     /**
@@ -123,6 +119,12 @@ public class PDFParser extends AbstractParser implements ConfigurableParser {
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
         //TODO: get rid of this after dev of TIKA-1508!!!
         localConfig.setSortByPosition(sortByPosition);
+
+        //TODO: this is just a mockup...move elsewhere
+        Map<String, Param<?>> params = context.getParams(PDFParser.class);
+        if (params != null && params.containsKey("sortByPosition")) {
+            localConfig.setSortByPosition((Boolean)params.get("sortByPosition").getValue());
+        }
         String password = "";
         try {
             // PDFBox can process entirely in memory, or can use a temp file
