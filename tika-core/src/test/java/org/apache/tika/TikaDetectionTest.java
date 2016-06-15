@@ -833,7 +833,7 @@ public class TikaDetectionTest {
         assertEquals("video/x-flv", tika.detect("x.flv"));
         assertEquals("video/x-m4v", tika.detect("x.m4v"));
         assertEquals("video/x-ms-asf", tika.detect("x.asf"));
-        assertEquals("video/x-ms-asf", tika.detect("x.asx"));
+        assertEquals("application/x-ms-asx", tika.detect("x.asx"));
         assertEquals("video/x-ms-wm", tika.detect("x.wm"));
         assertEquals("video/x-ms-wmv", tika.detect("x.wmv"));
         assertEquals("video/x-ms-wmx", tika.detect("x.wmx"));

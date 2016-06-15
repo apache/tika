@@ -6410,10 +6410,16 @@
 
   <mime-type type="video/x-ms-asf">
     <glob pattern="*.asf"/>
-    <glob pattern="*.asx"/>
     <magic>
        <match value="0x3026b275" type="big32" offset="0" />
     </magic>
+  </mime-type>
+  <mime-type type="application/x-ms-asx">
+    <_comment>Windows Media Metafile</_comment>
+    <glob pattern="*.asx"/>
+    <root-XML localName="asx"/>
+    <root-XML localName="ASX"/>
+    <sub-class-of type="application/xml"/>
   </mime-type>
   <mime-type type="video/x-ms-wm">
     <glob pattern="*.wm"/>
