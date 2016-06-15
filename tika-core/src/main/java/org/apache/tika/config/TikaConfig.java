@@ -565,6 +565,9 @@ public class TikaConfig {
                 Map<String, Param<?>> params = getParams(element);
                 //Assigning the params to bean fields/setters
                 AnnotationUtils.assignFieldParams(loaded, params);
+                if (loaded instanceof Initializable) {
+                    ((Initializable) loaded).initialize();
+                }
 
                 // Have any decoration performed, eg explicit mimetypes
                 loaded = decorate(loaded, element);

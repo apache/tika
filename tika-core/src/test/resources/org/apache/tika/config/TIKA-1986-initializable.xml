@@ -17,10 +17,10 @@
 -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.DummyParameterizedParser">
+        <parser class="org.apache.tika.parser.DummyInitializableParser">
             <params>
-                <param name="testparam" type="string">testparamval</param>
-                <param name="xbool" type="bool">false</param>
+                <param name="shortA" type="short">2</param>
+                <param name="shortB" type="short">3</param>
             </params>
         </parser>
 

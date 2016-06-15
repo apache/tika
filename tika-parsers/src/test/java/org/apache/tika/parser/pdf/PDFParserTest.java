@@ -61,6 +61,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -1231,6 +1232,7 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    @Ignore("We've turned this off for now")
     public void testParameterizationViaContext() throws Exception {
         ParseContext context = new ParseContext();
 

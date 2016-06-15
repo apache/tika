@@ -82,7 +82,7 @@ public class ParameterizedParserTest {
         Metadata md = getMetadata("TIKA-1986-some-parameters.xml");
         assertEquals("-6.0", md.get("xdouble"));
         assertEquals("testparamval", md.get("testparam"));
-        assertEquals("true", md.get("xbool"));
+        assertEquals("false", md.get("xbool"));
     }
 
     @Test

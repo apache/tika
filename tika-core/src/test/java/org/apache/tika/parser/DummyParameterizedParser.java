@@ -63,6 +63,7 @@ public class DummyParameterizedParser extends AbstractParser {
 
     @Field private String missing = "default";
 
+
     private String inner = "inner";
     private File xfile;
 

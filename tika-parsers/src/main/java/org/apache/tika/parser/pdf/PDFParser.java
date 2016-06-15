@@ -109,14 +109,8 @@ public class PDFParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        //step 1, check to see if there are params for the PDFParser class
-        Map<String, Param<?>> params = context.getParams(PDFParser.class);
-        PDFParserConfig localConfig = new PDFParserConfig();
-        if (params != null) {
-            AnnotationUtils.assignFieldParams(localConfig, params);
-        } else if (context.get(PDFParserConfig.class) != null) {
-            localConfig = context.get(PDFParserConfig.class, defaultConfig);
-        }
+        PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+
         PDDocument pdfDocument = null;
         TemporaryResources tmp = new TemporaryResources();
 
