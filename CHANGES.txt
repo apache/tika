@@ -1,5 +1,12 @@
 Release 1.14 - ???
 
+  * Add mime types, mime magic and/or globs for:
+     * Endnote Import File (TIKA-2011)
+     * DJVU files (TIKA-2009)
+     * MS Owner File (TIKA-2008)
+     * Windows Media Metafile (TIKA-2004)
+     * iCal and vCalendar (TIKA-2006)
+
   * Upgrade to PDFBox 2.0.2 (TIKA-1996).
 
   * Add configurable maximum threshold for number of events extracted
