@@ -10,6 +10,8 @@ Release 2.0 - Future Development
 
 Release 1.14 - ???
 
+  * Add mime definition and parser for MS Owner File (TIKA-2008).
+
   * Add mime definition for Windows Media Metafile (TIKA-2004).
 
   * Add mime definitions of iCal and vCalendar (TIKA-2006).

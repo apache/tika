@@ -3403,6 +3403,13 @@
   <mime-type type="application/x-ms-application">
     <glob pattern="*.application"/>
   </mime-type>
+  <mime-type type="application/x-ms-owner">
+    <_comment>Temporary files created by MSOffice applications</_comment>
+    <_comment>PRONOM fmt-473</_comment>
+    <magic priority="80">
+      <match value="(?s)^([\\x05-\\x0F]).{53}\\1\x00" type="regex" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-ms-wmd">
     <glob pattern="*.wmd"/>
   </mime-type>

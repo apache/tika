@@ -981,6 +981,11 @@ public class TestMimeTypes extends TikaTest {
         assertType("application/x-ms-asx", "testWindowsMediaMeta.asx");
     }
 
+    @Test
+    public void testMSOwner() throws Exception {
+        assertType("application/x-ms-owner", "testMSOwnerFile");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
