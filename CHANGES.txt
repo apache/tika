@@ -1,12 +1,11 @@
 Release 1.14 - ???
 
-  * Add mime magic for DJVU files (TIKA-2009).
-
-  * Add mime definition and parser for MS Owner File (TIKA-2008).
-
-  * Add mime definition for Windows Media Metafile (TIKA-2004).
-
-  * Add mime definitions of iCal and vCalendar (TIKA-2006).
+  * Add mime types, mime magic and/or globs for:
+     * Endnote Import File (TIKA-2011)
+     * DJVU files (TIKA-2009)
+     * MS Owner File (TIKA-2008)
+     * Windows Media Metafile (TIKA-2004)
+     * iCal and vCalendar (TIKA-2006)
 
   * Upgrade to PDFBox 2.0.2 (TIKA-1996).
 
