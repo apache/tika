@@ -35,7 +35,7 @@ import java.util.Set;
 
 /**
  * Parser for temporary MSOFfice files.
- * This currently only extracts the owner's name.
+ * This currently only extracts the last-modifier's name.
  */
 public class MSOwnerFileParser extends AbstractParser {
 
@@ -53,7 +53,7 @@ public class MSOwnerFileParser extends AbstractParser {
     }
 
     /**
-     * Extracts owner from MS temp file
+     * Extracts last-modifier's name from MS temp file
      */
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -66,15 +66,14 @@ public class MSOwnerFileParser extends AbstractParser {
         IOUtils.readFully(stream, asciiNameBytes);
         int asciiNameLength = (int)asciiNameBytes[0];//don't need to convert to unsigned int because it can't be that long
         String asciiName = new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
-        metadata.set(TikaCoreProperties.CREATOR, asciiName);
-
+        metadata.set(TikaCoreProperties.MODIFIER, asciiName);
         int unicodeCharLength = stream.read();
         if (unicodeCharLength > 0) {
             stream.read();//zero after the char length
             byte[] unicodeBytes = new byte[unicodeCharLength * 2];
             IOUtils.readFully(stream, unicodeBytes);
             String unicodeName = new String(unicodeBytes, StandardCharsets.UTF_16LE);
-            metadata.set(TikaCoreProperties.CREATOR, unicodeName);
+            metadata.set(TikaCoreProperties.MODIFIER, unicodeName);
         }
         xhtml.endDocument();
     }
