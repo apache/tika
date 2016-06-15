@@ -974,11 +974,14 @@ public class TestMimeTypes extends TikaTest {
     public void testVandICalendars() throws Exception {
         assertType("text/calendar", "testICalendar.ics");
         assertType("text/x-vcalendar", "testVCalendar.vcs");
+        assertTypeByData("text/calendar", "testICalendar.ics");
+        assertTypeByData("text/x-vcalendar", "testVCalendar.vcs");
     }
 
     @Test
     public void testASX() throws Exception {
         assertType("application/x-ms-asx", "testWindowsMediaMeta.asx");
+        assertTypeByData("application/x-ms-asx", "testWindowsMediaMeta.asx");
     }
 
     @Test
