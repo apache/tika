@@ -26,6 +26,6 @@ public class MSOwnerFileParserTest extends TikaTest {
     @Test
     public void testBasic() throws Exception {
         XMLResult r = getXML("testMSOwnerFile");
-        assertEquals("heidi", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("heidi", r.metadata.get(TikaCoreProperties.MODIFIER));
     }
 }
