@@ -40,7 +40,7 @@ public class AnnotationUtilsTest {
             @Field(required = true) int config;
         }
 
-        Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param> params = new HashMap<>();
         try {
             params.put("config", new Param<>("config", 1));
 
@@ -70,7 +70,7 @@ public class AnnotationUtilsTest {
             @Field(required = true, name = "config") Integer config2;
         }
 
-        Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param> params = new HashMap<>();
         try {
             MyParser bean = new MyParser();
             int val = 100;
@@ -92,7 +92,7 @@ public class AnnotationUtilsTest {
             @Field(required = true) String config;
         }
 
-        Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param> params = new HashMap<>();
         String someval = "someval";
         params.put("config", new Param<>("config", someval));
         try {
@@ -129,7 +129,7 @@ public class AnnotationUtilsTest {
         }
 
         int val = 1;
-        Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param> params = new HashMap<>();
         params.put("overridden", new Param<>("oevrriden", val));
         params.put("parentField", new Param<>("parentField", val));
         params.put("childField", new Param<>("childField", val));
@@ -164,7 +164,7 @@ public class AnnotationUtilsTest {
         }
 
         Bean parser = new Bean();
-        Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param> params = new HashMap<>();
         try {
             String val = "someval";
             params.put("field", new Param<String>("field", String.class, val));

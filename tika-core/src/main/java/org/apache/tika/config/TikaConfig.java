@@ -562,11 +562,12 @@ public class TikaConfig {
                     // See the thread "Configuring parsers and translators" for details 
                 }
 
-                Map<String, Param<?>> params = getParams(element);
+                Map<String, Param> params = getParams(element);
                 //Assigning the params to bean fields/setters
-                AnnotationUtils.assignFieldParams(loaded, params);
                 if (loaded instanceof Initializable) {
-                    ((Initializable) loaded).initialize();
+                    ((Initializable) loaded).initialize(params);
+                } else {
+                    AnnotationUtils.assignFieldParams(loaded, params);
                 }
 
                 // Have any decoration performed, eg explicit mimetypes
@@ -599,8 +600,8 @@ public class TikaConfig {
          * @param el xml node which has {@link #PARAMS_TAG_NAME} child
          * @return Map of key values read from xml
          */
-        Map<String, Param<?>>  getParams(Element el){
-            Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param>  getParams(Element el){
+            Map<String, Param> params = new HashMap<>();
             for (Node child = el.getFirstChild(); child != null;
                  child = child.getNextSibling()){
                 if (PARAMS_TAG_NAME.equals(child.getNodeName())){ //found the node

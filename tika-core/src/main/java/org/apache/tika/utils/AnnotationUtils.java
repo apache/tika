@@ -78,7 +78,7 @@ public class AnnotationUtils {
      * Assigns the param values to bean
      * @throws TikaConfigException when an error occurs while assigning params
      */
-    public static void assignFieldParams(Object bean, Map<String, Param<?>> params) throws TikaConfigException {
+    public static void assignFieldParams(Object bean, Map<String, Param> params) throws TikaConfigException {
         Class<?> beanClass = bean.getClass();
         if (!PARAM_INFO.containsKey(beanClass)) {
             synchronized (TikaConfig.class){

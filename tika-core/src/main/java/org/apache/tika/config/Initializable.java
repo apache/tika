@@ -18,6 +18,8 @@ package org.apache.tika.config;
 
 import org.apache.tika.exception.TikaConfigException;
 
+import java.util.Map;
+
 /**
  * Components that must do special processing across multiple fields
  * at initialization time should implement this interface.
@@ -27,5 +29,5 @@ import org.apache.tika.exception.TikaConfigException;
  */
 public interface Initializable {
 
-    void initialize() throws TikaConfigException;
+    void initialize(Map<String, Param> params) throws TikaConfigException;
 }

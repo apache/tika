@@ -19,6 +19,7 @@ package org.apache.tika.parser;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,6 +30,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -58,7 +60,9 @@ public class DummyInitializableParser extends AbstractParser implements Initiali
     }
 
     @Override
-    public void initialize() throws TikaConfigException {
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        shortA = (Short)params.get("shortA").getValue();
+        shortB = (Short)params.get("shortB").getValue();
         sum = shortA+shortB;
     }
 }
