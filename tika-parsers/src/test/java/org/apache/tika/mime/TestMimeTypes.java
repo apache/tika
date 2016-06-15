@@ -1037,7 +1037,12 @@ public class TestMimeTypes {
         assertType("text/calendar", "testICalendar.ics");
         assertType("text/x-vcalendar", "testVCalendar.vcs");
     }
-    
+
+    @Test
+    public void testASX() throws Exception {
+        assertType("application/x-ms-asx", "testWindowsMediaMeta.asx");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
