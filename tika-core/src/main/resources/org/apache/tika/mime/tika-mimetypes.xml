@@ -4896,6 +4896,9 @@
   <mime-type type="image/vnd.djvu">
     <glob pattern="*.djvu"/>
     <glob pattern="*.djv"/>
+    <magic priority="50">
+      <match value="AT&amp;TFORM" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/vnd.dwg">

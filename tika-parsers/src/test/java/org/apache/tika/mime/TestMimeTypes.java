@@ -1048,6 +1048,12 @@ public class TestMimeTypes {
         assertType("application/x-ms-owner", "testMSOwnerFile");
     }
 
+    @Test
+    public void testDJVU() throws Exception {
+        assertType("image/vnd.djvu", "testDJVU.djvu");
+        assertTypeByData("image/vnd.djvu", "testDJVU.djvu");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
