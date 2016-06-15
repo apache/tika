@@ -969,6 +969,12 @@ public class TestMimeTypes extends TikaTest {
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
     }
+
+    @Test
+    public void testVandICalendars() throws Exception {
+        assertType("text/calendar", "testICalendar.ics");
+        assertType("text/x-vcalendar", "testVCalendar.vcs");
+    }
     
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);

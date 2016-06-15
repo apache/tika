@@ -5329,8 +5329,14 @@
   </mime-type>
 
   <mime-type type="text/calendar">
+    <magic priority="50">
+      <match value="BEGIN:VCALENDAR" type="string" offset="0">
+        <match value="VERSION:2.0" type="string" offset="15:30"/>
+      </match>
+    </magic>
     <glob pattern="*.ics"/>
     <glob pattern="*.ifb"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
 
   <mime-type type="text/css">
@@ -6080,6 +6086,11 @@
   </mime-type>
 
   <mime-type type="text/x-vcalendar">
+    <magic priority="50">
+      <match value="BEGIN:VCALENDAR" type="string" offset="0">
+        <match value="VERSION:1.0" type="string" offset="15:30"/>
+      </match>
+    </magic>
     <glob pattern="*.vcs"/>
     <sub-class-of type="text/plain"/>
   </mime-type>

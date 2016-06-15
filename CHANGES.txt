@@ -10,6 +10,8 @@ Release 2.0 - Future Development
 
 Release 1.14 - ???
 
+  * Add mime definitions of iCal and vCalendar (TIKA-2006).
+
   * Upgrade to PDFBox 2.0.2 (TIKA-1996).
 
   * Add configurable maximum threshold for number of events extracted
