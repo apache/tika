@@ -995,6 +995,12 @@ public class TestMimeTypes extends TikaTest {
         assertTypeByData("image/vnd.djvu", "testDJVU.djvu");
     }
 
+    @Test
+    public void testEndNoteImport() throws Exception {
+        assertType("application/x-endnote-refer", "testEndNoteImportFile.enw");
+        assertTypeByData("application/x-endnote-refer", "testEndNoteImportFile.enw");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }

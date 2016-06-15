@@ -3060,6 +3060,18 @@
     <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
 
+  <mime-type type="application/x-endnote-refer">
+    <magic priority="80">
+      <match value="%A " type="string" offset="0:50">
+        <match value="\n%D " type="string" offset="0:1000">
+          <match value="\n%T " type="string" offset="0:1000"/>
+        </match>
+      </match>
+    </magic>
+    <glob pattern="*.enw"/>
+    <glob pattern="*.enr"/>
+  </mime-type>
+
   <mime-type type="application/x-killustrator">
     <_comment>KIllustrator File</_comment>
     <glob pattern="*.kil"/>
