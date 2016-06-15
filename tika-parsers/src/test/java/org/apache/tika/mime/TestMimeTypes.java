@@ -1031,6 +1031,12 @@ public class TestMimeTypes {
         assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
         assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
     }
+
+    @Test
+    public void testVandICalendars() throws Exception {
+        assertType("text/calendar", "testICalendar.ics");
+        assertType("text/x-vcalendar", "testVCalendar.vcs");
+    }
     
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
