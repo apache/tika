@@ -21,12 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
@@ -56,7 +51,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ConfigurableParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
@@ -66,7 +60,6 @@ import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
 
 /**
  * PDF parser.
@@ -86,7 +79,7 @@ import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
  * turn this feature on, see
  * {@link PDFParserConfig#setExtractInlineImages(boolean)}.
  */
-public class PDFParser extends AbstractParser implements ConfigurableParser {
+public class PDFParser extends AbstractParser {
 
 
     /**
@@ -109,20 +102,16 @@ public class PDFParser extends AbstractParser implements ConfigurableParser {
         return SUPPORTED_TYPES;
     }
 
-    @Field
-    private boolean sortByPosition = false;
-
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
+        PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+
         PDDocument pdfDocument = null;
         TemporaryResources tmp = new TemporaryResources();
-        //config from context, or default if not set via context
-        PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
-        //TODO: get rid of this after dev of TIKA-1508!!!
-        localConfig.setSortByPosition(sortByPosition);
+
         String password = "";
         try {
             // PDFBox can process entirely in memory, or can use a temp file
@@ -147,11 +136,11 @@ public class PDFParser extends AbstractParser implements ConfigurableParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
-                    if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
+                    if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                         metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     }
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
@@ -588,7 +577,7 @@ public class PDFParser extends AbstractParser implements ConfigurableParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getSortByPosition() {
-        return sortByPosition;
+        return defaultConfig.getSortByPosition();
     }
 
     /**
@@ -603,10 +592,18 @@ public class PDFParser extends AbstractParser implements ConfigurableParser {
      */
     @Field
     public void setSortByPosition(boolean v) {
-        sortByPosition = v;
+        defaultConfig.setSortByPosition(v);
     }
 
+    @Field
+    public void setOcrStrategy(String ocrStrategyString) {
+        defaultConfig.setOcrStrategy(ocrStrategyString);
+    }
 
+    @Field
+    public void setOcrImageType(String imageType) {
+        defaultConfig.setOcrImageType(imageType);
+    }
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
         if (pdMetadata == null) {

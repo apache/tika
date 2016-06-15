@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -23,12 +24,13 @@ import java.lang.annotation.Target;
 
 /**
  * Field annotation is a contract for binding {@link Param} value from
- * Tika Configuration to any instance of {@link org.apache.tika.base.Configurable}
+ * Tika Configuration to an object.
  * services
  * @since Apache Tika 1.14
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD})
+@Documented
 public @interface Field{
     /**
      *

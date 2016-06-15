@@ -14,19 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.base.Configurable;
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.Test;
 
-import java.io.Serializable;
+import static org.junit.Assert.assertEquals;
 
-/**
- * Extension of {@link Parser} with {@link Configurable} contract.
- * This interface shall be implemented to create parsers which accepts runtime parameters
- * from tika configuration file
- *
- * @since Tika 1.14
- */
-public interface ConfigurableParser extends Parser,
-        Configurable, Serializable {
+public class MSOwnerFileParserTest extends TikaTest {
+    @Test
+    public void testBasic() throws Exception {
+        XMLResult r = getXML("testMSOwnerFile");
+        assertEquals("heidi", r.metadata.get(TikaCoreProperties.MODIFIER));
+    }
 }

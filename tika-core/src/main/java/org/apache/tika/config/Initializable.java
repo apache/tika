@@ -14,31 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.base;
+package org.apache.tika.config;
 
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.parser.ParseContext;
 
 import java.util.Map;
 
 /**
- * Defines contract for configurable services
- * @since Apache Tika 1.14
+ * Components that must do special processing across multiple fields
+ * at initialization time should implement this interface.
+ * <p>
+ * TikaConfig will call initialize on Initializable classes after
+ * setting the parameters.
  */
-public interface Configurable {
+public interface Initializable {
 
-    /**
-     * Configure an instance with Tika Context
-     * @param context configuration instance in the form of context
-     * @throws TikaConfigException when an instance fails to work at the given context
-     * @since Apache Tika 1.14
-     */
-    void configure(ParseContext context) throws TikaConfigException;
-
-    /**
-     * Gets parameters of this configurable instance
-     * @return parameters in the form  of a map of key value pairs
-     */
-    Map<String, Param<?>> getParams();
+    void initialize(Map<String, Param> params) throws TikaConfigException;
 }

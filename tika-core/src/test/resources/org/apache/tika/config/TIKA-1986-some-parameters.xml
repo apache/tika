@@ -20,7 +20,7 @@
         <parser class="org.apache.tika.parser.DummyParameterizedParser">
             <params>
                 <param name="testparam" type="string">testparamval</param>
-                <param name="testbool" type="bool">false</param>
+                <param name="xbool" type="bool">false</param>
             </params>
         </parser>
 

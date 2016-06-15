@@ -38,8 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.tika.base.Configurable;
-
 import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
 import org.apache.tika.concurrent.SimpleThreadPoolExecutor;
 import org.apache.tika.detect.CompositeDetector;
@@ -564,16 +562,14 @@ public class TikaConfig {
                     // See the thread "Configuring parsers and translators" for details 
                 }
 
-                //if the instance is configurable, then call configure()
-                if (loaded instanceof Configurable){
-                    Map<String, Param<?>> params = getParams(element);
-                    //Assigning the params to bean fields/setters
+                Map<String, Param> params = getParams(element);
+                //Assigning the params to bean fields/setters
+                if (loaded instanceof Initializable) {
+                    ((Initializable) loaded).initialize(params);
+                } else {
                     AnnotationUtils.assignFieldParams(loaded, params);
-                    //invoking the configure() hook
-                    ParseContext context = new ParseContext();
-                    context.getParams().putAll(params);
-                    ((Configurable) loaded).configure(context); // initialize here
                 }
+
                 // Have any decoration performed, eg explicit mimetypes
                 loaded = decorate(loaded, element);
                 // All done with setup
@@ -604,8 +600,8 @@ public class TikaConfig {
          * @param el xml node which has {@link #PARAMS_TAG_NAME} child
          * @return Map of key values read from xml
          */
-        Map<String, Param<?>>  getParams(Element el){
-            Map<String, Param<?>> params = new HashMap<>();
+        Map<String, Param>  getParams(Element el){
+            Map<String, Param> params = new HashMap<>();
             for (Node child = el.getFirstChild(); child != null;
                  child = child.getNextSibling()){
                 if (PARAMS_TAG_NAME.equals(child.getNodeName())){ //found the node

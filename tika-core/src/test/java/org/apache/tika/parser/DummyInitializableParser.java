@@ -14,9 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser;
 
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
 import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -30,23 +34,20 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
- * This Parser is created to test runtime configuration to parser.
- * This parser simply copies parameters to metadata so that a test
- * suit can be developed to test that :
- * 1. Parameters were parsed from configuration file
- * 2. parameters were supplied to parser via configure(ctx) method
- * 3. parameters were available at parse
- *
+ * This tests that initialize() is called after adding the parameters
+ * configured via TikaConfig
  */
-public class DummyConfigurableParser extends AbstractParser {
+public class DummyInitializableParser extends AbstractParser implements Initializable {
 
+    public static String SUM_FIELD = "SUM";
     private static Set<MediaType> MIMES = new HashSet<>();
     static {
         MIMES.add(MediaType.TEXT_PLAIN);
-        MIMES.add(MediaType.TEXT_HTML);
-        MIMES.add(MediaType.OCTET_STREAM);
     }
+
+    @Field private short shortA = -2;
+    @Field private short shortB = -3;
+    private int sum = 0;
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -54,14 +55,14 @@ public class DummyConfigurableParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler,
-                      Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
-        for (Map.Entry<String, Param<?>> entry : getParams().entrySet()) {
-            Param<?> param = entry.getValue();
-            metadata.add(entry.getKey(), param.getValue().toString());
-            metadata.add(entry.getKey()+"-type", param.getValue().getClass().getName());
-        }
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        metadata.set(SUM_FIELD, Integer.toString(sum));
     }
 
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        shortA = (Short)params.get("shortA").getValue();
+        shortB = (Short)params.get("shortB").getValue();
+        sum = shortA+shortB;
+    }
 }

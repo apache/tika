@@ -34,7 +34,7 @@ import org.xml.sax.SAXException;
  *
  * @since Apache Tika 0.10
  */
-public abstract class AbstractParser implements ConfigurableParser {
+public abstract class AbstractParser implements Parser {
 
     /**
      * Configuration supplied at runtime
@@ -62,27 +62,5 @@ public abstract class AbstractParser implements ConfigurableParser {
         parse(stream, handler, metadata, new ParseContext());
     }
 
-    /**
-     * called by the framework to supply runtime parameters which may be
-     * required for initialization
-     * @param context the parser context at runtime
-     * @since Apache Tika 1.14
-     */
-    @Override
-    public void configure(ParseContext context) throws TikaConfigException {
-        this.context = context;
-    }
-
-
-    /**
-     * Gets Parameters of this configurable instance
-     * @return a map of key value pairs
-     *
-     * @since Apache Tika 1.14
-     */
-    @Override
-    public Map<String, Param<?>> getParams() {
-        return this.context.getParams();
-    }
 }
 

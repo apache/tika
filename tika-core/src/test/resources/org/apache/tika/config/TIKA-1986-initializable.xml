@@ -17,10 +17,12 @@
 -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.pdf.PDFParser">
+        <parser class="org.apache.tika.parser.DummyInitializableParser">
             <params>
-                <param name="sortByPosition" type="bool">true</param>
+                <param name="shortA" type="short">2</param>
+                <param name="shortB" type="short">3</param>
             </params>
         </parser>
+
     </parsers>
 </properties>

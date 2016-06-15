@@ -32,7 +32,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -54,11 +53,6 @@ public class ParseContext implements Serializable {
 
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
-
-    /**
-     * Map of configurable arguments
-     */
-    private final Map<String, Param<?>> params = new HashMap<>();
 
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
@@ -201,40 +195,6 @@ public class ParseContext implements Serializable {
         return factory;
     }
 
-    /**
-     * Stores a key=value parameter
-     * @param key parameter name
-     * @param value value
-     */
-    public void setParam(String key, Param<?> value){
-        this.params.put(key, value);
-    }
-
-    /**
-     * Gets the value associated with given parameter
-     * @param key parameter name
-     * @return param value
-     */
-    public Param<?> getParam(String key){
-        return this.params.get(key);
-    }
-
-    /**
-     * Gets all the params
-     * @return map of key values
-     */
-    public Map<String, Param<?>> getParams() {
-        return params;
-    }
-
-    /**
-     * Checks if parameter is available
-     * @param key parameter name
-     * @return true if parameter is available, false otherwise
-     */
-    public boolean hasParam(String key){
-       return params.containsKey(key);
-    }
     /**
      * Returns the DOM builder factory specified in this parsing context.
      * If a factory is not explicitly specified, then a default factory
