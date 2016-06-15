@@ -16,7 +16,8 @@
  */
 package org.apache.tika.parser.recognition;
 
-import org.apache.tika.base.Configurable;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,13 +30,14 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  *  This is a contract for object recognisers used by {@link ObjectRecognitionParser}
  *  @see {@link TensorflowImageRecParser} for an example
  */
-public interface ObjectRecogniser  extends Configurable {
+public interface ObjectRecogniser  extends Initializable {
 
     /**
      * The mimes supported by this recogniser
@@ -51,15 +53,15 @@ public interface ObjectRecogniser  extends Configurable {
 
     /**
      * This is the hook for configuring the recogniser
-     * @param context configuration instance in the form of context
+     * @param params configuration instance in the form of context
      * @throws TikaConfigException when there is an issue with configuration
      */
-    void configure(ParseContext context) throws TikaConfigException;
+    void initialize(Map<String, Param> params) throws TikaConfigException;
 
     /**
      * Recognise the objects in the stream
      * @param stream content stream
-     * @param handler tika's content handle
+     * @param handler tika's content handler
      * @param metadata metadata instance
      * @param context parser context
      * @return List of {@link RecognisedObject}s

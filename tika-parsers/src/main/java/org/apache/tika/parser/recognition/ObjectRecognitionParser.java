@@ -17,6 +17,8 @@
 package org.apache.tika.parser.recognition;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -38,6 +40,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -63,7 +66,7 @@ import java.util.Set;
  *
  * @since Apache Tika 1.14
  */
-public class ObjectRecognitionParser extends AbstractParser {
+public class ObjectRecognitionParser extends AbstractParser implements Initializable {
 
     public static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
     public static final String MD_KEY = "OBJECT";
@@ -89,10 +92,9 @@ public class ObjectRecognitionParser extends AbstractParser {
     }
 
     @Override
-    public void configure(ParseContext context) throws TikaConfigException {
-        super.configure(context);
-        AnnotationUtils.assignFieldParams(recogniser, context.getParams());
-        recogniser.configure(context);
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        AnnotationUtils.assignFieldParams(recogniser, params);
+        recogniser.initialize(params);
         LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
         LOG.info("Recogniser = {}", recogniser.getClass().getName());
         LOG.info("Recogniser Available = {}", recogniser.isAvailable());

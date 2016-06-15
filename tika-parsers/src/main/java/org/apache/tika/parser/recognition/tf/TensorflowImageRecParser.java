@@ -17,6 +17,7 @@
 package org.apache.tika.parser.recognition.tf;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -40,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -94,8 +96,7 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
     }
 
     @Override
-    public void configure(ParseContext context) throws TikaConfigException {
-        super.configure(context);
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             if (!modelFile.exists()) {
                 modelFile.getParentFile().mkdirs();
