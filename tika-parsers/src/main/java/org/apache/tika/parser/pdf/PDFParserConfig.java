@@ -61,8 +61,18 @@ public class PDFParserConfig implements Serializable {
             } else if (s.toLowerCase(Locale.ROOT).contains("ocr_and_text")) {
                 return OCR_AND_TEXT_EXTRACTION;
             }
-            //default -- no ocr
-            return NO_OCR;
+            StringBuilder sb = new StringBuilder();
+            sb.append("I regret that I don't recognize '").append(s);
+            sb.append("' as an OCR_STRATEGY. I only recognize:");
+            int i = 0;
+            for (OCR_STRATEGY strategy : OCR_STRATEGY.values()) {
+                if (i++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append(strategy.toString());
+
+            }
+            throw new IllegalArgumentException(sb.toString());
         }
     }
 
@@ -180,13 +190,13 @@ public class PDFParserConfig implements Serializable {
                 getBooleanProp(props.getProperty("catchIntermediateIOExceptions"),
                 isCatchIntermediateIOExceptions()));
 
-        setOCRStrategy(OCR_STRATEGY.parse(props.getProperty("ocrStrategy")));
+        setOcrStrategy(OCR_STRATEGY.parse(props.getProperty("ocrStrategy")));
 
-        setOCRDPI(getIntProp(props.getProperty("ocrDPI"), getOCRDPI()));
+        setOcrDPI(getIntProp(props.getProperty("ocrDPI"), getOcrDPI()));
 
-        setOCRImageFormatName(props.getProperty("ocrImageFormatName"));
+        setOcrImageFormatName(props.getProperty("ocrImageFormatName"));
 
-        setOCRImageType(parseImageType(props.getProperty("ocrImageType")));
+        setOcrImageType(parseImageType(props.getProperty("ocrImageType")));
 
 
         boolean checkExtractAccessPermission = getBooleanProp(props.getProperty("checkExtractAccessPermission"), false);
@@ -450,15 +460,22 @@ public class PDFParserConfig implements Serializable {
      * Which strategy to use for OCR
      * @param ocrStrategy
      */
-    public void setOCRStrategy(OCR_STRATEGY ocrStrategy) {
+    public void setOcrStrategy(OCR_STRATEGY ocrStrategy) {
         this.ocrStrategy = ocrStrategy;
     }
 
     /**
+     * Which strategy to use for OCR
+     * @param ocrStrategyString
+     */
+    public void setOcrStrategy(String ocrStrategyString) {
+        this.ocrStrategy = OCR_STRATEGY.parse(ocrStrategyString);
+    }
+    /**
      *
      * @return strategy to use for OCR
      */
-    public OCR_STRATEGY getOCRStrategy() {
+    public OCR_STRATEGY getOcrStrategy() {
         return ocrStrategy;
     }
 
@@ -489,26 +506,26 @@ public class PDFParserConfig implements Serializable {
      * the page image for OCR (examples: png, tiff, jpeg)
      * @return
      */
-    public String getOCRImageFormatName() {
+    public String getOcrImageFormatName() {
         return ocrImageFormatName;
     }
 
     /**
-     * @see #getOCRImageFormatName()
+     * @see #getOcrImageFormatName()
      *
      * @param ocrImageFormatName name of image format used to render
      *                           page image
      */
-    public void setOCRImageFormatName(String ocrImageFormatName) {
+    public void setOcrImageFormatName(String ocrImageFormatName) {
         this.ocrImageFormatName = ocrImageFormatName;
     }
 
     /**
      * Image type used to render the page image for OCR.
-     * @see #setOCRImageType(ImageType)
+     * @see #setOcrImageType(ImageType)
      * @return image type
      */
-    public ImageType getOCRImageType() {
+    public ImageType getOcrImageType() {
         return ocrImageType;
     }
 
@@ -516,15 +533,23 @@ public class PDFParserConfig implements Serializable {
      * Image type used to render the page image for OCR.
      * @param ocrImageType
      */
-    public void setOCRImageType(ImageType ocrImageType) {
+    public void setOcrImageType(ImageType ocrImageType) {
         this.ocrImageType = ocrImageType;
+    }
+
+    /**
+     * Image type used to render the page image for OCR.
+     * @see #setOcrImageType(ImageType)
+    */
+    public void setOcrImageType(String ocrImageTypeString) {
+        this.ocrImageType = parseImageType(ocrImageTypeString);
     }
 
     /**
      * Dots per inch used to render the page image for OCR
      * @return dots per inch
      */
-    public int getOCRDPI() {
+    public int getOcrDPI() {
         return ocrDPI;
     }
 
@@ -532,7 +557,7 @@ public class PDFParserConfig implements Serializable {
      * Dots per inche used to render the page image for OCR
      * @param ocrDPI
      */
-    public void setOCRDPI(int ocrDPI) {
+    public void setOcrDPI(int ocrDPI) {
         this.ocrDPI = ocrDPI;
     }
 
@@ -542,7 +567,18 @@ public class PDFParserConfig implements Serializable {
                 return t;
             }
         }
-        return null;
+        StringBuilder sb = new StringBuilder();
+        sb.append("I regret that I could not parse '");
+        sb.append(ocrImageType);
+        sb.append("'. I'm only familiar with: ");
+        int i = 0;
+        for (ImageType t : ImageType.values()) {
+            if (i++ == 0) {
+                sb.append(", ");
+            }
+            sb.append(t.toString());
+        }
+        throw new IllegalArgumentException(sb.toString());
     }
 
     @Override
@@ -560,13 +596,13 @@ public class PDFParserConfig implements Serializable {
         if (getExtractInlineImages() != config.getExtractInlineImages()) return false;
         if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
         if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
-        if (getOCRDPI() != config.getOCRDPI()) return false;
+        if (getOcrDPI() != config.getOcrDPI()) return false;
         if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) return false;
         if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) return false;
         if (!getSpacingTolerance().equals(config.getSpacingTolerance())) return false;
-        if (!getOCRStrategy().equals(config.getOCRStrategy())) return false;
-        if (getOCRImageType() != config.getOCRImageType()) return false;
-        if (!getOCRImageFormatName().equals(config.getOCRImageFormatName())) return false;
+        if (!getOcrStrategy().equals(config.getOcrStrategy())) return false;
+        if (getOcrImageType() != config.getOcrImageType()) return false;
+        if (!getOcrImageFormatName().equals(config.getOcrImageFormatName())) return false;
         return getAccessChecker().equals(config.getAccessChecker());
 
     }
@@ -584,9 +620,9 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + getSpacingTolerance().hashCode();
         result = 31 * result + (getIfXFAExtractOnlyXFA() ? 1 : 0);
         result = 31 * result + ocrStrategy.hashCode();
-        result = 31 * result + getOCRDPI();
-        result = 31 * result + getOCRImageType().hashCode();
-        result = 31 * result + getOCRImageFormatName().hashCode();
+        result = 31 * result + getOcrDPI();
+        result = 31 * result + getOcrImageType().hashCode();
+        result = 31 * result + getOcrImageFormatName().hashCode();
         result = 31 * result + getAccessChecker().hashCode();
         result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
         return result;

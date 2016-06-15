@@ -29,11 +29,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -55,13 +53,6 @@ public class ParseContext implements Serializable {
 
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
-
-    private final static Map<String, Param<?>> EMPTY_PARAMS = Collections.EMPTY_MAP;
-
-    /**
-     * Map of configurable arguments
-     */
-    private final Map<String, Map<String, Param<?>>> params = new HashMap<>();
 
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
@@ -204,53 +195,6 @@ public class ParseContext implements Serializable {
         return factory;
     }
 
-    /**
-     * @param clazz class associated with given param name
-     * @param value value
-     */
-    public void setParam(Class clazz, Param<?> value){
-        Map<String, Param<?>> classParams = this.params.get(clazz.getName());
-        if (classParams == null) {
-            classParams = new HashMap<>();
-        }
-        classParams.put(value.getName(), value);
-        this.params.put(clazz.getName(), classParams);
-    }
-
-    /**
-     * Gets the value associated with given class and parameter
-     * @param clazz class
-     * @param key parameter name
-     * @return param value or null if the clazz or key doesn't exist
-     */
-    public Param<?> getParam(Class clazz, String key) {
-        Map<String, Param<?>> classParams = this.params.get(clazz.getName());
-        if (classParams != null) {
-            return classParams.get(key);
-        }
-        return null;
-    }
-
-    /**
-     * Gets all the params for the specified class
-     * @param clazz class for which to grab the params
-     * @return map of key values or null if nothing has been specified
-     */
-    public Map<String, Param<?>> getParams(Class clazz) {
-        if (params.containsKey(clazz.getName())) {
-            return params.get(clazz.getName());
-        }
-        return EMPTY_PARAMS;
-    }
-
-    /**
-     * Checks if parameter is available
-     * @param key parameter name
-     * @return true if parameter is available, false otherwise
-     */
-    public boolean hasParam(Class clazz, String key){
-       return params.containsKey(clazz) && params.get(clazz.getName()).containsKey(key);
-    }
     /**
      * Returns the DOM builder factory specified in this parsing context.
      * If a factory is not explicitly specified, then a default factory

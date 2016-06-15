@@ -20,6 +20,9 @@
         <parser class="org.apache.tika.parser.pdf.PDFParser">
             <params>
                 <param name="sortByPosition" type="bool">true</param>
+                <param name="ocrImageType" type="string">rgb</param>
+                <param name="ocrStrategy" type="string">ocr_only</param>
+
             </params>
         </parser>
     </parsers>

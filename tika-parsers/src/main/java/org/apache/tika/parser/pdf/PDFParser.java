@@ -39,7 +39,6 @@ import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.config.Field;
-import org.apache.tika.config.Param;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -57,7 +56,6 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.AnnotationUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -138,11 +136,11 @@ public class PDFParser extends AbstractParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
-                    if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
+                    if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                         metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     }
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
@@ -597,7 +595,15 @@ public class PDFParser extends AbstractParser {
         defaultConfig.setSortByPosition(v);
     }
 
+    @Field
+    public void setOcrStrategy(String ocrStrategyString) {
+        defaultConfig.setOcrStrategy(ocrStrategyString);
+    }
 
+    @Field
+    public void setOcrImageType(String imageType) {
+        defaultConfig.setOcrImageType(imageType);
+    }
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
         if (pdMetadata == null) {
