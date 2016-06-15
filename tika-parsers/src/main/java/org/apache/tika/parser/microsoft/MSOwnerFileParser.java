@@ -66,7 +66,7 @@ public class MSOwnerFileParser extends AbstractParser {
         IOUtils.readFully(stream, asciiNameBytes);
         int asciiNameLength = (int)asciiNameBytes[0];//don't need to convert to unsigned int because it can't be that long
         String asciiName = new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
-        metadata.set(TikaCoreProperties.CREATOR, asciiName);
+        metadata.set(TikaCoreProperties.MODIFIER, asciiName);
 
         int unicodeCharLength = stream.read();
         if (unicodeCharLength > 0) {
@@ -74,7 +74,7 @@ public class MSOwnerFileParser extends AbstractParser {
             byte[] unicodeBytes = new byte[unicodeCharLength * 2];
             IOUtils.readFully(stream, unicodeBytes);
             String unicodeName = new String(unicodeBytes, StandardCharsets.UTF_16LE);
-            metadata.set(TikaCoreProperties.CREATOR, unicodeName);
+            metadata.set(TikaCoreProperties.MODIFIER, unicodeName);
         }
         xhtml.endDocument();
     }
