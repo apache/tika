@@ -1188,7 +1188,13 @@ public class PDFParserTest extends TikaTest {
             assertContains("Haystack", xmlResult.xml);
             assertContains("Needle", xmlResult.xml);
             if (! strategy.equals(PDFParserConfig.OCR_STRATEGY.NO_OCR)) {
-                assertContains("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
+                // Tesseract may see the t in haystack as a ! some times...
+                String div = "<div class=\"ocr\">pdf_hays";
+                if (xmlResult.xml.contains(div+"!ack")) {
+                   assertContains(div+"!ack", xmlResult.xml);
+                } else {
+                   assertContains(div+"tack", xmlResult.xml);
+                }
             } else {
                 assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
             }
