@@ -50,6 +50,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
+import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -145,6 +146,9 @@ public class ZipContainerDetector implements Detector {
                 MediaType type = detectOpenDocument(zip);
                 if (type == null) {
                     type = detectOPCBased(zip, tis);
+                }
+                if (type == null) {
+                    type = detectIWork13(zip);
                 }
                 if (type == null) {
                     type = detectIWork(zip);
@@ -298,6 +302,14 @@ public class ZipContainerDetector implements Detector {
             // Non-AutoCAD Package received
             return null;
         }
+    }
+
+    private static MediaType detectIWork13(ZipFile zip) {
+        if (zip.getEntry(IWork13PackageParser.IWORK13_COMMON_ENTRY) != null) {
+            return IWork13PackageParser.IWork13DocumentType.detect(zip);
+        }
+        return null;
+
     }
 
     private static MediaType detectIWork(ZipFile zip) {
