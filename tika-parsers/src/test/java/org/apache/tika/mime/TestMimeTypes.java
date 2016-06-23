@@ -283,11 +283,16 @@ public class TestMimeTypes {
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/zip", "testWORD.docx");
         
+        // POI-generated files have the rels first not Content Types
+        assertTypeByData("application/x-tika-ooxml", "testEXCEL_poi.xlsx");
+        
         // If we give the filename as well as the data, we can
         //  specialise the ooxml generic one to the correct type
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL.xlsx");
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.presentationml.presentation", "testPPT.pptx");
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "testWORD.docx");
+        
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL_poi.xlsx");
         
         // Test a few of the less usual ones
         assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12","testEXCEL.xlsb");
