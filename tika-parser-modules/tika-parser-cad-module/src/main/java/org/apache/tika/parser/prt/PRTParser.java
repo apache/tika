@@ -77,7 +77,7 @@ public class PRTParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         Last5 l5 = new Last5();
         int read;
-
+        xhtml.startDocument();
         // Try to get the creation date, which is YYYYMMDDhhmm
         byte[] header = new byte[30];
         IOUtils.readFully(stream, header);
@@ -123,6 +123,7 @@ public class PRTParser extends AbstractParser {
                 l5.record(read);
             }
         }
+        xhtml.endDocument();
     }
 
     private void handleNoteText(InputStream stream, XHTMLContentHandler xhtml)
