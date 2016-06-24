@@ -16,22 +16,32 @@
  */
 package org.apache.tika.parser.microsoft.xml;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.ElementMetadataHandler;
-import org.apache.tika.parser.xml.XMLParser;
+import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import java.io.IOException;
+import java.io.InputStream;
 
-public abstract class AbstractXML2003Parser extends XMLParser {
+
+public abstract class AbstractXML2003Parser extends AbstractParser {
 
     protected final static String MS_OFFICE_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
     protected final static String MS_DOC_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
@@ -44,9 +54,14 @@ public abstract class AbstractXML2003Parser extends XMLParser {
     protected final static String BIN_DATA = "binData";
 
     protected final static String A = "a";
-    protected final static String IMG = "img";
-    protected final static String HREF = "href";
+    protected final static String BODY = "body";
     protected final static String CDATA = "cdata";
+    protected final static String DIV = "div";
+    protected final static String HREF = "href";
+    protected final static String IMG = "img";
+    protected final static String P = "p";
+    protected final static String TD = "td";
+    protected final static String TR = "tr";
     protected final static String TABLE = "table";
     protected final static String TBODY = "tbody";
 
@@ -62,9 +77,34 @@ public abstract class AbstractXML2003Parser extends XMLParser {
                 metadata, property);
     }
 
-    @Override
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        setContentType(metadata);
+
+        final XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+
+        TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
+        try {
+            context.getSAXParser().parse(
+                    new CloseShieldInputStream(stream),
+                    new OfflineContentHandler(new EmbeddedContentHandler(
+                            getContentHandler(tagged, metadata, context))));
+        } catch (SAXException e) {
+            tagged.throwIfCauseOf(e);
+            throw new TikaException("XML parse error", e);
+        } finally {
+            xhtml.endDocument();
+        }
+    }
+
     protected ContentHandler getContentHandler(ContentHandler ch, Metadata md, ParseContext context) {
-        ch = new TeeContentHandler(
+        //ContentHandler is not currently used, but leave that as an option for
+        //potential future additions
+        return new TeeContentHandler(
                 getMSPropertiesHandler(md, TikaCoreProperties.TITLE, "Title"),
                 getMSPropertiesHandler(md, TikaCoreProperties.CREATOR, "Author"),
                 getMSPropertiesHandler(md, Office.LAST_AUTHOR, "LastAuthor"),
@@ -80,7 +120,7 @@ public abstract class AbstractXML2003Parser extends XMLParser {
                 getMSPropertiesHandler(md, Office.LINE_COUNT, "Lines"),
                 getMSPropertiesHandler(md, Office.PARAGRAPH_COUNT, "Paragraphs"),
                 getMSPropertiesHandler(md, OfficeOpenXMLCore.VERSION, "Version"));
-
-        return ch;
     }
+
+    abstract protected void setContentType(Metadata contentType);
 }
