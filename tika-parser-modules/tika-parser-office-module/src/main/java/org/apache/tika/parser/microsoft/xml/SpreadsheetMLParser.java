@@ -31,6 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -41,14 +42,15 @@ import java.util.Set;
  */
 public class SpreadsheetMLParser extends AbstractXML2003Parser {
 
-    final static String CELL = "Cell";
-    final static String DATA = "Data";
-    final static String ROW = "Row";
-    final static String WORKSHEET = "Worksheet";
+    final static String CELL = "cell";
+    final static String DATA = "data";
+    final static String ROW = "row";
+    final static String WORKSHEET = "worksheet";
 
-    protected static final Set<MediaType> SUPPORTED_TYPES =
+    private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-spreadsheetml");
+    private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.application("vnd.ms-spreadsheetml"))));
+                    MEDIA_TYPE)));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -64,11 +66,17 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                 new ExcelMLHandler(ch));
     }
 
+    @Override
+    public void setContentType(Metadata metadata) {
+        metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
+    }
+
     private class ExcelMLHandler extends DefaultHandler {
         final ContentHandler handler;
         StringBuilder buffer = new StringBuilder();
         String href = null;
         boolean inData = false;
+        boolean inBody = false;
 
         public ExcelMLHandler(ContentHandler handler) {
             this.handler = handler;
@@ -77,9 +85,12 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs)
                 throws SAXException {
+            localName = localName.toLowerCase(Locale.US);
 
             if (MS_SPREADSHEET_URN.equals(uri)) {
-                if ("Table".equals(localName)) {
+                if (BODY.equals(localName)) {
+                    inBody = true;
+                } else if (TABLE.equals(localName)) {
                     handler.startElement(XHTMLContentHandler.XHTML, TABLE, TABLE, EMPTY_ATTRS);
                     handler.startElement(XHTMLContentHandler.XHTML, TBODY, TBODY, EMPTY_ATTRS);
                 } else if (WORKSHEET.equals(localName)) {
@@ -91,12 +102,12 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
                                 NAME_ATTR,
                                 CDATA, worksheetName);
                     }
-                    handler.startElement(XHTMLContentHandler.XHTML, "div", "div", xhtmlAttrs);
+                    handler.startElement(XHTMLContentHandler.XHTML, DIV, DIV, xhtmlAttrs);
                 } else if (ROW.equals(localName)) {
-                    handler.startElement(XHTMLContentHandler.XHTML, "tr", "tr", EMPTY_ATTRS);
+                    handler.startElement(XHTMLContentHandler.XHTML, TR, TR, EMPTY_ATTRS);
                 } else if (CELL.equals(localName)) {
                     href = attrs.getValue(MS_SPREADSHEET_URN, "HRef");
-                    handler.startElement(XHTMLContentHandler.XHTML, "td", "td", EMPTY_ATTRS);
+                    handler.startElement(XHTMLContentHandler.XHTML, TD, TD, EMPTY_ATTRS);
                 } else if (DATA.equals(localName)) {
                     inData = true;
                 }
@@ -107,30 +118,33 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         public void characters(char[] str, int offset, int len) throws SAXException {
             if (inData) {
                 buffer.append(str, offset, len);
+            } else if (inBody) {
+                handler.characters(str, offset, len);
             }
         }
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
+            localName = localName.toLowerCase(Locale.US);
             if (MS_SPREADSHEET_URN.equals(uri)) {
-                if ("Table".equals(localName)) {
+                if (TABLE.equals(localName)) {
                     handler.endElement(XHTMLContentHandler.XHTML, TBODY, TBODY);
                     handler.endElement(XHTMLContentHandler.XHTML, TABLE, TABLE);
 
                 } else if (WORKSHEET.equals(localName)) {
                     handler.endElement(
                             XHTMLContentHandler.XHTML,
-                            "div", "div"
+                            DIV, DIV
                     );
                 } else if (ROW.equals(localName)) {
                     handler.endElement(
                             XHTMLContentHandler.XHTML,
-                            "tr", "tr"
+                            TR, TR
                     );
                 } else if (CELL.equals(localName)) {
                     handler.endElement(
                             XHTMLContentHandler.XHTML,
-                            "td", "td"
+                            TD, TD
                     );
                 } else if (DATA.equals(localName)) {
                     if (href != null) {
