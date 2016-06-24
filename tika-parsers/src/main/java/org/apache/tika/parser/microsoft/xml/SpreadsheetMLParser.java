@@ -52,8 +52,6 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MEDIA_TYPE)));
 
-    private boolean inBody = false;
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -78,6 +76,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
         StringBuilder buffer = new StringBuilder();
         String href = null;
         boolean inData = false;
+        private boolean inBody = false;
 
         public ExcelMLHandler(ContentHandler handler) {
             this.handler = handler;

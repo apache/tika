@@ -62,7 +62,6 @@ public class WordMLParser extends AbstractXML2003Parser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MEDIA_TYPE)));
-    private boolean inBody = false;
 
     static {
         WORDML_TO_XHTML.put(P, P);
@@ -107,6 +106,7 @@ public class WordMLParser extends AbstractXML2003Parser {
     private class WordMLHandler extends DefaultHandler {
         private final ContentHandler handler;
         private boolean ignoreCharacters;
+        private boolean inBody = false;
 
         //use inP to keep track of whether the handler is
         //in a paragraph or not. <p><p></p></p> was allowed
@@ -128,7 +128,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                 }
                 String html = WORDML_TO_XHTML.get(localName);
                 if (html != null) {
-                    if ("p".equals(localName)) {
+                    if (P.equals(localName)) {
                         //close p if already in a p to prevent nested <p>
                         if (inP) {
                             handler.endElement(XHTMLContentHandler.XHTML, P, P);
@@ -165,13 +165,13 @@ public class WordMLParser extends AbstractXML2003Parser {
                     if (html.equals(TABLE)) {
                         handler.endElement(XHTMLContentHandler.XHTML, TBODY, TBODY);
                     }
-                    if ("p".equals(html) && !inP) {
+                    if (P.equals(html) && !inP) {
                         //start p if not already in one to prevent non-matching <p>
                         handler.startElement(XHTMLContentHandler.XHTML, P, P, EMPTY_ATTRS);
                     }
                     handler.endElement(XHTMLContentHandler.XHTML, html, html);
 
-                    if ("p".equals(html)) {
+                    if (P.equals(html)) {
                         inP = false;
                     }
                 }

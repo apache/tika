@@ -43,31 +43,31 @@ import java.io.InputStream;
 
 public abstract class AbstractXML2003Parser extends AbstractParser {
 
-    protected final static String MS_OFFICE_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
-    protected final static String MS_DOC_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
-    protected final static String MS_SPREADSHEET_URN = "urn:schemas-microsoft-com:office:spreadsheet";
-    protected final static String WORD_ML_URL = "http://schemas.microsoft.com/office/word/2003/wordml";
-    protected final static Attributes EMPTY_ATTRS = new AttributesImpl();
+    final static String MS_OFFICE_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
+    final static String MS_DOC_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
+    final static String MS_SPREADSHEET_URN = "urn:schemas-microsoft-com:office:spreadsheet";
+    final static String WORD_ML_URL = "http://schemas.microsoft.com/office/word/2003/wordml";
+    final static Attributes EMPTY_ATTRS = new AttributesImpl();
 
-    protected final static String DOCUMENT_PROPERTIES = "DocumentProperties";
-    protected final static String PICT = "pict";
-    protected final static String BIN_DATA = "binData";
+    final static String DOCUMENT_PROPERTIES = "DocumentProperties";
+    final static String PICT = "pict";
+    final static String BIN_DATA = "binData";
 
-    protected final static String A = "a";
-    protected final static String BODY = "body";
-    protected final static String CDATA = "cdata";
-    protected final static String DIV = "div";
-    protected final static String HREF = "href";
-    protected final static String IMG = "img";
-    protected final static String P = "p";
-    protected final static String TD = "td";
-    protected final static String TR = "tr";
-    protected final static String TABLE = "table";
-    protected final static String TBODY = "tbody";
+    final static String A = "a";
+    final static String BODY = "body";
+    final static String CDATA = "cdata";
+    final static String DIV = "div";
+    final static String HREF = "href";
+    final static String IMG = "img";
+    final static String P = "p";
+    final static String TD = "td";
+    final static String TR = "tr";
+    final static String TABLE = "table";
+    final static String TBODY = "tbody";
 
-    protected final static String HLINK = "hlink";
-    protected final static String HLINK_DEST = "dest";
-    protected final static String NAME_ATTR = "name";
+    final static String HLINK = "hlink";
+    final static String HLINK_DEST = "dest";
+    final static String NAME_ATTR = "name";
 
 
     private static ContentHandler getMSPropertiesHandler(
@@ -77,6 +77,7 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
                 metadata, property);
     }
 
+    @Override
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
