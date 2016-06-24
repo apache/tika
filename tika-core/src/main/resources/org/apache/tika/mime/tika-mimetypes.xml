@@ -3989,10 +3989,11 @@
   <!-- =================================================================== -->
   <mime-type type="application/x-tika-ooxml">
     <sub-class-of type="application/zip"/>
-    <!-- Only works if the Content Types file is the first zip entry -->
+    <!-- Only works if the Content Types or rels file is the first zip entry -->
     <magic priority="50">
       <match value="PK\003\004" type="string" offset="0">
         <match value="[Content_Types].xml" type="string" offset="30"/>
+        <match value="_rels/.rels" type="string" offset="30"/>
       </match>
     </magic>
   </mime-type>
