@@ -29,7 +29,7 @@ public class PRTParserTest extends TikaTest {
      */
     @Test
     public void testPRTParserBasics() throws Exception {
-        XMLResult r = getXML("testCADKey.prt", new PRTParser());
+        XMLResult r = getXML("testCADKEY.prt", new PRTParser());
         Metadata metadata = r.metadata;
         String contents = r.xml;
         assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));

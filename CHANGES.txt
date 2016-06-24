@@ -1,12 +1,19 @@
-Release 2.0 - Future Development
+Release 2.0 - ???
 
-  * Upgrade rome to 1.5.1 (TIKA-1820)
+  MAJOR CHANGES
 
-  * The default LoadErrorHandler is now WARN, to alert you to missing
-    parser classes and their dependencies. To keep the old behaviour,
-    set your LoadErrorHandler to IGNORE. (TIKA-1805)
+  * Remove 3 parameter parse option from AbstractParser (TIKA-2020).
+    Clients will now need to include a ParseContext.
 
   * (Something about more specific parser bundles, plus an overall one)
+
+  MINOR CHANGES
+
+    * Upgrade rome to 1.5.1 (TIKA-1820)
+
+    * The default LoadErrorHandler is now WARN, to alert you to missing
+      parser classes and their dependencies. To keep the old behaviour,
+      set your LoadErrorHandler to IGNORE. (TIKA-1805)
 
 Release 1.14 - ???
 
