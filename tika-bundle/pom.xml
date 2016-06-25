@@ -112,6 +112,7 @@
   </dependencies>
 
   <build>
+  	<pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.felix</groupId>
@@ -426,6 +427,7 @@
         </configuration>
       </plugin>
     </plugins>
+    </pluginManagement>
   </build>
 
   <organization>
