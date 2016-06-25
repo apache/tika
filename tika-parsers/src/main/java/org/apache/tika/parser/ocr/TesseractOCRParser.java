@@ -160,7 +160,7 @@ public class TesseractOCRParser extends AbstractParser {
         
     	boolean hasPython = false;
     	
-    	try {
+		try {
 			Process proc = Runtime.getRuntime().exec("python -h");
 			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			if(stdInput.read() != -1) {
@@ -169,7 +169,7 @@ public class TesseractOCRParser extends AbstractParser {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} 
-    	
+
 		return hasPython;	
     }
     
@@ -283,22 +283,22 @@ public class TesseractOCRParser extends AbstractParser {
         // determine the angle of rotation required to make the text horizontal
         CommandLine cmdLine = CommandLine.parse(cmd);
         if(hasPython()) {
-        	try {
-        		executor.execute(cmdLine);
-        		angle = outputStream.toString().trim();
-            } catch(Exception e) {	
-        		e.printStackTrace();
-        	}
+			try {
+				executor.execute(cmdLine);
+				angle = outputStream.toString().trim();
+			} catch(Exception e) {	
+				e.printStackTrace();
+			}
         }
               
         // process the image - parameter values can be set in TesseractOCRConfig.properties
     	String line = "convert -density " + config.getDensity() + " -depth " + config.getDepth() + " -colorspace " + config.getColorspace() +  " -filter " + config.getFilter() + " -resize " + config.getResize() + "% -rotate "+ angle + " " + streamingObject.getAbsolutePath() + " " + streamingObject.getAbsolutePath();    	
         cmdLine = CommandLine.parse(line);
-        try {
-    		executor.execute(cmdLine);
-        } catch(Exception e) {	
-    		e.printStackTrace();
-    	} 
+		try {
+			executor.execute(cmdLine);
+		} catch(Exception e) {	
+			e.printStackTrace();
+		} 
        
         tmp.close();
     }
