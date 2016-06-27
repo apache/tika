@@ -36,6 +36,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.util.IOUtils;
+import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
@@ -47,10 +48,6 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
  * and for granting permission to use his code in Tika.
  */
 class RTFObjDataParser {
-
-    private final static int[] INT_LE_POWS = new int[]{
-            1, 256, 65536, 16777216
-    };
 
     private final static String WIN_ASCII = "WINDOWS-1252";
 
@@ -195,7 +192,12 @@ class RTFObjDataParser {
 
         //should we add this to the metadata?
         readAnsiString(is); //iconFilePath
-        readUShort(is); //iconIndex
+        try {
+            //iconIndex
+            EndianUtils.readUShortBE(is);
+        } catch (EndianUtils.BufferUnderrunException e) {
+            throw new IOException(e);
+        }
         int type = readUShort(is); //type
 
         //1 is link, 3 is embedded object
@@ -209,7 +211,7 @@ class RTFObjDataParser {
         String ansiFilePath = readAnsiString(is); //filePath
         long bytesLen = readUInt(is);
         byte[] objBytes = initByteArray(bytesLen);
-        is.read(objBytes);
+        IOUtils.readFully(is, objBytes);
         StringBuilder unicodeFilePath = new StringBuilder();
 
         try {
@@ -248,24 +250,19 @@ class RTFObjDataParser {
 
 
     private int readUShort(InputStream is) throws IOException {
-        int lo = is.read();
-        int hi = is.read() * 256;
-        if (lo == -1 || hi == -1) {
-            throw new IOException("Hit end of stream before reading little endian unsigned short.");
+        try {
+            return EndianUtils.readUShortLE(is);
+        } catch (EndianUtils.BufferUnderrunException e) {
+            throw new IOException(e);
         }
-        return hi + lo;
     }
 
     private long readUInt(InputStream is) throws IOException {
-        long sum = 0;
-        for (int i = 0; i < 4; i++) {
-            int v = is.read();
-            if (v == -1) {
-                throw new IOException("Hit end of stream before finishing little endian unsigned int.");
-            }
-            sum += v * (long) INT_LE_POWS[i];
+        try {
+            return EndianUtils.readUIntLE(is);
+        } catch (EndianUtils.BufferUnderrunException e) {
+            throw new IOException(e);
         }
-        return sum;
     }
 
     private String readAnsiString(InputStream is) throws IOException {
@@ -296,11 +293,7 @@ class RTFObjDataParser {
     private byte[] readBytes(InputStream is, long len) throws IOException {
         //initByteArray tests for "reading of too many bytes"
         byte[] bytes = initByteArray(len);
-        int read = is.read(bytes);
-        if (read != len) {
-            throw new IOException("Hit end of stream before reading all bytes");
-        }
-
+        IOUtils.readFully(is, bytes);
         return bytes;
     }
 

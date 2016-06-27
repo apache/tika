@@ -70,6 +70,26 @@ public class EndianUtils {
       return (ch1 << 8) + (ch2 << 0);
    }
 
+
+   /**
+    * Get a LE unsigned int value from an InputStream
+    *
+    * @param  stream the InputStream from which the int is to be read
+    * @return                              the int (32-bit) value
+    * @exception  IOException              will be propagated back to the caller
+    * @exception  BufferUnderrunException  if the stream cannot provide enough bytes
+    */
+   public static long readUIntLE(InputStream stream) throws IOException, BufferUnderrunException {
+      int ch1 = stream.read();
+      int ch2 = stream.read();
+      int ch3 = stream.read();
+      int ch4 = stream.read();
+      if ((ch1 | ch2 | ch3 | ch4) < 0) {
+         throw new BufferUnderrunException();
+      }
+      return ((ch4 << 24) + (ch3<<16) + (ch2 << 8) + (ch1 << 0)) & 0x00FFFFFFFFl;
+   }
+
    /**
     * Get a LE int value from an InputStream
     *
