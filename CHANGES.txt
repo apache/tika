@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Add parser for applefile (AppleSingle) (TIKA-2022)
+
   * Add mime types, mime magic and/or globs for:
      * Endnote Import File (TIKA-2011)
      * DJVU files (TIKA-2009)
