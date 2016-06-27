@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -952,15 +953,7 @@ final class TextExtractor {
                         embObjHandler.reset();
                     }
                 } else {
-                    int bytesToRead = param;
-                    byte[] tmpArray = new byte[Math.min(1024, bytesToRead)];
-                    while (bytesToRead > 0) {
-                        int r = in.read(tmpArray, 0, Math.min(bytesToRead, tmpArray.length));
-                        if (r < 0) {
-                            throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param - bytesToRead));
-                        }
-                        bytesToRead -= r;
-                    }
+                    IOUtils.skipFully(in, param);
                 }
             } else {
                 // log some warning?
