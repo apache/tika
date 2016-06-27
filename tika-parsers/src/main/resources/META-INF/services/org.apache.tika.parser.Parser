@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+org.apache.tika.parser.apple.AppleSingleFileParser
 org.apache.tika.parser.asm.ClassParser
 org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
