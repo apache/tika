@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -45,6 +46,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
@@ -1209,6 +1211,23 @@ public class OOXMLParserTest extends TikaTest {
         //link on textbox
         assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
+
+    @Test
+    public void testEmbeddedPDFInPPTX() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testPPT_embeddedPDF.pptx");
+        Metadata pdfMetadata1 = metadataList.get(2);
+        assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
+        Metadata pdfMetadata2 = metadataList.get(4);
+        assertContains("Hello World", pdfMetadata2.get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testEmbeddedPDFInXLSX() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
+        Metadata pdfMetadata = metadataList.get(2);
+        assertContains("Hello World", pdfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
 }
 
 

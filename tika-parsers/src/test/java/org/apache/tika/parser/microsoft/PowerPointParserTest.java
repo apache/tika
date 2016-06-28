@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.TikaTest;
@@ -27,6 +28,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -237,5 +239,14 @@ public class PowerPointParserTest extends TikaTest {
     public void testCommentAuthorship() throws Exception {
         XMLResult r = getXML("testPPT_comment.ppt");
         assertContains("<p class=\"slide-comment\"><b>Allison, Timothy B. (ATB)", r.xml);
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testPPT_embeddedPDF.ppt");
+        assertContains("Apache Tika project", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("3.pdf", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("Hello World", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("4.pdf", metadataList.get(2).get(Metadata.RESOURCE_NAME_KEY));
     }
 }

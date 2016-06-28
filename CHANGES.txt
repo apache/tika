@@ -1,6 +1,9 @@
 Release 1.14 - ???
 
-  * Add parser for applefile (AppleSingle) (TIKA-2022)
+  * Improve extraction of embedded documents from PPT, PPT and XLSX
+    (TIKA-2026).
+
+  * Add parser for applefile (AppleSingle) (TIKA-2022).
 
   * Add mime types, mime magic and/or globs for:
      * Endnote Import File (TIKA-2011)

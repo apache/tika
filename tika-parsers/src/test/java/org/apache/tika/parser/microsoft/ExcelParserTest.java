@@ -16,13 +16,12 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.TikaTest;
@@ -37,6 +36,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -455,5 +455,11 @@ public class ExcelParserTest extends TikaTest {
         //TODO: not extracting these yet
         //link on textbox
 //        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
+        assertContains("Hello World!", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
     }
 }

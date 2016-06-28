@@ -229,8 +229,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
             if (root.hasEntry("CONTENTS")
                     && root.hasEntry("\u0001Ole")
-                    && root.hasEntry("\u0001CompObj")
-                    && root.hasEntry("\u0003ObjInfo")) {
+                    && root.hasEntry("\u0001CompObj")) {
                 // TIKA-704: OLE 2.0 embedded non-Office document?
                 //TODO: original file paths can be stored underneath root
                 //figure out how to extract that info for: TikaCoreProperties.ORIGINAL_RESOURCE_NAME
