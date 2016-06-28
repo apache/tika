@@ -143,7 +143,7 @@ public class OfficeParser extends AbstractParser {
                 xhtml.element("p", publisherTextExtractor.getText());
                 break;
             case WORDDOCUMENT:
-                new WordExtractor(context).parse(root, xhtml);
+                new WordExtractor(context, metadata).parse(root, xhtml);
                 break;
             case POWERPOINT:
                 new HSLFExtractor(context).parse(root, xhtml);

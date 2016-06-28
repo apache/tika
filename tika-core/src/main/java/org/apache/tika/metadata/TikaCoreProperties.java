@@ -76,6 +76,13 @@ public interface TikaCoreProperties {
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"warn");
 
     /**
+     * Some file formats can store information about their original
+     * file name/location or about their attachment's original file name/location.
+     */
+    public static final Property ORIGINAL_RESOURCE_NAME =
+            Property.internalTextBag(TIKA_META_PREFIX+"origResourceName");
+
+    /**
      * This is currently used to identify Content-Type that may be
      * included within a document, such as in html documents
      * (e.g. <meta http-equiv="content-type" content="text/html; charset=UTF-8">)

@@ -31,6 +31,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
@@ -186,10 +187,12 @@ public class WordMLParser extends AbstractXML2003Parser {
     private class PictHandler extends DefaultHandler {
         final StringBuilder buffer = new StringBuilder();
         final ContentHandler handler;
+        byte[] rawBytes = null;
         EmbeddedDocumentExtractor embeddedDocumentExtractor;
         boolean inPict = false;
         boolean inBin = false;
         String pictName = null;
+        String pictSource = null;
         final Base64 base64 = new Base64();
 
         public PictHandler(ContentHandler handler, EmbeddedDocumentExtractor embeddedDocumentExtractor) {
@@ -210,6 +213,24 @@ public class WordMLParser extends AbstractXML2003Parser {
                         pictName = pictName.replaceFirst("wordml://", "");
                     }
                 }
+            } else if (MS_VML_URN.equals(uri)) {
+                if (localName.equals("imagedata")) {
+                    //src is an internal designator with an extension
+                    String src = attrs.getValue("", "src");
+                    //title appears to be the original file name
+                    String title = attrs.getValue(MS_OFFICE_PROPERTIES_URN, "title");
+                    if (title != null && ! title.equals("")) {
+                        if (src != null) {
+                            //take the extention from the src and append it to the title
+                            int i = src.lastIndexOf(".");
+                            if (i > -1 && i +1 < src.length()) {
+                                String ext = src.substring(i);
+                                title += ext;
+                            }
+                        }
+                        pictSource = title;
+                    }
+                }
             }
         }
 
@@ -227,6 +248,13 @@ public class WordMLParser extends AbstractXML2003Parser {
             if (!WORD_ML_URL.equals(uri)) {
                 return;
             }
+            //somewhat tricky...
+            //can't just dump bin_data at the end of the
+            //bin_data element because there may be metadata
+            //after it, if it is within a pict element
+            //<pict><binData></binData><imagedata/></pict>.
+            //However, if you aren't in a pict (say docOLEdata), then do dump binary
+            //data at the end of the bin data.
             if (PICT.equals(localName)) {
                 inPict = false;
                 AttributesImpl attrs = new AttributesImpl();
@@ -238,16 +266,28 @@ public class WordMLParser extends AbstractXML2003Parser {
                         IMG, IMG, attrs);
                 handler.endElement(
                         XHTMLContentHandler.XHTML, IMG, IMG);
+                handleEmbedded();
             } else if (BIN_DATA.equals(localName)) {
                 inBin = false;
-                byte[] bytes = base64.decode(buffer.toString());
-                if (bytes == null) {
-                    return;
+                rawBytes = base64.decode(buffer.toString());
+                //reset
+                buffer.setLength(0);
+
+                if (! inPict) {
+                    handleEmbedded();
                 }
-                try (TikaInputStream is = TikaInputStream.get(bytes)) {
+            }
+        }
+
+        private void handleEmbedded() throws SAXException {
+            if (rawBytes != null) {
+                try (TikaInputStream is = TikaInputStream.get(rawBytes)) {
                     Metadata metadata = new Metadata();
                     if (pictName != null) {
                         metadata.set(Metadata.RESOURCE_NAME_KEY, pictName);
+                    }
+                    if (pictSource != null) {
+                        metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, pictSource);
                     }
                     if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
                         embeddedDocumentExtractor.parseEmbedded(is,
@@ -256,8 +296,11 @@ public class WordMLParser extends AbstractXML2003Parser {
                 } catch (IOException e) {
                     //log
                 }
-                buffer.setLength(0);
             }
+            //reset
+            pictName = null;
+            pictSource = null;
+            rawBytes = null;
         }
     }
 }

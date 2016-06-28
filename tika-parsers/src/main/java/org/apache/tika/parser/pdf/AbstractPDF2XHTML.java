@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
+
 import javax.xml.stream.XMLStreamException;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -77,8 +79,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
 
@@ -177,7 +177,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void extractMultiOSPDEmbeddedFiles(String defaultName,
+    private void extractMultiOSPDEmbeddedFiles(String displayName,
                                        PDComplexFileSpecification spec,
                                        EmbeddedDocumentExtractor extractor) throws IOException,
             SAXException, TikaException {
@@ -186,13 +186,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         //current strategy is to pull all, not just first non-null
-        extractPDEmbeddedFile(defaultName, spec.getFile(), spec.getEmbeddedFile(), extractor);
-        extractPDEmbeddedFile(defaultName, spec.getFileMac(), spec.getEmbeddedFileMac(), extractor);
-        extractPDEmbeddedFile(defaultName, spec.getFileDos(), spec.getEmbeddedFileDos(), extractor);
-        extractPDEmbeddedFile(defaultName, spec.getFileUnix(), spec.getEmbeddedFileUnix(), extractor);
+        extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFile(), spec.getEmbeddedFile(), extractor);
+        extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileMac(), spec.getEmbeddedFileMac(), extractor);
+        extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileDos(), spec.getEmbeddedFileDos(), extractor);
+        extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileUnix(), spec.getEmbeddedFileUnix(), extractor);
     }
 
-    private void extractPDEmbeddedFile(String defaultName, String fileName, PDEmbeddedFile file,
+    private void extractPDEmbeddedFile(String displayName, String unicodeFileName,
+                                       String fileName, PDEmbeddedFile file,
                                        EmbeddedDocumentExtractor extractor)
             throws SAXException, IOException, TikaException {
 
@@ -200,8 +201,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //skip silently
             return;
         }
-
-        fileName = (fileName == null) ? defaultName : fileName;
+        
+        fileName = (fileName == null) ? displayName : fileName;
 
         // TODO: other metadata?
         Metadata metadata = new Metadata();
@@ -210,6 +211,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileName);
 
         if (extractor.shouldParseEmbedded(metadata)) {
             TikaInputStream stream = null;
@@ -290,7 +292,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
                     PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
                     try {
-                        extractMultiOSPDEmbeddedFiles("", fileSpec, extractor);
+                        extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec, extractor);
                     } catch (SAXException e) {
                         throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
                     } catch (TikaException e) {

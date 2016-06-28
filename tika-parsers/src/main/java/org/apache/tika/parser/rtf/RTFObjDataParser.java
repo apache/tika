@@ -40,6 +40,7 @@ import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 /**
@@ -242,6 +243,7 @@ class RTFObjDataParser {
             fileNameToUse = displayName == null ? "" : displayName;
             pathToUse = ansiFilePath == null ? "" : ansiFilePath;
         }
+        metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileNameToUse);
         metadata.set(Metadata.RESOURCE_NAME_KEY, FilenameUtils.getName(fileNameToUse));
         metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, pathToUse);
 
