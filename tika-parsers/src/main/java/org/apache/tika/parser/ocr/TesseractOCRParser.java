@@ -320,7 +320,7 @@ public class TesseractOCRParser extends AbstractParser {
             	FileUtils.copyFile(input, tmpFile);
             	
             	// Process image if ImageMagick Tool is present
-            	if(hasImageMagick(config)) {
+            	if(config.isEnableProcessing() == 1 && hasImageMagick(config)) {
             		processImage(tmpFile,config);
             	}
             	
