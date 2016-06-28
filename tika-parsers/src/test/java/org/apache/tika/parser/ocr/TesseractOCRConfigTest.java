@@ -37,7 +37,13 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("Invalid default pageSegMode value", "1", config.getPageSegMode());
         assertEquals("Invalid default minFileSizeToOcr value", 0, config.getMinFileSizeToOcr());
         assertEquals("Invalid default maxFileSizeToOcr value", Integer.MAX_VALUE, config.getMaxFileSizeToOcr());
-        assertEquals("Invalid default timeout value", 120, config.getTimeout());
+        assertEquals("Invalid default timeout value", 120, config.getTimeout());  
+        assertEquals("Invalid default ImageMagickPath value", "", config.getImageMagickPath());
+        assertEquals("Invalid default density value", 300 , config.getDensity());
+        assertEquals("Invalid default depth value", 4 , config.getDepth());
+        assertEquals("Invalid default colorpsace value", "gray" , config.getColorspace());
+        assertEquals("Invalid default filter value", "triangle" , config.getFilter());
+        assertEquals("Invalid default resize value", 900 , config.getResize());
     }
 
     @Test
@@ -54,6 +60,11 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
         assertEquals("Invalid default maxFileSizeToOcr value", Integer.MAX_VALUE, config.getMaxFileSizeToOcr());
         assertEquals("Invalid overridden timeout value", 240, config.getTimeout());
+        assertEquals("Invalid default ImageMagickPath value", "", config.getImageMagickPath());
+        assertEquals("Invalid overridden density value", 200 , config.getDensity());
+        assertEquals("Invalid overridden depth value", 8 , config.getDepth());
+        assertEquals("Invalid overridden filter value", "box" , config.getFilter());	
+        assertEquals("Invalid overridden resize value", 300 , config.getResize());
     }
 
     @Test
@@ -70,6 +81,11 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
         assertEquals("Invalid overridden maxFileSizeToOcr value", 2000000, config.getMaxFileSizeToOcr());
         assertEquals("Invalid overridden timeout value", 240, config.getTimeout());
+        assertEquals("Invalid overridden ImageMagickPath value", "/usr/local/bin/", config.getImageMagickPath());
+        assertEquals("Invalid overridden density value", 200 , config.getDensity());
+        assertEquals("Invalid overridden depth value", 8 , config.getDepth());
+        assertEquals("Invalid overridden filter value", "box" , config.getFilter());
+        assertEquals("Invalid overridden resize value", 300 , config.getResize());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -88,6 +104,42 @@ public class TesseractOCRConfigTest extends TikaTest {
         config.setPageSegMode("10");
         assertTrue("Couldn't set valid values", true);
         config.setPageSegMode("11");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testValidateDensity() {
+    	TesseractOCRConfig config = new TesseractOCRConfig();
+    	config.setDensity(300);
+    	config.setDensity(400);
+    	assertTrue("Couldn't set valid values", true);
+    	config.setDensity(1);
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testValidateDepth() {
+    	TesseractOCRConfig config = new TesseractOCRConfig();
+    	config.setDepth(4);
+    	config.setDepth(8);
+    	assertTrue("Couldn't set valid values", true);
+    	config.setDepth(6);
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testValidateFilter() {
+    	TesseractOCRConfig config = new TesseractOCRConfig();
+    	config.setFilter("Triangle");
+    	config.setFilter("box");
+    	assertTrue("Couldn't set valid values", true);
+    	config.setFilter("abc");
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void testValidateResize() {
+    	TesseractOCRConfig config = new TesseractOCRConfig();
+    	config.setResize(200);
+    	config.setResize(400);
+    	assertTrue("Couldn't set valid values", true);
+    	config.setDensity(1000);
     }
 
 }
