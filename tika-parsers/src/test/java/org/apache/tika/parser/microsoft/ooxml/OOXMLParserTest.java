@@ -1214,7 +1214,7 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDFInPPTX() throws Exception {
-        List<Metadata> metadataList = getRecursiveJson("testPPT_embeddedPDF.pptx");
+        List<Metadata> metadataList = getRecursiveJson("testPPT_EmbeddedPDF.pptx");
         Metadata pdfMetadata1 = metadataList.get(2);
         assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(4);
@@ -1223,8 +1223,8 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDFInXLSX() throws Exception {
-        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
-        Metadata pdfMetadata = metadataList.get(2);
+        List<Metadata> metadataList = getRecursiveJson("testExcel_embeddedPDF.xlsx");
+        Metadata pdfMetadata = metadataList.get(1);
         assertContains("Hello World", pdfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
     }
 

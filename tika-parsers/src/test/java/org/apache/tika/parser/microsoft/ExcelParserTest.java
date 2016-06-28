@@ -459,7 +459,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDF() throws Exception {
-        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
+        List<Metadata> metadataList = getRecursiveJson("testExcel_embeddedPDF.xls");
         assertContains("Hello World!", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
     }
 }
