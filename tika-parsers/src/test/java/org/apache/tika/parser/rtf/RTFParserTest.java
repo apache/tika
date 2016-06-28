@@ -450,12 +450,7 @@ public class RTFParserTest extends TikaTest {
         assertEquals("C:\\Users\\tallison\\AppData\\Local\\Temp\\testJPEG_普林斯顿.jpg",
                 metadataList.get(45).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
-
-    @Test
-    public void oneOff() throws Exception {
-        debug(getRecursiveJson("testRTFEmbeddedFiles.rtf"));
-    }
-
+    
     //TIKA-1010 test regular (not "embedded") images/picts
     @Test
     public void testRegularImages() throws Exception {
