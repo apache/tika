@@ -16,12 +16,14 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import java.io.InputStream;
-import java.util.Locale;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -491,6 +493,14 @@ public class WordParserTest extends TikaTest {
         assertEquals(2, managers.length);
         assertEquals("manager1", managers[0]);
         assertEquals("manager2", managers[1]);
+    }
+
+    @Test
+    public void testOrigLocation() throws Exception {
+        Metadata metadata = getXML("testException2.doc").metadata;
+        List<String> values = Arrays.asList(metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        assertContains("C:\\Lab Documents\\Lab Manuals\\Physics 275-6\\276-s00\\07-Force-on-a-current-S00.doc", values);
+        assertContains("Hard Drive:Course Folders:276:276-s00:07-Force-on-a-current-S00", values);
     }
 }
 

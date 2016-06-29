@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.xml;
 
 import org.apache.tika.TikaTest;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -26,10 +25,10 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Arrays;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 public class XML2003ParserTest extends TikaTest {
 
@@ -80,6 +79,8 @@ public class XML2003ParserTest extends TikaTest {
         assertContains("R1 c1 R1 c2", txt);
         assertNotContained("footnoteFigure", txt);
         assertContains("footnote Figure", txt);
+
+        assertEquals("testJPEG_EXIF.jpg", list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
         assertEquals("image/jpeg", list.get(7).get(Metadata.CONTENT_TYPE));
     }
 

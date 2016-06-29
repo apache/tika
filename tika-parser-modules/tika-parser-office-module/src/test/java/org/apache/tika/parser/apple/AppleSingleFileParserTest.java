@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 public class AppleSingleFileParserTest extends TikaTest {
@@ -36,5 +37,7 @@ public class AppleSingleFileParserTest extends TikaTest {
         assertContains(AppleSingleFileParser.class.getName(),
                 Arrays.asList(list.get(0).getValues("X-Parsed-By")));
         assertEquals("application/pdf", list.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("fltsyllabussortie2rev1_2.pdf", list.get(1).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+
     }
 }

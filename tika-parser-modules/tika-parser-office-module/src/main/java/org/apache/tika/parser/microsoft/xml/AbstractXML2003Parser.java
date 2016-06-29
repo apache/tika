@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.xml;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -37,14 +40,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import java.io.IOException;
-import java.io.InputStream;
 
 public abstract class AbstractXML2003Parser extends AbstractParser {
 
     final static String MS_OFFICE_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
     final static String MS_DOC_PROPERTIES_URN = "urn:schemas-microsoft-com:office:office";
     final static String MS_SPREADSHEET_URN = "urn:schemas-microsoft-com:office:spreadsheet";
+    final static String MS_VML_URN = "urn:schemas-microsoft-com:vml";
     final static String WORD_ML_URL = "http://schemas.microsoft.com/office/word/2003/wordml";
     final static Attributes EMPTY_ATTRS = new AttributesImpl();
 

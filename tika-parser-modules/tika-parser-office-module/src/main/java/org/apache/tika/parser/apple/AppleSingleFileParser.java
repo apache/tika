@@ -32,6 +32,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -133,8 +134,7 @@ public class AppleSingleFileParser extends AbstractParser {
                 IOUtils.readFully(stream, buffer);
                 bytesRead += f.length;
                 String originalFileName = new String(buffer, 0, buffer.length, StandardCharsets.US_ASCII);
-                //TODO: figure out correct metadata key
-                //embeddedMetadata.set(TikaCoreProperties.IDENTIFIER, originalFileName);
+                embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, originalFileName);
             } else if (f.entryId != DATA_FORK) {
                 IOUtils.skipFully(stream, f.length);
                 bytesRead += f.length;
