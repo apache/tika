@@ -231,8 +231,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     && root.hasEntry("\u0001Ole")
                     && root.hasEntry("\u0001CompObj")) {
                 // TIKA-704: OLE 2.0 embedded non-Office document?
-                //TODO: original file paths can be stored underneath root
-                //figure out how to extract that info for: TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+                //TODO: figure out if the equivalent of OLE 1.0's
+                //getCommand() and getFileName() exist for OLE 2.0 to populate
+                //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
                 stream = TikaInputStream.get(
                         fs.createDocumentInputStream("CONTENTS"));
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
@@ -246,6 +247,12 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         Ole10Native.createFromEmbeddedOleObject(fs);
                 if (ole.getLabel() != null) {
                     metadata.set(Metadata.RESOURCE_NAME_KEY, ole.getLabel());
+                }
+                if (ole.getCommand() != null) {
+                    metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());
+                }
+                if (ole.getFileName() != null) {
+                    metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getFileName());
                 }
                 byte[] data = ole.getDataBuffer();
                 if (data != null) {
