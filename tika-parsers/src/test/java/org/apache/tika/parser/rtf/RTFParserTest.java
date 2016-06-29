@@ -433,7 +433,7 @@ public class RTFParserTest extends TikaTest {
         expected.put(45, new Pair("testJPEG_\u666E\u6797\u65AF\u987F.jpg", "image/jpeg"));
 
 
-        List<Metadata> metadataList = getRecursiveJson("testRTFEmbeddedFiles.rtf");
+        List<Metadata> metadataList = getRecursiveMetadata("testRTFEmbeddedFiles.rtf");
         assertEquals(48, metadataList.size());
         for (Map.Entry<Integer, Pair> e : expected.entrySet()) {
             Metadata metadata = metadataList.get(e.getKey());

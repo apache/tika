@@ -308,7 +308,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
         //docx converts a chart to a actual xlsx file
         //so we only need to look in pptx and xlsx
         for (String suffix : new String[]{"pptx", "xlsx"}) {
-            List<Metadata> list = getRecursiveJson("testMSChart-govdocs-428996."+suffix);
+            List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996."+suffix);
             boolean found = false;
             for (Metadata m : list) {
                 if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {

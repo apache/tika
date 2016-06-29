@@ -34,7 +34,7 @@ public class XML2003ParserTest extends TikaTest {
 
     @Test
     public void testBasicWord() throws Exception {
-        List<Metadata> list =  getRecursiveJson("testWORD2003.xml");
+        List<Metadata> list =  getRecursiveMetadata("testWORD2003.xml");
         assertEquals(8, list.size());
 
         Metadata m = list.get(0);//container doc
