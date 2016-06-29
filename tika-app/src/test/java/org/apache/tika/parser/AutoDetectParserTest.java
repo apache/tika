@@ -391,7 +391,7 @@ public class AutoDetectParserTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 
-        List<Metadata> metadataList = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         //sanity check
         assertEquals(5, metadataList.size());
 
