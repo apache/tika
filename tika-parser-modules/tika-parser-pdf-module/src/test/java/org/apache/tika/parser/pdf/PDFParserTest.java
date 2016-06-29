@@ -767,7 +767,7 @@ public class PDFParserTest extends TikaTest {
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, new AutoDetectParser());
 
-        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -789,7 +789,7 @@ public class PDFParserTest extends TikaTest {
         inline = 0;
         attach = 0;
 
-        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -808,7 +808,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testInlineConfig() throws Exception {
 
-        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf");
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -835,7 +835,7 @@ public class PDFParserTest extends TikaTest {
         inline = 0;
         attach = 0;
 
-        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -852,7 +852,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1376
     public void testEmbeddedFileNameExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveJson("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
         Metadata firstAttachment = metadatas.get(1);
         assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
@@ -860,7 +860,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1374
     public void testOSSpecificEmbeddedFileExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveJson("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
 
         assertEquals("file name", "Test.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
@@ -1190,7 +1190,7 @@ public class PDFParserTest extends TikaTest {
             } else {
                 assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
             }
-            assertEquals(4, getRecursiveJson("testPDFEmbeddingAndEmbedded.docx", context).size());
+            assertEquals(4, getRecursiveMetadata("testPDFEmbeddingAndEmbedded.docx", context).size());
         }
 
     }

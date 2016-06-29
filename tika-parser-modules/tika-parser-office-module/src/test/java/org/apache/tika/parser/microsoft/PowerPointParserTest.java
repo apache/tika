@@ -242,7 +242,7 @@ public class PowerPointParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDF() throws Exception {
-        List<Metadata> metadataList = getRecursiveJson("testPPT_embeddedPDF.ppt");
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedPDF.ppt");
         assertEquals("application/pdf", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("3.pdf", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
         assertEquals("application/pdf", metadataList.get(2).get(Metadata.CONTENT_TYPE));

@@ -1214,7 +1214,7 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDFInPPTX() throws Exception {
-        List<Metadata> metadataList = getRecursiveJson("testPPT_embeddedPDF.pptx");
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedPDF.pptx");
         Metadata pdfMetadata1 = metadataList.get(2);
         assertEquals("application/pdf", pdfMetadata1.get(Metadata.CONTENT_TYPE));
         Metadata pdfMetadata2 = metadataList.get(4);
@@ -1223,14 +1223,14 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedPDFInXLSX() throws Exception {
-        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF.xls");
         Metadata pdfMetadata = metadataList.get(2);
         assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
     public void testOrigSourcePath() throws Exception {
-        Metadata embed1_zip_metadata = getRecursiveJson("test_recursive_embedded.docx").get(11);
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx").get(11);
         assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",

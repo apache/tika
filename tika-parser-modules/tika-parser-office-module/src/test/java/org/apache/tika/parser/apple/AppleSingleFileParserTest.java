@@ -32,7 +32,7 @@ public class AppleSingleFileParserTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
-        List<Metadata> list = getRecursiveJson("testAppleSingleFile.pdf");
+        List<Metadata> list = getRecursiveMetadata("testAppleSingleFile.pdf");
         assertEquals(2, list.size());
         assertContains(AppleSingleFileParser.class.getName(),
                 Arrays.asList(list.get(0).getValues("X-Parsed-By")));

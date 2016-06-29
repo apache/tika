@@ -206,11 +206,11 @@ public abstract class TikaTest {
         return getText(is, parser, new ParseContext(), new Metadata());
     }
 
-    protected List<Metadata> getRecursiveJson(String filePath) throws Exception {
-        return getRecursiveJson(filePath, new ParseContext());
+    protected List<Metadata> getRecursiveMetadata(String filePath) throws Exception {
+        return getRecursiveMetadata(filePath, new ParseContext());
     }
 
-    protected List<Metadata> getRecursiveJson(String filePath, ParseContext context) throws Exception {
+    protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
         Parser p = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
