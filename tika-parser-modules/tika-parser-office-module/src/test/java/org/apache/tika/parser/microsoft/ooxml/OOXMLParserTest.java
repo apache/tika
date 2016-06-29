@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
@@ -24,14 +28,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -1227,6 +1228,14 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
     }
 
+    @Test
+    public void testOrigSourcePath() throws Exception {
+        Metadata embed1_zip_metadata = getRecursiveJson("test_recursive_embedded.docx").get(11);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+    }
 }
 
 

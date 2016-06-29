@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.poi.hpsf.ClassID;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -28,7 +29,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
-import org.apache.poi.hpsf.ClassID;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.DetectorProxy;
@@ -37,6 +37,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -195,6 +196,12 @@ abstract class AbstractPOIFSExtractor {
                     if (ole.getLabel() != null) {
                         metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '/' + ole.getLabel());
                     }
+                    if (ole.getCommand() != null) {
+                        metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());
+                    }
+                    if (ole.getFileName() != null) {
+                        metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getFileName());
+                    }
                     byte[] data = ole.getDataBuffer();
                     embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
@@ -204,6 +211,10 @@ abstract class AbstractPOIFSExtractor {
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
+                    //TODO: figure out if the equivalent of OLE 1.0's
+                    //getCommand() and getFileName() exist for OLE 2.0 to populate
+                    //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+
                     // Grab the contents and process
                     DocumentEntry contentsEntry;
                     try {

@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -501,6 +501,15 @@ public class WordParserTest extends TikaTest {
         List<String> values = Arrays.asList(metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
         assertContains("C:\\Lab Documents\\Lab Manuals\\Physics 275-6\\276-s00\\07-Force-on-a-current-S00.doc", values);
         assertContains("Hard Drive:Course Folders:276:276-s00:07-Force-on-a-current-S00", values);
+    }
+
+    @Test
+    public void testOrigSourcePath() throws Exception {
+        Metadata embed1_zip_metadata = getRecursiveJson("test_recursive_embedded.doc").get(11);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
 }
 
