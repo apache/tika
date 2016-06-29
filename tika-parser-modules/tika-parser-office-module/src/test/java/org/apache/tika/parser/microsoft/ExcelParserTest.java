@@ -16,12 +16,13 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.InputStream;
+import java.util.List;
+import java.util.Locale;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
-import java.io.InputStream;
-import java.util.Locale;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
@@ -401,5 +402,11 @@ public class ExcelParserTest extends TikaTest {
         //TODO: not extracting these yet
         //link on textbox
 //        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
+        assertEquals("application/pdf", metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
 }

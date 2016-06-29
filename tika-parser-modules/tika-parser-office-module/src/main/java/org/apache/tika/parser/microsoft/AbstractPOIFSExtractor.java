@@ -152,6 +152,15 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbeddedOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
+        handleEmbeddedOfficeDoc(dir, null, xhtml);
+    }
+
+    /**
+     * Handle an office document that's embedded at the POIFS level
+     */
+    protected void handleEmbeddedOfficeDoc(
+            DirectoryEntry dir, String resourceName, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
 
         // Is it an embedded OLE2 document, or an embedded OOXML document?
 
@@ -177,21 +186,21 @@ abstract class AbstractPOIFSExtractor {
         }
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         TikaInputStream embedded = null;
-
+        String rName = (resourceName == null) ? dir.getName() : resourceName;
         try {
             if (type == POIFSDocumentType.OLE10_NATIVE) {
                 try {
                     // Try to un-wrap the OLE10Native record:
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode) dir);
                     if (ole.getLabel() != null) {
-                        metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
+                        metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '/' + ole.getLabel());
                     }
                     byte[] data = ole.getDataBuffer();
                     embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
                     // Not a valid OLE10Native record, skip it
                 } catch (Exception e) {
-                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + dir.getName(), e);
+                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + rName, e);
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
@@ -219,13 +228,13 @@ abstract class AbstractPOIFSExtractor {
 
                     // Record what we can do about it
                     metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + extension);
+                    metadata.set(Metadata.RESOURCE_NAME_KEY, rName + extension);
                 } catch (Exception e) {
                     throw new TikaException("Invalid embedded resource", e);
                 }
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-                metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
+                metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '.' + type.getExtension());
             }
 
             // Should we parse it?

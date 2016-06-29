@@ -16,10 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
@@ -29,8 +25,13 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -1209,6 +1210,23 @@ public class OOXMLParserTest extends TikaTest {
         //link on textbox
         assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
+
+    @Test
+    public void testEmbeddedPDFInPPTX() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testPPT_embeddedPDF.pptx");
+        Metadata pdfMetadata1 = metadataList.get(2);
+        assertEquals("application/pdf", pdfMetadata1.get(Metadata.CONTENT_TYPE));
+        Metadata pdfMetadata2 = metadataList.get(4);
+        assertEquals("application/pdf", pdfMetadata2.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testEmbeddedPDFInXLSX() throws Exception {
+        List<Metadata> metadataList = getRecursiveJson("testEXCEL_embeddedPDF.xls");
+        Metadata pdfMetadata = metadataList.get(2);
+        assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
+    }
+
 }
 
 
