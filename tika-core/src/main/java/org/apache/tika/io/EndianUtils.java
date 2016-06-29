@@ -93,6 +93,25 @@ public class EndianUtils {
     }
 
     /**
+     * Get a BE unsigned int value from an InputStream
+     *
+     * @param stream the InputStream from which the int is to be read
+     * @return the int (32-bit) value
+     * @throws IOException             will be propagated back to the caller
+     * @throws BufferUnderrunException if the stream cannot provide enough bytes
+     */
+    public static long readUIntBE(InputStream stream) throws IOException, BufferUnderrunException {
+        int ch1 = stream.read();
+        int ch2 = stream.read();
+        int ch3 = stream.read();
+        int ch4 = stream.read();
+        if ((ch1 | ch2 | ch3 | ch4) < 0) {
+            throw new BufferUnderrunException();
+        }
+        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0)) & 0x00FFFFFFFFl;
+    }
+
+    /**
      * Get a LE int value from an InputStream
      *
      * @param stream the InputStream from which the int is to be read

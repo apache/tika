@@ -50,21 +50,21 @@ public class AppleSingleFileParser extends AbstractParser {
     /**
      * Entry types
      */
-    public static final int DATA_FORK = 1;
-    public static final int RESOURCE_FORK = 2;
-    public static final int REAL_NAME = 3;
-    public static final int COMMENT = 4;
-    public static final int ICON_BW = 5;
-    public static final int ICON_COLOR = 6;
+    private static final int DATA_FORK = 1;
+    private static final int RESOURCE_FORK = 2;
+    private static final int REAL_NAME = 3;
+    private static final int COMMENT = 4;
+    private static final int ICON_BW = 5;
+    private static final int ICON_COLOR = 6;
     //7?!
-    public static final int FILE_DATES_INFO = 8;
-    public static final int FINDER_INFO = 9;
-    public static final int MACINTOSH_FILE_INFO = 10;
-    public static final int PRODOS_FILE_INFO = 11;
-    public static final int MSDOS_FILE_INFO = 12;
-    public static final int SHORT_NAME = 13;
-    public static final int AFP_FILE_INFO = 14;
-    public static final int DIRECTORY_ID = 15;
+    private static final int FILE_DATES_INFO = 8;
+    private static final int FINDER_INFO = 9;
+    private static final int MACINTOSH_FILE_INFO = 10;
+    private static final int PRODOS_FILE_INFO = 11;
+    private static final int MSDOS_FILE_INFO = 12;
+    private static final int SHORT_NAME = 13;
+    private static final int AFP_FILE_INFO = 14;
+    private static final int DIRECTORY_ID = 15;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("applefile"));
@@ -94,7 +94,6 @@ public class AppleSingleFileParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         if (contentFieldInfo != null) {
-            System.out.println(contentFieldInfo.offset + " "+bytesRead);
             long diff = contentFieldInfo.offset-bytesRead;
             IOUtils.skipFully(stream, diff);
             if (ex.shouldParseEmbedded(embeddedMetadata)) {
@@ -153,9 +152,9 @@ public class AppleSingleFileParser extends AbstractParser {
             //convert 32-bit unsigned ints to longs
             fieldInfoList.add(
                     new FieldInfo(
-                            EndianUtils.readIntBE(stream) & 0x00000000ffffffffL, //entry id
-                            EndianUtils.readIntBE(stream) & 0x00000000ffffffffL, //offset
-                            EndianUtils.readIntBE(stream) & 0x00000000ffffffffL  //length
+                            EndianUtils.readUIntBE(stream), //entry id
+                            EndianUtils.readUIntBE(stream), //offset
+                            EndianUtils.readUIntBE(stream) //length
                     )
             );
         }

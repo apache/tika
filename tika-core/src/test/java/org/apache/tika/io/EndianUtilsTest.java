@@ -54,6 +54,22 @@ public class EndianUtilsTest {
         } catch (EndianUtils.BufferUnderrunException e) {
 
         }
+    }
 
+    @Test
+    public void testReadUIntBE() throws Exception {
+        byte[] data = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x08 };
+        assertEquals((long) 8, EndianUtils.readUIntBE(new ByteArrayInputStream(data)));
+
+        data = new byte[] {(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xF0 };
+        assertEquals(4294967280L, EndianUtils.readUIntBE(new ByteArrayInputStream(data)));
+
+        data = new byte[] {(byte)0xFF, (byte)0xFF, (byte)0xFF  };
+        try {
+            EndianUtils.readUIntLE(new ByteArrayInputStream(data));
+            fail("Should have thrown exception");
+        } catch (EndianUtils.BufferUnderrunException e) {
+
+        }
     }
 }
