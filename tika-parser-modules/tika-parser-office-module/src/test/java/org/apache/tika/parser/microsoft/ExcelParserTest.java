@@ -16,13 +16,13 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.InputStream;
-import java.util.List;
-import java.util.Locale;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
@@ -226,9 +226,9 @@ public class ExcelParserTest extends TikaTest {
     }
 
     /**
-     * We don't currently support the .xlsb file format 
-     *  (an OOXML container with binary blobs), but we 
-     *  shouldn't break on these files either (TIKA-826)  
+     * We don't currently support the .xlsb file format
+     * (an OOXML container with binary blobs), but we
+     * shouldn't break on these files either (TIKA-826)
      */
     @Test
     public void testExcelXLSB() throws Exception {
@@ -360,7 +360,7 @@ public class ExcelParserTest extends TikaTest {
         assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
 
-	@Test
+    @Test
     public void testHeaderAndFooterExtraction() throws Exception {
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.UK);
