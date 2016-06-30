@@ -257,6 +257,12 @@
       <version>${cxf.version}</version>
     </dependency>
 	
+	
+	<dependency>
+	<groupId>edu.usc.ir</groupId>
+	<artifactId>PersonaExtraction</artifactId>
+	<version>0.0.1</version>
+	</dependency>
 
     <!-- Provided dependencies -->
     <dependency>
@@ -401,6 +407,8 @@
       <version>2.7.1</version>
     </dependency>
 
+	<!--Persona Parser-->
+	
   </dependencies>
 
   <build>
