@@ -47,6 +47,7 @@
             <Bundle-Activator>org.apache.tika.module.pdf.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-pdf-module;inline=true,
+              tika-parser-multimedia-module;inline=true,
               tika-parser-xmp-commons;inline=true,
               commons-io;inline=true,
               pdfbox;inline=true,
@@ -65,6 +66,22 @@
             <Import-Package>
               *,
               com.ibm.icu.text;resolution:=optional,
+              com.coremedia.iso;resolution:=optional,
+              com.coremedia.iso.boxes;resolution:=optional,
+              com.coremedia.iso.boxes.apple;resolution:=optional,
+              com.coremedia.iso.boxes.sampleentry;resolution:=optional,
+              com.drew.imaging.jpeg;resolution:=optional,
+              com.drew.imaging.riff;resolution:=optional,
+              com.drew.imaging.tiff;resolution:=optional,
+              com.drew.imaging.webp;resolution:=optional,
+              com.drew.lang;resolution:=optional,
+              com.drew.metadata;resolution:=optional,
+              com.drew.metadata.exif;resolution:=optional,
+              com.drew.metadata.iptc;resolution:=optional,
+              com.drew.metadata.jpeg;resolution:=optional,
+              com.googlecode.mp4parser;resolution:=optional,
+              com.googlecode.mp4parser.boxes.apple;resolution:=optional,
+              com.googlecode.mp4parser.util;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
               org.bouncycastle.cert;resolution:=optional,
@@ -73,7 +90,9 @@
               org.bouncycastle.cms.bc;resolution:=optional,
               org.bouncycastle.operator;resolution:=optional,
               org.bouncycastle.operator.bc;resolution:=optional,
-              org.bouncycastle.tsp;resolution:=optional
+              org.bouncycastle.tsp;resolution:=optional,
+              org.apache.commons.exec;resolution:=optional,
+              org.apache.commons.exec.environment;resolution:=optional
             </Import-Package>
           </instructions>
         </configuration>

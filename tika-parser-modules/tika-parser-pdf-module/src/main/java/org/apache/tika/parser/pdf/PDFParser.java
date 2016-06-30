@@ -57,6 +57,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.w3c.dom.Document;
@@ -140,9 +141,16 @@ public class PDFParser extends AbstractParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
+                } else if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                    metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
+                    OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
+                    if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
+                        metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
+                    }
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 }
+
             }
         } catch (InvalidPasswordException e) {
             metadata.set("pdf:encrypted", "true");

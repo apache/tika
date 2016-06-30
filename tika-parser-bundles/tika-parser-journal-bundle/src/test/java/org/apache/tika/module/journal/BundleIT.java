@@ -92,6 +92,6 @@ public class BundleIT {
     @Test
     public void testServicesCreated() throws Exception {
         ServiceReference[] services = bc.getAllServiceReferences(Parser.class.getName(), null);
-        assertEquals("Not all Services have started", 2, services.length);
+        assertEquals("Not all Services have started", 16, services.length);
     }
 }

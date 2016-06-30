@@ -301,7 +301,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 break;
             case SIMPLE_PACKAGE:
                 OleBlob.SimplePackageContent spc = (OleBlob.SimplePackageContent) content;
-
+                //TODO: find test file that has this kind of attachment
+                //and see if getFilePath or getLocalFilePath is meaningful
+                //for TikaCoreProperties.ORIGINAL_RESOURCE_NAME
                 handleEmbeddedResource(
                         TikaInputStream.get(spc.getStream()),
                         spc.getFileName(),//filename

@@ -969,7 +969,38 @@ public class TestMimeTypes extends TikaTest {
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
     }
-    
+
+    @Test
+    public void testVandICalendars() throws Exception {
+        assertType("text/calendar", "testICalendar.ics");
+        assertType("text/x-vcalendar", "testVCalendar.vcs");
+        assertTypeByData("text/calendar", "testICalendar.ics");
+        assertTypeByData("text/x-vcalendar", "testVCalendar.vcs");
+    }
+
+    @Test
+    public void testASX() throws Exception {
+        assertType("application/x-ms-asx", "testWindowsMediaMeta.asx");
+        assertTypeByData("application/x-ms-asx", "testWindowsMediaMeta.asx");
+    }
+
+    @Test
+    public void testMSOwner() throws Exception {
+        assertType("application/x-ms-owner", "testMSOwnerFile");
+    }
+
+    @Test
+    public void testDJVU() throws Exception {
+        assertType("image/vnd.djvu", "testDJVU.djvu");
+        assertTypeByData("image/vnd.djvu", "testDJVU.djvu");
+    }
+
+    @Test
+    public void testEndNoteImport() throws Exception {
+        assertType("application/x-endnote-refer", "testEndNoteImportFile.enw");
+        assertTypeByData("application/x-endnote-refer", "testEndNoteImportFile.enw");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }

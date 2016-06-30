@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.TikaTest;
@@ -225,9 +226,9 @@ public class ExcelParserTest extends TikaTest {
     }
 
     /**
-     * We don't currently support the .xlsb file format 
-     *  (an OOXML container with binary blobs), but we 
-     *  shouldn't break on these files either (TIKA-826)  
+     * We don't currently support the .xlsb file format
+     * (an OOXML container with binary blobs), but we
+     * shouldn't break on these files either (TIKA-826)
      */
     @Test
     public void testExcelXLSB() throws Exception {
@@ -359,7 +360,7 @@ public class ExcelParserTest extends TikaTest {
         assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
 
-	@Test
+    @Test
     public void testHeaderAndFooterExtraction() throws Exception {
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.UK);
@@ -401,5 +402,11 @@ public class ExcelParserTest extends TikaTest {
         //TODO: not extracting these yet
         //link on textbox
 //        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF.xls");
+        assertEquals("application/pdf", metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
 }

@@ -50,6 +50,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -69,6 +71,15 @@ public class PDFParserTest extends TikaTest {
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     public static final MediaType TYPE_DOC = MediaType.application("msword");
     public static Level PDFBOX_LOG_LEVEL = Level.INFO;
+    private static Boolean hasTesseract = null;
+
+    public static boolean canRunOCR() {
+        if (hasTesseract != null) {
+            return hasTesseract;
+        }
+        hasTesseract = new TesseractOCRParser().hasTesseract(new TesseractOCRConfig());
+        return hasTesseract;
+    }
 
     @BeforeClass
     public static void setup() {
@@ -756,7 +767,7 @@ public class PDFParserTest extends TikaTest {
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, new AutoDetectParser());
 
-        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -778,7 +789,7 @@ public class PDFParserTest extends TikaTest {
         inline = 0;
         attach = 0;
 
-        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -797,7 +808,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testInlineConfig() throws Exception {
 
-        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf");
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -824,7 +835,7 @@ public class PDFParserTest extends TikaTest {
         inline = 0;
         attach = 0;
 
-        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -841,7 +852,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1376
     public void testEmbeddedFileNameExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveJson("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
         Metadata firstAttachment = metadatas.get(1);
         assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
@@ -849,7 +860,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1374
     public void testOSSpecificEmbeddedFileExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveJson("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
 
         assertEquals("file name", "Test.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
@@ -1158,6 +1169,32 @@ public class PDFParserTest extends TikaTest {
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertNotContained("1309.61", content);
     }
+
+    @Test
+    public void testEmbeddedDocsWithOCR() throws Exception {
+        if (! canRunOCR()) { return; }
+
+        for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
+            PDFParserConfig config = new PDFParserConfig();
+            config.setOCRStrategy(strategy);
+            ParseContext context = new ParseContext();
+            context.set(PDFParserConfig.class, config);
+            context.set(Parser.class, new AutoDetectParser());
+            //make sure everything works with regular xml _and_ with recursive
+            XMLResult xmlResult = getXML("testPDFEmbeddingAndEmbedded.docx", context);
+            assertContains("pdf_haystack", xmlResult.xml);
+            assertContains("Haystack", xmlResult.xml);
+            assertContains("Needle", xmlResult.xml);
+            if (! strategy.equals(PDFParserConfig.OCR_STRATEGY.NO_OCR)) {
+                assertContains("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
+            } else {
+                assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
+            }
+            assertEquals(4, getRecursiveMetadata("testPDFEmbeddingAndEmbedded.docx", context).size());
+        }
+
+    }
+
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);

@@ -116,6 +116,14 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
+    <!-- Copied from PDFBox:
+   For legal reasons (incompatible license), jai-imageio-core is to be used
+   only in the tests and may not be distributed. See also LEGAL-195 -->
+    <dependency>
+      <groupId>com.github.jai-imageio</groupId>
+      <artifactId>jai-imageio-core</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

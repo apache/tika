@@ -24,6 +24,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -136,6 +137,7 @@ public class DBFParserTest extends TikaTest {
     }
 
     @Test
+    @Ignore("until we get permission to use the test file")
     public void testEncodingInHeaderAndDateTime() throws Exception {
         XMLResult r = getXML("prem2007_2.dbf");
         String xml = r.xml.replaceAll("[\\r\\n\\t]", " ");

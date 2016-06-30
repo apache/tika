@@ -34,6 +34,8 @@ import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.poi.hwpf.extractor.Word6Extractor;
 import org.apache.poi.hwpf.model.FieldsDocumentPart;
 import org.apache.poi.hwpf.model.PicturesTable;
+import org.apache.poi.hwpf.model.SavedByEntry;
+import org.apache.poi.hwpf.model.SavedByTable;
 import org.apache.poi.hwpf.model.StyleDescription;
 import org.apache.poi.hwpf.usermodel.CharacterRun;
 import org.apache.poi.hwpf.usermodel.Field;
@@ -50,6 +52,8 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -79,8 +83,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private boolean curBold;
     private boolean curItalic;
 
-    public WordExtractor(ParseContext context) {
+    private final Metadata metadata;
+
+    public WordExtractor(ParseContext context, Metadata metadata) {
         super(context);
+        this.metadata = metadata;
     }
 
     private static int countParagraphs(Range... ranges) {
@@ -146,6 +153,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             parseWord6(root, xhtml);
             return;
         }
+
+        extractSavedByMetadata(document);
+
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
                 new org.apache.poi.hwpf.extractor.WordExtractor(document);
         HeaderStories headerFooter = new HeaderStories(document);
@@ -209,6 +219,16 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                 }
             }
         } catch (FileNotFoundException e) {
+        }
+    }
+
+    private void extractSavedByMetadata(HWPFDocument document) {
+        SavedByTable savedByTable = document.getSavedByTable();
+        if (savedByTable == null) {
+            return;
+        }
+        for (SavedByEntry sbe : savedByTable.getEntries()) {
+            metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, sbe.getSaveLocation());
         }
     }
 

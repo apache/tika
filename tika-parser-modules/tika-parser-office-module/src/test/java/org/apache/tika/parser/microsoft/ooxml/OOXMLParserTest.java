@@ -28,7 +28,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -1208,6 +1210,31 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<a href=\"linked_file.txt.htm\">", xml);
         //link on textbox
         assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+    }
+
+    @Test
+    public void testEmbeddedPDFInPPTX() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedPDF.pptx");
+        Metadata pdfMetadata1 = metadataList.get(2);
+        assertEquals("application/pdf", pdfMetadata1.get(Metadata.CONTENT_TYPE));
+        Metadata pdfMetadata2 = metadataList.get(4);
+        assertEquals("application/pdf", pdfMetadata2.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testEmbeddedPDFInXLSX() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF.xls");
+        Metadata pdfMetadata = metadataList.get(2);
+        assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testOrigSourcePath() throws Exception {
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx").get(11);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
 }
 
