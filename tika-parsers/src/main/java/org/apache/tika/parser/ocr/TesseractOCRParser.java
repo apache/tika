@@ -137,7 +137,7 @@ public class TesseractOCRParser extends AbstractParser {
      
     }
     
-    public boolean hasImageMagick(TesseractOCRConfig config) {
+    private boolean hasImageMagick(TesseractOCRConfig config) {
         // Fetch where the config says to find ImageMagick Program
         String ImageMagick = config.getImageMagickPath() + getImageMagickProg();
 
@@ -155,7 +155,7 @@ public class TesseractOCRParser extends AbstractParser {
      
     }
     
-    public boolean hasPython() {
+    private boolean hasPython() {
     	// check if python is installed and if the rotation program path has been specified correctly
         
     	boolean hasPython = false;
@@ -261,8 +261,8 @@ public class TesseractOCRParser extends AbstractParser {
      * This method is used to process the image to an OCR-friendly format.
      * @param streamingObject input image to be processed
      * @param config TesseractOCRconfig class to get ImageMagick properties
-     * @throws IOException
-     * @throws TikaException
+     * @throws IOException if an input error occurred
+     * @throws TikaException if an exception timed out
      */
     private void processImage(File streamingObject, TesseractOCRConfig config) throws IOException, TikaException {
     	
@@ -292,7 +292,10 @@ public class TesseractOCRParser extends AbstractParser {
         }
               
         // process the image - parameter values can be set in TesseractOCRConfig.properties
-    	String line = "convert -density " + config.getDensity() + " -depth " + config.getDepth() + " -colorspace " + config.getColorspace() +  " -filter " + config.getFilter() + " -resize " + config.getResize() + "% -rotate "+ angle + " " + streamingObject.getAbsolutePath() + " " + streamingObject.getAbsolutePath();    	
+    	String line = "convert -density " + config.getDensity() + " -depth " + config.getDepth() + 
+    			" -colorspace " + config.getColorspace() +  " -filter " + config.getFilter() + 
+    			" -resize " + config.getResize() + "% -rotate "+ angle + " " + streamingObject.getAbsolutePath() + 
+    			" " + streamingObject.getAbsolutePath();    	
         cmdLine = CommandLine.parse(line);
 		try {
 			executor.execute(cmdLine);

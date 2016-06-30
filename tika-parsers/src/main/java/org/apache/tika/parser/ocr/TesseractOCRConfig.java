@@ -256,12 +256,14 @@ public class TesseractOCRConfig implements Serializable{
 		this.timeout = timeout;
 	}
 
-	/** @see #setTimeout(int timeout)*/
+	/** @see #setTimeout(int timeout)
+	 * @return timeout value for Tesseract */
 	public int getTimeout() {
 		return timeout;
 	}
 	
-	/** @see #setEnableImageProcessing(boolean) */
+	/** @see #setEnableImageProcessing(boolean)
+	 * @return image processing is enabled or not */
 	public int isEnableImageProcessing() {
 		return enableImageProcessing;
 	}
@@ -282,12 +284,12 @@ public class TesseractOCRConfig implements Serializable{
 	}
 
 	/**
-	 * @param density the density to set
+	 * @param density the density to set. Valid range of values is 150-1200.
 	 * Default value is 300.
 	 */
 	public void setDensity(int density) {
 		if(density < 150 || density > 1200) {
-			throw new IllegalArgumentException("Invalid density value");
+			throw new IllegalArgumentException("Invalid density value. Valid range of values is 150-1200.");
 		}
 		this.density = density;
 	}
@@ -300,7 +302,7 @@ public class TesseractOCRConfig implements Serializable{
 	}
 
 	/**
-	 * @param depth the depth to set
+	 * @param depth the depth to set. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.
 	 * Default value is 4.
 	 */
 	public void setDepth(int depth) {
@@ -311,7 +313,7 @@ public class TesseractOCRConfig implements Serializable{
 				return;
 			}
 		}
-		throw new IllegalArgumentException("Invalid depth value");
+		throw new IllegalArgumentException("Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
 	}
 
 	/**
@@ -329,7 +331,7 @@ public class TesseractOCRConfig implements Serializable{
 		if(!colorspace.equals(null)) {
 			this.colorspace = colorspace;
 		} else {
-			throw new IllegalArgumentException("Invalid colorspace value");
+			throw new IllegalArgumentException("Colorspace value cannot be null.");
 		}
 	}
 
@@ -341,12 +343,13 @@ public class TesseractOCRConfig implements Serializable{
 	}
 
 	/**
-	 * @param filter the filter to set
+	 * @param filter the filter to set. Valid values are point, hermite, cubic, box, gaussian, catrom, triangle, quadratic and mitchell.
 	 * Default value is triangle.
 	 */
 	public void setFilter(String filter) {
 		if(filter.equals(null)) {
-			throw new IllegalArgumentException("Invalid filter value");
+			throw new IllegalArgumentException("Filter value cannot be null. Valid values are point, hermite, "
+					+ "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
 		}
 		
 		String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic", "Mitchell"};
@@ -356,7 +359,8 @@ public class TesseractOCRConfig implements Serializable{
 				return;
 			}
 		}
-		throw new IllegalArgumentException("Invalid filter value");
+		throw new IllegalArgumentException("Invalid filter value. Valid values are point, hermite, "
+					+ "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
 	}
 
 	/**
@@ -367,7 +371,7 @@ public class TesseractOCRConfig implements Serializable{
 	}
 
 	/**
-	 * @param resize the resize to set
+	 * @param resize the resize to set. Valid range of values is 100-900.
 	 * Default value is 900.
 	 */
 	public void setResize(int resize) {
@@ -377,10 +381,11 @@ public class TesseractOCRConfig implements Serializable{
 				return;
 			}
 		}
-		throw new IllegalArgumentException("Invalid resize value");
+		throw new IllegalArgumentException("Invalid resize value. Valid range of values is 100-900.");
 	}
 
-	/** @see #setImageMagickPath(String ImageMagickPath)*/
+	/** @see #setImageMagickPath(String ImageMagickPath)
+	 * @return path to ImageMagick file. */
 	public String getImageMagickPath() {
 		
 		return ImageMagickPath;
@@ -388,6 +393,7 @@ public class TesseractOCRConfig implements Serializable{
 	
 	/**
 	 * Set the path to the ImageMagick executable, needed if it is not on system path.
+	 * @param path to ImageMagick file.
 	 */
 	public void setImageMagickPath(String ImageMagickPath) {
 		if(!ImageMagickPath.isEmpty() && !ImageMagickPath.endsWith(File.separator))
