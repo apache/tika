@@ -320,11 +320,11 @@ public class TesseractOCRParser extends AbstractParser {
             	FileUtils.copyFile(input, tmpFile);
             	
             	// Process image if ImageMagick Tool is present
-            	if(config.isEnableProcessing() == 1 && hasImageMagick(config)) {
+            	if(config.isEnableImageProcessing() == 1 && hasImageMagick(config)) {
             		processImage(tmpFile,config);
             	}
             	
-                doOCR(tmpFile, tmpImgFile, config);                
+                doOCR(tmpFile, tmpImgFile, config);
 
                 // Tesseract appends .txt to output file name
                 tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + ".txt");

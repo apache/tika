@@ -64,7 +64,7 @@ public class TesseractOCRConfig implements Serializable{
 	private int timeout = 120;
 	
 	// enable image processing (optional)
-	private int enableProcessing = 0;
+	private int enableImageProcessing = 0;
 
 	// Path to ImageMagick program, if not on system path.
 	private String ImageMagickPath = "";
@@ -137,8 +137,8 @@ public class TesseractOCRConfig implements Serializable{
                 getProp(props, "timeout", getTimeout()));
 		
 		// set parameters for ImageMagick
-		setEnableProcessing(
-				getProp(props, "enableProcessing", isEnableProcessing()));
+		setEnableImageProcessing(
+				getProp(props, "enableImageProcessing", isEnableImageProcessing()));
 		setImageMagickPath(
 				getProp(props, "ImageMagickPath", getImageMagickPath()));
 		setDensity(
@@ -261,17 +261,17 @@ public class TesseractOCRConfig implements Serializable{
 		return timeout;
 	}
 	
-	/** @see #setEnableProcessing(boolean) */
-	public int isEnableProcessing() {
-		return enableProcessing;
+	/** @see #setEnableImageProcessing(boolean) */
+	public int isEnableImageProcessing() {
+		return enableImageProcessing;
 	}
 
 	/** 
 	 * Set the value to true if processing is to be enabled.
 	 * Default value is false.
 	 */
-	public void setEnableProcessing(int enableProcessing) {
-		this.enableProcessing = enableProcessing;
+	public void setEnableImageProcessing(int enableImageProcessing) {
+		this.enableImageProcessing = enableImageProcessing;
 	}
 
 	/**
