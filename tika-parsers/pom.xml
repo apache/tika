@@ -263,6 +263,7 @@
 	    <groupId>org.apache.commons</groupId>
 	    <artifactId>commons-exec</artifactId>
 	    <version>${commonsexec.version}</version>
+	    <scope>compile</scope>
 	</dependency>
 
     <!-- Provided dependencies -->
