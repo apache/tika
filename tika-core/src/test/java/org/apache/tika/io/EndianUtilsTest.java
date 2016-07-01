@@ -18,6 +18,7 @@
 package org.apache.tika.io;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 
@@ -36,5 +37,39 @@ public class EndianUtilsTest {
         
         data = new byte[] { (byte)0xac, (byte)0xbe, 0x17 };
         assertEquals((long)728855, EndianUtils.readUE7(new ByteArrayInputStream(data)));
+    }
+
+    @Test
+    public void testReadUIntLE() throws Exception {
+        byte[] data = new byte[] {(byte)0x08, (byte)0x00, (byte)0x00, (byte)0x00 };
+        assertEquals((long) 8, EndianUtils.readUIntLE(new ByteArrayInputStream(data)));
+
+        data = new byte[] {(byte)0xF0, (byte)0xFF, (byte)0xFF, (byte)0xFF };
+        assertEquals(4294967280L, EndianUtils.readUIntLE(new ByteArrayInputStream(data)));
+
+        data = new byte[] {(byte)0xFF, (byte)0xFF, (byte)0xFF  };
+        try {
+            EndianUtils.readUIntLE(new ByteArrayInputStream(data));
+            fail("Should have thrown exception");
+        } catch (EndianUtils.BufferUnderrunException e) {
+
+        }
+    }
+
+    @Test
+    public void testReadUIntBE() throws Exception {
+        byte[] data = new byte[] {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x08 };
+        assertEquals((long) 8, EndianUtils.readUIntBE(new ByteArrayInputStream(data)));
+
+        data = new byte[] {(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xF0 };
+        assertEquals(4294967280L, EndianUtils.readUIntBE(new ByteArrayInputStream(data)));
+
+        data = new byte[] {(byte)0xFF, (byte)0xFF, (byte)0xFF  };
+        try {
+            EndianUtils.readUIntLE(new ByteArrayInputStream(data));
+            fail("Should have thrown exception");
+        } catch (EndianUtils.BufferUnderrunException e) {
+
+        }
     }
 }

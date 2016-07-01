@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.poi.hpsf.ClassID;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -28,7 +29,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
-import org.apache.poi.hpsf.ClassID;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -36,6 +36,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -150,6 +151,15 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbeddedOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
+        handleEmbeddedOfficeDoc(dir, null, xhtml);
+    }
+
+    /**
+     * Handle an office document that's embedded at the POIFS level
+     */
+    protected void handleEmbeddedOfficeDoc(
+            DirectoryEntry dir, String resourceName, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
 
         // Is it an embedded OLE2 document, or an embedded OOXML document?
 
@@ -176,24 +186,34 @@ abstract class AbstractPOIFSExtractor {
         }
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         TikaInputStream embedded = null;
-
+        String rName = (resourceName == null) ? dir.getName() : resourceName;
         try {
             if (type == POIFSDocumentType.OLE10_NATIVE) {
                 try {
                     // Try to un-wrap the OLE10Native record:
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode) dir);
                     if (ole.getLabel() != null) {
-                        metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
+                        metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '/' + ole.getLabel());
+                    }
+                    if (ole.getCommand() != null) {
+                        metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());
+                    }
+                    if (ole.getFileName() != null) {
+                        metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getFileName());
                     }
                     byte[] data = ole.getDataBuffer();
                     embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
                     // Not a valid OLE10Native record, skip it
                 } catch (Exception e) {
-                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + dir.getName(), e);
+                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + rName, e);
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
+                    //TODO: figure out if the equivalent of OLE 1.0's
+                    //getCommand() and getFileName() exist for OLE 2.0 to populate
+                    //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+
                     // Grab the contents and process
                     DocumentEntry contentsEntry;
                     try {
@@ -218,13 +238,13 @@ abstract class AbstractPOIFSExtractor {
 
                     // Record what we can do about it
                     metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + extension);
+                    metadata.set(Metadata.RESOURCE_NAME_KEY, rName + extension);
                 } catch (Exception e) {
                     throw new TikaException("Invalid embedded resource", e);
                 }
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-                metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
+                metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '.' + type.getExtension());
             }
 
             // Should we parse it?

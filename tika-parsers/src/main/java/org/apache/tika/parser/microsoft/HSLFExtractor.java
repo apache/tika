@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.model.OLEShape;
@@ -38,7 +39,10 @@ import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -267,7 +271,16 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 String paraTag = showBullet ? "li" : "p";
 
                 xhtml.startElement(paraTag);
+                boolean runIsHyperLink = false;
                 for (HSLFTextRun htr : textRuns) {
+                    Hyperlink link = htr.getHyperlink();
+                    if (link != null) {
+                        String address = link.getAddress();
+                        if (address != null && ! address.startsWith("_ftn")) {
+                            xhtml.startElement("a", "href", link.getAddress());
+                            runIsHyperLink = true;
+                        }
+                    }
                     String line = htr.getRawText();
                     if (line != null) {
                         boolean isfirst = true;
@@ -284,6 +297,10 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             xhtml.endElement("br");
                         }
                     }
+                    if (runIsHyperLink) {
+                        xhtml.endElement("a");
+                    }
+                    runIsHyperLink = false;
                 }
                 xhtml.endElement(paraTag);
             }
@@ -364,10 +381,19 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         String mediaType = null;
                         if ("Excel.Chart.8".equals(oleShape.getProgID())) {
                             mediaType = "application/vnd.ms-excel";
+                        } else {
+                            MediaType mt = getTikaConfig().getDetector().detect(stream, new Metadata());
+                            mediaType = mt.toString();
                         }
-                        handleEmbeddedResource(
-                                stream, objID, objID,
-                                mediaType, xhtml, false);
+                        if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")) {
+                            try(NPOIFSFileSystem npoifs = new NPOIFSFileSystem(new CloseShieldInputStream(stream))) {
+                                handleEmbeddedOfficeDoc(npoifs.getRoot(), objID, xhtml);
+                            }
+                        } else {
+                            handleEmbeddedResource(
+                                    stream, objID, objID,
+                                    mediaType, xhtml, false);
+                        }
                     }
                 }
             }

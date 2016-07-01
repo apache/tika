@@ -1,4 +1,34 @@
-Release 1.13 - ???
+Release 1.14 - ???
+
+  * Improve extraction of embedded documents from PPT, PPT and XLSX
+    (TIKA-2026).
+
+  * Add parser for applefile (AppleSingle) (TIKA-2022).
+
+  * Add mime types, mime magic and/or globs for:
+     * Endnote Import File (TIKA-2011)
+     * DJVU files (TIKA-2009)
+     * MS Owner File (TIKA-2008)
+     * Windows Media Metafile (TIKA-2004)
+     * iCal and vCalendar (TIKA-2006)
+
+  * Upgrade to PDFBox 2.0.2 (TIKA-1996).
+
+  * Add configurable maximum threshold for number of events extracted
+    from the XMP Media Management Schema in JempboxExtractor (TIKA-1999).
+
+  * Integrate TesseractOCR with full page image rendering for PDFs (TIKA-1994).
+
+  * Add mime detection via Nick C and parser for DBF files (TIKA-1513).
+  
+  * Add mime detection and parsers for MSOffice 2003 XML Word
+    and Excel formats (TIKA-1958).
+
+  * Extract hyperlinks from PPT, PPTX, XSLX (TIKA-1454).
+
+  * Upgrade to Commons Compress 1.12 (supports progress on TIKA-1358)
+
+Release 1.13 - 05/08/2016
 
   * Upgrade to PDFBox 2.0.1 (TIKA-1285/TIKA-1959).
     MAJOR CHANGES in PDFParser:
@@ -87,6 +117,12 @@ Release 1.13 - ???
   * Upgrade to Apache SIS 0.6 (TIKA-1878).
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
+
+  * Added ZeroSizeFileDetector to support application/x-zerovalue via
+    Adesh Gupta (TIKA-1885).  
+  
+  * Addition of types information to Grobid quantities parser via 
+    Can Menekse (TIKA-1965).
 
 Release 1.12 - 01/24/2016
 

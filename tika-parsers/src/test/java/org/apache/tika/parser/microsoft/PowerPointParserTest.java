@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.TikaTest;
@@ -27,6 +28,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -74,7 +76,7 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("<td>Row 2 Col 2</td>\t<td>Row 2 Col 3</td></tr>", xml);
         assertContains("<p>Row 1 column 1</p>", xml);
         assertContains("<p>Row 2 column 2</p>", xml);
-        assertContains("<p>This is a hyperlink", xml);
+        assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
         assertContains("<p>Here is a list:", xml);
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
@@ -237,5 +239,14 @@ public class PowerPointParserTest extends TikaTest {
     public void testCommentAuthorship() throws Exception {
         XMLResult r = getXML("testPPT_comment.ppt");
         assertContains("<p class=\"slide-comment\"><b>Allison, Timothy B. (ATB)", r.xml);
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.ppt");
+        assertContains("Apache Tika project", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("3.pdf", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("Hello World", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("4.pdf", metadataList.get(2).get(Metadata.RESOURCE_NAME_KEY));
     }
 }

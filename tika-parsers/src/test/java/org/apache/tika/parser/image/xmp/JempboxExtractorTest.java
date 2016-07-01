@@ -19,17 +19,24 @@ package org.apache.tika.parser.image.xmp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collection;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMPMM;
+import org.apache.tika.parser.ParseContext;
 import org.junit.Test;
 
-public class JempboxExtractorTest {
+import javax.xml.parsers.DocumentBuilder;
+
+public class JempboxExtractorTest extends TikaTest {
 
     @Test
     public void testParseJpeg() throws IOException, TikaException {
@@ -102,6 +109,26 @@ public class JempboxExtractorTest {
         // TODO use multi-value property instead?
         assertEquals("Mr B, Mr A", new JempboxExtractor(null).joinCreators(
                 Arrays.asList("Mr B", "Mr A")));
+    }
+
+    @Test
+    public void testMaxXMPMMHistory() throws Exception {
+        int maxHistory = JempboxExtractor.getMaxXMPMMHistory();
+        try {
+            Metadata m = new Metadata();
+            JempboxExtractor ex = new JempboxExtractor(m);
+            ex.parse(getResourceAsStream("/test-documents/testXMP.xmp"));
+            assertEquals(7, m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID).length);
+
+            JempboxExtractor.setMaxXMPMMHistory(5);
+            m = new Metadata();
+            ex = new JempboxExtractor(m);
+            ex.parse(getResourceAsStream("/test-documents/testXMP.xmp"));
+            assertEquals(5, m.getValues(XMPMM.HISTORY_EVENT_INSTANCEID).length);
+        } finally {
+            //if something goes wrong, make sure to set this back to what it was
+            JempboxExtractor.setMaxXMPMMHistory(maxHistory);
+        }
     }
 
 }

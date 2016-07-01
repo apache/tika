@@ -18,19 +18,13 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
+import com.microsoft.schemas.vml.CTH;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackagePart;
-import org.apache.poi.openxml4j.opc.PackagePartName;
-import org.apache.poi.openxml4j.opc.PackageRelationship;
-import org.apache.poi.openxml4j.opc.PackagingURIHelper;
-import org.apache.poi.openxml4j.opc.TargetMode;
+import org.apache.poi.openxml4j.opc.*;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
@@ -51,6 +45,11 @@ import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
+import org.bouncycastle.util.Pack;
+import org.openxmlformats.schemas.drawingml.x2006.main.CTHyperlink;
+import org.openxmlformats.schemas.drawingml.x2006.main.CTNonVisualDrawingProps;
+import org.openxmlformats.schemas.drawingml.x2006.spreadsheetDrawing.CTShape;
+import org.openxmlformats.schemas.drawingml.x2006.spreadsheetDrawing.CTShapeNonVisual;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -66,6 +65,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final XSSFEventBasedExcelExtractor extractor;
     private final DataFormatter formatter;
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
+    private final Map<String, String> drawingHyperlinks = new HashMap<>();
     private Metadata metadata;
     private ParseContext parseContext;
 
@@ -122,7 +122,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         while (iter.hasNext()) {
             InputStream stream = iter.next();
-            sheetParts.add(iter.getSheetPart());
+            PackagePart sheetPart = iter.getSheetPart();
+            addDrawingHyperLinks(sheetPart);
+            sheetParts.add(sheetPart);
 
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
             CommentsTable comments = iter.getSheetComments();
@@ -150,8 +152,47 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 extractHeaderFooter(footer, xhtml);
             }
             processShapes(iter.getShapes(), xhtml);
+
+            //for now dump sheet hyperlinks at bottom of page
+            //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes
+            //step 1: extract hyperlink info from bottom of page
+            //step 2: process as we do now, but with cached hyperlink relationship info
+            extractHyperLinks(sheetPart, xhtml);
             // All done with this sheet
             xhtml.endElement("div");
+        }
+    }
+
+    private void addDrawingHyperLinks(PackagePart sheetPart) {
+        try {
+            for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
+                if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                    PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                    for (PackageRelationship drawRel : rel.getPackage()
+                            .getPart(relName)
+                            .getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
+                        drawingHyperlinks.put(drawRel.getId(), drawRel.getTargetURI().toString());
+                    }
+                }
+            }
+        } catch (InvalidFormatException e) {
+            //swallow
+            //an exception trying to extract
+            //hyperlinks on drawings should not cause a parse failure
+        }
+
+    }
+
+
+    private void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
+        try {
+            for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
+                xhtml.startElement("a", "href", rel.getTargetURI().toString());
+                xhtml.characters(rel.getTargetURI().toString());
+                xhtml.endElement("a");
+            }
+        } catch (InvalidFormatException e) {
+            //swallow
         }
     }
 
@@ -174,8 +215,46 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 if (sText != null && sText.length() > 0) {
                     xhtml.element("p", sText);
                 }
+                extractHyperLinksFromShape(((XSSFSimpleShape)shape).getCTShape(), xhtml);
             }
         }
+    }
+
+    private void extractHyperLinksFromShape(CTShape ctShape, XHTMLContentHandler xhtml) throws SAXException {
+
+        if (ctShape == null)
+            return;
+
+        CTShapeNonVisual nvSpPR = ctShape.getNvSpPr();
+        if (nvSpPR == null)
+            return;
+
+        CTNonVisualDrawingProps cNvPr = nvSpPR.getCNvPr();
+        if (cNvPr == null)
+            return;
+
+        CTHyperlink ctHyperlink = cNvPr.getHlinkClick();
+        if (ctHyperlink == null)
+            return;
+
+        String url = drawingHyperlinks.get(ctHyperlink.getId());
+        if (url != null) {
+            xhtml.startElement("a", "href", url);
+            xhtml.characters(url);
+            xhtml.endElement("a");
+        }
+
+        CTHyperlink ctHoverHyperlink = cNvPr.getHlinkHover();
+        if (ctHoverHyperlink == null)
+            return;
+
+        url = drawingHyperlinks.get(ctHoverHyperlink.getId());
+        if (url != null) {
+            xhtml.startElement("a", "href", url);
+            xhtml.characters(url);
+            xhtml.endElement("a");
+        }
+
     }
 
     public void processSheet(

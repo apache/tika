@@ -19,17 +19,17 @@ package org.apache.tika.parser.rtf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FilenameUtils;
@@ -410,85 +410,47 @@ public class RTFParserTest extends TikaTest {
     // TIKA-1010
     @Test
     public void testEmbeddedMonster() throws Exception {
-        Set<MediaType> skipTypes = new HashSet<MediaType>();
-        skipTypes.add(MediaType.parse("application/x-emf"));
-        skipTypes.add(MediaType.parse("application/x-msmetafile"));
+
+        Map<Integer, Pair> expected = new HashMap<>();
+        expected.put(2, new Pair("Hw.txt","text/plain; charset=ISO-8859-1"));
+        expected.put(3, new Pair("file_0.doc", "application/msword"));
+        expected.put(6, new Pair("file_1.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        expected.put(9, new Pair("text.html", "text/html; charset=windows-1252"));
+        expected.put(10, new Pair("html-within-zip.zip", "application/zip"));
+        expected.put(11, new Pair("test-zip-of-zip_\u666E\u6797\u65AF\u987F.zip", "application/zip"));
+        expected.put(14, new Pair("testHTML_utf8_\u666E\u6797\u65AF\u987F.html", "text/html; charset=UTF-8"));
+        expected.put(17, new Pair("testJPEG_\u666E\u6797\u65AF\u987F.jpg", "image/jpeg"));
+        expected.put(20, new Pair("file_2.xls", "application/vnd.ms-excel"));
+        expected.put(23, new Pair("testMSG_\u666E\u6797\u65AF\u987F.msg", "application/vnd.ms-outlook"));
+        expected.put(26, new Pair("file_3.pdf", "application/pdf"));
+        expected.put(29, new Pair("file_4.ppt", "application/vnd.ms-powerpoint"));
+        expected.put(33, new Pair("file_5.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation"));
+        expected.put(32, new Pair("thumbnail.jpeg", "image/jpeg"));
+        expected.put(36, new Pair("file_6.doc", "application/msword"));
+        expected.put(39, new Pair("file_7.doc", "application/msword"));
+        expected.put(42, new Pair("file_8.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        expected.put(45, new Pair("testJPEG_\u666E\u6797\u65AF\u987F.jpg", "image/jpeg"));
 
 
-        List<String> trueNames = new ArrayList<String>();
-        trueNames.add("file_0.doc");
-        trueNames.add("Hw.txt");
-        trueNames.add("file_1.xlsx");
-        trueNames.add("test-zip-of-zip_\u666E\u6797\u65AF\u987F.zip");
-        trueNames.add("html-within-zip.zip");
-        trueNames.add("text.html");
-        trueNames.add("testHTML_utf8_\u666E\u6797\u65AF\u987F.html");
-        trueNames.add("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
-        trueNames.add("file_2.xls");
-        trueNames.add("testMSG_\u666E\u6797\u65AF\u987F.msg");
-        trueNames.add("file_3.pdf");
-        trueNames.add("file_4.ppt");
-        trueNames.add("file_5.pptx");
-        trueNames.add("thumbnail.jpeg");
-        trueNames.add("file_6.doc");
-        trueNames.add("file_7.doc");
-        trueNames.add("file_8.docx");
-        trueNames.add("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
+        List<Metadata> metadataList = getRecursiveMetadata("testRTFEmbeddedFiles.rtf");
+        assertEquals(48, metadataList.size());
+        for (Map.Entry<Integer, Pair> e : expected.entrySet()) {
+            Metadata metadata = metadataList.get(e.getKey());
+            Pair p = e.getValue();
+            assertNotNull(metadata.get(Metadata.RESOURCE_NAME_KEY));
+            //necessary to getName() because MSOffice extractor includes
+            //directory: _1457338524/HW.txt
+            assertEquals("filename equals ",
+                    p.fileName, FilenameUtils.getName(
+                            metadata.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
 
-        List<String> trueTypes = new ArrayList<String>();
-        trueTypes.add("application/msword");
-        trueTypes.add("text/plain");
-        trueTypes.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        trueTypes.add("application/zip");
-        trueTypes.add("application/zip");
-        trueTypes.add("text/html");
-        trueTypes.add("text/html");
-        trueTypes.add("image/jpeg");
-        trueTypes.add("application/vnd.ms-excel");
-        trueTypes.add("application/vnd.ms-outlook");
-        trueTypes.add("application/pdf");
-        trueTypes.add("application/vnd.ms-powerpoint");
-        trueTypes.add("application/vnd.openxmlformats-officedocument.presentationml.presentation");
-        trueTypes.add("image/jpeg");
-        trueTypes.add("application/msword");
-        trueTypes.add("application/msword");
-        trueTypes.add("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        trueTypes.add("image/jpeg");
-
-        TrackingHandler tracker = new TrackingHandler(skipTypes);
-        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"))) {
-            ContainerExtractor ex = new ParserContainerExtractor();
-            assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, tracker);
+            assertEquals(p.mimeType, metadata.get(Metadata.CONTENT_TYPE));
         }
-
-        assertEquals(trueNames.size(), tracker.filenames.size());
-        assertEquals(trueTypes.size(), tracker.mediaTypes.size());
-        for (int i = 0; i < tracker.filenames.size(); i++) {
-            String expectedName = trueNames.get(i);
-            if (expectedName == null) {
-                assertNull(tracker.filenames.get(i));
-            } else {
-                assertNotNull(tracker.filenames.get(i));
-                //necessary to getName() because MSOffice extractor includes
-                //directory: _1457338524/HW.txt
-                assertEquals("filename equals ",
-                        expectedName, FilenameUtils.getName(tracker.filenames.get(i)));
-            }
-            assertEquals(trueTypes.get(i), tracker.mediaTypes.get(i).toString());
-        }
-
-        tracker = new TrackingHandler();
-        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"))) {
-            ContainerExtractor ex = new ParserContainerExtractor();
-            assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, tracker);
-        }
-        assertEquals(47, tracker.filenames.size());
-        assertEquals("thumbnail_26.emf", tracker.filenames.get(45));
-        assertEquals("thumbnail_27.wmf", tracker.filenames.get(46));
+        assertEquals("C:\\Users\\tallison\\AppData\\Local\\Temp\\testJPEG_普林斯顿.jpg",
+                metadataList.get(45).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
-
+    
     //TIKA-1010 test regular (not "embedded") images/picts
     @Test
     public void testRegularImages() throws Exception {
@@ -588,6 +550,15 @@ public class RTFParserTest extends TikaTest {
         public Result(String text, Metadata metadata) {
             this.text = text;
             this.metadata = metadata;
+        }
+    }
+
+    private static class Pair {
+        final String fileName;
+        final String mimeType;
+        Pair(String fileName, String mimeType) {
+            this.fileName = fileName;
+            this.mimeType = mimeType;
         }
     }
 }

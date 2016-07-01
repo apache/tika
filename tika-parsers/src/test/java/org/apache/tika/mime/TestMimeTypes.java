@@ -283,11 +283,16 @@ public class TestMimeTypes {
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/zip", "testWORD.docx");
         
+        // POI-generated files have the rels first not Content Types
+        assertTypeByData("application/x-tika-ooxml", "testEXCEL_poi.xlsx");
+        
         // If we give the filename as well as the data, we can
         //  specialise the ooxml generic one to the correct type
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL.xlsx");
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.presentationml.presentation", "testPPT.pptx");
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "testWORD.docx");
+        
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL_poi.xlsx");
         
         // Test a few of the less usual ones
         assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12","testEXCEL.xlsb");
@@ -1031,7 +1036,38 @@ public class TestMimeTypes {
         assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
         assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
     }
-    
+
+    @Test
+    public void testVandICalendars() throws Exception {
+        assertType("text/calendar", "testICalendar.ics");
+        assertType("text/x-vcalendar", "testVCalendar.vcs");
+        assertTypeByData("text/calendar", "testICalendar.ics");
+        assertTypeByData("text/x-vcalendar", "testVCalendar.vcs");
+    }
+
+    @Test
+    public void testASX() throws Exception {
+        assertType("application/x-ms-asx", "testWindowsMediaMeta.asx");
+        assertTypeByData("application/x-ms-asx", "testWindowsMediaMeta.asx");
+    }
+
+    @Test
+    public void testMSOwner() throws Exception {
+        assertType("application/x-ms-owner", "testMSOwnerFile");
+    }
+
+    @Test
+    public void testDJVU() throws Exception {
+        assertType("image/vnd.djvu", "testDJVU.djvu");
+        assertTypeByData("image/vnd.djvu", "testDJVU.djvu");
+    }
+
+    @Test
+    public void testEndNoteImport() throws Exception {
+        assertType("application/x-endnote-refer", "testEndNoteImportFile.enw");
+        assertTypeByData("application/x-endnote-refer", "testEndNoteImportFile.enw");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }

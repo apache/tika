@@ -31,6 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.junit.Test;
 
 /**
@@ -313,6 +314,16 @@ public class TestContainerAwareDetector {
         assertTypeByData("testKeynote.key", "application/vnd.apple.keynote");
         assertTypeByData("testNumbers.numbers", "application/vnd.apple.numbers");
         assertTypeByData("testPages.pages", "application/vnd.apple.pages");
+    }
+
+    @Test
+    public void testDetectIWork2013() throws Exception {
+        assertTypeByData("testKeynote2013.key",
+                IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString());
+        assertTypeByData("testNumbers2013.numbers",
+                IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString());
+        assertTypeByData("testPages2013.pages",
+                IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString());
     }
 
     @Test

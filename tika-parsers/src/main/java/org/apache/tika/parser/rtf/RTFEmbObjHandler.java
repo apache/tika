@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -157,11 +158,7 @@ class RTFEmbObjHandler {
         }
 
         byte[] bytes = new byte[len];
-        int bytesRead = is.read(bytes);
-        if (bytesRead < len) {
-            throw new TikaException("unexpected end of file: need " + len +
-                    " bytes of binary data, found " + (len - bytesRead));
-        }
+        IOUtils.readFully(is, bytes);
         os.write(bytes);
     }
 
