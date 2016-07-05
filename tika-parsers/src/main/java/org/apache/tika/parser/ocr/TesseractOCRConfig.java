@@ -62,7 +62,7 @@ public class TesseractOCRConfig implements Serializable{
 
 	// Maximum time (seconds) to wait for the ocring process termination
 	private int timeout = 120;
-	
+
 	// enable image processing (optional)
 	private int enableImageProcessing = 0;
 
@@ -153,7 +153,7 @@ public class TesseractOCRConfig implements Serializable{
 				getProp(props, "resize", getResize()));
 
 	}
-	
+
 	/** @see #setTesseractPath(String tesseractPath)*/
 	public String getTesseractPath() {
 		return tesseractPath;
@@ -262,6 +262,7 @@ public class TesseractOCRConfig implements Serializable{
 		return timeout;
 	}
 	
+
 	/** @see #setEnableImageProcessing(boolean)
 	 * @return image processing is enabled or not */
 	public int isEnableImageProcessing() {
