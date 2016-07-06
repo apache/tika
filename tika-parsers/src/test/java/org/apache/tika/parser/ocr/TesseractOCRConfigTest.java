@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.ocr;
 
+import org.apache.commons.lang.SystemUtils;
 import org.apache.tika.TikaTest;
 import org.junit.Test;
 
@@ -74,14 +75,16 @@ public class TesseractOCRConfigTest extends TikaTest {
                 "/test-properties/TesseractOCRConfig-full.properties");
 
         TesseractOCRConfig config = new TesseractOCRConfig(stream);
-        assertEquals("Invalid overridden tesseractPath value", "/opt/tesseract" + File.separator, config.getTesseractPath());
-        assertEquals("Invalid overridden tesseractPath value", "/usr/local/share" + File.separator, config.getTessdataPath());
+        if(SystemUtils.IS_OS_UNIX) {
+        	assertEquals("Invalid overridden tesseractPath value", "/opt/tesseract" + File.separator, config.getTesseractPath());
+            assertEquals("Invalid overridden tesseractPath value", "/usr/local/share" + File.separator, config.getTessdataPath());
+        	assertEquals("Invalid overridden ImageMagickPath value", "/usr/local/bin/", config.getImageMagickPath());
+        }
         assertEquals("Invalid overridden language value", "fra+deu", config.getLanguage());
         assertEquals("Invalid overridden pageSegMode value", "2", config.getPageSegMode());
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
         assertEquals("Invalid overridden maxFileSizeToOcr value", 2000000, config.getMaxFileSizeToOcr());
         assertEquals("Invalid overridden timeout value", 240, config.getTimeout());
-        assertEquals("Invalid overridden ImageMagickPath value", "/usr/local/bin/", config.getImageMagickPath());
         assertEquals("Invalid overridden density value", 200 , config.getDensity());
         assertEquals("Invalid overridden depth value", 8 , config.getDepth());
         assertEquals("Invalid overridden filter value", "box" , config.getFilter());

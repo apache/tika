@@ -266,6 +266,13 @@
 	    <scope>compile</scope>
 	</dependency>
 
+	<!-- TIKA-2021: Tesseract OCR Parser tests -->
+	<dependency>
+	    <groupId>org.apache.commons</groupId>
+	    <artifactId>commons-lang3</artifactId>
+	    <version>3.4</version>
+	</dependency>
+
     <!-- Provided dependencies -->
     <dependency>
       <groupId>org.xerial</groupId>
