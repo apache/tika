@@ -431,5 +431,5 @@ public class TesseractOCRConfig implements Serializable{
 	 */
 	private String getProp(Properties properties, String property, String defaultMissing) {
 		return properties.getProperty(property, defaultMissing);
-	}	
+	}
 }
