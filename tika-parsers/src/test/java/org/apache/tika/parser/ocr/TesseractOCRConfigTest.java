@@ -142,7 +142,7 @@ public class TesseractOCRConfigTest extends TikaTest {
     	config.setResize(200);
     	config.setResize(400);
     	assertTrue("Couldn't set valid values", true);
-    	config.setDensity(1000);
+    	config.setResize(1000);
     }
 
 }
