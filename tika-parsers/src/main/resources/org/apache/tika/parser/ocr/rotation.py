@@ -16,10 +16,10 @@
 """
 
 from __future__ import division, print_function
+import numpy
 from skimage.transform import radon
 from PIL import Image
 from numpy import asarray, mean, array, blackman
-import numpy
 from numpy.fft import rfft
 import matplotlib.pyplot as plt
 from matplotlib.mlab import rms_flat
@@ -31,27 +31,27 @@ def main(argv):
 	filename = ''
 	
 	if len(sys.argv) < 3:
-		print('Usage: rotation_spacing.py -f <filename>')
+		print('Usage: rotation.py -f <filename>')
 		sys.exit()
 	try:
 	  opts, args = getopt.getopt(argv,"hf:",["file="])
 	except getopt.GetoptError:
-	  print('rotation_spacing.py -f <filename>')
+	  print('rotation.py -f <filename>')
 	  sys.exit(2)
 	for opt, arg in opts:
 	  if opt == '-h':
-	     print('Usage: rotation_spacing.py -f <filename>')
+	     print('Usage: rotation.py -f <filename>')
 	     sys.exit()
 	  elif opt in ("-f", "--file"):
 	     filename = arg
 
 	try:
-		from parabolic import parabolic
+	    from parabolic import parabolic
 
-		def argmax(x):
-		    return parabolic(x, numpy.argmax(x))[0]
+	    def argmax(x):
+	   	    return parabolic(x, numpy.argmax(x))[0]
 	except ImportError:
-		from numpy import argmax
+       from numpy import argmax
 
 	# Load file, converting to grayscale
 	I = asarray(Image.open(filename).convert('L'))

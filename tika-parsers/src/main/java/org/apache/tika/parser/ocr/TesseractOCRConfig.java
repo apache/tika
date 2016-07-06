@@ -260,8 +260,7 @@ public class TesseractOCRConfig implements Serializable{
 	 * @return timeout value for Tesseract */
 	public int getTimeout() {
 		return timeout;
-	}
-	
+	}	
 
 	/** @see #setEnableImageProcessing(boolean)
 	 * @return image processing is enabled or not */
@@ -432,6 +431,5 @@ public class TesseractOCRConfig implements Serializable{
 	 */
 	private String getProp(Properties properties, String property, String defaultMissing) {
 		return properties.getProperty(property, defaultMissing);
-	}
-	
+	}	
 }

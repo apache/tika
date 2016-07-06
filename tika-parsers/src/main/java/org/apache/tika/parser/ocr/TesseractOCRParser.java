@@ -283,12 +283,12 @@ public class TesseractOCRParser extends AbstractParser {
         // determine the angle of rotation required to make the text horizontal
         CommandLine cmdLine = CommandLine.parse(cmd);
         if(hasPython()) {
-			try {
-				executor.execute(cmdLine);
-				angle = outputStream.toString().trim();
-			} catch(Exception e) {	
-				e.printStackTrace();
-			}
+            try {
+                executor.execute(cmdLine);
+                angle = outputStream.toString().trim();
+            } catch(Exception e) {	
+                e.printStackTrace();
+            }
         }
               
         // process the image - parameter values can be set in TesseractOCRConfig.properties
@@ -327,7 +327,7 @@ public class TesseractOCRParser extends AbstractParser {
             		processImage(tmpFile,config);
             	}
             	
-                doOCR(tmpFile, tmpImgFile, config);
+                doOCR(tmpFile, tmpImgFile, config);                
 
                 // Tesseract appends .txt to output file name
                 tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + ".txt");
@@ -337,7 +337,7 @@ public class TesseractOCRParser extends AbstractParser {
                         extractOutput(is, xhtml);
                     }
                 }
-                
+             
                 tmp.close();
             }
 
