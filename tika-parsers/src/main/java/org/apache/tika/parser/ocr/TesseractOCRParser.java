@@ -161,7 +161,7 @@ public class TesseractOCRParser extends AbstractParser {
     	
 		try {
 			Process proc = Runtime.getRuntime().exec("python -h");
-			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"));
 			if(stdInput.read() != -1) {
 				hasPython = true;
 			}
@@ -284,7 +284,7 @@ public class TesseractOCRParser extends AbstractParser {
         if(hasPython()) {
             try {
                 executor.execute(cmdLine);
-                angle = outputStream.toString().trim();
+                angle = outputStream.toString("UTF-8").trim();
             } catch(Exception e) {	
                 e.printStackTrace();
             }

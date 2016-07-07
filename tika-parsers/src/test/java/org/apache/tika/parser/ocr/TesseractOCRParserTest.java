@@ -180,7 +180,7 @@ public class TesseractOCRParserTest extends TikaTest {
                 "/test-properties/TesseractOCR.properties");
     	TesseractOCRConfig config = new TesseractOCRConfig(stream);
     	String[] CheckCmd = {config.getImageMagickPath() + TesseractOCRParser.getImageMagickProg()};
-    	assertEquals(true,ExternalParser.check(CheckCmd));
+    	assumeTrue(ExternalParser.check(CheckCmd));
     }
     
     @Test
