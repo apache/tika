@@ -21,7 +21,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
+import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 import org.apache.tika.TikaTest;
@@ -149,7 +152,11 @@ public class TesseractOCRParserTest extends TikaTest {
             contents.append(m.get(RecursiveParserWrapper.TIKA_CONTENT));
         }
         if (canRun()) {
-            assertTrue(contents.toString().contains("Happy New Year 2003!"));
+        	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
+        		assertTrue(contents.toString().contains("Apache"));
+        	} else {
+        		assertTrue(contents.toString().contains("Happy New Year 2003!"));
+        	}
         }
         for (String needle : nonOCRContains) {
             assertContains(needle, contents.toString());
@@ -167,6 +174,15 @@ public class TesseractOCRParserTest extends TikaTest {
         assertContains("OCR Testing", xml);
     }
 
+    @Test
+    public void testImageMagick() throws Exception {
+    	InputStream stream = TesseractOCRConfig.class.getResourceAsStream(
+                "/test-properties/TesseractOCR.properties");
+    	TesseractOCRConfig config = new TesseractOCRConfig(stream);
+    	String[] CheckCmd = {config.getImageMagickPath() + TesseractOCRParser.getImageMagickProg()};
+    	assertEquals(true,ExternalParser.check(CheckCmd));
+    }
+    
     @Test
     public void getNormalMetadataToo() throws Exception {
         //this should be successful whether or not TesseractOCR is installed/active
