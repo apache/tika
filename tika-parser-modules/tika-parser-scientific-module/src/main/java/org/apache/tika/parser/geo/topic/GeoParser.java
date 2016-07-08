@@ -20,19 +20,21 @@ package org.apache.tika.parser.geo.topic;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -57,7 +59,7 @@ public class GeoParser extends AbstractParser {
 
     private boolean initialized;
     private URL modelUrl;
-    private NameEntityExtractor extractor;
+    private transient NameEntityExtractor extractor;
     private boolean available;
 
     @Override
@@ -70,9 +72,12 @@ public class GeoParser extends AbstractParser {
      * @param modelUrl the URL to NER model
      */
     public void initialize(URL modelUrl) {
-        if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
-            // Previously initialized for the same URL, no initialization needed
-            return;
+        try {
+            if (this.modelUrl != null && this.modelUrl.toURI().equals(modelUrl.toURI())) {
+                return;
+            }
+        } catch (URISyntaxException e1) {
+            LOG.log(Level.SEVERE, e1.getMessage(), e1);
         }
         
         this.modelUrl = modelUrl;
@@ -112,7 +117,7 @@ public class GeoParser extends AbstractParser {
         String bestner = extractor.bestNameEntity;
 
         /*------------------------resolve geonames for each ner, store results in a hashmap---------------------*/
-        HashMap<String, ArrayList<String>> resolvedGeonames = searchGeoNames(locationNameEntities);
+        HashMap<String, ArrayList<String>> resolvedGeonames = (HashMap<String, ArrayList<String>>) searchGeoNames(locationNameEntities);
 
         /*----------------store locationNameEntities and their geonames in a geotag, each input has one geotag---------------------*/
         GeoTag geotag = new GeoTag();
@@ -120,22 +125,21 @@ public class GeoParser extends AbstractParser {
 
         /* add resolved entities in metadata */
 
-        metadata.add("Geographic_NAME", geotag.Geographic_NAME);
-        metadata.add("Geographic_LONGITUDE", geotag.Geographic_LONGTITUDE);
-        metadata.add("Geographic_LATITUDE", geotag.Geographic_LATITUDE);
+        metadata.add("Geographic_NAME", geotag.geoNAME);
+        metadata.add("Geographic_LONGITUDE", geotag.geoLONGTITUDE);
+        metadata.add("Geographic_LATITUDE", geotag.geoLATITUDE);
         for (int i = 0; i < geotag.alternatives.size(); ++i) {
-            GeoTag alter = (GeoTag) geotag.alternatives.get(i);
-            metadata.add("Optional_NAME" + (i + 1), alter.Geographic_NAME);
+            GeoTag alter = geotag.alternatives.get(i);
+            metadata.add("Optional_NAME" + (i + 1), alter.geoNAME);
             metadata.add("Optional_LONGITUDE" + (i + 1),
-                         alter.Geographic_LONGTITUDE);
+                         alter.geoLONGTITUDE);
             metadata.add("Optional_LATITUDE" + (i + 1),
-                         alter.Geographic_LATITUDE);
+                         alter.geoLATITUDE);
         }
     }
 
-    public HashMap<String, ArrayList<String>> searchGeoNames(
-            ArrayList<String> locationNameEntities) throws ExecuteException,
-            IOException {
+    public Map<String, ArrayList<String>> searchGeoNames(
+            List<String> locationNameEntities) throws IOException {
         CommandLine cmdLine = new CommandLine("lucene-geo-gazetteer");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         cmdLine.addArgument("-s");
@@ -150,17 +154,16 @@ public class GeoParser extends AbstractParser {
         exec.setWatchdog(watchdog);
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
         exec.setStreamHandler(streamHandler);
-        int exitValue = exec.execute(cmdLine, EnvironmentUtils.getProcEnvironment());
         String outputJson = outputStream.toString("UTF-8");
         JSONArray json = (JSONArray) JSONValue.parse(outputJson);
 
-        HashMap<String, ArrayList<String>> returnHash = new HashMap<String, ArrayList<String>>();
+        HashMap<String, ArrayList<String>> returnHash = new HashMap<>();
         for (int i = 0; i < json.size(); i++) {
             JSONObject obj = (JSONObject) json.get(i);
             for (Object key : obj.keySet()) {
                 String theKey = (String) key;
                 JSONArray vals = (JSONArray) obj.get(theKey);
-                ArrayList<String> stringVals = new ArrayList<String>(
+                ArrayList<String> stringVals = new ArrayList<>(
                         vals.size());
                 for (int j = 0; j < vals.size(); j++) {
                     String val = (String) vals.get(j);

@@ -43,11 +43,11 @@ public class NameEntityExtractor {
     private final NameFinderME nameFinder;
 
     public NameEntityExtractor(URL modelUrl) throws IOException {
-        this.locationNameEntities = new ArrayList<String>();
+        this.locationNameEntities = new ArrayList<>();
         this.bestNameEntity = null;
         TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
         this.nameFinder = new NameFinderME(model);
-        this.tf = new HashMap<String, Integer>();
+        this.tf = new HashMap<>();
     }
 
     /*
@@ -59,7 +59,7 @@ public class NameEntityExtractor {
      */
     public void getAllNameEntitiesfromInput(InputStream stream) throws IOException {
         String[] in = IOUtils.toString(stream, UTF_8).split(" ");
-        Span nameE[];
+        Span[] nameE;
         
         //name finder is not thread safe https://opennlp.apache.org/documentation/1.5.2-incubating/manual/opennlp.html#tools.namefind
         synchronized (nameFinder) {
@@ -89,7 +89,7 @@ public class NameEntityExtractor {
      * ArrayList
      */
     public void getBestNameEntity() {
-        if (this.locationNameEntities.size() == 0)
+        if (this.locationNameEntities.isEmpty())
             return;
 
         for (int i = 0; i < this.locationNameEntities.size(); ++i) {
@@ -100,10 +100,11 @@ public class NameEntityExtractor {
                 tf.put(this.locationNameEntities.get(i), 1);
         }
         int max = 0;
-        List<Map.Entry<String, Integer>> list = new ArrayList<Map.Entry<String, Integer>>(
+        List<Map.Entry<String, Integer>> list = new ArrayList<>(
                 tf.entrySet());
         Collections.shuffle(list);
         Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
+            @Override
             public int compare(Map.Entry<String, Integer> o1,
                     Map.Entry<String, Integer> o2) {
                 // Descending Order
