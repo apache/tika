@@ -152,5 +152,4 @@ public class MboxParserTest {
 
         assertContains("When a Mapper completes", handler.toString());
     }
-
 }

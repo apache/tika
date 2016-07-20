@@ -22,6 +22,9 @@ Release 1.14 - ???
   * Maintain more significant digits in cells of "General" format
     in XLS and XLSX (TIKA-2025).
 
+  * Avoid mark/reset issues when extracting or detecting embedded resources
+    in RFC822 emails (TIKA-2037).
+
   * Improve extraction of embedded documents for PPT, PPTX and XLSX
     (TIKA-2026).
 
