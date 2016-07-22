@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Upgrade to Jackcess 2.1.4 (TIKA-2039).
+
   * Maintain more significant digits in cells of "General" format
     in XLS and XLSX (TIKA-2025).
 
