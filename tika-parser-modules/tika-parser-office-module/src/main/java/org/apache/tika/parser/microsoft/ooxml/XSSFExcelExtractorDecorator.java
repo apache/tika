@@ -18,7 +18,11 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -47,6 +51,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTHyperlink;
@@ -83,9 +88,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         extractor.setLocale(locale);
 
         if (locale == null) {
-            formatter = new DataFormatter();
+            formatter = new TikaExcelDataFormatter();
         } else {
-            formatter = new DataFormatter(locale);
+            formatter = new TikaExcelDataFormatter(locale);
         }
     }
 
