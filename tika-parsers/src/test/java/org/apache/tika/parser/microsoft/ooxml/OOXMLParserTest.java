@@ -1237,6 +1237,16 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
+
+    @Test
+    public void testBigIntegersWGeneralFormat() throws Exception {
+        //TIKA-2025
+        String xml = getXML("testEXCEL_big_numbers.xlsx").xml;
+        assertContains("123456789012345", xml);//15 digit number
+        assertContains("123456789012346", xml);//15 digit formula
+        assertContains("1.23456789012345E+15", xml);//16 digit number is treated as scientific notation
+        assertContains("1.23456789012345E+15", xml);//16 digit formula, ditto
+    }
 }
 
 

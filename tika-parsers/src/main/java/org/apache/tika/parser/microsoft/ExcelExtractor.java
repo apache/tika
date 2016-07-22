@@ -219,6 +219,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * formatting within the extraction.
          */
         private FormatTrackingHSSFListener formatListener;
+        private final TikaExcelDataFormatter tikaExcelDataFormatter;
+
         /**
          * List of worksheet names.
          */
@@ -255,7 +257,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.handler = handler;
             this.extractor = extractor;
             this.format = NumberFormat.getInstance(locale);
-            this.formatListener = new FormatTrackingHSSFListener(this, locale);
+            this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
+            this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
         }
 
         /**
@@ -612,6 +615,35 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
                 // Recursive call.
                 findPictures(escherRecord.getChildRecords());
+            }
+        }
+        private class TikaFormatTrackingHSSFListener extends FormatTrackingHSSFListener {
+            //TIKA-2025 -- use this to preserve large numbers in "General" format
+            //against the MS spec.
+            final TikaExcelGeneralFormat generalFormat;
+            public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale) {
+                super(childListener, locale);
+                generalFormat = new TikaExcelGeneralFormat(locale);
+            }
+
+            @Override
+            public String formatNumberDateCell(CellValueRecordInterface cell) {
+                String formatString = this.getFormatString(cell);
+                if (formatString != null && ! formatString.equals("General")) {
+                    return super.formatNumberDateCell(cell);
+                }
+
+                double value;
+                if(cell instanceof NumberRecord) {
+                    value = ((NumberRecord)cell).getValue();
+                } else {
+                    if(!(cell instanceof FormulaRecord)) {
+                        throw new IllegalArgumentException("Unsupported CellValue Record passed in " + cell);
+                    }
+
+                    value = ((FormulaRecord)cell).getValue();
+                }
+                return generalFormat.format(value);
             }
         }
     }
