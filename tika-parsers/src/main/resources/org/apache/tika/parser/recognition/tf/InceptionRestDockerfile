@@ -37,3 +37,5 @@ EXPOSE 8764
 
 # clean up cache, so we can publish smaller image to hub
 RUN apt-get clean
+
+CMD inceptionapi.py

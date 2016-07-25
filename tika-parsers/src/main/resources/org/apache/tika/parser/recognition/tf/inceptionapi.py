@@ -313,7 +313,7 @@ def classify_image():
 def main(_):
     if not app.debug:
         print("Serving on port %d" % FLAGS.port)
-    app.run(port=FLAGS.port)
+    app.run(host="0.0.0.0", port=FLAGS.port)
 
 if __name__ == '__main__':
     tf.app.run()
