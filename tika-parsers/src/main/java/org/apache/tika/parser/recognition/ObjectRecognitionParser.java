@@ -25,7 +25,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.recognition.tf.TensorflowImageRecParser;
+import org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.AnnotationUtils;
 import org.apache.tika.utils.ServiceLoaderUtils;
@@ -47,7 +47,7 @@ import java.util.Set;
 /**
  * This parser recognises objects from Images.
  * The Object Recognition implementation can be switched using 'class' argument.
- *
+ * <p>
  * <b>Example Usage : </b>
  * <pre>
  * &lt;properties&gt;
@@ -57,7 +57,7 @@ import java.util.Set;
  *    &lt;params&gt;
  *      &lt;param name=&quot;topN&quot; type=&quot;int&quot;&gt;2&lt;/param&gt;
  *      &lt;param name=&quot;minConfidence&quot; type=&quot;double&quot;&gt;0.015&lt;/param&gt;
- *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;org.apache.tika.parser.recognition.tf.TensorflowImageRecParser&lt;/param&gt;
+ *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser&lt;/param&gt;
  *    &lt;/params&gt;
  *   &lt;/parser&gt;
  *  &lt;/parsers&gt;
@@ -80,11 +80,13 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
                 }
             };
 
-    @Field private double minConfidence = 0.05;
+    @Field
+    private double minConfidence = 0.05;
 
-    @Field private int topN = 2;
+    @Field
+    private int topN = 2;
 
-    private ObjectRecogniser recogniser = new TensorflowImageRecParser();
+    private ObjectRecogniser recogniser = new TensorflowRESTRecogniser();
 
     @Field(name = "class")
     public void setRecogniser(String recogniserClass) {
@@ -117,7 +119,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         List<RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
         LOG.debug("Found {} objects", objects != null ? objects.size() : 0);
         LOG.debug("Time taken {}ms", System.currentTimeMillis() - start);
-        if (objects != null && !objects.isEmpty()){
+        if (objects != null && !objects.isEmpty()) {
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startElement("ol", "id", "objects");

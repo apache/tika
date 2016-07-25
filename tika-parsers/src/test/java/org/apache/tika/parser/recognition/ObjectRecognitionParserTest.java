@@ -21,15 +21,14 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +39,8 @@ import java.util.List;
 public class ObjectRecognitionParserTest {
 
     private static final String CONFIG_FILE = "org/apache/tika/parser/recognition/tika-config-tflow.xml";
+    private static final String CONFIG_ADDON_FILE = "org/apache/tika/parser/recognition/tika-config-tflow-addon.xml";
+    private static final String CONFIG_REST_FILE = "org/apache/tika/parser/recognition/tika-config-tflow-rest.xml";
     private static final String CAT_IMAGE = "test-documents/testJPEG.jpg";
     private static final ClassLoader loader = ObjectRecognitionParserTest.class.getClassLoader();
 
@@ -62,7 +63,50 @@ public class ObjectRecognitionParserTest {
                     Assert.assertTrue(message, text.contains(expectedObject));
                     Assert.assertTrue(message, metaValues.contains(expectedObject));
                 }
-                System.out.println(metadata);
+            }
+        }
+    }
+
+    @Ignore("Configure addon path in tika-config.xml")
+    @Test
+    public void testAddonJar() throws Exception {
+
+        try (InputStream stream = loader.getResourceAsStream(CONFIG_ADDON_FILE)){
+            assert stream != null;
+            Tika tika = new Tika(new TikaConfig(stream));
+            Metadata metadata = new Metadata();
+            try (InputStream imageStream = loader.getResourceAsStream(CAT_IMAGE)){
+                Reader reader = tika.parse(imageStream, metadata);
+                List<String> lines = IOUtils.readLines(reader);
+                String text = StringUtils.join(lines, " ");
+                String[] expectedObjects = {"Egyptian cat", "tabby cat"};
+                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
+                for (String expectedObject : expectedObjects) {
+                    String message = "'" + expectedObject + "' must have been detected";
+                    Assert.assertTrue(message, text.contains(expectedObject));
+                    Assert.assertTrue(message, metaValues.contains(expectedObject));
+                }
+            }
+        }
+    }
+
+    @Ignore("Configure Rest API service")
+    @Test
+    public void testREST() throws Exception {
+        try (InputStream stream = loader.getResourceAsStream(CONFIG_REST_FILE)){
+            assert stream != null;
+            Tika tika = new Tika(new TikaConfig(stream));
+            Metadata metadata = new Metadata();
+            try (InputStream imageStream = loader.getResourceAsStream(CAT_IMAGE)){
+                Reader reader = tika.parse(imageStream, metadata);
+                String text = IOUtils.toString(reader);
+                String[] expectedObjects = {"Egyptian cat", "tabby cat"};
+                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
+                for (String expectedObject : expectedObjects) {
+                    String message = "'" + expectedObject + "' must have been detected";
+                    Assert.assertTrue(message, text.contains(expectedObject));
+                    Assert.assertTrue(message, metaValues.contains(expectedObject));
+                }
             }
         }
     }

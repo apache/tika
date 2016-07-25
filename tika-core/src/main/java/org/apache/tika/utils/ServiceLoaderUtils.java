@@ -67,7 +67,7 @@ public class ServiceLoaderUtils {
      */
     public static <T> T newInstance(String className, ClassLoader loader){
         try {
-            Class loadedClass = loader.loadClass(className);
+            Class loadedClass = Class.forName(className, true, loader);
             Class<T> castedClass = loadedClass;
             T instance = castedClass.newInstance();
             return instance;

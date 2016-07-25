@@ -134,6 +134,7 @@ public class AnnotationUtils {
                 //LOG.debug("Param not supplied, field is not mandatory");
             }
         }
+        /*
         //now test that params doesn't contain a field
         //not allowed by this object
         for (String fieldName : params.keySet()) {
@@ -144,5 +145,6 @@ public class AnnotationUtils {
                 throw new TikaConfigException(msg);
             }
         }
+        */
     }
 }
