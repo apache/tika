@@ -833,6 +833,9 @@ public class TestMimeTypes extends TikaTest {
         // Lotus
         assertTypeDetection("testLotusEml.eml", "message/rfc822");
         
+        // MBOX
+        assertTypeDetection("headers.mbox", "application/mbox");
+        
         // Thunderbird - doesn't currently work by name
         assertTypeByNameAndData("message/rfc822", "testThunderbirdEml.eml");
     }
