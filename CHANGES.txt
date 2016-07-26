@@ -1,5 +1,8 @@
 Release 1.14 - ???
 
+  * Upgrade ICU4J charset detection components to fix multithreading
+    bug (TIKA-2041).
+
   * Upgrade to Jackcess 2.1.4 (TIKA-2039).
 
   * Maintain more significant digits in cells of "General" format
