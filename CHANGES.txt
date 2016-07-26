@@ -22,6 +22,7 @@ Release 1.14 - ???
      * MS Owner File (TIKA-2008)
      * Windows Media Metafile (TIKA-2004)
      * iCal and vCalendar (TIKA-2006)
+     * MBOX (TIKA-2042)
 
   * Upgrade to PDFBox 2.0.2 (TIKA-1996).
 
