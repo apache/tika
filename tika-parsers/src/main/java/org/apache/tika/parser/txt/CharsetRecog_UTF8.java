@@ -1,6 +1,8 @@
+// © 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html#License
 /**
  * ******************************************************************************
- * Copyright (C) 2005 - 2007, International Business Machines Corporation and  *
+ * Copyright (C) 2005 - 2014, International Business Machines Corporation and  *
  * others. All Rights Reserved.                                                *
  * ******************************************************************************
  */
@@ -8,8 +10,6 @@ package org.apache.tika.parser.txt;
 
 /**
  * Charset recognizer for UTF-8
- *
- * @internal
  */
 class CharsetRecog_UTF8 extends CharsetRecognizer {
 
@@ -20,7 +20,7 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
     /* (non-Javadoc)
      * @see com.ibm.icu.text.CharsetRecognizer#match(com.ibm.icu.text.CharsetDetector)
      */
-    int match(CharsetDetector det) {
+    CharsetMatch match(CharsetDetector det) {
         boolean hasBOM = false;
         int numValid = 0;
         int numInvalid = 0;
@@ -50,10 +50,7 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
                 trailBytes = 3;
             } else {
                 numInvalid++;
-                if (numInvalid > 5) {
-                    break;
-                }
-                trailBytes = 0;
+                continue;
             }
 
             // Verify that we've got the right number of trail bytes in the sequence
@@ -72,7 +69,6 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
                     break;
                 }
             }
-
         }
 
         // Cook up some sort of confidence score, based on presense of a BOM
@@ -87,13 +83,15 @@ class CharsetRecog_UTF8 extends CharsetRecognizer {
         } else if (numValid > 0 && numInvalid == 0) {
             confidence = 80;
         } else if (numValid == 0 && numInvalid == 0) {
-            // Plain ASCII.  
-            confidence = 10;
+            // Plain ASCII. Confidence must be > 10, it's more likely than UTF-16, which
+            //              accepts ASCII with confidence = 10.
+            // TODO: add plain ASCII as an explicitly detected type.
+            confidence = 15;
         } else if (numValid > numInvalid * 10) {
             // Probably corruput utf-8 data.  Valid sequences aren't likely by chance.
             confidence = 25;
         }
-        return confidence;
+        return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
     }
 
 }

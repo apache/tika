@@ -1,6 +1,8 @@
+// © 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html#License
 /*
 *******************************************************************************
-* Copyright (C) 2005 - 2008, International Business Machines Corporation and  *
+* Copyright (C) 2005 - 2012, International Business Machines Corporation and  *
 * others. All Rights Reserved.                                                *
 *******************************************************************************
 */
@@ -11,10 +13,8 @@ package org.apache.tika.parser.txt;
  * This is a superclass for the individual detectors for
  * each of the detectable members of the ISO 2022 family
  * of encodings.
- * <p/>
+ * <p>
  * The separate classes are nested within this class.
- *
- * @internal
  */
 abstract class CharsetRecog_2022 extends CharsetRecognizer {
 
@@ -74,7 +74,7 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
 
         //
         // Initial quality is based on relative proportion of recongized vs.
-        //   unrecognized escape sequences. 
+        //   unrecognized escape sequences.
         //   All good:  quality = 100;
         //   half or less good: quality = 0;
         //   linear inbetween.
@@ -114,8 +114,9 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
             return "ISO-2022-JP";
         }
 
-        int match(CharsetDetector det) {
-            return match(det.fInputBytes, det.fInputLen, escapeSequences);
+        CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det.fInputBytes, det.fInputLen, escapeSequences);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
         }
     }
 
@@ -128,10 +129,10 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
             return "ISO-2022-KR";
         }
 
-        int match(CharsetDetector det) {
-            return match(det.fInputBytes, det.fInputLen, escapeSequences);
+        CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det.fInputBytes, det.fInputLen, escapeSequences);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
         }
-
     }
 
     static class CharsetRecog_2022CN extends CharsetRecog_2022 {
@@ -153,11 +154,10 @@ abstract class CharsetRecog_2022 extends CharsetRecognizer {
             return "ISO-2022-CN";
         }
 
-
-        int match(CharsetDetector det) {
-            return match(det.fInputBytes, det.fInputLen, escapeSequences);
+        CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det.fInputBytes, det.fInputLen, escapeSequences);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
         }
     }
 
 }
-
