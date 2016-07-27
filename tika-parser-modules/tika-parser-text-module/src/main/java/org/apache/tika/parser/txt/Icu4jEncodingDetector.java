@@ -25,6 +25,14 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
+/**
+ * Tika wrapper around ICU4J's CharsetDetector.
+ * <p>
+ * NOTE: ICU4J's CharsetDetector and required classes were
+ * copied from ICU4J with two modifications:
+ * Apache Tika added the EBCDIC-500 family of detectors, and
+ * we increased the buffer to 12000 bytes.
+ */
 public class Icu4jEncodingDetector implements EncodingDetector {
 
     public Charset detect(InputStream input, Metadata metadata)

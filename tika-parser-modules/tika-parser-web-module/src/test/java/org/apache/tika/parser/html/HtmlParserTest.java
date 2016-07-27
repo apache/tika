@@ -33,15 +33,29 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -1128,4 +1142,102 @@ public class HtmlParserTest extends TikaTest {
         XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
         assertContains("有什么需要我帮你的", r.xml);
     }
+
+    @Test
+    public void testMultiThreadingEncodingDetection() throws Exception {
+        List<EncodingDetector> detectors = new ArrayList<>();
+        ServiceLoader loader =
+                new ServiceLoader(AutoDetectReader.class.getClassLoader());
+        detectors.addAll(loader.loadServiceProviders(EncodingDetector.class));
+        for (EncodingDetector detector : detectors) {
+            testDetector(detector);
+        }
+    }
+
+    private void testDetector(EncodingDetector detector) throws Exception {
+        Map<String, String> encodings = new ConcurrentHashMap<>();
+        List<String> tmpPaths = new ArrayList<>();
+        for (String p : new String[] {
+                "testHTML.html",
+                "testHTML_utf8.html",
+                "russian.cp866.txt",
+                "resume.html",
+                "test.html"
+
+        }) {
+            String testDocPath = "/test-documents/"+p;
+            String encoding = getEncoding(detector, testDocPath);
+            encodings.put(testDocPath, encoding);
+            //add 5 copies to add more chances for failure
+            for (int i = 0; i < 5; i++) {
+                tmpPaths.add(testDocPath);
+            }
+        }
+
+        Collections.shuffle(tmpPaths);
+
+        ArrayBlockingQueue<String> paths = new ArrayBlockingQueue<>(tmpPaths.size());
+        paths.addAll(tmpPaths);
+        int numThreads = paths.size()+1;
+        ExecutorService ex = Executors.newFixedThreadPool(numThreads);
+        CompletionService<String> completionService =
+                new ExecutorCompletionService<>(ex);
+
+        for (int i = 0; i < numThreads; i++) {
+            completionService.submit(new EncodingDetectorRunner(paths, encodings, detector));
+        }
+        int completed = 0;
+        while (completed < numThreads) {
+            Future<String> future = completionService.take();
+
+            if (future.isDone() &&
+                    //will trigger ExecutionException if an IOException
+                    //was thrown during call
+                    EncodingDetectorRunner.DONE.equals(future.get())) {
+                completed++;
+            }
+        }
+    }
+
+    private class EncodingDetectorRunner implements Callable<String> {
+
+        final static String DONE = "done";
+        private final ArrayBlockingQueue<String> paths;
+        private final Map<String, String> encodings;
+        private final EncodingDetector detector;
+        private EncodingDetectorRunner(ArrayBlockingQueue<String> paths,
+                                       Map<String, String> encodings, EncodingDetector detector) {
+            this.paths = paths;
+            this.encodings = encodings;
+            this.detector = detector;
+        }
+
+        @Override
+        public String call() throws IOException {
+            for (int i = 0; i < encodings.size(); i++) {
+                String p = paths.poll();
+                if (p == null) {
+                    return DONE;
+                }
+                String detectedEncoding = getEncoding(detector, p);
+                String trueEncoding = encodings.get(p);
+                assertEquals( "detector class="+detector.getClass() + " : file=",
+                        trueEncoding, detectedEncoding);
+
+            }
+            return DONE;
+        }
+    }
+
+    String getEncoding(EncodingDetector detector, String p) throws IOException {
+        try (InputStream is = TikaInputStream.get(getClass().getResourceAsStream(p))) {
+            Charset charset = detector.detect(is, new Metadata());
+            if (charset == null) {
+                return "NULL";
+            } else {
+                return charset.toString();
+            }
+        }
+    }
+
 }
