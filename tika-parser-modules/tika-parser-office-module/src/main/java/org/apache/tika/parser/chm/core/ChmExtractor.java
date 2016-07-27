@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.chm.core;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +36,6 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
 import org.apache.tika.parser.chm.lzx.ChmLzxBlock;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Extracts text from chm file. Enumerates chm entries.

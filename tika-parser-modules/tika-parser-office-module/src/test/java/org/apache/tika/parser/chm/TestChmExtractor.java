@@ -16,18 +16,23 @@
  */
 package org.apache.tika.parser.chm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.util.List;
+
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestChmExtractor {
+public class TestChmExtractor extends TikaTest {
     private ChmExtractor chmExtractor = null;
 
     @Before
@@ -58,6 +63,16 @@ public class TestChmExtractor {
             ++count;
         }
         assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, count);
+    }
+
+    @Test
+    public void testOOMOnCorruptCHM() throws Exception {
+        try {
+            XMLResult r = getXML("testChm_oom.chm");
+            fail("should have thrown TikaException");
+        } catch (TikaException e) {
+            assertTrue("correct exception thrown", true);
+        }
     }
 
 }
