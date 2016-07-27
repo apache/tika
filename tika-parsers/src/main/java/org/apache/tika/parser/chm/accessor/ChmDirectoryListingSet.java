@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Holds chm listing entries
@@ -121,7 +122,7 @@ public class ChmDirectoryListingSet {
      *            chm itsp PMGLheader
      */
     private void enumerateChmDirectoryListingList(ChmItsfHeader chmItsHeader,
-            ChmItspHeader chmItspHeader) {
+            ChmItspHeader chmItspHeader) throws TikaException {
         try {
             int startPmgl = chmItspHeader.getIndex_head();
             int stopPmgl = chmItspHeader.getUnknown_0024();
@@ -145,7 +146,7 @@ public class ChmDirectoryListingSet {
                 i=PMGLheader.getBlockNext();
                 dir_chunk = null;
             }
-        } catch (Exception e) {
+        } catch (ChmParsingException e) {
             e.printStackTrace();
         } finally {
             setData(null);
@@ -196,7 +197,7 @@ public class ChmDirectoryListingSet {
      * 
      * @param dir_chunk
      */
-    private void enumerateOneSegment(byte[] dir_chunk) throws ChmParsingException {
+    private void enumerateOneSegment(byte[] dir_chunk) throws ChmParsingException, TikaException {
 //        try {
             if (dir_chunk != null) {
                 int header_len;
