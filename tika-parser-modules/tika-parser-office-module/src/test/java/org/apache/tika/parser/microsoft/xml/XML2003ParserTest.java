@@ -78,6 +78,7 @@ public class XML2003ParserTest extends TikaTest {
         assertContains("R1 c1 R1 c2", txt);
         assertNotContained("footnoteFigure", txt);
         assertContains("footnote Figure", txt);
+        assertContains("test space", txt);
 
         assertEquals("testJPEG_EXIF.jpg", list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
         assertEquals("image/jpeg", list.get(7).get(Metadata.CONTENT_TYPE));
