@@ -56,6 +56,7 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
 
     final static String A = "a";
     final static String BODY = "body";
+    final static String BR = "br";
     final static String CDATA = "cdata";
     final static String DIV = "div";
     final static String HREF = "href";
@@ -69,6 +70,9 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
     final static String HLINK = "hlink";
     final static String HLINK_DEST = "dest";
     final static String NAME_ATTR = "name";
+
+    final static char[] NEWLINE = new char[] {'\n'};
+
 
 
     private static ContentHandler getMSPropertiesHandler(
