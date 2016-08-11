@@ -13,6 +13,22 @@ package org.apache.tika.parser.txt;
 /**
  * This class recognizes single-byte encodings. Because the encoding scheme is so
  * simple, language statistics are used to do the matching.
+ * <p/>
+ * The Recognizer works by first mapping from bytes in the encoding under test
+ * into that Recognizer's ngram space. Normally this means performing a
+ * lowercase, and excluding codepoints that don't correspond to numbers of
+ * letters. (Accented letters may or may not be ignored or normalised, depending
+ * on the needs of the ngrams)
+ * Then, ngram analysis is run against the transformed text, and a confidence
+ * is calculated.
+ * <p/>
+ * For many of our Recognizers, we have one ngram set per language in each
+ * encoding, and do a simultanious language+charset detection.
+ * <p/>
+ * When adding new Recognizers, the easiest way is to byte map to an existing
+ * encoding for which we have ngrams, excluding non text, and re-use the ngrams.
+ *
+ * @internal
  */
 abstract class CharsetRecog_sbcs extends CharsetRecognizer {
 
@@ -881,6 +897,64 @@ abstract class CharsetRecog_sbcs extends CharsetRecognizer {
 
         public String getName() {
             return "windows-1251";
+        }
+
+        public String getLanguage() {
+            return "ru";
+        }
+
+        public CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det, ngrams, byteMap);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence, getName(), "tr");
+        }
+    }
+
+    static class CharsetRecog_IBM866_ru extends CharsetRecog_sbcs {
+        private static int[] ngrams = {
+                0x20E220, 0x20E2EE, 0x20E4EE, 0x20E7E0, 0x20E820, 0x20EAE0, 0x20EAEE, 0x20EDE0, 0x20EDE5, 0x20EEE1, 0x20EFEE, 0x20EFF0, 0x20F0E0, 0x20F1EE, 0x20F1F2, 0x20F2EE,
+                0x20F7F2, 0x20FDF2, 0xE0EDE8, 0xE0F2FC, 0xE3EE20, 0xE5EBFC, 0xE5EDE8, 0xE5F1F2, 0xE5F220, 0xE820EF, 0xE8E520, 0xE8E820, 0xE8FF20, 0xEBE5ED, 0xEBE820, 0xEBFCED,
+                0xEDE020, 0xEDE520, 0xEDE8E5, 0xEDE8FF, 0xEDEE20, 0xEDEEE2, 0xEE20E2, 0xEE20EF, 0xEE20F1, 0xEEE220, 0xEEE2E0, 0xEEE3EE, 0xEEE920, 0xEEEBFC, 0xEEEC20, 0xEEF1F2,
+                0xEFEEEB, 0xEFF0E5, 0xEFF0E8, 0xEFF0EE, 0xF0E0E2, 0xF0E5E4, 0xF1F2E0, 0xF1F2E2, 0xF1F2E8, 0xF1FF20, 0xF2E5EB, 0xF2EE20, 0xF2EEF0, 0xF2FC20, 0xF7F2EE, 0xFBF520,
+        };
+
+        // bytemap converts cp866 chars to cp1251 chars, so ngrams are still unchanged
+        private static byte[] byteMap = {
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x00,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0x64, (byte) 0x65, (byte) 0x66, (byte) 0x67,
+                (byte) 0x68, (byte) 0x69, (byte) 0x6A, (byte) 0x6B, (byte) 0x6C, (byte) 0x6D, (byte) 0x6E, (byte) 0x6F,
+                (byte) 0x70, (byte) 0x71, (byte) 0x72, (byte) 0x73, (byte) 0x74, (byte) 0x75, (byte) 0x76, (byte) 0x77,
+                (byte) 0x78, (byte) 0x79, (byte) 0x7A, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0x64, (byte) 0x65, (byte) 0x66, (byte) 0x67,
+                (byte) 0x68, (byte) 0x69, (byte) 0x6A, (byte) 0x6B, (byte) 0x6C, (byte) 0x6D, (byte) 0x6E, (byte) 0x6F,
+                (byte) 0x70, (byte) 0x71, (byte) 0x72, (byte) 0x73, (byte) 0x74, (byte) 0x75, (byte) 0x76, (byte) 0x77,
+                (byte) 0x78, (byte) 0x79, (byte) 0x7A, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0xE0, (byte) 0xE1, (byte) 0xE2, (byte) 0xE3, (byte) 0xE4, (byte) 0xE5, (byte) 0xE6, (byte) 0xE7,
+                (byte) 0xE8, (byte) 0xE9, (byte) 0xEA, (byte) 0xEB, (byte) 0xEC, (byte) 0xED, (byte) 0xEE, (byte) 0xEF,
+                (byte) 0xF0, (byte) 0xF1, (byte) 0xF2, (byte) 0xF3, (byte) 0xF4, (byte) 0xF5, (byte) 0xF6, (byte) 0xF7,
+                (byte) 0xF8, (byte) 0xF9, (byte) 0xFA, (byte) 0xFB, (byte) 0xFC, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF,
+                (byte) 0xE0, (byte) 0xE1, (byte) 0xE2, (byte) 0xE3, (byte) 0xE4, (byte) 0xE5, (byte) 0xE6, (byte) 0xE7,
+                (byte) 0xE8, (byte) 0xE9, (byte) 0xEA, (byte) 0xEB, (byte) 0xEC, (byte) 0xED, (byte) 0xEE, (byte) 0xEF,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+                (byte) 0xF0, (byte) 0xF1, (byte) 0xF2, (byte) 0xF3, (byte) 0xF4, (byte) 0xF5, (byte) 0xF6, (byte) 0xF7,
+                (byte) 0xF8, (byte) 0xF9, (byte) 0xFA, (byte) 0xFB, (byte) 0xFC, (byte) 0xFD, (byte) 0xFE, (byte) 0xFF,
+                (byte) 0xB8, (byte) 0xB8, (byte) 0xBA, (byte) 0xBA, (byte) 0xBF, (byte) 0xBF, (byte) 0xA2, (byte) 0xA2,
+                (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20, (byte) 0x20,
+        };
+
+        public String getName() {
+            return "IBM866";
         }
 
         public String getLanguage() {
