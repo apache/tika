@@ -11,6 +11,7 @@ package org.apache.tika.parser.txt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,7 +57,8 @@ public class CharsetDetector {
 //   actually choose the "real" charset.  All assuming that the application just
 //   wants the data, and doesn't care about a char set name.
 
-    private static final int kBufSize = 12000;//legacy value; more recent value is 8000
+    private static final int kBufSize = 12000;//This is a Tika modification; ICU's is 8000
+    private static final int MAX_CONFIDENCE = 100;
     /*
      * List of recognizers for all charsets known to the implementation.
      */
@@ -100,11 +102,12 @@ public class CharsetDetector {
         list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_nl(), true));
 
         // IBM 420/424 recognizers are disabled by default
-        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM424_he_rtl(), false));
-        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM424_he_ltr(), false));
-        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_rtl(), false));
-        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_ltr(), false));
+        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM424_he_rtl(), true));
+        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM424_he_ltr(), true));
+        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_rtl(), true));
+        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_ltr(), true));
 
+        list.add(new CSRecognizerInfo(new CharsetRecog_sbcs.CharsetRecog_IBM866_ru(), true));
         ALL_CS_RECOGNIZERS = Collections.unmodifiableList(list);
     }
 
@@ -180,7 +183,7 @@ public class CharsetDetector {
      * @stable ICU 3.4
      */
     public CharsetDetector setDeclaredEncoding(String encoding) {
-        fDeclaredEncoding = encoding;
+        setCanonicalDeclaredEncoding(encoding);
         return this;
     }
     //   Value is rounded up, so zero really means zero occurences.
@@ -283,18 +286,30 @@ public class CharsetDetector {
      * @stable ICU 3.4
      */
     public CharsetMatch[] detectAll() {
-        ArrayList<CharsetMatch> matches = new ArrayList<>();
-
-        MungeInput();  // Strip html markup, collect byte stats.
+        CharsetRecognizer csr;
+        int i;
+        CharsetMatch charsetMatch;
+        int confidence;
+        ArrayList<CharsetMatch> matches = new ArrayList<CharsetMatch>();
 
         //  Iterate over all possible charsets, remember all that
         //    give a match quality > 0.
-        for (int i = 0; i < ALL_CS_RECOGNIZERS.size(); i++) {
-            CSRecognizerInfo rcinfo = ALL_CS_RECOGNIZERS.get(i);
-            boolean active = (fEnabledRecognizers != null) ? fEnabledRecognizers[i] : rcinfo.isDefaultEnabled;
-            if (active) {
-                CharsetMatch m = rcinfo.recognizer.match(this);
-                if (m != null) {
+        for (i = 0; i < ALL_CS_RECOGNIZERS.size(); i++) {
+            csr = ALL_CS_RECOGNIZERS.get(i).recognizer;
+            charsetMatch = csr.match(this);
+            if (charsetMatch != null) {
+                confidence = charsetMatch.getConfidence() & 0x000000ff;
+                if (confidence > 0) {
+                    // Just to be safe, constrain
+                    confidence = Math.min(confidence, MAX_CONFIDENCE);
+
+                    // Apply charset hint.
+                    if ((fDeclaredEncoding != null) && (fDeclaredEncoding.equalsIgnoreCase(csr.getName()))) {
+                        // Reduce lack of confidence (delta between "sure" and current) by 50%.
+                        confidence += (MAX_CONFIDENCE - confidence) / 2;
+                    }
+
+                    CharsetMatch m = new CharsetMatch(this, csr, confidence);
                     matches.add(m);
                 }
             }
@@ -405,6 +420,22 @@ public class CharsetDetector {
         fStripTags = filter;
 
         return previous;
+    }
+
+    /**
+     * Try to set fDeclaredEncoding to the canonical name for <encoding>, if it exists.
+     *
+     * @param encoding - name of character encoding
+     */
+    private void setCanonicalDeclaredEncoding(String encoding) {
+        if ((encoding == null) || encoding.isEmpty()) {
+            return;
+        }
+
+        Charset cs = Charset.forName(encoding);
+        if (cs != null) {
+            fDeclaredEncoding = cs.name();
+        }
     }
 
     /*
