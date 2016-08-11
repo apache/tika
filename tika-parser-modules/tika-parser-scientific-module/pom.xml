@@ -106,9 +106,9 @@
     </dependency>
     <!-- Upstream parser libraries -->
     <dependency>
-      <groupId>net.sourceforge.jmatio</groupId>
+      <groupId>org.tallison</groupId>
       <artifactId>jmatio</artifactId>
-      <version>1.0</version>
+      <version>1.2</version>
     </dependency>
     <!-- Apache Commons CSV -->
     <dependency>
