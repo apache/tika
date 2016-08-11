@@ -416,6 +416,13 @@
       <version>2.7.1</version>
     </dependency>
 
+    <!--HTML Parser for TagRatio Parser-->
+    <dependency>
+        <groupId>org.htmlparser</groupId>
+        <artifactId>htmlparser</artifactId>
+        <version>1.6</version>
+    </dependency>
+
   </dependencies>
 
   <build>
