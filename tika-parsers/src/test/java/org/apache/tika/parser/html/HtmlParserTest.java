@@ -1171,6 +1171,7 @@ public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testAllHeadElements() throws Exception {
+        //TIKA-1980
         // IdentityHtmlMapper is needed to extract <script> tags
         ParseContext context = new ParseContext();
         context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
@@ -1179,7 +1180,7 @@ public class HtmlParserTest extends TikaTest {
 
         final Map<String, Integer> tagFrequencies = new HashMap<>();
 
-        String path = "/test-documents/head.html";
+        String path = "/test-documents/testHTML_head.html";
         try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
             ContentHandler tagCounter = new DefaultHandler() {
                 @Override
@@ -1194,10 +1195,10 @@ public class HtmlParserTest extends TikaTest {
             new HtmlParser().parse(stream, tagCounter, metadata, context);
         }
 
-        assert(1 == tagFrequencies.get("title"));
-        assert(9 == tagFrequencies.get("meta"));
-        assert(12 == tagFrequencies.get("link"));
-        assert(6 == tagFrequencies.get("script"));
+        assertEquals(1, (int)tagFrequencies.get("title"));
+        assertEquals(9, (int)tagFrequencies.get("meta"));
+        assertEquals(12, (int)tagFrequencies.get("link"));
+        assertEquals(6, (int)tagFrequencies.get("script"));
     }
 
     @Test
