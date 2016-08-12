@@ -1167,6 +1167,37 @@ public class HtmlParserTest extends TikaTest {
         assertEquals(url, links.get(0));
     }
 
+    @Test
+    public void testAllHeadElements() throws Exception {
+        //TIKA-1980
+        // IdentityHtmlMapper is needed to extract <script> tags
+        ParseContext context = new ParseContext();
+        context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+
+        final Map<String, Integer> tagFrequencies = new HashMap<>();
+
+        String path = "/test-documents/testHTML_head.html";
+        try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
+            ContentHandler tagCounter = new DefaultHandler() {
+                @Override
+                public void startElement(
+                        String uri, String local, String name, Attributes attributes)
+                        throws SAXException {
+
+                    int count = tagFrequencies.containsKey(name) ? tagFrequencies.get(name) : 0;
+                    tagFrequencies.put(name, count + 1);
+                }
+            };
+            new HtmlParser().parse(stream, tagCounter, metadata, context);
+        }
+
+        assertEquals(1, (int)tagFrequencies.get("title"));
+        assertEquals(9, (int)tagFrequencies.get("meta"));
+        assertEquals(12, (int)tagFrequencies.get("link"));
+        assertEquals(6, (int)tagFrequencies.get("script"));
+    }
 
     @Test
     public void testSkippingCommentsInEncodingDetection() throws Exception {
