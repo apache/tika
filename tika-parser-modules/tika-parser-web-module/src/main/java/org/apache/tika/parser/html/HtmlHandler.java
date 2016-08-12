@@ -121,6 +121,9 @@ class HtmlHandler extends TextContentHandler {
             } else if ("LINK".equals(name)) {
                 startElementWithSafeAttributes("link", atts);
                 xhtml.endElement("link");
+            } else if ("SCRIPT".equals(name) && atts.getValue("src") != null) {
+                startElementWithSafeAttributes("script", atts);
+                xhtml.endElement("script");
             }
         }
 
