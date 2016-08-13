@@ -86,16 +86,6 @@ public class ParameterizedParserTest {
     }
 
     @Test
-    public void testBadParam() throws Exception {
-        try {
-            Metadata m = getMetadata("TIKA-1986-bad-parameters.xml");
-            fail("should have thrown exception");
-        } catch (TikaException e) {
-
-        }
-    }
-
-    @Test
     public void testBadValue() throws Exception {
         boolean ex = false;
         try {
