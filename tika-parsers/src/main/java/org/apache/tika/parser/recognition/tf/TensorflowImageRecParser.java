@@ -60,7 +60,7 @@ import java.util.regex.Pattern;
  *          <li> All dependencies of tensor flow (such as numpy) must also be available. <a href="https://www.tensorflow.org/versions/r0.9/tutorials/image_recognition/index.html#image-recognition">Follow the image recognition guide and make sure it works</a></li>
  *      </ol>
  *  </p>
- *  @see TensorflowGrpcRecogniser
+ *  @see TensorflowRESTRecogniser
  * @since Apache Tika 1.14
  */
 public class TensorflowImageRecParser extends ExternalParser implements ObjectRecogniser {
