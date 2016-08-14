@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import javax.imageio.spi.ServiceRegistry;
+import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +31,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -54,6 +57,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.utils.AnnotationUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -459,6 +463,7 @@ public class TikaConfig {
     }
     
     private static abstract class XmlLoader<CT,T> {
+        protected static final String PARAMS_TAG_NAME = "params";
         abstract boolean supportsComposite();
         abstract String getParentTagName(); // eg parsers
         abstract String getLoaderTagName(); // eg parser
@@ -504,6 +509,7 @@ public class TikaConfig {
             // Wrap the defined parsers/detectors up in a Composite
             return createComposite(loaded, mimeTypes, loader);
         }
+
         T loadOne(Element element, MimeTypes mimeTypes, ServiceLoader loader) 
                 throws TikaException, IOException {
             String name = element.getAttribute("class");
@@ -514,6 +520,7 @@ public class TikaConfig {
                         loader.getServiceClass(getLoaderClass(), name);
 
                 // Do pre-load checks and short-circuits
+                //TODO : allow duplicate instances with different configurations
                 loaded = preLoadOne(loadedClass, name, mimeTypes);
                 if (loaded != null) return loaded;
                 
@@ -554,10 +561,15 @@ public class TikaConfig {
                     // TODO Support arguments, needed for Translators etc
                     // See the thread "Configuring parsers and translators" for details 
                 }
-                
+
+                Map<String, Param> params = getParams(element);
+                //Assigning the params to bean fields/setters
+                AnnotationUtils.assignFieldParams(loaded, params);
+                if (loaded instanceof Initializable) {
+                    ((Initializable) loaded).initialize(params);
+                }
                 // Have any decoration performed, eg explicit mimetypes
                 loaded = decorate(loaded, element);
-                
                 // All done with setup
                 return loaded;
             } catch (ClassNotFoundException e) {
@@ -580,6 +592,37 @@ public class TikaConfig {
                         "Unable to instantiate a "+getLoaderTagName()+" class: " + name, e);
             }
         }
+
+        /**
+         * Gets parameters from a given
+         * @param el xml node which has {@link #PARAMS_TAG_NAME} child
+         * @return Map of key values read from xml
+         */
+        Map<String, Param>  getParams(Element el){
+            Map<String, Param> params = new HashMap<>();
+            for (Node child = el.getFirstChild(); child != null;
+                 child = child.getNextSibling()){
+                if (PARAMS_TAG_NAME.equals(child.getNodeName())){ //found the node
+                    if (child.hasChildNodes()) {//it has children
+                        NodeList childNodes = child.getChildNodes();
+                        for (int i = 0; i < childNodes.getLength(); i++) {
+                            Node item = childNodes.item(i);
+                            if (item.getNodeType() == Node.ELEMENT_NODE){
+                                try {
+                                    Param<?> param = Param.load(item);
+                                    params.put(param.getName(), param);
+                                } catch (JAXBException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    }
+                    break; //only the first one is used
+                }
+            }
+            return params;
+        }
+
     }
     private static class ParserXmlLoader extends XmlLoader<CompositeParser,Parser> {
         boolean supportsComposite() { return true; }

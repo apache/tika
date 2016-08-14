@@ -106,7 +106,6 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             // key methods to output to the given content
             // handler.
             pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
-
             config.configure(pdf2XHTML);
 
             pdf2XHTML.writeText(document, new Writer() {

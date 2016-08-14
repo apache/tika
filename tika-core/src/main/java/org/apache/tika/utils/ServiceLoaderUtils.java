@@ -20,6 +20,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.tika.config.ServiceLoader;
+
 /**
  * Service Loading and Ordering related utils
  */
@@ -44,5 +46,33 @@ public class ServiceLoaderUtils {
                 }
             }
         });
+    }
+
+    /**
+     * Loads a class and instantiates it
+     * @param className service class name
+     * @param <T> service type
+     * @return instance of service
+     */
+    public static <T> T newInstance(String className) {
+        return newInstance(className, ServiceLoader.class.getClassLoader());
+    }
+
+    /**
+     * Loads a class and instantiates it
+     * @param className service class name
+     * @param loader class loader
+     * @param <T> service type
+     * @return instance of service
+     */
+    public static <T> T newInstance(String className, ClassLoader loader){
+        try {
+            Class loadedClass = Class.forName(className, true, loader);
+            Class<T> castedClass = loadedClass;
+            T instance = castedClass.newInstance();
+            return instance;
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
