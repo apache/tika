@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -121,32 +122,50 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         LOG.debug("Time taken {}ms", System.currentTimeMillis() - start);
         if (objects != null && !objects.isEmpty()) {
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-            xhtml.startElement("ol", "id", "objects");
             Collections.sort(objects, DESC_CONFIDENCE_SORTER);
-            int count = 0;
-            for (RecognisedObject object : objects) {
+	    int count = 0;
+	    List<RecognisedObject> acceptedObjects = new ArrayList<RecognisedObject>(topN);
+
+	    // first process all the MD objects
+	    for (RecognisedObject object: objects){
                 if (object.getConfidence() >= minConfidence) {
-                    LOG.debug("Add {}", object);
-                    count++;
-                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-                            object.getLabel(), object.getConfidence());
-                    metadata.add(MD_KEY, mdValue);
+		    if (object.getConfidence() >= minConfidence) {
+			count++;
+			LOG.debug("Add {}", object);
+			String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
+						   object.getLabel(), object.getConfidence());
+			metadata.add(MD_KEY, mdValue);
+			acceptedObjects.add(object);
+			if (count >= topN) {
+			    break;
+			}
+		    }
+		    else{
+			LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
+		    }
+		}
+	    }
+
+	    // now the handler
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+	    xhtml.startDocument();
+            xhtml.startElement("ol", "id", "objects");
+            count = 0;
+            for (RecognisedObject object : acceptedObjects) {
                     //writing to handler
                     xhtml.startElement("li", "id", object.getId());
                     String text = String.format(Locale.ENGLISH, " %s [%s](confidence = %f )",
                             object.getLabel(), object.getLabelLang(), object.getConfidence());
-                    xhtml.characters(text);
+		    xhtml.characters(text);
                     xhtml.endElement("li");
-                    if (count >= topN) {
-                        break;
-                    }
-                }
             }
+
             xhtml.endElement("ol");
+	    xhtml.endDocument();
         } else {
             LOG.warn("NO objects");
             metadata.add("no.objects", Boolean.TRUE.toString());
         }
+
     }
 }

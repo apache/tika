@@ -21,7 +21,7 @@
         <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
             <mime>image/jpeg</mime>
             <params>
-                <param name="topN" type="int">7</param>
+                <param name="topN" type="int">2</param>
                 <param name="minConfidence" type="double">0.015</param>
                 <param name="class" type="string">org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser</param>
             </params>
