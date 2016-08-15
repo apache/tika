@@ -154,7 +154,7 @@ public class TesseractOCRParser extends AbstractParser {
      
     }
     
-    private boolean hasPython() {
+    private static boolean hasPython() {
     	// check if python is installed and if the rotation program path has been specified correctly
         
     	boolean hasPython = false;
@@ -166,7 +166,7 @@ public class TesseractOCRParser extends AbstractParser {
 				hasPython = true;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+
 		} 
 
 		return hasPython;	
@@ -286,7 +286,7 @@ public class TesseractOCRParser extends AbstractParser {
                 executor.execute(cmdLine);
                 angle = outputStream.toString("UTF-8").trim();
             } catch(Exception e) {	
-                e.printStackTrace();
+
             }
         }
               
@@ -299,7 +299,7 @@ public class TesseractOCRParser extends AbstractParser {
 		try {
 			executor.execute(cmdLine);
 		} catch(Exception e) {	
-			e.printStackTrace();
+
 		} 
        
         tmp.close();
