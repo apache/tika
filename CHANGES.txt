@@ -1,5 +1,5 @@
 Release 1.14 - ???
-
+ 
   * Tika now is integrated with the Tensorflow library from Google 
     and it can use its Inception v3 image classification model to 
     identify objects in images (TIKA-1993).
