@@ -21,7 +21,7 @@ Release 1.14 - ???
     in RFC822 emails (TIKA-2037).
 
   * Improving accuracy of Tesseract for better extraction of numeric 
-    and alphanumeric text from images (TIKA-2021).
+    and alphanumeric text from images (TIKA-2021, TIKA-2031).
 
   * Improve extraction of embedded documents from PPT, PPT and XLSX
     (TIKA-2026).
