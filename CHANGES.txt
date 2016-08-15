@@ -3,7 +3,7 @@ Release 1.14 - ???
   * Tika now is integrated with the Tensorflow library from Google 
     and it can use its Inception v3 image classification model to 
     identify objects in images (TIKA-1993).
- 
+
   * Parser configuration is now type-safe and parameters for parsers
     can have assigned types (TIKA-1508, TIKA-1986).
 
