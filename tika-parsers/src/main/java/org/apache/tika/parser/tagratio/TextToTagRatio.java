@@ -42,7 +42,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.xml.sax.SAXException;
 
-class TTR {
+class TextToTagRatioUtil {
 
 	private double[] linkTagList;
 	public Object outputDirPath;
@@ -215,7 +215,7 @@ public class TextToTagRatio {
 	private static String outputDirPath;
 	
 	public static void main(String[] args) {
-		TTR ttr = new TTR();		
+		TextToTagRatioUtil ttr = new TextToTagRatioUtil();		
 		TikaUtil tikaUtil = new TikaUtil();
 		TextToTagRatio.inputDirPath = args[0];
 		TextToTagRatio.outputDirPath = args[1];
