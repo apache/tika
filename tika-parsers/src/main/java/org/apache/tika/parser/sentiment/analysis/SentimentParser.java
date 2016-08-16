@@ -59,7 +59,6 @@ public class SentimentParser extends AbstractParser {
    * Constructor
    */
   public SentimentParser() {
-    System.out.println("Create sentiment parser");
   }
 
   /**
