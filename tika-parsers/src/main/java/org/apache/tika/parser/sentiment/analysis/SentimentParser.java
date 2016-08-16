@@ -35,7 +35,6 @@ import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import edu.usc.ir.sentiment.analysis.cmdline.SentimentConstant;
 import opennlp.tools.sentiment.SentimentME;
 import opennlp.tools.sentiment.SentimentModel;
 
@@ -44,15 +43,15 @@ import opennlp.tools.sentiment.SentimentModel;
  */
 public class SentimentParser extends AbstractParser {
 
+  private static final String MODEL = "model";
   private static final Set<MediaType> SUPPORTED_TYPES = Collections
       .singleton(MediaType.application("sentiment"));
   public static final String HELLO_MIME_TYPE = "application/sentiment";
   private static final Logger LOG = Logger
       .getLogger(SentimentParser.class.getName());
 
-  private SentimentME sentiment;
-  private URL modelUrl;
-  private File modelFile;
+  private transient SentimentME sentiment;
+  private transient URL modelUrl;
   private boolean initialised;
   private boolean available;
 
@@ -103,8 +102,6 @@ public class SentimentParser extends AbstractParser {
    *          the model file
    */
   public void initialise(File file) {
-    this.modelFile = file;
-
     try {
       SentimentModel model = new SentimentModel(file);
       this.sentiment = new SentimentME(model);
@@ -145,7 +142,7 @@ public class SentimentParser extends AbstractParser {
       Metadata metadata, ParseContext context)
       throws IOException, SAXException, TikaException {
     if (!initialised) {
-      String model = metadata.get(SentimentConstant.MODEL);
+      String model = metadata.get(MODEL);
       initialise(new File(model));
     }
     if (available) {
