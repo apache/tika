@@ -71,8 +71,10 @@ public class CachedTranslator extends AbstractTranslator {
 
 	@Override
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        if (translator == null) return text;
-		HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        if (translator == null) {
+            return text;
+        }
+        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
             translatedText = translator.translate(text, sourceLanguage, targetLanguage);
@@ -114,9 +116,12 @@ public class CachedTranslator extends AbstractTranslator {
      * @since Tika 1.6
      */
     public int getNumTranslationsFor(String sourceLanguage, String targetLanguage) {
-        HashMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
-        if (translationCache == null) return 0;
-        else return translationCache.size();
+        LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
+        if (translationCache == null) {
+            return 0;
+        } else {
+            return translationCache.size();
+        }
     }
 
     /**
@@ -129,8 +134,8 @@ public class CachedTranslator extends AbstractTranslator {
      * @return true if the cache contains a translation of the text, false otherwise.
      */
     public boolean contains(String text, String sourceLanguage, String targetLanguage) {
-        HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
-        return translationCache.containsKey(text);
+        LRUMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        return translationCache.get(text) != null;
     }
 
     /**
