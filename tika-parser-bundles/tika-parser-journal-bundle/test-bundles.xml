@@ -28,7 +28,7 @@
       <outputFileNameMapping>${artifact.artifactId}.jar</outputFileNameMapping>
       <includes>
         <include>org.apache.tika:tika-core</include>
-        <include>org.apache.tika:tika-parser-pdf-bundle</include>
+        <include>org.apache.tika:tika-parser-multimedia-bundle</include>
       </includes>
     </dependencySet>
   </dependencySets>

@@ -54,6 +54,12 @@
               jempbox;inline=true,
               fontbox;inline=true,
               isoparser;inline=true,
+              pdfbox;inline=true,
+              pdfbox-tools;inline=true,
+              pdfbox-debugger;inline=true,
+              bcmail-jdk15on,
+              bcprov-jdk15on,
+              bcpkix-jdk15on
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Export-Package>
@@ -62,13 +68,23 @@
               org.apache.tika.parser.audio.*,
               org.apache.tika.parser.video.*,
               org.apache.tika.parser.mp3.*,
-              org.apache.tika.parser.mp4.*
+              org.apache.tika.parser.mp4.*,
+              org.apache.tika.parser.pdf.*
             </Export-Package>
             <Import-Package>
               *,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
-              android.util;resolution:=optional
+              android.util;resolution:=optional,
+              javax.mail;resolution:=optional,
+              javax.mail.internet;resolution:=optional,
+              org.bouncycastle.cert;resolution:=optional,
+              org.bouncycastle.cert.jcajce;resolution:=optional,
+              org.bouncycastle.cert.ocsp;resolution:=optional,
+              org.bouncycastle.cms.bc;resolution:=optional,
+              org.bouncycastle.operator;resolution:=optional,
+              org.bouncycastle.operator.bc;resolution:=optional,
+              org.bouncycastle.tsp;resolution:=optional,
             </Import-Package>
           </instructions>
         </configuration>

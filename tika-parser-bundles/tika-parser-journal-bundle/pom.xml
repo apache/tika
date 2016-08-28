@@ -32,7 +32,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-pdf-bundle</artifactId>
+      <artifactId>tika-parser-multimedia-bundle</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

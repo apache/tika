@@ -105,11 +105,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-pdf-module</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-scientific-module</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -220,7 +215,6 @@
                   <include>org.apache.tika:tika-parser-journal-module</include>
                   <include>org.apache.tika:tika-parser-office-module</include>
                   <include>org.apache.tika:tika-parser-package-module</include>
-                  <include>org.apache.tika:tika-parser-pdf-module</include>
                   <include>org.apache.tika:tika-parser-scientific-module</include>
                   <include>org.apache.tika:tika-parser-text-module</include>
                   <include>org.apache.tika:tika-parser-web-module</include>

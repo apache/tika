@@ -56,7 +56,6 @@
     <module>tika-parser-multimedia-module</module>
     <module>tika-parser-office-module</module>
     <module>tika-parser-package-module</module>
-    <module>tika-parser-pdf-module</module>
     <module>tika-parser-scientific-module</module>
     <module>tika-parser-text-module</module>
     <module>tika-parser-web-module</module>

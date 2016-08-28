@@ -68,7 +68,7 @@ public class BundleIT {
         String bundleFileName = System.getProperty(BUNDLE_JAR_SYS_PROP);
         return options(junitBundles(), 
                 bundle(new File("target/test-bundles/tika-core.jar").toURI().toURL().toString()),
-                bundle(new File("target/test-bundles/tika-parser-pdf-bundle.jar").toURI().toURL().toString()),
+                bundle(new File("target/test-bundles/tika-parser-multimedia-bundle.jar").toURI().toURL().toString()),
                 bundle(new File(bundleFileName).toURI().toString()));
     }
 
@@ -92,6 +92,6 @@ public class BundleIT {
     @Test
     public void testServicesCreated() throws Exception {
         ServiceReference[] services = bc.getAllServiceReferences(Parser.class.getName(), null);
-        assertEquals("Not all Services have started", 16, services.length);
+        assertEquals("Not all Services have started", 17, services.length);
     }
 }

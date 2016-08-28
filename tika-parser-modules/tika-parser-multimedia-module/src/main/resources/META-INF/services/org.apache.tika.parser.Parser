@@ -13,7 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
+org.apache.tika.parser.pdf.PDFParser
 org.apache.tika.parser.font.AdobeFontMetricParser
 org.apache.tika.parser.font.TrueTypeParser
 org.apache.tika.parser.image.BPGParser
@@ -29,3 +29,4 @@ org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.mp4.MP4Parser
 org.apache.tika.parser.pot.PooledTimeSeriesParser
 org.apache.tika.parser.video.FLVParser
+
