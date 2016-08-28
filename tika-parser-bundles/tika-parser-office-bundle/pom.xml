@@ -74,7 +74,7 @@
               java-libpst;inline=true,
               curvesapi;inline=true,
               xmlbeans;inline=true,
-              bcprov-jdk15on;inline=true,
+              bcprov-jdk15on,
             </Embed-Dependency> 
             <Embed-Transitive>true</Embed-Transitive>
             <Export-Package>

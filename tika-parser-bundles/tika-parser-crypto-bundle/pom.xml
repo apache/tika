@@ -43,9 +43,9 @@
             <Bundle-Activator>org.apache.tika.module.crypto.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-crypto-module;inline=true,
-              bcmail-jdk15on;inline=true,
-              bcprov-jdk15on;inline=true,
-              bcpkix-jdk15on;inline=true,
+              bcmail-jdk15on,
+              bcprov-jdk15on,
+              bcpkix-jdk15on,
               commons-io;inline=true
             </Embed-Dependency> 
             <Embed-Transitive>true</Embed-Transitive>
