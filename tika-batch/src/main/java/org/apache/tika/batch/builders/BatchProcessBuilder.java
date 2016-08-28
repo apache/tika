@@ -97,12 +97,21 @@ public class BatchProcessBuilder {
                 incomingRuntimeAttributes, docElement);
         int maxAliveTimeSeconds = XMLDOMUtil.getInt("maxAliveTimeSeconds",
                 incomingRuntimeAttributes, docElement);
+        
 
         FileResourceCrawler crawler = null;
         ConsumersManager consumersManager = null;
         StatusReporter reporter = null;
         Interrupter interrupter = null;
-
+        
+        Node useBundleClassLoaderAttribute = 
+                docElement.getAttributes().getNamedItem("useBundleClassLoader");
+        if(useBundleClassLoaderAttribute != null)
+        {
+            ClassLoaderUtil.setUseBundleClassLoader(
+                    Boolean.parseBoolean(useBundleClassLoaderAttribute.getNodeValue()));
+        }
+        
         /*
          * TODO: This is a bit smelly.  NumConsumers needs to be used by the crawler
          * and the consumers.  This copies the incomingRuntimeAttributes and then

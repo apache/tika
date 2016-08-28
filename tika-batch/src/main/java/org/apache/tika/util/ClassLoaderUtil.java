@@ -17,11 +17,23 @@ package org.apache.tika.util;
  * limitations under the License.
  */
 public class ClassLoaderUtil {
+    
+    private static boolean useBundleClassLoader = false;
 
     @SuppressWarnings("unchecked")
     public static <T> T buildClass(Class<T> iface, String className) {
 
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
+        
+        ClassLoader loader = null;
+        if(useBundleClassLoader)
+        {
+            loader = ClassLoaderUtil.class.getClassLoader();
+        }
+        else
+        {
+            loader = ClassLoader.getSystemClassLoader();
+        }
+        
         Class<?> clazz;
         try {
             clazz = loader.loadClass(className);
@@ -37,5 +49,9 @@ public class ClassLoaderUtil {
             throw new RuntimeException(e);
         }
 
+    }
+    
+    public static void setUseBundleClassLoader(boolean useBundleClassLoader) {
+        ClassLoaderUtil.useBundleClassLoader = useBundleClassLoader;
     }
 }
