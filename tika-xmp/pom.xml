@@ -52,6 +52,9 @@
               org.apache.tika.xmp,
               org.apache.tika.xmp.convert
             </Export-Package>
+            <Embed-Dependency>
+                xmpcore
+            </Embed-Dependency>
             <Private-Package />
           </instructions>
         </configuration>
@@ -78,7 +81,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
+      <artifactId>tika-parser-office-module</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
