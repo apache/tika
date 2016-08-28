@@ -54,6 +54,7 @@
     <module>tika-parser-package-bundle</module>
     <module>tika-parser-scientific-bundle</module>
     <module>tika-parser-text-bundle</module>
+    <module>tika-parser-vorbis-bundle</module>
     <module>tika-parser-web-bundle</module>
   </modules>
   
