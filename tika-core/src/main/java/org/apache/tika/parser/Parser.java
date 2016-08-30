@@ -29,7 +29,6 @@ import org.xml.sax.SAXException;
 
 /**
  * Tika parser interface.
- * @see ConfigurableParser for parsers which adopts to runtime params
  */
 public interface Parser extends Serializable {
 
@@ -66,6 +65,33 @@ public interface Parser extends Serializable {
     void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException;
+
+    /**
+     * Parses a document stream into a sequence of XHTML SAX events.
+     * Fills in related document metadata in the given metadata object.
+     * <p>
+     * The given document stream is consumed but not closed by this method.
+     * The responsibility to close the stream remains on the caller.
+     * <p>
+     * Information about the parsing context can be passed in the context
+     * parameter. See the parser implementations for the kinds of context
+     * information they expect.
+     *
+     * @since Apache Tika 0.5
+     * @param stream the document stream (input)
+     * @param handler handler for the XHTML SAX events (output)
+     * @param metadata document metadata (input and output)
+     * @param context parse context
+     * @param flag flag used to invoke TagRatio parser
+     * @throws IOException if the document stream could not be read
+     * @throws SAXException if the SAX events could not be processed
+     * @throws TikaException if the document could not be parsed
+     */
+    
+    void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context, boolean flag)
             throws IOException, SAXException, TikaException;
 
 }
