@@ -22,39 +22,53 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 
+/**
+ * 
+ * Abstract class that is used by Tika bundles to initialize 
+ * Parsers, Detectors, EncodingDetectors, and Language Detectors as
+ * OSGi services based on Java ServiceLoader config.
+ * 
+ * @since 2.0
+ *
+ */
 public abstract class TikaAbstractBundleActivator implements BundleActivator {
-
-    Dictionary createServiceRankProperties(String configName, BundleContext context) {
-        Dictionary serviceProps = new Properties();
-        String serviceRank = context.getProperty(configName);
-        if (serviceRank != null) {
-            serviceProps.put(Constants.SERVICE_RANKING, Integer.parseInt(serviceRank));
-        }
-        return serviceProps;
-
+    
+    public void registerAllTikaServiceLoaders(BundleContext context, ClassLoader loader)
+    {
+        registerServiceFromServiceLoader(context, loader, Parser.class);
+        registerServiceFromServiceLoader(context, loader, Detector.class);
+        registerServiceFromServiceLoader(context, loader, EncodingDetector.class);
+        registerServiceFromServiceLoader(context, loader, LanguageDetector.class);
     }
     
-    public void registerTikaParserServiceLoader(BundleContext context, ClassLoader loader)
+    public <T> void registerServiceFromServiceLoader(BundleContext context, ClassLoader loader, Class<T> iface)
     {
-        ServiceLoader<Parser> serviceLoader = ServiceLoader.load(Parser.class, loader);
-        for(Parser currentParser: serviceLoader)
+        ServiceLoader<T> serviceLoader = ServiceLoader.load(iface, loader);
+        for(T currentService: serviceLoader)
         {
-            registerTikaService(context, currentParser, null);
+            registerTikaService(context, iface, currentService, null);
         }
     }
+    
+    
 
-    void registerTikaService(BundleContext context, Parser parserService,
+    void registerTikaService(BundleContext context, Class klass, Object service,
             Dictionary additionalServiceProperties) {
-        String parserFullyClassifiedName = parserService.getClass().getCanonicalName().toLowerCase(Locale.US);
+        String parserFullyClassifiedName = service.getClass().getCanonicalName().toLowerCase(Locale.US);
 
         String serviceRankingPropName = parserFullyClassifiedName + ".serviceRanking";
 
-        Dictionary serviceProperties = createServiceRankProperties(serviceRankingPropName, context);
+        Dictionary serviceProperties = new Properties();
+        
+        createServiceRankProperties(serviceProperties, serviceRankingPropName, context);
 
         if (additionalServiceProperties != null) {
             Enumeration keys = additionalServiceProperties.keys();
@@ -65,7 +79,14 @@ public abstract class TikaAbstractBundleActivator implements BundleActivator {
 
         }
 
-        context.registerService(Parser.class, parserService, serviceProperties);
+        context.registerService(klass, service, serviceProperties);
+    }
+    
+    void createServiceRankProperties(Dictionary serviceProps, String configName, BundleContext context) {
+        String serviceRank = context.getProperty(configName);
+        if (serviceRank != null) {
+            serviceProps.put(Constants.SERVICE_RANKING, Integer.parseInt(serviceRank));
+        }
     }
 
 }

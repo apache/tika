@@ -58,8 +58,8 @@ public abstract class LanguageDetector {
 	// thus a different algorithm and/or set of profiles should be used.
 	protected boolean shortText = false;
 	
-	public static LanguageDetector getDefaultLanguageDetector() {
-		List<LanguageDetector> detectors = getLanguageDetectors();
+	public static LanguageDetector getDefaultLanguageDetector(ServiceLoader loader) {
+		List<LanguageDetector> detectors = getLanguageDetectors(loader);
 		if (detectors.isEmpty()) {
 			throw new IllegalStateException("No language detectors available");
 		} else {
@@ -67,12 +67,16 @@ public abstract class LanguageDetector {
 		}
 	}
 	
+	public static LanguageDetector getDefaultLanguageDetector() {
+	    return getDefaultLanguageDetector(DEFAULT_SERVICE_LOADER);
+	}
+	
 	public static List<LanguageDetector> getLanguageDetectors() {
 		return getLanguageDetectors(DEFAULT_SERVICE_LOADER);
 	}
 	
 	public static List<LanguageDetector> getLanguageDetectors(ServiceLoader loader) {
-        List<LanguageDetector> detectors = loader.loadStaticServiceProviders(LanguageDetector.class);
+        List<LanguageDetector> detectors = loader.loadServiceProviders(LanguageDetector.class);
         Collections.sort(detectors, new Comparator<LanguageDetector>() {
             public int compare(LanguageDetector d1, LanguageDetector d2) {
                 String n1 = d1.getClass().getName();

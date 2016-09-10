@@ -18,6 +18,7 @@ package org.apache.tika.language.detect;
 
 import java.io.IOException;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.sax.WriteOutContentHandler;
 
 /**
@@ -32,6 +33,10 @@ public class LanguageHandler extends WriteOutContentHandler {
 
     public LanguageHandler() throws IOException {
     	this(new LanguageWriter(LanguageDetector.getDefaultLanguageDetector().loadModels()));
+    }
+    
+    public LanguageHandler(ServiceLoader loader) throws IOException {
+        this(new LanguageWriter(LanguageDetector.getDefaultLanguageDetector(loader).loadModels()));
     }
     
     public LanguageHandler(LanguageWriter writer) {

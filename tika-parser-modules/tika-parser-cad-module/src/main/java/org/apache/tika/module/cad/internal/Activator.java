@@ -24,7 +24,7 @@ public class Activator extends TikaAbstractBundleActivator {
     @Override
     public void start(BundleContext context) throws Exception {
 
-        registerTikaParserServiceLoader(context, Activator.class.getClassLoader());
+        registerAllTikaServiceLoaders(context, Activator.class.getClassLoader());
 
     }
 
