@@ -16,10 +16,16 @@
  */
 package org.apache.tika.osgi;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.parser.Parser;
 
 public interface TikaService extends Parser, Detector, Translator {
-
+    
+    public Parser getWrappedParser();
+    
+    public Detector getWrappedDetector();
+    
+    public ServiceLoader getServiceLoader();
 }

@@ -21,61 +21,90 @@ import java.io.InputStream;
 import java.util.Set;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.osgi.TikaService;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class TikaServiceImpl implements TikaService {
 
-    private static final long serialVersionUID = 1L;
-    
-    private final Tika tika;
+    private static final long serialVersionUID = 6587317333752670909L;
 
-    public TikaServiceImpl() {
-        this.tika = new Tika();
-    }
+    private final Parser parser;
     
-    public TikaServiceImpl(TikaConfig config)
-    {
-        this.tika = new Tika(config);
+    private final Detector detector;
+    
+    private final Translator translator;
+    
+    private final ServiceLoader loader;
+
+    public TikaServiceImpl(TikaConfig config) {
+        
+        
+        if(config == null)
+        {
+            config = TikaConfig.getDefaultConfig();
+        }
+        Tika tika = new Tika(config);
+        this.parser = tika.getParser();
+        this.detector = tika.getDetector();
+        this.translator = tika.getTranslator();
+        this.loader = config.getServiceLoader();
     }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return this.tika.getParser().getSupportedTypes(context);
+        return this.parser.getSupportedTypes(context);
     }
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        tika.getParser().parse(stream, handler, metadata, context);
+        this.parser.parse(stream, handler, metadata, context);
 
     }
 
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
-        return tika.getDetector().detect(input, metadata);
+        return this.detector.detect(input, metadata);
     }
     
     @Override
     public String translate(String text, String sourceLanguage, String targetLanguage)
             throws TikaException, IOException {
-        return tika.getTranslator().translate(text, sourceLanguage, targetLanguage);
+        return this.translator.translate(text, sourceLanguage, targetLanguage);
     }
     
     @Override
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
-        return tika.getTranslator().translate(text, targetLanguage);
+        return this.translator.translate(text, targetLanguage);
     }
     
     @Override
     public boolean isAvailable() {
-        return tika.getTranslator().isAvailable();
+        return this.translator.isAvailable();
+    }
+    
+    @Override
+    public Detector getWrappedDetector() {
+        return this.detector;
+    }
+    
+    @Override
+    public Parser getWrappedParser() {
+        return this.parser;
+    }
+    
+    public ServiceLoader getServiceLoader() {
+        return this.loader;
     }
 
 }
