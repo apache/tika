@@ -49,7 +49,7 @@ public class DefaultParser extends CompositeParser {
      * @return ordered list of statically loadable parsers
      */
     private static List<Parser> getDefaultParsers(ServiceLoader loader) {
-        List<Parser> parsers = loader.loadStaticServiceProviders(Parser.class);
+        List<Parser> parsers = loader.loadServiceProviders(Parser.class);
         ServiceLoaderUtils.sortLoadedClasses(parsers);
         return parsers;
     }
@@ -90,8 +90,9 @@ public class DefaultParser extends CompositeParser {
             // Add dynamic parser service (they always override static ones)
             MediaTypeRegistry registry = getMediaTypeRegistry();
             List<Parser> parsers =
-                    loader.loadDynamicServiceProviders(Parser.class);
+                    filterExcludedParsers(loader.loadDynamicServiceProviders(Parser.class));
             Collections.reverse(parsers); // best parser last
+            
             for (Parser parser : parsers) {
                 for (MediaType type : parser.getSupportedTypes(context)) {
                     map.put(registry.normalize(type), parser);
@@ -105,9 +106,9 @@ public class DefaultParser extends CompositeParser {
     @Override
     public List<Parser> getAllComponentParsers() {
         List<Parser> parsers = super.getAllComponentParsers();
-        if (loader != null) {
+        if (loader != null) { 
             parsers = new ArrayList<Parser>(parsers);
-            parsers.addAll(loader.loadDynamicServiceProviders(Parser.class));
+            parsers.addAll(filterExcludedParsers(loader.loadDynamicServiceProviders(Parser.class)));
         }
         return parsers;
     }

@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -152,5 +153,24 @@ public class CompositeParserTest {
        both.parse(new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
        assertEquals("True", metadata.get("BMP"));
        assertEquals("True", metadata.get("Alias"));
+    }
+    
+    @Test
+    public void testFilterExcludedParsers(){
+        
+        
+        List<Class<? extends Parser>> excludeParserList = new ArrayList<>();
+        excludeParserList.add(DummyProxyParser.class);
+        
+        CompositeParser composite = new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), Collections.EMPTY_LIST, excludeParserList);
+        
+        List<Parser> parserList = new ArrayList<>();
+        parserList.add(new EmptyParser());
+        parserList.add(new DummyProxyParser());
+        
+        List<Parser> result = composite.filterExcludedParsers(parserList);
+        
+        assertEquals("Should have only one parser.", 1, result.size());
+        assertEquals("Should only include EmptyParser", EmptyParser.class, result.get(0).getClass());
     }
 }

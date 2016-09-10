@@ -57,6 +57,8 @@ public class CompositeParser extends AbstractParser {
      * List of component parsers.
      */
     private List<Parser> parsers;
+    
+    private Collection<Class<? extends Parser>> excludeParsers;
 
     /**
      * The fallback parser, used when no better parser is available.
@@ -65,18 +67,11 @@ public class CompositeParser extends AbstractParser {
 
     public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers,
                            Collection<Class<? extends Parser>> excludeParsers) {
-        if (excludeParsers == null || excludeParsers.isEmpty()) {
-            this.parsers = parsers;
-        } else {
-            this.parsers = new ArrayList<Parser>();
-            for (Parser p : parsers) {
-                if (!isExcluded(excludeParsers, p.getClass())) {
-                    this.parsers.add(p);
-                }
-            }
-        }
+        this.excludeParsers = excludeParsers;
+        this.parsers = filterExcludedParsers(parsers);
         this.registry = registry;
     }
+
     public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers) {
         this(registry, parsers, null);
     }
@@ -88,7 +83,7 @@ public class CompositeParser extends AbstractParser {
     public CompositeParser() {
         this(new MediaTypeRegistry());
     }
-
+    
     public Map<MediaType, Parser> getParsers(ParseContext context) {
         Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
         for (Parser parser : parsers) {
@@ -293,6 +288,28 @@ public class CompositeParser extends AbstractParser {
         } finally {
             tmp.dispose();
         }
+    }
+    
+    /**
+     * 
+     * Filters a list of parsers based on the composite's Excluded parsers.
+     * 
+     * @param parsers
+     * @return List<Parser>
+     */
+    protected List<Parser> filterExcludedParsers(List<Parser> parsers) {
+        
+        List<Parser> result = new ArrayList<>();
+        if (excludeParsers == null || excludeParsers.isEmpty()) {
+            result.addAll(parsers);
+        } else {
+            for (Parser p : parsers) {
+                if (!isExcluded(excludeParsers, p.getClass())) {
+                    result.add(p);
+                }
+            }
+        }
+        return result;
     }
 
 }
