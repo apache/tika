@@ -116,6 +116,18 @@ public class ServiceLoader {
             return services.remove(reference);
         }
     }
+    
+    static Class getDynamicServiceClass(String klass) throws ClassNotFoundException {
+        synchronized (services) {
+            for(RankedService currentRankedService: services.values())
+            {
+                Class serviceClass = currentRankedService.service.getClass();
+                if(serviceClass.getName().equals(klass))
+                    return serviceClass;
+            }
+        }
+        throw new ClassNotFoundException("Class " + klass + " could not be found in dynamic loader.");
+    }
 
     private final ClassLoader loader;
 
@@ -204,7 +216,18 @@ public class ServiceLoader {
             throw new ClassNotFoundException(
                     "Service class " + name + " is not available");
         }
-        Class<?> klass = Class.forName(name, true, loader);
+        Class<?> klass = null;
+        try{
+            klass = Class.forName(name, true, loader);
+        }catch(ClassNotFoundException e)
+        {
+            if(this.dynamic) {
+                klass = getDynamicServiceClass(name);
+            }
+            else{
+                throw e;
+            }
+        }
         if (klass.isInterface()) {
             throw new ClassNotFoundException(
                     "Service class " + name + " is an interface");
