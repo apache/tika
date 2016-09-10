@@ -45,6 +45,20 @@
       <artifactId>language-detector</artifactId>
       <version>0.5</version>
     </dependency>
+    
+    <!-- Optional OSGi dependencies, used only when running within OSGi -->
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.compendium</artifactId>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -69,8 +83,20 @@
           <instructions>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Bundle-Activator>
-              org.apache.tika.parser.internal.Activator
+              org.apache.tika.langdetect.internal.Activator
             </Bundle-Activator>
+            <Embed-Dependency>
+              language-detector,
+              guava,
+              jsonic,
+              annotations,
+              commons-io,
+              commons-codec
+            </Embed-Dependency> 
+            <Embed-Transitive>true</Embed-Transitive>
+            <Export-Package>
+               org.apache.tika.langdetect.*
+            </Export-Package>
             <Import-Package>
               org.w3c.dom,
               org.apache.tika.*,
