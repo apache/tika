@@ -20,7 +20,8 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.osgi.TikaService;
-import org.apache.tika.osgi.internal.TikaServiceImpl;
+import org.apache.tika.osgi.TikaServiceFactory;
+import org.apache.tika.osgi.internal.TikaServiceFactoryImpl;
 import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -66,7 +67,11 @@ public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer 
         encodingDetectorTracker.open();
         languageDetectorTracker.open();
         
-        context.registerService(TikaService.class, new TikaServiceImpl(TikaConfig.getDefaultConfig()), null);
+        TikaServiceFactory tikaServiceFactory = new TikaServiceFactoryImpl(context);
+        
+        context.registerService(TikaServiceFactory.class, tikaServiceFactory, null);
+        
+        context.registerService(TikaService.class, tikaServiceFactory.createTikaService(), null);
     }
 
     public void stop(BundleContext context) throws Exception {
