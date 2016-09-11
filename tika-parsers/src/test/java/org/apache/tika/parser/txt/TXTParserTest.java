@@ -296,17 +296,20 @@ public class TXTParserTest {
      * Test case for TIKA-2053: Adding TagRatio to Tika Parser
      * @see https://issues.apache.org/jira/browse/TIKA-2053
      */
-    @Test
+    @SuppressWarnings("static-access")
+	@Test
     public void testTextToTagRatioParser() throws Exception{
     	
     	Metadata metadata = new Metadata();
     	StringWriter writer = new StringWriter();
+    	ParseContext context = new ParseContext();
+    	context.isTagRatioSet = true;
         parser.parse(
         	    TXTParserTest.class.getResourceAsStream("/test-documents/tika2053.html"),
                 new WriteOutContentHandler(writer),
                 metadata,
-                new ParseContext(),
-        	    true);
+                context
+        		);
     
         assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
