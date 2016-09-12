@@ -212,8 +212,40 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
         TmpFormatting fmtg = new TmpFormatting(false, false);
 
+        //hyperlinks may or may not have hyperlink ids
+        String lastHyperlinkId = null;
+        boolean inHyperlink = false;
         // Do the iruns
         for (IRunElement run : paragraph.getIRuns()) {
+
+            if (run instanceof XWPFHyperlinkRun) {
+                XWPFHyperlinkRun hyperlinkRun = (XWPFHyperlinkRun) run;
+                if (hyperlinkRun.getHyperlinkId() == null ||
+                        !hyperlinkRun.getHyperlinkId().equals(lastHyperlinkId)) {
+                    if (inHyperlink) {
+                        //close out the old one
+                        xhtml.endElement("a");
+                        inHyperlink = false;
+                    }
+                    lastHyperlinkId = hyperlinkRun.getHyperlinkId();
+                    fmtg = closeStyleTags(xhtml, fmtg);
+                    XWPFHyperlink link = hyperlinkRun.getHyperlink(document);
+                    if (link != null && link.getURL() != null) {
+                        xhtml.startElement("a", "href", link.getURL());
+                        inHyperlink = true;
+                    } else if (hyperlinkRun.getAnchor() != null && hyperlinkRun.getAnchor().length() > 0) {
+                        xhtml.startElement("a", "href", "#" + hyperlinkRun.getAnchor());
+                        inHyperlink = true;
+                    }
+                }
+            } else if (inHyperlink) {
+                //if this isn't a hyperlink, but the last one was
+                closeStyleTags(xhtml, fmtg);
+                xhtml.endElement("a");
+                lastHyperlinkId = null;
+                inHyperlink = false;
+            }
+
             if (run instanceof XWPFSDT) {
                 fmtg = closeStyleTags(xhtml, fmtg);
                 processSDTRun((XWPFSDT) run, xhtml);
@@ -226,7 +258,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         closeStyleTags(xhtml, fmtg);
-
+        if (inHyperlink) {
+            xhtml.endElement("a");
+        }
 
         // Now do any comments for the paragraph
         XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
@@ -306,19 +340,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             tfmtg.setItalic(run.isItalic());
         }
 
-        boolean addedHREF = false;
-        if (run instanceof XWPFHyperlinkRun) {
-            XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun) run;
-            XWPFHyperlink link = linkRun.getHyperlink(document);
-            if (link != null && link.getURL() != null) {
-                xhtml.startElement("a", "href", link.getURL());
-                addedHREF = true;
-            } else if (linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
-                xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
-                addedHREF = true;
-            }
-        }
-
         xhtml.characters(run.toString());
 
         // If we have any pictures, output them
@@ -335,10 +356,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.endElement("img");
                 }
             }
-        }
-
-        if (addedHREF) {
-            xhtml.endElement("a");
         }
 
         return tfmtg;
