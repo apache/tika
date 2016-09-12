@@ -365,7 +365,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testControlCharacter() throws Exception {
-        assertContains("1. Introduzione<b> </a></b> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
+        assertContains("1. Introduzione<b> </b></a> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
     }
 
     @Test
@@ -510,6 +510,15 @@ public class WordParserTest extends TikaTest {
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+    }
+
+    @Test
+    public void testBoldHyperlink() throws Exception {
+        //TIKA-1255
+        String xml = getXML("testWORD_boldHyperlink.doc").xml;
+        xml = xml.replaceAll("\\s+", " ");
+        assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold" , xml);
     }
 }
 

@@ -1,5 +1,8 @@
 Release 1.14 - ???
- 
+
+  * Fix hyperlinks with formatting in DOC and DOCX (TIKA-1255
+    and TIKA-2078)
+
   * Tika now is integrated with the Tensorflow library from Google 
     and it can use its Inception v3 image classification model to 
     identify objects in images (TIKA-1993).
