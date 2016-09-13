@@ -1004,6 +1004,16 @@ public class TestMimeTypes extends TikaTest {
         assertTypeByData("application/x-endnote-refer", "testEndNoteImportFile.enw");
     }
 
+    @Test
+    public void testStataDTA() throws Exception {
+        // Filename only gives base type
+        assertTypeByName("application/x-stata-dta", "testStataDTA.dta");
+        // With data too, can get specific version
+        assertTypeByData("application/x-stata-dta; version=13", "testStataDTA.dta");
+        // Name + data gets specific version as well
+        assertType("application/x-stata-dta; version=13", "testStataDTA.dta");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
