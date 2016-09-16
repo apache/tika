@@ -110,7 +110,6 @@ public class PDFParser extends AbstractParser {
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
 
         PDDocument pdfDocument = null;
-        TemporaryResources tmp = new TemporaryResources();
 
         String password = "";
         try {
