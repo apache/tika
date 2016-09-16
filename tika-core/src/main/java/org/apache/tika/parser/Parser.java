@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Tika parser interface.
+ * @see ConfigurableParser for parsers which adopts to runtime params
  */
 public interface Parser extends Serializable {
 

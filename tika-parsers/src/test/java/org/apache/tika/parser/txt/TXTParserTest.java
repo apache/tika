@@ -29,6 +29,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.tagRatio.TextToTagRatio;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
@@ -300,17 +301,16 @@ public class TXTParserTest {
 	@Test
     public void testTextToTagRatioParser() throws Exception{
     	
+    	TextToTagRatio textToTagRatio=new TextToTagRatio();
     	Metadata metadata = new Metadata();
     	StringWriter writer = new StringWriter();
     	ParseContext context = new ParseContext();
-    	context.isTagRatioSet = true;
+    	context.set(org.apache.tika.parser.tagRatio.TextToTagRatio.class,textToTagRatio);
         parser.parse(
         	    TXTParserTest.class.getResourceAsStream("/test-documents/tika2053.html"),
                 new WriteOutContentHandler(writer),
                 metadata,
-                context
-        		);
-    
+                context);
         assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
         

@@ -48,10 +48,6 @@ import org.xml.sax.XMLReader;
  */
 public class ParseContext implements Serializable {
 
-    /** Flag to invoke Text to TagRatio Parser */
-    
-    public static final boolean isTagRatioSet = false;
-    
     /** Serial version UID. */
     private static final long serialVersionUID = -5921436862145826534L;
 

@@ -73,7 +73,6 @@ public class TXTParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
     	
-    	// Create an object of the utility class
     	TextToTagRatio ttr = new TextToTagRatio();
     	
     	
@@ -104,11 +103,10 @@ public class TXTParser extends AbstractParser {
             
             try {
             	
-            	if(context.isTagRatioSet == true){
+            	if(context.get(org.apache.tika.parser.tagRatio.TextToTagRatio.class) != null){
             		
         		String xhtmlOutput = xhtml.toString();
 				
-				//Get Tag Ratio data for xhtml
 				String output = ttr.readXhtmlData(xhtmlOutput);
 
 				ttr.getTagRatioOfHtml(output);

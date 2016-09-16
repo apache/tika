@@ -21,11 +21,11 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
+import org.apache.tika.io.IOUtils;
 import org.htmlparser.Parser;
 import org.htmlparser.util.NodeList;
 import org.htmlparser.util.ParserException;
@@ -54,7 +54,7 @@ public class TextToTagRatio {
      */
     
     @SuppressWarnings("unchecked")
-    public double[] getTagRatioOfHtml(String html) {
+    public double[] getTagRatioOfHtml(String html) throws MalformedURLException {
         
         html = html.replaceAll("(?s)<!--.*?-->", "");
         html = html.replaceAll("(?s)<script.*?>.*?</script>", "");
@@ -87,7 +87,6 @@ public class TextToTagRatio {
                     continue;
                 }
                 linkTagList[i] = computeTextToTagRatio(line);
-                //Extract meta tags
                 populateMetaTags(line, metaTagsMap);
                 
                 if(linkTagList[i] != 0 && linkTagList[i] >= threshold){
@@ -99,7 +98,6 @@ public class TextToTagRatio {
                 }
             }
             
-            //Create a JSON Object
             JSONObject obj = new JSONObject();
             obj.put("avgTagRatio", (tagRatio/count));
             obj.put("content", sb.toString());
@@ -111,13 +109,8 @@ public class TextToTagRatio {
             
             br.close();
             
-        }catch (MalformedURLException e) {
+        }catch (IOException|ParserException e) {
             e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParserException e) {
-            e.printStackTrace();
-            return linkTagList;
         }
         return linkTagList;
     }
@@ -152,25 +145,23 @@ public class TextToTagRatio {
         int text = 0;
         
         for (int i = 0; i >= 0 && i < line.length(); i++) {
-            if (line.charAt(i) == '<') {	//start tag
+            if (line.charAt(i) == '<') {	
                 tag++;
                 i = line.indexOf('>', i);
                 if (i == -1) {
                     break;
                 }
-            } else if (tag == 0 && line.charAt(i) == '>') {	//close tag
+            } else if (tag == 0 && line.charAt(i) == '>') {	
                 text = 0;
                 tag++;
-            } else {		//just text
+            } else {		
                 text++;
             }
             
         }
-        if (tag == 0) {
-            tag = 1;
-        }
-        if(text != 0){
-        }
+        
+        tag = Math.max(tag, 1);
+        
         return (double) text / (double) tag;
     }
     
@@ -182,26 +173,15 @@ public class TextToTagRatio {
      */
     
     public String readXhtmlData(String xhtmlOutput) {
-        
-        // convert String into InputStream
+      
+    	try{
+    		
         InputStream is = new ByteArrayInputStream(xhtmlOutput.getBytes());
-        
-        // read it with BufferedReader
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        
-        String line = null;
-        StringBuffer lines = new StringBuffer();
-        try {
-            while ((line = br.readLine()) != null) {
-                lines.append(line);
-                lines.append("\n");
-            }
-            return lines.toString();
+        return IOUtils.toString(is); 
             
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
         return null;
     }
     
