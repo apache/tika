@@ -46,7 +46,6 @@ import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
@@ -114,7 +113,6 @@ public class PDFParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
 
         PDDocument pdfDocument = null;
-        TemporaryResources tmp = new TemporaryResources();
         //config from context, or default if not set via context
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
         String password = "";
