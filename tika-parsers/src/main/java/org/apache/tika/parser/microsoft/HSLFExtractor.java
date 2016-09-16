@@ -116,25 +116,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             if (notes != null) {
                 xhtml.startElement("div", "class", "slide-notes");
 
-                
-                
                 // Notes text
                 textRunsToText(xhtml, notes.getTextParagraphs());
-                
-                // Note headers/footers can be extracted, but content will be duplicate
-                // Repeat the notes footer, if set
-                /*if (nhf != null && nhf.isFooterVisible() && nhf.getFooterText() != null) {
-                    xhtml.startElement("p", "class", "footer");
-                    xhtml.characters(nhf.getFooterText()); //is this just a repetition of the footers?
-                    xhtml.endElement("p");
-                }
-                
-                // Repeat the Notes header, if set
-                if (nhf != null && nhf.isHeaderVisible() && nhf.getHeaderText() != null) {
-                    xhtml.startElement("p", "class", "header");
-                    xhtml.characters(nhf.getHeaderText());
-                    xhtml.endElement("p");
-                }*/
        
                 xhtml.endElement("div");
             }
