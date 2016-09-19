@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Upgrade to PDFBox 2.0.3 (TIKA-2051).
+
   * Fix hyperlinks with formatting in DOC and DOCX (TIKA-1255
     and TIKA-2078)
 
