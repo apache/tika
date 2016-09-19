@@ -17,6 +17,8 @@ Release 2.0 - ???
 
 Release 1.14 - ???
 
+  * Upgrade to PDFBox 2.0.3 (TIKA-2051).
+
   * Prevent OOM/permanent hang on some corrupt CHM files (TIKA-2040).
 
   * Upgrade ICU4J charset detection components to fix multithreading
