@@ -72,8 +72,18 @@ public class TXTParser extends AbstractParser {
         try (AutoDetectReader reader = new AutoDetectReader(
                 new CloseShieldInputStream(stream), metadata,
                 context.get(ServiceLoader.class, LOADER))) {
+            //try to get detected content type; could be a subclass of text/plain
+            //such as vcal, etc.
+            String incomingMime = metadata.get(Metadata.CONTENT_TYPE);
+            MediaType mediaType = MediaType.TEXT_PLAIN;
+            if (incomingMime != null) {
+                MediaType tmpMediaType = MediaType.parse(incomingMime);
+                if (tmpMediaType != null) {
+                    mediaType = tmpMediaType;
+                }
+            }
             Charset charset = reader.getCharset();
-            MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
+            MediaType type = new MediaType(mediaType, charset);
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
