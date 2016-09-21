@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Maintain passed-in mime in TXTParser (TIKA-2047).
+
   * Upgrade to POI.3-15 (TIKA-2013).
 
   * Upgrade to PDFBox 2.0.3 (TIKA-2051).
