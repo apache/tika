@@ -332,11 +332,14 @@ public class ChmCommons {
     /*
      * This method is added because of supporting of Java 5
      */
-    public static byte[] copyOfRange(byte[] original, int from, int to) {
+    public static byte[] copyOfRange(byte[] original, int from, int to) throws TikaException {
         checkCopyOfRangeParams(original, from, to);
         int newLength = to - from;
         if (newLength < 0)
             throw new IllegalArgumentException(from + " > " + to);
+        if (to > original.length) {
+            throw new TikaException("can't copy beyond array length");
+        }
         byte[] copy = new byte[newLength];
         System.arraycopy(original, from, copy, 0, Math.min(original.length - from, newLength));
         return copy;

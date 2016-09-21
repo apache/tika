@@ -869,6 +869,9 @@ public class TestMimeTypes {
         // Lotus
         assertTypeDetection("testLotusEml.eml", "message/rfc822");
         
+        // MBOX
+        assertTypeDetection("headers.mbox", "application/mbox");
+        
         // Thunderbird - doesn't currently work by name
         assertTypeByNameAndData("message/rfc822", "testThunderbirdEml.eml");
     }
@@ -1066,6 +1069,16 @@ public class TestMimeTypes {
     public void testEndNoteImport() throws Exception {
         assertType("application/x-endnote-refer", "testEndNoteImportFile.enw");
         assertTypeByData("application/x-endnote-refer", "testEndNoteImportFile.enw");
+    }
+
+    @Test
+    public void testStataDTA() throws Exception {
+        // Filename only gives base type
+        assertTypeByName("application/x-stata-dta", "testStataDTA.dta");
+        // With data too, can get specific version
+        assertTypeByData("application/x-stata-dta; version=13", "testStataDTA.dta");
+        // Name + data gets specific version as well
+        assertType("application/x-stata-dta; version=13", "testStataDTA.dta");
     }
 
     private void assertText(byte[] prefix) throws IOException {

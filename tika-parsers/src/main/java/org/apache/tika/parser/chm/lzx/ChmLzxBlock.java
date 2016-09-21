@@ -846,12 +846,12 @@ public class ChmLzxBlock {
         return content;
     }
 
-    public byte[] getContent(int startOffset, int endOffset) {
+    public byte[] getContent(int startOffset, int endOffset) throws TikaException {
         return (getContent() != null) ? ChmCommons.copyOfRange(getContent(),
                 startOffset, endOffset) : new byte[1];
     }
 
-    public byte[] getContent(int start) {
+    public byte[] getContent(int start) throws TikaException {
         return (getContent() != null) ? ChmCommons.copyOfRange(getContent(),
                 start, getContent().length) : new byte[1];
     }

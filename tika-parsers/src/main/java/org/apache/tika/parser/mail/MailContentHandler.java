@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.mail;
 
+import static org.apache.tika.utils.DateUtils.MIDDAY;
+import static org.apache.tika.utils.DateUtils.UTC;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DateFormat;
@@ -44,9 +47,7 @@ import org.apache.james.mime4j.field.LenientFieldParser;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
-import org.apache.james.mime4j.util.ByteSequence;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
@@ -57,9 +58,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
-
-import static org.apache.tika.utils.DateUtils.MIDDAY;
-import static org.apache.tika.utils.DateUtils.UTC;
 
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
@@ -179,7 +177,10 @@ class MailContentHandler implements ContentHandler {
 
         try {
             if (extractor.shouldParseEmbedded(submd)) {
-                extractor.parseEmbedded(is, handler, submd, false);
+                // Wrap the InputStream before passing on, as the James provided
+                //  one misses many features we might want eg mark/reset
+                TikaInputStream tis = TikaInputStream.get(is);
+                extractor.parseEmbedded(tis, handler, submd, false);
             }
         } catch (SAXException e) {
             throw new MimeException(e);

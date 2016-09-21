@@ -68,6 +68,7 @@ public class OpenDocumentContentParser extends AbstractParser {
 
     private static final class OpenDocumentElementMappingContentHandler extends
             ElementMappingContentHandler {
+        private static final char[] SPACE = new char[]{ ' '};
         private final ContentHandler handler;
         private final BitSet textNodeStack = new BitSet();
         private int nodeDepth = 0;
@@ -283,6 +284,8 @@ public class OpenDocumentContentParser extends AbstractParser {
                     startList(attrs.getValue(TEXT_NS, "style-name"));
                 } else if (TEXT_NS.equals(namespaceURI) && "span".equals(localName)) {
                     startSpan(attrs.getValue(TEXT_NS, "style-name"));
+                } else if (TEXT_NS.equals(namespaceURI) && "s".equals(localName)) {
+                    handler.characters(SPACE, 0, 1);
                 } else {
                     super.startElement(namespaceURI, localName, qName, attrs);
                 }

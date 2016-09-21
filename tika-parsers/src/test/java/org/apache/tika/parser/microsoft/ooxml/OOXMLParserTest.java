@@ -424,7 +424,7 @@ public class OOXMLParserTest extends TikaTest {
         // Links
         assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
         // Anchor links
-        assertTrue(xml.contains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>"));
+        assertContains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>", xml);
         // Paragraphs with other styles
         assertTrue(xml.contains("<p class=\"signature\">This one"));
 
@@ -1237,6 +1237,32 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
     }
+
+    @Test
+    public void testBigIntegersWGeneralFormat() throws Exception {
+        //TIKA-2025
+        String xml = getXML("testEXCEL_big_numbers.xlsx").xml;
+        assertContains("123456789012345", xml);//15 digit number
+        assertContains("123456789012346", xml);//15 digit formula
+        assertContains("1.23456789012345E+15", xml);//16 digit number is treated as scientific notation
+        assertContains("1.23456789012345E+15", xml);//16 digit formula, ditto
+    }
+
+    @Test
+    public void testBoldHyperlink() throws Exception {
+        //TIKA-1255
+        String xml = getXML("testWORD_boldHyperlink.docx").xml;
+        xml = xml.replaceAll("\\s+", " ");
+        assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold" , xml);
+    }
+
+    @Test
+    public void testLongForIntExceptionInSummaryDetails() throws Exception {
+        //TIKA-2055
+        assertContains("bold", getXML("testWORD_totalTimeOutOfRange.docx").xml);
+    }
+
 }
 
 

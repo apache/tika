@@ -462,4 +462,14 @@ public class ExcelParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xls");
         assertContains("Hello World!", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
     }
+
+    @Test
+    public void testBigIntegersWGeneralFormat() throws Exception {
+        //TIKA-2025
+        String xml = getXML("testEXCEL_big_numbers.xls").xml;
+        assertContains("123456789012345", xml);//15 digit number
+        assertContains("123456789012346", xml);//15 digit formula
+        assertContains("1.23456789012345E15", xml);//16 digit number is treated as scientific notation
+        assertContains("1.23456789012345E15", xml);//16 digit formula, ditto
+    }
 }

@@ -45,6 +45,11 @@ import org.xml.sax.SAXException;
 
 public class MatParser extends AbstractParser {
 
+    static {
+        //make sure that this is set to false
+        MatFileReader.setAllowObjectDeserialization(false);
+    }
+
     public static final String MATLAB_MIME_TYPE =
             "application/x-matlab-data";
 

@@ -503,9 +503,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                 }
 
                 xhtml.startElement("a", "href", url);
+                closeStyleElements(skipStyling, xhtml);
                 for (CharacterRun cr : texts) {
                     handleCharacterRun(cr, skipStyling, xhtml);
                 }
+                closeStyleElements(skipStyling, xhtml);
                 xhtml.endElement("a");
             } else {
                 // Just output the text ones
@@ -528,6 +530,24 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         // Tell them how many to skip over
         return i - index;
+    }
+
+    private void closeStyleElements(boolean skipStyling, XHTMLContentHandler xhtml) throws SAXException {
+        if (skipStyling) {
+            return;
+        }
+        if (curStrikeThrough) {
+            xhtml.endElement("s");
+            curStrikeThrough = false;
+        }
+        if (curItalic) {
+            xhtml.endElement("i");
+            curItalic = false;
+        }
+        if (curBold) {
+            xhtml.endElement("b");
+            curBold = false;
+        }
     }
 
     //temporary work around for TIKA-1512

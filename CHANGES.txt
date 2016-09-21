@@ -1,5 +1,33 @@
 Release 1.14 - ???
 
+  * Upgrade to PDFBox 2.0.3 (TIKA-2051).
+
+  * Fix hyperlinks with formatting in DOC and DOCX (TIKA-1255
+    and TIKA-2078)
+
+  * Tika now is integrated with the Tensorflow library from Google 
+    and it can use its Inception v3 image classification model to 
+    identify objects in images (TIKA-1993).
+
+  * Parser configuration is now type-safe and parameters for parsers
+    can have assigned types (TIKA-1508, TIKA-1986).
+
+  * Prevent OOM/permanent hang on some corrupt CHM files (TIKA-2040).
+
+  * Upgrade ICU4J charset detection components to fix multithreading
+    bug (TIKA-2041).
+
+  * Upgrade to Jackcess 2.1.4 (TIKA-2039).
+
+  * Maintain more significant digits in cells of "General" format
+    in XLS and XLSX (TIKA-2025).
+
+  * Avoid mark/reset issues when extracting or detecting embedded resources
+    in RFC822 emails (TIKA-2037).
+
+  * Improving accuracy of Tesseract for better extraction of numeric 
+    and alphanumeric text from images (TIKA-2021, TIKA-2031).
+
   * Improve extraction of embedded documents from PPT, PPT and XLSX
     (TIKA-2026).
 
@@ -11,6 +39,8 @@ Release 1.14 - ???
      * MS Owner File (TIKA-2008)
      * Windows Media Metafile (TIKA-2004)
      * iCal and vCalendar (TIKA-2006)
+     * MBOX (TIKA-2042)
+     * Stata DTA (TIKA-2064)
 
   * Upgrade to PDFBox 2.0.2 (TIKA-1996).
 

@@ -19,7 +19,6 @@ package org.apache.tika.parser.html;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -30,18 +29,36 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -59,7 +76,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import org.xml.sax.helpers.XMLReaderAdapter;
 
 public class HtmlParserTest extends TikaTest {
 
@@ -1154,6 +1170,38 @@ public class HtmlParserTest extends TikaTest {
     }
 
     @Test
+    public void testAllHeadElements() throws Exception {
+        //TIKA-1980
+        // IdentityHtmlMapper is needed to extract <script> tags
+        ParseContext context = new ParseContext();
+        context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+
+        final Map<String, Integer> tagFrequencies = new HashMap<>();
+
+        String path = "/test-documents/testHTML_head.html";
+        try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
+            ContentHandler tagCounter = new DefaultHandler() {
+                @Override
+                public void startElement(
+                        String uri, String local, String name, Attributes attributes)
+                        throws SAXException {
+
+                    int count = tagFrequencies.containsKey(name) ? tagFrequencies.get(name) : 0;
+                    tagFrequencies.put(name, count + 1);
+                }
+            };
+            new HtmlParser().parse(stream, tagCounter, metadata, context);
+        }
+
+        assertEquals(1, (int)tagFrequencies.get("title"));
+        assertEquals(9, (int)tagFrequencies.get("meta"));
+        assertEquals(12, (int)tagFrequencies.get("link"));
+        assertEquals(6, (int)tagFrequencies.get("script"));
+    }
+
+    @Test
     public void testSkippingCommentsInEncodingDetection() throws Exception {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 10000; i++) {
@@ -1168,5 +1216,93 @@ public class HtmlParserTest extends TikaTest {
                 "</body></html>").getBytes(StandardCharsets.UTF_8);
         XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
         assertContains("有什么需要我帮你的", r.xml);
+    }
+
+    @Test
+    public void testMultiThreadingEncodingDetection() throws Exception {
+        List<EncodingDetector> detectors = new ArrayList<>();
+        ServiceLoader loader =
+                new ServiceLoader(AutoDetectReader.class.getClassLoader());
+        detectors.addAll(loader.loadServiceProviders(EncodingDetector.class));
+        for (EncodingDetector detector : detectors) {
+            testDetector(detector);
+        }
+    }
+
+    private void testDetector(EncodingDetector detector) throws Exception {
+        Path testDocs = Paths.get(this.getClass().getResource("/test-documents").toURI());
+        List<Path> tmp = new ArrayList<>();
+        Map<Path, String> encodings = new ConcurrentHashMap<>();
+        File[] testDocArray = testDocs.toFile().listFiles();
+        assertNotNull("no test docs??", testDocArray);
+        for (File file : testDocArray) {
+            if (file.getName().endsWith(".txt") || file.getName().endsWith(".html")) {
+                    String encoding = getEncoding(detector, file.toPath());
+                    tmp.add(file.toPath());
+                    encodings.put(file.toPath(), encoding);
+            }
+        }
+        ArrayBlockingQueue<Path> paths = new ArrayBlockingQueue<>(tmp.size());
+        paths.addAll(tmp);
+        int numThreads = paths.size()+1;
+        ExecutorService ex = Executors.newFixedThreadPool(numThreads);
+        CompletionService<String> completionService =
+                new ExecutorCompletionService<>(ex);
+
+        for (int i = 0; i < numThreads; i++) {
+            completionService.submit(new EncodingDetectorRunner(paths, encodings, detector));
+        }
+        int completed = 0;
+        while (completed < numThreads) {
+            Future<String> future = completionService.take();
+
+            if (future.isDone() &&
+                    //will trigger ExecutionException if an IOException
+                    //was thrown during call
+                    EncodingDetectorRunner.DONE.equals(future.get())) {
+                completed++;
+            }
+        }
+    }
+
+    private class EncodingDetectorRunner implements Callable<String> {
+
+        final static String DONE = "done";
+        private final ArrayBlockingQueue<Path> paths;
+        private final Map<Path, String> encodings;
+        private final EncodingDetector detector;
+        private EncodingDetectorRunner(ArrayBlockingQueue<Path> paths,
+                                       Map<Path, String> encodings, EncodingDetector detector) {
+            this.paths = paths;
+            this.encodings = encodings;
+            this.detector = detector;
+        }
+
+        @Override
+        public String call() throws IOException {
+            for (int i = 0; i < encodings.size(); i++) {
+                Path p = paths.poll();
+                if (p == null) {
+                    return DONE;
+                }
+                String detectedEncoding = getEncoding(detector, p);
+                String trueEncoding = encodings.get(p);
+                assertEquals( "detector class="+detector.getClass() + " : file=" + p.toString(),
+                        trueEncoding, detectedEncoding);
+
+            }
+            return DONE;
+        }
+    }
+
+    public String getEncoding(EncodingDetector detector, Path p) throws IOException {
+        try (InputStream is = TikaInputStream.get(p)) {
+            Charset charset = detector.detect(is, new Metadata());
+            if (charset == null) {
+                return "NULL";
+            } else {
+                return charset.toString();
+            }
+        }
     }
 }

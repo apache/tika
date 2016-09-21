@@ -141,6 +141,9 @@ public class WordMLParser extends AbstractXML2003Parser {
                         handler.startElement(XHTMLContentHandler.XHTML, TBODY, TBODY, EMPTY_ATTRS);
                     }
                 }
+                if (BR.equals(localName)) {
+                    handler.characters(NEWLINE, 0, 1);
+                }
 
             }
             if (IGNORE_CHARACTERS.contains(new QName(uri, localName))) {

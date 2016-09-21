@@ -1,0 +1,41 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+FROM ubuntu
+
+MAINTAINER Thamme Gowda <thammegowda@apache.org>
+
+# install missing part of ubuntu core + python stuff
+RUN apt-get update && \
+    apt-get install -y python-pip python-dev wget
+
+# Install tensorflow and other dependencies
+RUN \
+  pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl && \
+  pip install flask requests
+
+# TODO: Change the URL to Apache/Tika Repo when this PR gets merged
+RUN \
+  wget https://raw.githubusercontent.com/thammegowda/tika/TIKA-1993/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  chmod +x /usr/bin/inceptionapi.py
+
+# expose API port, this is the default port
+EXPOSE 8764
+
+# clean up cache, so we can publish smaller image to hub
+RUN apt-get clean
+
+CMD inceptionapi.py

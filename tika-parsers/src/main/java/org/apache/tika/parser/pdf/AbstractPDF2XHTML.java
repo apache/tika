@@ -247,7 +247,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     void doOCROnCurrentPage() throws IOException, TikaException, SAXException {
-        if (config.getOCRStrategy().equals(NO_OCR)) {
+        if (config.getOcrStrategy().equals(NO_OCR)) {
             return;
         }
         TesseractOCRConfig tesseractConfig =
@@ -262,12 +262,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         PDFRenderer renderer = new PDFRenderer(pdDocument);
         TemporaryResources tmp = new TemporaryResources();
         try {
-            BufferedImage image = renderer.renderImage(pageIndex, 2.0f, config.getOCRImageType());
+            BufferedImage image = renderer.renderImage(pageIndex, 2.0f, config.getOcrImageType());
             Path tmpFile = tmp.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
-                ImageIOUtil.writeImage(image, config.getOCRImageFormatName(),
-                        os, config.getOCRDPI());
+                ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
+                        os, config.getOcrDPI());
             }
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 tesseractOCRParser.parseInline(is, xhtml, tesseractConfig);
@@ -308,11 +308,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         if (annotationlink.getAction() != null) {
                             PDAction action = annotationlink.getAction();
                             if (action instanceof PDActionURI) {
+                                //can't currently associate link to text.
+                                //for now, extract link and repeat the link as if it
+                                //were the visible text
                                 PDActionURI uri = (PDActionURI) action;
                                 String link = uri.getURI();
-                                if (link != null) {
+                                if (link != null && link.trim().length() > 0) {
                                     xhtml.startElement("div", "class", "annotation");
                                     xhtml.startElement("a", "href", link);
+                                    xhtml.characters(link);
                                     xhtml.endElement("a");
                                     xhtml.endElement("div");
                                 }
@@ -352,7 +356,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     }
                 }
             }
-            if (config.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
+            if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                 doOCROnCurrentPage();
             }
             xhtml.endElement("div");

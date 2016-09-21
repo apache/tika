@@ -19,6 +19,7 @@ package org.apache.tika.parser.pdf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -32,7 +33,9 @@ import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.pdfbox.rendering.ImageType;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -45,11 +48,7 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.*;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -387,7 +386,8 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testLinks() throws Exception {
         final XMLResult result = getXML("testPDFVarious.pdf");
-        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\" /></div>", result.xml);
+        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\">"+
+                "http://tika.apache.org/</a></div>", result.xml);
     }
 
     @Test
@@ -466,7 +466,7 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("\\s+", " ");
         assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
 
-        parser.getPDFParserConfig().setSortByPosition(true);
+        parser.setSortByPosition(true);
         stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
@@ -1193,7 +1193,7 @@ public class PDFParserTest extends TikaTest {
 
         for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
             PDFParserConfig config = new PDFParserConfig();
-            config.setOCRStrategy(strategy);
+            config.setOcrStrategy(strategy);
             ParseContext context = new ParseContext();
             context.set(PDFParserConfig.class, config);
             context.set(Parser.class, new AutoDetectParser());
@@ -1218,6 +1218,34 @@ public class PDFParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testInitializationViaConfig() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+        text = text.replaceAll("\\s+", " ");
+
+        // Column text is now interleaved:
+        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+
+    }
+
+    @Test
+    public void testInitializationOfNonPrimitivesViaConfig() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        Map<MediaType, Parser> parsers = p.getParsers();
+        Parser composite = parsers.get(MediaType.application("pdf"));
+        Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+        assertEquals("org.apache.tika.parser.pdf.PDFParser", pdfParser.getClass().getName());
+        assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY, ((PDFParser)pdfParser).getPDFParserConfig().getOcrStrategy());
+        assertEquals(ImageType.RGB, ((PDFParser)pdfParser).getPDFParserConfig().getOcrImageType());
+
+    }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;

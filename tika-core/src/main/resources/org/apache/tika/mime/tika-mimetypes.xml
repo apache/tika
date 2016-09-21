@@ -365,9 +365,22 @@
   <mime-type type="application/mbms-register+xml"/>
   <mime-type type="application/mbms-register-response+xml"/>
   <mime-type type="application/mbms-user-service-description+xml"/>
+
   <mime-type type="application/mbox">
-    <sub-class-of type="text/plain"/>
+    <!-- MBOX files start with "From [sender] [date]" -->
+    <!-- To avoid false matches, check for other headers after that -->
+    <magic priority="70">
+      <match value="From " type="string" offset="0">
+         <match value="\nFrom: " type="string" offset="32:256"/>
+         <match value="\nDate: " type="string" offset="32:256"/>
+         <match value="\nDelivered-To: " type="string" offset="32:256"/>
+         <match value="\nReceived: by " type="string" offset="32:256"/>
+         <match value="\nReceived: via " type="string" offset="32:256"/>
+         <match value="\nReceived: from " type="string" offset="32:256"/>
+      </match>
+    </magic>
     <glob pattern="*.mbox"/>
+    <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
   <mime-type type="application/media_control+xml"/>
   <mime-type type="application/mediaservercontrol+xml">
@@ -3888,6 +3901,58 @@
   <mime-type type="application/x-sqlite3">
     <magic priority="50">
       <match value="SQLite format 3\x00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-stata-do">
+    <_comment>Stata DTA Script</_comment>
+    <acronym>DO</acronym>
+    <tika:link>http://www.stata.com/help.cgi?do</tika:link>
+    <glob pattern="*.do"/>
+  </mime-type>
+
+  <mime-type type="application/x-stata-dta">
+    <_comment>Stata DTA Dataset</_comment>
+    <acronym>DTA</acronym>
+    <tika:link>http://www.stata.com/help.cgi?dta</tika:link>
+	 <root-XML localName="stata_dta"/>
+    <magic priority="50">
+      <match value="&lt;stata_dta>&lt;header>&lt;release>" type="string" offset="0"/>
+    </magic>
+    <magic priority="40">
+      <match value="&lt;stata_dta>" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.dta"/>
+  </mime-type>
+
+  <mime-type type="application/x-stata-dta;version=14">
+    <sub-class-of type="application/x-stata-dta"/>
+    <magic priority="60">
+      <match value="&lt;stata_dta>&lt;header>&lt;release>118&lt;/release>" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-stata-dta;version=13">
+    <sub-class-of type="application/x-stata-dta"/>
+    <magic priority="60">
+      <match value="&lt;stata_dta>&lt;header>&lt;release>117&lt;/release>" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-stata-dta;version=12">
+    <sub-class-of type="application/x-stata-dta"/>
+    <magic priority="60">
+      <match value="&lt;stata_dta>&lt;header>&lt;release>115&lt;/release>" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-stata-dta;version=10">
+    <sub-class-of type="application/x-stata-dta"/>
+    <magic priority="60">
+      <match value="&lt;stata_dta>&lt;header>&lt;release>114&lt;/release>" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-stata-dta;version=8">
+    <sub-class-of type="application/x-stata-dta"/>
+    <magic priority="60">
+      <match value="&lt;stata_dta>&lt;header>&lt;release>113&lt;/release>" type="string" offset="0"/>
     </magic>
   </mime-type>
 

@@ -31,24 +31,30 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.TikaTest;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -58,6 +64,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class RFC822ParserTest extends TikaTest {
@@ -496,4 +503,63 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("I Urge You to Require Notice of Mercury", m.get(TikaCoreProperties.TITLE));
     }
 
+
+    @Test
+    public void testExtractAttachments() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        Parser p = new RFC822Parser();
+        ParseContext context = new ParseContext();
+
+        try (InputStream stream = getStream("test-documents/testEmailWithPNGAtt.eml")) {
+            p.parse(stream, handler, metadata, context);
+        }
+
+        // Check we go the metadata
+        assertEquals("Tika Test <XXXX@apache.org>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Test Attachment Email", metadata.get(TikaCoreProperties.TITLE));
+        
+        // Try again with attachment detecting and fetching
+        final Detector detector = new DefaultDetector();
+        final Parser extParser = new AutoDetectParser();
+        final List<MediaType> seenTypes = new ArrayList<MediaType>();
+        final List<String> seenText = new ArrayList<String>();
+        EmbeddedDocumentExtractor ext = new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata) {
+                return true;
+            }
+            
+            @Override
+            public void parseEmbedded(InputStream stream, ContentHandler handler,
+                    Metadata metadata, boolean outputHtml) throws SAXException,
+                    IOException {
+                seenTypes.add( detector.detect(stream, metadata) );
+                
+                ContentHandler h = new BodyContentHandler();
+                try {
+                    extParser.parse(stream, h, metadata, new ParseContext());
+                } catch (TikaException e) {
+                    throw new RuntimeException(e);
+                }
+                seenText.add(h.toString());
+            }
+        };
+        context.set(EmbeddedDocumentExtractor.class, ext);
+
+        try (InputStream stream = getStream("test-documents/testEmailWithPNGAtt.eml")) {
+            p.parse(stream, handler, metadata, context);
+        }
+        
+        // Check we go the metadata
+        assertEquals("Tika Test <XXXX@apache.org>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Test Attachment Email", metadata.get(TikaCoreProperties.TITLE));
+        
+        // Check attachments
+        assertEquals(2, seenTypes.size());
+        assertEquals(2, seenText.size());
+        assertEquals("text/plain", seenTypes.get(0).toString());
+        assertEquals("image/png", seenTypes.get(1).toString());
+        assertEquals("This email has a PNG attachment included in it\n\n", seenText.get(0));
+    }
 }

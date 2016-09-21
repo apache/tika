@@ -21,12 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
@@ -43,6 +38,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -102,8 +98,6 @@ public class PDFParser extends AbstractParser {
             Collections.singleton(MEDIA_TYPE);
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
-
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -113,10 +107,10 @@ public class PDFParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        PDDocument pdfDocument = null;
-        TemporaryResources tmp = new TemporaryResources();
-        //config from context, or default if not set via context
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+
+        PDDocument pdfDocument = null;
+
         String password = "";
         try {
             // PDFBox can process entirely in memory, or can use a temp file
@@ -141,11 +135,11 @@ public class PDFParser extends AbstractParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
+                } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
-                    if (localConfig.getOCRStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
+                    if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                         metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     }
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
@@ -595,11 +589,20 @@ public class PDFParser extends AbstractParser {
      *
      * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
+    @Field
     public void setSortByPosition(boolean v) {
         defaultConfig.setSortByPosition(v);
     }
 
+    @Field
+    public void setOcrStrategy(String ocrStrategyString) {
+        defaultConfig.setOcrStrategy(ocrStrategyString);
+    }
 
+    @Field
+    public void setOcrImageType(String imageType) {
+        defaultConfig.setOcrImageType(imageType);
+    }
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
         if (pdMetadata == null) {

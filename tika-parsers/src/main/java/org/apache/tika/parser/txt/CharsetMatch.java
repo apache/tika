@@ -1,6 +1,8 @@
+// © 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html#License
 /**
  * ******************************************************************************
- * Copyright (C) 2005-2007, International Business Machines Corporation and    *
+ * Copyright (C) 2005-2016, International Business Machines Corporation and    *
  * others. All Rights Reserved.                                                *
  * ******************************************************************************
  */
@@ -18,63 +20,36 @@ import java.io.Reader;
  * as a possible encoding for a set of input data.  From an instance of this
  * class, you can ask for a confidence level in the charset identification,
  * or for Java Reader or String to access the original byte data in Unicode form.
- * <p/>
+ * <p>
  * Instances of this class are created only by CharsetDetectors.
- * <p/>
+ * <p>
  * Note:  this class has a natural ordering that is inconsistent with equals.
- *        The natural ordering is based on the match confidence value.
+ * The natural ordering is based on the match confidence value.
  *
  * @stable ICU 3.4
  */
 public class CharsetMatch implements Comparable<CharsetMatch> {
 
 
-    /**
-     * Bit flag indicating the match is based on the the encoding scheme.
-     *
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int ENCODING_SCHEME = 1;
-    /**
-     * Bit flag indicating the match is based on the presence of a BOM.
-     *
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int BOM = 2;
-    /**
-     * Bit flag indicating he match is based on the declared encoding.
-     *
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int DECLARED_ENCODING = 4;
-    /**
-     * Bit flag indicating the match is based on language statistics.
-     *
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int LANG_STATISTICS = 8;
     //
     //   Private Data
     //
     private int fConfidence;
-    private CharsetRecognizer fRecognizer;
     private byte[] fRawInput = null;     // Original, untouched input bytes.
     //  If user gave us a byte array, this is it.
     private int fRawLength;           // Length of data in fRawInput array.
     private InputStream fInputStream = null;  // User's input stream, or null if the user
+    private String fCharsetName;         // The name of the charset this CharsetMatch
+    //   represents.  Filled in by the recognizer.
+    private String fLang;                // The language, if one was determined by
 
     /*
      *  Constructor.  Implementation internal
      */
     CharsetMatch(CharsetDetector det, CharsetRecognizer rec, int conf) {
-        fRecognizer = rec;
         fConfidence = conf;
 
-        // The references to the original aplication input data must be copied out
+        // The references to the original application input data must be copied out
         //   of the charset recognizer to here, in case the application resets the
         //   recognizer before using this CharsetMatch.
         if (det.fInputStream == null) {
@@ -84,19 +59,40 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
             fRawLength = det.fRawLength;
         }
         fInputStream = det.fInputStream;
+        fCharsetName = rec.getName();
+        fLang = rec.getLanguage();
+    }
+
+    /*
+     *  Constructor.  Implementation internal
+     */
+    CharsetMatch(CharsetDetector det, CharsetRecognizer rec, int conf, String csName, String lang) {
+        fConfidence = conf;
+
+        // The references to the original application input data must be copied out
+        //   of the charset recognizer to here, in case the application resets the
+        //   recognizer before using this CharsetMatch.
+        if (det.fInputStream == null) {
+            // We only want the existing input byte data if it came straight from the user,
+            //   not if is just the head of a stream.
+            fRawInput = det.fRawInput;
+            fRawLength = det.fRawLength;
+        }
+        fInputStream = det.fInputStream;
+        fCharsetName = csName;
+        fLang = lang;
     }
 
     /**
      * Create a java.io.Reader for reading the Unicode character data corresponding
      * to the original byte data supplied to the Charset detect operation.
-     * <p/>
+     * <p>
      * CAUTION:  if the source of the byte data was an InputStream, a Reader
      * can be created for only one matching char set using this method.  If more
      * than one charset needs to be tried, the caller will need to reset
      * the InputStream and create InputStreamReaders itself, based on the charset name.
      *
      * @return the Reader for the Unicode character data.
-     *
      * @stable ICU 3.4
      */
     public Reader getReader() {
@@ -119,7 +115,6 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      * to the original byte data supplied to the Charset detect operation.
      *
      * @return a String created from the converted input data.
-     *
      * @stable ICU 3.4
      */
     public String getString() throws java.io.IOException {
@@ -138,13 +133,12 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      *                  source of the data is an input stream, or -1 for
      *                  unlimited length.
      * @return a String created from the converted input data.
-     *
      * @stable ICU 3.4
      */
     public String getString(int maxLength) throws java.io.IOException {
         String result = null;
         if (fInputStream != null) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             char[] buffer = new char[1024];
             Reader reader = getReader();
             int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
@@ -159,7 +153,17 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
             return sb.toString();
         } else {
-            result = new String(fRawInput, getName());
+            String name = getName();
+            /*
+             * getName() may return a name with a suffix 'rtl' or 'ltr'. This cannot
+             * be used to open a charset (e.g. IBM424_rtl). The ending '_rtl' or 'ltr'
+             * should be stripped off before creating the string.
+             */
+            int startSuffix = name.indexOf("_rtl") < 0 ? name.indexOf("_ltr") : name.indexOf("_rtl");
+            if (startSuffix > 0) {
+                name = name.substring(0, startSuffix);
+            }
+            result = new String(fRawInput, name);
         }
         return result;
 
@@ -172,31 +176,10 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      * charset.
      *
      * @return the confidence in the charset match
-     *
      * @stable ICU 3.4
      */
     public int getConfidence() {
         return fConfidence;
-    }
-
-    /**
-     * Return flags indicating what it was about the input data
-     * that caused this charset to be considered as a possible match.
-     * The result is a bitfield containing zero or more of the flags
-     * ENCODING_SCHEME, BOM, DECLARED_ENCODING, and LANG_STATISTICS.
-     * A result of zero means no information is available.
-     * <p>
-     * Note: currently, this method always returns zero.
-     * <p>
-     *
-     * @return the type of match found for this charset.
-     *
-     * @draft ICU 3.4
-     * @provisional This API might change or be removed in a future release.
-     */
-    public int getMatchType() {
-//      TODO: create a list of enum-like constants for common combinations of types of matches.
-        return 0;
     }
 
     /**
@@ -207,40 +190,38 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      * charsets that are registered with the IANA charset registry,
      * this is the MIME-preferred registerd name.
      *
+     * @return The name of the charset.
+     * @stable ICU 3.4
      * @see java.nio.charset.Charset
      * @see java.io.InputStreamReader
-     *
-     * @return The name of the charset.
-     *
-     * @stable ICU 3.4
      */
     public String getName() {
-        return fRecognizer.getName();
+        return fCharsetName;
     }
+    //   gave us a byte array.
 
     /**
      * Get the ISO code for the language of the detected charset.
      *
      * @return The ISO code for the language or <code>null</code> if the language cannot be determined.
-     *
      * @stable ICU 3.4
      */
     public String getLanguage() {
-        return fRecognizer.getLanguage();
+        return fLang;
     }
 
     /**
      * Compare to other CharsetMatch objects.
      * Comparison is based on the match confidence value, which
-     *   allows CharsetDetector.detectAll() to order its results.
+     * allows CharsetDetector.detectAll() to order its results.
      *
-     * @param o the CharsetMatch object to compare against.
+     * @param other the CharsetMatch object to compare against.
      * @return a negative integer, zero, or a positive integer as the
-     *          confidence level of this CharsetMatch
-     *          is less than, equal to, or greater than that of
-     *          the argument.
+     * confidence level of this CharsetMatch
+     * is less than, equal to, or greater than that of
+     * the argument.
      * @throws ClassCastException if the argument is not a CharsetMatch.
-     * @stable ICU 3.4
+     * @stable ICU 4.4
      */
     public int compareTo(CharsetMatch other) {
         int compareResult = 0;
@@ -276,9 +257,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     //   gave us a byte array.
 
     public String toString() {
-        String s = "Match of " + fRecognizer.getName();
-        if (fRecognizer.getLanguage() != null) {
-            s += " in " + fRecognizer.getLanguage();
+        String s = "Match of " + fCharsetName;
+        if (getLanguage() != null) {
+            s += " in " + getLanguage();
         }
         s += " with confidence " + fConfidence;
         return s;
