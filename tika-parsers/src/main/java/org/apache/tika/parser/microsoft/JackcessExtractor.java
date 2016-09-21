@@ -326,8 +326,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
     private void handleCompoundContent(OleBlob.CompoundContent cc, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
-        NPOIFSFileSystem nfs = new NPOIFSFileSystem(cc.getStream());
-        handleEmbeddedOfficeDoc(nfs.getRoot(), xhtml);
+        try (NPOIFSFileSystem nfs = new NPOIFSFileSystem(cc.getStream())) {
+            handleEmbeddedOfficeDoc(nfs.getRoot(), xhtml);
+        }
     }
 
     String formatCurrency(Double d, DataType type) {

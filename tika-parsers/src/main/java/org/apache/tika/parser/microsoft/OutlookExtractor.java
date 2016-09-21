@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -59,8 +61,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Outlook Message Parser.
@@ -254,6 +254,14 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             }
         } catch (ChunkNotFoundException e) {
             throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk", e);
+        } finally {
+            if (msg != null) {
+                try {
+                    msg.close();
+                } catch (IOException e) {
+                    //swallow
+                }
+            }
         }
     }
 

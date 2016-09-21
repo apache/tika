@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Upgrade to POI.3-15 (TIKA-2013).
+
   * Upgrade to PDFBox 2.0.3 (TIKA-2051).
 
   * Fix hyperlinks with formatting in DOC and DOCX (TIKA-1255
@@ -41,8 +43,6 @@ Release 1.14 - ???
      * iCal and vCalendar (TIKA-2006)
      * MBOX (TIKA-2042)
      * Stata DTA (TIKA-2064)
-
-  * Upgrade to PDFBox 2.0.2 (TIKA-1996).
 
   * Add configurable maximum threshold for number of events extracted
     from the XMP Media Management Schema in JempboxExtractor (TIKA-1999).
