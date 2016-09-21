@@ -35,6 +35,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -95,26 +96,33 @@ public class OfficeParser extends AbstractParser {
 
         final DirectoryNode root;
         TikaInputStream tstream = TikaInputStream.cast(stream);
-        if (tstream == null) {
-            root = new NPOIFSFileSystem(new CloseShieldInputStream(stream)).getRoot();
-        } else {
-            final Object container = tstream.getOpenContainer();
-            if (container instanceof NPOIFSFileSystem) {
-                root = ((NPOIFSFileSystem) container).getRoot();
-            } else if (container instanceof DirectoryNode) {
-                root = (DirectoryNode) container;
+        NPOIFSFileSystem mustCloseFs = null;
+        try {
+            if (tstream == null) {
+                mustCloseFs = new NPOIFSFileSystem(new CloseShieldInputStream(stream));
+                root = mustCloseFs.getRoot();
             } else {
-                NPOIFSFileSystem fs;
-                if (tstream.hasFile()) {
-                    fs = new NPOIFSFileSystem(tstream.getFile(), true);
+                final Object container = tstream.getOpenContainer();
+                if (container instanceof NPOIFSFileSystem) {
+                    root = ((NPOIFSFileSystem) container).getRoot();
+                } else if (container instanceof DirectoryNode) {
+                    root = (DirectoryNode) container;
                 } else {
-                    fs = new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+                    NPOIFSFileSystem fs = null;
+                    if (tstream.hasFile()) {
+                        fs = new NPOIFSFileSystem(tstream.getFile(), true);
+                    } else {
+                        fs = new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+                    }
+                    //tstream will close the fs, no need to close this below
+                    tstream.setOpenContainer(fs);
+                    root = fs.getRoot();
                 }
-                tstream.setOpenContainer(fs);
-                root = fs.getRoot();
             }
+            parse(root, context, metadata, xhtml);
+        } finally {
+            IOUtils.closeQuietly(mustCloseFs);
         }
-        parse(root, context, metadata, xhtml);
         xhtml.endDocument();
     }
 

@@ -65,6 +65,7 @@
               commons-lang;inline=true,
               commons-io;inline=true,
               commons-codec;inline=true,
+              commons-collections4;inline=true,
               poi;inline=true,
               poi-scratchpad;inline=true,
               poi-ooxml;inline=true,
