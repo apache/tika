@@ -29,6 +29,9 @@ import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,10 +57,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * so this translation implementation takes care of that.
  */
 public class JoshuaNetworkTranslator extends AbstractTranslator {
+  
+  private static final Logger LOG = LoggerFactory.getLogger(JoshuaNetworkTranslator.class);
 
   private static final String PROPERTIES_FILE = "translator.joshua.properties";
 
-  private String JOSHUA_SERVER = "joshua.server.url";
+  private static final String JOSHUA_SERVER = "joshua.server.url";
 
   private String networkServer;
   
@@ -82,8 +87,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
         networkServer = props.getProperty(JOSHUA_SERVER);
       }
     } catch (IOException e) {
-      // Error with properties file. Translation will not work.
-      e.printStackTrace();
+      LOG.error("An error occured whilst reading translator.joshua.properties file", e);
     }
   }
 
@@ -119,7 +123,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
       sb.replace(i, i + 1, "\n");
     }
 
-    text = sb.toString();
+    String inputText = sb.toString();
 
     //create client
     if (!networkServer.endsWith("/")) {
@@ -131,10 +135,10 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
     //make the reuest
     Response response = client.accept(MediaType.APPLICATION_JSON)
         .query("inputLanguage", sourceLanguage)
-        .query("inputText", text).get();
+        .query("inputText", inputText).get();
     BufferedReader reader = new BufferedReader(new InputStreamReader(
         (InputStream) response.getEntity(), UTF_8));
-    String line = null;
+    String line;
     StringBuffer responseText = new StringBuffer();
     while ((line = reader.readLine()) != null) {
       responseText.append(line);
@@ -146,7 +150,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
 
       if (!jsonResp.findValuesAsText("code").isEmpty()) {
         String code = jsonResp.findValuesAsText("code").get(0);
-        if (code.equals("200")) {
+        if ("200".equals(code)) {
           return jsonResp.findValue("text").get(0).asText();
         } else {
           throw new TikaException(jsonResp.findValue("message").get(0).asText());
