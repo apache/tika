@@ -421,14 +421,14 @@ public class ExcelParserTest extends TikaTest {
         assertContains("1.23456789012345E15", xml);//16 digit formula, ditto
     }
 
-    @Test
-    public void testMacroinXls() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xls");
-        Metadata macroMetadata = metadataList.get(1);
-        assertContains("Sub Dirty()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("dirty dirt dirt", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
-                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    public void testMacros() throws  Exception {
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls"));
     }
 }

@@ -1265,35 +1265,38 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testMacrosInDocm() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.docm");
-        Metadata macroMetadata = metadataList.get(1);
-        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
-                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm"));
     }
 
     @Test
     public void testMacrosInPptm() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.pptm");
-        Metadata macroMetadata = metadataList.get(1);
-        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
-                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm"));
     }
 
     @Test
     public void testMacroinXlsm() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xlsm");
-        Metadata macroMetadata = metadataList.get(1);
-        assertContains("Sub Dirty()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("dirty dirt dirt", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
-                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm"));
     }
 
 }
