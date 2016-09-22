@@ -126,9 +126,31 @@ public class TesseractOCRParserTest extends TikaTest {
         };
         testBasicOCR(resource, nonOCRContains, 3);
     }
+    
+    @Test
+    public void testOCROutputsHOCR() throws Exception {
+        String resource = "/test-documents/testOCR.pdf";
+        String[] nonOCRContains = new String[0];
+        String contents = runOCR(resource, nonOCRContains, 2, "hocr");        
+        assertTrue(contents.contains("<meta name='ocr-system' content='tesseract"));
 
-    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception {
+    }
+
+    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
+    	String contents = runOCR(resource, nonOCRContains, numMetadatas, "txt");
+        if (canRun()) {
+        	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
+        		assertTrue(contents.toString().contains("Apache"));
+        	} else {
+        		assertTrue(contents.toString().contains("Happy New Year 2003!"));
+        	}
+        }
+    }
+    
+    private String runOCR(String resource, String[] nonOCRContains, int numMetadatas, String outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setOutputType(outputType);
+        
         Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),
                 new BasicContentHandlerFactory(
                         BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
@@ -151,13 +173,7 @@ public class TesseractOCRParserTest extends TikaTest {
         for (Metadata m : metadataList) {
             contents.append(m.get(RecursiveParserWrapper.TIKA_CONTENT));
         }
-        if (canRun()) {
-        	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
-        		assertTrue(contents.toString().contains("Apache"));
-        	} else {
-        		assertTrue(contents.toString().contains("Happy New Year 2003!"));
-        	}
-        }
+ 
         for (String needle : nonOCRContains) {
             assertContains(needle, contents.toString());
         }
@@ -165,6 +181,8 @@ public class TesseractOCRParserTest extends TikaTest {
         assertTrue(metadataList.get(1).names().length > 10);
         //test at least one value
         assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+        
+        return contents.toString();
     }
 
     @Test

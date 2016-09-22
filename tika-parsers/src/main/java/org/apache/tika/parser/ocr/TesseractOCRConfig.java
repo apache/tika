@@ -62,6 +62,9 @@ public class TesseractOCRConfig implements Serializable{
 
 	// Maximum time (seconds) to wait for the ocring process termination
 	private int timeout = 120;
+	
+	// The format of the ocr'ed output to be returned, txt or hocr.
+	private String outputType = "txt";
 
 	// enable image processing (optional)
 	private int enableImageProcessing = 0;
@@ -135,6 +138,8 @@ public class TesseractOCRConfig implements Serializable{
 				getProp(props, "maxFileSizeToOcr", getMaxFileSizeToOcr()));
 		setTimeout(
                 getProp(props, "timeout", getTimeout()));
+		setOutputType(
+                getProp(props, "outputType", getOutputType()));		
 		
 		// set parameters for ImageMagick
 		setEnableImageProcessing(
@@ -260,6 +265,19 @@ public class TesseractOCRConfig implements Serializable{
 	 * @return timeout value for Tesseract */
 	public int getTimeout() {
 		return timeout;
+	}	
+	
+	/**
+	 * Set output type from ocr process.  Default is "txt", but can be "hocr".
+	 * Default value is 120s.
+	 */
+	public void setOutputType(String outputType) {
+		this.outputType = outputType;
+	}
+
+	/** @see #setOutputType(String outputType) */
+	public String getOutputType() {
+		return outputType;
 	}	
 
 	/** @see #setEnableImageProcessing(boolean)

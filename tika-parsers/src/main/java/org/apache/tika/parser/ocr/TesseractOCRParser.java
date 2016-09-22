@@ -328,8 +328,8 @@ public class TesseractOCRParser extends AbstractParser {
             	
                 doOCR(tmpFile, tmpImgFile, config);                
 
-                // Tesseract appends .txt to output file name
-                tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + ".txt");
+                // Tesseract appends the output type (.txt or .hocr) to output file name
+                tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + "." + config.getOutputType());
 
                 if (tmpTxtOutput.exists()) {
                     try (InputStream is = new FileInputStream(tmpTxtOutput)) {
@@ -375,7 +375,7 @@ public class TesseractOCRParser extends AbstractParser {
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
         String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
-                config.getLanguage(), "-psm", config.getPageSegMode() };
+                config.getLanguage(), "-psm", config.getPageSegMode(), config.getOutputType()};
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
