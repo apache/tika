@@ -39,16 +39,24 @@ public interface TikaCoreProperties {
 
     /**
      * A file might contain different types of embedded documents.
-     * The most common is the ATTACHEMENT.
+     * The most common is the ATTACHMENT.
+     * <p>
      * An INLINE embedded resource should be used for embedded image
      * files that are used to render the page image (as in PDXObjImages in PDF files).
      * <p>
-     * Not all parsers have yet implemented this. 
+     * A MACRO is code that is embedded in the document and is intended
+     * to be executable within the application that opens the document.  This
+     * includes traditional macros within Microsoft Office files and
+     * javascript within PDFActions.  This would not include, e.g., an
+     * .exe file embedded in a .zip file.
+     * <p>
+     * Not all parsers have yet implemented this.
      *
      */
     public enum EmbeddedResourceType {
         INLINE,
-        ATTACHMENT
+        ATTACHMENT,
+        MACRO
     };
 
     /**

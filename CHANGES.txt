@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Extract macros from MSOffice files (TIKA-2069).
+
   * Maintain passed-in mime in TXTParser (TIKA-2047).
 
   * Upgrade to POI.3-15 (TIKA-2013).

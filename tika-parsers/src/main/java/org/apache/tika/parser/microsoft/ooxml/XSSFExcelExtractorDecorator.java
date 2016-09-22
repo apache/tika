@@ -320,6 +320,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
+        //add main document so that macros can be extracted
+        //by AbstractOOXMLExtractor
+        for (PackagePart part : extractor.getPackage().
+                getPartsByRelationshipType(RELATION_OFFICE_DOCUMENT)) {
+            parts.add(part);
+        }
+
         return parts;
     }
 

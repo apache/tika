@@ -33,6 +33,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -43,6 +44,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -64,7 +66,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     static final String RELATION_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
     static final String RELATION_OLE_OBJECT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
     static final String RELATION_PACKAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
-
+    static final String RELATION_MACRO = "http://schemas.microsoft.com/office/2006/relationships/vbaProject";
+    static final String RELATION_OFFICE_DOCUMENT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
     private final EmbeddedDocumentExtractor embeddedExtractor;
@@ -197,6 +200,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                                 || RELATION_PACKAGE.equals(type)
                                 || RELATION_OLE_OBJECT.equals(type)) {
                             handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
+                        } else if (RELATION_MACRO.equals(type)) {
+                            handleMacros(target, handler);
                         }
                     }
                 }
@@ -325,4 +330,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      */
     protected abstract List<PackagePart> getMainDocumentParts()
             throws TikaException;
+
+
+    void handleMacros(PackagePart macroPart, ContentHandler handler) throws TikaException, SAXException {
+
+        try (InputStream is = macroPart.getInputStream()) {
+            try (NPOIFSFileSystem npoifs = new NPOIFSFileSystem(is)) {
+                //Macro reading exceptions are already swallowed here
+                OfficeParser.extractMacros(npoifs, handler, embeddedExtractor);
+            }
+        } catch (IOException e) {
+            throw new TikaException("Broken OOXML file", e);
+        }
+    }
 }
