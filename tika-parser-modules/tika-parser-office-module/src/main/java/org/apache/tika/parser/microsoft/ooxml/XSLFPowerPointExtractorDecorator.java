@@ -280,6 +280,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 }
             }
         }
+        //add full document to include macros
+        parts.add(document.getPackagePart());
+
         return parts;
     }
 }

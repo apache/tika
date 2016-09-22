@@ -47,6 +47,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
@@ -577,39 +578,39 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Here is a citation:", content);
         assertContains("Figure 1 This is a caption for Figure 1", content);
         assertContains("(Kramer)", content);
-        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+"," "));
-        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
+        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+", " "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
             assertContains("Bullet " + row, content);
         }
         assertContains("Here is a numbered list:", content);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             //assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
             assertContains("Number bullet " + row, content);
         }
 
-        for(int row=1;row<=2;row++) {
-            for(int col=1;col<=3;col++) {
+        for (int row = 1; row <= 2; row++) {
+            for (int col = 1; col <= 3; col++) {
                 assertContains("Row " + row + " Col " + col, content);
             }
         }
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                     metadata.get(Metadata.KEYWORDS));
+                metadata.get(Metadata.KEYWORDS));
 
         assertContains("Subject is here", content);
         // TODO: Remove subject in Tika 2.0
         assertEquals("Subject is here",
-                     metadata.get(Metadata.SUBJECT));
+                metadata.get(Metadata.SUBJECT));
         assertEquals("Subject is here",
-                     metadata.get(OfficeOpenXMLCore.SUBJECT));
+                metadata.get(OfficeOpenXMLCore.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -641,21 +642,21 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<p>Row 2 column 2</p>", xml);
         assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
         assertContains("<p>Here is a list:", xml);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
             assertContains("<p>Bullet " + row, xml);
         }
         assertContains("Here is a numbered list:", xml);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             //assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
             assertContains("<p>Number bullet " + row, xml);
         }
 
-        for(int row=1;row<=2;row++) {
-            for(int col=1;col<=3;col++) {
+        for (int row = 1; row <= 2; row++) {
+            for (int col = 1; col <= 3; col++) {
                 assertContains("Row " + row + " Col " + col, xml);
             }
         }
@@ -667,7 +668,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Subject is here", xml);
         // TODO: Remove subject in Tika 2.0
         assertEquals("Subject is here",
-                     metadata.get(Metadata.SUBJECT));
+                metadata.get(Metadata.SUBJECT));
         assertEquals("Subject is here",
                 metadata.get(OfficeOpenXMLCore.SUBJECT));
 
@@ -1253,13 +1254,46 @@ public class OOXMLParserTest extends TikaTest {
         String xml = getXML("testWORD_boldHyperlink.docx").xml;
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
-        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold" , xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold", xml);
     }
 
     @Test
     public void testLongForIntExceptionInSummaryDetails() throws Exception {
         //TIKA-2055
         assertContains("bold", getXML("testWORD_totalTimeOutOfRange.docx").xml);
+    }
+
+    @Test
+    public void testMacrosInDocm() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.docm");
+        Metadata macroMetadata = metadataList.get(1);
+        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testMacrosInPptm() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.pptm");
+        Metadata macroMetadata = metadataList.get(1);
+        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testMacroinXlsm() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xlsm");
+        Metadata macroMetadata = metadataList.get(1);
+        assertContains("Sub Dirty()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("dirty dirt dirt", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
 }

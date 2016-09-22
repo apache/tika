@@ -16,13 +16,16 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -35,11 +38,15 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.macros.VBAMacroReader;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -117,9 +124,17 @@ public class OfficeParser extends AbstractParser {
                     //tstream will close the fs, no need to close this below
                     tstream.setOpenContainer(fs);
                     root = fs.getRoot();
+
                 }
             }
             parse(root, context, metadata, xhtml);
+
+            //now try to get macros
+            EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
+            if (ex == null) {
+                ex = new ParsingEmbeddedDocumentExtractor(context);
+            }
+            extractMacros(root.getNFileSystem(), xhtml, ex);
         } finally {
             IOUtils.closeQuietly(mustCloseFs);
         }
@@ -276,6 +291,41 @@ public class OfficeParser extends AbstractParser {
 
         public MediaType getType() {
             return type;
+        }
+    }
+
+    /**
+     * Helper to extract macros from an NPOIFS/vbaProject.bin
+     *
+     * As of POI-3.15-final, there are still some bugs in VBAMacroReader.
+     * For now, we are swallowing NPE and other runtime exceptions
+     *
+     * @param fs NPOIFS to extract from
+     * @param xhtml SAX writer
+     * @param embeddedDocumentExtractor extractor for embedded documents
+     * @throws IOException on IOException if it occurs during the extraction of the embedded doc
+     * @throws SAXException on SAXException for writing to xhtml
+     */
+    public static void extractMacros(NPOIFSFileSystem fs, ContentHandler xhtml, EmbeddedDocumentExtractor
+            embeddedDocumentExtractor)  throws IOException, SAXException {
+
+        VBAMacroReader reader = null;
+        Map<String, String> macros = null;
+        try {
+            reader = new VBAMacroReader(fs);
+            macros = reader.readMacros();
+        } catch (Exception e) {
+            //swallow
+            return;
+        }
+        for (Map.Entry<String, String> e : macros.entrySet()) {
+            Metadata m = new Metadata();
+            m.set(Metadata.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+            m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+                embeddedDocumentExtractor.parseEmbedded(
+                        new ByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)), xhtml, m, true);
+            }
         }
     }
 

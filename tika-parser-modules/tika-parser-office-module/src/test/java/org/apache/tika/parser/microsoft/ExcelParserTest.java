@@ -36,6 +36,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -418,5 +419,16 @@ public class ExcelParserTest extends TikaTest {
         assertContains("123456789012346", xml);//15 digit formula
         assertContains("1.23456789012345E15", xml);//16 digit number is treated as scientific notation
         assertContains("1.23456789012345E15", xml);//16 digit formula, ditto
+    }
+
+    @Test
+    public void testMacroinXls() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xls");
+        Metadata macroMetadata = metadataList.get(1);
+        assertContains("Sub Dirty()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("dirty dirt dirt", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 }

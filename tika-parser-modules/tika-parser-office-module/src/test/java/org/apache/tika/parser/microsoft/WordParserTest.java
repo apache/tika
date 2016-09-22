@@ -34,6 +34,7 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -519,6 +520,18 @@ public class WordParserTest extends TikaTest {
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
         assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold" , xml);
+    }
+
+    @Test
+    public void testMacros() throws  Exception {
+        //debug(getRecursiveMetadata("SimpleMacro.doc"));
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.doc");
+        Metadata macroMetadata = metadataList.get(1);
+        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 }
 

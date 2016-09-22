@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
-
-import static org.junit.Assert.assertEquals;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -28,7 +28,9 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -247,5 +249,17 @@ public class PowerPointParserTest extends TikaTest {
         assertEquals("3.pdf", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
         assertEquals("application/pdf", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("4.pdf", metadataList.get(2).get(Metadata.RESOURCE_NAME_KEY));
+    }
+
+    @Test
+    @Ignore("POI 3.15-final not finding any macros in this ppt")
+    public void testMacros() throws  Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.ppt");
+        Metadata macroMetadata = metadataList.get(1);
+        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 }
