@@ -99,6 +99,44 @@ public abstract class TikaTest {
         assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
     }
 
+    /**
+     * Test that in at least one item in metadataList, all keys and values
+     * in minExpected are contained.
+     * <p>
+     * The values in minExpected are tested for whether they are contained
+     * within a value in the target.  If minExpected=&dquot;text/vbasic&dquot;  and
+     * what was actually found in the target within metadatalist is
+     * &dquot;text/vbasic; charset=windows-1252&dquot;,
+     * that is counted as a hit.
+     *
+     * @param minExpected
+     * @param metadataList
+     */
+    public static void assertContainsAtLeast(Metadata minExpected, List<Metadata> metadataList) {
+
+        for (Metadata m : metadataList) {
+            int foundPropertyCount = 0;
+            for (String n : minExpected.names()) {
+                int foundValCount = 0;
+                for (String foundVal : m.getValues(n)) {
+                    for (String expectedVal : minExpected.getValues(n)) {
+                        if (foundVal.contains(expectedVal)) {
+                            foundValCount++;
+                        }
+                    }
+                }
+                if (foundValCount == minExpected.getValues(n).length) {
+                    foundPropertyCount++;
+                }
+            }
+            if (foundPropertyCount == minExpected.names().length) {
+                //found everything!
+                return;
+            }
+        }
+        //TODO: figure out how to have more informative error message
+        fail("Couldn't find everything within a single metadata item");
+    }
     protected static class XMLResult {
         public final String xml;
         public final Metadata metadata;

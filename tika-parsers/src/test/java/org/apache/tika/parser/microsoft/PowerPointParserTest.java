@@ -254,12 +254,18 @@ public class PowerPointParserTest extends TikaTest {
     @Test
     @Ignore("POI 3.15-final not finding any macros in this ppt")
     public void testMacros() throws  Exception {
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.ppt");
-        Metadata macroMetadata = metadataList.get(1);
-        assertContains("Sub Embolden()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("Sub Italicize()", macroMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("text/x-vbasic", macroMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
-                macroMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertContainsAtLeast(minExpected, metadataList);
     }
+
+
+
+
 }
