@@ -46,7 +46,7 @@ public class DetectorResource {
     public String detect(final InputStream is,
                          @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         Metadata met = new Metadata();
-        TikaInputStream tis = TikaInputStream.get(is);
+        TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, httpHeaders));
         String filename = TikaResource.detectFilename(httpHeaders
                 .getRequestHeaders());
         logger.info("Detecting media type for Filename: " + filename);

@@ -68,6 +68,13 @@ public class TikaServerCli {
             new HashSet<String>(Arrays.asList("debug", "info"));
     private static final Log logger = LogFactory.getLog(TikaServerCli.class);
 
+    private static final String FILE_URL_WARNING =
+            "WARNING: You have chosen to run tika-server with fileUrl enabled.\n"+
+            "Whoever has access to your service now has the same read permissions\n"+
+            "as tika-server. Users could request and receive a sensitive file from your\n" +
+            "drive or a webpage from your intranet.  See CVE-2015-3271.\n"+
+            "Please make sure you know what you are doing.";
+
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("C", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
@@ -79,6 +86,8 @@ public class TikaServerCli {
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
         options.addOption("?", "help", false, "this help message");
+        options.addOption("enable-unsecure-features", false, "this is required to enable fileUrl.");
+        options.addOption("enable-fileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
 
         return options;
     }
@@ -166,8 +175,22 @@ public class TikaServerCli {
                         CommonsDigester.parse(line.getOptionValue("digest")));
             }
 
+            if (line.hasOption("enable-fileUrl") &&
+                    !line.hasOption("enable-unsecure-features")) {
+                System.err.println("If you want to enable fileUrl, you must also acknowledge the security risks\n"+
+                "by including --enable-unsecure-features.  See CVE-2015-3271.");
+                System.exit(-1);
+            }
+            InputStreamFactory inputStreamFactory = null;
+            if (line.hasOption("enable-fileUrl") &&
+                    line.hasOption("enable-unsecure-features")) {
+                inputStreamFactory = new URLEnabledInputStreamFactory();
+                System.out.println(FILE_URL_WARNING);
+            } else {
+                inputStreamFactory = new DefaultInputStreamFactory();
+            }
 
-            TikaResource.init(tika, digester);
+            TikaResource.init(tika, digester, inputStreamFactory);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
             List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();

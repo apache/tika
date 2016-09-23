@@ -73,6 +73,7 @@ import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.server.RichTextContentHandler;
+import org.apache.tika.server.InputStreamFactory;
 import org.apache.tika.server.TikaServerParseException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -88,10 +89,13 @@ public class TikaResource {
 
     private static TikaConfig tikaConfig;
     private static DigestingParser.Digester digester = null;
+    private static InputStreamFactory inputStreamFactory = null;
 
-    public static void init(TikaConfig config, DigestingParser.Digester digestr) {
+    public static void init(TikaConfig config, DigestingParser.Digester digestr,
+                            InputStreamFactory iSF) {
         tikaConfig = config;
         digester = digestr;
+        inputStreamFactory = iSF;
     }
 
     static {
@@ -169,6 +173,14 @@ public class TikaResource {
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
         if (embeddedParser != null) {
             parseContext.set(Parser.class, embeddedParser);
+        }
+    }
+
+    public static InputStream getInputStream(InputStream is, HttpHeaders headers) {
+        try {
+            return inputStreamFactory.getInputSteam(is, headers);
+        } catch (IOException e) {
+            throw new TikaServerParseException(e);
         }
     }
 
@@ -337,7 +349,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceText(is, httpHeaders.getRequestHeaders(), info);
+        return produceText(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
     }
 
     public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
@@ -375,7 +387,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/html")
     public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(is, httpHeaders.getRequestHeaders(), info, "html");
+        return produceOutput(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, "html");
     }
 
     @POST
@@ -390,7 +402,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/xml")
     public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(is, httpHeaders.getRequestHeaders(), info, "xml");
+        return produceOutput(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, "xml");
     }
 
     private StreamingOutput produceOutput(final InputStream is, final MultivaluedMap<String, String> httpHeaders,

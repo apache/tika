@@ -17,6 +17,10 @@ Release 2.0 - ???
 
 Release 1.14 - ???
 
+  * Re-enable fileUrl for tika-server (TIKA-2081).  If you choose,
+    to use this feature, beware of the security vulnerabilities!
+    See: https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271
+
   * Add Tesseract's hOCR output format as an option, via Eric Pugh
     (TIKA-2093).
 

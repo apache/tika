@@ -74,7 +74,9 @@ public abstract class CXFTestBase extends TikaTest {
     @Before
     public void setUp() {
         this.tika = TikaConfig.getDefaultConfig();
-        TikaResource.init(tika, new CommonsDigester(DIGESTER_READ_LIMIT, CommonsDigester.DigestAlgorithm.MD5));
+        TikaResource.init(tika,
+                new CommonsDigester(DIGESTER_READ_LIMIT, CommonsDigester.DigestAlgorithm.MD5),
+                new DefaultInputStreamFactory());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         setUpResources(sf);
         setUpProviders(sf);

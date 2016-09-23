@@ -17,8 +17,6 @@
 
 package org.apache.tika.server.resource;
 
-import java.io.InputStream;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -30,6 +28,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -118,7 +117,8 @@ public class RecursiveMetadataResource {
                                 @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName
                                 ) throws Exception {
         return Response.ok(
-                parseMetadata(is, httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
+                parseMetadata(TikaResource.getInputStream(is, httpHeaders),
+						httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
     }
 
 	private MetadataList parseMetadata(InputStream is,
