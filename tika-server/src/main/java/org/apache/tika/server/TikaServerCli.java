@@ -86,8 +86,8 @@ public class TikaServerCli {
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("enable-unsecure-features", false, "this is required to enable fileUrl.");
-        options.addOption("enable-fileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
+        options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
+        options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
 
         return options;
     }
