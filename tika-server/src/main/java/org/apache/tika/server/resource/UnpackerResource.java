@@ -17,6 +17,8 @@
 
 package org.apache.tika.server.resource;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -63,8 +65,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 @Path("/unpack")
 public class UnpackerResource {
     public static final String TEXT_FILENAME = "__TEXT__";
@@ -93,7 +93,7 @@ public class UnpackerResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info
     ) throws Exception {
-        return process(is, httpHeaders, info, false);
+        return process(TikaResource.getInputStream(is, httpHeaders), httpHeaders, info, false);
     }
 
     @Path("/all{id:(/.*)?}")
@@ -104,7 +104,7 @@ public class UnpackerResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info
     ) throws Exception {
-        return process(is, httpHeaders, info, true);
+        return process(TikaResource.getInputStream(is, httpHeaders), httpHeaders, info, true);
     }
 
     private Map<String, byte[]> process(
