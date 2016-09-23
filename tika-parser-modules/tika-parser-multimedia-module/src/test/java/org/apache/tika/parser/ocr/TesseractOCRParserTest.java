@@ -18,16 +18,8 @@ package org.apache.tika.parser.ocr;
 
 import static org.apache.tika.parser.ocr.TesseractOCRParser.getTesseractProg;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import java.io.InputStream;
 import java.util.List;
@@ -42,14 +34,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
-import org.apache.tika.parser.mail.RFC822Parser;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class TesseractOCRParserTest extends TikaTest {
@@ -112,7 +99,6 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("TODO: cyclic reference to pdf-module...maybe move these all to tika-app?")
     public void testPDFOCR() throws Exception {
         String resource = "/test-documents/testOCR.pdf";
         String[] nonOCRContains = new String[0];
@@ -138,15 +124,51 @@ public class TesseractOCRParserTest extends TikaTest {
         testBasicOCR(resource, nonOCRContains, 3);
     }
 
-    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception {
+    @Test
+    public void testOCROutputsHOCR() throws Exception {
+        assumeTrue(canRun());
+
+        String resource = "/test-documents/testOCR.pdf";
+
+        String[] nonOCRContains = new String[0];
+        String contents = runOCR(resource, nonOCRContains, 2,
+                BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+
+        assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
+        assertContains("Happy</span>", contents);
+
+    }
+
+    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
+        String contents = runOCR(resource, nonOCRContains, numMetadatas,
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
+        if (canRun()) {
+            if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
+                assertTrue(contents.toString().contains("Apache"));
+            } else {
+                assertTrue(contents.toString().contains("Happy New Year 2003!"));
+            }
+        }
+    }
+
+    private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
+                          BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+                          TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setOutputType(outputType);
+
         Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),
                 new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+                        handlerType, -1));
+
+        PDFParserConfig pdfConfig = new PDFParserConfig();
+        pdfConfig.setExtractInlineImages(true);
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, config);
         parseContext.set(Parser.class, parser);
+        parseContext.set(PDFParserConfig.class, pdfConfig);
 
         try (InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(resource)) {
             parser.parse(stream, new DefaultHandler(), new Metadata(), parseContext);
@@ -158,9 +180,7 @@ public class TesseractOCRParserTest extends TikaTest {
         for (Metadata m : metadataList) {
             contents.append(m.get(RecursiveParserWrapper.TIKA_CONTENT));
         }
-        if (canRun()) {
-            assertTrue(contents.toString().contains("Happy New Year 2003!"));
-        }
+
         for (String needle : nonOCRContains) {
             assertContains(needle, contents.toString());
         }
@@ -168,6 +188,8 @@ public class TesseractOCRParserTest extends TikaTest {
         assertTrue(metadataList.get(1).names().length > 10);
         //test at least one value
         assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+
+        return contents.toString();
     }
 
     @Test
@@ -175,6 +197,15 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue(canRun());
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
+    }
+
+    @Test
+    public void testImageMagick() throws Exception {
+        InputStream stream = TesseractOCRConfig.class.getResourceAsStream(
+                "/test-properties/TesseractOCR.properties");
+        TesseractOCRConfig config = new TesseractOCRConfig(stream);
+        String[] CheckCmd = {config.getImageMagickPath() + TesseractOCRParser.getImageMagickProg()};
+        assumeTrue(ExternalParser.check(CheckCmd));
     }
 
     @Test
@@ -212,51 +243,5 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
         assertEquals("72 dots per inch", m.get("Y Resolution"));
-    }
-    
-    @Test
-    public void testMultipart() {
-        Parser parser = new RFC822Parser();
-        Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/testRFC822-multipart");
-        ContentHandler handler = mock(XHTMLContentHandler.class);
-
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
-            verify(handler).startDocument();
-            int bodyExpectedTimes = 4, multipackExpectedTimes = 5;
-            // TIKA-1422. TesseractOCRParser interferes with the number of times the handler is invoked.
-            // But, different versions of Tesseract lead to a different number of invocations. So, we
-            // only verify the handler if Tesseract cannot run.
-            if (!TesseractOCRParserTest.canRun()) {
-                verify(handler, times(bodyExpectedTimes)).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
-                verify(handler, times(bodyExpectedTimes)).endElement(XHTMLContentHandler.XHTML, "div", "div");
-            }
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
-
-        //repeat, this time looking at content
-        parser = new RFC822Parser();
-        metadata = new Metadata();
-        stream = getStream("test-documents/testRFC822-multipart");
-        handler = new BodyContentHandler();
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
-            //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
-            String bodyText = handler.toString();
-            assertTrue(bodyText.contains("body 1"));
-            assertTrue(bodyText.contains("body 2"));
-            assertFalse(bodyText.contains("R0lGODlhNgE8AMQAA")); //part of encoded gif
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
-    }
-    
-    private static InputStream getStream(String name) {
-        InputStream stream = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(name);
-        assertNotNull("Test file not found " + name, stream);
-        return stream;
     }
 }

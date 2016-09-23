@@ -42,11 +42,16 @@ public class TesseractOCRConfig implements Serializable{
 
 	private static final long serialVersionUID = -4861942486845757891L;
 
+	public enum OUTPUT_TYPE {
+		TXT,
+		HOCR
+	}
+
 	// Path to tesseract installation folder, if not on system path.
 	private  String tesseractPath = "";
 
-    // Path to the 'tessdata' folder, which contains language files and config files.
-    private String tessdataPath = "";
+	// Path to the 'tessdata' folder, which contains language files and config files.
+	private String tessdataPath = "";
 
 	// Language dictionary to be used.
 	private  String language = "eng";
@@ -62,6 +67,30 @@ public class TesseractOCRConfig implements Serializable{
 
 	// Maximum time (seconds) to wait for the ocring process termination
 	private int timeout = 120;
+
+	// The format of the ocr'ed output to be returned, txt or hocr.
+	private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
+
+	// enable image processing (optional)
+	private int enableImageProcessing = 0;
+
+	// Path to ImageMagick program, if not on system path.
+	private String ImageMagickPath = "";
+
+	// resolution of processed image (in dpi).
+	private int density = 300;
+
+	// number of bits in a color sample within a pixel.
+	private int depth = 4;
+
+	// colorspace of processed image.
+	private String colorspace = "gray";
+
+	// filter to be applied to the processed image.
+	private String filter = "triangle";
+
+	// factor by which image is to be scaled.
+	private int resize = 900;
 
 	/**
 	 * Default contructor.
@@ -99,10 +128,11 @@ public class TesseractOCRConfig implements Serializable{
 			}
 		}
 
+		// set parameters for Tesseract
 		setTesseractPath(
 				getProp(props, "tesseractPath", getTesseractPath()));
-        setTessdataPath(
-                getProp(props, "tessdataPath", getTessdataPath()));
+		setTessdataPath(
+				getProp(props, "tessdataPath", getTessdataPath()));
 		setLanguage(
 				getProp(props, "language", getLanguage()));
 		setPageSegMode(
@@ -112,7 +142,29 @@ public class TesseractOCRConfig implements Serializable{
 		setMaxFileSizeToOcr(
 				getProp(props, "maxFileSizeToOcr", getMaxFileSizeToOcr()));
 		setTimeout(
-                getProp(props, "timeout", getTimeout()));
+				getProp(props, "timeout", getTimeout()));
+		String outputTypeString = props.getProperty("outputType");
+		if ("txt".equals(outputTypeString)) {
+			setOutputType(OUTPUT_TYPE.TXT);
+		} else if ("hocr".equals(outputTypeString)) {
+			setOutputType(OUTPUT_TYPE.HOCR);
+		}
+
+		// set parameters for ImageMagick
+		setEnableImageProcessing(
+				getProp(props, "enableImageProcessing", isEnableImageProcessing()));
+		setImageMagickPath(
+				getProp(props, "ImageMagickPath", getImageMagickPath()));
+		setDensity(
+				getProp(props, "density", getDensity()));
+		setDepth(
+				getProp(props, "depth", getDepth()));
+		setColorspace(
+				getProp(props, "colorspace", getColorspace()));
+		setFilter(
+				getProp(props, "filter", getFilter()));
+		setResize(
+				getProp(props, "resize", getResize()));
 
 	}
 
@@ -123,10 +175,10 @@ public class TesseractOCRConfig implements Serializable{
 
 	/**
 	 * Set the path to the Tesseract executable, needed if it is not on system path.
-     * <p>
-     * Note that if you set this value, it is highly recommended that you also
-     * set the path to the 'tessdata' folder using {@link #setTessdataPath}.
-     * </p>
+	 * <p>
+	 * Note that if you set this value, it is highly recommended that you also
+	 * set the path to the 'tessdata' folder using {@link #setTessdataPath}.
+	 * </p>
 	 */
 	public void setTesseractPath(String tesseractPath) {
 		if(!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator))
@@ -135,22 +187,22 @@ public class TesseractOCRConfig implements Serializable{
 		this.tesseractPath = tesseractPath;
 	}
 
-    /** @see #setTessdataPath(String tessdataPath) */
-    public String getTessdataPath() {
-        return tessdataPath;
-    }
+	/** @see #setTessdataPath(String tessdataPath) */
+	public String getTessdataPath() {
+		return tessdataPath;
+	}
 
-    /**
-     * Set the path to the 'tessdata' folder, which contains language files and config files. In some cases (such
-     * as on Windows), this folder is found in the Tesseract installation, but in other cases
-     * (such as when Tesseract is built from source), it may be located elsewhere.
-     */
-    public void setTessdataPath(String tessdataPath) {
-        if(!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
-            tessdataPath += File.separator;
+	/**
+	 * Set the path to the 'tessdata' folder, which contains language files and config files. In some cases (such
+	 * as on Windows), this folder is found in the Tesseract installation, but in other cases
+	 * (such as when Tesseract is built from source), it may be located elsewhere.
+	 */
+	public void setTessdataPath(String tessdataPath) {
+		if(!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
+			tessdataPath += File.separator;
 
-        this.tessdataPath = tessdataPath;
-    }
+		this.tessdataPath = tessdataPath;
+	}
 
 	/** @see #setLanguage(String language)*/
 	public String getLanguage() {
@@ -218,9 +270,163 @@ public class TesseractOCRConfig implements Serializable{
 		this.timeout = timeout;
 	}
 
-	/** @see #setTimeout(int timeout)*/
+	/** @see #setTimeout(int timeout)
+	 * @return timeout value for Tesseract */
 	public int getTimeout() {
 		return timeout;
+	}
+
+	/**
+	 * Set output type from ocr process.  Default is "txt", but can be "hocr".
+	 * Default value is 120s.
+	 */
+	public void setOutputType(OUTPUT_TYPE outputType) {
+		this.outputType = outputType;
+	}
+
+	/** @see #setOutputType(OUTPUT_TYPE outputType) */
+	public OUTPUT_TYPE getOutputType() {
+		return outputType;
+	}
+
+	/** @see #setEnableImageProcessing(int)
+	 * @return image processing is enabled or not */
+	public int isEnableImageProcessing() {
+		return enableImageProcessing;
+	}
+
+	/**
+	 * Set the value to true if processing is to be enabled.
+	 * Default value is false.
+	 */
+	public void setEnableImageProcessing(int enableImageProcessing) {
+		this.enableImageProcessing = enableImageProcessing;
+	}
+
+	/**
+	 * @return the density
+	 */
+	public int getDensity() {
+		return density;
+	}
+
+	/**
+	 * @param density the density to set. Valid range of values is 150-1200.
+	 * Default value is 300.
+	 */
+	public void setDensity(int density) {
+		if(density < 150 || density > 1200) {
+			throw new IllegalArgumentException("Invalid density value. Valid range of values is 150-1200.");
+		}
+		this.density = density;
+	}
+
+	/**
+	 * @return the depth
+	 */
+	public int getDepth() {
+		return depth;
+	}
+
+	/**
+	 * @param depth the depth to set. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.
+	 * Default value is 4.
+	 */
+	public void setDepth(int depth) {
+		int[] allowedValues = {2, 4, 8, 16, 32, 64, 256, 4096};
+		for (int i = 0; i < allowedValues.length; i++) {
+			if(depth == allowedValues[i]) {
+				this.depth = depth;
+				return;
+			}
+		}
+		throw new IllegalArgumentException("Invalid depth value. Valid values are 2, 4, 8, 16, 32, 64, 256, 4096.");
+	}
+
+	/**
+	 * @return the colorspace
+	 */
+	public String getColorspace() {
+		return colorspace;
+	}
+
+	/**
+	 * @param colorspace the colorspace to set
+	 * Deafult value is gray.
+	 */
+	public void setColorspace(String colorspace) {
+		if(!colorspace.equals(null)) {
+			this.colorspace = colorspace;
+		} else {
+			throw new IllegalArgumentException("Colorspace value cannot be null.");
+		}
+	}
+
+	/**
+	 * @return the filter
+	 */
+	public String getFilter() {
+		return filter;
+	}
+
+	/**
+	 * @param filter the filter to set. Valid values are point, hermite, cubic, box, gaussian, catrom, triangle, quadratic and mitchell.
+	 * Default value is triangle.
+	 */
+	public void setFilter(String filter) {
+		if(filter.equals(null)) {
+			throw new IllegalArgumentException("Filter value cannot be null. Valid values are point, hermite, "
+					+ "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+		}
+
+		String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic", "Mitchell"};
+		for (int i = 0; i < allowedFilters.length; i++) {
+			if(filter.equalsIgnoreCase(allowedFilters[i])) {
+				this.filter = filter;
+				return;
+			}
+		}
+		throw new IllegalArgumentException("Invalid filter value. Valid values are point, hermite, "
+				+ "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+	}
+
+	/**
+	 * @return the resize
+	 */
+	public int getResize() {
+		return resize;
+	}
+
+	/**
+	 * @param resize the resize to set. Valid range of values is 100-900.
+	 * Default value is 900.
+	 */
+	public void setResize(int resize) {
+		for(int i=1;i<10;i++) {
+			if(resize == i*100) {
+				this.resize = resize;
+				return;
+			}
+		}
+		throw new IllegalArgumentException("Invalid resize value. Valid range of values is 100-900.");
+	}
+
+	/** @see #setImageMagickPath(String ImageMagickPath)
+	 * @return path to ImageMagick file. */
+	public String getImageMagickPath() {
+
+		return ImageMagickPath;
+	}
+
+	/**
+	 * Set the path to the ImageMagick executable, needed if it is not on system path.
+	 * @param ImageMagickPath to ImageMagick file.
+	 */
+	public void setImageMagickPath(String ImageMagickPath) {
+		if(!ImageMagickPath.isEmpty() && !ImageMagickPath.endsWith(File.separator))
+			ImageMagickPath += File.separator;
+
+		this.ImageMagickPath = ImageMagickPath;
 	}
 
 	/**
