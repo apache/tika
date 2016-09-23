@@ -86,8 +86,8 @@ public class TikaServerCli {
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("enable-unsecure-features", false, "this is required to enable fileUrl.");
-        options.addOption("enable-fileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
+        options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
+        options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
 
         return options;
     }
@@ -175,15 +175,15 @@ public class TikaServerCli {
                         CommonsDigester.parse(line.getOptionValue("digest")));
             }
 
-            if (line.hasOption("enable-fileUrl") &&
-                    !line.hasOption("enable-unsecure-features")) {
+            if (line.hasOption("enableFileUrl") &&
+                    !line.hasOption("enableUnsecureFeatures")) {
                 System.err.println("If you want to enable fileUrl, you must also acknowledge the security risks\n"+
-                "by including --enable-unsecure-features.  See CVE-2015-3271.");
+                "by including --enableUnsecureFeatures.  See CVE-2015-3271.");
                 System.exit(-1);
             }
             InputStreamFactory inputStreamFactory = null;
-            if (line.hasOption("enable-fileUrl") &&
-                    line.hasOption("enable-unsecure-features")) {
+            if (line.hasOption("enableFileUrl") &&
+                    line.hasOption("enableUnsecureFeatures")) {
                 inputStreamFactory = new URLEnabledInputStreamFactory();
                 System.out.println(FILE_URL_WARNING);
             } else {
