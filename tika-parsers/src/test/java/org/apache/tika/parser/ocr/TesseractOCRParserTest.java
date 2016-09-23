@@ -21,10 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.List;
 
 import org.apache.tika.TikaTest;
@@ -129,15 +126,23 @@ public class TesseractOCRParserTest extends TikaTest {
     
     @Test
     public void testOCROutputsHOCR() throws Exception {
+        assumeTrue(canRun());
+
         String resource = "/test-documents/testOCR.pdf";
+
         String[] nonOCRContains = new String[0];
-        String contents = runOCR(resource, nonOCRContains, 2, "hocr");        
-        assertTrue(contents.contains("<meta name='ocr-system' content='tesseract"));
+        String contents = runOCR(resource, nonOCRContains, 2,
+                BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+
+        assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
+        assertContains("Happy</span>", contents);
 
     }
 
     private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
-    	String contents = runOCR(resource, nonOCRContains, numMetadatas, "txt");
+    	String contents = runOCR(resource, nonOCRContains, numMetadatas,
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
         	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
         		assertTrue(contents.toString().contains("Apache"));
@@ -147,13 +152,15 @@ public class TesseractOCRParserTest extends TikaTest {
         }
     }
     
-    private String runOCR(String resource, String[] nonOCRContains, int numMetadatas, String outputType) throws Exception {
+    private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
+                          BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+                          TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setOutputType(outputType);
         
         Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),
                 new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+                        handlerType, -1));
 
         PDFParserConfig pdfConfig = new PDFParserConfig();
         pdfConfig.setExtractInlineImages(true);

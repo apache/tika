@@ -1,5 +1,8 @@
 Release 1.14 - ???
 
+  * Add Tesseract's hOCR output format as an option, via Eric Pugh
+    (TIKA-2093)
+
   * Extract macros from MSOffice files (TIKA-2069).
 
   * Maintain passed-in mime in TXTParser (TIKA-2047).
