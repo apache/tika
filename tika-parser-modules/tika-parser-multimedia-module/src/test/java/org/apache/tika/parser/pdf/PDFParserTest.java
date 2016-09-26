@@ -42,6 +42,7 @@ import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
@@ -1193,6 +1194,14 @@ public class PDFParserTest extends TikaTest {
             assertEquals(4, getRecursiveMetadata("testPDFEmbeddingAndEmbedded.docx", context).size());
         }
 
+    }
+
+    @Test
+    public void testDiffTitles() throws Exception {
+        //different titles in xmp vs docinfo
+        Metadata m = getXML("testPDF_diffTitles.pdf").metadata;
+        assertEquals("this is a new title", m.get(PDF.DOC_INFO_TITLE));
+        assertEquals("Sample Title", m.get(TikaCoreProperties.TITLE));
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
