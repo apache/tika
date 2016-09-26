@@ -44,7 +44,7 @@ Release 1.14 - ???
   * Improving accuracy of Tesseract for better extraction of numeric 
     and alphanumeric text from images (TIKA-2021, TIKA-2031).
 
-  * Improve extraction of embedded documents from PPT, PPT and XLSX
+  * Improve extraction of embedded documents from PPT, PPTX and XLSX
     (TIKA-2026).
 
   * Add parser for applefile (AppleSingle) (TIKA-2022).
