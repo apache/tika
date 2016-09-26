@@ -235,6 +235,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     void handleCatchableIOE(IOException e) throws IOException {
         if (config.isCatchIntermediateIOExceptions()) {
+            if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
+                    e.getCause().getMessage().contains("Your document contained more than")) {
+                //TODO -- is there a cleaner way of checking for:
+                // WriteOutContentHandler.WriteLimitReachedException?
+                throw e;
+            }
+
             String msg = e.getMessage();
             if (msg == null) {
                 msg = "IOException, no message";
