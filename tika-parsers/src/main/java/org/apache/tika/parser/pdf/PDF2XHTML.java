@@ -122,17 +122,16 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 }
             });
 
+            if (pdf2XHTML.exceptions.size() > 0) {
+                //throw the first
+                throw pdf2XHTML.exceptions.get(0);
+            }
         } catch (IOException e) {
             if (e.getCause() instanceof SAXException) {
                 throw (SAXException) e.getCause();
             } else {
                 throw new TikaException("Unable to extract PDF content", e);
             }
-        }
-        if (pdf2XHTML.exceptions.size() > 0) {
-            //throw the first
-            throw new TikaException("Unable to extract all PDF content",
-                    pdf2XHTML.exceptions.get(0));
         }
     }
 
