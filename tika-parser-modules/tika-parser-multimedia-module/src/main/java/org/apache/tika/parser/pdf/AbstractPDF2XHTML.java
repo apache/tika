@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
+
+import javax.xml.stream.XMLStreamException;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -33,9 +36,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
-
-import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -79,7 +79,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
 
@@ -236,6 +235,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     void handleCatchableIOE(IOException e) throws IOException {
         if (config.isCatchIntermediateIOExceptions()) {
+            if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
+                    e.getCause().getMessage().contains("Your document contained more than")) {
+                //TODO -- is there a cleaner way of checking for:
+                // WriteOutContentHandler.WriteLimitReachedException?
+                throw e;
+            }
             String msg = e.getMessage();
             if (msg == null) {
                 msg = "IOException, no message";
