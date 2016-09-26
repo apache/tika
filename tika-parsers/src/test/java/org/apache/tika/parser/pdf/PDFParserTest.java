@@ -45,10 +45,16 @@ import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.*;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -1245,6 +1251,14 @@ public class PDFParserTest extends TikaTest {
         assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY, ((PDFParser)pdfParser).getPDFParserConfig().getOcrStrategy());
         assertEquals(ImageType.RGB, ((PDFParser)pdfParser).getPDFParserConfig().getOcrImageType());
 
+    }
+
+    @Test
+    public void testDiffTitles() throws Exception {
+        //different titles in xmp vs docinfo
+        Metadata m = getXML("testPDF_diffTitles.pdf").metadata;
+        assertEquals("this is a new title", m.get(PDF.DOC_INFO_TITLE));
+        assertEquals("Sample Title", m.get(TikaCoreProperties.TITLE));
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {

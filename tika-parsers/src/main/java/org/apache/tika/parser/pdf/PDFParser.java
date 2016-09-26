@@ -21,7 +21,12 @@ import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
@@ -42,10 +47,10 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -125,9 +130,9 @@ public class PDFParser extends AbstractParser {
             } else {
                 pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), password);
             }
-            metadata.set("pdf:encrypted", Boolean.toString(pdfDocument.isEncrypted()));
+            metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(pdfDocument.isEncrypted()));
 
-            metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
+            metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
             extractMetadata(pdfDocument, metadata, context);
 
             AccessChecker checker = localConfig.getAccessChecker();
@@ -146,7 +151,7 @@ public class PDFParser extends AbstractParser {
                 }
             }
         } catch (InvalidPasswordException e) {
-            metadata.set("pdf:encrypted", "true");
+            metadata.set(PDF.IS_ENCRYPTED, "true");
             throw new EncryptedDocumentException(e);
         } finally {
             if (pdfDocument != null) {
@@ -220,22 +225,32 @@ public class PDFParser extends AbstractParser {
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
+        addMetadata(metadata, PDF.DOC_INFO_TITLE, info.getTitle());
         extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, info.getAuthor(), dcSchema);
+        addMetadata(metadata, PDF.DOC_INFO_CREATOR, info.getAuthor());
         extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, null, dcSchema);
         addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
+        addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
         addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
+        addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
+        addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
         extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
+
+        addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
 
         // TODO: Move to description in Tika 2.0
         addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
+        addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
             // TODO Remove these in Tika 2.0
         addMetadata(metadata, "created", info.getCreationDate());
+        addMetadata(metadata, PDF.DOC_INFO_CREATED, info.getCreationDate());
         addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
         Calendar modified = info.getModificationDate();
         addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
         addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
+        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, info.getModificationDate());
 
         // All remaining metadata is custom
         // Copy this over as-is
@@ -245,6 +260,8 @@ public class PDFParser extends AbstractParser {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
                 addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
+                addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
+                        info.getCOSObject().getDictionaryObject(key));
             }
         }
 
@@ -252,8 +269,8 @@ public class PDFParser extends AbstractParser {
         //Caveats:
         //    there is currently a fair amount of redundancy
         //    TikaCoreProperties.FORMAT can be multivalued
-        //    There are also three potential pdf specific version keys: pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion        
-        metadata.set("pdf:PDFVersion", Float.toString(document.getDocument().getVersion()));
+        //    There are also three potential pdf specific version keys: pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
         metadata.add(TikaCoreProperties.FORMAT.getName(),
                 MEDIA_TYPE.toString() + "; version=" +
                         Float.toString(document.getDocument().getVersion()));
@@ -264,12 +281,12 @@ public class PDFParser extends AbstractParser {
                 XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
                 if (pdfaxmp != null) {
                     if (pdfaxmp.getPart() != null) {
-                        metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
+                        metadata.set(PDF.PDFAID_PART, Integer.toString(pdfaxmp.getPart()));
                     }
                     if (pdfaxmp.getConformance() != null) {
-                        metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
+                        metadata.set(PDF.PDFAID_CONFORMANCE, pdfaxmp.getConformance());
                         String version = "A-" + pdfaxmp.getPart() + pdfaxmp.getConformance().toLowerCase(Locale.ROOT);
-                        metadata.set("pdfa:PDFVersion", version);
+                        metadata.set(PDF.PDFA_VERSION, version);
                         metadata.add(TikaCoreProperties.FORMAT.getName(),
                                 MEDIA_TYPE.toString() + "; version=\"" + version + "\"");
                     }
@@ -293,7 +310,7 @@ public class PDFParser extends AbstractParser {
                         int el = adobeExt.getInt(COSName.getPDFName("ExtensionLevel"));
                         //-1 is sentinel value that something went wrong in getInt
                         if (el != -1) {
-                            metadata.set("pdf:PDFExtensionVersion", baseVersion + " Adobe Extension Level " + el);
+                            metadata.set(PDF.PDF_EXTENSION_VERSION, baseVersion + " Adobe Extension Level " + el);
                             metadata.add(TikaCoreProperties.FORMAT.getName(),
                                     MEDIA_TYPE.toString() + "; version=\"" + baseVersion + " Adobe Extension Level " + el + "\"");
                         }
