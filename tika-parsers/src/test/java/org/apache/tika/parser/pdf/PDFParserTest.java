@@ -34,6 +34,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.rendering.ImageType;
+import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
@@ -1259,6 +1260,14 @@ public class PDFParserTest extends TikaTest {
         Metadata m = getXML("testPDF_diffTitles.pdf").metadata;
         assertEquals("this is a new title", m.get(PDF.DOC_INFO_TITLE));
         assertEquals("Sample Title", m.get(TikaCoreProperties.TITLE));
+    }
+
+    @Test
+    public void testMaxLength() throws Exception {
+        InputStream is = getResourceAsStream("/test-documents/testPDF.pdf");
+        String content = new Tika().parseToString(is, new Metadata(), 100);
+
+        assertTrue(content.length() <= 100);
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
