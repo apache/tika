@@ -103,7 +103,9 @@ public class MboxParser extends AbstractParser {
                     mailMetadata.add(EMAIL_FROMLINE_METADATA, curLine.substring(MBOX_RECORD_DIVIDER.length()));
                     mailMetadata.set(Metadata.CONTENT_TYPE, "message/rfc822");
                     curLine = reader.readLine();
-
+                    if (curLine == null) {
+                        break;
+                    }
                     ByteArrayOutputStream message = new ByteArrayOutputStream(100000);
                     do {
                         if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
