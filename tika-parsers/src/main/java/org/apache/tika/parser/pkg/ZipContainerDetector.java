@@ -111,22 +111,11 @@ public class ZipContainerDetector implements Detector {
     }
 
     private static MediaType detectArchiveFormat(byte[] prefix, int length) {
-        try {
-            ArchiveStreamFactory factory = new ArchiveStreamFactory();
-            ArchiveInputStream ais = factory.createArchiveInputStream(
-                    new ByteArrayInputStream(prefix, 0, length));
-            try {
-                if ((ais instanceof TarArchiveInputStream)
-                        && !TarArchiveInputStream.matches(prefix, length)) {
-                    // ArchiveStreamFactory is too relaxed, see COMPRESS-117
-                    return MediaType.OCTET_STREAM;
-                } else {
-                    return PackageParser.getMediaType(ais);
-                }
-            } finally {
-                IOUtils.closeQuietly(ais);
-            }
-        } catch (ArchiveException e) {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try (ArchiveInputStream ais = factory.createArchiveInputStream(
+                new ByteArrayInputStream(prefix, 0, length))) {
+            return PackageParser.getMediaType(ais);
+        } catch (ArchiveException | IOException e) {
             return MediaType.OCTET_STREAM;
         }
     }
