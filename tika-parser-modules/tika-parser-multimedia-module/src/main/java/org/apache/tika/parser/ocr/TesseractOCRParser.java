@@ -357,7 +357,8 @@ public class TesseractOCRParser extends AbstractParser {
                 doOCR(tmpFile, tmpImgFile, config);
 
                 // Tesseract appends the output type (.txt or .hocr) to output file name
-                tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + "." + config.getOutputType());
+                tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + "." +
+                        config.getOutputType().toString().toLowerCase(Locale.US));
 
                 if (tmpTxtOutput.exists()) {
                     try (InputStream is = new FileInputStream(tmpTxtOutput)) {
