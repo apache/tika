@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -90,7 +89,7 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
             }
         } catch (IOException e) {
             logger.warn("FSFileAdder couldn't read "+directory.toAbsolutePath() +
-            ": "+e.getMessage());
+            ": "+e.getMessage(), e);
         }
         if (files.size() == 0) {
             logger.info("Empty directory: " + directory.toAbsolutePath());

@@ -17,6 +17,8 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -31,8 +33,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.xml.sax.ContentHandler;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Basic FileResourceConsumer that reads files from an input
@@ -94,7 +94,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
             logger.error(getXMLifiedLogMsg("output_encoding_ex",
                     fileResource.getResourceId(), e));
             flushAndClose(os);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e);
         }
 
         //now actually call parse!

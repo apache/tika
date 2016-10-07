@@ -117,7 +117,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 gobblerThread = new Thread(gobbler);
                 gobblerThread.start();
             } catch (IOException e) {
-                logger.error(e.getMessage());
+                logger.error(e.getMessage(), e);
                 return FileVisitResult.CONTINUE;
             }
 

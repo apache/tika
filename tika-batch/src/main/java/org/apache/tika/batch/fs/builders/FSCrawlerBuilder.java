@@ -90,7 +90,7 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("fileList encoding not supported: "+encodingString);
             } catch (IOException e) {
-                throw new RuntimeException("IOException while trying to open fileList: " + e.getMessage());
+                throw new RuntimeException("IOException while trying to open fileList: " + e.getMessage(), e);
             }
         } else {
             FSDirectoryCrawler.CRAWL_ORDER crawlOrder = getCrawlOrder(attributes.get(CRAWL_ORDER));
