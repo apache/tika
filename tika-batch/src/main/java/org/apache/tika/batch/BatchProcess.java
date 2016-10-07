@@ -17,6 +17,8 @@ package org.apache.tika.batch;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Date;
@@ -33,8 +35,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is the main processor class for a single process.
@@ -232,7 +232,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                 } else {
                     causeForTermination = CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION;
                 }
-                logger.error("Main loop execution exception: " + e.getMessage());
+                logger.error("Main loop execution exception", e);
                 break;
             }
         }
@@ -307,9 +307,9 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                     added += crawlerResult.getAdded();
                 } //else ...we don't care about anything else stopping at this point
             } catch (ExecutionException e) {
-                logger.error("Execution exception trying to shutdown after shutdownNow:" + e.getMessage());
+                logger.error("Execution exception trying to shutdown after shutdownNow", e);
             } catch (InterruptedException e) {
-                logger.error("Interrupted exception trying to shutdown after shutdownNow:" + e.getMessage());
+                logger.error("Interrupted exception trying to shutdown after shutdownNow", e);
             }
         }
         //do we need to restart?

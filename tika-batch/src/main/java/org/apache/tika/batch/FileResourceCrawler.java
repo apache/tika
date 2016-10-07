@@ -80,9 +80,9 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
             start();
         } catch (InterruptedException e) {
             //this can be triggered by shutdownNow in BatchProcess
-            logger.info("InterruptedException in FileCrawler: " + e.getMessage());
+            logger.info("InterruptedException in FileCrawler: " + e.getMessage(), e);
         } catch (Exception e) {
-            logger.error("Exception in FileResourceCrawler: " + e.getMessage());
+            logger.error("Exception in FileResourceCrawler: " + e.getMessage(), e);
         } finally {
             isActive = false;
         }

@@ -30,4 +30,7 @@ public class BatchNoRestartError extends Error {
     public BatchNoRestartError(String message) {
         super(message);
     }
+    public BatchNoRestartError(String message, Throwable t) {
+        super(message, t);
+    }
 }

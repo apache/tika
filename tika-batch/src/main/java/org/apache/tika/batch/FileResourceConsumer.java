@@ -353,7 +353,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             try {
                 closeable.close();
             } catch (IOException e){
-                logger.warn(e.getMessage());
+                logger.warn(e.getMessage(), e);
             }
         }
         closeable = null;
@@ -367,7 +367,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             try {
                 ((Flushable)closeable).flush();
             } catch (IOException e) {
-                logger.warn(e.getMessage());
+                logger.warn(e.getMessage(), e);
             }
         }
         close(closeable);

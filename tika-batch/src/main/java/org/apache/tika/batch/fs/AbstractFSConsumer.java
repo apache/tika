@@ -53,7 +53,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
             logger.error("{}", getXMLifiedLogMsg(IO_OS,
                     fileResource.getResourceId(), e));
             throw new BatchNoRestartError("IOException trying to open output stream for " +
-                    fileResource.getResourceId() + " :: " + e.getMessage());
+                    fileResource.getResourceId() + " :: " + e.getMessage(), e);
         }
         return os;
     }
