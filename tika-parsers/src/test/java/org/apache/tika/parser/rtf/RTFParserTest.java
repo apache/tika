@@ -458,7 +458,6 @@ public class RTFParserTest extends TikaTest {
         ParseContext ctx = new ParseContext();
         RecursiveParserWrapper parser = new RecursiveParserWrapper(base,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
-        ctx.set(org.apache.tika.parser.Parser.class, parser);
         ContentHandler handler = new BodyContentHandler();
         Metadata rootMetadata = new Metadata();
         rootMetadata.add(Metadata.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
@@ -479,8 +478,8 @@ public class RTFParserTest extends TikaTest {
         assertEquals("false", meta_jpg.get(RTFMetadata.THUMBNAIL));
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
-        assertEquals(46, meta_jpg.names().length);
-        assertEquals(110, meta_jpg_exif.names().length);
+        assertEquals(48, meta_jpg.names().length);
+        assertEquals(112, meta_jpg_exif.names().length);
     }
 
     @Test

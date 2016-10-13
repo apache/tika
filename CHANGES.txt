@@ -1,5 +1,7 @@
 Release 1.14 - ???
 
+  * Upgrade metadata extractor to 2.9.1 (TIKA-2113).
+
   * Extract PDF DocInfo metadata into separate keys to prevent
     overwriting by XMP metadata (TIKA-2057).
 
