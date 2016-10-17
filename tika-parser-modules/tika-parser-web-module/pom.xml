@@ -22,10 +22,7 @@
   <artifactId>tika-parser-web-module</artifactId>
   <name>Apache Tika parser web module</name>
   <url>http://tika.apache.org/</url>
-  
-  <properties>
-    <mime4j.version>0.7.2</mime4j.version>
-  </properties>
+
   
   <dependencies>
     <dependency>

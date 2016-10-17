@@ -26,6 +26,7 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -71,6 +72,12 @@ public class OutlookParserTest extends TikaTest {
                 "L'\u00C9quipe Microsoft Outlook Express",
                 metadata.get(Metadata.AUTHOR));
 
+        //ensure that "raw" header is correctly decoded
+        assertEquals(
+                "L'\u00C9quipe Microsoft Outlook Express <msoe@microsoft.com>",
+                metadata.get(Metadata.MESSAGE_RAW_HEADER_PREFIX+"From"));
+
+
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals(
                 "2007-04-05T16:26:06Z",
@@ -108,6 +115,14 @@ public class OutlookParserTest extends TikaTest {
         Matcher matcher = pattern.matcher(content);
         assertTrue(matcher.find());
         assertFalse(matcher.find());
+
+        //test that last header is added
+        assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
+                Arrays.asList(metadata.getValues("Message:Raw-Header:X-OriginalArrivalTime")));
+        //confirm next line is added correctly
+        assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
+                "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 -0800",
+                Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
     }
 
     /**

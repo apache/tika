@@ -69,9 +69,10 @@
               poi;inline=true,
               poi-scratchpad;inline=true,
               poi-ooxml;inline=true,
-              poi-ooxml-schemas;inline=true;
+              poi-ooxml-schemas;inline=true,
               jackcess;inline=true,
               jackcess-encrypt;inline=true,
+              apache-mime4j-core;inline=true,
               java-libpst;inline=true,
               curvesapi;inline=true,
               xmlbeans;inline=true,

@@ -17,6 +17,8 @@ Release 2.0 - ???
 
 Release 1.14 - ???
 
+  * Extract all headers from MSG/RFC822 (TIKA-2122).
+
   * Upgrade metadata extractor to 2.9.1 (TIKA-2113).
 
   * Extract PDF DocInfo metadata into separate keys to prevent

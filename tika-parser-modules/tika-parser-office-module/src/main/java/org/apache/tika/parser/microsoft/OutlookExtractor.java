@@ -26,13 +26,17 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.james.mime4j.codec.DecodeMonitor;
+import org.apache.james.mime4j.codec.DecoderUtil;
 import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
@@ -68,6 +72,18 @@ import org.xml.sax.SAXException;
  * Outlook Message Parser.
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
+
+
+    private static Pattern HEADER_KEY_PAT =
+            Pattern.compile("\\A([\\x21-\\x39\\x3B-\\x7E]+):(.*?)\\Z");
+    //this according to the spec; in practice, it is probably more likely
+    //that a "split field" fails to start with a space character than
+    //that a real header contains anything but [-_A-Za-z0-9].
+    //e.g.
+    //header: this header goes onto the next line
+    //<mailto:xyz@cnn.com...
+
+
     private static final Metadata EMPTY_METADATA = new Metadata();
     private final SimpleDateFormat dateFormat;
     private final EncodingDetector htmlEncodingDetectorProxy;
@@ -124,8 +140,19 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 }
             } catch (ChunkNotFoundException he) {
             } // Will be fixed in POI 3.7 Final
+            try {
+                Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
+                for (Map.Entry<String, String[]> e : headers.entrySet()) {
+                    String headerKey = e.getKey();
+                    for (String headerValue : e.getValue()) {
+                        metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX+headerKey, headerValue);
+                    }
+                }
+            } catch (ChunkNotFoundException e) {
 
-            // Date - try two ways to find it
+            }
+
+                    // Date - try two ways to find it
             // First try via the proper chunk
             if (msg.getMessageDate() != null) {
                 metadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
@@ -268,6 +295,62 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             //child is read, the fs is closed, and the other children
             //get a java.nio.channels.ClosedChannelException
         }
+    }
+
+    //As of 3.15, POI currently returns header[] by splitting on /\r?\n/
+    //this rebuilds headers that are broken up over several lines
+    //this also decodes encoded headers.
+    private Map<String, String[]> normalizeHeaders(String[] rows) {
+        Map<String, String[]> ret = new LinkedHashMap<>();
+        if (rows == null) {
+            return ret;
+        }
+        StringBuilder sb = new StringBuilder();
+        Map<String, List<String>> headers = new LinkedHashMap();
+        Matcher headerKeyMatcher = HEADER_KEY_PAT.matcher("");
+        String lastKey = null;
+        int consec = 0;
+        for (String row : rows) {
+            headerKeyMatcher.reset(row);
+            if (headerKeyMatcher.find()) {
+                if (lastKey != null) {
+                    List<String> vals = headers.get(lastKey);
+                    vals = (vals == null) ? new ArrayList<String>() : vals;
+                    vals.add(decodeHeader(sb.toString()));
+                    headers.put(lastKey, vals);
+                }
+                //reset sb
+                sb.setLength(0);
+                lastKey = headerKeyMatcher.group(1).trim();
+                sb.append(headerKeyMatcher.group(2).trim());
+                consec = 0;
+            } else {
+                if (consec > 0) {
+                    sb.append("\n");
+                }
+                sb.append(row);
+            }
+            consec++;
+        }
+
+        //make sure to add the last value
+        if (sb.length() > 0 && lastKey != null) {
+            List<String> vals = headers.get(lastKey);
+            vals = (vals == null) ? new ArrayList<String>() : vals;
+            vals.add(decodeHeader(sb.toString()));
+            headers.put(lastKey, vals);
+        }
+
+        //convert to array
+        for (Map.Entry<String, List<String>> e : headers.entrySet()) {
+            ret.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
+        }
+        return ret;
+
+    }
+
+    private String decodeHeader(String header) {
+        return DecoderUtil.decodeEncodedWords(header, DecodeMonitor.SILENT);
     }
 
     private void header(XHTMLContentHandler xhtml, String key, String value)
