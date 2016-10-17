@@ -16,10 +16,16 @@
  */
 package org.apache.tika.metadata;
 
+import org.apache.tika.Tika;
+
 /**
  * A collection of Message related property names.
  */
 public interface Message {
+    String MESSAGE_PREFIX = "Message"+ Metadata.NAMESPACE_PREFIX_DELIMITER;
+
+    String MESSAGE_RAW_HEADER_PREFIX = MESSAGE_PREFIX+"Raw-Header"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+
     String MESSAGE_RECIPIENT_ADDRESS = "Message-Recipient-Address";
     
     String MESSAGE_FROM = "Message-From";

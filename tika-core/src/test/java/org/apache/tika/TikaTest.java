@@ -296,4 +296,12 @@ public abstract class TikaTest {
             i++;
         }
     }
+
+    public static void debug(Metadata metadata) {
+        for (String n : metadata.names()) {
+            for (String v : metadata.getValues(n)) {
+                System.out.println(n + " : "+v);
+            }
+        }
+    }
 }

@@ -51,6 +51,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -238,6 +239,7 @@ class MailContentHandler implements ContentHandler {
 
         try {
             String fieldname = field.getName();
+
             ParsedField parsedField = LenientFieldParser.getParser().parse(
                     field, DecodeMonitor.SILENT);
             if (fieldname.equalsIgnoreCase("From")) {
@@ -276,6 +278,9 @@ class MailContentHandler implements ContentHandler {
                     date = tryOtherDateFormats(field.getBody());
                 }
                 metadata.set(TikaCoreProperties.CREATED, date);
+            } else {
+                metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX+parsedField.getName(),
+                        field.getBody());
             }
         } catch (RuntimeException me) {
             if (strictParsing) {
