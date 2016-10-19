@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.14-SNAPSHOT</version>
+    <version>1.14</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -158,7 +158,7 @@
     <url>http://svn.apache.org/viewvc/tika/trunk/tika-langdetect</url>
     <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-langdetect</connection>
     <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-langdetect</developerConnection>
-    <tag>HEAD</tag>
+    <tag>1.14-rc1</tag>
   </scm>
   <issueManagement>
     <system>JIRA</system>
