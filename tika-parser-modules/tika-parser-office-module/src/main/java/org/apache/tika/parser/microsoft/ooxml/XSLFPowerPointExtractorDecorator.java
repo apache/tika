@@ -90,7 +90,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
                 // master sheet for this notes
                 XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
-                extractContent(notesMaster.getShapes(), true, xhtml, null);
+                if (notesMaster != null) {
+                    extractContent(notesMaster.getShapes(), true, xhtml, null);
+                }
                 xhtml.endElement("div");
             }
 
