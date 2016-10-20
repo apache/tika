@@ -145,6 +145,11 @@ public class ListManager extends AbstractListManager {
             if (offset == 0) {
                 break;
             }
+            if (offset-1 < last || offset > numberText.length()) {
+                //something went wrong.
+                //silently stop
+                break;
+            }
             sb.append(numberText.substring(last, offset - 1));
             //need to add one because newer format
             //adds one.  In .doc, this was the array index;
