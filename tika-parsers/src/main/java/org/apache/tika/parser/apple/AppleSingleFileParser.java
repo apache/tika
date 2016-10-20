@@ -95,7 +95,6 @@ public class AppleSingleFileParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         if (contentFieldInfo != null) {
-            System.out.println(contentFieldInfo.offset + " "+bytesRead);
             long diff = contentFieldInfo.offset-bytesRead;
             IOUtils.skipFully(stream, diff);
             if (ex.shouldParseEmbedded(embeddedMetadata)) {
