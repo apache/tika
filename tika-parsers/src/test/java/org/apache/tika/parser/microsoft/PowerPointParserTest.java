@@ -266,6 +266,11 @@ public class PowerPointParserTest extends TikaTest {
     }
 
 
-
-
+    @Test
+    public void testSkippingBadCompressedObj() throws Exception {
+        //test file is from govdocs1: 258642.ppt
+        //TIKA-2130
+        XMLResult r = getXML("testPPT_skipBadCompressedObject.ppt");
+        assertContains("NASA Human", r.xml);
+    }
 }

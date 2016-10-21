@@ -40,6 +40,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.TaggedIOException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -393,6 +394,14 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             handleEmbeddedResource(
                                     stream, objID, objID,
                                     mediaType, xhtml, false);
+                        }
+                    } catch (TaggedIOException e) {
+                        if ("incorrect data check".equals(e.getMessage())) {
+                            //TIKA-2130
+                            //some embedded objects can't be uncompressed correctly
+                            //swallow
+                        } else {
+                            throw e;
                         }
                     }
                 }
