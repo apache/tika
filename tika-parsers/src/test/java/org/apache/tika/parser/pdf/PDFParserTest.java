@@ -23,7 +23,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1268,6 +1270,20 @@ public class PDFParserTest extends TikaTest {
         String content = new Tika().parseToString(is, new Metadata(), 100);
 
         assertTrue(content.length() <= 100);
+    }
+
+    @Test
+    public void batch() throws Exception {
+        for (File f : Paths.get(getClass().getResource("/test-documents").toURI()).toFile().listFiles()) {
+            if (f.getName().endsWith(".pdf")) {
+                System.out.println("FILE NAME: " + f.getName());
+                try {
+                    getXML(f.getName());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {

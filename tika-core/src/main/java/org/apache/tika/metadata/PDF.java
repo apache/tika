@@ -64,4 +64,10 @@ public interface PDF {
     Property PDFAID_PART = Property.internalText(PDFAID_PREFIX+"part");
 
     Property IS_ENCRYPTED = Property.internalBoolean(PDF_PREFIX+"encrypted");
+
+    /**
+     * This specifies where an action or destination would be found/triggered
+     * in the document: on document open, close, etc.
+     */
+    Property ACTION_LOCATION = Property.internalText(PDF_PREFIX+"actionLocation");
 }

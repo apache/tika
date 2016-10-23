@@ -25,8 +25,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -38,21 +40,41 @@ import java.util.TreeMap;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSInputStream;
+import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
+import org.apache.pdfbox.pdmodel.common.filespecification.PDFileSpecification;
+import org.apache.pdfbox.pdmodel.common.filespecification.PDSimpleFileSpecification;
 import org.apache.pdfbox.pdmodel.interactive.action.PDAction;
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionImportData;
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionJavaScript;
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionLaunch;
+import org.apache.pdfbox.pdmodel.interactive.action.PDActionRemoteGoTo;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
+import org.apache.pdfbox.pdmodel.interactive.action.PDAdditionalActions;
+import org.apache.pdfbox.pdmodel.interactive.action.PDAnnotationAdditionalActions;
+import org.apache.pdfbox.pdmodel.interactive.action.PDDocumentCatalogAdditionalActions;
+import org.apache.pdfbox.pdmodel.interactive.action.PDFormFieldAdditionalActions;
+import org.apache.pdfbox.pdmodel.interactive.action.PDPageAdditionalActions;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationFileAttachment;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationPopup;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationText;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDDestination;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode;
@@ -69,7 +91,9 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
@@ -81,6 +105,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
+
+    enum ActionLocation {
+        DOCUMENT_OPEN,
+        AFTER_DOCUMENT_PRINT,
+        AFTER_DOCUMENT_SAVE,
+        BEFORE_DOCUMENT_CLOSE,
+        BEFORE_DOCUMENT_PRINT,
+        BEFORE_DOCUMENT_SAVE, FORM_FIELD, FORM_FIELD_RECALCULATE, FORM_FIELD_FORMATTED, FORM_FIELD_KEYSTROKE, FORM_FIELD_VALUE_CHANGE, PAGE_CLOSE, PAGE_OPEN, ANNOTATION_WIDGET, ANNOTATION_LOSE_INPUT_FOCUS, ANNOTATION_MOUSE_CLICK, ANNOTATION_CURSOR_ENTERS, ANNOTATION_RECEIVES_FOCUS, ANNOTATION_PAGE_CLOSED, ANNOTATION_PAGE_NO_LONGER_VISIBLE, ANNOTATION_PAGE_OPENED, ANNOTATION_PAGE_VISIBLE, ANNOTATION_MOUSE_RELEASED, ANNOTATION_CURSOR_EXIT,
+    };
 
     /**
      * Maximum recursive depth during AcroForm processing.
@@ -136,12 +169,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private void extractEmbeddedDocuments(PDDocument document)
             throws IOException, SAXException, TikaException {
-        PDDocumentNameDictionary namesDictionary =
-                new PDDocumentNameDictionary(document.getDocumentCatalog());
-        PDEmbeddedFilesNameTreeNode efTree = namesDictionary.getEmbeddedFiles();
-        if (efTree == null) {
-            return;
-        }
+            PDDocumentNameDictionary namesDictionary =
+                    new PDDocumentNameDictionary(document.getDocumentCatalog());
+            PDEmbeddedFilesNameTreeNode efTree = namesDictionary.getEmbeddedFiles();
+            if (efTree == null) {
+                return;
+            }
 
         Map<String, PDComplexFileSpecification> embeddedFileNames = efTree.getNames();
         //For now, try to get the embeddedFileNames out of embeddedFiles or its kids.
@@ -164,27 +197,37 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
+    private void processDoc(String name, PDFileSpecification spec) throws TikaException, SAXException, IOException {
+        if (spec instanceof PDSimpleFileSpecification) {
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "class", "class", "CDATA", "linked");
+            attributes.addAttribute("", "id", "id", "CDATA", spec.getFile());
+            xhtml.startElement("div", attributes);
+            xhtml.endElement("div");
+        } else if (spec instanceof  PDComplexFileSpecification){
+            extractMultiOSPDEmbeddedFiles(name, (PDComplexFileSpecification)spec);
+        }
+    }
+
     private void processEmbeddedDocNames(Map<String, PDComplexFileSpecification> embeddedFileNames)
             throws IOException, SAXException, TikaException {
         if (embeddedFileNames == null || embeddedFileNames.isEmpty()) {
             return;
         }
 
-        EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
         for (Map.Entry<String, PDComplexFileSpecification> ent : embeddedFileNames.entrySet()) {
-            PDComplexFileSpecification spec = ent.getValue();
-            extractMultiOSPDEmbeddedFiles(ent.getKey(), spec, extractor);
+            processDoc(ent.getKey(), ent.getValue());
         }
     }
 
     private void extractMultiOSPDEmbeddedFiles(String displayName,
-                                       PDComplexFileSpecification spec,
-                                       EmbeddedDocumentExtractor extractor) throws IOException,
+                                       PDComplexFileSpecification spec) throws IOException,
             SAXException, TikaException {
 
         if (spec == null) {
             return;
         }
+        EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
         //current strategy is to pull all, not just first non-null
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFile(), spec.getEmbeddedFile(), extractor);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(), spec.getFileMac(), spec.getEmbeddedFileMac(), extractor);
@@ -292,20 +335,35 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void endPage(PDPage page) throws IOException {
 
         try {
-            EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
             for (PDAnnotation annotation : page.getAnnotations()) {
 
                 if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
                     PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
                     try {
-                        extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec, extractor);
+                        extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec);
                     } catch (SAXException e) {
                         throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
                     } catch (TikaException e) {
                         throw new IOExceptionWithCause("file embedded in annotation tika exception", e);
                     } catch (IOException e) {
                         handleCatchableIOE(e);
+                    }
+                } else if (annotation instanceof PDAnnotationWidget) {
+                    PDAnnotationWidget widget = (PDAnnotationWidget)annotation;
+                    handleDestinationOrAction(widget.getAction(), ActionLocation.ANNOTATION_WIDGET);
+                    PDAnnotationAdditionalActions annotationActions = widget.getActions();
+                    if (annotationActions != null) {
+                        handleDestinationOrAction(annotationActions.getBl(), ActionLocation.ANNOTATION_LOSE_INPUT_FOCUS);
+                        handleDestinationOrAction(annotationActions.getD(), ActionLocation.ANNOTATION_MOUSE_CLICK);
+                        handleDestinationOrAction(annotationActions.getE(), ActionLocation.ANNOTATION_CURSOR_ENTERS);
+                        handleDestinationOrAction(annotationActions.getFo(), ActionLocation.ANNOTATION_RECEIVES_FOCUS);
+                        handleDestinationOrAction(annotationActions.getPC(), ActionLocation.ANNOTATION_PAGE_CLOSED);
+                        handleDestinationOrAction(annotationActions.getPI(), ActionLocation.ANNOTATION_PAGE_NO_LONGER_VISIBLE);
+                        handleDestinationOrAction(annotationActions.getPO(), ActionLocation.ANNOTATION_PAGE_OPENED);
+                        handleDestinationOrAction(annotationActions.getPV(), ActionLocation.ANNOTATION_PAGE_VISIBLE);
+                        handleDestinationOrAction(annotationActions.getU(), ActionLocation.ANNOTATION_MOUSE_RELEASED);
+                        handleDestinationOrAction(annotationActions.getX(), ActionLocation.ANNOTATION_CURSOR_EXIT);
                     }
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
@@ -366,6 +424,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                 doOCROnCurrentPage();
             }
+
+            PDPageAdditionalActions pageActions = page.getActions();
+            if (pageActions != null) {
+                handleDestinationOrAction(pageActions.getC(), ActionLocation.PAGE_CLOSE);
+                handleDestinationOrAction(pageActions.getO(), ActionLocation.PAGE_OPEN);
+            }
             xhtml.endElement("div");
         } catch (SAXException|TikaException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
@@ -380,9 +444,57 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             xhtml.startDocument();
-        } catch (SAXException e) {
+            handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(), ActionLocation.DOCUMENT_OPEN);
+        } catch (TikaException|SAXException e) {
             throw new IOExceptionWithCause("Unable to start a document", e);
         }
+    }
+
+    private void handleDestinationOrAction(PDDestinationOrAction action,
+                                           ActionLocation actionLocation) throws IOException, SAXException, TikaException {
+        if (action == null) {
+            return;
+        }
+
+        if (action instanceof PDActionImportData) {
+            processDoc("", ((PDActionImportData)action).getFile());
+        } else if (action instanceof PDActionLaunch) {
+            PDActionLaunch pdActionLaunch = (PDActionLaunch)action;
+            if (pdActionLaunch.getFile() instanceof PDComplexFileSpecification) {
+                processDoc(pdActionLaunch.getF(), pdActionLaunch.getFile());
+            } else {
+                AttributesImpl attributes = new AttributesImpl();
+                addNonNullAttribute("class", "launch", attributes);
+                addNonNullAttribute("id", pdActionLaunch.getF(), attributes);
+                addNonNullAttribute("defaultDirectory", pdActionLaunch.getD(), attributes);
+                addNonNullAttribute("operation", pdActionLaunch.getO(), attributes);
+                addNonNullAttribute("parameters", pdActionLaunch.getP(), attributes);
+                xhtml.startElement("div", attributes);
+                xhtml.endElement("div");
+            }
+        } else if (action instanceof PDActionRemoteGoTo) {
+            PDActionRemoteGoTo remoteGoTo = (PDActionRemoteGoTo)action;
+            processDoc("", remoteGoTo.getFile());
+        } else if (action instanceof PDActionJavaScript) {
+            PDActionJavaScript jsAction = (PDActionJavaScript)action;
+            EmbeddedDocumentExtractor ex = getEmbeddedDocumentExtractor();
+            Metadata m = new Metadata();
+            m.set(Metadata.CONTENT_TYPE, "application/javascript");
+            m.set(Metadata.CONTENT_ENCODING, StandardCharsets.UTF_8.toString());
+            m.set(PDF.ACTION_LOCATION, actionLocation.toString());
+            String js = jsAction.getAction();
+            js = (js == null) ? "" : js;
+            try (InputStream is = new ByteArrayInputStream(js.getBytes(StandardCharsets.UTF_8))) {
+                ex.parseEmbedded(is, xhtml, metadata, false);
+            }
+        }
+    }
+
+    private static void addNonNullAttribute(String name, String value, AttributesImpl attributes) {
+        if (name == null || value == null) {
+            return;
+        }
+        attributes.addAttribute("", name, name, "CDATA", value);
     }
 
     @Override
@@ -404,6 +516,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     handleCatchableIOE(e);
                 }
             }
+            PDDocumentCatalogAdditionalActions additionalActions = pdf.getDocumentCatalog().getActions();
+            handleDestinationOrAction(additionalActions.getDP(), ActionLocation.AFTER_DOCUMENT_PRINT);
+            handleDestinationOrAction(additionalActions.getDS(), ActionLocation.AFTER_DOCUMENT_SAVE);
+            handleDestinationOrAction(additionalActions.getWC(), ActionLocation.BEFORE_DOCUMENT_CLOSE);
+            handleDestinationOrAction(additionalActions.getWP(), ActionLocation.BEFORE_DOCUMENT_PRINT);
+            handleDestinationOrAction(additionalActions.getWS(), ActionLocation.BEFORE_DOCUMENT_SAVE);
             xhtml.endDocument();
         } catch (TikaException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
@@ -436,7 +554,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     void extractAcroForm(PDDocument pdf) throws IOException,
-            SAXException {
+            SAXException, TikaException {
         //Thank you, Ben Litchfield, for org.apache.pdfbox.examples.fdf.PrintFields
         //this code derives from Ben's code
         PDDocumentCatalog catalog = pdf.getDocumentCatalog();
@@ -491,10 +609,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private void processAcroField(PDField field, final int currentRecursiveDepth)
-            throws SAXException, IOException {
+            throws SAXException, IOException, TikaException {
 
         if (currentRecursiveDepth >= MAX_ACROFORM_RECURSIONS) {
             return;
+        }
+        PDFormFieldAdditionalActions pdFormFieldAdditionalActions = field.getActions();
+        if (pdFormFieldAdditionalActions != null) {
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getC(), ActionLocation.FORM_FIELD_RECALCULATE);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getF(), ActionLocation.FORM_FIELD_FORMATTED);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getK(), ActionLocation.FORM_FIELD_KEYSTROKE);
+            handleDestinationOrAction(pdFormFieldAdditionalActions.getV(), ActionLocation.FORM_FIELD_VALUE_CHANGE);
         }
         addFieldString(field);
         if (field instanceof PDNonTerminalField) {
