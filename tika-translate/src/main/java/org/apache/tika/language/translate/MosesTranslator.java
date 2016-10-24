@@ -76,6 +76,7 @@ public class MosesTranslator extends ExternalTranslator {
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) return text;
         File tmpFile = new File(TMP_FILE_NAME);
+        @SuppressWarnings("resource")
         OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset());
         out.append(text).append('\n').close();
 
@@ -84,6 +85,7 @@ public class MosesTranslator extends ExternalTranslator {
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
+        @SuppressWarnings("resource")
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(tmpTranslatedFile),
                 Charset.defaultCharset()

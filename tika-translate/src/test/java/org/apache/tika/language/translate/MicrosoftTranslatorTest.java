@@ -16,7 +16,6 @@
  */
 package org.apache.tika.language.translate;
 
-import org.apache.tika.Tika;
 import org.junit.Before;
 import org.junit.Test;
 
