@@ -33,7 +33,7 @@ public class LanguageResult {
 	
 	/**
 	 * 
-	 * @param language ISO 639-1 language code (plus optional "-<country code>")
+	 * @param language ISO 639-1 language code (plus optional country code)
 	 * @param rawScore confidence of detector in the result.
 	 */
 	public LanguageResult(String language, LanguageConfidence confidence, float rawScore) {
@@ -42,6 +42,10 @@ public class LanguageResult {
 		this.rawScore = rawScore;
 	}
 
+	/**
+	 * The ISO 639-1 language code (plus optional country code)
+	 * @return a string representation of the language code
+	 */
 	public String getLanguage() {
 		return language;
 	}

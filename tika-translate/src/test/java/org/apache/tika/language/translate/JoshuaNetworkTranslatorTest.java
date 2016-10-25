@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,17 +16,26 @@
  */
 package org.apache.tika.language.translate;
 
-import java.io.IOException;
+import org.junit.Before;
+import org.junit.Test;
 
-import org.apache.tika.langdetect.OptimaizeLangDetector;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.language.detect.LanguageResult;
+import static org.junit.Assert.assertTrue;
 
+public class JoshuaNetworkTranslatorTest {
 
-public abstract class AbstractTranslator implements Translator {
+  JoshuaNetworkTranslator translator;
 
-    protected LanguageResult detectLanguage(String text) throws IOException {
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        return detector.detect(text);
-	}
+  @Before
+  public void setUp() {
+    translator = new JoshuaNetworkTranslator();
+  }
+
+  @Test
+  public void testSimpleSpanishToEnglishTranslation() throws Exception {
+    String source = "hola";
+    String expected = "hello";
+    String translated = translator.translate(source, "spanish", "english");
+    if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
+        expected.equalsIgnoreCase(translated));
+  }
 }
