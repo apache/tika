@@ -34,7 +34,7 @@ public class JoshuaNetworkTranslatorTest {
   public void testSimpleSpanishToEnglishTranslation() throws Exception {
     String source = "hola";
     String expected = "hello";
-    String translated = translator.translate(source, "es", "en");
+    String translated = translator.translate(source, "spanish", "english");
     if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
         expected.equalsIgnoreCase(translated));
   }

@@ -22,6 +22,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.ws.rs.core.MediaType;
@@ -35,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 /**
  * <p>This translator is designed to work with a TCP-IP available
@@ -57,7 +61,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * so this translation implementation takes care of that.
  */
 public class JoshuaNetworkTranslator extends AbstractTranslator {
-  
+
   private static final Logger LOG = LoggerFactory.getLogger(JoshuaNetworkTranslator.class);
 
   private static final String PROPERTIES_FILE = "translator.joshua.properties";
@@ -65,8 +69,6 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
   private static final String JOSHUA_SERVER = "joshua.server.url";
 
   private String networkServer;
-  
-  private WebClient client;
 
   /**
    * Default constructor which first checks for the presence of
@@ -124,40 +126,40 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
     }
 
     String inputText = sb.toString();
+    WebClient client;
+    final List<Object> providers = new ArrayList<>();
+    JacksonJsonProvider jacksonJsonProvider = new JacksonJsonProvider();
+    providers.add(jacksonJsonProvider);
 
     //create client
     if (!networkServer.endsWith("/")) {
-      client = WebClient.create(networkServer + "/" + targetLanguage + "/");
+      client = WebClient.create(networkServer + "/" + targetLanguage, providers);
     } else {
-      client = WebClient.create(networkServer + targetLanguage + "/");
+      client = WebClient.create(networkServer + targetLanguage, providers);
     }
 
+    ObjectMapper requestMapper = new ObjectMapper();
+    ObjectNode jsonNode = requestMapper.createObjectNode();
+    jsonNode.put("inputLanguage", sourceLanguage);
+    jsonNode.put("inputText", inputText);
     //make the reuest
-    Response response = client.accept(MediaType.APPLICATION_JSON)
-        .query("inputLanguage", sourceLanguage)
-        .query("inputText", inputText).get();
+    Response response = client.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post(jsonNode);
     BufferedReader reader = new BufferedReader(new InputStreamReader(
         (InputStream) response.getEntity(), UTF_8));
     String line;
-    StringBuffer responseText = new StringBuffer();
+    StringBuilder responseText = new StringBuilder();
     while ((line = reader.readLine()) != null) {
       responseText.append(line);
     }
 
     try {
-      ObjectMapper mapper = new ObjectMapper();
-      JsonNode jsonResp = mapper.readTree(responseText.toString());
+      ObjectMapper responseMapper = new ObjectMapper();
+      JsonNode jsonResp = responseMapper.readTree(responseText.toString());
 
-      if (!jsonResp.findValuesAsText("code").isEmpty()) {
-        String code = jsonResp.findValuesAsText("code").get(0);
-        if ("200".equals(code)) {
-          return jsonResp.findValue("text").get(0).asText();
-        } else {
-          throw new TikaException(jsonResp.findValue("message").get(0).asText());
-        }
+      if (jsonResp.findValuesAsText("outputText") != null) {
+        return jsonResp.findValuesAsText("outputText").get(0);
       } else {
-        throw new TikaException("Return message not recognized: " + 
-            responseText.toString().substring(0, Math.min(responseText.length(), 100)));
+        throw new TikaException(jsonResp.findValue("message").get(0).asText());
       }
     } catch (JsonParseException e) {
       throw new TikaException("Error requesting translation from '" + 
