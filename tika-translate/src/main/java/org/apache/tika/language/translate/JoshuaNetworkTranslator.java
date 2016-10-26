@@ -22,6 +22,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -69,6 +72,8 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
   private static final String JOSHUA_SERVER = "joshua.server.url";
 
   private String networkServer;
+  
+  private String networkURI;
 
   /**
    * Default constructor which first checks for the presence of
@@ -110,6 +115,12 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
   @Override
   public String translate(String text, String sourceLanguage,
       String targetLanguage) throws TikaException, IOException {
+    //create networkURI
+    if (!networkServer.endsWith("/")) {
+      networkURI = networkServer + "/" + targetLanguage;
+    } else {
+      networkURI = networkServer + targetLanguage;
+    }
     if (!this.isAvailable())
       return text;
 
@@ -131,12 +142,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
     JacksonJsonProvider jacksonJsonProvider = new JacksonJsonProvider();
     providers.add(jacksonJsonProvider);
 
-    //create client
-    if (!networkServer.endsWith("/")) {
-      client = WebClient.create(networkServer + "/" + targetLanguage, providers);
-    } else {
-      client = WebClient.create(networkServer + targetLanguage, providers);
-    }
+    client = WebClient.create(networkURI, providers);
 
     ObjectMapper requestMapper = new ObjectMapper();
     ObjectNode jsonNode = requestMapper.createObjectNode();
@@ -189,7 +195,38 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
    */
   @Override
   public boolean isAvailable() {
-    return this.networkServer!=null;
+    if (this.networkServer!=null) {
+      URL url = null;
+      try {
+        url = new URL(networkURI);
+      } catch (MalformedURLException mue) {
+        LOG.error("Error reading {} property from {}. {}", JOSHUA_SERVER, PROPERTIES_FILE, mue);
+      }
+      HttpURLConnection connection = null;
+      try {
+        if (url!=null) {
+          connection = (HttpURLConnection) url.openConnection();
+          connection.setRequestProperty("Connection", "close");
+          connection.setConnectTimeout(2000); // Timeout 2 seconds
+          connection.connect();
+          return tryResponseCode(connection);
+        }
+      } catch (IOException ioe) {
+        LOG.error("Error whilst checking availability of {}. {}", JOSHUA_SERVER, ioe);
+      }
+    }
+    return false;
+  }
+
+  private boolean tryResponseCode(HttpURLConnection connection) {
+    // If the web service is available
+    try {
+      if (connection.getResponseCode() == 200)
+        return true;
+    } catch (IOException ioe) {
+      LOG.error("Error retreiving response code from Joshua Network Translator. {}", ioe);
+    }
+    return false;
   }
 
 }
