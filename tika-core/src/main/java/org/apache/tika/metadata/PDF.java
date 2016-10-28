@@ -67,7 +67,7 @@ public interface PDF {
 
     /**
      * This specifies where an action or destination would be found/triggered
-     * in the document: on document open, close, etc.
+     * in the document: on document open, before close, etc.
      */
-    Property ACTION_LOCATION = Property.internalText(PDF_PREFIX+"actionLocation");
+    Property ACTION_TRIGGER = Property.internalText(PDF_PREFIX+"actionTrigger");
 }
