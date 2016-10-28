@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
-import java.util.logging.Logger;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -50,9 +48,6 @@ public class GoogleTranslator extends AbstractTranslator {
 	private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
 
 	private static final String DEFAULT_KEY = "dummy-secret";
-
-	private static final Logger LOG = Logger.getLogger(GoogleTranslator.class
-			.getName());
 
 	private WebClient client;
 
