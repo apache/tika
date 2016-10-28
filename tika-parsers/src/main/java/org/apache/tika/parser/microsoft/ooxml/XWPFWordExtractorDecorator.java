@@ -145,7 +145,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // Is this a paragraph, or a heading?
         String tag = "p";
         String styleClass = null;
-        if (paragraph.getStyleID() != null) {
+        //TIKA-2144 check that styles is not null
+        if (paragraph.getStyleID() != null && styles != null) {
             XWPFStyle style = styles.getStyle(
                     paragraph.getStyleID()
             );
