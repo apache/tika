@@ -1266,8 +1266,8 @@ public class PDFParserTest extends TikaTest {
     public void testMaxLength() throws Exception {
         InputStream is = getResourceAsStream("/test-documents/testPDF.pdf");
         String content = new Tika().parseToString(is, new Metadata(), 100);
-
-        assertTrue(content.length() <= 100);
+        assertTrue(content.length() == 100);
+        assertContains("Tika - Content", content);
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
