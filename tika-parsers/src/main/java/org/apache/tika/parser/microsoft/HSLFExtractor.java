@@ -17,10 +17,12 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 
 import org.apache.poi.common.usermodel.Hyperlink;
+import org.apache.poi.hslf.exceptions.HSLFException;
 import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.model.OLEShape;
@@ -337,10 +339,18 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     mediaType = pic.getContentType();
                     break;
             }
-
-            handleEmbeddedResource(
-                    TikaInputStream.get(pic.getData()), null, null,
-                    mediaType, xhtml, false);
+            try (TikaInputStream picIs = TikaInputStream.get(pic.getData())){
+                handleEmbeddedResource(
+                        picIs, null, null,
+                        mediaType, xhtml, false);
+            } catch (HSLFException e) {
+                if (e.getMessage() != null && e.getMessage().contains("incorrect data check")) {
+                    //TIKA-2157
+                    //swallow
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
