@@ -1,3 +1,7 @@
+Release 1.15 - ??
+
+  * Upgrade SQLite "provided" dependency to 3.15.1.
+
 Release 1.14 - 10/19/2016
 
   * Extract all headers from MSG/RFC822 (TIKA-2122).
