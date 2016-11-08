@@ -620,6 +620,42 @@ public class PDFParser extends AbstractParser {
     public void setOcrImageType(String imageType) {
         defaultConfig.setOcrImageType(imageType);
     }
+
+    @Field
+    void setOcrDPI(int dpi) {
+        defaultConfig.setOcrDPI(dpi);
+    }
+
+    @Field
+    void setExtractInlineImages(boolean extractInlineImages) {
+        defaultConfig.setExtractInlineImages(extractInlineImages);
+    }
+
+    @Field
+    void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
+        defaultConfig.setCatchIntermediateIOExceptions(catchIntermediateExceptions);
+    }
+
+    @Field
+    void setExtractAcroFormContent(boolean extractAcroFormContent) {
+        defaultConfig.setExtractAcroFormContent(extractAcroFormContent);
+    }
+
+    @Field
+    void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
+        defaultConfig.setIfXFAExtractOnlyXFA(ifXFAExtractOnlyXFA);
+    }
+
+    @Field
+    void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
+        defaultConfig.setAccessChecker(new AccessChecker(allowExtractionForAccessibility));
+    }
+
+    @Field
+    void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
+        defaultConfig.setExtractUniqueInlineImagesOnly(extractUniqueInlineImagesOnly);
+    }
+
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
         if (pdMetadata == null) {

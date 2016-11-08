@@ -78,4 +78,23 @@ public class AccessChecker implements Serializable {
             throw new AccessPermissionException("Content extraction is not allowed.");
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AccessChecker checker = (AccessChecker) o;
+
+        if (needToCheck != checker.needToCheck) return false;
+        return allowAccessibility == checker.allowAccessibility;
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (needToCheck ? 1 : 0);
+        result = 31 * result + (allowAccessibility ? 1 : 0);
+        return result;
+    }
 }

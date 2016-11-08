@@ -204,6 +204,15 @@ public abstract class TikaTest {
         return wrapper.getMetadata();
     }
 
+    protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap) throws Exception {
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
+            wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+        }
+        return wrapper.getMetadata();
+    }
+
     /**
      * Basic text extraction.
      * <p>

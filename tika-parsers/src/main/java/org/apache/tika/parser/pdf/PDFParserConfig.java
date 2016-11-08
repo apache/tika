@@ -125,7 +125,7 @@ public class PDFParserConfig implements Serializable {
     //with a streams.  If this is set to true, Tika's
     //parser catches these exceptions, reports them in the metadata
     //and then throws the first stored exception after the parse has completed.
-    private boolean isCatchIntermediateIOExceptions = true;
+    private boolean catchIntermediateIOExceptions = true;
 
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
@@ -439,11 +439,19 @@ public class PDFParserConfig implements Serializable {
     /**
      * See {@link #setCatchIntermediateIOExceptions(boolean)}
      * @return whether or not to catch IOExceptions
+     * @deprecated use {@link #getCatchIntermediateIOExceptions()}
      */
     public boolean isCatchIntermediateIOExceptions() {
-        return isCatchIntermediateIOExceptions;
+        return catchIntermediateIOExceptions;
     }
 
+    /**
+     * See {@link #setCatchIntermediateIOExceptions(boolean)}
+     * @return whether or not to catch IOExceptions
+     */
+    public boolean getCatchIntermediateIOExceptions() {
+        return catchIntermediateIOExceptions;
+    }
     /**
      * The PDFBox parser will throw an IOException if there is
      * a problem with a stream.  If this is set to <code>true</code>,
@@ -453,7 +461,7 @@ public class PDFParserConfig implements Serializable {
      * @param catchIntermediateIOExceptions
      */
     public void setCatchIntermediateIOExceptions(boolean catchIntermediateIOExceptions) {
-        isCatchIntermediateIOExceptions = catchIntermediateIOExceptions;
+        this.catchIntermediateIOExceptions = catchIntermediateIOExceptions;
     }
 
     /**
@@ -646,7 +654,7 @@ public class PDFParserConfig implements Serializable {
                 ", ocrImageType=" + ocrImageType +
                 ", ocrImageFormatName='" + ocrImageFormatName + '\'' +
                 ", accessChecker=" + accessChecker +
-                ", isCatchIntermediateIOExceptions=" + isCatchIntermediateIOExceptions +
+                ", catchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
                 '}';
     }
 }

@@ -1270,6 +1270,28 @@ public class PDFParserTest extends TikaTest {
         assertContains("Tika - Content", content);
     }
 
+    @Test
+    public void testConfiguringMoreParams() throws Exception {
+        try (InputStream configIs = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
+            assertNotNull(configIs);
+            TikaConfig tikaConfig = new TikaConfig(configIs);
+            AutoDetectParser p = new AutoDetectParser(tikaConfig);
+            //make absolutely certain the functionality works!
+            List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", p);
+            assertEquals(2, metadata.size());
+            Map<MediaType, Parser> parsers = p.getParsers();
+            Parser composite = parsers.get(MediaType.application("pdf"));
+            Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+            assertTrue(pdfParser instanceof PDFParser);
+            PDFParserConfig pdfParserConfig = ((PDFParser)pdfParser).getPDFParserConfig();
+            assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
+            assertEquals(true, pdfParserConfig.getExtractInlineImages());
+            assertEquals(false, pdfParserConfig.getExtractUniqueInlineImagesOnly());
+            assertEquals(314159, pdfParserConfig.getOcrDPI());
+            assertEquals(false, pdfParserConfig.getCatchIntermediateIOExceptions());
+        }
+    }
+
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);
