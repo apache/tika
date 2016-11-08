@@ -15,6 +15,9 @@ Release 2.0 - ???
       parser classes and their dependencies. To keep the old behaviour,
       set your LoadErrorHandler to IGNORE. (TIKA-1805)
 
+Release 1.15
+ * Upgrade provided SQLite parser to 3.15.1 (TIKA-2171).
+
 Release 1.14 - ???
 
   * Extract all headers from MSG/RFC822 (TIKA-2122).
