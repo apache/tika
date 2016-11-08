@@ -127,7 +127,7 @@ public class HtmlParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("The file 'testXHTML_utf8.html' is not available fo testing")
+    @Ignore("The file 'testXHTML_utf8.html' is not available for testing")
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
         String path = "/test-documents/testXHTML_utf8.html";
         Metadata metadata = new Metadata();
@@ -1216,6 +1216,21 @@ public class HtmlParserTest extends TikaTest {
                 "</body></html>").getBytes(StandardCharsets.UTF_8);
         XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
         assertContains("有什么需要我帮你的", r.xml);
+    }
+
+    @Test
+    @Ignore("until we fix TIKA-1896")
+    public void testBadScript() throws Exception {
+        String xml = getXML("testHTMLBadScript.html").xml;
+        assertContains("This is a test", xml);
+        assertNotContained("cool", xml);
+    }
+
+    @Test
+    public void testGoodScript() throws Exception {
+        String xml = getXML("testHTMLGoodScript.html").xml;
+        assertContains("This is a test", xml);
+        assertNotContained("cool", xml);
     }
 
     @Test
