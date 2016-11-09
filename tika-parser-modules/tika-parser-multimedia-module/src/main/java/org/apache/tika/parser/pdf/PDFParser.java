@@ -613,10 +613,45 @@ public class PDFParser extends AbstractParser {
      *
      * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
-    public void setSortByPosition(boolean v) {
+    void setSortByPosition(boolean v) {
         defaultConfig.setSortByPosition(v);
     }
 
+/*    void setOcrStrategy(String ocrStrategyString) {
+        defaultConfig.setOcrStrategy(ocrStrategyString);
+    }
+
+    void setOcrImageType(String imageType) {
+        defaultConfig.setOcrImageType(imageType);
+    }
+
+    void setOcrDPI(int dpi) {
+        defaultConfig.setOcrDPI(dpi);
+    }
+*/
+    void setExtractInlineImages(boolean extractInlineImages) {
+        defaultConfig.setExtractInlineImages(extractInlineImages);
+    }
+
+    void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
+        defaultConfig.setCatchIntermediateIOExceptions(catchIntermediateExceptions);
+    }
+
+    void setExtractAcroFormContent(boolean extractAcroFormContent) {
+        defaultConfig.setExtractAcroFormContent(extractAcroFormContent);
+    }
+
+    void setIfXFAExtractOnlyXFA(boolean ifXFAExtractOnlyXFA) {
+        defaultConfig.setIfXFAExtractOnlyXFA(ifXFAExtractOnlyXFA);
+    }
+
+    void setAllowExtractionForAccessibility(boolean allowExtractionForAccessibility) {
+        defaultConfig.setAccessChecker(new AccessChecker(allowExtractionForAccessibility));
+    }
+
+    void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
+        defaultConfig.setExtractUniqueInlineImagesOnly(extractUniqueInlineImagesOnly);
+    }
 
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {

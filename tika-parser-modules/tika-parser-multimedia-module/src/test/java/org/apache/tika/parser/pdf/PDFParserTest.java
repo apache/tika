@@ -19,6 +19,7 @@ package org.apache.tika.parser.pdf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -34,6 +35,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -48,6 +50,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -59,6 +62,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -1218,6 +1222,29 @@ public class PDFParserTest extends TikaTest {
 
         assertTrue(content.length() == 100);
         assertContains("Tika - Content", content);
+    }
+
+    @Test
+    @Ignore("until we add parameter mods")
+    public void testConfiguringMoreParams() throws Exception {
+        try (InputStream configIs = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
+            assertNotNull(configIs);
+            TikaConfig tikaConfig = new TikaConfig(configIs);
+            AutoDetectParser p = new AutoDetectParser(tikaConfig);
+            //make absolutely certain the functionality works!
+            List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", p);
+            assertEquals(2, metadata.size());
+            Map<MediaType, Parser> parsers = p.getParsers();
+            Parser composite = parsers.get(MediaType.application("pdf"));
+            Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+            assertTrue(pdfParser instanceof PDFParser);
+            PDFParserConfig pdfParserConfig = ((PDFParser)pdfParser).getPDFParserConfig();
+            assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
+            assertEquals(true, pdfParserConfig.getExtractInlineImages());
+            assertEquals(false, pdfParserConfig.getExtractUniqueInlineImagesOnly());
+            //assertEquals(314159, pdfParserConfig.getOcrDPI());
+            assertEquals(false, pdfParserConfig.getCatchIntermediateIOExceptions());
+        }
     }
 
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
