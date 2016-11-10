@@ -244,4 +244,6 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
         assertEquals("72 dots per inch", m.get("Y Resolution"));
     }
+
+    //TODO: add unit tests for jp2/jpx and ppm
 }

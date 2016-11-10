@@ -97,7 +97,7 @@ public class TesseractOCRParser extends AbstractParser {
                     MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
                     MediaType.image("x-ms-bmp"), MediaType.image("gif"),
                     MediaType.APPLICATION_XML.image("jp2"),
-                    MediaType.image("jpx")
+                    MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
     private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<String, Boolean>();
 

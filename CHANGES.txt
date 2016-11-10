@@ -15,10 +15,15 @@ Release 2.0 - ???
       parser classes and their dependencies. To keep the old behaviour,
       set your LoadErrorHandler to IGNORE. (TIKA-1805)
 
-Release 1.15
- * Upgrade provided SQLite parser to 3.15.1 (TIKA-2171).
+Release 1.15 -???
 
-Release 1.14 - ???
+  * Add extraction of .jpx inline images from PDFs (TIKA-2175).
+
+  * Add .jpx, .jp2, .ppm to formats handled by Tesseract (TIKA-2174).
+
+  * Upgrade provided SQLite parser to 3.15.1 (TIKA-2171).
+
+Release 1.14 - 11/9/2016
 
   * Extract all headers from MSG/RFC822 (TIKA-2122).
 
