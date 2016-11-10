@@ -46,7 +46,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -185,15 +185,15 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
                 PDImageXObject image = (PDImageXObject) object;
 
-                Metadata metadata = new Metadata();
+                Metadata embeddedMetadata = new Metadata();
                 String extension = image.getSuffix();
-                if (extension == null) {
-                    metadata.set(Metadata.CONTENT_TYPE, "image/png");
+                if (extension == null || extension.equals("png")) {
+                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
                     extension = "png";
                 } else if (extension.equals("jpg")) {
-                    metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
                 } else if (extension.equals("tiff")) {
-                    metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
+                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/tiff");
                     extension = "tif";
                 } else {
                     //TODO: determine if we need to add more image types
@@ -205,7 +205,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     imageNumber = inlineImageCounter++;
                 }
                 String fileName = "image" + imageNumber + "."+extension;
-                metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+                embeddedMetadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
 
                 // Output the img tag
                 AttributesImpl attr = new AttributesImpl();
@@ -223,20 +223,23 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     processedInlineImages.put(cosStream, imageNumber);
                 }
 
-                metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
-                EmbeddedDocumentExtractor extractor =
-                        getEmbeddedDocumentExtractor();
-                if (extractor.shouldParseEmbedded(metadata)) {
+                if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                     try {
                         //TODO: handle image.getMetadata()?
-                        writeToBuffer(image, extension, buffer);
-                        extractor.parseEmbedded(
+                        try {
+                            writeToBuffer(image, extension, buffer);
+                        } catch (IOException e) {
+                            EmbeddedDocumentUtil.recordException(e, metadata);
+                            return;
+                        }
+                        embeddedDocumentExtractor.parseEmbedded(
                                 new ByteArrayInputStream(buffer.toByteArray()),
                                 new EmbeddedContentHandler(xhtml),
-                                metadata, false);
+                                embeddedMetadata, false);
                     } catch (IOException e) {
                         handleCatchableIOE(e);
                     }

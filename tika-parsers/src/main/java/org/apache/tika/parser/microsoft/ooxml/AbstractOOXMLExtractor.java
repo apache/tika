@@ -39,7 +39,7 @@ import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -75,15 +75,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor) {
         this.extractor = extractor;
-
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-
-        if (ex == null) {
-            embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
-        } else {
-            embeddedExtractor = ex;
-        }
-
+        embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
     }
 
     /**

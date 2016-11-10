@@ -47,6 +47,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
@@ -206,7 +207,7 @@ public class PDFParser extends AbstractParser {
 
 
         //now go for the XMP
-        Document dom = loadDOM(document.getDocumentCatalog().getMetadata(), context);
+        Document dom = loadDOM(document.getDocumentCatalog().getMetadata(), metadata, context);
 
         XMPMetadata xmp = null;
         if (dom != null) {
@@ -657,7 +658,7 @@ public class PDFParser extends AbstractParser {
     }
 
     //can return null!
-    private Document loadDOM(PDMetadata pdMetadata, ParseContext context) {
+    private Document loadDOM(PDMetadata pdMetadata, Metadata parentMetadata, ParseContext context) {
         if (pdMetadata == null) {
             return null;
         }
@@ -666,7 +667,7 @@ public class PDFParser extends AbstractParser {
             documentBuilder.setErrorHandler((ErrorHandler)null);
             return documentBuilder.parse(is);
         } catch (IOException|SAXException|TikaException e) {
-            //swallow
+            EmbeddedDocumentUtil.recordException(e, parentMetadata);
         }
         return null;
 

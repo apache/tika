@@ -82,9 +82,11 @@ public class RFC822ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822");
         ContentHandler handler = mock(DefaultHandler.class);
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
 
         try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(stream, handler, metadata, context);
             verify(handler).startDocument();
             //just one body
             verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
@@ -110,9 +112,10 @@ public class RFC822ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822-multipart");
         ContentHandler handler = mock(XHTMLContentHandler.class);
-
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
         try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(stream, handler, metadata, context);
             verify(handler).startDocument();
             int bodyExpectedTimes = 4, multipackExpectedTimes = 5;
             // TIKA-1422. TesseractOCRParser interferes with the number of times the handler is invoked.
@@ -136,7 +139,7 @@ public class RFC822ParserTest extends TikaTest {
         stream = getStream("test-documents/testRFC822-multipart");
         handler = new BodyContentHandler();
         try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(stream, handler, metadata, context);
             //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
             String bodyText = handler.toString();
             assertTrue(bodyText.contains("body 1"));
@@ -153,9 +156,11 @@ public class RFC822ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822_quoted");
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
 
         try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(stream, handler, metadata, context);
             //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
             String bodyText = handler.toString();
             assertTrue(bodyText.contains("D\u00FCsseldorf has non-ascii."));
@@ -173,9 +178,11 @@ public class RFC822ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822_base64");
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
 
         try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(stream, handler, metadata, context);
             //tests correct decoding of base64 text, including ISO-8859-1 bytes into Unicode
             assertContains("Here is some text, with international characters, voil\u00E0!", handler.toString());
         } catch (Exception e) {
@@ -268,8 +275,10 @@ public class RFC822ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822-limitedheaders");
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
 
-        parser.parse(stream, handler, metadata, new ParseContext());
+        parser.parse(stream, handler, metadata, context);
         assertEquals(true, metadata.isMultiValued(TikaCoreProperties.CREATOR));
         assertEquals("xyz", metadata.getValues(TikaCoreProperties.CREATOR)[0]);
         assertEquals("abc", metadata.getValues(TikaCoreProperties.CREATOR)[1]);
@@ -294,6 +303,7 @@ public class RFC822ParserTest extends TikaTest {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
         InputStream stream = getStream("test-documents/testRFC822_encrypted_zip");
         ContentHandler handler = new BodyContentHandler();
         parser.parse(stream, handler, metadata, context);
@@ -349,6 +359,7 @@ public class RFC822ParserTest extends TikaTest {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
         InputStream stream = getStream("test-documents/testRFC822_normal_zip");
         ContentHandler handler = new BodyContentHandler();
         parser.parse(stream, handler, metadata, context);

@@ -32,7 +32,7 @@ import com.pff.PSTFolder;
 import com.pff.PSTMessage;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -69,8 +69,7 @@ public class OutlookPSTParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
 
         // Use the delegate parser to parse the contained document
-        EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class,
-                new ParsingEmbeddedDocumentExtractor(context));
+        EmbeddedDocumentExtractor embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         metadata.set(Metadata.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
 

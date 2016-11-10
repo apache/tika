@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -85,18 +85,14 @@ public class WordMLParser extends AbstractXML2003Parser {
     @Override
     protected ContentHandler getContentHandler(ContentHandler ch,
                                         Metadata metadata, ParseContext context) {
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-
-        if (ex == null) {
-            ex = new ParsingEmbeddedDocumentExtractor(context);
-        }
 
         return new TeeContentHandler(
                 super.getContentHandler(ch, metadata, context),
                 new WordMLHandler(ch),
                 new HyperlinkHandler(ch,
                         WORD_ML_URL),
-                new PictHandler(ch, ex));
+                new PictHandler(ch,
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
     }
 
     @Override

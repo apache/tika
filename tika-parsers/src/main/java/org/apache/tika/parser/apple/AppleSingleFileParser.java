@@ -29,7 +29,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -79,11 +79,7 @@ public class AppleSingleFileParser extends AbstractParser {
                       Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-
-        if (ex == null) {
-            ex = new ParsingEmbeddedDocumentExtractor(context);
-        }
+        EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         short numEntries = readThroughNumEntries(stream);
         long bytesRead = 26;
