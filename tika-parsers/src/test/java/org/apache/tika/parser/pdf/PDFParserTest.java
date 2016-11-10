@@ -1292,6 +1292,8 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
+    //TODO: figure out how to test jp2 embedded with OCR
+
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);
