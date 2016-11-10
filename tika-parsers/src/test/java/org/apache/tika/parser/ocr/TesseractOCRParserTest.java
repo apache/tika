@@ -91,7 +91,7 @@ public class TesseractOCRParserTest extends TikaTest {
         // Assuming that Tesseract is on the path, we should find 5 Parsers that support PNG.
         assumeTrue(canRun());
 
-        assertEquals(7, parser.getSupportedTypes(parseContext).size());
+        assertEquals(8, parser.getSupportedTypes(parseContext).size());
         assertTrue(parser.getSupportedTypes(parseContext).contains(png));
 
         // DefaultParser will now select the TesseractOCRParser.

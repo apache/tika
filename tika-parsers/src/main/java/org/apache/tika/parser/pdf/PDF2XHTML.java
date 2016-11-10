@@ -246,7 +246,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                             writeToBuffer(image, extension, buffer);
                         } catch (IOException e) {
                             EmbeddedDocumentUtil.recordException(e, metadata);
-                            return;
+                            continue;
                         }
                         embeddedDocumentExtractor.parseEmbedded(
                                 new ByteArrayInputStream(buffer.toByteArray()),
