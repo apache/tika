@@ -34,6 +34,7 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
+import org.apache.pdfbox.filter.MissingImageReaderException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDResources;
@@ -66,6 +67,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     private static final List<String> JPEG = Arrays.asList(
             COSName.DCT_DECODE.getName(),
             COSName.DCT_DECODE_ABBREVIATION.getName());
+
+    private static final List<String> JP2 =
+            Arrays.asList(COSName.JPX_DECODE.getName());
 
     /**
      * This keeps track of the pdf object ids for inline
@@ -170,12 +174,19 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
 
         for (COSName name : resources.getXObjectNames()) {
+            PDXObject object = null;
+            try {
+                object = resources.getXObject(name);
+            } catch (MissingImageReaderException e) {
+                EmbeddedDocumentUtil.recordException(e, metadata);
+                continue;
+            }
 
-            PDXObject object = resources.getXObject(name);
             if (object == null) {
                 continue;
             }
             COSStream cosStream = object.getCOSObject();
+
             if (seenThisPage.contains(cosStream)) {
                 //avoid infinite recursion TIKA-1742
                 continue;
@@ -198,6 +209,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 } else if (extension.equals("tiff")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/tiff");
                     extension = "tif";
+                } else if (extension.equals("jpx")) {
+                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
                 } else {
                     //TODO: determine if we need to add more image types
                     //throw new RuntimeException("EXTEN:" + extension);
@@ -237,7 +250,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                             writeToBuffer(image, extension, buffer);
                         } catch (IOException e) {
                             EmbeddedDocumentUtil.recordException(e, metadata);
-                            return;
+                            continue;
                         }
                         embeddedDocumentExtractor.parseEmbedded(
                                 new ByteArrayInputStream(buffer.toByteArray()),
@@ -271,6 +284,10 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, suffix, out);
                 }
+            } else if ("jp2".equals(suffix) || "jpx".equals(suffix)) {
+                InputStream data = pdImage.createInputStream(JP2);
+                org.apache.pdfbox.io.IOUtils.copy(data, out);
+                org.apache.pdfbox.io.IOUtils.closeQuietly(data);
             } else {
                 ImageIOUtil.writeImage(image, suffix, out);
             }
