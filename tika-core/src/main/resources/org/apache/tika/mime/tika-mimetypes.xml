@@ -3837,6 +3837,14 @@
     <_comment>SAS Backup</_comment>
     <glob pattern="*.sas7bbak"/>
   </mime-type>
+  <mime-type type="application/x-sas-xport">
+    <_comment>SAS XPORT Transfer File</_comment>
+    <glob pattern="*.xpt"/>
+    <glob pattern="*.xport"/>
+    <magic priority="40">
+      <match value="HEADER RECORD*******LIBRARY HEADER RECORD!!!!!!!" offset="0" />
+    </magic>
+  </mime-type>
 
   <mime-type type="application/x-sc">
     <magic priority="50">
