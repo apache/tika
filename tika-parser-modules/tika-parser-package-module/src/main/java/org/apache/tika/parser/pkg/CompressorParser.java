@@ -38,7 +38,7 @@ import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -157,9 +157,8 @@ public class CompressorParser extends AbstractParser {
             }
 
             // Use the delegate parser to parse the compressed document
-            EmbeddedDocumentExtractor extractor = context.get(
-                    EmbeddedDocumentExtractor.class,
-                    new ParsingEmbeddedDocumentExtractor(context));
+            EmbeddedDocumentExtractor extractor =
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
                 extractor.parseEmbedded(cis, xhtml, entrydata, true);
             }

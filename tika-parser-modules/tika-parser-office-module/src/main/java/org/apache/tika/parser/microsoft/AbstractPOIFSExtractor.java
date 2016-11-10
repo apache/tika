@@ -33,8 +33,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.DetectorProxy;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -50,11 +49,8 @@ import org.xml.sax.SAXException;
 
 abstract class AbstractPOIFSExtractor {
     private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
-    private final EmbeddedDocumentExtractor extractor;
+    private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private PasswordProvider passwordProvider;
-    private TikaConfig tikaConfig;
-    private MimeTypes mimeTypes;
-    private Detector detector;
     private Metadata metadata;
     private final Detector zipDetectorProxy;
 
@@ -63,42 +59,28 @@ abstract class AbstractPOIFSExtractor {
     }
 
     protected AbstractPOIFSExtractor(ParseContext context, Metadata metadata) {
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-
-        if (ex == null) {
-            this.extractor = new ParsingEmbeddedDocumentExtractor(context);
-        } else {
-            this.extractor = ex;
-        }
+        embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
 
         this.passwordProvider = context.get(PasswordProvider.class);
-        this.tikaConfig = context.get(TikaConfig.class);
-        this.mimeTypes = context.get(MimeTypes.class);
-        this.detector = context.get(Detector.class);
         this.metadata = metadata;
         this.zipDetectorProxy = new DetectorProxy("org.apache.tika.parser.pkg.ZipContainerDetector", getClass().getClassLoader());
     }
 
     // Note - these cache, but avoid creating the default TikaConfig if not needed
     protected TikaConfig getTikaConfig() {
-        if (tikaConfig == null) {
-            tikaConfig = TikaConfig.getDefaultConfig();
-        }
-        return tikaConfig;
+        return embeddedDocumentUtil.getTikaConfig();
     }
 
     protected Detector getDetector() {
-        if (detector != null) return detector;
-
-        detector = getTikaConfig().getDetector();
-        return detector;
+        return embeddedDocumentUtil.getDetector();
     }
 
+    /**
+     * @deprecated use {@link #embeddedDocumentUtil}
+     * @return mimetypes
+     */
     protected MimeTypes getMimeTypes() {
-        if (mimeTypes != null) return mimeTypes;
-
-        mimeTypes = getTikaConfig().getMimeRepository();
-        return mimeTypes;
+        return embeddedDocumentUtil.getMimeTypes();
     }
 
     /**
@@ -139,8 +121,8 @@ abstract class AbstractPOIFSExtractor {
                 metadata.set(Metadata.CONTENT_TYPE, mediaType);
             }
 
-            if (extractor.shouldParseEmbedded(metadata)) {
-                extractor.parseEmbedded(resource, xhtml, metadata, outputHtml);
+            if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+                embeddedDocumentUtil.parseEmbedded(resource, xhtml, metadata, outputHtml);
             }
         } finally {
             resource.close();
@@ -249,7 +231,7 @@ abstract class AbstractPOIFSExtractor {
             }
 
             // Should we parse it?
-            if (extractor.shouldParseEmbedded(metadata)) {
+            if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
                 if (embedded == null) {
                     // Make a TikaInputStream that just
                     // passes the root directory of the
@@ -258,7 +240,7 @@ abstract class AbstractPOIFSExtractor {
                     embedded = TikaInputStream.get(new byte[0]);
                     embedded.setOpenContainer(dir);
                 }
-                extractor.parseEmbedded(embedded, xhtml, metadata, true);
+                embeddedDocumentUtil.parseEmbedded(embedded, xhtml, metadata, true);
             }
         } finally {
             if (embedded != null) {

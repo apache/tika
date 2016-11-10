@@ -30,7 +30,7 @@ import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -68,13 +68,8 @@ public class TNEFParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
 
         // We work by recursing, so get the appropriate bits
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-        EmbeddedDocumentExtractor embeddedExtractor;
-        if (ex == null) {
-            embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
-        } else {
-            embeddedExtractor = ex;
-        }
+        EmbeddedDocumentExtractor embeddedExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         // Ask POI to process the file for us
         HMEFMessage msg = new HMEFMessage(stream);

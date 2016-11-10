@@ -43,7 +43,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -130,11 +130,8 @@ public class OfficeParser extends AbstractParser {
             parse(root, context, metadata, xhtml);
 
             //now try to get macros
-            EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-            if (ex == null) {
-                ex = new ParsingEmbeddedDocumentExtractor(context);
-            }
-            extractMacros(root.getNFileSystem(), xhtml, ex);
+            extractMacros(root.getNFileSystem(), xhtml,
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
         } finally {
             IOUtils.closeQuietly(mustCloseFs);
         }
@@ -169,7 +166,7 @@ public class OfficeParser extends AbstractParser {
                 new WordExtractor(context, metadata).parse(root, xhtml);
                 break;
             case POWERPOINT:
-                new HSLFExtractor(context).parse(root, xhtml);
+                new HSLFExtractor(context, metadata).parse(root, xhtml);
                 break;
             case WORKBOOK:
             case XLR:

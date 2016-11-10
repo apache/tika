@@ -26,8 +26,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -45,11 +43,6 @@ abstract class AbstractDBParser extends AbstractParser {
     private final static byte[] EMPTY_BYTE_ARR = new byte[0];
 
     private Connection connection;
-
-    protected static EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
-        return context.get(EmbeddedDocumentExtractor.class,
-                new ParsingEmbeddedDocumentExtractor(context));
-    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
