@@ -17,6 +17,8 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Allow configuration of timeout for ForkParser (TIKA-2170).
+
   * Add extraction of .jpx inline images from PDFs (TIKA-2175).
 
   * Add .jpx, .jp2, .ppm to formats handled by Tesseract (TIKA-2174).
