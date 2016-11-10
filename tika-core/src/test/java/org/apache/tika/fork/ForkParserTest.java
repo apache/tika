@@ -213,7 +213,7 @@ public class ForkParserTest {
         try {
             forkParser.parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)), o, m, c);
             fail("Should have thrown exception");
-        } catch (IOException e) {
+        } catch (IOException|TikaException e) {
             assertTrue("should have thrown IOException lost connection", true);
         }
     }
