@@ -51,7 +51,7 @@ class ForkClient {
 
     private final InputStream error;
 
-    public ForkClient(ClassLoader loader, Object object, List<String> java)
+    public ForkClient(ClassLoader loader, Object object, List<String> java, long serverPulseMillis)
             throws IOException, TikaException {
         boolean ok = false;
         try {
@@ -63,6 +63,7 @@ class ForkClient {
             command.addAll(java);
             command.add("-jar");
             command.add(jar.getPath());
+            command.add(Long.toString(serverPulseMillis));
             builder.command(command);
             this.process = builder.start();
 

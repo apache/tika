@@ -46,6 +46,9 @@ class ForkServer implements Runnable, Checksum {
 
     public static final byte READY = 4;
 
+    //milliseconds to sleep before checking to see if there has been any reading/writing
+    //If no reading or writing in this time, shutdown the server.
+    private long serverPulseMillis = 5000;
     /**
      * Starts a forked server process using the standard input and output
      * streams for communication with the parent process. Any attempts by
@@ -56,9 +59,13 @@ class ForkServer implements Runnable, Checksum {
      * @throws Exception if the server could not be started
      */
     public static void main(String[] args) throws Exception {
+        long serverPulseMillis = -1;
+        if (args.length > 0) {
+            serverPulseMillis = Long.parseLong(args[0]);
+        }
         URL.setURLStreamHandlerFactory(new MemoryURLStreamHandlerFactory());
 
-        ForkServer server = new ForkServer(System.in, System.out);
+        ForkServer server = new ForkServer(System.in, System.out, serverPulseMillis);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
 
@@ -85,19 +92,20 @@ class ForkServer implements Runnable, Checksum {
      * @param output output stream for writing to the parent process
      * @throws IOException if the server instance could not be created
      */
-    public ForkServer(InputStream input, OutputStream output)
+    public ForkServer(InputStream input, OutputStream output, long serverPulseMillis)
             throws IOException {
         this.input =
             new DataInputStream(new CheckedInputStream(input, this));
         this.output =
             new DataOutputStream(new CheckedOutputStream(output, this));
+        this.serverPulseMillis = serverPulseMillis;
     }
 
     public void run() {
         try {
             while (active) {
                 active = false;
-                Thread.sleep(5000);
+                Thread.sleep(serverPulseMillis);
             }
             System.exit(0);
         } catch (InterruptedException e) {
