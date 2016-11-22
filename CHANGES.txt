@@ -1,5 +1,7 @@
 Release 1.15 - ??
 
+  * Upgrade to POI 3.16-beta1 (TIKA-2116).
+
   * Allow configuration of timeout for ForkParser (TIKA-2170).
 
   * Add extraction of .jpx inline images from PDFs (TIKA-2175).
