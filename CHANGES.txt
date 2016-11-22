@@ -16,6 +16,7 @@ Release 2.0 - ???
       set your LoadErrorHandler to IGNORE. (TIKA-1805)
 
 Release 1.15 -???
+  * Upgrade to POI 3.16-beta1 (TIKA-2116).
 
   * Allow configuration of timeout for ForkParser (TIKA-2170).
 
