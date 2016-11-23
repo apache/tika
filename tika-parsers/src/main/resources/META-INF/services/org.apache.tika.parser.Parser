@@ -42,6 +42,7 @@ org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.OldExcelParser
 org.apache.tika.parser.microsoft.TNEFParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
+org.apache.tika.parser.microsoft.ooxml.xwpf.Word2006MLParser
 org.apache.tika.parser.microsoft.xml.WordMLParser
 org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
 org.apache.tika.parser.mp3.Mp3Parser

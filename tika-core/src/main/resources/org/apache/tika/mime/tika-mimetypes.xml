@@ -645,6 +645,12 @@
     <_comment>Word 2003 xml format, pre-ooxml</_comment>
     <_comment>glob pattern typically *.doc</_comment>
   </mime-type>
+  <mime-type type="application/vnd.ms-word2006ml">
+    <root-XML localName="package" namespaceURI="http://schemas.microsoft.com/office/2006/xmlPackage"/>
+    <sub-class-of type="application/xml"/>
+    <_comment>Word 2006 xml format, pre-ooxml</_comment>
+    <_comment>glob pattern typically *.xml</_comment>
+  </mime-type>
 
   <mime-type type="application/rdf+xml">
     <root-XML localName="RDF"/>

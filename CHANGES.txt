@@ -1,5 +1,7 @@
 Release 1.15 - ??
 
+  * Add mime detection and parser for Word 2006ML format (TIKA-2179).
+
   * Upgrade to POI 3.16-beta1 (TIKA-2116).
 
   * Allow configuration of timeout for ForkParser (TIKA-2170).
