@@ -197,6 +197,16 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue(canRun());
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
+        //test metadata extraction
+        assertContains("<meta name=\"Image Width\" content=\"136 pixels\" />", xml);
+
+        //TIKA-2169
+        assertContainsCount("<html", xml, 1);
+        assertContainsCount("<title", xml, 1);
+        assertContainsCount("</title", xml, 1);
+        assertContainsCount("<body", xml, 1);
+        assertContainsCount("</body", xml, 1);
+        assertContainsCount("</html", xml, 1);
     }
 
     @Test
