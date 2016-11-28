@@ -192,7 +192,6 @@ public abstract class TikaTest {
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata, ParseContext context) throws Exception {
       if (context == null) {
           context = new ParseContext();
-          context.set(Parser.class, parser);
       }
 
       try {

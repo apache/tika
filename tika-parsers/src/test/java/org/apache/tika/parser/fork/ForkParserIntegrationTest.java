@@ -34,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -256,6 +257,7 @@ public class ForkParserIntegrationTest {
             InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
                     "/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
+            context.set(Parser.class, new EmptyParser());
             parser.parse(stream, output, new Metadata(), context);
 
             String content = output.toString();
