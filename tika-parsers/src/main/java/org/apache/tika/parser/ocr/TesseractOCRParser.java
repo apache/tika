@@ -67,7 +67,6 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.parser.jpeg.JpegParser;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
@@ -219,15 +218,22 @@ public class TesseractOCRParser extends AbstractParser {
         try {
             TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-            xhtml.startDocument();
-            File tmpImgFile = tmp.createTemporaryFile();
-            parse(tikaStream, tmpImgFile, parseContext, xhtml, config);
+            //trigger the spooling to a tmp file if the stream wasn't
+            //already a TikaInputStream that contained a file
+            tikaStream.getPath();
+            //this is the text output file name specified on the tesseract
+            //commandline.  The actual output file name will have a suffix added.
+            File tmpOCROutputFile = tmp.createTemporaryFile();
+
             // Temporary workaround for TIKA-1445 - until we can specify
             //  composite parsers with strategies (eg Composite, Try In Turn),
             //  always send the image onwards to the regular parser to have
             //  the metadata for them extracted as well
-            _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, new EmbeddedContentHandler(xhtml), metadata, parseContext);
+            _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, new DefaultHandler(), metadata, parseContext);
+
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            parse(tikaStream, tmpOCROutputFile, parseContext, xhtml, config);
             xhtml.endDocument();
         } finally {
             tmp.dispose();
@@ -263,7 +269,6 @@ public class TesseractOCRParser extends AbstractParser {
      * @throws SAXException
      * @throws TikaException
      *
-     * @deprecated use {@link #parseInline(InputStream, XHTMLContentHandler, ParseContext, TesseractOCRConfig)}
      */
     public void parseInline(InputStream stream, XHTMLContentHandler xhtml, ParseContext parseContext,
                             TesseractOCRConfig config)
@@ -334,7 +339,7 @@ public class TesseractOCRParser extends AbstractParser {
         tmp.close();
     }
     
-    private void parse(TikaInputStream tikaInputStream, File tmpImgFile, ParseContext parseContext,
+    private void parse(TikaInputStream tikaInputStream, File tmpOCROutputFile, ParseContext parseContext,
                        XHTMLContentHandler xhtml, TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
         File tmpTxtOutput = null;
@@ -344,21 +349,27 @@ public class TesseractOCRParser extends AbstractParser {
 
             if (size >= config.getMinFileSizeToOcr() && size <= config.getMaxFileSizeToOcr()) {
 
-            	// copy the contents of the original input file into a temporary file
-            	// which will be processed for OCR
-            	TemporaryResources tmp = new TemporaryResources();
-            	File tmpFile = tmp.createTemporaryFile();
-            	FileUtils.copyFile(input, tmpFile);
-            	
             	// Process image if ImageMagick Tool is present
             	if(config.isEnableImageProcessing() == 1 && hasImageMagick(config)) {
-            		processImage(tmpFile,config);
-            	}
-            	
-                doOCR(tmpFile, tmpImgFile, config);                
+                    // copy the contents of the original input file into a temporary file
+                    // which will be preprocessed for OCR
+                    TemporaryResources tmp = new TemporaryResources();
+                    try {
+                        File tmpFile = tmp.createTemporaryFile();
+                        FileUtils.copyFile(input, tmpFile);
+                        processImage(tmpFile, config);
+                        doOCR(tmpFile, tmpOCROutputFile, config);
+                    } finally {
+                        if (tmp != null) {
+                            tmp.dispose();
+                        }
+                    }
+            	} else {
+                    doOCR(input, tmpOCROutputFile, config);
+                }
 
                 // Tesseract appends the output type (.txt or .hocr) to output file name
-                tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + "." +
+                tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() + "." +
                         config.getOutputType().toString().toLowerCase(Locale.US));
 
                 if (tmpTxtOutput.exists()) {
@@ -370,10 +381,7 @@ public class TesseractOCRParser extends AbstractParser {
                         }
                     }
                 }
-             
-                tmp.close();
             }
-
         } finally {
             if (tmpTxtOutput != null) {
                 tmpTxtOutput.delete();
