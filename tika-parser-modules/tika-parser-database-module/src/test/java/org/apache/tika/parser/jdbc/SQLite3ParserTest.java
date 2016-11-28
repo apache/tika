@@ -40,6 +40,7 @@ import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -136,14 +137,16 @@ public class SQLite3ParserTest extends TikaTest {
         assertContains("tempor\n", s);
     }
 
-    //test what happens if the user forgets to pass in a parser via context
-    //to handle embedded documents
+    //test what happens if the user does not want embedded docs handled
     @Test
     public void testNotAddingEmbeddedParserToParseContext() throws Exception {
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-        XMLResult r = getXML(TEST_FILE_NAME, new AutoDetectParser(), new Metadata(), new ParseContext());
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, new EmptyParser());
+
+        XMLResult r = getXML(TEST_FILE_NAME, new AutoDetectParser(), new Metadata(), parseContext);
         String xml = r.xml;
         //just includes headers for embedded documents
         assertContains("<table name=\"my_table1\"><thead><tr>", xml);

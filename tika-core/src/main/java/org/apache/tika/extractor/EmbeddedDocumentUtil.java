@@ -30,7 +30,9 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.ContentHandler;
@@ -58,9 +60,25 @@ public class EmbeddedDocumentUtil implements Serializable {
         this.embeddedDocumentExtractor = getEmbeddedDocumentExtractor(context);
     }
 
+    /**
+     * This offers a uniform way to get an EmbeddedDocumentExtractor from a ParseContext.
+     * As of Tika 1.15, an AutoDetectParser will automatically be added to parse
+     * embedded documents if no Parser.class is specified in the ParseContext.
+     * <p/>
+     * If you'd prefer not to parse embedded documents, set Parser.class
+     * to {@link org.apache.tika.parser.EmptyParser} in the ParseContext.
+     * @param context
+     * @return EmbeddedDocumentExtractor
+     */
     public static EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
         EmbeddedDocumentExtractor extractor = context.get(EmbeddedDocumentExtractor.class);
         if (extractor == null) {
+            //ensure that an AutoDetectParser is
+            //available for parsing embedded docs TIKA-2096
+            Parser embeddedParser = context.get(Parser.class);
+            if (embeddedParser == null) {
+                context.set(Parser.class, new AutoDetectParser());
+            }
             extractor = new ParsingEmbeddedDocumentExtractor(context);
         }
         return extractor;
