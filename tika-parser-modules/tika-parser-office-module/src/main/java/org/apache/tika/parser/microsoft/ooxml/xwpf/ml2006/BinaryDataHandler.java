@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import java.io.ByteArrayInputStream;
@@ -33,7 +33,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-class BinaryDataHandler extends PartHandler {
+class BinaryDataHandler extends AbstractPartHandler {
 
     private final XHTMLContentHandler handler;
     private final Metadata metadata;
@@ -62,7 +62,7 @@ class BinaryDataHandler extends PartHandler {
     }
 
     @Override
-    void endPart() throws SAXException, TikaException {
+    public void endPart() throws SAXException, TikaException {
         if (hasData()) {
             EmbeddedDocumentExtractor embeddedDocumentExtractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
@@ -80,14 +80,14 @@ class BinaryDataHandler extends PartHandler {
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
 
-        if (uri.equals(Word2006MLHandler.PKG_NS) && localName.equals("binaryData")) {
+        if (uri.equals(Word2006MLDocHandler.PKG_NS) && localName.equals("binaryData")) {
             inBinaryData = true;
         }
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (uri.equals(Word2006MLHandler.PKG_NS) && localName.equals("binaryData")) {
+        if (uri.equals(Word2006MLDocHandler.PKG_NS) && localName.equals("binaryData")) {
             inBinaryData = false;
         }
     }
@@ -105,7 +105,7 @@ class BinaryDataHandler extends PartHandler {
     }
 
     @Override
-    public String getPartContentType() {
+    public String getContentType() {
         return "";
     }
 

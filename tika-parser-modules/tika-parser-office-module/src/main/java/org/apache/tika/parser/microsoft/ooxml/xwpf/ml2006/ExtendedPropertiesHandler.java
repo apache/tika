@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import java.util.HashMap;
@@ -61,7 +61,7 @@ class ExtendedPropertiesHandler extends CorePropertiesHandler {
     }
 
     @Override
-    public String getPartContentType() {
+    public String getContentType() {
         return "application/vnd.openxmlformats-officedocument.extended-properties+xml";
     }
 }

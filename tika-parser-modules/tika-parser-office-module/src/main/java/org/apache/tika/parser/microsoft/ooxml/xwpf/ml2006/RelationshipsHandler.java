@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import org.apache.poi.openxml4j.opc.ContentTypes;
@@ -23,7 +23,7 @@ import org.apache.poi.openxml4j.opc.TargetMode;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-class RelationshipsHandler extends PartHandler {
+class RelationshipsHandler extends AbstractPartHandler {
 
     final static String REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships";
 
@@ -79,7 +79,7 @@ class RelationshipsHandler extends PartHandler {
     }
 
     @Override
-    public String getPartContentType() {
+    public String getContentType() {
         return ContentTypes.RELATIONSHIPS_PART;
     }
 

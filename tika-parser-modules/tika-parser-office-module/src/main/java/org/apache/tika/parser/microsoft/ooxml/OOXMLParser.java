@@ -27,15 +27,15 @@ import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.AbstractOfficeParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
  * Office Open XML (OOXML) parser.
  */
-public class OOXMLParser extends AbstractParser {
+public class OOXMLParser extends AbstractOfficeParser {
     static {
         //turn off POI's zip bomb detection because we have our own
         ZipSecureFile.setMinInflateRatio(-1.0d);
@@ -83,6 +83,8 @@ public class OOXMLParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        //set OfficeParserConfig if the user hasn't specified one
+        configure(context);
         // Have the OOXML file processed
         OOXMLExtractorFactory.parse(stream, handler, metadata, context);
     }

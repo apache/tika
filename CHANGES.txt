@@ -17,6 +17,9 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Added experimental SAX parser for .docx files. To select this parser,
+    set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321).
+
   * Change default behavior to parse embedded documents even if the user
     forgets to specify a Parser.class in the ParseContext (TIKA-2096).
     Users who wish to parse only the container document should set

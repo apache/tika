@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,7 +29,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.microsoft.MSOfficeParserConfig;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.junit.Test;
 
 
@@ -38,37 +38,33 @@ public class Word2006MLParserTest extends TikaTest {
     @Test
     public void basicTest() throws Exception {
 
-
-
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_2006ml.xml");
 
-        assertEquals(5, metadataList.size());
+        assertEquals(9, metadataList.size());
 
         Metadata m = metadataList.get(0);
 
-        assertEquals("2016-11-23T12:07:00Z", m.get(TikaCoreProperties.CREATED));
-        assertEquals("2016-11-23T12:07:00Z", m.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2016-11-29T17:54:00Z", m.get(TikaCoreProperties.CREATED));
+        assertEquals("2016-11-29T17:54:00Z", m.get(TikaCoreProperties.MODIFIED));
         assertEquals("My Document Title", m.get(TikaCoreProperties.TITLE));
         assertEquals("This is the Author", m.get(TikaCoreProperties.CREATOR));
         assertEquals("2", m.get(OfficeOpenXMLCore.REVISION));
-        assertEquals("Allison, Timothy B.", m.get(OfficeOpenXMLCore.LAST_MODIFIED_BY));
+        assertEquals("Allison, Timothy B.", m.get(TikaCoreProperties.MODIFIER));
         assertEquals("0", m.get(OfficeOpenXMLExtended.DOC_SECURITY));
-        assertEquals("225", m.get(Office.WORD_COUNT));
+        assertEquals("260", m.get(Office.WORD_COUNT));
         assertEquals("3", m.get(Office.PARAGRAPH_COUNT));
-        assertEquals("1506", m.get(Office.CHARACTER_COUNT_WITH_SPACES));
-        assertEquals("10", m.get(Office.LINE_COUNT));
+        assertEquals("1742", m.get(Office.CHARACTER_COUNT_WITH_SPACES));
+        assertEquals("12", m.get(Office.LINE_COUNT));
         assertEquals("16.0000", m.get(OfficeOpenXMLExtended.APP_VERSION));
 
 
         String content = m.get(RecursiveParserWrapper.TIKA_CONTENT);
 
+        assertContainsCount("This is the Author", content, 1);
+        assertContainsCount("This is an engaging title page", content, 1);
 
-        assertContainsCountTimes("engaging title page", content, 1);
-        assertContainsCountTimes("<p>This is the Author</p>", content, 1);
-        assertContainsCountTimes("<p>This is an engaging title page</p>", content, 1);
-
-        assertContains("<p>My Document Title</p>", content);
-        assertContains("<p>My Document Subtitle</p>", content);
+        assertContains("My Document Title", content);
+        assertContains("My Document Subtitle", content);
 
         assertContains("<p>\tHeading1\t3</p>", content);
 
@@ -76,11 +72,11 @@ public class Word2006MLParserTest extends TikaTest {
         //TODO: integrate numbering
         assertContains("Really basic 2.", content);
 
-        assertContainsCountTimes("This is a text box", content, 1);
+        assertContainsCount("This is a text box", content, 1);
 
-        assertContains("<p>This is a hyperlink: <a href=\"http://tika.apache.org\">tika</a></p>", content);
+//        assertContains("<p>This is a hyperlink: <a href=\"http://tika.apache.org\">tika</a></p>", content);
 
-        assertContains("<p>This is a link to a local file: <a href=\"file:///C:\\data\\test.png\">test.png</a></p>", content);
+//        assertContains("<p>This is a link to a local file: <a href=\"file:///C:\\data\\test.png\">test.png</a></p>", content);
 
         assertContains("<p>This is          10 spaces</p>", content);
 
@@ -92,7 +88,7 @@ public class Word2006MLParserTest extends TikaTest {
         assertContains("<p>Embedded table r1c1</p>", content);
 
         //shape
-        assertContainsCountTimes("<p>This is text within a shape", content, 1);
+        assertContainsCount("<p>This is text within a shape", content, 1);
 
         //sdt rich text
         assertContains("<p>Rich text content control", content);
@@ -113,8 +109,8 @@ public class Word2006MLParserTest extends TikaTest {
         //test that <tab/> works
         assertContains("tab\ttab", content);
 
-        assertContainsCountTimes("serious word art", content, 1);
-        assertContainsCountTimes("Wordartr1c1", content, 1);
+        assertContainsCount("serious word art", content, 1);
+        assertContainsCount("Wordartr1c1", content, 1);
 
         //glossary document contents
         assertContains("Click or tap to enter a date", content);
@@ -149,34 +145,27 @@ public class Word2006MLParserTest extends TikaTest {
 
         assertContains("Mattmann", content);
 
-        //TODO: extract this...Note that it is in "Backup" not "Choice"!!!
-//        assertContains("This is the chart title", content);
+        //test default -- do not include moveFrom
+        assertContainsCount("Second paragraph", content, 1);
 
-
-
-    }
-
-    private void assertContainsCountTimes(String needle, String haystack, int expectedCount) {
-        int i = haystack.indexOf("engaging title page");
-        int cnt = 0;
-        while (i > -1) {
-            cnt++;
-            i = haystack.indexOf("engaging title page", i+1);
-        }
-        assertEquals("found needle >"+ needle+"<"+cnt+" times instead of expected: "+expectedCount,
-                expectedCount, cnt);
+        //TODO: figure out how to get this
+        //assertContains("This is the chart title", content);
 
     }
 
     @Test
-    public void testSkipDeleted() throws Exception {
+    public void testSkipDeletedAndMoveFrom() throws Exception {
         ParseContext pc = new ParseContext();
-        MSOfficeParserConfig msOfficeParserConfig = new MSOfficeParserConfig();
-        msOfficeParserConfig.setIncludeDeletedContent(false);
-        pc.set(MSOfficeParserConfig.class, msOfficeParserConfig);
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeDeletedContent(false);
+        officeParserConfig.setIncludeMoveFromContent(true);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
 
         XMLResult r = getXML("testWORD_2006ml.xml", pc);
         assertNotContained("frog", r.xml);
+        assertContainsCount("Second paragraph", r.xml, 2);
+
     }
+
 
 }

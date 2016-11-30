@@ -25,10 +25,12 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -44,10 +46,12 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
@@ -1297,6 +1301,33 @@ public class OOXMLParserTest extends TikaTest {
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm"));
+    }
+
+    //@Test //use this for lightweight benchmarking to compare xwpf options
+    public void testBatch() throws Exception {
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setUseSAXDocxExtractor(true);
+        long started = new Date().getTime();
+        int ex = 0;
+        for (int i = 0; i < 100; i++) {
+            for (File f : getResourceAsFile("/test-documents").listFiles()) {
+                if (!f.getName().endsWith(".docx")) {
+                    continue;
+                }
+                try (InputStream is = TikaInputStream.get(f)) {
+                    ParseContext parseContext = new ParseContext();
+                    parseContext.set(OfficeParserConfig.class, officeParserConfig);
+                    //test only the extraction of the main docx content, not embedded docs
+                    parseContext.set(Parser.class, new EmptyParser());
+                    Metadata metadata = new Metadata();
+                    XMLResult r = getXML(is, parser, metadata, parseContext);
+                } catch (Exception e) {
+                    ex++;
+
+                }
+            }
+        }
+        System.out.println("elapsed: "+(new Date().getTime()-started) + " with " + ex + " exceptions");
     }
 
 }

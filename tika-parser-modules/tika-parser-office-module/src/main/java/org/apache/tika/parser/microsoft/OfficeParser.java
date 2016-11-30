@@ -48,7 +48,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
@@ -61,7 +60,7 @@ import org.xml.sax.SAXException;
 /**
  * Defines a Microsoft document content extractor.
  */
-public class OfficeParser extends AbstractParser {
+public class OfficeParser extends AbstractOfficeParser {
 
     /**
      * Serial version UID
@@ -98,6 +97,8 @@ public class OfficeParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+
+        configure(context);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 

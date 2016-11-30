@@ -16,9 +16,14 @@
  */
 package org.apache.tika.utils;
 
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -26,6 +31,7 @@ import java.util.TimeZone;
  * Date related utility methods and constants
  */
 public class DateUtils {
+
     /**
      * The UTC time zone. Not sure if {@link TimeZone#getTimeZone(String)}
      * understands "UTC" in all environments, but it'll fall back to GMT
@@ -44,8 +50,49 @@ public class DateUtils {
      */
     public static final TimeZone MIDDAY = TimeZone.getTimeZone("GMT-12:00");
 
+    private static ThreadLocal<DateFormat> createDateFormat(String format, TimeZone timezone) {
+        final SimpleDateFormat sdf =
+                new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        if (timezone != null) {
+            sdf.setTimeZone(timezone);
+        }
+        return new ThreadLocal<DateFormat>() {
+            @Override
+            public DateFormat initialValue() {
+                return sdf;
+            }
+        };
+    }
+
     /**
-     * Returns a ISO 8601 representation of the given date. This method 
+     * Some parsers will have the date as a ISO-8601 string
+     *  already, and will set that into the Metadata object.
+     * So we can return Date objects for these, this is the
+     *  list (in preference order) of the various ISO-8601
+     *  variants that we try when processing a date based
+     *  property.
+     */
+    private static final List<ThreadLocal<DateFormat>> ISO_8601_INPUT_FORMATS = loadDateFormats();
+
+    private static List<ThreadLocal<DateFormat>> loadDateFormats() {
+        List<ThreadLocal<DateFormat>> dateFormats = new ArrayList<>();
+        // yyyy-mm-ddThh...
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC));   // UTC/Zulu
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null));    // With timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null));     // Without timezone
+        // yyyy-mm-dd hh...
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", UTC));   // UTC/Zulu
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null));    // With timezone
+        dateFormats.add(createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null));     // Without timezone
+        // Date without time, set to Midday UTC
+        dateFormats.add(createDateFormat("yyyy-MM-dd", MIDDAY));       // Normal date format
+        dateFormats.add(createDateFormat("yyyy:MM:dd", MIDDAY));              // Image (IPTC/EXIF) format
+
+        return dateFormats;
+    }
+
+    /**
+     * Returns a ISO 8601 representation of the given date. This method
      * is thread safe and non-blocking.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
@@ -58,7 +105,7 @@ public class DateUtils {
         return doFormatDate(calendar);
     }
     /**
-     * Returns a ISO 8601 representation of the given date. This method 
+     * Returns a ISO 8601 representation of the given date. This method
      * is thread safe and non-blocking.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
@@ -66,7 +113,7 @@ public class DateUtils {
      * @return ISO 8601 date string, including timezone details
      */
     public static String formatDate(Calendar date) {
-        // Explicitly switch it into UTC before formatting 
+        // Explicitly switch it into UTC before formatting
         date.setTimeZone(UTC);
         return doFormatDate(date);
     }
@@ -97,5 +144,24 @@ public class DateUtils {
                 calendar.get(Calendar.HOUR_OF_DAY),
                 calendar.get(Calendar.MINUTE),
                 calendar.get(Calendar.SECOND));
+    }
+
+    /**
+     * Tries to parse the date string; returns null if no parse was possible.
+     *
+     * This is thread safe because it relies on threadlocal dateformats.
+     *
+     * @param dateString
+     * @return
+     */
+    public static Date tryToParse(String dateString) {
+        for (ThreadLocal<DateFormat> df : ISO_8601_INPUT_FORMATS) {
+            try {
+                return df.get().parse(dateString);
+            } catch (java.text.ParseException e){
+
+            }
+        }
+        return null;
     }
 }
