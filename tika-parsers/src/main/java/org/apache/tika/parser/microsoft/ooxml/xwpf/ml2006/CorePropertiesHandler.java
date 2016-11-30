@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import java.util.HashMap;
@@ -29,7 +29,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-class CorePropertiesHandler extends PartHandler {
+class CorePropertiesHandler extends AbstractPartHandler {
 
     final static String DC_NS = "http://purl.org/dc/elements/1.1";
     final static String DC_TERMS_NS = "http://purl.org/dc/terms";
@@ -70,7 +70,7 @@ class CorePropertiesHandler extends PartHandler {
         }
         cp.put("category", OfficeOpenXMLCore.CATEGORY);
         cp.put("contentStatus", OfficeOpenXMLCore.CONTENT_STATUS);
-        cp.put("lastModifiedBy", OfficeOpenXMLCore.LAST_MODIFIED_BY);
+        cp.put("lastModifiedBy", TikaCoreProperties.MODIFIER);
         cp.put("lastPrinted", OfficeOpenXMLCore.LAST_PRINTED);
         cp.put("revision", OfficeOpenXMLCore.REVISION);
         cp.put("subject", OfficeOpenXMLCore.SUBJECT);
@@ -138,7 +138,7 @@ class CorePropertiesHandler extends PartHandler {
     }
 
     @Override
-    public String getPartContentType() {
+    public String getContentType() {
         return ContentTypes.CORE_PROPERTIES_PART;
     }
 }

@@ -14,39 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
+abstract class AbstractPartHandler extends DefaultHandler implements PartHandler {
 
-import org.apache.poi.openxml4j.opc.TargetMode;
+    private String name;
 
-class Relationship {
+    public abstract String getContentType();
 
-    private final String contentType;
-
-    private final String target;
-
-    private final TargetMode targetMode;
-
-    public Relationship(String contentType, String target) {
-        this(contentType, target, null);
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public Relationship(String contentType, String target, TargetMode targetMode) {
-        this.contentType = contentType;
-        this.target = target;
-        this.targetMode = targetMode;
+    public String getName() {
+        return name;
     }
 
-    public String getContentType() {
-        return contentType;
-    }
-
-    public String getTarget() {
-        return target;
-    }
-
-    public TargetMode getTargetMode() {
-        return targetMode;
+    /**
+     * Override this to flush buffers, etc if necessary
+     */
+    public void endPart() throws SAXException, TikaException {
+        //no-op
     }
 }

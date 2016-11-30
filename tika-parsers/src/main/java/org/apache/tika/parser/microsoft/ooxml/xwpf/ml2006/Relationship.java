@@ -14,25 +14,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.microsoft;
+
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
-public class MSOfficeParserConfig {
+import org.apache.poi.openxml4j.opc.TargetMode;
 
-    private boolean includeDeletedContent = true;
+class Relationship {
 
-    /**
-     * Sets whether or not the parser should include deleted content.
-     * <b>This has not been implemented in all MSOffice parsers yet!!!</b>
-     * @param includeDeletedContent
-     */
-    public void setIncludeDeletedContent(boolean includeDeletedContent) {
-        this.includeDeletedContent = includeDeletedContent;
+    private final String contentType;
+
+    private final String target;
+
+    private final TargetMode targetMode;
+
+    public Relationship(String contentType, String target) {
+        this(contentType, target, null);
     }
 
-    public boolean getIncludeDeletedContent() {
-        return includeDeletedContent;
+    public Relationship(String contentType, String target, TargetMode targetMode) {
+        this.contentType = contentType;
+        this.target = target;
+        this.targetMode = targetMode;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public TargetMode getTargetMode() {
+        return targetMode;
     }
 }
-
-

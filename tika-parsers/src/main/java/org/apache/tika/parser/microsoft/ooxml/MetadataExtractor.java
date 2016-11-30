@@ -36,6 +36,7 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
@@ -57,7 +58,8 @@ public class MetadataExtractor {
 
     public void extract(Metadata metadata) throws TikaException {
         if (extractor.getDocument() != null ||
-                (extractor instanceof XSSFEventBasedExcelExtractor &&
+                ((extractor instanceof XSSFEventBasedExcelExtractor ||
+                        extractor instanceof XWPFEventBasedWordExtractor) &&
                         extractor.getPackage() != null)) {
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);

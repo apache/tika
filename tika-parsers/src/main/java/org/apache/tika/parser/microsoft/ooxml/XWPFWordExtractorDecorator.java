@@ -83,7 +83,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
-        XWPFListManager listManager = new XWPFListManager(document);
+        XWPFListManager listManager = new XWPFListManager(document.getNumbering());
         // headers
         if (hfPolicy != null) {
             extractHeaders(xhtml, hfPolicy, listManager);

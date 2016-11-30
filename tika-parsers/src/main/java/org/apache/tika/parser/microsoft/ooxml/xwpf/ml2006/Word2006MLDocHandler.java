@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import java.util.HashMap;
@@ -25,17 +25,18 @@ import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-class Word2006MLHandler extends DefaultHandler {
+class Word2006MLDocHandler extends DefaultHandler {
 
     final static String PKG_NS = "http://schemas.microsoft.com/office/2006/xmlPackage";
 
 
-    private final XHTMLContentHandler handler;
+    private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
     private final ParseContext parseContext;
 
@@ -44,53 +45,55 @@ class Word2006MLHandler extends DefaultHandler {
     private final RelationshipsManager relationshipsManager = new RelationshipsManager();
     private PartHandler currentPartHandler = null;
 
-    public Word2006MLHandler(XHTMLContentHandler handler, Metadata metadata, ParseContext context) {
-        this.handler = handler;
+    public Word2006MLDocHandler(XHTMLContentHandler xhtml, Metadata metadata,
+                                ParseContext context) {
+        this.xhtml = xhtml;
         this.metadata = metadata;
         this.parseContext = context;
+        OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
-        addPackageHandler(new RelationshipsHandler(relationshipsManager));
+        addPartHandler(new RelationshipsHandler(relationshipsManager));
 
-        addPackageHandler(new BodyContentHandler(
+        addPartHandler(new BodyPartHandler(
                 XWPFRelation.DOCUMENT.getContentType(),
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                XWPFRelation.FOOTNOTE.getContentType(),
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                XWPFRelation.HEADER.getContentType(),
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                XWPFRelation.FOOTER.getContentType(),
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
-                relationshipsManager,
-                handler, metadata, context));
-        addPackageHandler(new BodyContentHandler(
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
-                relationshipsManager,
-                handler, metadata, context));
+                xhtml, relationshipsManager, officeParserConfig));
 
-        addPackageHandler(new CorePropertiesHandler(metadata));
-        addPackageHandler(new ExtendedPropertiesHandler(metadata));
-        binaryDataHandler = new BinaryDataHandler(handler, metadata, context);
+        addPartHandler(new BodyPartHandler(
+                XWPFRelation.FOOTNOTE.getContentType(),
+                xhtml, relationshipsManager, officeParserConfig));
+
+        addPartHandler(new BodyPartHandler(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
+                xhtml, relationshipsManager, officeParserConfig));
+
+        addPartHandler(new BodyPartHandler(
+                XWPFRelation.HEADER.getContentType(),
+                xhtml, relationshipsManager, officeParserConfig));
+
+        addPartHandler(new BodyPartHandler(
+                XWPFRelation.FOOTER.getContentType(),
+                xhtml, relationshipsManager, officeParserConfig));
+
+        addPartHandler(new BodyPartHandler(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
+                xhtml, relationshipsManager, officeParserConfig));
+
+
+        addPartHandler(new BodyPartHandler(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
+                xhtml, relationshipsManager, officeParserConfig));
+
+        addPartHandler(new BodyPartHandler(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
+                xhtml, relationshipsManager, officeParserConfig));
+
+        addPartHandler(new CorePropertiesHandler(metadata));
+        addPartHandler(new ExtendedPropertiesHandler(metadata));
+        binaryDataHandler = new BinaryDataHandler(xhtml, metadata, context);
     }
 
-    private void addPackageHandler(PartHandler partHandler) {
-        partHandlers.put(partHandler.getPartContentType(), partHandler);
+    private void addPartHandler(PartHandler partHandler) {
+        partHandlers.put(partHandler.getContentType(), partHandler);
     }
 
 

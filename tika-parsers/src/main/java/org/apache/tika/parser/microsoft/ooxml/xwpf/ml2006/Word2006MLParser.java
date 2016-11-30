@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,8 +26,8 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.AbstractOfficeParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -35,7 +35,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 
-public class Word2006MLParser extends AbstractParser {
+public class Word2006MLParser extends AbstractOfficeParser {
 
     protected static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(
                     MediaType.application("vnd.ms-word2006ml"));
@@ -48,6 +48,9 @@ public class Word2006MLParser extends AbstractParser {
     @Override
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+        //set OfficeParserConfig if the user hasn't specified one
+        configure(context);
+
         final XHTMLContentHandler xhtml =
                 new XHTMLContentHandler(handler, metadata);
 
@@ -57,11 +60,12 @@ public class Word2006MLParser extends AbstractParser {
             context.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
-                            new Word2006MLHandler(xhtml, metadata, context))));
+                            new Word2006MLDocHandler(xhtml, metadata, context))));
         } catch (SAXException e) {
             throw new TikaException("XML parse error", e);
         } finally {
             xhtml.endDocument();
         }
     }
+
 }

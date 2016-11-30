@@ -14,30 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+/**
+ * WARNING: This class is mutable.  Make a copy of it
+ * if you want persistence!
+ */
 
-abstract class PartHandler extends DefaultHandler {
+class XWPFRunProperties {
+    boolean italics = false;
+    boolean bold = false;
 
-    private String name;
-
-    public abstract String getPartContentType();
-
-    public void setName(String name) {
-        this.name = name;
+    public boolean getItalics() {
+        return italics;
     }
 
-    public String getName() {
-        return name;
+    public boolean getBold() {
+        return bold;
     }
 
-    /**
-     * Override this to flush buffers, etc if necessary
-     */
-    void endPart() throws SAXException, TikaException {
+    public void setItalics(boolean italics) {
+        this.italics = italics;
+    }
 
+    public void setBold(boolean bold) {
+        this.bold = bold;
     }
 }

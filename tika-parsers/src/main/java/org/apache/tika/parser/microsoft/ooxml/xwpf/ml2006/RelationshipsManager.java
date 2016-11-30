@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 
 import java.util.HashMap;
