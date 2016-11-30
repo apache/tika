@@ -534,5 +534,19 @@ public class WordParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.doc");
         assertContainsAtLeast(minExpected, metadataList);
     }
+
+    @Test
+    public void testDeleted() throws Exception {
+        //test classic behavior
+        assertNotContained("frog", getXML("testWORD_2006ml.doc").xml);
+
+        //now test inclusion of deleted text
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeDeletedContent(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+        XMLResult r = getXML("testWORD_2006ml.doc", context);
+        assertContains("frog", r.xml);
+    }
 }
 

@@ -140,8 +140,8 @@ public class Word2006MLParserTest extends TikaTest {
 
         assertContains("Odd page footer", content);
 
-        //test default includes deleted
-        assertContains("frog", content);
+        //test default ignores deleted
+        assertNotContained("frog", content);
 
         assertContains("Mattmann", content);
 
@@ -157,12 +157,12 @@ public class Word2006MLParserTest extends TikaTest {
     public void testSkipDeletedAndMoveFrom() throws Exception {
         ParseContext pc = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setIncludeDeletedContent(false);
+        officeParserConfig.setIncludeDeletedContent(true);
         officeParserConfig.setIncludeMoveFromContent(true);
         pc.set(OfficeParserConfig.class, officeParserConfig);
 
         XMLResult r = getXML("testWORD_2006ml.xml", pc);
-        assertNotContained("frog", r.xml);
+        assertContains("frog", r.xml);
         assertContainsCount("Second paragraph", r.xml, 2);
 
     }

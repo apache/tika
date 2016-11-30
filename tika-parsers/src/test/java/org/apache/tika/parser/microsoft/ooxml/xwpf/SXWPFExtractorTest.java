@@ -145,8 +145,8 @@ public class SXWPFExtractorTest extends TikaTest {
 
         assertContains("Odd page footer", content);
 
-        //test default includes deleted
-        assertContains("frog", content);
+        //test default does not include deleted
+        assertNotContained("frog", content);
 
         assertContains("Mattmann", content);
 
@@ -159,13 +159,13 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testSkipDeleted() throws Exception {
         ParseContext pc = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setIncludeDeletedContent(false);
+        officeParserConfig.setIncludeDeletedContent(true);
         officeParserConfig.setUseSAXDocxExtractor(true);
         officeParserConfig.setIncludeMoveFromContent(true);
         pc.set(OfficeParserConfig.class, officeParserConfig);
 
         XMLResult r = getXML("testWORD_2006ml.docx", pc);
-        assertNotContained("frog", r.xml);
+        assertContains("frog", r.xml);
         assertContainsCount("Second paragraph", r.xml, 2);
 
     }
