@@ -17,6 +17,9 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Change default behavior in experimental .docx parser to ignore
+    deleted text to align with .doc (TIKA-2187).
+
   * Added experimental SAX parser for .docx files. To select this parser,
     set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321).
 

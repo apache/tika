@@ -21,7 +21,7 @@ import java.io.Serializable;
 
 public class OfficeParserConfig implements Serializable {
 
-    private boolean includeDeletedContent = true;
+    private boolean includeDeletedContent = false;
     private boolean includeMoveFromContent = false;
 
     private boolean useSAXDocxExtractor = false;
