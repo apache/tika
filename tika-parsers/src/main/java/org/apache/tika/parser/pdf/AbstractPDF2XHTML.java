@@ -230,21 +230,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (spec == null) {
             return;
         }
-        EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
         //current strategy is to pull all, not just first non-null
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(),
-                spec.getFile(), spec.getEmbeddedFile(), extractor, attributes);
+                spec.getFile(), spec.getEmbeddedFile(), attributes);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(),
-                spec.getFileMac(), spec.getEmbeddedFileMac(), extractor, attributes);
+                spec.getFileMac(), spec.getEmbeddedFileMac(), attributes);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(),
-                spec.getFileDos(), spec.getEmbeddedFileDos(), extractor, attributes);
+                spec.getFileDos(), spec.getEmbeddedFileDos(), attributes);
         extractPDEmbeddedFile(displayName, spec.getFileUnicode(),
-                spec.getFileUnix(), spec.getEmbeddedFileUnix(), extractor, attributes);
+                spec.getFileUnix(), spec.getEmbeddedFileUnix(), attributes);
     }
 
     private void extractPDEmbeddedFile(String displayName, String unicodeFileName,
-                                       String fileName, PDEmbeddedFile file,
-                                       EmbeddedDocumentExtractor extractor, AttributesImpl attributes)
+                                       String fileName, PDEmbeddedFile file, AttributesImpl attributes)
             throws SAXException, IOException, TikaException {
 
         if (file == null) {
@@ -256,18 +254,18 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         fileName = (fileName == null || "".equals(fileName.trim())) ? displayName : fileName;
 
         // TODO: other metadata?
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
-        metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
-        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+        Metadata embeddedMetadata = new Metadata();
+        embeddedMetadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+        embeddedMetadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
+        embeddedMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
-        metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileName);
-        if (extractor.shouldParseEmbedded(metadata)) {
+        embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileName);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             TikaInputStream stream = null;
             try {
                 stream = TikaInputStream.get(file.createInputStream());
-                extractor.parseEmbedded(
+                embeddedDocumentExtractor.parseEmbedded(
                         stream,
                         new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, false);
@@ -341,7 +339,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void endPage(PDPage page) throws IOException {
 
         try {
-            EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
             for (PDAnnotation annotation : page.getAnnotations()) {
 
                 if (annotation instanceof PDAnnotationFileAttachment) {
@@ -492,7 +489,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             processDoc("", remoteGoTo.getFile(), attributes);
         } else if (action instanceof PDActionJavaScript) {
             PDActionJavaScript jsAction = (PDActionJavaScript)action;
-            EmbeddedDocumentExtractor ex = getEmbeddedDocumentExtractor();
             Metadata m = new Metadata();
             m.set(Metadata.CONTENT_TYPE, "application/javascript");
             m.set(Metadata.CONTENT_ENCODING, StandardCharsets.UTF_8.toString());
@@ -500,9 +496,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.name());
             String js = jsAction.getAction();
             js = (js == null) ? "" : js;
-            if (ex.shouldParseEmbedded(m)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 try (InputStream is = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
-                    ex.parseEmbedded(is, xhtml, m, false);
+                    embeddedDocumentExtractor.parseEmbedded(is, xhtml, m, false);
                 }
             }
             addNonNullAttribute("class", "javascript", attributes);

@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Allow extraction of PDActions (including Javascript) from
+    PDFs (TIKA-2090).
+
   * Change default behavior in experimental .docx parser to ignore
     deleted text to align with .doc (TIKA-2187).
 
