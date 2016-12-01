@@ -135,7 +135,6 @@ public class PDFParser extends AbstractParser {
 
             metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
             extractMetadata(pdfDocument, metadata, context);
-
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
