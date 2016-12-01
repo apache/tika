@@ -538,8 +538,11 @@ public class WordParserTest extends TikaTest {
     @Test
     public void testDeleted() throws Exception {
         //test classic behavior
-        assertNotContained("frog", getXML("testWORD_2006ml.doc").xml);
+        String xml = getXML("testWORD_2006ml.doc").xml;
+        assertNotContained("frog", xml);
 
+        //moveFrom is deleted in .doc files
+        assertContainsCount("Second paragraph", xml, 1);
         //now test inclusion of deleted text
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
@@ -547,6 +550,9 @@ public class WordParserTest extends TikaTest {
         context.set(OfficeParserConfig.class, officeParserConfig);
         XMLResult r = getXML("testWORD_2006ml.doc", context);
         assertContains("frog", r.xml);
+
+        //moveFrom is deleted in .doc files
+        assertContainsCount("Second paragraph", r.xml, 2);
     }
 }
 
