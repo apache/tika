@@ -115,6 +115,9 @@ public class PDFParserConfig implements Serializable {
     //and then throws the first stored exception after the parse has completed.
     private boolean catchIntermediateIOExceptions = true;
 
+    private boolean extractActions = false;
+
+
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
@@ -177,6 +180,8 @@ public class PDFParserConfig implements Serializable {
         setCatchIntermediateIOExceptions(
                 getBooleanProp(props.getProperty("catchIntermediateIOExceptions"),
                 isCatchIntermediateIOExceptions()));
+
+        setExtractActions(getBooleanProp(props.getProperty("extractActions"), false));
 
         setOCRStrategy(OCR_STRATEGY.parse(props.getProperty("ocrStrategy")));
 
@@ -551,6 +556,25 @@ public class PDFParserConfig implements Serializable {
         return null;
     }
 
+    /**
+     * Whether or not to extract PDActions from the file.
+     * Most Action types are handled inline; javascript macros
+     * are processed as embedded documents.
+     *
+     * @param v
+     */
+    public void setExtractActions(boolean v) {
+        extractActions = v;
+    }
+
+    /**
+     * @see #setExtractActions(boolean)
+     * @return whether or not to extract PDActions
+     */
+    public boolean getExtractActions() {
+        return extractActions;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -573,6 +597,8 @@ public class PDFParserConfig implements Serializable {
         if (!getOCRStrategy().equals(config.getOCRStrategy())) return false;
         if (getOCRImageType() != config.getOCRImageType()) return false;
         if (!getOCRImageFormatName().equals(config.getOCRImageFormatName())) return false;
+        if (getExtractActions() != config.getExtractActions()) return false;
+
         return getAccessChecker().equals(config.getAccessChecker());
 
     }
@@ -594,7 +620,8 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + getOCRImageType().hashCode();
         result = 31 * result + getOCRImageFormatName().hashCode();
         result = 31 * result + getAccessChecker().hashCode();
-        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
+        result = 31 * result + (getCatchIntermediateIOExceptions() ? 1 : 0);
+        result = 31 * result + (getExtractActions() ? 1 : 0);
         return result;
     }
 
@@ -616,7 +643,8 @@ public class PDFParserConfig implements Serializable {
                 ", ocrImageType=" + ocrImageType +
                 ", ocrImageFormatName='" + ocrImageFormatName + '\'' +
                 ", accessChecker=" + accessChecker +
-                ", isCatchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
+                ", extractActions=" + extractActions +
+                ", catchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
                 '}';
     }
 }

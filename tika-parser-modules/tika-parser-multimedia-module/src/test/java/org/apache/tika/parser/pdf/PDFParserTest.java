@@ -394,7 +394,8 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testLinks() throws Exception {
         final XMLResult result = getXML("testPDFVarious.pdf");
-        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\" /></div>", result.xml);
+        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\">"+
+                "http://tika.apache.org/</a></div>", result.xml);
     }
 
     @Test
@@ -893,13 +894,14 @@ public class PDFParserTest extends TikaTest {
 
         XMLResult r = getXML("testPDF_childAttachments.pdf", context);
         //regular attachment
-        assertContains("<div class=\"embedded\" id=\"Unit10.doc\" />", r.xml);
+        assertContains("<div source=\"attachment\" class=\"embedded\" id=\"Unit10.doc\" />", r.xml);
         //inline image
         assertContains("<img src=\"embedded:image1.tif\" alt=\"image1.tif\" />", r.xml);
 
         //doc embedded inside an annotation
         r = getXML("testPDFFileEmbInAnnotation.pdf");
-        assertContains("<div class=\"embedded\" id=\"Excel.xlsx\" />", r.xml);
+        assertContains("<div source=\"annotation\" class=\"embedded\" id=\"Excel.xlsx\" />", r.xml);
+
     }
 
     //Access checker tests
