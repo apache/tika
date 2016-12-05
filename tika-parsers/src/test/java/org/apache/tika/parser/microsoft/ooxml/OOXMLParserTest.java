@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import javax.xml.transform.OutputKeys;
@@ -37,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -1328,6 +1330,20 @@ public class OOXMLParserTest extends TikaTest {
             }
         }
         System.out.println("elapsed: "+(new Date().getTime()-started) + " with " + ex + " exceptions");
+    }
+
+    @Test
+    public void testInitializationViaConfig() throws Exception {
+        //NOTE: this test relies on a bug in the DOM extractor that
+        //is passing over the title information.
+        //once we fix that, this test will no longer be meaningful!
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        XMLResult xml = getXML("testWORD_2006ml.docx", p, new Metadata());
+        assertContains("engaging title", xml.xml);
+
     }
 
 }
