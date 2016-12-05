@@ -72,7 +72,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         //handle main document
-        List<PackagePart> pps = opcPackage.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
+        List<PackagePart> pps = getMainDocumentParts();
         if (pps != null) {
             for (PackagePart pp : pps) {
                 //likely only one, but why not...
@@ -81,7 +81,6 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
         //handle glossary document
         pps = opcPackage.getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
-
         if (pps != null) {
             for (PackagePart pp : pps) {
                 //likely only one, but why not...
@@ -145,7 +144,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                                     new XWPFTikaBodyPartHandler(xhtml, xwpfListManager,
                                             context.get(OfficeParserConfig.class)), hyperlinks))));
         } catch (TikaException e) {
-            e.printStackTrace();
+            //swallow
         }
 
     }
@@ -217,6 +216,14 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
-        return opcPackage.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
+        //figure out which one this is
+        List<PackagePart> pps = opcPackage.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
+        if (pps.size() == 0) {
+            pps = opcPackage.getPartsByContentType(XWPFRelation.MACRO_DOCUMENT.getContentType());
+            if (pps.size() == 0) {
+                pps = opcPackage.getPartsByContentType(XWPFRelation.MACRO_TEMPLATE_DOCUMENT.getContentType());
+            }
+        }
+        return pps;
     }
 }

@@ -148,9 +148,6 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over",
                 content);
 
-        //TODO: add chart parsing
-//        assertContains("This is the chart", content);
-
         assertContains("This is a comment", content);
 
         assertContains("This is an endnote", content);
@@ -176,6 +173,9 @@ public class SXWPFExtractorTest extends TikaTest {
 
         //TODO: extract chart text
 //        assertContains("This is the chart title", content);
+
+        //TODO: add chart parsing
+//        assertContains("This is the chart", content);
 
     }
 
@@ -261,15 +261,18 @@ public class SXWPFExtractorTest extends TikaTest {
 
         // Text too
         assertTrue(xml.contains("<p>The end!</p>"));
+    }
 
+    @Test
+    public void testContiguousHTMLFormatting() throws Exception {
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
-        xml = getXML("testWORD_bold_character_runs.docx", parseContext).xml;
+        String xml = getXML("testWORD_bold_character_runs.docx", parseContext).xml;
 
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
-//TODO:        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
@@ -278,7 +281,7 @@ public class SXWPFExtractorTest extends TikaTest {
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
-//TODO:        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+        assertTrue("Bold text wasn't contiguous: " + xml, xml.contains("F<b>oob</b>a<b>r</b>"));
     }
 
     /**
@@ -311,9 +314,9 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testVarious() throws Exception {
-        XMLResult xmlResult = getXML("testWORD_various.docx", parseContext);
-        String content = xmlResult.xml;
-        Metadata metadata = xmlResult.metadata;
+        Metadata metadata = new Metadata();
+        String content = getText(getResourceAsStream("/test-documents/testWORD_various.docx"),
+                new AutoDetectParser(), parseContext, metadata);
         //content = content.replaceAll("\\s+"," ");
         assertContains("Footnote appears here", content);
         assertContains("This is a footnote.", content);
@@ -328,8 +331,8 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("Here is a citation:", content);
         assertContains("Figure 1 This is a caption for Figure 1", content);
         assertContains("(Kramer)", content);
-//TODO:        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+", " "));
-//TODO:        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+", " "));
+        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+", " "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for (int row = 1; row <= 3; row++) {
@@ -522,7 +525,7 @@ public class SXWPFExtractorTest extends TikaTest {
         String xml = getXML("testDOCX_Thumbnail.docx", parseContext).xml;
         int a = xml.indexOf("This file contains a thumbnail");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.emf\" />");
-
+        System.out.println(xml);
         assertTrue(a != -1);
         assertTrue(b != -1);
         assertTrue(a < b);
@@ -566,11 +569,11 @@ public class SXWPFExtractorTest extends TikaTest {
     }
 
     @Test
+    @Ignore("TODO -- paragraph list numbers")
     public void testDOCXParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_numbered_list.docx", parseContext).xml;
-        //SAX parser is getting this.  DOM parser is not
+        //SAX parser is getting this.  DOM parser is not!
         assertContains("add a list here", xml);
-/*TODO:
         assertContains("1) This", xml);
         assertContains("a) Is", xml);
         assertContains("i) A multi", xml);
@@ -591,11 +594,11 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("Some-1-CrazyFormat Greek numbering with crazy format - alpha", xml);
         assertContains("1.1.1. 1.1.1", xml);
         assertContains("1.1. 1.2-&gt;1.1  //set the value", xml);
-*/
+
     }
 
     @Test
-    @Ignore("TODO")
+    @Ignore("TODO -- paragraph list numbers")
     public void testDOCXOverrideParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_override_list_numbering.docx").xml;
 
@@ -678,8 +681,11 @@ public class SXWPFExtractorTest extends TikaTest {
     }
 
     @Test
-    @Ignore("TODO")
     public void testMacrosInDocm() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.docm", parseContext);
+        //check that content came out of the .docm file
+        assertContains("quick", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
@@ -687,7 +693,7 @@ public class SXWPFExtractorTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", parseContext));
+        assertContainsAtLeast(minExpected, metadataList);//, parseContext));
     }
 
 
