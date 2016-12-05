@@ -265,8 +265,13 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void hyperlinkRun(String link, String text) {
-            buffer.append(" (").append(text).append(") ");
+        public void hyperlinkStart(String link) {
+            //no-op
+        }
+
+        @Override
+        public void hyperlinkEnd() {
+            //no-op
         }
 
         @Override

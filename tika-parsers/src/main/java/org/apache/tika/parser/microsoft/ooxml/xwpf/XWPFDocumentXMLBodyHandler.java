@@ -65,7 +65,6 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inDelText = false;
-    private boolean inHyperlink = false;
 
     //alternate content can be embedded in itself.
     //need to track depth.
@@ -73,7 +72,6 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private int inACChoiceDepth = 0;
     private int inACFallbackDepth = 0;
     private EditType editType = EditType.NONE;
-    private String hyperlink = null;
 
     private XWPFRunProperties currRunProperties = new XWPFRunProperties();
 
@@ -151,10 +149,11 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                 startEditedSection(editType.MOVE_FROM, atts);
             } else if (localName.equals("hyperlink")) {
                 String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
+                String hyperlink = null;
                 if (hyperlinkId != null) {
                     hyperlink = hyperlinks.get(hyperlinkId);
                 }
-                inHyperlink = true;
+                bodyContentsHandler.hyperlinkStart(hyperlink);
             } else if (localName.equals("footnoteReference")) {
                 String id = atts.getValue(W_NS, "id");
                 bodyContentsHandler.footnoteReference(id);
@@ -210,7 +209,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
             }
 
 
-            if (localName.equals("r") && !inHyperlink) {
+            if (localName.equals("r")) {
                 bodyContentsHandler.run(currRunProperties, runBuffer.toString());
                 inR = false;
                 runBuffer.setLength(0);
@@ -235,13 +234,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                     localName.equals("moveTo") || localName.equals("moveFrom")) {
                 editType = EditType.NONE;
             } else if (localName.equals("hyperlink")) {
-                if (hyperlink != null) {
-                    bodyContentsHandler.hyperlinkRun(hyperlink, runBuffer.toString());
-                } else {
-                    bodyContentsHandler.run(currRunProperties, runBuffer.toString());
-                }
-                runBuffer.setLength(0);
-                inHyperlink = false;
+                bodyContentsHandler.hyperlinkEnd();
             }
         }
     }
@@ -281,7 +274,9 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
         void run(XWPFRunProperties runProperties, String contents);
 
-        void hyperlinkRun(String link, String text);
+        void hyperlinkStart(String link);
+
+        void hyperlinkEnd();
 
         void startParagraph();
 

@@ -38,6 +38,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     private int pDepth = 0; //paragraph depth
     private boolean isItalics = false;
     private boolean isBold = false;
+    private boolean wroteHyperlinkStart = false;
 
     public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
@@ -48,22 +49,45 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
 
     @Override
     public void run(XWPFRunProperties runProperties, String contents) {
-        //TODO: smooth out bold/italics to handle only changes
-        //If two runs are bold, only add <b> at beginning and end of the run pair
         try {
-            if (runProperties.getBold()) {
-                xhtml.startElement("b");
+            // True if we are currently in the named style tag:
+            if (runProperties.getBold() != isBold) {
+                if (isItalics) {
+                    xhtml.endElement("i");
+                    isItalics = false;
+                }
+                if (runProperties.getBold()) {
+                    xhtml.startElement("b");
+                    isBold = true;
+                } else {
+                    xhtml.endElement("b");
+                    isBold = false;
+                }
             }
-            if (runProperties.getItalics()) {
-                xhtml.startElement("i");
+
+            if (runProperties.getItalics() != isItalics) {
+                if (runProperties.getItalics()) {
+                    xhtml.startElement("i");
+                    isItalics = true;
+                } else {
+                    xhtml.endElement("i");
+                    isItalics = false;
+                }
             }
 
             xhtml.characters(contents);
-            if (runProperties.getItalics()) {
-                xhtml.endElement("i");
-            }
-            if (runProperties.getBold()) {
-                xhtml.endElement("b");
+
+        } catch (SAXException e) {
+
+        }
+    }
+
+    @Override
+    public void hyperlinkStart(String link) {
+        try {
+            if (link != null) {
+                xhtml.startElement("a", "href", link);
+                wroteHyperlinkStart = true;
             }
         } catch (SAXException e) {
 
@@ -71,14 +95,11 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     }
 
     @Override
-    public void hyperlinkRun(String link, String text) {
-        //System.out.println("tika handler: "+link + " :: "+text);
+    public void hyperlinkEnd() {
         try {
-            if (link != null) {
-                xhtml.startElement("a", "href", link);
-            }
-            xhtml.characters(text);
-            if (link != null) {
+            if (wroteHyperlinkStart) {
+                closeStyleTags();
+                wroteHyperlinkStart = false;
                 xhtml.endElement("a");
             }
         } catch (SAXException e) {
@@ -101,6 +122,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     @Override
     public void endParagraph() {
         try {
+            closeStyleTags();
             if (pDepth == 1) {
                 xhtml.endElement("p");
             } else {
@@ -168,7 +190,11 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
 
     @Override
     public void startSDT() {
-        //no-op
+        try {
+            closeStyleTags();
+        } catch (SAXException e) {
+
+        }
     }
 
     @Override
@@ -220,5 +246,16 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     @Override
     public boolean getIncludeMoveFromText() {
         return includeMoveFromText;
+    }
+
+    private void closeStyleTags() throws SAXException {
+        if (isItalics) {
+            xhtml.endElement("i");
+            isItalics = false;
+        }
+        if (isBold) {
+            xhtml.endElement("b");
+            isBold = false;
+        }
     }
 }

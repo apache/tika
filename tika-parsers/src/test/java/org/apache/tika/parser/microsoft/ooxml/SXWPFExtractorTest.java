@@ -144,7 +144,7 @@ public class SXWPFExtractorTest extends TikaTest {
         //glossary document contents
         assertContains("Click or tap to enter a date", content);
 
-        //basic formatting
+        //basic b/i tags...make sure not to overlap!
         assertContains("<p>The <i>quick</i> brown <b>fox </b>j<i>um</i><b><i>ped</i></b> over",
                 content);
 
@@ -665,10 +665,10 @@ public class SXWPFExtractorTest extends TikaTest {
     }
 
     @Test
-    @Ignore("TODO")
     public void testBoldHyperlink() throws Exception {
         //TIKA-1255
         String xml = getXML("testWORD_boldHyperlink.docx", parseContext).xml;
+        System.out.println(xml);
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
         assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold", xml);
