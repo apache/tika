@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -38,6 +39,7 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -418,13 +420,13 @@ public class SXWPFExtractorTest extends TikaTest {
 
     // TIKA-989:
     @Test
-    @Ignore("TODO")
     public void testEmbeddedPDF() throws Exception {
         String xml = getXML("testWORD_embedded_pdf.docx", parseContext).xml;
+        System.out.println(xml);
         int i = xml.indexOf("Here is the pdf file:");
-        int j = xml.indexOf("<div class=\"embedded\" id=\"rId5\"/>");
+        int j = xml.indexOf("<div class=\"embedded\" id=\"rId5\" />");
         int k = xml.indexOf("Bye Bye");
-        int l = xml.indexOf("<div class=\"embedded\" id=\"rId6\"/>");
+        int l = xml.indexOf("<div class=\"embedded\" id=\"rId6\" />");
         int m = xml.indexOf("Bye for real.");
         assertTrue(i != -1);
         assertTrue(j != -1);
@@ -696,5 +698,41 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsAtLeast(minExpected, metadataList);//, parseContext));
     }
 
+    @Test
+    public void testEmbedded() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_embeded.docx", parseContext);
+        Metadata main = metadataList.get(0);
+        String content = main.get(RecursiveParserWrapper.TIKA_CONTENT);
+        //make sure mark up is there
+        assertContains("<img src=\"embedded:image2.jpeg\" alt=\"A description...\" />",
+                content);
+
+        assertContains("<div class=\"embedded\" id=\"rId8\" />",
+                content);
+
+        assertEquals(16, metadataList.size());
+    }
+
+    @Test
+    public void iterate() throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, EmptyParser.INSTANCE);
+        for (File f : getResourceAsFile("/test-documents").listFiles()) {
+            if (! f.getName().equals("testWORD_embeded.docx")) {
+                continue;
+            }
+            if (f.getName().endsWith("docx") || f.getName().endsWith(".docm")) {
+                try {
+                    XMLResult r = getXML(f.getName(), context);
+                    if (r.xml.contains("<img")) {
+                        System.out.println(f.getName());
+                    }
+                    System.out.println(r.xml);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
 }

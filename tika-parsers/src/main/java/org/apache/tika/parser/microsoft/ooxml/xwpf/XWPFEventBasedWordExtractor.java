@@ -353,6 +353,16 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         public boolean getIncludeMoveFromText() {
             return false;
         }
+
+        @Override
+        public void embeddedOLERef(String refId) {
+            //no-op
+        }
+
+        @Override
+        public void embeddedPicRef(String picFileName, String picDescription) {
+            //no-op
+        }
     }
 }
 

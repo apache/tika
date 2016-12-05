@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
@@ -56,9 +58,17 @@ import org.xml.sax.SAXException;
  */
 public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
+    private final static String[] EMBEDDED_RELATIONSHIPS = new String[]{
+            RELATION_OLE_OBJECT,
+            RELATION_AUDIO,
+            RELATION_IMAGE,
+            RELATION_PACKAGE,
+            RELATION_OFFICE_DOCUMENT
+    };
 
     private final OPCPackage opcPackage;
     private final ParseContext context;
+
 
     public SXWPFWordExtractorDecorator(ParseContext context,
                                        XWPFEventBasedWordExtractor extractor) {
@@ -135,22 +145,22 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void handlePart(PackagePart packagePart,
                             XWPFListManager xwpfListManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
-        Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
+        Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
             context.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new XWPFDocumentXMLBodyHandler(
                                     new XWPFTikaBodyPartHandler(xhtml, xwpfListManager,
-                                            context.get(OfficeParserConfig.class)), hyperlinks))));
+                                            context.get(OfficeParserConfig.class)), linkedRelationships))));
         } catch (TikaException e) {
             //swallow
         }
 
     }
 
-    private Map<String, String> loadHyperlinkRelationships(PackagePart bodyPart) {
-        Map<String, String> hyperlinks = new HashMap<>();
+    private Map<String, String> loadLinkedRelationships(PackagePart bodyPart) {
+        Map<String, String> linkedRelationships = new HashMap<>();
         try {
             PackageRelationshipCollection prc = bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
             for (int i = 0; i < prc.size(); i++) {
@@ -161,12 +171,37 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 String id = pr.getId();
                 String url = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
                 if (id != null && url != null) {
-                    hyperlinks.put(id, url);
+                    linkedRelationships.put(id, url);
                 }
             }
+
+            for (String rel : EMBEDDED_RELATIONSHIPS) {
+                prc = bodyPart.getRelationshipsByType(rel);
+                for (int i = 0; i < prc.size(); i++) {
+                    PackageRelationship pr = prc.getRelationship(i);
+                    if (pr == null) {
+                        continue;
+                    }
+                    String id = pr.getId();
+                    String uriString = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
+                    String fileName = uriString;
+                    if (pr.getTargetURI() != null) {
+                        try {
+                            fileName = FileHelper.getFilename(new File(fileName));
+                        } catch (Exception e) {
+                            fileName = uriString;
+                        }
+                    }
+                    if (id != null) {
+                        fileName = (fileName == null) ? "" : fileName;
+                        linkedRelationships.put(id, fileName);
+                    }
+                }
+            }
+
         } catch (InvalidFormatException e) {
         }
-        return hyperlinks;
+        return linkedRelationships;
     }
 /*
     private XWPFStyles loadStyles(PackagePart packagePart) {

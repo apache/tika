@@ -24,6 +24,7 @@ import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFBodyContentsHandler {
 
@@ -246,6 +247,43 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     @Override
     public boolean getIncludeMoveFromText() {
         return includeMoveFromText;
+    }
+
+    @Override
+    public void embeddedOLERef(String relId) {
+        if (relId == null) {
+            return;
+        }
+        try {
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+            attributes.addAttribute("", "id", "id", "CDATA", relId);
+            xhtml.startElement("div", attributes);
+            xhtml.endElement("div");
+
+        } catch (SAXException e) {
+
+        }
+    }
+
+    @Override
+    public void embeddedPicRef(String picFileName, String picDescription) {
+
+        try {
+            AttributesImpl attr = new AttributesImpl();
+            if (picFileName != null) {
+                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + picFileName);
+            }
+            if (picDescription != null) {
+                attr.addAttribute("", "alt", "alt", "CDATA", picDescription);
+            }
+
+            xhtml.startElement("img", attr);
+            xhtml.endElement("img");
+
+        } catch (SAXException e) {
+
+        }
     }
 
     private void closeStyleTags() throws SAXException {

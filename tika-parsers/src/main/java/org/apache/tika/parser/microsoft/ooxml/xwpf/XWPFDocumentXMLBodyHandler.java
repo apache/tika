@@ -45,6 +45,10 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     private final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+    private final static String O_NS = "urn:schemas-microsoft-com:office:office";
+    private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
+    private final static String DRAWING_MAIN_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+
     private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
     private final static char[] TAB = new char[1];
@@ -55,7 +59,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     private final XWPFBodyContentsHandler bodyContentsHandler;
     //private final RelationshipsManager relationshipsManager;
-    private final Map<String, String> hyperlinks;
+    private final Map<String, String> linkedRelationships;
 
     private final StringBuilder runBuffer = new StringBuilder();
 
@@ -65,6 +69,11 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inDelText = false;
+
+    private boolean inPic = false;
+    private String picDescription = null;
+    private String picRId = null;
+    private String picFilename = null;
 
     //alternate content can be embedded in itself.
     //need to track depth.
@@ -78,7 +87,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     public XWPFDocumentXMLBodyHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                       Map<String, String> hyperlinks) {
         this.bodyContentsHandler = bodyContentsHandler;
-        this.hyperlinks = hyperlinks;
+        this.linkedRelationships = hyperlinks;
     }
 
 
@@ -110,6 +119,39 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
         if (inACChoiceDepth > 0) {
             return;
+        }
+        if (uri == null || uri.equals(O_NS)) {
+            if (localName.equals("OLEObject")) {
+                String type = null;
+                String refId = null;
+                //TODO: want to get ProgID?
+                for (int i = 0; i < atts.getLength(); i++) {
+                    String attLocalName = atts.getLocalName(i);
+                    String attValue = atts.getValue(i);
+                    if (attLocalName.equals("Type")) {
+                        type = attValue;
+                    } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) && attLocalName.equals("id")) {
+                        refId = attValue;
+                    }
+                }
+                if ("Embed".equals(type)) {
+                    bodyContentsHandler.embeddedOLERef(refId);
+                }
+            }
+        }
+
+        if (uri == null || uri.equals(PIC_NS)) {
+            if ("pic".equals(localName)) {
+                inPic = true;
+            } else if ("cNvPr".equals(localName)) {
+                picDescription = atts.getValue("", "descr");
+            }
+        }
+
+        if (uri == null || uri.equals(DRAWING_MAIN_NS)) {
+            if ("blip".equals(localName)) {
+                picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
+            }
         }
 
         if (uri == null || uri.equals(W_NS)) {
@@ -151,7 +193,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                 String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
                 String hyperlink = null;
                 if (hyperlinkId != null) {
-                    hyperlink = hyperlinks.get(hyperlinkId);
+                    hyperlink = linkedRelationships.get(hyperlinkId);
                 }
                 bodyContentsHandler.hyperlinkStart(hyperlink);
             } else if (localName.equals("footnoteReference")) {
@@ -202,6 +244,20 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
             } else if (localName.equals("Fallback")) {
                 inACFallbackDepth--;
             }
+        }
+
+        if (PIC_NS.equals(uri)) {
+            if ("pic".equals(localName)) {
+                String picFileName = null;
+                if (picRId != null) {
+                    picFileName = linkedRelationships.get(picRId);
+                }
+                bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
+                picDescription = null;
+                picRId = null;
+                inPic = false;
+            }
+
         }
         if (uri == null || uri.equals(W_NS)) {
             if (inACChoiceDepth > 0) {
@@ -309,5 +365,9 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
         void endnoteReference(String id);
 
         boolean getIncludeMoveFromText();
+
+        void embeddedOLERef(String refId);
+
+        void embeddedPicRef(String picFileName, String picDescription);
     }
 }
