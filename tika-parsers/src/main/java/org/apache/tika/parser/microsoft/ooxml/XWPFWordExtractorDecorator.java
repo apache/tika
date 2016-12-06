@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
@@ -38,6 +40,7 @@ import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFPicture;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
+import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFSDT;
 import org.apache.poi.xwpf.usermodel.XWPFSDTCell;
@@ -64,6 +67,16 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
     private static final String LIST_DELIMITER = " ";
+
+
+    //include all parts that might have embedded objects
+    private final static String[] MAIN_PART_RELATIONS = new String[]{
+            XWPFRelation.HEADER.getRelation(),
+            XWPFRelation.FOOTER.getRelation(),
+            XWPFRelation.FOOTNOTE.getRelation(),
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
+    };
 
 
     private XWPFDocument document;
@@ -438,14 +451,32 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * Word documents are simple, they only have the one
-     * main part
+     * Include main body and anything else that can
+     * have an attachment/embedded object
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
         List<PackagePart> parts = new ArrayList<PackagePart>();
         parts.add(document.getPackagePart());
+        addRelatedParts(document.getPackagePart(), parts);
         return parts;
+    }
+
+    private void addRelatedParts(PackagePart documentPart, List<PackagePart> relatedParts) {
+        for (String relation : MAIN_PART_RELATIONS) {
+            PackageRelationshipCollection prc = null;
+            try {
+                prc = documentPart.getRelationshipsByType(relation);
+                if (prc != null) {
+                    for (int i = 0; i < prc.size(); i++) {
+                        PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
+                        relatedParts.add(packagePart);
+                    }
+                }
+            } catch (InvalidFormatException e) {
+            }
+        }
+
     }
 
     private class TmpFormatting {

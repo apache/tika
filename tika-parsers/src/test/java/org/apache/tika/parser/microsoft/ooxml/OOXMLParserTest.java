@@ -468,7 +468,6 @@ public class OOXMLParserTest extends TikaTest {
      * Test that we can extract image from docx header
      */
     @Test
-    @Ignore("fix actual extraction")
     public void testWordPicturesInHeader() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("headerPic.docx");
         assertEquals(2, metadataList.size());
@@ -482,7 +481,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("not currently extracting from non-body components")
+    @Ignore("need to add links in xhtml")
     public void testPicturesInVariousPlaces() throws Exception {
         //test that images are actually extracted from
         //headers, footers, comments, endnotes, footnotes
