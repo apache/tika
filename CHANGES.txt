@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Enabled extraction of embedded objects from headers, footers,
+    footnotes, endnotes and comments in legacy .docx parser (TIKA-2192).
+
   * Allow extraction of PDActions (including Javascript) from
     PDFs (TIKA-2090).
 
@@ -7,7 +10,7 @@ Release 1.15 - ??
     deleted text to align with .doc (TIKA-2187).
 
   * Added experimental SAX parser for .docx files. To select this parser,
-    set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321).
+    set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321, TIKA-2191).
 
   * Change default behavior to parse embedded documents even if the user
     forgets to specify a Parser.class in the ParseContext (TIKA-2096).
