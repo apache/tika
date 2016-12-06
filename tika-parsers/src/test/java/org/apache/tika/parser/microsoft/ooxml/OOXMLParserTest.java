@@ -468,30 +468,44 @@ public class OOXMLParserTest extends TikaTest {
      * Test that we can extract image from docx header
      */
     @Test
+    @Ignore("fix actual extraction")
     public void testWordPicturesInHeader() throws Exception {
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-        handler.setResult(new StreamResult(sw));
-
-        // Try with a document containing various tables and formattings
-        try (InputStream input = getTestDocument("headerPic.docx")) {
-            parser.parse(input, handler, metadata, context);
-            String xml = sw.toString();
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            // Check that custom headings came through
-            assertTrue(xml.contains("<img"));
-        }
+        List<Metadata> metadataList = getRecursiveMetadata("headerPic.docx");
+        assertEquals(2, metadataList.size());
+        Metadata m = metadataList.get(0);
+        String mainContent = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+        assertEquals(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                m.get(Metadata.CONTENT_TYPE));
+        // Check that custom headings came through
+        assertTrue(mainContent.contains("<img"));
     }
 
+    @Test
+    @Ignore("not currently extracting from non-body components")
+    public void testPicturesInVariousPlaces() throws Exception {
+        //test that images are actually extracted from
+        //headers, footers, comments, endnotes, footnotes
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_embedded_pics.docx");
+
+        //only process embedded resources once
+        assertEquals(3, metadataList.size());
+        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        for (int i = 1; i < 4; i++) {
+            assertContains("header"+i+"_pic", content);
+            assertContains("footer"+i+"_pic", content);
+        }
+        assertContains("body_pic.jpg", content);
+        assertContains("sdt_pic.jpg", content);
+        assertContains("deeply_embedded_pic", content);
+        assertContains("deleted_pic", content);//TODO: don't extract this
+        assertContains("footnotes_pic", content);
+        assertContains("comments_pic", content);
+        assertContains("endnotes_pic", content);
+//        assertContains("sdt2_pic.jpg", content);//name of file is not stored in image-sdt
+
+        assertContainsCount("<img src=", content, 14);
+    }
     /**
      * Documents with some sheets are protected, but not all.
      * See TIKA-364.

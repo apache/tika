@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,11 +60,19 @@ import org.xml.sax.SAXException;
 public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private final static String[] EMBEDDED_RELATIONSHIPS = new String[]{
-            RELATION_OLE_OBJECT,
             RELATION_AUDIO,
             RELATION_IMAGE,
             RELATION_PACKAGE,
             RELATION_OFFICE_DOCUMENT
+    };
+
+    //include all parts that might have embedded objects
+    private final static String[] MAIN_PART_RELATIONS = new String[]{
+            XWPFRelation.HEADER.getRelation(),
+            XWPFRelation.FOOTER.getRelation(),
+            XWPFRelation.FOOTNOTE.getRelation(),
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
     };
 
     private final OPCPackage opcPackage;
@@ -82,7 +91,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         //handle main document
-        List<PackagePart> pps = getMainDocumentParts();
+        List<PackagePart> pps = getStoryDocumentParts();
         if (pps != null) {
             for (PackagePart pp : pps) {
                 //likely only one, but why not...
@@ -176,6 +185,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
 
             for (String rel : EMBEDDED_RELATIONSHIPS) {
+
                 prc = bodyPart.getRelationshipsByType(rel);
                 for (int i = 0; i < prc.size(); i++) {
                     PackageRelationship pr = prc.getRelationship(i);
@@ -247,11 +257,40 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * This returns the main document only.
+     * This returns all items that might contain embedded objects:
+     * main document, headers, footers, comments, etc.
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
-        //figure out which one this is
+
+        List<PackagePart> mainStoryDocs = getStoryDocumentParts();
+        List<PackagePart> relatedParts = new ArrayList<>();
+
+        for (PackagePart pp : mainStoryDocs) {
+            addRelatedParts(pp, relatedParts);
+        }
+        relatedParts.addAll(mainStoryDocs);
+        return relatedParts;
+    }
+
+    private void addRelatedParts(PackagePart documentPart, List<PackagePart> relatedParts) {
+        for (String relation : MAIN_PART_RELATIONS) {
+            PackageRelationshipCollection prc = null;
+            try {
+                prc = documentPart.getRelationshipsByType(relation);
+                if (prc != null) {
+                    for (int i = 0; i < prc.size(); i++) {
+                        PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
+                        relatedParts.add(packagePart);
+                    }
+                }
+            } catch (InvalidFormatException e) {
+            }
+        }
+
+    }
+
+    private List<PackagePart> getStoryDocumentParts() {
         List<PackagePart> pps = opcPackage.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
         if (pps.size() == 0) {
             pps = opcPackage.getPartsByContentType(XWPFRelation.MACRO_DOCUMENT.getContentType());

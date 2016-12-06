@@ -34,6 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
 
+
     enum EditType {
         NONE,
         INSERT,
@@ -48,6 +49,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
     private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
     private final static String DRAWING_MAIN_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+    private static final String V_NS = "urn:schemas-microsoft-com:vml";
 
     private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
@@ -71,6 +73,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private boolean inDelText = false;
 
     private boolean inPic = false;
+    private boolean inPict = false;
     private String picDescription = null;
     private String picRId = null;
     private String picFilename = null;
@@ -151,6 +154,13 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
         if (uri == null || uri.equals(DRAWING_MAIN_NS)) {
             if ("blip".equals(localName)) {
                 picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
+            }
+        }
+
+        if (uri == null || uri.equals(V_NS)) {
+            if ("imagedata".equals(localName)) {
+                picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
+                picDescription = atts.getValue(O_NS, "title");
             }
         }
 
@@ -248,14 +258,9 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
         if (PIC_NS.equals(uri)) {
             if ("pic".equals(localName)) {
-                String picFileName = null;
-                if (picRId != null) {
-                    picFileName = linkedRelationships.get(picRId);
-                }
-                bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
-                picDescription = null;
-                picRId = null;
+                handlePict();
                 inPic = false;
+                return;
             }
 
         }
@@ -291,8 +296,21 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                 editType = EditType.NONE;
             } else if (localName.equals("hyperlink")) {
                 bodyContentsHandler.hyperlinkEnd();
+            } else if ("pict".equals(localName)) {
+                handlePict();
             }
         }
+    }
+
+    private void handlePict() {
+        String picFileName = null;
+        if (picRId != null) {
+            picFileName = linkedRelationships.get(picRId);
+        }
+        bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
+        picDescription = null;
+        picRId = null;
+        inPic = false;
     }
 
     @Override

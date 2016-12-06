@@ -290,16 +290,41 @@ public class SXWPFExtractorTest extends TikaTest {
      * Test that we can extract image from docx header
      */
     @Test
-    @Ignore("TODO")
     public void testWordPicturesInHeader() throws Exception {
-        assertEquals(2, getRecursiveMetadata("headerPic.docx").size());
-        XMLResult xmlResult = getXML("headerPic.docx",  parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("headerPic.docx", parseContext);
+        assertEquals(2, metadataList.size());
+        Metadata m = metadataList.get(0);
+        String mainContent = m.get(RecursiveParserWrapper.TIKA_CONTENT);
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                    m.get(Metadata.CONTENT_TYPE));
             // Check that custom headings came through
-            assertTrue(xmlResult.xml.contains("<img"));
+            assertTrue(mainContent.contains("<img"));
+    }
 
+    @Test
+    public void testPicturesInVariousPlaces() throws Exception {
+        //test that images are actually extracted from
+        //headers, footers, comments, endnotes, footnotes
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_embedded_pics.docx", parseContext);
+
+        //only process embedded resources once
+        assertEquals(3, metadataList.size());
+        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        for (int i = 1; i < 4; i++) {
+            assertContains("header"+i+"_pic", content);
+            assertContains("footer"+i+"_pic", content);
+        }
+        assertContains("body_pic.jpg", content);
+        assertContains("sdt_pic.jpg", content);
+        assertContains("deeply_embedded_pic", content);
+        assertContains("deleted_pic", content);//TODO: don't extract this
+        assertContains("footnotes_pic", content);
+        assertContains("comments_pic", content);
+        assertContains("endnotes_pic", content);
+//        assertContains("sdt2_pic.jpg", content);//name of file is not stored in image-sdt
+
+        assertContainsCount("<img src=", content, 14);
     }
 
     /**

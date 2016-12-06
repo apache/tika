@@ -22,7 +22,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
@@ -158,10 +160,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private void handleEmbeddedParts(ContentHandler handler)
             throws TikaException, IOException, SAXException {
+        Set<String> seen = new HashSet<>();
         try {
             for (PackagePart source : getMainDocumentParts()) {
                 for (PackageRelationship rel : source.getRelationships()) {
-
+                    URI targetURI = rel.getTargetURI();
+                    if (targetURI != null) {
+                        if (seen.contains(targetURI.toString())) {
+                            continue;
+                        }
+                        seen.add(targetURI.toString());
+                    }
                     URI sourceURI = rel.getSourceURI();
                     String sourceDesc;
                     if (sourceURI != null) {
