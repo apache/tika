@@ -66,7 +66,7 @@ public class Word2006MLParserTest extends TikaTest {
         assertContains("My Document Title", content);
         assertContains("My Document Subtitle", content);
 
-        assertContains("<p>\tHeading1\t3</p>", content);
+        assertContains("<p>\t<a href=\"#_Toc467647605\">Heading1	3</a></p>", content);
 
 
         //TODO: integrate numbering
@@ -81,11 +81,11 @@ public class Word2006MLParserTest extends TikaTest {
         assertContains("<p>This is          10 spaces</p>", content);
 
         //caption
-        assertContains("<p>Table 1: Table1 Caption</p>", content);
+        assertContains("<p>\t<a href=\"#_Toc467647797\">Table 1: Table1 Caption\t2</a>", content);
 
         //embedded table
         //TODO: figure out how to handle embedded tables in html
-        assertContains("<p>Embedded table r1c1</p>", content);
+        assertContains("<td>Embedded table r1c1", content);
 
         //shape
         assertContainsCount("<p>This is text within a shape", content, 1);

@@ -77,6 +77,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private String picDescription = null;
     private String picRId = null;
     private String picFilename = null;
+    private boolean lastStartElementWasP;
 
     //alternate content can be embedded in itself.
     //need to track depth.
@@ -86,6 +87,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     private EditType editType = EditType.NONE;
 
     private XWPFRunProperties currRunProperties = new XWPFRunProperties();
+    private XWPFParagraphProperties currPProperties = new XWPFParagraphProperties();
 
     public XWPFDocumentXMLBodyHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                       Map<String, String> hyperlinks) {
@@ -112,6 +114,12 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+
+        if (lastStartElementWasP && ! "pPr".equals(localName)) {
+            bodyContentsHandler.startParagraph(currPProperties);
+        }
+        lastStartElementWasP = false;
+
         if (uri != null && uri.equals(MC_NS)) {
             if (localName.equals("Choice")) {
                 inACChoiceDepth++;
@@ -166,7 +174,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
         if (uri == null || uri.equals(W_NS)) {
             if (localName.equals("p")) {
-                bodyContentsHandler.startParagraph();
+                lastStartElementWasP = true;
                 pDepth++;
             } else if (localName.equals("r")) {
                 inR = true;
@@ -204,21 +212,43 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                 String hyperlink = null;
                 if (hyperlinkId != null) {
                     hyperlink = linkedRelationships.get(hyperlinkId);
+                    bodyContentsHandler.hyperlinkStart(hyperlink);
+                } else {
+                    String anchor = atts.getValue(W_NS, "anchor");
+                    if (anchor != null) {
+                        anchor = "#"+anchor;
+                    }
+                    bodyContentsHandler.hyperlinkStart(anchor);
                 }
-                bodyContentsHandler.hyperlinkStart(hyperlink);
             } else if (localName.equals("footnoteReference")) {
                 String id = atts.getValue(W_NS, "id");
                 bodyContentsHandler.footnoteReference(id);
             } else if (localName.equals("endnoteReference")) {
                 String id = atts.getValue(W_NS, "id");
                 bodyContentsHandler.endnoteReference(id);
-            } /*else if (localName.equals("headerReference")) {
+            } else if ("pStyle".equals(localName)) {
+                String styleId = atts.getValue(W_NS, "val");
+                currPProperties.setStyleID(styleId);
+            } else if (inNumPr && "ilvl".equals(localName)) {
+                currPProperties.setIlvl(getIntVal(atts));
+            } else if (inNumPr && "numId".equals(localName)) {
+                currPProperties.setNumId(getIntVal(atts));
+            } else if ("bookmarkStart".equals(localName)) {
+                String name = atts.getValue(W_NS, "name");
+                String id = atts.getValue(W_NS, "id");
+                bodyContentsHandler.startBookmark(id, name);
+            } else if ("bookmarkEnd".equals(localName)) {
+                String id = atts.getValue(W_NS, "id");
+                bodyContentsHandler.endBookmark(id);
+            }
+            /*else if (localName.equals("headerReference")) {
                 //TODO
             } else if (localName.equals("footerReference")) {
                 //TODO
             } else if (localName.equals("commentRangeEnd")) {
                 //TODO
             }*/
+
         }
     }
 
@@ -298,6 +328,9 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                 bodyContentsHandler.hyperlinkEnd();
             } else if ("pict".equals(localName)) {
                 handlePict();
+            } else if ("pPr".equals(localName)) {
+                bodyContentsHandler.startParagraph(currPProperties);
+                currPProperties.reset();
             }
         }
     }
@@ -348,11 +381,15 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
         void run(XWPFRunProperties runProperties, String contents);
 
+        /**
+         *
+         * @param link the link; can be null
+         */
         void hyperlinkStart(String link);
 
         void hyperlinkEnd();
 
-        void startParagraph();
+        void startParagraph(XWPFParagraphProperties paragraphProperties);
 
         void endParagraph();
 
@@ -387,5 +424,9 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
         void embeddedOLERef(String refId);
 
         void embeddedPicRef(String picFileName, String picDescription);
+
+        void startBookmark(String id, String name);
+
+        void endBookmark(String id);
     }
 }

@@ -34,11 +34,14 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFDocumentXMLBodyHandler;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFTikaBodyPartHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
@@ -111,8 +114,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void handleDocumentPart(PackagePart documentPart, XHTMLContentHandler xhtml) throws IOException, SAXException {
         //load the numbering/list manager and styles from the main document part
         XWPFNumbering numbering = loadNumbering(documentPart);
-        XWPFListManager xwpfListManager = new XWPFListManager(numbering);
-        //TODO: XWPFStyles styles = loadStyles(documentPart);
+        XWPFListManager listManager = new XWPFListManager(numbering);
+        XWPFStyles styles = loadStyles(documentPart);
 
         //headers
         try {
@@ -120,7 +123,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             if (headersPRC != null) {
                 for (int i = 0; i < headersPRC.size(); i++) {
                     PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
-                    handlePart(header, xwpfListManager, xhtml);
+                    handlePart(header, styles, listManager, xhtml);
                 }
             }
         } catch (InvalidFormatException e) {
@@ -128,7 +131,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         //main document
-        handlePart(documentPart, xwpfListManager, xhtml);
+        handlePart(documentPart, styles, listManager, xhtml);
 
         //for now, just dump other components at end
         for (XWPFRelation rel : new XWPFRelation[]{
@@ -142,7 +145,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
-                        handlePart(packagePart, xwpfListManager, xhtml);
+                        handlePart(packagePart, styles, listManager, xhtml);
                     }
                 }
             } catch (InvalidFormatException e) {
@@ -151,8 +154,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void handlePart(PackagePart packagePart,
-                            XWPFListManager xwpfListManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
+    private void handlePart(PackagePart packagePart, XWPFStyles styles,
+                            XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
         Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
@@ -160,7 +163,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new XWPFDocumentXMLBodyHandler(
-                                    new XWPFTikaBodyPartHandler(xhtml, xwpfListManager,
+                                    new XWPFTikaBodyPartHandler(xhtml, styles, listManager,
                                             context.get(OfficeParserConfig.class)), linkedRelationships))));
         } catch (TikaException e) {
             //swallow
@@ -213,7 +216,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
         return linkedRelationships;
     }
-/*
+
     private XWPFStyles loadStyles(PackagePart packagePart) {
         try {
             PackageRelationshipCollection stylesParts =
@@ -223,11 +226,12 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (stylesRelationShip == null) {
                     return null;
                 }
-                PackagePart stylesPart = opcPackage.getPart(stylesRelationShip);
+                PackagePart stylesPart = packagePart.getRelatedPart(stylesRelationShip);
                 if (stylesPart == null) {
                     return null;
                 }
-                return new XWPFStyles(stylesPart);
+
+                return new XWPFStylesShim(stylesPart);
             }
         } catch (IOException|OpenXML4JException e) {
             //swallow
@@ -235,7 +239,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         return null;
 
     }
-*/
+
     private XWPFNumbering loadNumbering(PackagePart packagePart) {
         try {
             PackageRelationshipCollection numberingParts = packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
@@ -244,11 +248,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (numberingRelationShip == null) {
                     return null;
                 }
-                PackagePart numberingPart = opcPackage.getPart(numberingRelationShip);
+                PackagePart numberingPart = packagePart.getRelatedPart(numberingRelationShip);
                 if (numberingPart == null) {
                     return null;
                 }
-                return new XWPFNumbering(numberingPart);
+                return new XWPFNumberingShim(numberingPart);
             }
         } catch (IOException | OpenXML4JException e) {
             //swallow

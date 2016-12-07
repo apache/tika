@@ -275,7 +275,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void startParagraph() {
+        public void startParagraph(XWPFParagraphProperties paragraphProperties) {
             //no-op
         }
 
@@ -361,6 +361,16 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
 
         @Override
         public void embeddedPicRef(String picFileName, String picDescription) {
+            //no-op
+        }
+
+        @Override
+        public void startBookmark(String id, String name) {
+            //no-op
+        }
+
+        @Override
+        public void endBookmark(String id) {
             //no-op
         }
     }

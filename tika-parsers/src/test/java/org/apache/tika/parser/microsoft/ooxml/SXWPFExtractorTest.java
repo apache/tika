@@ -22,7 +22,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -39,7 +38,6 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -47,7 +45,6 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -97,11 +94,10 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("My Document Title", content);
         assertContains("My Document Subtitle", content);
 
-        assertContains("<p>\tHeading1\t3</p>", content);
+        assertContains("<p class=\"toc_1\">\t<a href=\"#_Toc467647605\">Heading1\t3</a></p>", content);
 
 
-        //TODO: integrate numbering
-        assertContains("Really basic 2.", content);
+        assertContains("2. Really basic 2.", content);
 
         assertContainsCount("This is a text box", content, 1);
 
@@ -112,11 +108,11 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("<p>This is          10 spaces</p>", content);
 
         //caption
-        assertContains("<p>Table 1: Table1 Caption</p>", content);
+        assertContains("<p class=\"table_of_figures\">\t<a href=\"#_Toc467647797\">Table 1: Table1 Caption\t2</a></p>", content);
 
         //embedded table
         //TODO: figure out how to handle embedded tables in html
-        assertContains("<p>Embedded table r1c1</p>", content);
+        assertContains("<td>Embedded table r1c1", content);
 
         //shape
         assertContainsCount("<p>This is text within a shape", content, 1);
@@ -190,13 +186,13 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testWord() throws Exception {
 
         XMLResult xmlResult = getXML("testWORD.docx", parseContext);
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    xmlResult.metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Sample Word Document", xmlResult.metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Keith Bennett", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Keith Bennett", xmlResult.metadata.get(Metadata.AUTHOR));
-            assertTrue(xmlResult.xml.contains("Sample Word Document"));
+        assertEquals(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Sample Word Document", xmlResult.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Keith Bennett", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Keith Bennett", xmlResult.metadata.get(Metadata.AUTHOR));
+        assertTrue(xmlResult.xml.contains("Sample Word Document"));
 
     }
 
@@ -208,10 +204,10 @@ public class SXWPFExtractorTest extends TikaTest {
     @Test
     public void testWordFootnote() throws Exception {
         XMLResult xmlResult = getXML("footnotes.docx", parseContext);
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    xmlResult.metadata.get(Metadata.CONTENT_TYPE));
-            assertTrue(xmlResult.xml.contains("snoska"));
+        assertEquals(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertTrue(xmlResult.xml.contains("snoska"));
 
     }
 
@@ -231,15 +227,17 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
         assertTrue(xml.contains("Sample Word Document"));
-
+        System.out.println(xml);
         // Check that custom headings came through
-//TODO:        assertTrue(xml.contains("<h1 class=\"title\">"));
+        assertTrue(xml.contains("<h1 class=\"title\">"));
 
         // Regular headings
-//TODO:        assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
-//TODO:        assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
+        assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
+        assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
         // Headings with anchor tags in them
-//TODO:        assertTrue(xml.contains("<h3><a name=\"OnLevel3\" />Heading Level 3</h3>"));
+        //TODO: still not getting bookmarks
+        assertTrue(xml.contains("<h3>Heading Level 3<a name=\"OnLevel3\" /></h3>"));
+//        assertTrue(xml.contains("<h3>Heading Level 3</h3>"));
         // Bold and italic
         assertTrue(xml.contains("<b>BOLD</b>"));
         assertTrue(xml.contains("<i>ITALIC</i>"));
@@ -249,17 +247,17 @@ public class SXWPFExtractorTest extends TikaTest {
         // Links
         assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
         // Anchor links
-//TODO:        assertContains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>", xml);
+        assertContains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>", xml);
         // Paragraphs with other styles
-//TODO:        assertTrue(xml.contains("<p class=\"signature\">This one"));
+        assertTrue(xml.contains("<p class=\"signature\">This one"));
 
         result = getXML("testWORD_3imgs.docx", parseContext);
         xml = result.xml;
 
         // Images 2-4 (there is no 1!)
-//TODO:        assertTrue("Image not found in:\n" + xml, xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"));
-//TODO:        assertTrue("Image not found in:\n" + xml, xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"));
-//TODO:        assertTrue("Image not found in:\n" + xml, xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"));
+        assertTrue("Image not found in:\n" + xml, xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"));
+        assertTrue("Image not found in:\n" + xml, xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"));
+        assertTrue("Image not found in:\n" + xml, xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"));
 
         // Text too
         assertTrue(xml.contains("<p>The end!</p>"));
@@ -295,11 +293,11 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals(2, metadataList.size());
         Metadata m = metadataList.get(0);
         String mainContent = m.get(RecursiveParserWrapper.TIKA_CONTENT);
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    m.get(Metadata.CONTENT_TYPE));
-            // Check that custom headings came through
-            assertTrue(mainContent.contains("<img"));
+        assertEquals(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                m.get(Metadata.CONTENT_TYPE));
+        // Check that custom headings came through
+        assertTrue(mainContent.contains("<img"));
     }
 
     @Test
@@ -312,8 +310,8 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals(3, metadataList.size());
         String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
         for (int i = 1; i < 4; i++) {
-            assertContains("header"+i+"_pic", content);
-            assertContains("footer"+i+"_pic", content);
+            assertContains("header" + i + "_pic", content);
+            assertContains("footer" + i + "_pic", content);
         }
         assertContains("body_pic.jpg", content);
         assertContains("sdt_pic.jpg", content);
@@ -515,12 +513,12 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testMissingText() throws Exception {
 
         XMLResult xmlResult = getXML("testWORD_missing_text.docx", parseContext);
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    xmlResult.metadata.get(Metadata.CONTENT_TYPE));
-            assertContains("BigCompany", xmlResult.xml);
-            assertContains("Seasoned", xmlResult.xml);
-            assertContains("Rich_text_in_cell", xmlResult.xml);
+        assertEquals(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("BigCompany", xmlResult.xml);
+        assertContains("Seasoned", xmlResult.xml);
+        assertContains("Rich_text_in_cell", xmlResult.xml);
 
     }
 
@@ -596,7 +594,6 @@ public class SXWPFExtractorTest extends TikaTest {
     }
 
     @Test
-    @Ignore("TODO -- paragraph list numbers")
     public void testDOCXParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_numbered_list.docx", parseContext).xml;
         //SAX parser is getting this.  DOM parser is not!
@@ -625,7 +622,6 @@ public class SXWPFExtractorTest extends TikaTest {
     }
 
     @Test
-    @Ignore("TODO -- paragraph list numbers")
     public void testDOCXOverrideParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_override_list_numbering.docx").xml;
 
@@ -695,7 +691,6 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testBoldHyperlink() throws Exception {
         //TIKA-1255
         String xml = getXML("testWORD_boldHyperlink.docx", parseContext).xml;
-        System.out.println(xml);
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
         assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold", xml);
@@ -736,28 +731,6 @@ public class SXWPFExtractorTest extends TikaTest {
                 content);
 
         assertEquals(16, metadataList.size());
-    }
-
-    @Test
-    public void iterate() throws Exception {
-        ParseContext context = new ParseContext();
-        context.set(Parser.class, EmptyParser.INSTANCE);
-        for (File f : getResourceAsFile("/test-documents").listFiles()) {
-            if (! f.getName().equals("testWORD_embeded.docx")) {
-                continue;
-            }
-            if (f.getName().endsWith("docx") || f.getName().endsWith(".docm")) {
-                try {
-                    XMLResult r = getXML(f.getName(), context);
-                    if (r.xml.contains("<img")) {
-                        System.out.println(f.getName());
-                    }
-                    System.out.println(r.xml);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
 }

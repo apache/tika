@@ -37,7 +37,7 @@ class BodyPartHandler extends XWPFDocumentXMLBodyHandler implements PartHandler 
     public BodyPartHandler(String contentType, XHTMLContentHandler xhtml,
                            RelationshipsManager relationshipsManager,
                            OfficeParserConfig officeParserConfig) {
-        super(new XWPFTikaBodyPartHandler(xhtml, null, officeParserConfig),
+        super(new XWPFTikaBodyPartHandler(xhtml, null, null, officeParserConfig),
                 new HashMap<String, String>());
         this.contentType = contentType;
     }

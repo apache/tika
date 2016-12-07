@@ -18,9 +18,13 @@
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 
+import java.math.BigInteger;
 import java.util.Date;
 
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -35,14 +39,22 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     private final XWPFListManager listManager;
     private final boolean includeDeletedText;
     private final boolean includeMoveFromText;
+    private final XWPFStyles styles;
 
     private int pDepth = 0; //paragraph depth
+    private int tableDepth = 0;//table depth
+    private int sdtDepth = 0;//
     private boolean isItalics = false;
     private boolean isBold = false;
     private boolean wroteHyperlinkStart = false;
 
-    public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    //will need to replace this with a stack
+    //if we're marking more that the first level <p/> element
+    private String paragraphTag = null;
+
+    public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStyles styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
+        this.styles = styles;
         this.listManager = listManager;
         this.includeDeletedText = parserConfig.getIncludeDeletedContent();
         this.includeMoveFromText = parserConfig.getIncludeMoveFromContent();
@@ -109,13 +121,40 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     }
 
     @Override
-    public void startParagraph() {
-        if (pDepth == 0) {
+    public void startParagraph(XWPFParagraphProperties paragraphProperties) {
+        if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
+            paragraphTag = "p";
+            String styleClass = null;
+            //TIKA-2144 check that styles is not null
+            if (paragraphProperties.getStyleID() != null && styles != null) {
+                XWPFStyle style = styles.getStyle(
+                        paragraphProperties.getStyleID()
+                );
+                if (style != null && style.getName() != null) {
+                    WordExtractor.TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
+                            style.getName(), false);
+                    paragraphTag = tas.getTag();
+                    styleClass = tas.getStyleClass();
+                }
+            }
+
+
             try {
-                xhtml.startElement("p");
+                if (styleClass == null) {
+                    xhtml.startElement(paragraphTag);
+                } else {
+                    xhtml.startElement(paragraphTag, "class", styleClass);
+                }
             } catch (SAXException e) {
 
             }
+        }
+
+        try {
+            writeParagraphNumber(paragraphProperties.getNumId(),
+                    paragraphProperties.getIlvl(), listManager, xhtml);
+        } catch (SAXException e) {
+
         }
         pDepth++;
     }
@@ -124,8 +163,9 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     public void endParagraph() {
         try {
             closeStyleTags();
-            if (pDepth == 1) {
-                xhtml.endElement("p");
+            if (pDepth == 1 && tableDepth == 0 && sdtDepth == 0) {
+                xhtml.endElement(paragraphTag);
+                paragraphTag = null;
             } else {
                 xhtml.characters(NEWLINE, 0, 1);
             }
@@ -139,6 +179,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     public void startTable() {
         try {
             xhtml.startElement("table");
+            tableDepth++;
         } catch (SAXException e) {
 
         }
@@ -148,6 +189,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     public void endTable() {
         try {
             xhtml.endElement("table");
+            tableDepth--;
         } catch (SAXException e) {
 
         }
@@ -193,6 +235,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     public void startSDT() {
         try {
             closeStyleTags();
+            sdtDepth++;
         } catch (SAXException e) {
 
         }
@@ -200,7 +243,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
 
     @Override
     public void endSDT() {
-        //no-op
+        sdtDepth--;
     }
 
     @Override
@@ -286,6 +329,24 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         }
     }
 
+    @Override
+    public void startBookmark(String id, String name) {
+        //skip bookmarks within hyperlinks
+        if (name != null && ! wroteHyperlinkStart) {
+            try {
+                xhtml.startElement("a", "name", name);
+                xhtml.endElement("a");
+            } catch (SAXException e) {
+
+            }
+        }
+    }
+
+    @Override
+    public void endBookmark(String id) {
+        //no-op
+    }
+
     private void closeStyleTags() throws SAXException {
         if (isItalics) {
             xhtml.endElement("i");
@@ -295,5 +356,19 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
             xhtml.endElement("b");
             isBold = false;
         }
+    }
+
+    private void writeParagraphNumber(int numId, int ilvl,
+                                      XWPFListManager listManager,
+                                      XHTMLContentHandler xhtml) throws SAXException {
+
+        if (ilvl < 0 || numId < 0 || listManager == null) {
+            return;
+        }
+        String number = listManager.getFormattedNumber(BigInteger.valueOf(numId), ilvl);
+        if (number != null) {
+            xhtml.characters(number);
+        }
+
     }
 }
