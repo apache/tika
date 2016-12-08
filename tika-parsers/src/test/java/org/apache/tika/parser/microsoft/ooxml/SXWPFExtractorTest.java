@@ -227,7 +227,6 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
         assertTrue(xml.contains("Sample Word Document"));
-        System.out.println(xml);
         // Check that custom headings came through
         assertTrue(xml.contains("<h1 class=\"title\">"));
 
@@ -445,7 +444,6 @@ public class SXWPFExtractorTest extends TikaTest {
     @Test
     public void testEmbeddedPDF() throws Exception {
         String xml = getXML("testWORD_embedded_pdf.docx", parseContext).xml;
-        System.out.println(xml);
         int i = xml.indexOf("Here is the pdf file:");
         int j = xml.indexOf("<div class=\"embedded\" id=\"rId5\" />");
         int k = xml.indexOf("Bye Bye");
@@ -550,7 +548,6 @@ public class SXWPFExtractorTest extends TikaTest {
         String xml = getXML("testDOCX_Thumbnail.docx", parseContext).xml;
         int a = xml.indexOf("This file contains a thumbnail");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.emf\" />");
-        System.out.println(xml);
         assertTrue(a != -1);
         assertTrue(b != -1);
         assertTrue(a < b);
