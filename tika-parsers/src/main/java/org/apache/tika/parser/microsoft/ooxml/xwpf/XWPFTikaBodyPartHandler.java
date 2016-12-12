@@ -21,8 +21,6 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf;
 import java.math.BigInteger;
 import java.util.Date;
 
-import org.apache.poi.xwpf.usermodel.XWPFStyle;
-import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
@@ -39,7 +37,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     private final XWPFListManager listManager;
     private final boolean includeDeletedText;
     private final boolean includeMoveFromText;
-    private final XWPFStyles styles;
+    private final XWPFStylesShim styles;
 
     private int pDepth = 0; //paragraph depth
     private int tableDepth = 0;//table depth
@@ -52,7 +50,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     //if we're marking more that the first level <p/> element
     private String paragraphTag = null;
 
-    public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStyles styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
@@ -127,12 +125,12 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
             String styleClass = null;
             //TIKA-2144 check that styles is not null
             if (paragraphProperties.getStyleID() != null && styles != null) {
-                XWPFStyle style = styles.getStyle(
+                String styleName = styles.getStyleName(
                         paragraphProperties.getStyleID()
                 );
-                if (style != null && style.getName() != null) {
+                if (styleName != null) {
                     WordExtractor.TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
-                            style.getName(), false);
+                            styleName, false);
                     paragraphTag = tas.getTag();
                     styleClass = tas.getStyleClass();
                 }

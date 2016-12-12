@@ -44,7 +44,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
     }
 
 
-    private final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
     private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";

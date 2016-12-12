@@ -18,20 +18,79 @@
 package org.apache.tika.parser.microsoft.ooxml.xwpf;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.PackagePart;
-import org.apache.poi.xwpf.usermodel.XWPFStyles;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.OfflineContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Stub class of POI's XWPFStyles because onDocumentRead() is protected
+ * For Tika, all we need (so far) is a mapping between styleId and a style's name.
+ *
+ * This class uses SAX to scrape that info out of the styles.xml file.  If
+ * either the styleId or the style's name is null, no information is recorded.
  */
-public class XWPFStylesShim extends XWPFStyles {
+public class XWPFStylesShim {
 
-    public XWPFStylesShim(PackagePart part) throws IOException, OpenXML4JException {
-        super(part);
-        onDocumentRead();
+    private Map<String, String> styles = new HashMap<>();
+
+    public XWPFStylesShim(PackagePart part, ParseContext parseContext) {
+        try (InputStream is = part.getInputStream()) {
+            onDocumentLoad(parseContext, is);
+        } catch (IOException|TikaException|SAXException e) {
+            //swallow
+        }
     }
 
+    private void onDocumentLoad(ParseContext parseContext, InputStream stream) throws TikaException, IOException, SAXException {
+        parseContext.getSAXParser().parse(stream,
+                new OfflineContentHandler(new StylesStripper()));
+    }
+
+    /**
+     *
+     * @param styleId
+     * @return style's name or null if styleId is null or can't be found
+     */
+    public String getStyleName(String styleId) {
+        if (styleId == null) {
+            return null;
+        }
+        return styles.get(styleId);
+    }
+
+    private class StylesStripper extends DefaultHandler {
+
+        String currentStyleId = null;
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+            if (uri == null || XWPFDocumentXMLBodyHandler.W_NS.equals(uri)) {
+                if ("style".equals(localName)) {
+                    currentStyleId = atts.getValue(XWPFDocumentXMLBodyHandler.W_NS, "styleId");
+                } else if ("name".equals(localName)) {
+                    String name = atts.getValue(XWPFDocumentXMLBodyHandler.W_NS, "val");
+                    if (currentStyleId != null && name != null) {
+                        styles.put(currentStyleId, name);
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (uri == null || XWPFDocumentXMLBodyHandler.W_NS.equals(uri)) {
+                if ("style".equals(localName)) {
+                    currentStyleId = null;
+                }
+            }
+        }
+    }
 
 }

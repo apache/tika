@@ -129,7 +129,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //load the numbering/list manager and styles from the main document part
         XWPFNumbering numbering = loadNumbering(documentPart);
         XWPFListManager listManager = new XWPFListManager(numbering);
-        XWPFStyles styles = loadStyles(documentPart);
+        XWPFStylesShim styles = loadStyles(documentPart);
 
         //headers
         try {
@@ -168,7 +168,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void handlePart(PackagePart packagePart, XWPFStyles styles,
+    private void handlePart(PackagePart packagePart, XWPFStylesShim styles,
                             XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
         Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart);
@@ -231,7 +231,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         return linkedRelationships;
     }
 
-    private XWPFStyles loadStyles(PackagePart packagePart) {
+    private XWPFStylesShim loadStyles(PackagePart packagePart) {
         try {
             PackageRelationshipCollection stylesParts =
                     packagePart.getRelationshipsByType(XWPFRelation.STYLES.getRelation());
@@ -245,9 +245,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     return null;
                 }
 
-                return new XWPFStylesShim(stylesPart);
+                return new XWPFStylesShim(stylesPart, context);
             }
-        } catch (IOException|OpenXML4JException e) {
+        } catch (OpenXML4JException e) {
             //swallow
         }
         return null;
