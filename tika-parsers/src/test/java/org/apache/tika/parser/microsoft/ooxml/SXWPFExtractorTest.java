@@ -730,4 +730,21 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals(16, metadataList.size());
     }
 
+    @Test
+    public void testDotx() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_template.docx", parseContext);
+        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        assertContains("Metallica", content);
+        assertContains("Hetfield", content);
+        assertContains("one eye open", content);
+        assertContains("Getting the perfect", content);
+        //from glossary document
+        assertContains("table rows", content);
+
+        metadataList = getRecursiveMetadata("testWORD_template.dotx", parseContext);
+        content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        //from glossary document
+        assertContainsCount("ready to write", content, 2);
+    }
+
 }

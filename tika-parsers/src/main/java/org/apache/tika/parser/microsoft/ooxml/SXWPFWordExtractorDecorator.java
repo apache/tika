@@ -78,6 +78,15 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
     };
 
+    //a docx file should have one of these "main story" parts
+    private final static String[] MAIN_STORY_PART_RELATIONS = new String[]{
+            XWPFRelation.DOCUMENT.getContentType(),
+            XWPFRelation.MACRO_DOCUMENT.getContentType(),
+            XWPFRelation.TEMPLATE.getContentType(),
+            XWPFRelation.MACRO_TEMPLATE_DOCUMENT.getContentType()
+
+    };
+
     private final OPCPackage opcPackage;
     private final ParseContext context;
 
@@ -104,9 +113,14 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //handle glossary document
         pps = opcPackage.getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
         if (pps != null) {
-            for (PackagePart pp : pps) {
-                //likely only one, but why not...
-                handleDocumentPart(pp, xhtml);
+            if (pps.size() > 0) {
+                xhtml.startElement("div", "class", "glossary");
+
+                for (PackagePart pp : pps) {
+                    //likely only one, but why not...
+                    handleDocumentPart(pp, xhtml);
+                }
+                xhtml.endElement("div");
             }
         }
     }
@@ -270,6 +284,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         List<PackagePart> mainStoryDocs = getStoryDocumentParts();
         List<PackagePart> relatedParts = new ArrayList<>();
 
+        mainStoryDocs.addAll(
+                opcPackage.getPartsByContentType(
+                        XWPFRelation.GLOSSARY_DOCUMENT.getContentType()));
+
+
         for (PackagePart pp : mainStoryDocs) {
             addRelatedParts(pp, relatedParts);
         }
@@ -294,14 +313,19 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
+    /**
+     *
+     * @return the first non-empty main story document part; empty list if no
+     * main story is found.
+     */
     private List<PackagePart> getStoryDocumentParts() {
-        List<PackagePart> pps = opcPackage.getPartsByContentType(XWPFRelation.DOCUMENT.getContentType());
-        if (pps.size() == 0) {
-            pps = opcPackage.getPartsByContentType(XWPFRelation.MACRO_DOCUMENT.getContentType());
-            if (pps.size() == 0) {
-                pps = opcPackage.getPartsByContentType(XWPFRelation.MACRO_TEMPLATE_DOCUMENT.getContentType());
+
+        for (String contentType : MAIN_STORY_PART_RELATIONS) {
+            List<PackagePart> pps = opcPackage.getPartsByContentType(contentType);
+            if (pps.size() > 0) {
+                return pps;
             }
         }
-        return pps;
+        return new ArrayList<>();
     }
 }

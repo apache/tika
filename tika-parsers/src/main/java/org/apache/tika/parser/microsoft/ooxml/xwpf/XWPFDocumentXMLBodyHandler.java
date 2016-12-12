@@ -182,7 +182,11 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
                 inT = true;
             } else if (localName.equals("tab")) {
                 runBuffer.append("\t");
-            } else if (localName.equals("tbl")) {
+            } else if("br".equals(localName)) {
+                runBuffer.append("\n");
+            } else if("cr".equals(localName)) {
+                runBuffer.append("\n");
+            } else if(localName.equals("tbl")) {
                 bodyContentsHandler.startTable();
             } else if (localName.equals("tc")) {
                 bodyContentsHandler.startTableCell();
