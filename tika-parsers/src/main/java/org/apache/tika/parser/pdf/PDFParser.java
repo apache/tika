@@ -656,6 +656,11 @@ public class PDFParser extends AbstractParser {
         defaultConfig.setExtractUniqueInlineImagesOnly(extractUniqueInlineImagesOnly);
     }
 
+    @Field
+    void setExtractActions(boolean extractActions) {
+        defaultConfig.setExtractActions(extractActions);
+    }
+
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, Metadata parentMetadata, ParseContext context) {
         if (pdMetadata == null) {
