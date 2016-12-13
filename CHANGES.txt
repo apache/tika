@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Refactor MockParser to consolidate service loading
+    and mime types into tika-core/src/test (TIKA-2195).
+
   * Enabled extraction of embedded objects from headers, footers,
     footnotes, endnotes and comments in legacy .docx parser (TIKA-2192).
 

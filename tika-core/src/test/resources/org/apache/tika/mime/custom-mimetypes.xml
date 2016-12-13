@@ -42,4 +42,10 @@
         <match value="Hello, World!" type="string" offset="0:13" />
      </magic>
   </mime-type>
+
+  <!-- add this to make testing with mock parser easier -->
+  <mime-type type="application/mock+xml">
+      <root-XML localName="mock"/>
+      <sub-class-of type="application/xml"/>
+  </mime-type>
 </mime-info>
