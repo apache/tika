@@ -34,7 +34,6 @@ import org.xml.sax.helpers.DefaultHandler;
 public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
 
-
     enum EditType {
         NONE,
         INSERT,
@@ -53,11 +52,47 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
-    private final static char[] TAB = new char[1];
+    private final static char[] TAB_CHAR = new char[1];
+    private final static char NEWLINE = '\n';
 
     static {
-        TAB[0] = '\t';
+        TAB_CHAR[0] = '\t';
     }
+
+    private final static String R = "r";
+    private final static String RPR = "rPr";
+    private final static String P = "p";
+    private final static String P_STYLE = "pStyle";
+    private final static String PPR = "pPr";
+    private final static String T = "t";
+    private final static String TAB = "tab";
+    private final static String B = "b";
+    private final static String ILVL = "ilvl";
+    private final static String NUM_ID = "numId";
+    private final static String TC = "tc";
+    private final static String TR = "tr";
+    private final static String I = "i";
+    private final static String NUM_PR = "numPr";
+    private final static String BR = "br";
+    private final static String BOOKMARK_START = "bookmarkStart";
+    private final static String BOOKMARK_END = "bookmarkEnd";
+    private final static String HYPERLINK = "hyperlink";
+    private final static String TBL = "tbl";
+    private final static String PIC = "pic";
+    private final static String PICT = "pict";
+    private final static String FOOTNOTE_REFERENCE = "footnoteReference";
+    private final static String IMAGEDATA = "imagedata";
+    private final static String BLIP = "blip";
+    private final static String INS = "ins";
+    private final static String DEL = "del";
+    private final static String DEL_TEXT = "delText";
+    private final static String MOVE_FROM = "moveFrom";
+    private final static String MOVE_TO = "moveTo";
+    private final static String OLE_OBJECT = "OLEObject";
+    private final static String CR = "cr";
+    private final static String ENDNOTE_REFERENCE = "endnoteReference";
+    private final static String CHOICE = "Choice";
+    private final static String FALLBACK = "Fallback";
 
     private final XWPFBodyContentsHandler bodyContentsHandler;
     //private final RelationshipsManager relationshipsManager;
@@ -114,16 +149,18 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+        //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
-        if (lastStartElementWasP && ! "pPr".equals(localName)) {
+        if (lastStartElementWasP && ! PPR.equals(localName)) {
             bodyContentsHandler.startParagraph(currPProperties);
         }
+
         lastStartElementWasP = false;
 
         if (uri != null && uri.equals(MC_NS)) {
-            if (localName.equals("Choice")) {
+            if (CHOICE.equals(localName)) {
                 inACChoiceDepth++;
-            } else if (localName.equals("Fallback")) {
+            } else if (FALLBACK.equals(localName)) {
                 inACFallbackDepth++;
             }
         }
@@ -131,129 +168,115 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
         if (inACChoiceDepth > 0) {
             return;
         }
-        if (uri == null || uri.equals(O_NS)) {
-            if (localName.equals("OLEObject")) {
-                String type = null;
-                String refId = null;
-                //TODO: want to get ProgID?
-                for (int i = 0; i < atts.getLength(); i++) {
-                    String attLocalName = atts.getLocalName(i);
-                    String attValue = atts.getValue(i);
-                    if (attLocalName.equals("Type")) {
-                        type = attValue;
-                    } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) && attLocalName.equals("id")) {
-                        refId = attValue;
-                    }
-                }
-                if ("Embed".equals(type)) {
-                    bodyContentsHandler.embeddedOLERef(refId);
-                }
-            }
-        }
-
-        if (uri == null || uri.equals(PIC_NS)) {
-            if ("pic".equals(localName)) {
-                inPic = true;
-            } else if ("cNvPr".equals(localName)) {
-                picDescription = atts.getValue("", "descr");
-            }
-        }
-
-        if (uri == null || uri.equals(DRAWING_MAIN_NS)) {
-            if ("blip".equals(localName)) {
-                picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
-            }
-        }
-
-        if (uri == null || uri.equals(V_NS)) {
-            if ("imagedata".equals(localName)) {
-                picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
-                picDescription = atts.getValue(O_NS, "title");
-            }
-        }
-
-        if (uri == null || uri.equals(W_NS)) {
-            if (localName.equals("p")) {
-                lastStartElementWasP = true;
-                pDepth++;
-            } else if (localName.equals("r")) {
-                inR = true;
-            } else if (localName.equals("t")) {
-                inT = true;
-            } else if (localName.equals("tab")) {
-                runBuffer.append("\t");
-            } else if("br".equals(localName)) {
-                runBuffer.append("\n");
-            } else if("cr".equals(localName)) {
-                runBuffer.append("\n");
-            } else if(localName.equals("tbl")) {
-                bodyContentsHandler.startTable();
-            } else if (localName.equals("tc")) {
-                bodyContentsHandler.startTableCell();
-            } else if (localName.equals("tr")) {
-                bodyContentsHandler.startTableRow();
-            } else if (localName.equals("numPr")) {
-                inNumPr = true;
-            } else if (localName.equals("rPr")) {
-                inRPr = true;
-            } else if (inR && inRPr && localName.equals("i")) {
-                //rprs don't have to be inR; ignore those that aren't
-                currRunProperties.setItalics(true);
-            } else if (inR && inRPr && localName.equals("b")) {
+        //these are sorted descending by frequency
+        //in our regression corpus
+        if (RPR.equals(localName)) {
+            inRPr = true;
+        } else if (R.equals(localName)) {
+            inR = true;
+        } else if (T.equals(localName)) {
+            inT = true;
+        } else if (TAB.equals(localName)) {
+            runBuffer.append(TAB_CHAR);
+        } else if (P.equals(localName)) {
+            lastStartElementWasP = true;
+            pDepth++;
+        } else if (B.equals(localName)) { //TODO: add bCs
+            if(inR && inRPr) {
                 currRunProperties.setBold(true);
-            } else if (localName.equals("delText")) {
-                inDelText = true;
-            } else if (localName.equals("ins")) {
-                startEditedSection(editType.INSERT, atts);
-            } else if (localName.equals("del")) {
-                startEditedSection(editType.DELETE, atts);
-            } else if (localName.equals("moveTo")) {
-                startEditedSection(EditType.MOVE_TO, atts);
-            } else if (localName.equals("moveFrom")) {
-                startEditedSection(editType.MOVE_FROM, atts);
-            } else if (localName.equals("hyperlink")) {
-                String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
-                String hyperlink = null;
-                if (hyperlinkId != null) {
-                    hyperlink = linkedRelationships.get(hyperlinkId);
-                    bodyContentsHandler.hyperlinkStart(hyperlink);
-                } else {
-                    String anchor = atts.getValue(W_NS, "anchor");
-                    if (anchor != null) {
-                        anchor = "#"+anchor;
-                    }
-                    bodyContentsHandler.hyperlinkStart(anchor);
-                }
-            } else if (localName.equals("footnoteReference")) {
-                String id = atts.getValue(W_NS, "id");
-                bodyContentsHandler.footnoteReference(id);
-            } else if (localName.equals("endnoteReference")) {
-                String id = atts.getValue(W_NS, "id");
-                bodyContentsHandler.endnoteReference(id);
-            } else if ("pStyle".equals(localName)) {
-                String styleId = atts.getValue(W_NS, "val");
-                currPProperties.setStyleID(styleId);
-            } else if (inNumPr && "ilvl".equals(localName)) {
-                currPProperties.setIlvl(getIntVal(atts));
-            } else if (inNumPr && "numId".equals(localName)) {
-                currPProperties.setNumId(getIntVal(atts));
-            } else if ("bookmarkStart".equals(localName)) {
-                String name = atts.getValue(W_NS, "name");
-                String id = atts.getValue(W_NS, "id");
-                bodyContentsHandler.startBookmark(id, name);
-            } else if ("bookmarkEnd".equals(localName)) {
-                String id = atts.getValue(W_NS, "id");
-                bodyContentsHandler.endBookmark(id);
             }
-            /*else if (localName.equals("headerReference")) {
-                //TODO
-            } else if (localName.equals("footerReference")) {
-                //TODO
-            } else if (localName.equals("commentRangeEnd")) {
-                //TODO
-            }*/
-
+        } else if (TC.equals(localName)) {
+            bodyContentsHandler.startTableCell();
+        } else if (P_STYLE.equals(localName)) {
+            String styleId = atts.getValue(W_NS, "val");
+            currPProperties.setStyleID(styleId);
+        } else if (I.equals(localName)) { //TODO: add iCs
+            //rprs don't have to be inR; ignore those that aren't
+            if (inR && inRPr) {
+                currRunProperties.setItalics(true);
+            }
+        } else if (TR.equals(localName)) {
+            bodyContentsHandler.startTableRow();
+        } else if (NUM_PR.equals(localName)) {
+            inNumPr = true;
+        } else if (ILVL.equals(localName)) {
+            if (inNumPr) {
+                currPProperties.setIlvl(getIntVal(atts));
+            }
+        } else if (NUM_ID.equals(localName)) {
+            if (inNumPr) {
+                currPProperties.setNumId(getIntVal(atts));
+            }
+        } else if(BR.equals(localName)) {
+            runBuffer.append(NEWLINE);
+        } else if (BOOKMARK_START.equals(localName)) {
+            String name = atts.getValue(W_NS, "name");
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.startBookmark(id, name);
+        } else if (BOOKMARK_END.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.endBookmark(id);
+        } else if (HYPERLINK.equals(localName)) {
+            String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
+            String hyperlink = null;
+            if (hyperlinkId != null) {
+                hyperlink = linkedRelationships.get(hyperlinkId);
+                bodyContentsHandler.hyperlinkStart(hyperlink);
+            } else {
+                String anchor = atts.getValue(W_NS, "anchor");
+                if (anchor != null) {
+                    anchor = "#" + anchor;
+                }
+                bodyContentsHandler.hyperlinkStart(anchor);
+            }
+        } else if(TBL.equals(localName)) {
+            bodyContentsHandler.startTable();
+        } else if (BLIP.equals(localName)) { //check for DRAWING_NS
+            picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
+        } else if ("cNvPr".equals(localName)) { //check for PIC_NS?
+            picDescription = atts.getValue("", "descr");
+        } else if (PIC.equals(localName)) {
+            inPic = true; //check for PIC_NS?
+        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
+        else if (FOOTNOTE_REFERENCE.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.footnoteReference(id);
+        } else if (IMAGEDATA.equals(localName)) {
+            picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
+            picDescription = atts.getValue(O_NS, "title");
+        } else if (INS.equals(localName)) {
+            startEditedSection(editType.INSERT, atts);
+        } else if (DEL_TEXT.equals(localName)) {
+            inDelText = true;
+        } else if (DEL.equals(localName)) {
+            startEditedSection(editType.DELETE, atts);
+        } else if (MOVE_TO.equals(localName)) {
+            startEditedSection(EditType.MOVE_TO, atts);
+        } else if (MOVE_FROM.equals(localName)) {
+            startEditedSection(editType.MOVE_FROM, atts);
+        } else if (OLE_OBJECT.equals(localName)){ //check for O_NS?
+            String type = null;
+            String refId = null;
+            //TODO: clean this up and ...want to get ProgID?
+            for (int i = 0; i < atts.getLength(); i++) {
+                String attLocalName = atts.getLocalName(i);
+                String attValue = atts.getValue(i);
+                if (attLocalName.equals("Type")) {
+                    type = attValue;
+                } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) && attLocalName.equals("id")) {
+                    refId = attValue;
+                }
+            }
+            if ("Embed".equals(type)) {
+                bodyContentsHandler.embeddedOLERef(refId);
+            }
+        } else if(CR.equals(localName)) {
+            runBuffer.append(NEWLINE);
+        } else if (ENDNOTE_REFERENCE.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.endnoteReference(id);
         }
+
     }
 
     private void startEditedSection(EditType editType, Attributes atts) {
@@ -282,60 +305,52 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        if (uri.equals(MC_NS)) {
-            if (localName.equals("Choice")) {
-                inACChoiceDepth--;
-            } else if (localName.equals("Fallback")) {
-                inACFallbackDepth--;
-            }
+
+        if (CHOICE.equals(localName)) {
+            inACChoiceDepth--;
+        } else if (FALLBACK.equals(localName)) {
+            inACFallbackDepth--;
+        }
+        if (inACChoiceDepth > 0) {
+            return;
         }
 
-        if (PIC_NS.equals(uri)) {
-            if ("pic".equals(localName)) {
-                handlePict();
-                inPic = false;
-                return;
-            }
+        if (PIC.equals(localName)) { //PIC_NS
+            handlePict();
+            inPic = false;
+            return;
+        } else if (RPR.equals(localName)) {
+            inRPr = false;
+        } else if (R.equals(localName)) {
+            bodyContentsHandler.run(currRunProperties, runBuffer.toString());
+            inR = false;
+            runBuffer.setLength(0);
+            currRunProperties.setBold(false);
+            currRunProperties.setItalics(false);
+        } else if (T.equals(localName)) {
+            inT = false;
+        } else if (PPR.equals(localName)) {
+            bodyContentsHandler.startParagraph(currPProperties);
+            currPProperties.reset();
+        } else if (P.equals(localName)) {
+            bodyContentsHandler.endParagraph();
+            pDepth--;
+        } else if (TC.equals(localName)) {
+            bodyContentsHandler.endTableCell();
+        } else if (TR.equals(localName)) {
+            bodyContentsHandler.endTableRow();
+        } else if (TBL.equals(localName)) {
+            bodyContentsHandler.endTable();
+        } else if (HYPERLINK.equals(localName)) {
+            bodyContentsHandler.hyperlinkEnd();
+        } else if (DEL_TEXT.equals(localName)) {
+            inDelText = false;
+        } else if (INS.equals(localName) || DEL.equals(localName) ||
+                MOVE_TO.equals(localName) || MOVE_FROM.equals(localName)) {
+            editType = EditType.NONE;
+        } else if (PICT.equals(localName)) {
+            handlePict();
 
-        }
-        if (uri == null || uri.equals(W_NS)) {
-            if (inACChoiceDepth > 0) {
-                return;
-            }
-
-
-            if (localName.equals("r")) {
-                bodyContentsHandler.run(currRunProperties, runBuffer.toString());
-                inR = false;
-                runBuffer.setLength(0);
-                currRunProperties.setBold(false);
-                currRunProperties.setItalics(false);
-            } else if (localName.equals("p")) {
-                bodyContentsHandler.endParagraph();
-                pDepth--;
-            } else if (localName.equals("t")) {
-                inT = false;
-            } else if (localName.equals("tbl")) {
-                bodyContentsHandler.endTable();
-            } else if (localName.equals("tc")) {
-                bodyContentsHandler.endTableCell();
-            } else if (localName.equals("tr")) {
-                bodyContentsHandler.endTableRow();
-            } else if (localName.equals("rPr")) {
-                inRPr = false;
-            } else if (localName.equals("delText")) {
-                inDelText = false;
-            } else if (localName.equals("ins") || localName.equals("del") ||
-                    localName.equals("moveTo") || localName.equals("moveFrom")) {
-                editType = EditType.NONE;
-            } else if (localName.equals("hyperlink")) {
-                bodyContentsHandler.hyperlinkEnd();
-            } else if ("pict".equals(localName)) {
-                handlePict();
-            } else if ("pPr".equals(localName)) {
-                bodyContentsHandler.startParagraph(currPProperties);
-                currPProperties.reset();
-            }
         }
     }
 
@@ -386,7 +401,6 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
         void run(XWPFRunProperties runProperties, String contents);
 
         /**
-         *
          * @param link the link; can be null
          */
         void hyperlinkStart(String link);

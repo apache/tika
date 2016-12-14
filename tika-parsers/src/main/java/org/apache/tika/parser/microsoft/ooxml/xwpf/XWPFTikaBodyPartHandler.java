@@ -30,6 +30,8 @@ import org.xml.sax.helpers.AttributesImpl;
 
 public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFBodyContentsHandler {
 
+    private final static String P = "p";
+
     private final static char[] NEWLINE = new char[]{'\n'};
     private final static char[] TAB = new char[]{'\t'};
 
@@ -121,7 +123,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     @Override
     public void startParagraph(XWPFParagraphProperties paragraphProperties) {
         if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
-            paragraphTag = "p";
+            paragraphTag = P;
             String styleClass = null;
             //TIKA-2144 check that styles is not null
             if (paragraphProperties.getStyleID() != null && styles != null) {
