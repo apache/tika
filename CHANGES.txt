@@ -1,5 +1,7 @@
 Release 1.15 - ??
 
+  * Upgrade to PDFBox 2.0.4 (TIKA-2209).
+
   * Refactor MockParser to consolidate service loading
     and mime types into tika-core/src/test (TIKA-2195).
 
