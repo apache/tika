@@ -15,14 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xslf;
 
 
 import java.math.BigInteger;
-import java.util.Date;
 
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
-import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
@@ -30,7 +27,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFBodyContentsHandler {
+public class XSLFTikaBodyPartHandler implements XSLFDocumentXMLBodyHandler.XSLFBodyContentsHandler {
 
     private final static String P = "p";
 
@@ -38,28 +35,17 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     private final static char[] TAB = new char[]{'\t'};
 
     private final XHTMLContentHandler xhtml;
-    private final XWPFListManager listManager;
-    private final boolean includeDeletedText;
-    private final boolean includeMoveFromText;
-    private final XWPFStylesShim styles;
 
     private int pDepth = 0; //paragraph depth
     private int tableDepth = 0;//table depth
-    private int sdtDepth = 0;//
+    private int pWithinCell = 0;//paragraph count within a cell
     private boolean isItalics = false;
     private boolean isBold = false;
     private boolean wroteHyperlinkStart = false;
+    private boolean inTableCell = false;
 
-    //will need to replace this with a stack
-    //if we're marking more that the first level <p/> element
-    private String paragraphTag = null;
-
-    public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    public XSLFTikaBodyPartHandler(XHTMLContentHandler xhtml) {
         this.xhtml = xhtml;
-        this.styles = styles;
-        this.listManager = listManager;
-        this.includeDeletedText = parserConfig.getIncludeDeletedContent();
-        this.includeMoveFromText = parserConfig.getIncludeMoveFromContent();
     }
 
     @Override
@@ -124,39 +110,12 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
 
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) {
-        if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
-            paragraphTag = P;
-            String styleClass = null;
-            //TIKA-2144 check that styles is not null
-            if (paragraphProperties.getStyleID() != null && styles != null) {
-                String styleName = styles.getStyleName(
-                        paragraphProperties.getStyleID()
-                );
-                if (styleName != null) {
-                    WordExtractor.TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
-                            styleName, false);
-                    paragraphTag = tas.getTag();
-                    styleClass = tas.getStyleClass();
-                }
-            }
-
-
+        if (pDepth == 0 && tableDepth == 0) {
             try {
-                if (styleClass == null) {
-                    xhtml.startElement(paragraphTag);
-                } else {
-                    xhtml.startElement(paragraphTag, "class", styleClass);
-                }
+                xhtml.startElement(P);
             } catch (SAXException e) {
 
             }
-        }
-
-        try {
-            writeParagraphNumber(paragraphProperties.getNumId(),
-                    paragraphProperties.getIlvl(), listManager, xhtml);
-        } catch (SAXException e) {
-
         }
         pDepth++;
     }
@@ -165,14 +124,16 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     public void endParagraph() {
         try {
             closeStyleTags();
-            if (pDepth == 1 && tableDepth == 0 && sdtDepth == 0) {
-                xhtml.endElement(paragraphTag);
-                paragraphTag = null;
-            } else {
+            if (pDepth == 1 && tableDepth == 0) {
+                xhtml.endElement(P);
+            } else if (pWithinCell > 0){
                 xhtml.characters(NEWLINE, 0, 1);
             }
         } catch (SAXException e) {
 
+        }
+        if (inTableCell) {
+            pWithinCell++;
         }
         pDepth--;
     }
@@ -222,6 +183,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         } catch (SAXException e) {
 
         }
+        inTableCell = true;
     }
 
     @Override
@@ -231,68 +193,10 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         } catch (SAXException e) {
 
         }
+        inTableCell = false;
+        pWithinCell = 0;
     }
 
-    @Override
-    public void startSDT() {
-        try {
-            closeStyleTags();
-            sdtDepth++;
-        } catch (SAXException e) {
-
-        }
-    }
-
-    @Override
-    public void endSDT() {
-        sdtDepth--;
-    }
-
-    @Override
-    public void startEditedSection(String editor, Date date, XWPFDocumentXMLBodyHandler.EditType editType) {
-        //no-op
-    }
-
-    @Override
-    public void endEditedSection() {
-        //no-op
-    }
-
-    @Override
-    public boolean getIncludeDeletedText() {
-        return includeDeletedText;
-    }
-
-    @Override
-    public void footnoteReference(String id) {
-        if (id != null) {
-            try {
-                xhtml.characters("[");
-                xhtml.characters(id);
-                xhtml.characters("]");
-            } catch (SAXException e) {
-
-            }
-        }
-    }
-
-    @Override
-    public void endnoteReference(String id) {
-        if (id != null) {
-            try {
-                xhtml.characters("[");
-                xhtml.characters(id);
-                xhtml.characters("]");
-            } catch (SAXException e) {
-
-            }
-        }
-    }
-
-    @Override
-    public boolean getIncludeMoveFromText() {
-        return includeMoveFromText;
-    }
 
     @Override
     public void embeddedOLERef(String relId) {
@@ -329,24 +233,6 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         } catch (SAXException e) {
 
         }
-    }
-
-    @Override
-    public void startBookmark(String id, String name) {
-        //skip bookmarks within hyperlinks
-        if (name != null && ! wroteHyperlinkStart) {
-            try {
-                xhtml.startElement("a", "name", name);
-                xhtml.endElement("a");
-            } catch (SAXException e) {
-
-            }
-        }
-    }
-
-    @Override
-    public void endBookmark(String id) {
-        //no-op
     }
 
     private void closeStyleTags() throws SAXException {

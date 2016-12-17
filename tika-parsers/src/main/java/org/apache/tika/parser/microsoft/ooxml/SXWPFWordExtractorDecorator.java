@@ -16,11 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,10 +29,8 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
-import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
@@ -62,12 +58,6 @@ import org.xml.sax.SAXException;
  */
 public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
-    private final static String[] EMBEDDED_RELATIONSHIPS = new String[]{
-            RELATION_AUDIO,
-            RELATION_IMAGE,
-            RELATION_PACKAGE,
-            RELATION_OFFICE_DOCUMENT
-    };
 
     //include all parts that might have embedded objects
     private final static String[] MAIN_PART_RELATIONS = new String[]{
@@ -171,7 +161,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void handlePart(PackagePart packagePart, XWPFStylesShim styles,
                             XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
-        Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart);
+        Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart, true);
         try (InputStream stream = packagePart.getInputStream()) {
             context.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
@@ -185,51 +175,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    private Map<String, String> loadLinkedRelationships(PackagePart bodyPart) {
-        Map<String, String> linkedRelationships = new HashMap<>();
-        try {
-            PackageRelationshipCollection prc = bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
-            for (int i = 0; i < prc.size(); i++) {
-                PackageRelationship pr = prc.getRelationship(i);
-                if (pr == null) {
-                    continue;
-                }
-                String id = pr.getId();
-                String url = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
-                if (id != null && url != null) {
-                    linkedRelationships.put(id, url);
-                }
-            }
 
-            for (String rel : EMBEDDED_RELATIONSHIPS) {
-
-                prc = bodyPart.getRelationshipsByType(rel);
-                for (int i = 0; i < prc.size(); i++) {
-                    PackageRelationship pr = prc.getRelationship(i);
-                    if (pr == null) {
-                        continue;
-                    }
-                    String id = pr.getId();
-                    String uriString = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
-                    String fileName = uriString;
-                    if (pr.getTargetURI() != null) {
-                        try {
-                            fileName = FileHelper.getFilename(new File(fileName));
-                        } catch (Exception e) {
-                            fileName = uriString;
-                        }
-                    }
-                    if (id != null) {
-                        fileName = (fileName == null) ? "" : fileName;
-                        linkedRelationships.put(id, fileName);
-                    }
-                }
-            }
-
-        } catch (InvalidFormatException e) {
-        }
-        return linkedRelationships;
-    }
 
     private XWPFStylesShim loadStyles(PackagePart packagePart) {
         try {

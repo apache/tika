@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.ooxml.AbstractDocumentXMLBodyHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -71,11 +72,11 @@ public class XWPFStylesShim {
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
-            if (uri == null || XWPFDocumentXMLBodyHandler.W_NS.equals(uri)) {
+            if (uri == null || AbstractDocumentXMLBodyHandler.W_NS.equals(uri)) {
                 if ("style".equals(localName)) {
-                    currentStyleId = atts.getValue(XWPFDocumentXMLBodyHandler.W_NS, "styleId");
+                    currentStyleId = atts.getValue(AbstractDocumentXMLBodyHandler.W_NS, "styleId");
                 } else if ("name".equals(localName)) {
-                    String name = atts.getValue(XWPFDocumentXMLBodyHandler.W_NS, "val");
+                    String name = atts.getValue(AbstractDocumentXMLBodyHandler.W_NS, "val");
                     if (currentStyleId != null && name != null) {
                         styles.put(currentStyleId, name);
                     }
@@ -85,7 +86,7 @@ public class XWPFStylesShim {
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (uri == null || XWPFDocumentXMLBodyHandler.W_NS.equals(uri)) {
+            if (uri == null || AbstractDocumentXMLBodyHandler.W_NS.equals(uri)) {
                 if ("style".equals(localName)) {
                     currentStyleId = null;
                 }

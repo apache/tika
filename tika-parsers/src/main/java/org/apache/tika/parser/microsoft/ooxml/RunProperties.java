@@ -15,42 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml;
 
+/**
+ * WARNING: This class is mutable.  Make a copy of it
+ * if you want persistence!
+ */
 
-public class XWPFParagraphProperties {
+public class RunProperties {
+    boolean italics = false;
+    boolean bold = false;
 
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
-
-    String getStyleID() {
-        return  styleId;
+    public boolean getItalics() {
+        return italics;
     }
 
-    void setStyleID(String styleId) {
-        this.styleId = styleId;
+    public boolean getBold() {
+        return bold;
     }
 
-    void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
+    public void setItalics(boolean italics) {
+        this.italics = italics;
     }
 
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
+    public void setBold(boolean bold) {
+        this.bold = bold;
     }
 }

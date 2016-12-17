@@ -15,16 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml.xslf;
 
 
-import java.util.Date;
 import java.util.Map;
 
 import org.apache.tika.parser.microsoft.ooxml.AbstractDocumentXMLBodyHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
-import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -33,41 +31,27 @@ import org.xml.sax.SAXException;
  * main document, headers, footers, notes, etc.
  */
 
-public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
+public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
 
-    enum EditType {
-        NONE,
-        INSERT,
-        DELETE,
-        MOVE_TO,
-        MOVE_FROM
-    }
-
-
-    private final static String BOOKMARK_START = "bookmarkStart";
-    private final static String BOOKMARK_END = "bookmarkEnd";
-    private final static String FOOTNOTE_REFERENCE = "footnoteReference";
-    private final static String INS = "ins";
-    private final static String DEL = "del";
-    private final static String DEL_TEXT = "delText";
-    private final static String MOVE_FROM = "moveFrom";
-    private final static String MOVE_TO = "moveTo";
-    private final static String ENDNOTE_REFERENCE = "endnoteReference";
-
-    private final XWPFBodyContentsHandler bodyContentsHandler;
+    private final XSLFBodyContentsHandler bodyContentsHandler;
     //private final RelationshipsManager relationshipsManager;
+
+
+    //alternate content can be embedded in itself.
+    //need to track depth.
+    //if in alternate, choose fallback, maybe make this configurable?
+    private int inACChoiceDepth = 0;
+    private int inACFallbackDepth = 0;
+
+    private boolean inHyperlink = false;
+
     private final Map<String, String> linkedRelationships;
 
-    private boolean inDelText = false;
-
-    private XWPFDocumentXMLBodyHandler.EditType editType = XWPFDocumentXMLBodyHandler.EditType.NONE;
-
-
-    public XWPFDocumentXMLBodyHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                      Map<String, String> hyperlinks) {
+    public XSLFDocumentXMLBodyHandler(XSLFBodyContentsHandler bodyContentsHandler,
+                                      Map<String, String> linkedRelationships) {
         this.bodyContentsHandler = bodyContentsHandler;
-        this.linkedRelationships = hyperlinks;
+        this.linkedRelationships = linkedRelationships;
     }
 
 
@@ -93,6 +77,7 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
         if (lastStartElementWasP && ! PPR.equals(localName)) {
             bodyContentsHandler.startParagraph(currPProperties);
+            pStarted = true;
         }
 
         lastStartElementWasP = false;
@@ -134,6 +119,8 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             if (inR && inRPr) {
                 currRunProperties.setItalics(true);
             }
+        } else if (FLD.equals(localName)) {
+            inR = true;
         } else if (TR.equals(localName)) {
             bodyContentsHandler.startTableRow();
         } else if (NUM_PR.equals(localName)) {
@@ -148,26 +135,21 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             }
         } else if(BR.equals(localName)) {
             runBuffer.append(NEWLINE);
-        } else if (BOOKMARK_START.equals(localName)) {
-            String name = atts.getValue(W_NS, "name");
-            String id = atts.getValue(W_NS, "id");
-            bodyContentsHandler.startBookmark(id, name);
-        } else if (BOOKMARK_END.equals(localName)) {
-            String id = atts.getValue(W_NS, "id");
-            bodyContentsHandler.endBookmark(id);
-        } else if (HYPERLINK.equals(localName)) {
+        } else if ("hlinkClick".equals(localName)) {
             String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             String hyperlink = null;
             if (hyperlinkId != null) {
                 hyperlink = linkedRelationships.get(hyperlinkId);
                 bodyContentsHandler.hyperlinkStart(hyperlink);
-            } else {
+                inHyperlink = true;
+            }/* else {
                 String anchor = atts.getValue(W_NS, "anchor");
                 if (anchor != null) {
                     anchor = "#" + anchor;
                 }
                 bodyContentsHandler.hyperlinkStart(anchor);
-            }
+                inHyperlink = true;
+            }*/
         } else if(TBL.equals(localName)) {
             bodyContentsHandler.startTable();
         } else if (BLIP.equals(localName)) { //check for DRAWING_NS
@@ -176,23 +158,9 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             picDescription = atts.getValue("", "descr");
         } else if (PIC.equals(localName)) {
             inPic = true; //check for PIC_NS?
-        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
-        else if (FOOTNOTE_REFERENCE.equals(localName)) {
-            String id = atts.getValue(W_NS, "id");
-            bodyContentsHandler.footnoteReference(id);
         } else if (IMAGEDATA.equals(localName)) {
             picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             picDescription = atts.getValue(O_NS, "title");
-        } else if (INS.equals(localName)) {
-            startEditedSection(editType.INSERT, atts);
-        } else if (DEL_TEXT.equals(localName)) {
-            inDelText = true;
-        } else if (DEL.equals(localName)) {
-            startEditedSection(editType.DELETE, atts);
-        } else if (MOVE_TO.equals(localName)) {
-            startEditedSection(EditType.MOVE_TO, atts);
-        } else if (MOVE_FROM.equals(localName)) {
-            startEditedSection(editType.MOVE_FROM, atts);
         } else if (OLE_OBJECT.equals(localName)){ //check for O_NS?
             String type = null;
             String refId = null;
@@ -211,23 +179,10 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             }
         } else if(CR.equals(localName)) {
             runBuffer.append(NEWLINE);
-        } else if (ENDNOTE_REFERENCE.equals(localName)) {
-            String id = atts.getValue(W_NS, "id");
-            bodyContentsHandler.endnoteReference(id);
         }
 
     }
 
-    private void startEditedSection(EditType editType, Attributes atts) {
-        String editAuthor = atts.getValue(W_NS, "author");
-        String editDateString = atts.getValue(W_NS, "date");
-        Date editDate = null;
-        if (editDateString != null) {
-            editDate = DateUtils.tryToParse(editDateString);
-        }
-        bodyContentsHandler.startEditedSection(editAuthor, editDate, editType);
-        this.editType = editType;
-    }
 
     private int getIntVal(Attributes atts) {
         String valString = atts.getValue(W_NS, "val");
@@ -261,17 +216,23 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
         } else if (RPR.equals(localName)) {
             inRPr = false;
         } else if (R.equals(localName)) {
-            bodyContentsHandler.run(currRunProperties, runBuffer.toString());
-            inR = false;
-            runBuffer.setLength(0);
-            currRunProperties.setBold(false);
-            currRunProperties.setItalics(false);
+            handleEndOfRun();
         } else if (T.equals(localName)) {
             inT = false;
         } else if (PPR.equals(localName)) {
-            bodyContentsHandler.startParagraph(currPProperties);
+            if (!pStarted) {
+                bodyContentsHandler.startParagraph(currPProperties);
+                pStarted = true;
+            }
             currPProperties.reset();
         } else if (P.equals(localName)) {
+            if (runBuffer.length() > 0) {
+                //<p><tab></p>...this will treat that as if it were
+                //a run...TODO: should we swallow whitespace that doesn't occur in a run?
+                bodyContentsHandler.run(currRunProperties, runBuffer.toString());
+                runBuffer.setLength(0);
+            }
+            pStarted = false;
             bodyContentsHandler.endParagraph();
         } else if (TC.equals(localName)) {
             bodyContentsHandler.endTableCell();
@@ -279,23 +240,31 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             bodyContentsHandler.endTableRow();
         } else if (TBL.equals(localName)) {
             bodyContentsHandler.endTable();
+        } else if (FLD.equals(localName)) {
+            handleEndOfRun();
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();
-        } else if (DEL_TEXT.equals(localName)) {
-            inDelText = false;
-        } else if (INS.equals(localName) || DEL.equals(localName) ||
-                MOVE_TO.equals(localName) || MOVE_FROM.equals(localName)) {
-            editType = EditType.NONE;
         } else if (PICT.equals(localName)) {
             handlePict();
-
         }
+    }
+
+    private void handleEndOfRun() {
+        bodyContentsHandler.run(currRunProperties, runBuffer.toString());
+        if (inHyperlink) {
+            bodyContentsHandler.hyperlinkEnd();
+            inHyperlink = false;
+        }
+        inR = false;
+        runBuffer.setLength(0);
+        currRunProperties.setBold(false);
+        currRunProperties.setItalics(false);
     }
 
     private void handlePict() {
         String picFileName = null;
         if (picRId != null) {
-            picFileName = linkedRelationships.get(picRId);
+            picFileName = "picId";//TODO: linkedRelationships.get(picRId);
         }
         bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
         picDescription = null;
@@ -309,13 +278,7 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
         if (inACChoiceDepth > 0) {
             return;
         }
-        if (editType.equals(EditType.MOVE_FROM) && inT) {
-            if (bodyContentsHandler.getIncludeMoveFromText()) {
-                runBuffer.append(ch, start, length);
-            }
-        } else if (inT) {
-            runBuffer.append(ch, start, length);
-        } else if (bodyContentsHandler.getIncludeDeletedText() && editType.equals(EditType.DELETE)) {
+         if (inT) {
             runBuffer.append(ch, start, length);
         }
     }
@@ -328,13 +291,11 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
         if (inT) {
             runBuffer.append(ch, start, length);
-        } else if (bodyContentsHandler.getIncludeDeletedText() && inDelText) {
-            runBuffer.append(ch, start, length);
         }
     }
 
 
-    public interface XWPFBodyContentsHandler {
+    public interface XSLFBodyContentsHandler {
 
         void run(RunProperties runProperties, String contents);
 
@@ -361,28 +322,9 @@ public class XWPFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
         void endTableCell();
 
-        void startSDT();
-
-        void endSDT();
-
-        void startEditedSection(String editor, Date date, EditType editType);
-
-        void endEditedSection();
-
-        boolean getIncludeDeletedText();
-
-        void footnoteReference(String id);
-
-        void endnoteReference(String id);
-
-        boolean getIncludeMoveFromText();
-
         void embeddedOLERef(String refId);
 
         void embeddedPicRef(String picFileName, String picDescription);
 
-        void startBookmark(String id, String name);
-
-        void endBookmark(String id);
     }
 }

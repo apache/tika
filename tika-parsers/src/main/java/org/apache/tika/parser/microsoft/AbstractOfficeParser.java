@@ -66,4 +66,8 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.setUseSAXDocxExtractor(useSAXDocxExtractor);
     }
 
+    @Field
+    public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
+        defaultOfficeParserConfig.setUseSAXPptxExtractor(useSAXPptxExtractor);
+    }
 }

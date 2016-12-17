@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Added experimental SAX parser for .pptx files. To select this parser,
+    set useSAXPptxExtractor(true) on OfficeParserConfig (TIKA-2210).
+
   * Upgrade to PDFBox 2.0.4 (TIKA-2209).
 
   * Refactor MockParser to consolidate service loading

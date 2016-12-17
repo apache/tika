@@ -38,6 +38,8 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.SAXHelper;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
+import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.InputSource;
@@ -209,29 +211,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
         return hyperlinks;
     }
-/*
-    private XWPFStyles loadStyles(PackagePart packagePart) {
-        try {
-            PackageRelationshipCollection stylesParts =
-                    packagePart.getRelationshipsByType(XWPFRelation.STYLES.getRelation());
-            if (stylesParts.size() > 0) {
-                PackageRelationship stylesRelationShip = stylesParts.getRelationship(0);
-                if (stylesRelationShip == null) {
-                    return null;
-                }
-                PackagePart stylesPart = opcPackage.getPart(stylesRelationShip);
-                if (stylesPart == null) {
-                    return null;
-                }
-                return new XWPFStyles(stylesPart);
-            }
-        } catch (IOException|OpenXML4JException e) {
-            //swallow
-        }
-        return null;
 
-    }
-*/
     private XWPFNumbering loadNumbering(PackagePart packagePart) {
         try {
             PackageRelationshipCollection numberingParts = packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
@@ -260,7 +240,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void run(XWPFRunProperties runProperties, String contents) {
+        public void run(RunProperties runProperties, String contents) {
             buffer.append(contents);
         }
 
@@ -275,7 +255,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void startParagraph(XWPFParagraphProperties paragraphProperties) {
+        public void startParagraph(ParagraphProperties paragraphProperties) {
             //no-op
         }
 
