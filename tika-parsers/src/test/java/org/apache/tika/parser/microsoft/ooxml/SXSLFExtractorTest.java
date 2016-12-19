@@ -63,7 +63,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_various2.pptx", parseContext);
 
-        assertEquals("right number of attachments", 10, metadataList.size());
+        assertEquals("right number of attachments", 14, metadataList.size());
 
         String mainContent = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
 

@@ -26,6 +26,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.sl.usermodel.Placeholder;
@@ -45,6 +46,10 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
+
+    private final static String HANDOUT_MASTER = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster";
+
+
     public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
         super(context, extractor);
     }
@@ -267,24 +272,55 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 } catch (XmlException xe) {
                     throw new TikaException("Broken OOXML file", xe);
                 }
-                parts.add(slidePart);
-
-                // If it has drawings, return those too
-                try {
-                    for (PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
-                        if (rel.getTargetMode() == TargetMode.INTERNAL) {
-                            PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                            parts.add(rel.getPackage().getPart(relName));
-                        }
-                    }
-                } catch (InvalidFormatException e) {
-                    throw new TikaException("Broken OOXML file", e);
-                }
+                addSlideParts(slidePart, parts);
             }
         }
         //add full document to include macros
         parts.add(document.getPackagePart());
 
+        for (String rel : new String[]{
+                XSLFRelation.SLIDE_MASTER.getRelation(),
+                HANDOUT_MASTER}) {
+            try {
+                PackageRelationshipCollection prc = document.getPackagePart().getRelationshipsByType(rel);
+                for (int i = 0; i < prc.size(); i++) {
+                    PackagePart pp = document.getPackagePart().getRelatedPart(prc.getRelationship(i));
+                    if (pp != null) {
+                        parts.add(pp);
+                    }
+                }
+
+            } catch (InvalidFormatException e) {
+                //log
+            }
+        }
+
         return parts;
     }
+
+
+    private void addSlideParts(PackagePart slidePart, List<PackagePart> parts) {
+
+        for (String relation : new String[]{
+                XSLFRelation.VML_DRAWING.getRelation(),
+                XSLFRelation.SLIDE_LAYOUT.getRelation(),
+                XSLFRelation.NOTES_MASTER.getRelation(),
+                XSLFRelation.NOTES.getRelation()
+        }) {
+            try {
+                for (PackageRelationship packageRelationship : slidePart.getRelationshipsByType(relation)) {
+                    if (packageRelationship.getTargetMode() == TargetMode.INTERNAL) {
+                        PackagePartName relName = PackagingURIHelper.createPartName(packageRelationship.getTargetURI());
+                        parts.add(packageRelationship.getPackage().getPart(relName));
+                    }
+                }
+            } catch (InvalidFormatException e) {
+
+            }
+        }
+        //and slide of course
+        parts.add(slidePart);
+
+    }
+
 }

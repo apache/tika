@@ -251,19 +251,55 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             PackageRelationshipCollection prc = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
             for (int i = 0; i < prc.size(); i++) {
                 PackagePart slidePart = mainDocument.getRelatedPart(prc.getRelationship(i));
-                for (PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
-                    if (rel.getTargetMode() == TargetMode.INTERNAL) {
-                        PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                        parts.add(rel.getPackage().getPart(relName));
-                    }
-                }
-                parts.add(slidePart);
+                addSlideParts(slidePart, parts);
             }
         } catch (InvalidFormatException e) {
-            //do something
+            //log
         }
+
         parts.add(mainDocument);
+        for (String rel : new String[]{
+                XSLFRelation.SLIDE_MASTER.getRelation(),
+                HANDOUT_MASTER}) {
+            try {
+                PackageRelationshipCollection prc = mainDocument.getRelationshipsByType(rel);
+                for (int i = 0; i < prc.size(); i++) {
+                    PackagePart pp = mainDocument.getRelatedPart(prc.getRelationship(i));
+                    if (pp != null) {
+                        parts.add(pp);
+                    }
+                }
+
+            } catch (InvalidFormatException e) {
+                //log
+            }
+        }
+
         return parts;
+    }
+
+    private void addSlideParts(PackagePart slidePart, List<PackagePart> parts) {
+
+        for (String relation : new String[]{
+                XSLFRelation.VML_DRAWING.getRelation(),
+                XSLFRelation.SLIDE_LAYOUT.getRelation(),
+                XSLFRelation.NOTES_MASTER.getRelation(),
+                XSLFRelation.NOTES.getRelation()
+        }) {
+            try {
+                for (PackageRelationship packageRelationship : slidePart.getRelationshipsByType(relation)) {
+                    if (packageRelationship.getTargetMode() == TargetMode.INTERNAL) {
+                        PackagePartName relName = PackagingURIHelper.createPartName(packageRelationship.getTargetURI());
+                        parts.add(packageRelationship.getPackage().getPart(relName));
+                    }
+                }
+            } catch (InvalidFormatException e) {
+
+            }
+        }
+        //and slide of course
+        parts.add(slidePart);
+
     }
 
     private class XSLFCommentsHandler extends DefaultHandler {
