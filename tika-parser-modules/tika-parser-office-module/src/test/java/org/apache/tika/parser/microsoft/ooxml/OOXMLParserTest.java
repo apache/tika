@@ -1220,9 +1220,9 @@ public class OOXMLParserTest extends TikaTest {
     @Test
     public void testEmbeddedPDFInPPTX() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedPDF.pptx");
-        Metadata pdfMetadata1 = metadataList.get(2);
+        Metadata pdfMetadata1 = metadataList.get(4);
         assertEquals("application/pdf", pdfMetadata1.get(Metadata.CONTENT_TYPE));
-        Metadata pdfMetadata2 = metadataList.get(4);
+        Metadata pdfMetadata2 = metadataList.get(6);
         assertEquals("application/pdf", pdfMetadata2.get(Metadata.CONTENT_TYPE));
     }
 
