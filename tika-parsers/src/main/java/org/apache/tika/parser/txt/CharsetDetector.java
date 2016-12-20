@@ -285,7 +285,6 @@ public class CharsetDetector {
         CharsetMatch charsetMatch;
         int confidence;
         ArrayList<CharsetMatch> matches = new ArrayList<CharsetMatch>();
-
         //  Iterate over all possible charsets, remember all that
         //    give a match quality > 0.
         for (i = 0; i < ALL_CS_RECOGNIZERS.size(); i++) {
@@ -302,8 +301,7 @@ public class CharsetDetector {
                         // Reduce lack of confidence (delta between "sure" and current) by 50%.
                         confidence += (MAX_CONFIDENCE - confidence) / 2;
                     }
-
-                    CharsetMatch m = new CharsetMatch(this, csr, confidence);
+                    CharsetMatch m = new CharsetMatch(this, csr, confidence, charsetMatch.getName(), charsetMatch.getLanguage());
                     matches.add(m);
                 }
             }
