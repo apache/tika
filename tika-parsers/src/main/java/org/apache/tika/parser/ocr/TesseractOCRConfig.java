@@ -91,6 +91,10 @@ public class TesseractOCRConfig implements Serializable {
     // factor by which image is to be scaled.
     private int resize = 900;
 
+    // whether or not to preserve interword spacing
+    private boolean preserveInterwordSpacing = false;
+
+
     /**
      * Default contructor.
      */
@@ -148,6 +152,7 @@ public class TesseractOCRConfig implements Serializable {
         } else if ("hocr".equals(outputTypeString)) {
             setOutputType(OUTPUT_TYPE.HOCR);
         }
+        setPreserveInterwordSpacing(getProp(props, "preserveInterwordSpacing", false));
 
         // set parameters for ImageMagick
         setEnableImageProcessing(
@@ -243,6 +248,22 @@ public class TesseractOCRConfig implements Serializable {
         this.pageSegMode = pageSegMode;
     }
 
+    /**
+     * Whether or not to maintain interword spacing.  Default is <code>false</code>.
+     *
+     * @param preserveInterwordSpacing
+     */
+    public void setPreserveInterwordSpacing(boolean preserveInterwordSpacing) {
+        this.preserveInterwordSpacing = preserveInterwordSpacing;
+    }
+
+    /**
+     *
+     * @return whether or not to maintain interword spacing.
+     */
+    public boolean getPreserveInterwordSpacing() {
+        return preserveInterwordSpacing;
+    }
     /**
      * @see #setMinFileSizeToOcr(int minFileSizeToOcr)
      */
@@ -481,4 +502,21 @@ public class TesseractOCRConfig implements Serializable {
     private String getProp(Properties properties, String property, String defaultMissing) {
         return properties.getProperty(property, defaultMissing);
     }
+
+    private boolean getProp(Properties properties, String property, boolean defaultMissing) {
+        String propVal = properties.getProperty(property);
+        if (propVal == null) {
+            return defaultMissing;
+        }
+        if (propVal.equalsIgnoreCase("true")) {
+            return true;
+        } else if (propVal.equalsIgnoreCase("false")) {
+            return false;
+        }
+
+        throw new RuntimeException(String.format(Locale.ROOT,
+                "Cannot parse TesseractOCRConfig variable %s, invalid boolean value: %s",
+                property, propVal));
+    }
+
 }
