@@ -17,6 +17,9 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Add configurability of "preserve-interword-spacing" to
+    TesseractOCRParser (TIKA-2190).
+
   * Allow extraction of PDActions (including Javascript) from
     PDFs (TIKA-2090).
 

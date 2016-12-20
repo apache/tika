@@ -418,9 +418,12 @@ public class TesseractOCRParser extends AbstractParser {
      *           if an input error occurred
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
-        String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
-                config.getLanguage(), "-psm", config.getPageSegMode(), config.getOutputType().name().toLowerCase(Locale.US)};
 
+        String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
+                config.getLanguage(), "-psm", config.getPageSegMode(),
+                config.getOutputType().name().toLowerCase(Locale.US),
+                "-c",
+                (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0"};
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
         final Process process = pb.start();
@@ -480,8 +483,9 @@ public class TesseractOCRParser extends AbstractParser {
         try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             char[] buffer = new char[1024];
             for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                if (n > 0)
+                if (n > 0) {
                     xhtml.characters(buffer, 0, n);
+                }
             }
         }
         xhtml.endElement("div");

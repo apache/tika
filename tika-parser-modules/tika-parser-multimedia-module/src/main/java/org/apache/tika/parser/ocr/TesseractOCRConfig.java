@@ -71,6 +71,9 @@ public class TesseractOCRConfig implements Serializable{
 	// The format of the ocr'ed output to be returned, txt or hocr.
 	private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
 
+    // whether or not to preserve interword spacing
+    private boolean preserveInterwordSpacing = false;
+
 	// enable image processing (optional)
 	private int enableImageProcessing = 0;
 
@@ -150,7 +153,9 @@ public class TesseractOCRConfig implements Serializable{
 			setOutputType(OUTPUT_TYPE.HOCR);
 		}
 
-		// set parameters for ImageMagick
+        setPreserveInterwordSpacing(getProp(props, "preserveInterwordSpacing", false));
+
+        // set parameters for ImageMagick
 		setEnableImageProcessing(
 				getProp(props, "enableImageProcessing", isEnableImageProcessing()));
 		setImageMagickPath(
@@ -302,6 +307,23 @@ public class TesseractOCRConfig implements Serializable{
 	public void setEnableImageProcessing(int enableImageProcessing) {
 		this.enableImageProcessing = enableImageProcessing;
 	}
+
+    /**
+     * Whether or not to maintain interword spacing.  Default is <code>false</code>.
+     *
+     * @param preserveInterwordSpacing
+     */
+    public void setPreserveInterwordSpacing(boolean preserveInterwordSpacing) {
+        this.preserveInterwordSpacing = preserveInterwordSpacing;
+    }
+
+    /**
+     *
+     * @return whether or not to maintain interword spacing.
+     */
+    public boolean getPreserveInterwordSpacing() {
+        return preserveInterwordSpacing;
+    }
 
 	/**
 	 * @return the density
@@ -459,4 +481,20 @@ public class TesseractOCRConfig implements Serializable{
 	private String getProp(Properties properties, String property, String defaultMissing) {
 		return properties.getProperty(property, defaultMissing);
 	}
+
+    private boolean getProp(Properties properties, String property, boolean defaultMissing) {
+        String propVal = properties.getProperty(property);
+        if (propVal == null) {
+            return defaultMissing;
+        }
+        if (propVal.equalsIgnoreCase("true")) {
+            return true;
+        } else if (propVal.equalsIgnoreCase("false")) {
+            return false;
+        }
+
+        throw new RuntimeException(String.format(Locale.ROOT,
+                "Cannot parse TesseractOCRConfig variable %s, invalid boolean value: %s",
+                property, propVal));
+    }
 }
