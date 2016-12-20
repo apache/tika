@@ -50,6 +50,7 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -151,6 +152,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         HWPFDocument document;
         try {
             document = new HWPFDocument(root);
+        } catch (org.apache.poi.EncryptedDocumentException e) {
+            throw new EncryptedDocumentException(e);
         } catch (OldWordFileFormatException e) {
             parseWord6(root, xhtml);
             return;

@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -553,6 +554,16 @@ public class WordParserTest extends TikaTest {
 
         //moveFrom is deleted in .doc files
         assertContainsCount("Second paragraph", r.xml, 2);
+    }
+
+    @Test
+    public void testProtected() throws Exception {
+        try {
+            getXML("testWORD_protected_passtika.doc");
+            fail("should have thrown encrypted document exception");
+        } catch (org.apache.tika.exception.EncryptedDocumentException e) {
+
+        }
     }
 }
 
