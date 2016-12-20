@@ -231,7 +231,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertTrue(xml.contains("<h1 class=\"title\">"));
 
         // Regular headings
-        assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
+        assertContains("<h1>Heading Level 1</h1>", xml);
         assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
         // Headings with anchor tags in them
         //TODO: still not getting bookmarks

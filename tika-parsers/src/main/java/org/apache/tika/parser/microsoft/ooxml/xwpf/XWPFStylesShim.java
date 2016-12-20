@@ -25,7 +25,7 @@ import java.util.Map;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.ooxml.AbstractDocumentXMLBodyHandler;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -39,7 +39,16 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class XWPFStylesShim {
 
+    /**
+     * Empty singleton to be used when there is no style info
+     */
+    public static XWPFStylesShim EMPTY_STYLES = new EmptyXWPFStyles();
+
     private Map<String, String> styles = new HashMap<>();
+
+    private XWPFStylesShim() {
+
+    }
 
     public XWPFStylesShim(PackagePart part, ParseContext parseContext) {
         try (InputStream is = part.getInputStream()) {
@@ -66,17 +75,25 @@ public class XWPFStylesShim {
         return styles.get(styleId);
     }
 
+    private static class EmptyXWPFStyles extends XWPFStylesShim {
+
+        @Override
+        public String getStyleName(String styleId) {
+            return null;
+        }
+    }
+
     private class StylesStripper extends DefaultHandler {
 
         String currentStyleId = null;
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
-            if (uri == null || AbstractDocumentXMLBodyHandler.W_NS.equals(uri)) {
+            if (uri == null || OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
                 if ("style".equals(localName)) {
-                    currentStyleId = atts.getValue(AbstractDocumentXMLBodyHandler.W_NS, "styleId");
+                    currentStyleId = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
                 } else if ("name".equals(localName)) {
-                    String name = atts.getValue(AbstractDocumentXMLBodyHandler.W_NS, "val");
+                    String name = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "val");
                     if (currentStyleId != null && name != null) {
                         styles.put(currentStyleId, name);
                     }
@@ -86,7 +103,7 @@ public class XWPFStylesShim {
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (uri == null || AbstractDocumentXMLBodyHandler.W_NS.equals(uri)) {
+            if (uri == null || OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
                 if ("style".equals(localName)) {
                     currentStyleId = null;
                 }

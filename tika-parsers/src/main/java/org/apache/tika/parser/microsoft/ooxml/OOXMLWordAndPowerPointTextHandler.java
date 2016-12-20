@@ -15,28 +15,117 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xslf;
+package org.apache.tika.parser.microsoft.ooxml;
 
 
+import java.util.Date;
 import java.util.Map;
 
-import org.apache.tika.parser.microsoft.ooxml.AbstractDocumentXMLBodyHandler;
-import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
-import org.apache.tika.parser.microsoft.ooxml.RunProperties;
+import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This class is intended to handle anything that might contain IBodyElements:
- * main document, headers, footers, notes, etc.
+ * main document, headers, footers, notes, slides, etc.
+ *
+ * <p/>
+ *
+ * This class does not check for namespaces, and it can be applied
+ * to PPTX and DOCX for text extraction.
+ *
+ * <p/>
+ * This does not work with .xlsx or .vsdx.
+ *
+ * TODO: move this into POI?
+ *
  */
 
-public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
+public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
 
-    private final XSLFBodyContentsHandler bodyContentsHandler;
-    //private final RelationshipsManager relationshipsManager;
+    public enum EditType {
+        NONE,
+        INSERT,
+        DELETE,
+        MOVE_TO,
+        MOVE_FROM
+    }
 
+    private final static String R = "r";
+    private final static String FLD = "fld";
+    private final static String RPR = "rPr";
+    private final static String P = "p";
+    private final static String P_STYLE = "pStyle";
+    private final static String PPR = "pPr";
+    private final static String T = "t";
+    private final static String TAB = "tab";
+    private final static String B = "b";
+    private final static String ILVL = "ilvl";
+    private final static String NUM_ID = "numId";
+    private final static String TC = "tc";
+    private final static String TR = "tr";
+    private final static String I = "i";
+    private final static String NUM_PR = "numPr";
+    private final static String BR = "br";
+    private final static String HYPERLINK = "hyperlink";
+    private final static String HLINK_CLICK = "hlinkClick"; //pptx hlink
+    private final static String TBL = "tbl";
+    private final static String PIC = "pic";
+    private final static String PICT = "pict";
+    private final static String IMAGEDATA = "imagedata";
+    private final static String BLIP = "blip";
+    private final static String CHOICE = "Choice";
+    private final static String FALLBACK = "Fallback";
+    private final static String OLE_OBJECT = "OLEObject";
+    private final static String CR = "cr";
+
+    public final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+    private final static String O_NS = "urn:schemas-microsoft-com:office:office";
+    private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
+    private final static String DRAWING_MAIN_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
+    private final static String V_NS = "urn:schemas-microsoft-com:vml";
+
+    private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+
+    private final static char[] TAB_CHAR = new char[]{'\t'};
+    private final static char NEWLINE = '\n';
+    
+    private final static String BOOKMARK_START = "bookmarkStart";
+    private final static String BOOKMARK_END = "bookmarkEnd";
+    private final static String FOOTNOTE_REFERENCE = "footnoteReference";
+    private final static String INS = "ins";
+    private final static String DEL = "del";
+    private final static String DEL_TEXT = "delText";
+    private final static String MOVE_FROM = "moveFrom";
+    private final static String MOVE_TO = "moveTo";
+    private final static String ENDNOTE_REFERENCE = "endnoteReference";
+
+    private final XWPFBodyContentsHandler bodyContentsHandler;
+
+    private final Map<String, String> linkedRelationships;
+
+    private boolean inR = false;//in run or in field
+    private boolean inT = false;
+    private boolean inRPr = false;
+    private boolean inNumPr = false;
+
+    private boolean inPic = false;
+    private boolean inPict = false;
+    private String picDescription = null;
+    private String picRId = null;
+    private String picFilename = null;
+
+    //mechanism used to determine when to
+    //signal the start of the p, and still
+    //handle p with pPr and those without
+    private boolean lastStartElementWasP = false;
+    //have we signaled the start of a p?
+    //pPr can happen multiple times within a p
+    //<p><pPr/><r><t>text</t></r><pPr></p>
+    private boolean pStarted = false;
 
     //alternate content can be embedded in itself.
     //need to track depth.
@@ -44,14 +133,22 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
     private int inACChoiceDepth = 0;
     private int inACFallbackDepth = 0;
 
-    private boolean inHyperlink = false;
+    private final RunProperties currRunProperties = new RunProperties();
+    private final ParagraphProperties currPProperties = new ParagraphProperties();
 
-    private final Map<String, String> linkedRelationships;
+    private final StringBuilder runBuffer = new StringBuilder();
 
-    public XSLFDocumentXMLBodyHandler(XSLFBodyContentsHandler bodyContentsHandler,
-                                      Map<String, String> linkedRelationships) {
+
+    private boolean inDelText = false;
+    private boolean inHlinkClick = false;
+
+    private OOXMLWordAndPowerPointTextHandler.EditType editType = OOXMLWordAndPowerPointTextHandler.EditType.NONE;
+
+
+    public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
+                                             Map<String, String> hyperlinks) {
         this.bodyContentsHandler = bodyContentsHandler;
-        this.linkedRelationships = linkedRelationships;
+        this.linkedRelationships = hyperlinks;
     }
 
 
@@ -77,7 +174,6 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
         if (lastStartElementWasP && ! PPR.equals(localName)) {
             bodyContentsHandler.startParagraph(currPProperties);
-            pStarted = true;
         }
 
         lastStartElementWasP = false;
@@ -93,8 +189,9 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
         if (inACChoiceDepth > 0) {
             return;
         }
-        //these are sorted descending by frequency
-        //in our regression corpus
+        //these are sorted descending by frequency within docx files
+        //in our regression corpus.
+        //yes, I know, likely premature optimization...
         if (RPR.equals(localName)) {
             inRPr = true;
         } else if (R.equals(localName)) {
@@ -119,8 +216,6 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             if (inR && inRPr) {
                 currRunProperties.setItalics(true);
             }
-        } else if (FLD.equals(localName)) {
-            inR = true;
         } else if (TR.equals(localName)) {
             bodyContentsHandler.startTableRow();
         } else if (NUM_PR.equals(localName)) {
@@ -135,21 +230,34 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             }
         } else if(BR.equals(localName)) {
             runBuffer.append(NEWLINE);
-        } else if ("hlinkClick".equals(localName)) {
+        } else if (BOOKMARK_START.equals(localName)) {
+            String name = atts.getValue(W_NS, "name");
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.startBookmark(id, name);
+        } else if (BOOKMARK_END.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.endBookmark(id);
+        } else if (HYPERLINK.equals(localName)) { //docx hyperlink
             String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             String hyperlink = null;
             if (hyperlinkId != null) {
                 hyperlink = linkedRelationships.get(hyperlinkId);
                 bodyContentsHandler.hyperlinkStart(hyperlink);
-                inHyperlink = true;
-            }/* else {
+            } else {
                 String anchor = atts.getValue(W_NS, "anchor");
                 if (anchor != null) {
                     anchor = "#" + anchor;
                 }
                 bodyContentsHandler.hyperlinkStart(anchor);
-                inHyperlink = true;
-            }*/
+            }
+        } else if (HLINK_CLICK.equals(localName)) { //pptx hyperlink
+            String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
+            String hyperlink = null;
+            if (hyperlinkId != null) {
+                hyperlink = linkedRelationships.get(hyperlinkId);
+                bodyContentsHandler.hyperlinkStart(hyperlink);
+                inHlinkClick = true;
+            }
         } else if(TBL.equals(localName)) {
             bodyContentsHandler.startTable();
         } else if (BLIP.equals(localName)) { //check for DRAWING_NS
@@ -158,9 +266,23 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             picDescription = atts.getValue("", "descr");
         } else if (PIC.equals(localName)) {
             inPic = true; //check for PIC_NS?
+        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
+        else if (FOOTNOTE_REFERENCE.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.footnoteReference(id);
         } else if (IMAGEDATA.equals(localName)) {
             picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             picDescription = atts.getValue(O_NS, "title");
+        } else if (INS.equals(localName)) {
+            startEditedSection(editType.INSERT, atts);
+        } else if (DEL_TEXT.equals(localName)) {
+            inDelText = true;
+        } else if (DEL.equals(localName)) {
+            startEditedSection(editType.DELETE, atts);
+        } else if (MOVE_TO.equals(localName)) {
+            startEditedSection(EditType.MOVE_TO, atts);
+        } else if (MOVE_FROM.equals(localName)) {
+            startEditedSection(editType.MOVE_FROM, atts);
         } else if (OLE_OBJECT.equals(localName)){ //check for O_NS?
             String type = null;
             String refId = null;
@@ -179,10 +301,23 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             }
         } else if(CR.equals(localName)) {
             runBuffer.append(NEWLINE);
+        } else if (ENDNOTE_REFERENCE.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.endnoteReference(id);
         }
 
     }
 
+    private void startEditedSection(EditType editType, Attributes atts) {
+        String editAuthor = atts.getValue(W_NS, "author");
+        String editDateString = atts.getValue(W_NS, "date");
+        Date editDate = null;
+        if (editDateString != null) {
+            editDate = DateUtils.tryToParse(editDateString);
+        }
+        bodyContentsHandler.startEditedSection(editAuthor, editDate, editType);
+        this.editType = editType;
+    }
 
     private int getIntVal(Attributes atts) {
         String valString = atts.getValue(W_NS, "val");
@@ -242,6 +377,11 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
             bodyContentsHandler.endTable();
         } else if (FLD.equals(localName)) {
             handleEndOfRun();
+        } else if (DEL_TEXT.equals(localName)) {
+            inDelText = false;
+        } else if (INS.equals(localName) || DEL.equals(localName) ||
+                MOVE_TO.equals(localName) || MOVE_FROM.equals(localName)) {
+            editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();
         } else if (PICT.equals(localName)) {
@@ -251,9 +391,9 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
     private void handleEndOfRun() {
         bodyContentsHandler.run(currRunProperties, runBuffer.toString());
-        if (inHyperlink) {
+        if (inHlinkClick) {
             bodyContentsHandler.hyperlinkEnd();
-            inHyperlink = false;
+            inHlinkClick = false;
         }
         inR = false;
         runBuffer.setLength(0);
@@ -264,7 +404,7 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
     private void handlePict() {
         String picFileName = null;
         if (picRId != null) {
-            picFileName = "picId";//TODO: linkedRelationships.get(picRId);
+            picFileName = linkedRelationships.get(picRId);
         }
         bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
         picDescription = null;
@@ -278,7 +418,13 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
         if (inACChoiceDepth > 0) {
             return;
         }
-         if (inT) {
+        if (editType.equals(EditType.MOVE_FROM) && inT) {
+            if (bodyContentsHandler.getIncludeMoveFromText()) {
+                runBuffer.append(ch, start, length);
+            }
+        } else if (inT) {
+            runBuffer.append(ch, start, length);
+        } else if (bodyContentsHandler.getIncludeDeletedText() && editType.equals(EditType.DELETE)) {
             runBuffer.append(ch, start, length);
         }
     }
@@ -291,11 +437,13 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
         if (inT) {
             runBuffer.append(ch, start, length);
+        } else if (bodyContentsHandler.getIncludeDeletedText() && inDelText) {
+            runBuffer.append(ch, start, length);
         }
     }
 
 
-    public interface XSLFBodyContentsHandler {
+    public interface XWPFBodyContentsHandler {
 
         void run(RunProperties runProperties, String contents);
 
@@ -322,9 +470,28 @@ public class XSLFDocumentXMLBodyHandler extends AbstractDocumentXMLBodyHandler {
 
         void endTableCell();
 
+        void startSDT();
+
+        void endSDT();
+
+        void startEditedSection(String editor, Date date, EditType editType);
+
+        void endEditedSection();
+
+        boolean getIncludeDeletedText();
+
+        void footnoteReference(String id);
+
+        void endnoteReference(String id);
+
+        boolean getIncludeMoveFromText();
+
         void embeddedOLERef(String refId);
 
         void embeddedPicRef(String picFileName, String picDescription);
 
+        void startBookmark(String id, String name);
+
+        void endBookmark(String id);
     }
 }

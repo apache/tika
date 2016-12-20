@@ -38,6 +38,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.SAXHelper;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
@@ -182,7 +183,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReader reader = SAXHelper.newXMLReader();
-            reader.setContentHandler(new XWPFDocumentXMLBodyHandler(
+            reader.setContentHandler(new OOXMLWordAndPowerPointTextHandler(
                     new XWPFToTextContentHandler(buffer), hyperlinks));
             reader.parse(new InputSource(new CloseShieldInputStream(stream)));
 
@@ -232,7 +233,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         return null;
     }
 
-    private class XWPFToTextContentHandler implements XWPFDocumentXMLBodyHandler.XWPFBodyContentsHandler {
+    private class XWPFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XWPFToTextContentHandler(StringBuilder buffer) {
@@ -305,7 +306,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void startEditedSection(String editor, Date date, XWPFDocumentXMLBodyHandler.EditType editType) {
+        public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 

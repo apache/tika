@@ -18,12 +18,14 @@
 package org.apache.tika.parser.microsoft.ooxml.xslf;
 
 import java.io.IOException;
+import java.util.Date;
 
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLProperties;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
@@ -83,7 +85,7 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
 
 
 
-    private class XSLFToTextContentHandler implements XSLFDocumentXMLBodyHandler.XSLFBodyContentsHandler {
+    private class XSLFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XSLFToTextContentHandler(StringBuilder buffer) {
@@ -145,6 +147,45 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
             buffer.append("\t");
         }
 
+        @Override
+        public void startSDT() {
+
+        }
+
+        @Override
+        public void endSDT() {
+
+        }
+
+        @Override
+        public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
+
+        }
+
+        @Override
+        public void endEditedSection() {
+
+        }
+
+        @Override
+        public boolean getIncludeDeletedText() {
+            return false;
+        }
+
+        @Override
+        public void footnoteReference(String id) {
+
+        }
+
+        @Override
+        public void endnoteReference(String id) {
+
+        }
+
+        @Override
+        public boolean getIncludeMoveFromText() {
+            return false;
+        }
 
 
         @Override
@@ -155,6 +196,16 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
         @Override
         public void embeddedPicRef(String picFileName, String picDescription) {
             //no-op
+        }
+
+        @Override
+        public void startBookmark(String id, String name) {
+
+        }
+
+        @Override
+        public void endBookmark(String id) {
+
         }
 
     }

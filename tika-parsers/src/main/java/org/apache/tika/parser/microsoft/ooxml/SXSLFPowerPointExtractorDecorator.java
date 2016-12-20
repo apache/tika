@@ -36,9 +36,7 @@ import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFDocumentXMLBodyHandler;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
-import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFTikaBodyPartHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -110,14 +108,14 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         handleBasicRelatedParts(XSLFRelation.SLIDE_MASTER.getRelation(),
                 "slide-master",
                 mainDocument,
-                new PlaceHolderSkipper(new XSLFDocumentXMLBodyHandler(
-                        new XSLFTikaBodyPartHandler(xhtml), new HashMap<String, String>())));
+                new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())));
 
         handleBasicRelatedParts(HANDOUT_MASTER,
                 "slide-handout-master",
                 mainDocument,
-                new XSLFDocumentXMLBodyHandler(
-                        new XSLFTikaBodyPartHandler(xhtml), new HashMap<String, String>())
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())
         );
     }
 
@@ -162,8 +160,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             context.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
-                            new XSLFDocumentXMLBodyHandler(
-                                    new XSLFTikaBodyPartHandler(xhtml), linkedRelationships))));
+                            new OOXMLWordAndPowerPointTextHandler(
+                                    new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))));
 
         } catch (TikaException e) {
             //do something with this
@@ -174,19 +172,19 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         handleBasicRelatedParts(XSLFRelation.SLIDE_LAYOUT.getRelation(),
                 "slide-master-content", slidePart,
-                new PlaceHolderSkipper(new XSLFDocumentXMLBodyHandler(
-                        new XSLFTikaBodyPartHandler(xhtml), linkedRelationships))
+                new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))
                 );
 
         handleBasicRelatedParts(XSLFRelation.NOTES.getRelation(),
                 "slide-notes", slidePart,
-                new XSLFDocumentXMLBodyHandler(
-                        new XSLFTikaBodyPartHandler(xhtml), linkedRelationships));
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
         handleBasicRelatedParts(XSLFRelation.NOTES_MASTER.getRelation(),
                 "slide-notes-master", slidePart,
-                new XSLFDocumentXMLBodyHandler(
-                        new XSLFTikaBodyPartHandler(xhtml), linkedRelationships));
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
         handleBasicRelatedParts(XSLFRelation.COMMENTS.getRelation(),
                 null, slidePart,
@@ -387,9 +385,9 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     private static class PlaceHolderSkipper extends DefaultHandler {
 
-        private final XSLFDocumentXMLBodyHandler wrappedHandler;
+        private final ContentHandler wrappedHandler;
 
-        PlaceHolderSkipper(XSLFDocumentXMLBodyHandler wrappedHandler) {
+        PlaceHolderSkipper(ContentHandler wrappedHandler) {
             this.wrappedHandler = wrappedHandler;
         }
 

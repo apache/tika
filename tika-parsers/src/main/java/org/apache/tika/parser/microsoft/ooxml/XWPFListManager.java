@@ -31,6 +31,12 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
 
 
 public class XWPFListManager extends AbstractListManager {
+
+    /**
+     * Empty singleton to be used when there is no list manager.
+     * Always returns empty string.
+     */
+    public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
     private final static boolean OVERRIDE_AVAILABLE;
     private final static String SKIP_FORMAT = Character.toString((char) 61623);//if this shows up as the lvlText, don't show a number
 
@@ -175,4 +181,21 @@ public class XWPFListManager extends AbstractListManager {
         return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
     }
 
+
+    private static class EmptyListManager extends XWPFListManager {
+        EmptyListManager() {
+            super(null);
+        }
+
+        @Override
+        public String getFormattedNumber(XWPFParagraph paragraph) {
+            return "";
+        }
+
+        @Override
+        public String getFormattedNumber(BigInteger numId, int iLvl) {
+            return "";
+        }
+
+    }
 }

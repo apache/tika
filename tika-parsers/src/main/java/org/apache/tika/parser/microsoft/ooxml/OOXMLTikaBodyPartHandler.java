@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.microsoft.ooxml.xwpf;
+package org.apache.tika.parser.microsoft.ooxml;
 
 
 import java.math.BigInteger;
@@ -23,19 +23,16 @@ import java.util.Date;
 
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
-import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
-import org.apache.tika.parser.microsoft.ooxml.RunProperties;
-import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFBodyContentsHandler {
+public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
     private final static String P = "p";
 
     private final static char[] NEWLINE = new char[]{'\n'};
-    private final static char[] TAB = new char[]{'\t'};
 
     private final XHTMLContentHandler xhtml;
     private final XWPFListManager listManager;
@@ -50,11 +47,27 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     private boolean isBold = false;
     private boolean wroteHyperlinkStart = false;
 
+    //TODO: fix this
+    //pWithinCell should be an array/stack of given cell depths
+    //so that when you get to the end of an embedded table, e.g.,
+    //you know what your paragraph count was in the parent cell.
+    //<tc><p/><p/><table><tr><tc></p></p></tc></tr></table>...
+    private int tableCellDepth = 0;
+    private int pWithinCell = 0;
+
     //will need to replace this with a stack
     //if we're marking more that the first level <p/> element
     private String paragraphTag = null;
 
-    public XWPFTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
+        this.xhtml = xhtml;
+        this.styles = XWPFStylesShim.EMPTY_STYLES;
+        this.listManager = XWPFListManager.EMPTY_LIST;
+        this.includeDeletedText = false;
+        this.includeMoveFromText = false;
+    }
+
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles, XWPFListManager listManager, OfficeParserConfig parserConfig) {
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
@@ -161,18 +174,23 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         pDepth++;
     }
 
+
     @Override
     public void endParagraph() {
         try {
             closeStyleTags();
-            if (pDepth == 1 && tableDepth == 0 && sdtDepth == 0) {
+            if (pDepth == 1 && tableDepth == 0) {
                 xhtml.endElement(paragraphTag);
-                paragraphTag = null;
-            } else {
+            } else if (tableCellDepth > 0 && pWithinCell > 0){
+                xhtml.characters(NEWLINE, 0, 1);
+            } else if (tableCellDepth == 0) {
                 xhtml.characters(NEWLINE, 0, 1);
             }
         } catch (SAXException e) {
 
+        }
+        if (tableCellDepth > 0) {
+            pWithinCell++;
         }
         pDepth--;
     }
@@ -222,6 +240,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         } catch (SAXException e) {
 
         }
+        tableCellDepth++;
     }
 
     @Override
@@ -231,6 +250,8 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
         } catch (SAXException e) {
 
         }
+        pWithinCell = 0;
+        tableCellDepth--;
     }
 
     @Override
@@ -249,7 +270,7 @@ public class XWPFTikaBodyPartHandler implements XWPFDocumentXMLBodyHandler.XWPFB
     }
 
     @Override
-    public void startEditedSection(String editor, Date date, XWPFDocumentXMLBodyHandler.EditType editType) {
+    public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
         //no-op
     }
 
