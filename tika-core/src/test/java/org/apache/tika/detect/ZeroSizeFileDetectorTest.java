@@ -16,18 +16,18 @@
  */
 package org.apache.tika.detect;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.junit.Before;
-import org.junit.Test;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.junit.Before;
+import org.junit.Test;
 
 public class ZeroSizeFileDetectorTest {
 
@@ -42,14 +42,12 @@ public class ZeroSizeFileDetectorTest {
     public void testDetectZeroValue() {
         byte[] data = "".getBytes(UTF_8);
         detect(data, MediaType.EMPTY);
-        System.out.println();
     }
 
     @Test
     public void testDetectNonZeroValue() {
         byte[] data = "Testing 1...2...3".getBytes(UTF_8);
         detect(data, MediaType.OCTET_STREAM);
-        System.out.println();
     }
 
     private void detect(byte[] data, MediaType type) {
