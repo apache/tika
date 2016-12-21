@@ -26,7 +26,7 @@ import org.apache.commons.lang.StringUtils;
  * {@link InputStream} wrapper adding WordPerfect-specific byte-reading methods.
  * @author Pascal Essiembre
  */
-public class WPInputStream extends InputStream {
+class WPInputStream extends InputStream {
 
     private final DataInputStream in;
     
@@ -102,7 +102,11 @@ public class WPInputStream extends InputStream {
      * @throws IOException if not enough bytes remain
      */
     public char readWPChar() throws IOException {
-        return (char) in.read();
+        int c = in.read();
+        if (c == -1) {
+            throw new EOFException();
+        }
+        return (char)c;
     }
 
     /**
@@ -145,25 +149,48 @@ public class WPInputStream extends InputStream {
      * @throws IOException if not enough bytes remain
      */
     public String readWPHex() throws IOException {
-        return StringUtils.leftPad(Integer.toString(read(), 16), 2, '0');
+        return StringUtils.leftPad(Integer.toString(readWP(), 16), 2, '0');
     }
-    
-    
+
+    /**
+     * Reads a byte
+     * @return byte read
+     * @throws IOException if not enough bytes remain
+     */
+    public int readWP() throws IOException {
+        int i = read();
+        if (i == -1) {
+            throw new EOFException();
+        }
+        return i;
+    }
+
+
     @Override
     public int read() throws IOException {
         return in.read();
     }
 
+
+    /**
+     * Does not guarantee full buffer is read.
+     */
     @Override
     public int read(byte[] b) throws IOException {
         return in.read(b);
     }
 
+    /**
+     * Does not guarantee full buffer is read.
+     */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         return in.read(b, off, len);
     }
 
+    /**
+     * Does not guarantee full length is skipped.
+     */
     @Override
     public long skip(long n) throws IOException {
         return in.skip(n);

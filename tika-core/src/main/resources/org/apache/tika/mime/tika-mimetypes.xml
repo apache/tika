@@ -2594,10 +2594,10 @@
     <tika:link>http://en.wikipedia.org/wiki/WordPerfect</tika:link>
     <tika:uti>com.corel.wordperfect.doc</tika:uti>
     <magic priority="60">
-      <match value="0xFF575043" type="big32" offset="0"/>
+      <match value="0xFF575043" type="big32" offset="0"/> <!-- ÿWPC -->
     </magic>
     <magic priority="50">
-      <match value="application/vnd.wordperfect;" type="string" offset="0"></match>
+      <match value="application/vnd.wordperfect;" type="string" offset="0"/>
     </magic>
     <glob pattern="*.wpd"/>
     <glob pattern="*.wp"/>
@@ -3745,14 +3745,11 @@
     <_comment>
       Quattro Pro - Corel Spreadsheet (part of WordPerfect Office suite)
     </_comment>
-    <!-- Conflicts with MS Word .doc format:
-    <magic priority="90">
-      <match value="0xD0CF11E0A1B11AE1" type="string" offset="0"/>
-    </magic>
-     -->
+<!--
+    Let's hold off on this for now until we deconflict with x-123
     <magic priority="50">
       <match value="0x00000200" type="big32" offset="0"/>
-    </magic>
+    </magic> -->
     <glob pattern="*.qpw"/>
     <glob pattern="*.wb1"/> 
     <glob pattern="*.wb2"/>

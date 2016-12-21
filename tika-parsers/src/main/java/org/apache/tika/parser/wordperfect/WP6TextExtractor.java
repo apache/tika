@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.WordPerfect;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -26,7 +27,7 @@ import org.xml.sax.SAXException;
  * This format appears to be compatible with more recent versions too.
  * @author Pascal Essiembre
  */
-public class WP6TextExtractor {
+class WP6TextExtractor {
 
     public void extract(
             InputStream input, XHTMLContentHandler xhtml, Metadata metadata) 
@@ -44,7 +45,7 @@ public class WP6TextExtractor {
     }
 
     private void applyMetadata(WP6FileHeader header, Metadata metadata) {
-        metadata.set(WordPerfect.FILE_SIZE, 
+        metadata.set(WordPerfect.FILE_SIZE,
                 Long.toString(header.getFileSize()));
         metadata.set(WordPerfect.FILE_ID, header.getFileId());
         metadata.set(WordPerfect.PRODUCT_TYPE, header.getProductType());
@@ -92,10 +93,10 @@ public class WP6TextExtractor {
                 out.append('\n');
             } else if (c >= 208 && c <= 239) {
                 // Variable-Length Multi-Byte Functions
-                int subgroup = in.read();
+                int subgroup = in.readWP();
                 int functionSize = in.readWPShort();
                 for (int i = 0; i < functionSize - 4; i++) {
-                    in.read(); 
+                    in.readWP();
                 }
                 
                 // End-of-Line group
@@ -121,9 +122,9 @@ public class WP6TextExtractor {
                 
             } else if (c == 240) {
                 // extended char
-                int charval = in.read();
-                int charset = in.read();
-                in.read(); // closing character
+                int charval = in.readWP();
+                int charset = in.readWP();
+                in.readWP(); // closing character
   
                 //TODO implement all charsets
                 if (charset == 4 || charset == 5) {
@@ -184,10 +185,10 @@ public class WP6TextExtractor {
         in.mark(30);
         header.setFileId(in.readWPString(4));         // 1-4
         header.setDocAreaPointer(in.readWPLong());    // 5-8
-        header.setProductType(in.read());             // 9
+        header.setProductType(in.readWP());             // 9
         header.setFileType(in.readWPChar());          // 10
-        header.setMajorVersion(in.read());            // 11
-        header.setMinorVersion(in.read());            // 12
+        header.setMajorVersion(in.readWP());            // 11
+        header.setMinorVersion(in.readWP());            // 12
         header.setEncrypted(in.readWPShort() != 0);   // 13-14
         header.setIndexAreaPointer(in.readWPShort()); // 15-16
         try {

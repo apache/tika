@@ -18,7 +18,7 @@ package org.apache.tika.parser.wordperfect;
  * WordPerfect constant values used for parsing and extracting text.
  * @author Pascal Essiembre
  */
-public final class WP6Constants {
+final class WP6Constants {
 
 
     public static final String WP6_FILE_ID = "ÿWPC";

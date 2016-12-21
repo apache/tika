@@ -16,15 +16,8 @@ package org.apache.tika.parser.wordperfect;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.StringWriter;
-
-import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
 
 /**
@@ -33,24 +26,14 @@ import org.junit.Test;
  */
 public class WordPerfectTest extends TikaTest {
 
-    private Tika tika = new Tika();
 
     @Test
     public void testWordPerfectParser() throws Exception {
-        File file = getResourceAsFile("/test-documents/testWordPerfect.wpd");
 
-        Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
-        tika.getParser().parse(
-                new FileInputStream(file),
-                new WriteOutContentHandler(writer),
-                metadata,
-                new ParseContext());
-        String content = writer.toString();
-
+        XMLResult r = getXML("testWordPerfect.wpd");
         assertEquals("application/vnd.wordperfect", 
-                metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
-        assertContains("test test", content);
+                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
+        assertContains("test test", r.xml);
     }
 }

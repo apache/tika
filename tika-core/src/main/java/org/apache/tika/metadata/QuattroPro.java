@@ -12,10 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.wordperfect;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+package org.apache.tika.metadata;
 
 /**
  * QuattroPro properties collection.
@@ -24,49 +21,28 @@ import org.apache.tika.metadata.Property;
 public interface QuattroPro {
    public static final String QUATTROPRO_METADATA_NAME_PREFIX = "wordperfect";
 
-   public static final String META_CREATOR = "creator";
-   public static final String META_LAST_USER = "last-user";
-   
    /**
-    * ID. 
+    * ID.
     */
    Property ID = Property.internalText(
            QUATTROPRO_METADATA_NAME_PREFIX
                    + Metadata.NAMESPACE_PREFIX_DELIMITER + "Id");
    /**
-    * Version. 
+    * Version.
     */
    Property VERSION = Property.internalInteger(
            QUATTROPRO_METADATA_NAME_PREFIX
                    + Metadata.NAMESPACE_PREFIX_DELIMITER + "Version");
    /**
-    * Build. 
+    * Build.
     */
    Property BUILD = Property.internalInteger(
            QUATTROPRO_METADATA_NAME_PREFIX
                    + Metadata.NAMESPACE_PREFIX_DELIMITER + "Build");
    /**
-    * Lowest version. 
+    * Lowest version.
     */
    Property LOWEST_VERSION = Property.internalInteger(
            QUATTROPRO_METADATA_NAME_PREFIX
                    + Metadata.NAMESPACE_PREFIX_DELIMITER + "LowestVersion");
-   /**
-    * Number of pages. 
-    */
-   Property PAGE_COUNT = Property.internalInteger(
-           QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "PageCount");
-   /**
-    * Creator. 
-    */
-   Property CREATOR = Property.internalText(
-           QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "Creator");
-   /**
-    * Last User. 
-    */
-   Property LAST_USER = Property.internalText(
-           QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "LastUser");
 }

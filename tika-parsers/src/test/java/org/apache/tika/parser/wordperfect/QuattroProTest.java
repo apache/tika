@@ -15,16 +15,11 @@
 package org.apache.tika.parser.wordperfect;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.StringWriter;
-
-import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
 
 /**
@@ -32,27 +27,26 @@ import org.junit.Test;
  * @author Pascal Essiembre
  */
 public class QuattroProTest extends TikaTest {
-
-    private Tika tika = new Tika();
-
     //TODO add testWB/testQUATTRO.wb3 if .wb? files get supported
     
     @Test
     public void testQPW() throws Exception {
-        File file = getResourceAsFile("/test-documents/testQUATTRO.qpw");
 
-        Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
-        tika.getParser().parse(
-                new FileInputStream(file),
-                new WriteOutContentHandler(writer),
-                metadata,
-                new ParseContext());
-        String content = writer.toString();
-
+        XMLResult r = getXML("testQUATTRO.qpw");
         assertEquals("application/x-quattro-pro", 
-                metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
-        assertContains("This is an example spreadsheet", content);
+                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
+        assertContains("This is an example spreadsheet", r.xml);
+    }
+
+    @Test
+    public void testWB3() throws Exception {
+        try {
+            XMLResult r = getXML("testQUATTRO.wb3");
+            fail("Should have thrown Tika exception...wb3 is unsupported");
+        } catch (TikaException e) {
+
+        }
+
     }
 }

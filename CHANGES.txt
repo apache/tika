@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Add parsers for WordPerfect and QuattroPro (.qpw) files.
+    Contributed by Pascal Essiembre (TIKA-1946).
+
   * Add configurability of "preserve-interword-spacing" to
     TesseractOCRParser (TIKA-2190).
 

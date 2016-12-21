@@ -25,6 +25,9 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.QuattroPro;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -33,7 +36,7 @@ import org.xml.sax.SAXException;
  * This format appears to be compatible with more recent versions too.
  * @author Pascal Essiembre
  */
-public class QPWTextExtractor {
+class QPWTextExtractor {
 
     private static final Logger LOG = 
             LogManager.getLogger(QPWTextExtractor.class);
@@ -50,12 +53,12 @@ public class QPWTextExtractor {
             ctx.metadata.set(QuattroPro.BUILD, ctx.in.readWPShort());
             ctx.in.readWPShort(); // Last saved bits
             ctx.metadata.set(QuattroPro.LOWEST_VERSION, ctx.in.readWPShort());
-            ctx.metadata.set(QuattroPro.PAGE_COUNT, ctx.in.readWPShort());
+            ctx.metadata.set(Office.PAGE_COUNT, ctx.in.readWPShort());
             ctx.in.skipWPByte(ctx.bodyLength - 14);
         }},
         USER { @Override public void extract(Context ctx) throws IOException {
-            ctx.metadata.set(QuattroPro.CREATOR, getQstrLabel(ctx.in));
-            ctx.metadata.set(QuattroPro.LAST_USER, getQstrLabel(ctx.in));
+            ctx.metadata.set(TikaCoreProperties.CREATOR, getQstrLabel(ctx.in));
+            ctx.metadata.set(TikaCoreProperties.MODIFIER, getQstrLabel(ctx.in));
         }},
         EXT_LINK { @Override public void extract(Context ctx) 
                 throws IOException, SAXException {
@@ -127,7 +130,7 @@ public class QPWTextExtractor {
     // Holds extractors for each record types we are interested in.
     // All record types not defined here will be skipped.
     private static final Map<Integer, Extractor> EXTRACTORS = 
-            new HashMap<Integer, Extractor>();
+            new HashMap<>();
     static {
         //--- Global Records ---
         EXTRACTORS.put(0x0001, Extractor.BOF);     // Beginning of file
@@ -190,7 +193,7 @@ public class QPWTextExtractor {
                     extractor.extract(ctx);
                 } else {
                     // Use DEBUG to find out what we are ignoring
-                    //Extractor.DEBUG.extract(ctx);
+//                    Extractor.DEBUG.extract(ctx);
                     Extractor.IGNORE.extract(ctx);
                 }
             }

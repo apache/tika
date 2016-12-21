@@ -12,10 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.wordperfect;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+package org.apache.tika.metadata;
 
 /**
  * WordPerfect properties collection.

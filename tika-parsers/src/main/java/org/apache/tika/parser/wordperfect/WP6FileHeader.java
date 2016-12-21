@@ -14,13 +14,12 @@
  */
 package org.apache.tika.parser.wordperfect;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 /**
  * WordPerfect file header.
  * @author Pascal Essiembre
  */
-public class WP6FileHeader {
+class WP6FileHeader {
 
     // Normal header
     private String fileId;
@@ -112,17 +111,17 @@ public class WP6FileHeader {
 
     @Override
     public String toString() {
-        ToStringBuilder builder = new ToStringBuilder(this);
-        builder.append("fileId", fileId);
-        builder.append("docAreaPointer", docAreaPointer);
-        builder.append("productType", productType);
-        builder.append("fileType", fileType);
-        builder.append("majorVersion", majorVersion);
-        builder.append("minorVersion", minorVersion);
-        builder.append("encrypted", encrypted);
-        builder.append("indexAreaPointer", indexAreaPointer);
-        builder.append("fileSize", fileSize);
-        return builder.toString();
+        return "WP6FileHeader{" +
+                "fileId='" + fileId + '\'' +
+                ", docAreaPointer=" + docAreaPointer +
+                ", productType=" + productType +
+                ", fileType=" + fileType +
+                ", majorVersion=" + majorVersion +
+                ", minorVersion=" + minorVersion +
+                ", encrypted=" + encrypted +
+                ", indexAreaPointer=" + indexAreaPointer +
+                ", fileSize=" + fileSize +
+                '}';
     }
 
     @Override
