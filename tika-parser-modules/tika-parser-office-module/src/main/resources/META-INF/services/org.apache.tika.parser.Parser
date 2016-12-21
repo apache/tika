@@ -24,6 +24,8 @@ org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser
 org.apache.tika.parser.microsoft.xml.WordMLParser
 org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
+org.apache.tika.parser.wordperfect.QuattroProParser
+org.apache.tika.parser.wordperfect.WordPerfectParser
 #org.apache.tika.parser.odf.OpenDocumentContentParser
 #org.apache.tika.parser.odf.OpenDocumentMetaParser
 org.apache.tika.parser.odf.OpenDocumentParser
