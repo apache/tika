@@ -23,6 +23,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -165,15 +166,14 @@ public class QPWTextExtractor {
     @SuppressWarnings("resource")
     public void extract(
             InputStream input, XHTMLContentHandler xhtml, Metadata metadata)
-                    throws IOException, SAXException {
+                    throws IOException, SAXException, TikaException {
         
         POIFSFileSystem pfs = new POIFSFileSystem(input);
         DirectoryNode rootNode = pfs.getRoot();
         if (rootNode == null || !rootNode.hasEntry(OLE_DOCUMENT_NAME)) {
-            LOG.info("Unsupported QuattroPro file format. "
+            throw new TikaException("Unsupported QuattroPro file format. "
                     + "Looking for OLE entry \"" + OLE_DOCUMENT_NAME
                     + "\". Found: "+ rootNode.getEntryNames());
-            return;
         }
         
         //TODO shall we validate and throw warning/error if the file does not 
