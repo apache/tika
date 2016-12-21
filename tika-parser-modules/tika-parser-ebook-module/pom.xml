@@ -34,6 +34,12 @@
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- need this for the ZipContainerDetector -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-package-module</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   
   <build>
