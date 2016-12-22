@@ -17,8 +17,12 @@ package org.apache.tika.parser.wordperfect;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.WordPerfect;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -31,13 +35,33 @@ class WP6TextExtractor {
 
     public void extract(
             InputStream input, XHTMLContentHandler xhtml, Metadata metadata) 
-            throws IOException, SAXException {
+            throws IOException, SAXException, TikaException {
         WPInputStream in = new WPInputStream(input);
         
         WP6FileHeader header = parseFileHeader(in);
 
         applyMetadata(header, metadata);
-        
+
+        if (header.getMajorVersion() == 0) {
+            MediaType version = WordPerfectParser.WP_UNK;
+            if (header.getMinorVersion() == 0) {
+                version = WordPerfectParser.WP_5_0;
+            } else if (header.getMinorVersion() == 1) {
+                version = WordPerfectParser.WP_5_1;
+            }
+            metadata.set(Metadata.CONTENT_TYPE, version.toString());
+            throw new UnsupportedFormatException("Parser doesn't support this version:"+version.toString());
+        }
+
+        if (header.getMajorVersion() != 2) {
+            metadata.set(Metadata.CONTENT_TYPE, WordPerfectParser.WP_UNK.toString());
+            throw new UnsupportedFormatException("Parser doesn't recognize this version");
+        }
+
+        if (header.isEncrypted()) {
+            throw new EncryptedDocumentException();
+        }
+
         // For text extraction we can safely ignore WP Index Area and
         // Packet Data Area and jump right away to Document Area.
         extractDocumentText(in, header.getDocAreaPointer(), xhtml);
@@ -198,7 +222,7 @@ class WP6TextExtractor {
             // May fail if not extended error, which is fine.
         }
         in.reset();
-        
+
         //TODO header may be shared between corel products, so move validation
         //specific to each product elsewhere?
         //TODO convert to logs only, and let it fail elsewhere?

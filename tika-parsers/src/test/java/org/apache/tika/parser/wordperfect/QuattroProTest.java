@@ -15,10 +15,8 @@
 package org.apache.tika.parser.wordperfect;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
@@ -33,7 +31,7 @@ public class QuattroProTest extends TikaTest {
     public void testQPW() throws Exception {
 
         XMLResult r = getXML("testQUATTRO.qpw");
-        assertEquals("application/x-quattro-pro", 
+        assertEquals(QuattroProParser.QP_9.toString(),
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("This is an example spreadsheet", r.xml);
@@ -41,12 +39,8 @@ public class QuattroProTest extends TikaTest {
 
     @Test
     public void testWB3() throws Exception {
-        try {
-            XMLResult r = getXML("testQUATTRO.wb3");
-            fail("Should have thrown Tika exception...wb3 is unsupported");
-        } catch (TikaException e) {
-
-        }
-
+        XMLResult r = getXML("testQUATTRO.wb3");
+        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get("X-Parsed-By"));
+        assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
     }
 }

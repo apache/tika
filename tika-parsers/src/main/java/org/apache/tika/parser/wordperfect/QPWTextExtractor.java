@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.QuattroPro;
@@ -174,7 +175,7 @@ class QPWTextExtractor {
         POIFSFileSystem pfs = new POIFSFileSystem(input);
         DirectoryNode rootNode = pfs.getRoot();
         if (rootNode == null || !rootNode.hasEntry(OLE_DOCUMENT_NAME)) {
-            throw new TikaException("Unsupported QuattroPro file format. "
+            throw new UnsupportedFormatException("Unsupported QuattroPro file format. "
                     + "Looking for OLE entry \"" + OLE_DOCUMENT_NAME
                     + "\". Found: "+ rootNode.getEntryNames());
         }
