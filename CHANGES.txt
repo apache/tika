@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Mime magic for the OneNote family (.one / .onetoc / .onepkg), no parser
+    (TIKA-2224).
+
   * Add configurability of "preserve-interword-spacing" to
     TesseractOCRParser (TIKA-2190).
 
