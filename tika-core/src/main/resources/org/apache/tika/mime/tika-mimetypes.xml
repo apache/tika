@@ -2543,19 +2543,17 @@
   <mime-type type="application/vnd.wmc"/>
   <mime-type type="application/vnd.wmf.bootstrap"/>
   <mime-type type="application/vnd.wordperfect">
-    <alias type="application/wordperfect"/>
-    <alias type="application/wordperfect6.1"/>
-    <alias type="application/x-corel-wordperfect"/>
     <acronym>WPD</acronym>
     <_comment>WordPerfect - Corel Word Processing</_comment>
     <tika:link>http://en.wikipedia.org/wiki/WordPerfect</tika:link>
     <tika:uti>com.corel.wordperfect.doc</tika:uti>
-    <magic priority="60">
-      <match value="0xFF575043" type="big32" offset="0"/>
-    </magic>
     <magic priority="50">
-      <match value="application/vnd.wordperfect;" type="string" offset="0"></match>
+      <match value="application/vnd.wordperfect;" type="string" offset="0"/>
     </magic>
+    <magic priority="40">
+      <match value="0xFF575043" type="big32" offset="0"/> <!-- ÿWPC -->
+    </magic>
+    <!-- If magic for the different versions doesn't work, fall back to glob -->
     <glob pattern="*.wpd"/>
     <glob pattern="*.wp"/>
     <glob pattern="*.wp5"/>
@@ -2563,8 +2561,38 @@
     <glob pattern="*.w60"/>
     <glob pattern="*.wp61"/>
     <glob pattern="*.wpt"/>
+
+  </mime-type>
+  <!-- TODO: figure out how to identify earlier versions -->
+  <mime-type type="application/vnd.wordperfect;version=5.0">
+    <sub-class-of type="application/vnd.wordperfect"/>
+    <magic priority="50">
+      <match value="0xFF575043" type="big32" offset="0"> <!-- ÿWPC -->
+        <match value="0x0000" type="big16" offset="10"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/vnd.wordperfect;version=5.1">
+    <sub-class-of type="application/vnd.wordperfect"/>
+    <magic priority="50">
+      <match value="0xFF575043" type="big32" offset="0"> <!-- ÿWPC -->
+        <match value="0x0001" type="big16" offset="10"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/vnd.wordperfect;version=6.x">
+    <!--TODO: figure out how to distinguish 6.x versions -->
+    <sub-class-of type="application/vnd.wordperfect"/>
+    <magic priority="50">
+      <match value="0xFF575043" type="big32" offset="0"> <!-- ÿWPC -->
+        <match value="0x0201" type="big16" offset="10"/>
+      </match>
+    </magic>
   </mime-type>
 
+<mime-type type="application/vnd.wqd">
+<glob pattern="*.wqd"/>
+</mime-type>
   <mime-type type="application/vnd.wqd">
     <glob pattern="*.wqd"/>
   </mime-type>
@@ -3681,10 +3709,8 @@
     <_comment>
       Quattro Pro - Corel Spreadsheet (part of WordPerfect Office suite)
     </_comment>
-    <!-- let's hold off on this until we can improve x-123
-    <magic priority="50">
-      <match value="0x00000200" type="big32" offset="0"/>
-    </magic> -->
+    <!-- qp2 and wb3 are currently detected by POIFSContainerDetector
+        TODO: add detection for wb2 and wb1 -->
     <glob pattern="*.qpw"/>
     <glob pattern="*.wb1"/>
     <glob pattern="*.wb2"/>

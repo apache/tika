@@ -16,9 +16,7 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -41,10 +39,14 @@ public class QuattroProParser extends AbstractParser {
 
     private static final long serialVersionUID = 8941810225917012232L;
 
+    private final static MediaType QP_BASE = MediaType.application("x-quattro-pro");
+    public final static MediaType QP_9 = new MediaType(QP_BASE, "version", "9");
+    public static final MediaType QP_7_8 = new MediaType(QP_BASE, "version", "7-8");
+
+
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("x-quattro-pro"))));
-    
+            Collections.singleton(QP_9);
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -56,7 +58,7 @@ public class QuattroProParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
 
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-            metadata.set(Metadata.CONTENT_TYPE, "application/x-quattro-pro");
+            metadata.set(Metadata.CONTENT_TYPE, QP_9.toString());
         }
         
         XHTMLContentHandler xhtml =

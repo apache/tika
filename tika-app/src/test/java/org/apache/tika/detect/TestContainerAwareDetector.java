@@ -103,8 +103,8 @@ public class TestContainerAwareDetector {
 
         // Try some ones that POI doesn't handle, that are still OLE2 based
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
-        assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
-        assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
+        assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro; version=9");
+        assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro; version=7-8");
         
         assertTypeByData("testHWP_5.0.hwp", "application/x-hwp-v5");
         

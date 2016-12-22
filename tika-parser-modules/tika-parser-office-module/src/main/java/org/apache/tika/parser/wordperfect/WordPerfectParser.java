@@ -16,9 +16,7 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -39,14 +37,19 @@ public class WordPerfectParser extends AbstractParser {
 
     private static final long serialVersionUID = 8941810225917012232L;
 
+    final static MediaType WP_BASE = MediaType.application("vnd.wordperfect");
+
+    final static MediaType WP_UNK =
+            new MediaType(WP_BASE, "version", "unknown");
+
+    final static MediaType WP_5_0 = new MediaType(WP_BASE, "version", "5.0");
+
+    final static MediaType WP_5_1 = new MediaType(WP_BASE, "version", "5.1");
+
+    final static MediaType WP_6_x = new MediaType(WP_BASE, "version", "6.x");
+
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("vnd.wordperfect"),
-                    MediaType.application("wordperfect"),
-                    MediaType.application("wordperfect5.1"),
-                    MediaType.application("wordperfect6.0"),
-                    MediaType.application("wordperfect6.1"),
-                    MediaType.application("x-corel-wordperfect"))));
+            Collections.unmodifiableSet(Collections.singleton(WP_6_x));
     
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -57,7 +60,6 @@ public class WordPerfectParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             metadata.set(Metadata.CONTENT_TYPE, "application/wordperfect");
         }

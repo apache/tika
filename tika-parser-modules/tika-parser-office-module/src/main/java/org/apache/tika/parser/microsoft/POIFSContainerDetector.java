@@ -132,6 +132,11 @@ public class POIFSContainerDetector implements Detector {
      * Hangul Word Processor (Korean)
      */
     public static final MediaType HWP = application("x-hwp-v5");
+
+    /**
+     * Base QuattroPro mime
+     */
+    public static final MediaType QUATTROPRO = application("x-quattro-pro");
     /**
      * Serial version UID
      */
@@ -291,10 +296,10 @@ public class POIFSContainerDetector implements Detector {
                 if (names.contains("SlideShow")) {
                     return MediaType.application("x-corelpresentations"); // .shw
                 } else if (names.contains("PerfectOffice_OBJECTS")) {
-                    return MediaType.application("x-quattro-pro"); // .wb?
+                    return new MediaType(QUATTROPRO, "version", "7-8"); // .wb?
                 }
             } else if (names.contains("NativeContent_MAIN")) {
-                return MediaType.application("x-quattro-pro"); // .qpw
+                return new MediaType(QUATTROPRO, "version", "9"); // .qpw
             } else {
                 for (String name : names) {
                     if (name.startsWith("__substg1.0_")) {

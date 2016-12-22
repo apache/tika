@@ -31,9 +31,17 @@ public class QuattroProTest extends TikaTest {
     public void testQPW() throws Exception {
 
         XMLResult r = getXML("testQUATTRO.qpw");
-        assertEquals("application/x-quattro-pro", 
+        assertEquals(QuattroProParser.QP_9.toString(),
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("This is an example spreadsheet", r.xml);
+    }
+
+    @Test
+    public void testWB3() throws Exception {
+
+        XMLResult r = getXML("testQUATTRO.wb3");
+        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get("X-Parsed-By"));
+        assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
     }
 }

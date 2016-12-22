@@ -31,9 +31,26 @@ public class WordPerfectTest extends TikaTest {
     public void testWordPerfectParser() throws Exception {
 
         XMLResult r = getXML("testWordPerfect.wpd");
-        assertEquals("application/vnd.wordperfect", 
+        assertEquals("application/vnd.wordperfect; version=6.x",
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("test test", r.xml);
+    }
+
+
+    @Test
+    public void testVersion50() throws Exception {
+        //test file "testWordPerfect_5_0.wp" is from govdocs1: 126546.wp
+        XMLResult r = getXML("testWordPerfect_5_0.wp");
+        assertEquals(WordPerfectParser.WP_5_0.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get("X-Parsed-By"));
+    }
+
+    @Test
+    public void testVersion51() throws Exception {
+        //testfile "testWordperfect_5_1.wp is from govdocs1: 758750.wp
+        XMLResult r = getXML("testWordPerfect_5_1.wp");
+        assertEquals(WordPerfectParser.WP_5_1.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get("X-Parsed-By"));
     }
 }
