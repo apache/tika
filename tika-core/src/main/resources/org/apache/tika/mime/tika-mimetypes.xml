@@ -489,9 +489,9 @@
   </mime-type>
 
   <mime-type type="application/onenote">
+    <alias type="application/msonenote"/>
     <acronym>OneNote</acronym>
     <glob pattern="*.onetmp"/>
-    <glob pattern="*.onepkg"/>
   </mime-type>
   <mime-type type="application/onenote;format=one">
     <glob pattern="*.one"/>
@@ -508,6 +508,7 @@
     <sub-class-of type="application/onenote"/>
   </mime-type>
   <mime-type type="application/onenote;format=onetoc2">
+    <_comment>OneNote Table of Contents</_comment>
     <glob pattern="*.onetoc"/>
     <glob pattern="*.onetoc2"/>
     <magic priority="50">
@@ -521,6 +522,12 @@
       </match>
     </magic>
     <sub-class-of type="application/onenote"/>
+  </mime-type>
+  <mime-type type="application/onenote; format=package">
+    <_comment>OneNote Package</_comment>
+    <glob pattern="*.onepkg"/>
+    <!-- Actually a CAB file of the other OneNote file formats! -->
+    <sub-class-of type="application/vnd.ms-cab-compressed" />
   </mime-type>
 
   <mime-type type="application/parityfec"/>
