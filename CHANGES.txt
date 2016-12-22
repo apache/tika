@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Mime magic for the OneNote family (.one / .onetoc / .onepkg), no parser
+    (TIKA-2224).
+
   * Add parsers for WordPerfect and QuattroPro (.qpw) files.
     Contributed by Pascal Essiembre (TIKA-1946).
 
