@@ -29,7 +29,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -48,12 +47,11 @@ public class EpubContentParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        final XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
+
         SAXParser parser = context.getSAXParser();
         parser.parse(
                 new CloseShieldInputStream(stream),
-                new OfflineContentHandler(xhtml));
+                new OfflineContentHandler(handler));
     }
 
 }
