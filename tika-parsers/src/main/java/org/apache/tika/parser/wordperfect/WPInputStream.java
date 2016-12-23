@@ -1,6 +1,4 @@
-/* Copyright 2015-2016 Norconex Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+/* Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -24,6 +22,7 @@ import org.apache.commons.lang.StringUtils;
 
 /**
  * {@link InputStream} wrapper adding WordPerfect-specific byte-reading methods.
+ * Applies to both 5.x and 6+ documents.
  * @author Pascal Essiembre
  */
 class WPInputStream extends InputStream {
