@@ -33,25 +33,31 @@ final class WPPrefixAreaExtractor {
     
     public static WPPrefixArea extract(WPInputStream in) 
             throws IOException {
-        WPPrefixArea header = new WPPrefixArea();
+        WPPrefixArea prefixArea = new WPPrefixArea();
 
         in.mark(30);
-        header.setFileId(in.readWPString(4));         // 1-4
-        header.setDocAreaPointer(in.readWPLong());    // 5-8
-        header.setProductType(in.readWP());           // 9
-        header.setFileType(in.readWPChar());          // 10
-        header.setMajorVersion(in.readWP());          // 11
-        header.setMinorVersion(in.readWP());          // 12
-        header.setEncrypted(in.readWPShort() != 0);   // 13-14
-        header.setIndexAreaPointer(in.readWPShort()); // 15-16
-        try {
-            in.skip(4); // 4 reserved bytes: skip     // 17-20
-            header.setFileSize(in.readWPLong());      // 21-24
-        } catch (IOException e) {
-            // May fail if no index header, which is fine.
+        prefixArea.setFileId(in.readWPString(4));         // 1-4
+        prefixArea.setDocAreaPointer(in.readWPLong());    // 5-8
+        prefixArea.setProductType(in.readWP());           // 9
+        prefixArea.setFileType(in.readWPChar());          // 10
+        prefixArea.setMajorVersion(in.readWP());          // 11
+        prefixArea.setMinorVersion(in.readWP());          // 12
+        prefixArea.setEncrypted(in.readWPShort() != 0);   // 13-14
+        prefixArea.setIndexAreaPointer(in.readWPShort()); // 15-16
+
+        // only applies to 6.x:
+        prefixArea.setFileSize(-1);
+        if (prefixArea.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
+            try {
+                in.skip(4); // 4 reserved bytes: skip     // 17-20
+                prefixArea.setFileSize(in.readWPLong());      // 21-24
+            } catch (IOException e) {
+                // May fail if no index header, which is fine.
+            }
         }
+        
         in.reset();
 
-        return header;
+        return prefixArea;
     }
 }

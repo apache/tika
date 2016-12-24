@@ -126,13 +126,17 @@ public class WordPerfectParser extends AbstractParser {
             }
         }
         
-        metadata.set(WordPerfect.FILE_SIZE, Long.toString(pa.getFileSize()));
         metadata.set(WordPerfect.FILE_ID, pa.getFileId());
         metadata.set(WordPerfect.PRODUCT_TYPE, pa.getProductType());
         metadata.set(WordPerfect.FILE_TYPE, pa.getFileType());
         metadata.set(WordPerfect.MAJOR_VERSION, pa.getMajorVersion());
         metadata.set(WordPerfect.MINOR_VERSION, pa.getMinorVersion());
         metadata.set(WordPerfect.ENCRYPTED, Boolean.toString(pa.isEncrypted()));
+        
+        if (pa.getFileSize() > -1) {
+            metadata.set(
+                    WordPerfect.FILE_SIZE, Long.toString(pa.getFileSize()));
+        }
     }
     
     private WPDocumentAreaExtractor getDocumentAreaExtractor(
