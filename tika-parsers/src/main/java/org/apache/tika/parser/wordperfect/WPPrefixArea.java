@@ -1,6 +1,4 @@
-/* Copyright 2015-2016 Norconex Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+/* Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -16,11 +14,27 @@ package org.apache.tika.parser.wordperfect;
 
 
 /**
- * WordPerfect file header.
+ * Section of a WordPerfect file called "Prefix Area" containing  
+ * information about the specific file format/version.
  * @author Pascal Essiembre
  */
-class WP6FileHeader {
+class WPPrefixArea {
 
+    public static final String WP_FILE_ID = "ÿWPC";
+    public static final int WP_PRODUCT_TYPE = 1;
+
+    // WordPerfect 5.x header values
+    public static final int WP5_FILE_TYPE = 10;
+    public static final int WP5_MAJOR_VERSION = 0;
+    public static final int WP5_0_MINOR_VERSION = 0;
+    public static final int WP5_1_MINOR_VERSION = 1; // also for WPWin 5.2
+
+    // WordPerfect 6+ header values
+    public static final int WP6_FILE_TYPE = 36;
+    public static final int WP6_MAJOR_VERSION = 2;
+    public static final int WP6_MINOR_VERSION = 0;
+    
+    
     // Normal header
     private String fileId;
     private long docAreaPointer;
@@ -34,7 +48,7 @@ class WP6FileHeader {
     // Extended header
     private long fileSize;
     
-    public WP6FileHeader() {
+    public WPPrefixArea() {
         super();
     }
 
@@ -149,10 +163,10 @@ class WP6FileHeader {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof WP6FileHeader)) {
+        if (!(obj instanceof WPPrefixArea)) {
             return false;
         }
-        WP6FileHeader other = (WP6FileHeader) obj;
+        WPPrefixArea other = (WPPrefixArea) obj;
         if (docAreaPointer != other.docAreaPointer) {
             return false;
         }
