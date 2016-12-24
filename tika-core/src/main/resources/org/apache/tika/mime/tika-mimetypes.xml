@@ -2684,7 +2684,19 @@
     </magic>
   </mime-type>
   <mime-type type="application/vnd.xfdl">
-    <glob pattern="*.xfdl"/>
+    <acronym>XFDL</acronym>
+    <_comment>PureEdge - Extensible Forms Description Language</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/Extensible_Forms_Description_Language</tika:link>
+    <tika:uti>public.xml</tika:uti>
+    <root-XML localName="xfdl" />
+    <magic priority="90">
+      <match value="application/vnd.xfdl;content-encoding=&quot;base64-gzip&quot;" type="string" offset="0"></match>
+      <match value="&lt;XFDL xmlns" type="string" offset="0:100"></match>
+    </magic>
+    <!-- Glob could also be .frm, but that's already taken -->
+    <glob pattern="*.xfdl" />
+    <glob pattern="*.xfd" />
+    <sub-class-of type="application/xml"/>
   </mime-type>
   <mime-type type="application/vnd.xfdl.webform"/>
   <mime-type type="application/vnd.xmi+xml"/>
