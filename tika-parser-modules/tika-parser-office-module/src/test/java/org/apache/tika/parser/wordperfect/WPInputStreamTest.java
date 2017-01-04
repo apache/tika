@@ -30,8 +30,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadByte() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPByte();
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -42,8 +41,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadShort() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPShort();
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -54,8 +52,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadChar() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPChar();
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -65,8 +62,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadHex() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPHex();
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -76,8 +72,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadHexString() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPHexString(10);
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -87,8 +82,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadLong() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPLong();
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -99,8 +93,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadString() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             wpInputStream.readWPString(10);
             fail("should have thrown EOF");
         } catch (EOFException e) {
@@ -110,8 +103,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadArr() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             byte[] buffer = new byte[10];
             wpInputStream.read(buffer);
         } catch (EOFException e) {
@@ -121,8 +113,7 @@ public class WPInputStreamTest {
 
     @Test
     public void testReadArrOffset() throws Exception {
-        WPInputStream wpInputStream = new WPInputStream(new ByteArrayInputStream(new byte[0]));
-        try {
+        try (WPInputStream wpInputStream = emptyWPStream()) {
             byte[] buffer = new byte[10];
             wpInputStream.read(buffer, 0, 2);
         } catch (EOFException e) {
@@ -130,5 +121,7 @@ public class WPInputStreamTest {
         }
     }
 
-
+    private WPInputStream emptyWPStream() {
+        return new WPInputStream(new ByteArrayInputStream(new byte[0]));
+    }
 }
