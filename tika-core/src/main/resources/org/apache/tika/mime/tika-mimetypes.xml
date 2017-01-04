@@ -489,11 +489,47 @@
   </mime-type>
 
   <mime-type type="application/onenote">
+    <alias type="application/msonenote"/>
+    <acronym>OneNote</acronym>
+    <glob pattern="*.onetmp"/>
+  </mime-type>
+  <mime-type type="application/onenote;format=one">
+    <glob pattern="*.one"/>
+    <magic priority="50">
+      <!-- GUID {7B5C52E4-D88C-4DA7-AEB1-5378D02996D3} -->
+      <match value="0x7B5C52E4" type="little32" offset="0">
+        <match value="0xD88C" type="little16" offset="4">
+          <match value="0x4DA7" type="little16" offset="6">
+            <match value="0xAEB15378D02996D3" offset="8" />
+          </match>
+        </match>
+      </match>
+    </magic>
+    <sub-class-of type="application/onenote"/>
+  </mime-type>
+  <mime-type type="application/onenote;format=onetoc2">
+    <_comment>OneNote Table of Contents</_comment>
     <glob pattern="*.onetoc"/>
     <glob pattern="*.onetoc2"/>
-    <glob pattern="*.onetmp"/>
-    <glob pattern="*.onepkg"/>
+    <magic priority="50">
+      <!-- GUID {43FF2FA1-EFD9-4C76-9EE2-10EA5722765F} -->
+      <match value="0x43FF2FA1" type="little32" offset="0">
+        <match value="0xEFD9" type="little16" offset="4">
+          <match value="0x4C76" type="little16" offset="6">
+            <match value="0x9EE210EA5722765F" offset="8" />
+          </match>
+        </match>
+      </match>
+    </magic>
+    <sub-class-of type="application/onenote"/>
   </mime-type>
+  <mime-type type="application/onenote; format=package">
+    <_comment>OneNote Package</_comment>
+    <glob pattern="*.onepkg"/>
+    <!-- Actually a CAB file of the other OneNote file formats! -->
+    <sub-class-of type="application/vnd.ms-cab-compressed" />
+  </mime-type>
+
   <mime-type type="application/parityfec"/>
   <mime-type type="application/patch-ops-error+xml">
     <glob pattern="*.xer"/>

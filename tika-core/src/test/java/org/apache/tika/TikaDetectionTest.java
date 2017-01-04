@@ -89,10 +89,11 @@ public class TikaDetectionTest {
         assertEquals("application/oda", tika.detect("x.oda"));
         assertEquals("application/oebps-package+xml", tika.detect("x.opf"));
         assertEquals("application/ogg", tika.detect("x.ogx"));
-        assertEquals("application/onenote", tika.detect("x.onetoc"));
-        assertEquals("application/onenote", tika.detect("x.onetoc2"));
-        assertEquals("application/onenote", tika.detect("x.onetmp"));
-        assertEquals("application/onenote", tika.detect("x.onepkg"));
+        // Differ from httpd - We have subtypes they lack
+        //assertEquals("application/onenote", tika.detect("x.onetoc"));
+        //assertEquals("application/onenote", tika.detect("x.onetoc2"));
+        //assertEquals("application/onenote", tika.detect("x.onetmp"));
+        //assertEquals("application/onenote", tika.detect("x.onepkg"));
         assertEquals("application/patch-ops-error+xml", tika.detect("x.xer"));
         assertEquals("application/pdf", tika.detect("x.pdf"));
         assertEquals("application/pgp-encrypted", tika.detect("x.pgp"));

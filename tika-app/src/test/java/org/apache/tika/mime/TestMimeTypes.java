@@ -1013,6 +1013,15 @@ public class TestMimeTypes extends TikaTest {
         // Name + data gets specific version as well
         assertType("application/x-stata-dta; version=13", "testStataDTA.dta");
     }
+    
+    @Test
+    public void testOneNote() throws Exception {
+        // With name or data we can get the full details
+        assertTypeByName("application/onenote; format=one", "testOneNote.one");
+        assertTypeByData("application/onenote; format=one", "testOneNote.one");
+        
+        // TODO Get sample .onetoc2 and .onepkg files
+    }
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
