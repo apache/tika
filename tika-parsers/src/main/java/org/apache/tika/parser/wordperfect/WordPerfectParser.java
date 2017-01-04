@@ -1,8 +1,10 @@
-/* Copyright 2016 Norconex Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -16,11 +18,16 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.WordPerfect;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -49,7 +56,8 @@ public class WordPerfectParser extends AbstractParser {
     final static MediaType WP_6_x = new MediaType(WP_BASE, "version", "6.x");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(Collections.singleton(WP_6_x));
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                    WP_5_0, WP_5_1, WP_6_x)));
     
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -60,17 +68,87 @@ public class WordPerfectParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler, 
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-            metadata.set(Metadata.CONTENT_TYPE, "application/wordperfect");
+        
+        WPInputStream wpStream = new WPInputStream(stream);
+        WPPrefixArea prefixArea = WPPrefixAreaExtractor.extract(wpStream);
+        
+        ensureFileSupport(prefixArea, metadata);
+        
+        applyMetadata(prefixArea, metadata);
+        
+        extractDocumentArea(prefixArea, wpStream, 
+                new XHTMLContentHandler(handler, metadata));
+    }
+    
+    private void extractDocumentArea(WPPrefixArea prefixArea,
+            WPInputStream in, XHTMLContentHandler xhtml)
+                    throws SAXException, IOException {
+
+        // Move to offset (for some reason skip() did not work).
+        for (int i = 0; i < prefixArea.getDocAreaPointer(); i++) {
+            in.readWPByte();
         }
         
-        XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
+        xhtml.startElement("p");
 
-        WP6TextExtractor extractor = new WP6TextExtractor();
-        extractor.extract(stream, xhtml, metadata);
-
+        getDocumentAreaExtractor(prefixArea).extract(in, xhtml);
+        
+        xhtml.endElement("p");
         xhtml.endDocument();
+    }
+    
+    private void ensureFileSupport(WPPrefixArea pa, Metadata metadata)
+            throws UnsupportedFormatException, EncryptedDocumentException {
+        if (pa.getMajorVersion() != WPPrefixArea.WP5_MAJOR_VERSION
+                && pa.getMajorVersion() != WPPrefixArea.WP6_MAJOR_VERSION) {
+            metadata.set(Metadata.CONTENT_TYPE, WP_UNK.toString());
+            throw new UnsupportedFormatException(
+                    "Parser doesn't recognize this major version: "
+                            + pa.getMajorVersion());
+        }
+        if (pa.isEncrypted()) {
+            throw new EncryptedDocumentException();
+        }
+    }
+    
+    private void applyMetadata(WPPrefixArea pa, Metadata metadata) {
+        // Should we force the more precise media type if only the base
+        // form is found?  Or shall we store a friendly representation
+        // of the version in a new field?
+        if (metadata.get(Metadata.CONTENT_TYPE) == null) {
+            if (pa.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
+                metadata.set(Metadata.CONTENT_TYPE, WP_6_x.toString());
+            } else if (pa.getMinorVersion() == 
+                    WPPrefixArea.WP5_0_MINOR_VERSION) {
+                metadata.set(Metadata.CONTENT_TYPE, WP_5_0.toString());
+            } else if (pa.getMinorVersion() == 
+                    WPPrefixArea.WP5_1_MINOR_VERSION) {
+                metadata.set(Metadata.CONTENT_TYPE, WP_5_1.toString());
+            } else {
+                metadata.set(Metadata.CONTENT_TYPE, WP_BASE.toString());
+            }
+        }
+        
+        metadata.set(WordPerfect.FILE_ID, pa.getFileId());
+        metadata.set(WordPerfect.PRODUCT_TYPE, pa.getProductType());
+        metadata.set(WordPerfect.FILE_TYPE, pa.getFileType());
+        metadata.set(WordPerfect.MAJOR_VERSION, pa.getMajorVersion());
+        metadata.set(WordPerfect.MINOR_VERSION, pa.getMinorVersion());
+        metadata.set(WordPerfect.ENCRYPTED, Boolean.toString(pa.isEncrypted()));
+        
+        if (pa.getFileSize() > -1) {
+            metadata.set(
+                    WordPerfect.FILE_SIZE, Long.toString(pa.getFileSize()));
+        }
+    }
+    
+    private WPDocumentAreaExtractor getDocumentAreaExtractor(
+            WPPrefixArea prefixArea) {
+        if (prefixArea.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
+            return new WP6DocumentAreaExtractor();
+        }
+        // we can safely assume v5 as exception would have been thrown
+        return new WP5DocumentAreaExtractor();
     }
 }

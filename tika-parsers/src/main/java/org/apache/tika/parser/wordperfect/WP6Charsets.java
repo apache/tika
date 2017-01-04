@@ -1,8 +1,10 @@
-/* Copyright 2015-2016 Norconex Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -14,18 +16,18 @@
  */
 package org.apache.tika.parser.wordperfect;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+
 /**
- * WordPerfect constant values used for parsing and extracting text.
+ * WordPerfect 6+ constant values used for mapping WordPerfect charsets to
+ * unicode equivalents when possible.
  * @author Pascal Essiembre
  */
-final class WP6Constants {
+final class WP6Charsets {
 
+    private static final Logger LOG = LogManager.getLogger(WP6Charsets.class);
 
-    public static final String WP6_FILE_ID = "ÿWPC";
-    public static final int WP6_PRODUCT_TYPE = 1;
-    public static final int WP6_FILE_TYPE_WP_DOCUMENT = 10;
-    public static final int WP6_FILE_TYPE_WPD = 36;
-    
     public static final char[] DEFAULT_EXTENDED_INTL_CHARS = new char[] {
         '\0',     '\u00E5', '\u00C5', '\u00E6', '\u00C6',
         '\u00E4', '\u00C4', '\u00E1', '\u00E0', '\u00E2',
@@ -41,21 +43,21 @@ final class WP6Constants {
      * with a byte value of 240 (0xF0) are found in a WordPerfect document.
      * Those character set codes may be specific to WordPerfect 
      * file specifications and may or may not be considered standard 
-     * outside WordPerfect.
+     * outside WordPerfect. Applies to version 6 and likely higher.
      */
     public static final char[][] EXTENDED_CHARSETS = new char[][] {
-        // WP Charset 0: ASCII (95 chars)
+        // WP Charset 0: ASCII (96 chars)
         {
-        ' ', '"', '#', '$', '%', '&', '\'', '(', ')', '*',
-        '+', ',', '-', '.', '/', '0', '1', '2', '3', '4',
-        '5', '6', '7', '8', '9', ':', ';', '<', '=', '>',
-        '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
-        'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-        'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\',
-        ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e', 'f',
-        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-        'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        '{', '|', '}', '~', '\u00A0'
+        ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')',
+        '*', '+', ',', '-', '.', '/', '0', '1', '2', '3',
+        '4', '5', '6', '7', '8', '9', ':', ';', '<', '=',
+        '>', '?', '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
+        'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
+        'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[',
+        '\\', ']', '^', '_', '`', 'a', 'b', 'c', 'd', 'e',
+        'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
+        'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
+        'z', '{', '|', '}', '~', '\u00A0'
         },
         // WP Charset 1: Multinational (242 chars)
         {
@@ -422,11 +424,24 @@ final class WP6Constants {
         },
     }; 
 
+    //TODO map multi-characters
     
     /**
      * Constructor.
      */
-    private WP6Constants() {
+    private WP6Charsets() {
     }
 
+    public static void append(StringBuilder out, int charset, int charval) {
+        if (charset >= WP6Charsets.EXTENDED_CHARSETS.length) {
+            LOG.debug("Unsupported WordPerfect 6+ charset: " + charset);
+            out.append(' ');
+        } else if (charval >= WP6Charsets.EXTENDED_CHARSETS[charset].length) {
+            LOG.debug("Unsupported WordPerfect 6+ charset (" + charset 
+                    + ") character value: " + charval);
+            out.append(' ');
+        } else {
+            out.append(WP6Charsets.EXTENDED_CHARSETS[charset][charval]);
+        }
+    }
 }
