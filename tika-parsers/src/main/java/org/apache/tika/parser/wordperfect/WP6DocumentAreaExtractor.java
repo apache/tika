@@ -18,6 +18,9 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+
 /**
  * Extracts WordPerfect Document Area text from a WordPerfect document
  * version 6+.
@@ -25,8 +28,8 @@ import java.io.IOException;
  */
 class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
     
-    protected void extract(int c, WPInputStream in, StringBuilder out)
-            throws IOException {
+    protected void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
+            throws IOException, SAXException {
         if (c > 0 && c <= 32) {
             out.append(WP6Charsets.DEFAULT_EXTENDED_INTL_CHARS[c]);
         } else if (c >= 33 && c <= 126) {
@@ -38,7 +41,7 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
         } else if (c == 129) {
             out.append('-');      // Hard hyphen
         } else if (c == 135 || c == 137) {
-            out.append('\n');      // Dormant Hard return
+            endParagraph(out, xhtml); // Dormant Hard return
         } else if (c == 138) {
             // skip to closing pair surrounding page number
             skipUntilChar(in, 139);
@@ -46,7 +49,7 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
             // end of cell
             out.append('\t');
         } else if (c >= 180 && c <= 207) {
-            out.append('\n');
+            endParagraph(out, xhtml);
         } else if (c >= 208 && c <= 239) {
             // Variable-Length Multi-Byte Functions
             int subgroup = in.readWP();
@@ -63,11 +66,11 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
                     // end of cell
                     out.append('\t');
                 } else if (subgroup >= 4 && subgroup <= 19) {
-                    out.append('\n');
+                    endParagraph(out, xhtml);
                 } else if (subgroup >= 20 && subgroup <= 22) {
                     out.append(' ');
                 } else if (subgroup >= 23 && subgroup <= 28) {
-                    out.append('\n');
+                    endParagraph(out, xhtml);
                 }
             } else if (c == 213) {
                 out.append(' ');

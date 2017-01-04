@@ -34,7 +34,7 @@ public class WordPerfectTest extends TikaTest {
         assertEquals(WordPerfectParser.WP_6_x.toString(),
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
-        assertContains("test test", r.xml);
+        assertContains("<p>AND FURTHER</p>", r.xml);
     }
 
     @Test
@@ -44,7 +44,7 @@ public class WordPerfectTest extends TikaTest {
         assertEquals(WordPerfectParser.WP_5_0.toString(),
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
-        assertContains("Surrounded by her family", r.xml);
+        assertContains("<p>Surrounded by her family", r.xml);
     }
 
     @Test
@@ -54,6 +54,7 @@ public class WordPerfectTest extends TikaTest {
         assertEquals(WordPerfectParser.WP_5_1.toString(),
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
-        assertContains("Summer is the peak travel time", r.xml);
+        assertContains("<p>STUDY RESULTS: Existing condition", r.xml);
+        assertContains("Seattle nonstop flights.</p>", r.xml);
     }
 }

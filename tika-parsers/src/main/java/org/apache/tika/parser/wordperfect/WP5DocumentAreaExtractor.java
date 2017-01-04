@@ -18,6 +18,9 @@ package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
 
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.SAXException;
+
 /**
  * Extracts WordPerfect Document Area text from a WordPerfect document
  * version 5.x.
@@ -25,16 +28,16 @@ import java.io.IOException;
  */
 class WP5DocumentAreaExtractor extends WPDocumentAreaExtractor {
     
-    protected void extract(int c, WPInputStream in, StringBuilder out)
-            throws IOException {
+    protected void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
+            throws IOException, SAXException {
 
         // 0-31: control characters
         if (c == 10) {
-            out.append('\n');     // hard return ("Enter")
+            endParagraph(out, xhtml);// hard return ("Enter")
         } else if (c == 11) {
             out.append(' ');      // soft page break
         } else if (c == 12) {
-            out.append('\n');     // hard page break
+            endParagraph(out, xhtml);// hard page break
         } else if (c == 13) {
             out.append(' ');      // soft return (line wrap)
             
@@ -44,11 +47,11 @@ class WP5DocumentAreaExtractor extends WPDocumentAreaExtractor {
 
         // 128-191: single-byte functions
         } else if (c == 140) {
-            out.append('\n');     // combination hard return/soft page (WP5.1)
+            endParagraph(out, xhtml);// combination hard return/soft page (WP5.1)
         } else if (c >= 144 && c <= 149) {
             out.append(' ');      // deletable/invisible soft return/page
         } else if (c == 153) {
-            out.append('\4');     // Dormant Hard return (WP5.1)
+            endParagraph(out, xhtml);// Dormant Hard return (WP5.1)
         } else if (c == 160) {
             out.append('\u00A0'); // Hard space
         } else if (c >= 169 && c <= 171) {

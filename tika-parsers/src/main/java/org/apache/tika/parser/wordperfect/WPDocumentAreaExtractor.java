@@ -27,26 +27,51 @@ import org.xml.sax.SAXException;
  */
 abstract class WPDocumentAreaExtractor {
 
+    boolean startedP = false;
     public void extract(WPInputStream in, XHTMLContentHandler xhtml) 
             throws IOException, SAXException {
         int chunk = 4096;
         StringBuilder out = new StringBuilder(chunk);
         int c;
         while ((c = in.read()) != -1) {
-            extract(c, in, out);
+            extract(c, in, out, xhtml);
             if (out.length() >= chunk) {
                 xhtml.characters(out.toString());
                 out.setLength(0);
             }
         }
-        xhtml.characters(out.toString());
-        out.setLength(0);
+        endParagraph(out, xhtml);
     }
  
     protected abstract void extract(
-            int c, WPInputStream in, StringBuilder out) throws IOException;
-    
-    
+            int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml) throws IOException, SAXException;
+
+
+    protected void lazilyStartParagraph(XHTMLContentHandler xhtml) throws SAXException {
+        if (! startedP) {
+            xhtml.startElement("p");
+        }
+        startedP = true;
+    }
+
+    /**
+     * This assumes that the &lt;p&gt; was started before you get here.
+     * And the user is required to close the &lt;p&gt; at the end of the document.
+     *
+     * These are currently handled by {@link #extract(WPInputStream, XHTMLContentHandler)}.
+     *
+     * @param xhtml
+     * @throws SAXException
+     */
+    protected void endParagraph(StringBuilder buffer, XHTMLContentHandler xhtml) throws SAXException {
+        lazilyStartParagraph(xhtml);
+
+        xhtml.characters(buffer.toString());
+        buffer.setLength(0);
+        xhtml.endElement("p");
+        startedP = false;
+    }
+
     // Skips until the given character is encountered.
     protected int skipUntilChar(WPInputStream in, int targetChar)
             throws IOException {

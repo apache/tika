@@ -90,11 +90,9 @@ public class WordPerfectParser extends AbstractParser {
         }
         
         xhtml.startDocument();
-        xhtml.startElement("p");
 
         getDocumentAreaExtractor(prefixArea).extract(in, xhtml);
         
-        xhtml.endElement("p");
         xhtml.endDocument();
     }
     
