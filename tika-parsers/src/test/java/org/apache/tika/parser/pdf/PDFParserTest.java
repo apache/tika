@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -663,9 +664,12 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadatas = p.getMetadata();
 
         assertEquals(2, metadatas.size());
-        assertNull("Exception found: " + metadatas.get(0).get(
-                "X-TIKA:EXCEPTION:warn"), metadatas.get(0).get(
-                        "X-TIKA:EXCEPTION:warn"));
+        
+        for (String key : metadatas.get(1).names()) {
+            if (key.startsWith("X-TIKA:EXCEPTION")) {
+                fail("Exception: " + metadatas.get(1).get(key));
+            }
+        }
         assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
         assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
         
