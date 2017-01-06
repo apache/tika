@@ -640,6 +640,44 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
     }
 
+    @Test // TIKA-2232
+    public void testEmbeddedJBIG2Image() throws Exception {
+        String xml = getXML("/testPDF_JBIG2.pdf").xml;
+        assertContains("test images compressed using JBIG2", xml);
+        
+        RecursiveParserWrapper p = new RecursiveParserWrapper(
+                new AutoDetectParser(), new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, p);
+
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/testPDF_JBIG2.pdf"))) {
+            p.parse(tis, new BodyContentHandler(-1), new Metadata(), context);
+        }
+
+        List<Metadata> metadatas = p.getMetadata();
+
+        assertEquals(2, metadatas.size());
+        assertNull("Exception found: " + metadatas.get(0).get(
+                "X-TIKA:EXCEPTION:warn"), metadatas.get(0).get(
+                        "X-TIKA:EXCEPTION:warn"));
+        assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
+        assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
+        
+        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+        
+        //TODO mime/extension should be tested against JBIG2 once better
+        //supported by PDFBox and Levigo jbig2-imageio
+        assertEquals("image0.png", 
+                metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("png").toString(), 
+                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+    }
 
     @Test
     public void testEmbeddedFilesInAnnotations() throws Exception {

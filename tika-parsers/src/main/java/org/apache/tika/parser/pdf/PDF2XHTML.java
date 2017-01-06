@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -159,7 +158,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             }
             super.endPage(page);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to end a page", e);
+            throw new IOException("Unable to end a page", e);
         } catch (IOException e) {
             exceptions.add(e);
         }
@@ -208,6 +207,20 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     extension = "tif";
                 } else if (extension.equals("jpx")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
+                    
+                // PDFBox does not yet return JBIG2 extension and extracting
+                // inline JBIG2 images fails with test file testPDF_JBIG2.pdf
+                // if we explicitely set the content type to image/x-jbig2
+                // (no "pages" are found when image is embedded).
+                // It works when it thinks it is PNG so we do not force it to
+                // jb2 for parsing until this issue is addressed in PDFBox and 
+                // Levigo jbig2-imageio.  Will result in bad content-type in 
+                // metadata for now, but that's better than not being able to 
+                // handle JBIG2 in PDFs at all.
+//                } else if (extension.equals("jb2")) {
+//                    embeddedMetadata.set(
+//                            Metadata.CONTENT_TYPE, "image/x-jbig2");
+
                 } else {
                     //TODO: determine if we need to add more image types
 //                    throw new RuntimeException("EXTEN:" + extension);
@@ -297,7 +310,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.startElement("p");
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to start a paragraph", e);
+            throw new IOException("Unable to start a paragraph", e);
         }
     }
 
@@ -307,7 +320,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.endElement("p");
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to end a paragraph", e);
+            throw new IOException("Unable to end a paragraph", e);
         }
     }
 
@@ -316,7 +329,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.characters(text);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a string: " + text, e);
         }
     }
@@ -326,7 +339,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.characters(text.getUnicode());
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a character: " + text.getUnicode(), e);
         }
     }
@@ -336,7 +349,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.characters(getWordSeparator());
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a space character", e);
         }
     }
@@ -346,10 +359,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.newline();
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a newline character", e);
         }
     }
-
 }
 
