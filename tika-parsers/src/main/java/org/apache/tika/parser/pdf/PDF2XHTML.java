@@ -70,6 +70,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     private static final List<String> JP2 =
             Arrays.asList(COSName.JPX_DECODE.getName());
 
+    private static final List<String> JB2 = Arrays.asList(
+            COSName.JBIG2_DECODE.getName());
+
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.
@@ -197,6 +200,13 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
                 Metadata embeddedMetadata = new Metadata();
                 String extension = image.getSuffix();
+                
+                //TODO remove this next block when upgrading to PDFBox 2.0.5.
+                //See: https://issues.apache.org/jira/browse/PDFBOX-3634
+                if (extension == null) {
+                    extension = getJBIG2Suffix(image);
+                }
+                
                 if (extension == null || extension.equals("png")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
                     extension = "png";
@@ -207,20 +217,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     extension = "tif";
                 } else if (extension.equals("jpx")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
-                    
-                // PDFBox does not yet return JBIG2 extension and extracting
-                // inline JBIG2 images fails with test file testPDF_JBIG2.pdf
-                // if we explicitely set the content type to image/x-jbig2
-                // (no "pages" are found when image is embedded).
-                // It works when it thinks it is PNG so we do not force it to
-                // jb2 for parsing until this issue is addressed in PDFBox and 
-                // Levigo jbig2-imageio.  Will result in bad content-type in 
-                // metadata for now, but that's better than not being able to 
-                // handle JBIG2 in PDFs at all.
-//                } else if (extension.equals("jb2")) {
-//                    embeddedMetadata.set(
-//                            Metadata.CONTENT_TYPE, "image/x-jbig2");
-
+                } else if (extension.equals("jb2")) {
+                    embeddedMetadata.set(
+                            Metadata.CONTENT_TYPE, "image/x-jbig2");
                 } else {
                     //TODO: determine if we need to add more image types
 //                    throw new RuntimeException("EXTEN:" + extension);
@@ -297,6 +296,10 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 InputStream data = pdImage.createInputStream(JP2);
                 org.apache.pdfbox.io.IOUtils.copy(data, out);
                 org.apache.pdfbox.io.IOUtils.closeQuietly(data);
+            } else if ("jb2".equals(suffix)) {
+                InputStream data = pdImage.createInputStream(JB2);
+                org.apache.pdfbox.io.IOUtils.copy(data, out);
+                org.apache.pdfbox.io.IOUtils.closeQuietly(data);
             } else{
                 ImageIOUtil.writeImage(image, suffix, out);
             }
@@ -362,6 +365,17 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             throw new IOException(
                     "Unable to write a newline character", e);
         }
+    }
+    
+    //TODO remove this method once upgrading to PDFBox 2.0.5 which will
+    // then return jb2 suffix properly.
+    //See: https://issues.apache.org/jira/browse/PDFBOX-3634
+    private String getJBIG2Suffix(PDImageXObject image) {
+        List<COSName> filters = image.getStream().getFilters();
+        if (filters != null && filters.contains(COSName.JBIG2_DECODE)) {
+            return "jb2";
+        }
+        return null;
     }
 }
 
