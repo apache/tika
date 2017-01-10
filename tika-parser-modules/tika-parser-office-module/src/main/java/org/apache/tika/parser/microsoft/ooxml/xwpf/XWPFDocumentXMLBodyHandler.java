@@ -77,6 +77,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
 
     private XWPFRunProperties currRunProperties = new XWPFRunProperties();
 
+    private final DateUtils dateUtils = new DateUtils();
     public XWPFDocumentXMLBodyHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                       Map<String, String> hyperlinks) {
         this.bodyContentsHandler = bodyContentsHandler;
@@ -176,7 +177,7 @@ public class XWPFDocumentXMLBodyHandler extends DefaultHandler {
         String editDateString = atts.getValue(W_NS, "date");
         Date editDate = null;
         if (editDateString != null) {
-            editDate = DateUtils.tryToParse(editDateString);
+            editDate = dateUtils.tryToParse(editDateString);
         }
         bodyContentsHandler.startEditedSection(editAuthor, editDate, editType);
         this.editType = editType;
