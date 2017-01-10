@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -640,6 +641,44 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
     }
 
+    @Test // TIKA-2232
+    public void testEmbeddedJBIG2Image() throws Exception {
+        String xml = getXML("/testPDF_JBIG2.pdf").xml;
+        assertContains("test images compressed using JBIG2", xml);
+        
+        RecursiveParserWrapper p = new RecursiveParserWrapper(
+                new AutoDetectParser(), new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, p);
+
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/testPDF_JBIG2.pdf"))) {
+            p.parse(tis, new BodyContentHandler(-1), new Metadata(), context);
+        }
+
+        List<Metadata> metadatas = p.getMetadata();
+
+        assertEquals(2, metadatas.size());
+        
+        for (String key : metadatas.get(1).names()) {
+            if (key.startsWith("X-TIKA:EXCEPTION")) {
+                fail("Exception: " + metadatas.get(1).get(key));
+            }
+        }
+        assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
+        assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
+        
+        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("image0.jb2", 
+                metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("x-jbig2").toString(), 
+                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+    }
 
     @Test
     public void testEmbeddedFilesInAnnotations() throws Exception {

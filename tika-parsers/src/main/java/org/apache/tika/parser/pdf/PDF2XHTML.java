@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -70,6 +69,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
     private static final List<String> JP2 =
             Arrays.asList(COSName.JPX_DECODE.getName());
+
+    private static final List<String> JB2 = Arrays.asList(
+            COSName.JBIG2_DECODE.getName());
 
     /**
      * This keeps track of the pdf object ids for inline
@@ -159,7 +161,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             }
             super.endPage(page);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to end a page", e);
+            throw new IOException("Unable to end a page", e);
         } catch (IOException e) {
             exceptions.add(e);
         }
@@ -198,6 +200,13 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
                 Metadata embeddedMetadata = new Metadata();
                 String extension = image.getSuffix();
+                
+                //TODO remove this next block when upgrading to PDFBox 2.0.5.
+                //See: https://issues.apache.org/jira/browse/PDFBOX-3634
+                if (extension == null) {
+                    extension = getJBIG2Suffix(image);
+                }
+                
                 if (extension == null || extension.equals("png")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
                     extension = "png";
@@ -208,6 +217,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     extension = "tif";
                 } else if (extension.equals("jpx")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
+                } else if (extension.equals("jb2")) {
+                    embeddedMetadata.set(
+                            Metadata.CONTENT_TYPE, "image/x-jbig2");
                 } else {
                     //TODO: determine if we need to add more image types
 //                    throw new RuntimeException("EXTEN:" + extension);
@@ -284,6 +296,10 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 InputStream data = pdImage.createInputStream(JP2);
                 org.apache.pdfbox.io.IOUtils.copy(data, out);
                 org.apache.pdfbox.io.IOUtils.closeQuietly(data);
+            } else if ("jb2".equals(suffix)) {
+                InputStream data = pdImage.createInputStream(JB2);
+                org.apache.pdfbox.io.IOUtils.copy(data, out);
+                org.apache.pdfbox.io.IOUtils.closeQuietly(data);
             } else{
                 ImageIOUtil.writeImage(image, suffix, out);
             }
@@ -297,7 +313,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.startElement("p");
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to start a paragraph", e);
+            throw new IOException("Unable to start a paragraph", e);
         }
     }
 
@@ -307,7 +323,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.endElement("p");
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to end a paragraph", e);
+            throw new IOException("Unable to end a paragraph", e);
         }
     }
 
@@ -316,7 +332,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.characters(text);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a string: " + text, e);
         }
     }
@@ -326,7 +342,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.characters(text.getUnicode());
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a character: " + text.getUnicode(), e);
         }
     }
@@ -336,7 +352,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.characters(getWordSeparator());
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a space character", e);
         }
     }
@@ -346,10 +362,20 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             xhtml.newline();
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     "Unable to write a newline character", e);
         }
     }
-
+    
+    //TODO remove this method once upgrading to PDFBox 2.0.5 which will
+    // then return jb2 suffix properly.
+    //See: https://issues.apache.org/jira/browse/PDFBOX-3634
+    private String getJBIG2Suffix(PDImageXObject image) {
+        List<COSName> filters = image.getStream().getFilters();
+        if (filters != null && filters.contains(COSName.JBIG2_DECODE)) {
+            return "jb2";
+        }
+        return null;
+    }
 }
 
