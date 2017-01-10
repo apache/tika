@@ -144,7 +144,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     private OOXMLWordAndPowerPointTextHandler.EditType editType = OOXMLWordAndPowerPointTextHandler.EditType.NONE;
 
-
+    private DateUtils dateUtils = new DateUtils();
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks) {
         this.bodyContentsHandler = bodyContentsHandler;
@@ -313,7 +313,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         String editDateString = atts.getValue(W_NS, "date");
         Date editDate = null;
         if (editDateString != null) {
-            editDate = DateUtils.tryToParse(editDateString);
+            editDate = dateUtils.tryToParse(editDateString);
         }
         bodyContentsHandler.startEditedSection(editAuthor, editDate, editType);
         this.editType = editType;

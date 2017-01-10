@@ -50,32 +50,25 @@ public class DateUtils {
      */
     public static final TimeZone MIDDAY = TimeZone.getTimeZone("GMT-12:00");
 
-    private static ThreadLocal<DateFormat> createDateFormat(String format, TimeZone timezone) {
+    private static DateFormat createDateFormat(String format, TimeZone timezone) {
         final SimpleDateFormat sdf =
                 new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
         if (timezone != null) {
             sdf.setTimeZone(timezone);
         }
-        return new ThreadLocal<DateFormat>() {
-            @Override
-            public DateFormat initialValue() {
-                return sdf;
-            }
-        };
+        return sdf;
     }
 
     /**
-     * Some parsers will have the date as a ISO-8601 string
-     *  already, and will set that into the Metadata object.
      * So we can return Date objects for these, this is the
      *  list (in preference order) of the various ISO-8601
      *  variants that we try when processing a date based
      *  property.
      */
-    private static final List<ThreadLocal<DateFormat>> ISO_8601_INPUT_FORMATS = loadDateFormats();
+    private final List<DateFormat> iso8601InputFormats = loadDateFormats();
 
-    private static List<ThreadLocal<DateFormat>> loadDateFormats() {
-        List<ThreadLocal<DateFormat>> dateFormats = new ArrayList<>();
+    private List<DateFormat> loadDateFormats() {
+        List<DateFormat> dateFormats = new ArrayList<>();
         // yyyy-mm-ddThh...
         dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC));   // UTC/Zulu
         dateFormats.add(createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null));    // With timezone
@@ -149,15 +142,24 @@ public class DateUtils {
     /**
      * Tries to parse the date string; returns null if no parse was possible.
      *
-     * This is thread safe because it relies on threadlocal dateformats.
+     * This is not thread safe!  Wrap in synchronized or create new {@link DateUtils}
+     * for each class.
      *
      * @param dateString
      * @return
      */
-    public static Date tryToParse(String dateString) {
-        for (ThreadLocal<DateFormat> df : ISO_8601_INPUT_FORMATS) {
+    public Date tryToParse(String dateString) {
+        // Java doesn't like timezones in the form ss+hh:mm
+        // It only likes the hhmm form, without the colon
+        int n = dateString.length();
+        if (dateString.charAt(n - 3) == ':'
+                && (dateString.charAt(n - 6) == '+' || dateString.charAt(n - 6) == '-')) {
+            dateString = dateString.substring(0, n - 3) + dateString.substring(n - 2);
+        }
+
+        for (DateFormat df : iso8601InputFormats) {
             try {
-                return df.get().parse(dateString);
+                return df.parse(dateString);
             } catch (java.text.ParseException e){
 
             }

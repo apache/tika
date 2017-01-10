@@ -16,14 +16,11 @@
  */
 package org.apache.tika.metadata;
 
-import static org.apache.tika.utils.DateUtils.MIDDAY;
-import static org.apache.tika.utils.DateUtils.UTC;
 import static org.apache.tika.utils.DateUtils.formatDate;
 
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -35,6 +32,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 
 import org.apache.tika.metadata.Property.PropertyType;
+import org.apache.tika.utils.DateUtils;
 
 /**
  * A multi-valued metadata container.
@@ -92,24 +90,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Some parsers will have the date as a ISO-8601 string
      *  already, and will set that into the Metadata object.
-     * So we can return Date objects for these, this is the
-     *  list (in preference order) of the various ISO-8601
-     *  variants that we try when processing a date based
-     *  property.
      */
-    private static final DateFormat[] iso8601InputFormats = new DateFormat[] {
-        // yyyy-mm-ddThh...
-        createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", UTC),   // UTC/Zulu
-        createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null),    // With timezone
-        createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null),     // Without timezone
-        // yyyy-mm-dd hh...
-        createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", UTC),   // UTC/Zulu
-        createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null),    // With timezone
-        createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null),     // Without timezone
-        // Date without time, set to Midday UTC
-        createDateFormat("yyyy-MM-dd", MIDDAY),              // Normal date format
-        createDateFormat("yyyy:MM:dd", MIDDAY),              // Image (IPTC/EXIF) format
-    };
+    private static final DateUtils DATE_UTILS = new DateUtils();
 
     private static DateFormat createDateFormat(String format, TimeZone timezone) {
         SimpleDateFormat sdf =
@@ -129,22 +111,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @return parsed date, or <code>null</code> if the date can't be parsed
      */
     private static synchronized Date parseDate(String date) {
-        // Java doesn't like timezones in the form ss+hh:mm
-        // It only likes the hhmm form, without the colon
-        int n = date.length();
-        if (date.charAt(n - 3) == ':'
-            && (date.charAt(n - 6) == '+' || date.charAt(n - 6) == '-')) {
-            date = date.substring(0, n - 3) + date.substring(n - 2);
-        }
-
-        // Try several different ISO-8601 variants
-        for (DateFormat format : iso8601InputFormats) {
-            try {
-                return format.parse(date);
-            } catch (ParseException ignore) {
-            }
-        }
-        return null;
+        return DATE_UTILS.tryToParse(date);
     }
 
     /**
