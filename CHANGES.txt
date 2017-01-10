@@ -1,10 +1,14 @@
 Release 1.15 - ??
 
+  * Add parsing of JBIG2 and extraction of JBIG2 from PDFs when
+    required dependencies are added to class path by user.
+    Contributed by Pascal Essiembre (TIKA-2232).
+
   * Mime magic for the OneNote family (.one / .onetoc / .onepkg), no parser
     (TIKA-2224).
 
   * Add parsers for WordPerfect and QuattroPro (.qpw) files.
-    Contributed by Pascal Essiembre (TIKA-1946).
+    Contributed by Pascal Essiembre (TIKA-1946 and TIKA-2228).
 
   * Add configurability of "preserve-interword-spacing" to
     TesseractOCRParser (TIKA-2190).
@@ -40,7 +44,8 @@ Release 1.15 - ??
 
   * Allow configuration of timeout for ForkParser (TIKA-2170).
 
-  * Add extraction of .jpx inline images from PDFs (TIKA-2175).
+  * Add extraction of .jpx inline images from PDFs when required
+    dependencies are added by user to class path (TIKA-2175).
 
   * Add .jpx, .jp2, .ppm to formats handled by Tesseract (TIKA-2174).
 

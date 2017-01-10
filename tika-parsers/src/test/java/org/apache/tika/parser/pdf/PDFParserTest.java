@@ -643,28 +643,18 @@ public class PDFParserTest extends TikaTest {
 
     @Test // TIKA-2232
     public void testEmbeddedJBIG2Image() throws Exception {
-        String xml = getXML("/testPDF_JBIG2.pdf").xml;
-        assertContains("test images compressed using JBIG2", xml);
-        
-        RecursiveParserWrapper p = new RecursiveParserWrapper(
-                new AutoDetectParser(), new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
+
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
         config.setExtractUniqueInlineImagesOnly(false);
         context.set(PDFParserConfig.class, config);
-        context.set(Parser.class, p);
 
-        try (TikaInputStream tis = TikaInputStream.get(
-                getResourceAsStream("/test-documents/testPDF_JBIG2.pdf"))) {
-            p.parse(tis, new BodyContentHandler(-1), new Metadata(), context);
-        }
 
-        List<Metadata> metadatas = p.getMetadata();
-
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
         assertEquals(2, metadatas.size());
-        
+        assertContains("test images compressed using JBIG2", metadatas.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+
         for (String key : metadatas.get(1).names()) {
             if (key.startsWith("X-TIKA:EXCEPTION")) {
                 fail("Exception: " + metadatas.get(1).get(key));
