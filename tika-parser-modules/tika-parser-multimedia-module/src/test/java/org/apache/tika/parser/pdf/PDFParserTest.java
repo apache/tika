@@ -642,6 +642,51 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
     }
 
+    @Test // TIKA-2232
+    public void testEmbeddedJBIG2Image() throws Exception {
+
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(PDFParserConfig.class, config);
+
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
+
+        assertContains("test images compressed using JBIG2",
+                metadatas.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+
+        assertEquals(2, metadatas.size());
+        assertNull("Exception found: " + metadatas.get(0).get(
+                "X-TIKA:EXCEPTION:warn"), metadatas.get(0).get(
+                "X-TIKA:EXCEPTION:warn"));
+        assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
+        assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
+
+        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+
+        //TODO mime/extension should be tested against JBIG2 once better
+        //supported by PDFBox and Levigo jbig2-imageio
+        assertEquals("image0.png",
+                metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("png").toString(),
+                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testJBIG2OCROnly() throws Exception {
+        if (!canRunOCR()) {
+            return;
+        }
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOCRStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser());
+        //make sure everything works with regular xml _and_ with recursive
+        XMLResult xmlResult = getXML("testPDF_JBIG2.pdf", context);
+        assertContains("Norconex", xmlResult.xml);
+    }
 
     @Test
     public void testEmbeddedFilesInAnnotations() throws Exception {

@@ -61,7 +61,8 @@ public class ImageParser extends AbstractParser {
                     MediaType.image("png"),
                     MediaType.image("vnd.wap.wbmp"),
                     MediaType.image("x-icon"),
-                    MediaType.image("x-xcf"))));
+                    MediaType.image("x-xcf"),
+                    MediaType.image("x-jbig2"))));
 
     private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
         if (metadata.get(imageIOkey) != null) {
@@ -80,6 +81,9 @@ public class ImageParser extends AbstractParser {
     }
 
     private static void loadMetadata(IIOMetadata imageMetadata, Metadata metadata) {
+        if (imageMetadata == null) {
+            return;
+        }
         String[] names = imageMetadata.getMetadataFormatNames();
         if (names == null) {
             return;

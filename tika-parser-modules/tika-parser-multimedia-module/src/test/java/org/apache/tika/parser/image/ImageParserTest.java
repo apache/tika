@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -27,7 +28,7 @@ import org.apache.tika.parser.Parser;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class ImageParserTest {
+public class ImageParserTest extends TikaTest {
 
     private final Parser parser = new ImageParser();
 
@@ -157,6 +158,15 @@ public class ImageParserTest {
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
+    }
+
+    @Test // TIKA-2232
+    public void testJBIG2() throws Exception {
+
+        XMLResult r = getXML("testJBIG2.jb2");
+        assertEquals("78", r.metadata.get("height"));
+        assertEquals("328", r.metadata.get("width"));
+        assertEquals("image/x-jbig2", r.metadata.get("Content-Type"));
     }
 
 }

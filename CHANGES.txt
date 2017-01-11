@@ -17,6 +17,10 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Add parsing of JBIG2 and extraction of JBIG2 from PDFs when
+    required dependencies are added to class path by user.
+    Contributed by Pascal Essiembre (TIKA-2232).
+
   * Mime magic for the OneNote family (.one / .onetoc / .onepkg), no parser
     (TIKA-2224).
 

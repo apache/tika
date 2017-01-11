@@ -152,6 +152,17 @@
       <version>1.3.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- Java ImageIO plugin for JBIG2 support (often used in PDF)
+         This jbig2 dep is not distributed with Tika due to licensing
+           issue (GPLV3). That's why it is included here as "test".
+           https://github.com/levigo/jbig2-imageio
+        -->
+    <dependency>
+      <groupId>com.levigo.jbig2</groupId>
+      <artifactId>levigo-jbig2-imageio</artifactId>
+      <version>1.6.5</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   
   <build>
