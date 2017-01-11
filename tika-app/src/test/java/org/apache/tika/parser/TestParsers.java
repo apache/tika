@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
@@ -30,6 +31,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -110,6 +112,35 @@ public class TestParsers extends TikaTest {
         for(String extension : extensions) {
             verifyComment(extension, "testComment");
         }
+    }
+
+    @Test
+    public void testEmbeddedPDFInPPTX() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
+        Metadata pdfMetadata1 = metadataList.get(4);
+        assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
+        Metadata pdfMetadata2 = metadataList.get(5);
+        assertContains("Hello World", pdfMetadata2.get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testEmbeddedPDFInXLSX() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xlsx");
+        Metadata pdfMetadata = metadataList.get(1);
+        assertContains("Hello World", pdfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testEmbeddedPDFInPPTXViaSAX() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setUseSAXPptxExtractor(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
+        Metadata pdfMetadata1 = metadataList.get(4);
+        assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
+        Metadata pdfMetadata2 = metadataList.get(5);
+        assertContains("Hello World", pdfMetadata2.get(RecursiveParserWrapper.TIKA_CONTENT));
     }
 
     private void verifyComment(String extension, String fileName) throws Exception {

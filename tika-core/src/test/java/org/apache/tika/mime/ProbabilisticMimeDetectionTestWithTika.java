@@ -27,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
@@ -264,5 +265,19 @@ public class ProbabilisticMimeDetectionTestWithTika extends TikaTest {
         metadata.set(Metadata.RESOURCE_NAME_KEY, "testingTESTINGtesting");
         assertEquals(helloXType.toString(),
                 tika.detect(new ByteArrayInputStream(helloWorld), metadata));
+    }
+
+    @Test
+    public void testTIKA2237() throws IOException {
+        Metadata metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, MediaType.text("javascript").toString());
+        InputStream input = new ByteArrayInputStream(("function() {};\n" +
+                "try {\n" +
+                "    window.location = 'index.html';\n" +
+                "} catch (e) {\n" +
+                "    console.log(e);\n" +
+                "}").getBytes(StandardCharsets.UTF_8));
+        MediaType detect = new ProbabilisticMimeDetectionSelector().detect(input, metadata);
+        assertEquals(MediaType.application("javascript"), detect);
     }
 }
