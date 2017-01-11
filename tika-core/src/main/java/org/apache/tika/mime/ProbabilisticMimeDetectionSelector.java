@@ -20,15 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.mime.MimeTypes;
 
 /**
  * Selector for combining different mime detection results
@@ -128,14 +124,16 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
 
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        List<MimeType> possibleTypes = null;
+
+        List<MimeType> possibleTypes = new ArrayList<>();
 
         // Get type based on magic prefix
         if (input != null) {
             input.mark(mimeTypes.getMinLength());
             try {
                 byte[] prefix = mimeTypes.readMagicHeader(input);
-                possibleTypes = mimeTypes.getMimeType(prefix);
+                //defensive copy
+                possibleTypes.addAll(mimeTypes.getMimeType(prefix));
             } finally {
                 input.reset();
             }
