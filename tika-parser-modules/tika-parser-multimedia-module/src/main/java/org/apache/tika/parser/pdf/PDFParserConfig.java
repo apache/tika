@@ -103,7 +103,7 @@ public class PDFParserConfig implements Serializable {
 
     private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.NO_OCR;
 
-    private int ocrDPI = 200;
+    private int ocrDPI = 300;
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
 
