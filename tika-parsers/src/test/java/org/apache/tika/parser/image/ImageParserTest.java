@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -27,7 +28,7 @@ import org.apache.tika.parser.Parser;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class ImageParserTest {
+public class ImageParserTest extends TikaTest {
 
     private final Parser parser = new ImageParser();
 

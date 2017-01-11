@@ -1255,6 +1255,22 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testJBIG2OCROnly() throws Exception {
+        if (!canRunOCR()) {
+            return;
+        }
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser());
+        //make sure everything works with regular xml _and_ with recursive
+        XMLResult xmlResult = getXML("testPDF_JBIG2.pdf", context);
+        assertContains("Norconex", xmlResult.xml);
+    }
+
+
+    @Test
     public void testInitializationViaConfig() throws Exception {
         InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml");
         assertNotNull(is);
