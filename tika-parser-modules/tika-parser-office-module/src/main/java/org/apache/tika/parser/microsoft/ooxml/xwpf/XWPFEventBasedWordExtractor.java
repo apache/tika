@@ -38,6 +38,9 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.SAXHelper;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
+import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
+import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.InputSource;
@@ -45,6 +48,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 
 //TODO: move this into POI?
+
 /**
  * Experimental class that is based on POI's XSSFEventBasedExcelExtractor
  *
@@ -180,7 +184,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReader reader = SAXHelper.newXMLReader();
-            reader.setContentHandler(new XWPFDocumentXMLBodyHandler(
+            reader.setContentHandler(new OOXMLWordAndPowerPointTextHandler(
                     new XWPFToTextContentHandler(buffer), hyperlinks));
             reader.parse(new InputSource(new CloseShieldInputStream(stream)));
 
@@ -209,29 +213,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
         return hyperlinks;
     }
-/*
-    private XWPFStyles loadStyles(PackagePart packagePart) {
-        try {
-            PackageRelationshipCollection stylesParts =
-                    packagePart.getRelationshipsByType(XWPFRelation.STYLES.getRelation());
-            if (stylesParts.size() > 0) {
-                PackageRelationship stylesRelationShip = stylesParts.getRelationship(0);
-                if (stylesRelationShip == null) {
-                    return null;
-                }
-                PackagePart stylesPart = opcPackage.getPart(stylesRelationShip);
-                if (stylesPart == null) {
-                    return null;
-                }
-                return new XWPFStyles(stylesPart);
-            }
-        } catch (IOException|OpenXML4JException e) {
-            //swallow
-        }
-        return null;
 
-    }
-*/
     private XWPFNumbering loadNumbering(PackagePart packagePart) {
         try {
             PackageRelationshipCollection numberingParts = packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
@@ -252,7 +234,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         return null;
     }
 
-    private class XWPFToTextContentHandler implements XWPFDocumentXMLBodyHandler.XWPFBodyContentsHandler {
+    private class XWPFToTextContentHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XWPFToTextContentHandler(StringBuilder buffer) {
@@ -260,17 +242,22 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void run(XWPFRunProperties runProperties, String contents) {
+        public void run(RunProperties runProperties, String contents) {
             buffer.append(contents);
         }
 
         @Override
-        public void hyperlinkRun(String link, String text) {
-            buffer.append(" (").append(text).append(") ");
+        public void hyperlinkStart(String link) {
+            //no-op
         }
 
         @Override
-        public void startParagraph() {
+        public void hyperlinkEnd() {
+            //no-op
+        }
+
+        @Override
+        public void startParagraph(ParagraphProperties paragraphProperties) {
             //no-op
         }
 
@@ -320,7 +307,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public void startEditedSection(String editor, Date date, XWPFDocumentXMLBodyHandler.EditType editType) {
+        public void startEditedSection(String editor, Date date, OOXMLWordAndPowerPointTextHandler.EditType editType) {
 
         }
 
@@ -347,6 +334,26 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         @Override
         public boolean getIncludeMoveFromText() {
             return false;
+        }
+
+        @Override
+        public void embeddedOLERef(String refId) {
+            //no-op
+        }
+
+        @Override
+        public void embeddedPicRef(String picFileName, String picDescription) {
+            //no-op
+        }
+
+        @Override
+        public void startBookmark(String id, String name) {
+            //no-op
+        }
+
+        @Override
+        public void endBookmark(String id) {
+            //no-op
         }
     }
 }

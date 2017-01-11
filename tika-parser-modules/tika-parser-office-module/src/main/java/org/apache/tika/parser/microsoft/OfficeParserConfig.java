@@ -25,6 +25,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeMoveFromContent = false;
 
     private boolean useSAXDocxExtractor = false;
+    private boolean useSAXPptxExtractor = false;
 
     /**
      * Sets whether or not the parser should include deleted content.
@@ -71,11 +72,27 @@ public class OfficeParserConfig implements Serializable {
      * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
      * the new experimental parser will be used.
      * <p/>
-     * Default: classic parser
+     * Default: <code>false</code> (classic DOM parser)
      * @param useSAXDocxExtractor
      */
     public void setUseSAXDocxExtractor(boolean useSAXDocxExtractor) {
         this.useSAXDocxExtractor = useSAXDocxExtractor;
+    }
+
+    /**
+     * Use the experimental SAX-based streaming DOCX parser?
+     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
+     * the new experimental parser will be used.
+     * <p/>
+     * Default: <code>false</code> (classic DOM parser)
+     * @param useSAXPptxExtractor
+     */
+    public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
+        this.useSAXPptxExtractor = useSAXPptxExtractor;
+    }
+
+    public boolean getUseSAXPptxExtractor() {
+        return useSAXPptxExtractor;
     }
 }
 

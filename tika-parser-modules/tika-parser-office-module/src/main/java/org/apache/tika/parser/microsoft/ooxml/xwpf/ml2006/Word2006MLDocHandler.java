@@ -54,36 +54,36 @@ class Word2006MLDocHandler extends DefaultHandler {
 
         addPartHandler(new RelationshipsHandler(relationshipsManager));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 XWPFRelation.DOCUMENT.getContentType(),
                 xhtml, relationshipsManager, officeParserConfig));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 XWPFRelation.FOOTNOTE.getContentType(),
                 xhtml, relationshipsManager, officeParserConfig));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
                 xhtml, relationshipsManager, officeParserConfig));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 XWPFRelation.HEADER.getContentType(),
                 xhtml, relationshipsManager, officeParserConfig));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 XWPFRelation.FOOTER.getContentType(),
                 xhtml, relationshipsManager, officeParserConfig));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml",
                 xhtml, relationshipsManager, officeParserConfig));
 
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
                 xhtml, relationshipsManager, officeParserConfig));
 
-        addPartHandler(new BodyPartHandler(
+        addPartHandler(new WordAndPowerPointTextPartHandler(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
                 xhtml, relationshipsManager, officeParserConfig));
 

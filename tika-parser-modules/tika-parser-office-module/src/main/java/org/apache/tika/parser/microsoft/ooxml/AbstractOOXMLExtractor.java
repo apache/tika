@@ -18,11 +18,16 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
@@ -30,13 +35,16 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.TargetMode;
+import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -62,6 +70,9 @@ import org.xml.sax.helpers.AttributesImpl;
  * populates the {@link XHTMLContentHandler} object received as parameter.
  */
 public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
+
+
+
     static final String RELATION_AUDIO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
     static final String RELATION_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
     static final String RELATION_OLE_OBJECT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
@@ -70,6 +81,15 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     static final String RELATION_OFFICE_DOCUMENT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
+
+    protected final static String[] EMBEDDED_RELATIONSHIPS = new String[]{
+            RELATION_AUDIO,
+            RELATION_IMAGE,
+            RELATION_PACKAGE,
+            RELATION_OFFICE_DOCUMENT
+    };
+
+
     private final EmbeddedDocumentExtractor embeddedExtractor;
     protected POIXMLTextExtractor extractor;
 
@@ -158,10 +178,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private void handleEmbeddedParts(ContentHandler handler)
             throws TikaException, IOException, SAXException {
+        Set<String> seen = new HashSet<>();
         try {
             for (PackagePart source : getMainDocumentParts()) {
                 for (PackageRelationship rel : source.getRelationships()) {
-
+                    URI targetURI = rel.getTargetURI();
+                    if (targetURI != null) {
+                        if (seen.contains(targetURI.toString())) {
+                            continue;
+                        }
+                        seen.add(targetURI.toString());
+                    }
                     URI sourceURI = rel.getSourceURI();
                     String sourceDesc;
                     if (sourceURI != null) {
@@ -334,5 +361,61 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (IOException e) {
             throw new TikaException("Broken OOXML file", e);
         }
+    }
+
+    /**
+     * This is used by the SAX docx and pptx decorators to load hyperlinks and
+     * other linked objects
+     *
+     * @param bodyPart
+     * @return
+     */
+    protected Map<String, String> loadLinkedRelationships(PackagePart bodyPart, boolean includeInternal) {
+        Map<String, String> linkedRelationships = new HashMap<>();
+        try {
+            PackageRelationshipCollection prc = bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
+            for (int i = 0; i < prc.size(); i++) {
+                PackageRelationship pr = prc.getRelationship(i);
+                if (pr == null) {
+                    continue;
+                }
+                if (! includeInternal && TargetMode.INTERNAL.equals(pr.getTargetMode())) {
+                    continue;
+                }
+                String id = pr.getId();
+                String url = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
+                if (id != null && url != null) {
+                    linkedRelationships.put(id, url);
+                }
+            }
+
+            for (String rel : EMBEDDED_RELATIONSHIPS) {
+
+                prc = bodyPart.getRelationshipsByType(rel);
+                for (int i = 0; i < prc.size(); i++) {
+                    PackageRelationship pr = prc.getRelationship(i);
+                    if (pr == null) {
+                        continue;
+                    }
+                    String id = pr.getId();
+                    String uriString = (pr.getTargetURI() == null) ? null : pr.getTargetURI().toString();
+                    String fileName = uriString;
+                    if (pr.getTargetURI() != null) {
+                        try {
+                            fileName = FileHelper.getFilename(new File(fileName));
+                        } catch (Exception e) {
+                            fileName = uriString;
+                        }
+                    }
+                    if (id != null) {
+                        fileName = (fileName == null) ? "" : fileName;
+                        linkedRelationships.put(id, fileName);
+                    }
+                }
+            }
+
+        } catch (InvalidFormatException e) {
+        }
+        return linkedRelationships;
     }
 }

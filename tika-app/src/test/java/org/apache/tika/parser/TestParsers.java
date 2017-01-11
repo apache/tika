@@ -116,7 +116,7 @@ public class TestParsers extends TikaTest {
 
     @Test
     public void testEmbeddedPDFInPPTX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedPDF.pptx");
         Metadata pdfMetadata1 = metadataList.get(4);
         assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);
@@ -125,7 +125,7 @@ public class TestParsers extends TikaTest {
 
     @Test
     public void testEmbeddedPDFInXLSX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xlsx");
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF.xlsx");
         Metadata pdfMetadata = metadataList.get(1);
         assertContains("Hello World", pdfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
     }
@@ -136,7 +136,7 @@ public class TestParsers extends TikaTest {
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedPDF.pptx", parseContext);
         Metadata pdfMetadata1 = metadataList.get(4);
         assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);

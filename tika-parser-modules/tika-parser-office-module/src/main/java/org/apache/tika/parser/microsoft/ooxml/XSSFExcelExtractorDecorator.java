@@ -74,7 +74,6 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final DataFormatter formatter;
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
     private final Map<String, String> drawingHyperlinks = new HashMap<>();
-
     private Metadata metadata;
     private ParseContext parseContext;
 
@@ -161,6 +160,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 extractHeaderFooter(footer, xhtml);
             }
             processShapes(iter.getShapes(), xhtml);
+
             //for now dump sheet hyperlinks at bottom of page
             //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes
             //step 1: extract hyperlink info from bottom of page
@@ -168,6 +168,39 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             extractHyperLinks(sheetPart, xhtml);
             // All done with this sheet
             xhtml.endElement("div");
+        }
+    }
+
+    private void addDrawingHyperLinks(PackagePart sheetPart) {
+        try {
+            for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
+                if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                    PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                    for (PackageRelationship drawRel : rel.getPackage()
+                            .getPart(relName)
+                            .getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
+                        drawingHyperlinks.put(drawRel.getId(), drawRel.getTargetURI().toString());
+                    }
+                }
+            }
+        } catch (InvalidFormatException e) {
+            //swallow
+            //an exception trying to extract
+            //hyperlinks on drawings should not cause a parse failure
+        }
+
+    }
+
+
+    private void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
+        try {
+            for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
+                xhtml.startElement("a", "href", rel.getTargetURI().toString());
+                xhtml.characters(rel.getTargetURI().toString());
+                xhtml.endElement("a");
+            }
+        } catch (InvalidFormatException e) {
+            //swallow
         }
     }
 
@@ -230,39 +263,6 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("a");
         }
 
-    }
-
-    private void addDrawingHyperLinks(PackagePart sheetPart) {
-        try {
-            for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
-                if (rel.getTargetMode() == TargetMode.INTERNAL) {
-                    PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                    for (PackageRelationship drawRel : rel.getPackage()
-                            .getPart(relName)
-                            .getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
-                        drawingHyperlinks.put(drawRel.getId(), drawRel.getTargetURI().toString());
-                    }
-                }
-            }
-        } catch (InvalidFormatException e) {
-            //swallow
-            //an exception trying to extract
-            //hyperlinks on drawings should not cause a parse failure
-        }
-
-    }
-
-
-    private void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
-        try {
-            for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
-                xhtml.startElement("a", "href", rel.getTargetURI().toString());
-                xhtml.characters(rel.getTargetURI().toString());
-                xhtml.endElement("a");
-            }
-        } catch (InvalidFormatException e) {
-            //swallow
-        }
     }
 
     public void processSheet(

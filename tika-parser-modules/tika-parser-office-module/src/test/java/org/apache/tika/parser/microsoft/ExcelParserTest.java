@@ -49,7 +49,7 @@ public class ExcelParserTest extends TikaTest {
 
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.US);
-        XMLResult r = getXML("testEXCEL.xls", new OfficeParser(), new Metadata(), context);
+        XMLResult r = getXML("testEXCEL.xls", new OfficeParser(), context);
 
         assertEquals(
                 "application/vnd.ms-excel",
@@ -81,7 +81,7 @@ public class ExcelParserTest extends TikaTest {
     public void testExcelParserFormatting() throws Exception {
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.US);
-        XMLResult r = getXML("testEXCEL-formats.xls", new OfficeParser(), new Metadata(), context);
+        XMLResult r = getXML("testEXCEL-formats.xls", new OfficeParser(), context);
 
         assertEquals(
                 "application/vnd.ms-excel",
@@ -161,7 +161,7 @@ public class ExcelParserTest extends TikaTest {
                 return "tika";
             }
         });
-        XMLResult r = getXML("testEXCEL_protected_passtika.xls", new OfficeParser(), new Metadata(), context);
+        XMLResult r = getXML("testEXCEL_protected_passtika.xls", new OfficeParser(), context);
 
         assertEquals(
                 "application/vnd.ms-excel",
@@ -346,7 +346,7 @@ public class ExcelParserTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.US);
 
-        XMLResult r = getXML("testEXCEL_custom_props.xls", new OfficeParser(), new Metadata(), context);
+        XMLResult r = getXML("testEXCEL_custom_props.xls", new OfficeParser(), context);
         Metadata metadata = r.metadata;
         assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("", metadata.get(TikaCoreProperties.CREATOR));
@@ -366,8 +366,7 @@ public class ExcelParserTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.UK);
 
-        XMLResult r = getXML("testEXCEL_headers_footers.xls", new OfficeParser(),
-                new Metadata(), context);
+        XMLResult r = getXML("testEXCEL_headers_footers.xls", new OfficeParser(), context);
 
         Metadata metadata = r.metadata;
         assertEquals(

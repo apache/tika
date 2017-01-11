@@ -30,7 +30,7 @@ import org.xml.sax.SAXException;
 /**
  * Interface implemented by all Tika OOXML extractors.
  *
- * @see org.apache.poi.POIXMLTextExtractor
+ * @see POIXMLTextExtractor
  */
 public interface OOXMLExtractor {
 

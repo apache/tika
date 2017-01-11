@@ -31,7 +31,27 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
-import org.apache.poi.xslf.usermodel.*;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
+import org.apache.poi.xslf.usermodel.XSLFComments;
+import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
+import org.apache.poi.xslf.usermodel.XSLFGroupShape;
+import org.apache.poi.xslf.usermodel.XSLFHyperlink;
+import org.apache.poi.xslf.usermodel.XSLFNotes;
+import org.apache.poi.xslf.usermodel.XSLFNotesMaster;
+import org.apache.poi.xslf.usermodel.XSLFPictureShape;
+import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xslf.usermodel.XSLFShape;
+import org.apache.poi.xslf.usermodel.XSLFSheet;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
+import org.apache.poi.xslf.usermodel.XSLFSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFTable;
+import org.apache.poi.xslf.usermodel.XSLFTableCell;
+import org.apache.poi.xslf.usermodel.XSLFTableRow;
+import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
+import org.apache.poi.xslf.usermodel.XSLFTextRun;
+import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -55,7 +75,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * @see org.apache.poi.xslf.extractor.XSLFPowerPointExtractor#getText()
+     * @see XSLFPowerPointExtractor#getText()
      */
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
@@ -148,6 +168,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
                     xhtml.startElement("p");
+
                     for (XSLFTextRun run : p.getTextRuns()) {
                         //TODO: add check for targetmode=external into POI
                         //then check to confirm that the urls are actually
@@ -219,7 +240,6 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         xhtml.startElement("table");
         for (XSLFTableRow row : tbl) {
             xhtml.startElement("tr");
-            List<XSLFTableCell> cells = row.getCells();
             for (XSLFTableCell c : row.getCells()) {
                 xhtml.startElement("td");
                 //TODO: Need to wait for fix in POI to test for hyperlink first
