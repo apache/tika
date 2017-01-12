@@ -106,11 +106,11 @@ public class OOXMLExtractorFactory {
                 extractor = new XSSFExcelExtractorDecorator(
                         context, (XSSFEventBasedExcelExtractor) poiExtractor, locale);
             } else if (poiExtractor instanceof XWPFEventBasedWordExtractor) {
-                extractor = new SXWPFWordExtractorDecorator(context,
+                extractor = new SXWPFWordExtractorDecorator(metadata, context,
                         (XWPFEventBasedWordExtractor) poiExtractor);
                 metadata.add("X-Parsed-By", XWPFEventBasedWordExtractor.class.getSimpleName());
             } else if (poiExtractor instanceof XSLFEventBasedPowerPointExtractor) {
-                extractor = new SXSLFPowerPointExtractorDecorator(context,
+                extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
                         (XSLFEventBasedPowerPointExtractor) poiExtractor);
                 metadata.add("X-Parsed-By", XSLFEventBasedPowerPointExtractor.class.getSimpleName());
             } else if (document == null) {

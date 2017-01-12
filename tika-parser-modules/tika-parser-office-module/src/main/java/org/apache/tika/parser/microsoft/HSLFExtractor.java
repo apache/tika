@@ -52,11 +52,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
-    private final Metadata metadata;
 
     public HSLFExtractor(ParseContext context, Metadata metadata) {
-        super(context);
-        this.metadata = metadata;
+        super(context, metadata);
     }
 
     protected void parse(
@@ -338,7 +336,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             try {
                 data = pic.getData();
             } catch (Exception e) {
-                EmbeddedDocumentUtil.recordException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 continue;
             }
             try (TikaInputStream picIs = TikaInputStream.get(data)){
@@ -357,6 +355,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         } catch (NullPointerException e) {
             // Sometimes HSLF hits problems
             // Please open POI bugs for any you come across!
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             return;
         }
 
@@ -367,7 +366,9 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 try {
                     data = oleShape.getObjectData();
                 } catch (NullPointerException e) {
-                /* getObjectData throws NPE some times. */
+                    /* getObjectData throws NPE some times. */
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    continue;
                 }
 
                 if (data != null) {
@@ -386,7 +387,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     try {
                         dataStream = data.getData();
                     } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordException(e, metadata);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                         continue;
                     }
                     try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
@@ -406,8 +407,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                                     stream, objID, objID,
                                     mediaType, xhtml, false);
                         }
-                    } catch (TaggedIOException e) {
-                        EmbeddedDocumentUtil.recordException(e, metadata);
+                    } catch (IOException e) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     }
                 }
             }

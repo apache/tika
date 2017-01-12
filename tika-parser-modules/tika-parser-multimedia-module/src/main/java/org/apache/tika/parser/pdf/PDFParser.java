@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchema;
@@ -655,16 +656,25 @@ public class PDFParser extends AbstractParser {
     }
 
     //can return null!
-    private Document loadDOM(PDMetadata pdMetadata, Metadata parentMetadata, ParseContext context) {
+    private Document loadDOM(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
             return null;
         }
-        try (InputStream is = pdMetadata.exportXMPMetadata()) {
+        InputStream is = null;
+        try {
+            try {
+                is = pdMetadata.exportXMPMetadata();
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                return null;
+            }
             DocumentBuilder documentBuilder = context.getDocumentBuilder();
             documentBuilder.setErrorHandler((ErrorHandler)null);
             return documentBuilder.parse(is);
         } catch (IOException|SAXException|TikaException e) {
-            EmbeddedDocumentUtil.recordException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordException(e, metadata);
+        } finally {
+            IOUtils.closeQuietly(is);
         }
         return null;
 

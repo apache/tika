@@ -51,18 +51,18 @@ abstract class AbstractPOIFSExtractor {
     private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private PasswordProvider passwordProvider;
-    private Metadata metadata;
+    protected final Metadata parentMetadata;//metadata of the parent/container document
     private final Detector zipDetectorProxy;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         this(context, null);
     }
 
-    protected AbstractPOIFSExtractor(ParseContext context, Metadata metadata) {
+    protected AbstractPOIFSExtractor(ParseContext context, Metadata parentMetadata) {
         embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
 
         this.passwordProvider = context.get(PasswordProvider.class);
-        this.metadata = metadata;
+        this.parentMetadata = parentMetadata;
         this.zipDetectorProxy = new DetectorProxy("org.apache.tika.parser.pkg.ZipContainerDetector", getClass().getClassLoader());
     }
 
@@ -89,7 +89,7 @@ abstract class AbstractPOIFSExtractor {
      */
     protected String getPassword() {
         if (passwordProvider != null) {
-            return passwordProvider.getPassword(metadata);
+            return passwordProvider.getPassword(parentMetadata);
         }
         return null;
     }
@@ -153,7 +153,14 @@ abstract class AbstractPOIFSExtractor {
 
             try (TikaInputStream stream = TikaInputStream.get(
                     new DocumentInputStream((DocumentEntry) ooxml))) {
-                MediaType type = zipDetectorProxy.detect(stream, new Metadata());
+                MediaType type = null;
+                try {
+                    //if there's a stream error while detecting...
+                    type = zipDetectorProxy.detect(stream, new Metadata());
+                } catch (Exception e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    return;
+                }
                 handleEmbeddedResource(stream, null, dir.getName(), dir.getStorageClsid(), type.toString(), xhtml, true);
                 return;
             }
@@ -189,7 +196,8 @@ abstract class AbstractPOIFSExtractor {
                 } catch (Ole10NativeException ex) {
                     // Not a valid OLE10Native record, skip it
                 } catch (Exception e) {
-                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + rName, e);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    return;
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
@@ -223,7 +231,8 @@ abstract class AbstractPOIFSExtractor {
                     metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
                     metadata.set(Metadata.RESOURCE_NAME_KEY, rName + extension);
                 } catch (Exception e) {
-                    throw new TikaException("Invalid embedded resource", e);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    return;
                 }
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
@@ -242,6 +251,8 @@ abstract class AbstractPOIFSExtractor {
                 }
                 embeddedDocumentUtil.parseEmbedded(embedded, xhtml, metadata, true);
             }
+        } catch (IOException e) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
         } finally {
             if (embedded != null) {
                 embedded.close();

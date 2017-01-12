@@ -171,6 +171,10 @@ public class EmbeddedDocumentUtil implements Serializable {
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, ex);
     }
 
+    public static void recordEmbeddedStreamException(Throwable t, Metadata m) {
+        String ex = ExceptionUtils.getFilteredStackTrace(t);
+        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM, ex);
+    }
     public boolean shouldParseEmbedded(Metadata m) {
         return getEmbeddedDocumentExtractor().shouldParseEmbedded(m);
     }
