@@ -249,7 +249,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //skip silently
             return;
         }
-        
+
         fileName = (fileName == null || "".equals(fileName.trim())) ? unicodeFileName : fileName;
         fileName = (fileName == null || "".equals(fileName.trim())) ? displayName : fileName;
 
@@ -261,23 +261,31 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
         embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fileName);
-        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            TikaInputStream stream = null;
-            try {
-                stream = TikaInputStream.get(file.createInputStream());
-                embeddedDocumentExtractor.parseEmbedded(
-                        stream,
-                        new EmbeddedContentHandler(xhtml),
-                        embeddedMetadata, false);
-
-                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                attributes.addAttribute("", "id", "id", "CDATA", fileName);
-                xhtml.startElement("div", attributes);
-                xhtml.endElement("div");
-            } finally {
-                IOUtils.closeQuietly(stream);
-            }
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+            return;
         }
+        TikaInputStream stream = null;
+        try {
+            stream = TikaInputStream.get(file.createInputStream());
+        } catch (IOException e) {
+            //store this exception in the parent's metadata
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            return;
+        }
+        try {
+            embeddedDocumentExtractor.parseEmbedded(
+                    stream,
+                    new EmbeddedContentHandler(xhtml),
+                    embeddedMetadata, false);
+
+            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+            attributes.addAttribute("", "id", "id", "CDATA", fileName);
+            xhtml.startElement("div", attributes);
+            xhtml.endElement("div");
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
     }
 
     void handleCatchableIOE(IOException e) throws IOException {
@@ -598,13 +606,23 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (pdxfa != null) {
             //if successful, return
             XFAExtractor xfaExtractor = new XFAExtractor();
-            try (InputStream is = new BufferedInputStream(
-                    new ByteArrayInputStream(pdxfa.getBytes()))) {
-                xfaExtractor.extract(is, xhtml, metadata, context);
-                return;
-            } catch (XMLStreamException |IOException e) {
-                //if there was an xml parse exception in xfa, try the AcroForm
-                EmbeddedDocumentUtil.recordException(e, metadata);
+            InputStream is = null;
+            try {
+                is = new BufferedInputStream(
+                        new ByteArrayInputStream(pdxfa.getBytes()));
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            }
+            if (is != null) {
+                try {
+                    xfaExtractor.extract(is, xhtml, metadata, context);
+                    return;
+                } catch (XMLStreamException e) {
+                    //if there was an xml parse exception in xfa, try the AcroForm
+                    EmbeddedDocumentUtil.recordException(e, metadata);
+                } finally {
+                    IOUtils.closeQuietly(is);
+                }
             }
         }
 

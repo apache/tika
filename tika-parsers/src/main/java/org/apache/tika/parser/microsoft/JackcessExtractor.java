@@ -22,6 +22,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.NumberFormat;
@@ -42,6 +43,8 @@ import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
@@ -73,29 +76,29 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
     final HtmlParser htmlParser = new HtmlParser();
 
-    protected JackcessExtractor(ParseContext context, Locale locale) {
-        super(context);
+    protected JackcessExtractor(Metadata metadata, ParseContext context, Locale locale) {
+        super(context, metadata);
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
     }
 
-    public void parse(Database db, XHTMLContentHandler xhtml, Metadata metadata) throws IOException, SAXException, TikaException {
+    public void parse(Database db, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
 
 
         String pw = db.getDatabasePassword();
         if (pw != null) {
-            metadata.set(JackcessParser.MDB_PW, pw);
+            parentMetadata.set(JackcessParser.MDB_PW, pw);
         }
 
         PropertyMap dbp = db.getDatabaseProperties();
         for (PropertyMap.Property p : dbp) {
-            metadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
+            parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
                     toString(p.getValue(), p.getType()));
         }
 
         PropertyMap up = db.getUserDefinedProperties();
         for (PropertyMap.Property p : up) {
-            metadata.add(JackcessParser.USER_DEFINED_PROPERTY_PREFIX+ p.getName(),
+            parentMetadata.add(JackcessParser.USER_DEFINED_PROPERTY_PREFIX+ p.getName(),
                     toString(p.getValue(), p.getType()));
         }
 
@@ -105,24 +108,24 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             //try to get core properties
             PropertyMap.Property title = summaryProperties.get(TITLE_PROP_KEY);
             if (title != null) {
-                metadata.set(TikaCoreProperties.TITLE, toString(title.getValue(), title.getType()));
+                parentMetadata.set(TikaCoreProperties.TITLE, toString(title.getValue(), title.getType()));
                 found.add(title.getName());
             }
             PropertyMap.Property author = summaryProperties.get(AUTHOR_PROP_KEY);
             if (author != null && author.getValue() != null) {
                 String authorString = toString(author.getValue(), author.getType());
-                SummaryExtractor.addMulti(metadata, TikaCoreProperties.CREATOR, authorString);
+                SummaryExtractor.addMulti(parentMetadata, TikaCoreProperties.CREATOR, authorString);
                 found.add(author.getName());
             }
             PropertyMap.Property company = summaryProperties.get(COMPANY_PROP_KEY);
             if (company != null) {
-                metadata.set(OfficeOpenXMLExtended.COMPANY, toString(company.getValue(), company.getType()));
+                parentMetadata.set(OfficeOpenXMLExtended.COMPANY, toString(company.getValue(), company.getType()));
                 found.add(company.getName());
             }
 
             for (PropertyMap.Property p : db.getSummaryProperties()) {
                 if (! found.contains(p.getName())) {
-                    metadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX + p.getName(),
+                    parentMetadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX + p.getName(),
                             toString(p.getValue(), p.getType()));
                 }
             }
@@ -302,21 +305,44 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 //TODO: find test file that has this kind of attachment
                 //and see if getFilePath or getLocalFilePath is meaningful
                 //for TikaCoreProperties.ORIGINAL_RESOURCE_NAME
-                handleEmbeddedResource(
-                        TikaInputStream.get(spc.getStream()),
-                        spc.getFileName(),//filename
-                        null,//relationshipId
-                        spc.getTypeName(),//mediatype
-                        xhtml, false);
+                TikaInputStream tis = null;
+                try {
+                    tis = TikaInputStream.get(spc.getStream());
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    break;
+                }
+                if (tis != null) {
+                    try {
+                        handleEmbeddedResource(
+                                tis,
+                                spc.getFileName(),//filename
+                                null,//relationshipId
+                                spc.getTypeName(),//mediatype
+                                xhtml, false);
+                    } finally {
+                        IOUtils.closeQuietly(tis);
+                    }
+                }
                 break;
             case OTHER:
                 OleBlob.OtherContent oc = (OleBlob.OtherContent) content;
-                handleEmbeddedResource(
-                        TikaInputStream.get(oc.getStream()),
-                        null,//filename
-                        null,//relationshipId
-                        oc.getTypeName(),//mediatype
-                        xhtml, false);
+                TikaInputStream ocStream = null;
+                try {
+                    ocStream = TikaInputStream.get(oc.getStream());
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordException(e, parentMetadata);
+                }
+                try {
+                    handleEmbeddedResource(
+                            ocStream,
+                            null,//filename
+                            null,//relationshipId
+                            oc.getTypeName(),//mediatype
+                            xhtml, false);
+                } finally {
+                    IOUtils.closeQuietly(ocStream);
+                }
                 break;
             case COMPOUND_STORAGE:
                 OleBlob.CompoundContent cc = (OleBlob.CompoundContent) content;
@@ -326,8 +352,36 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     }
 
     private void handleCompoundContent(OleBlob.CompoundContent cc, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
-        try (NPOIFSFileSystem nfs = new NPOIFSFileSystem(cc.getStream())) {
+        InputStream is = null;
+        NPOIFSFileSystem nfs = null;
+        try {
+            try {
+                is = cc.getStream();
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                return;
+            }
+
+            try {
+                nfs = new NPOIFSFileSystem(is);
+            } catch (Exception e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                return;
+            }
+
             handleEmbeddedOfficeDoc(nfs.getRoot(), xhtml);
+
+        } finally {
+            if (nfs != null) {
+                try {
+                    nfs.close();
+                } catch (IOException e) {
+                    //swallow
+                }
+            }
+            if (is != null) {
+                IOUtils.closeQuietly(is);
+            }
         }
     }
 

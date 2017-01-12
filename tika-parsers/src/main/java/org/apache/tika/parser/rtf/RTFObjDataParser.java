@@ -36,6 +36,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.util.IOUtils;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -106,11 +107,18 @@ class RTFObjDataParser {
             return embObjBytes;
         } else {
             ByteArrayInputStream embIs = new ByteArrayInputStream(embObjBytes);
-            if (NPOIFSFileSystem.hasPOIFSHeader(embIs)) {
+            boolean hasPoifs = false;
+            try {
+                hasPoifs = NPOIFSFileSystem.hasPOIFSHeader(embIs);
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                return embObjBytes;
+            }
+            if (hasPoifs) {
                 try {
                     return handleEmbeddedPOIFS(embIs, metadata, unknownFilenameCount);
-                } catch (IOException e) {
-                    //swallow
+                } catch (Exception e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                 }
             }
         }

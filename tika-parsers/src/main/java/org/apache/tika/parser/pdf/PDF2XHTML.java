@@ -17,7 +17,6 @@
 package org.apache.tika.parser.pdf;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +46,7 @@ import org.apache.pdfbox.text.TextPosition;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -180,6 +180,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             } catch (MissingImageReaderException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata);
                 continue;
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                continue;
             }
 
             if (object == null) {
@@ -257,13 +260,15 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                         try {
                             writeToBuffer(image, extension, buffer);
                         } catch (IOException e) {
-                            EmbeddedDocumentUtil.recordException(e, metadata);
+                            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                             continue;
                         }
-                        embeddedDocumentExtractor.parseEmbedded(
-                                new ByteArrayInputStream(buffer.toByteArray()),
-                                new EmbeddedContentHandler(xhtml),
-                                embeddedMetadata, false);
+                        try (InputStream embeddedIs = TikaInputStream.get(buffer.toByteArray())) {
+                            embeddedDocumentExtractor.parseEmbedded(
+                                    embeddedIs,
+                                    new EmbeddedContentHandler(xhtml),
+                                    embeddedMetadata, false);
+                        }
                     } catch (IOException e) {
                         handleCatchableIOE(e);
                     }

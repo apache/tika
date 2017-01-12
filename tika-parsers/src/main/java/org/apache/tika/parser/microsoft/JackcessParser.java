@@ -98,8 +98,8 @@ public class JackcessParser extends AbstractParser {
                         .setReadOnly(true).open();
             }
             db.setLinkResolver(IGNORE_LINK_RESOLVER);//just in case
-            JackcessExtractor ex = new JackcessExtractor(context, locale);
-            ex.parse(db, xhtml, metadata);
+            JackcessExtractor ex = new JackcessExtractor(metadata, context, locale);
+            ex.parse(db, xhtml);
         } catch (IllegalStateException e) {
             if (e.getMessage() != null && e.getMessage().contains("Incorrect password")) {
                 throw new EncryptedDocumentException(e);

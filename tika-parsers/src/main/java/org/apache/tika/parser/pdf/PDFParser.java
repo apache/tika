@@ -43,6 +43,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
+import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -662,16 +663,25 @@ public class PDFParser extends AbstractParser {
     }
 
     //can return null!
-    private Document loadDOM(PDMetadata pdMetadata, Metadata parentMetadata, ParseContext context) {
+    private Document loadDOM(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
             return null;
         }
-        try (InputStream is = pdMetadata.exportXMPMetadata()) {
+        InputStream is = null;
+        try {
+            try {
+                is = pdMetadata.exportXMPMetadata();
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                return null;
+            }
             DocumentBuilder documentBuilder = context.getDocumentBuilder();
             documentBuilder.setErrorHandler((ErrorHandler)null);
             return documentBuilder.parse(is);
         } catch (IOException|SAXException|TikaException e) {
-            EmbeddedDocumentUtil.recordException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordException(e, metadata);
+        } finally {
+            IOUtils.closeQuietly(is);
         }
         return null;
 

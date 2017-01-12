@@ -32,6 +32,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
@@ -77,11 +78,13 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private final OPCPackage opcPackage;
     private final ParseContext context;
+    private final Metadata metadata;
 
 
-    public SXWPFWordExtractorDecorator(ParseContext context,
+    public SXWPFWordExtractorDecorator(Metadata metadata, ParseContext context,
                                        XWPFEventBasedWordExtractor extractor) {
         super(context, extractor);
+        this.metadata = metadata;
         this.context = context;
         this.opcPackage = extractor.getPackage();
     }
@@ -159,7 +162,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void handlePart(PackagePart packagePart, XWPFStylesShim styles,
                             XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
-        Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart, true);
+        Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart, true, metadata);
         try (InputStream stream = packagePart.getInputStream()) {
             context.getSAXParser().parse(
                     new CloseShieldInputStream(stream),

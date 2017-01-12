@@ -35,6 +35,7 @@ import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -1337,7 +1338,11 @@ final class TextExtractor {
         ansiSkip = 0;
 
         if (groupState.objdata == true) {
-            embObjHandler.handleCompletedObject();
+            try {
+                embObjHandler.handleCompletedObject();
+            } catch (TikaException|IOException e) {
+                EmbeddedDocumentUtil.recordException(e, metadata);
+            }
             groupState.objdata = false;
         } else if (groupState.pictDepth > 0) {
             if (groupState.sn == true) {

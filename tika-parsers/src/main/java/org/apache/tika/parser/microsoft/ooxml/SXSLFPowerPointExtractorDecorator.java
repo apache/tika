@@ -35,6 +35,7 @@ import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -69,11 +70,13 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     private final OPCPackage opcPackage;
     private final ParseContext context;
+    private final Metadata metadata;
     private PackagePart mainDocument = null;
     private final CommentAuthors commentAuthors = new CommentAuthors();
 
-    public SXSLFPowerPointExtractorDecorator(ParseContext context, XSLFEventBasedPowerPointExtractor extractor) {
+    public SXSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context, XSLFEventBasedPowerPointExtractor extractor) {
         super(context, extractor);
+        this.metadata = metadata;
         this.context = context;
         this.opcPackage = extractor.getPackage();
         for (String contentType : MAIN_STORY_PART_RELATIONS) {
@@ -152,7 +155,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void handleSlidePart(PackagePart slidePart, XHTMLContentHandler xhtml) throws IOException, SAXException {
-        Map<String, String> linkedRelationships = loadLinkedRelationships(slidePart, false);
+        Map<String, String> linkedRelationships = loadLinkedRelationships(slidePart, false, metadata);
 
 //        Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         xhtml.startElement("div", "class", "slide-content");

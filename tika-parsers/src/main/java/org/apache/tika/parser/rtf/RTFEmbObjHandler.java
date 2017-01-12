@@ -70,6 +70,7 @@ class RTFEmbObjHandler {
     private StringBuilder sb = new StringBuilder();
     private Metadata metadata;
     private EMB_STATE state = EMB_STATE.NADA;
+
     protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
@@ -170,7 +171,7 @@ class RTFEmbObjHandler {
                 byte[] objBytes = objParser.parse(bytes, metadata, unknownFilenameCount);
                 extractObj(objBytes, handler, metadata);
             } catch (IOException e) {
-                //swallow.  If anything goes wrong, ignore.
+                EmbeddedDocumentUtil.recordException(e, metadata);
             }
         } else if (state == EMB_STATE.PICT) {
             String filePath = metadata.get(RTFMetadata.RTF_PICT_META_PREFIX + "wzDescription");
@@ -213,6 +214,8 @@ class RTFEmbObjHandler {
                         stream,
                         new EmbeddedContentHandler(handler),
                         metadata, false);
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {
                 stream.close();
             }
