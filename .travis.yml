@@ -13,8 +13,8 @@ env:
   - secure: Y5NPEuYVrIzxwB6R+QPwbiOgqQZAZeDrorNKdzCEhbn9AtlaBJhrKk9h63m+s3YORHOITCpwJJvipBtmkJmd8lo50Zk19Y+0yrx3++euTz018iwbktsebzcyXgPy/J7KYuIzteeDtkdLkWTZRwYdaJO3mIm88DgZ7gBUbckoFNCvA/aZ3rLFocuYh6BDUpWv3kilPIF6tepi3OdEYlGMkwvzACN/xpsipr1cmSPUnKHk/EbiK5FbVsCiRc3iJlt6wVE0U+So7iGzPklaudj2ueuy6+nPIWxTibZ0Tpz87haBz+SY66wGTOSY1F0Fg9wIubpMX0dnRJpbtFhGVkuALokUdlHVSnUhVDm1F2FE+BPoXzxNNUBpVuyJnmoPLOsP18eFgzkb+emJwo//tn/0z5SoJDK7QZltMnIteF7yPb9eONKXFmCSEpqFSJLlMtt/bcTA8W4YDo1vbCXphRPmk7AifUD6ZFvF3KB+k+IvH+n0NBtnlTKvxKySKsmtt2Wj9jbKPUHvfpQc8M+uhtde4jk5jbaCaY+rAT5OkUqYYCpcqfRVynbtiDnP5DAgJChWsxVVP+Cbbj26i5Iy1d0WySkgY+qe6YkgM2qa+ftnTNAGlnT3bRnptpBCkwPABnnKFJO7BQLtYa8jVqdKZtecjjV1B+5XSWHmIhHfqB/pzhU=
   - # ^^ GPG_PASSPHRASE
 
-install: mvn install -P !build-extras -DskipTests=true -Dmaven.javadoc.skip=true -B
-  -V
+install: 
+-mvn install -P !build-extras -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 script: mvn test -P !build-extras -B
 cache:
   directories:
@@ -22,5 +22,6 @@ cache:
 after_success:
 - "./cd/before-deploy.sh"
 - "./cd/deploy.sh"
-before_install:
-- openssl aes-256-cbc -K $encrypted_6061f4efda3d_key -iv $encrypted_6061f4efda3d_iv -in codesigning.asc.enc -out mysecret.asc -d
+after_failure:
+- cat com.github.lafa.logfast/target/surefire-reports/*.txt
+- cat com.github.lafa.logfast/core/target/surefire-reports/*.txt
