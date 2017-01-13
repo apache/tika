@@ -53,16 +53,27 @@ public class ImageParser extends AbstractParser {
     private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
     private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
 
+    private static final Set<MediaType> TMP_SUPPORTED;
+
+    static {
+        TMP_SUPPORTED = new HashSet<MediaType>(Arrays.asList(
+                CANONICAL_BMP_TYPE,
+                JAVA_BMP_TYPE,
+                MediaType.image("gif"),
+                MediaType.image("png"),
+                MediaType.image("vnd.wap.wbmp"),
+                MediaType.image("x-icon"),
+                MediaType.image("x-xcf")));
+        try {
+            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+            TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
+        } catch (ClassNotFoundException e) {
+
+        }
+    }
+
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    CANONICAL_BMP_TYPE,
-                    JAVA_BMP_TYPE,
-                    MediaType.image("gif"),
-                    MediaType.image("png"),
-                    MediaType.image("vnd.wap.wbmp"),
-                    MediaType.image("x-icon"),
-                    MediaType.image("x-xcf"),
-                    MediaType.image("x-jbig2"))));
+            Collections.unmodifiableSet(TMP_SUPPORTED);
 
     private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
         if (metadata.get(imageIOkey) != null) {
