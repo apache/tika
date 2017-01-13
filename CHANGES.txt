@@ -1,5 +1,7 @@
 Release 1.15 - ??
 
+  * Add container detection for embedded MSEquation files (TIKA-2238).
+
   * Add parsing of JBIG2 and extraction of JBIG2 from PDFs when
     required dependencies are added to class path by user.
     Contributed by Pascal Essiembre (TIKA-2232).
