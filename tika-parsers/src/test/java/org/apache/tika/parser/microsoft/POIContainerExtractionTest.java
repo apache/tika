@@ -379,4 +379,12 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             assertTrue("didn't find chart in "+suffix, found);
         }
     }
+
+    @Test
+    public void testEmbeddedEquation() throws Exception {
+        //file derives from govdocs1 863534.doc
+        List<Metadata> metadataList = getRecursiveMetadata("testMSEquation-govdos-863534.doc");
+        assertEquals(3, metadataList.size());
+        assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+    }
 }
