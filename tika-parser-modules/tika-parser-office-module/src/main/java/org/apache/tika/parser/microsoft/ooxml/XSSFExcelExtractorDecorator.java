@@ -159,7 +159,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             for (String footer : sheetExtractor.footers) {
                 extractHeaderFooter(footer, xhtml);
             }
-            processShapes(iter.getShapes(), xhtml);
+            List<XSSFShape> shapes = null;
+            try {
+                shapes = iter.getShapes();
+            } catch (NullPointerException e) {
+                //missing shape
+            }
+            processShapes(shapes, xhtml);
 
             //for now dump sheet hyperlinks at bottom of page
             //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes
@@ -176,8 +182,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
                 if (rel.getTargetMode() == TargetMode.INTERNAL) {
                     PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                    for (PackageRelationship drawRel : rel.getPackage()
-                            .getPart(relName)
+                    PackagePart part = rel.getPackage().getPart(relName);
+                    //parts can go missing, and Excel quietly ignores missing images -- TIKA-2134
+                    if (part == null) {
+                        continue;
+                    }
+                    for (PackageRelationship drawRel : part
                             .getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
                         drawingHyperlinks.put(drawRel.getId(), drawRel.getTargetURI().toString());
                     }
