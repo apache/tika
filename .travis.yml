@@ -23,5 +23,4 @@ after_success:
 - "./cd/before-deploy.sh"
 - "./cd/deploy.sh"
 before_install:
-- openssl aes-256-cbc -K $encrypted_6061f4efda3d_key -iv $encrypted_6061f4efda3d_iv
-  -in mysecret.asc.enc -out mysecret.asc -d
+- openssl aes-256-cbc -K $encrypted_6061f4efda3d_key -iv $encrypted_6061f4efda3d_iv -in codesigning.asc.enc -out mysecret.asc -d
