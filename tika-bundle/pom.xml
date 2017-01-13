@@ -23,7 +23,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.tika</groupId>
+    <groupId>com.github.lafaspot.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
     <version>1.15-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
@@ -389,6 +389,7 @@
         </configuration>
       </plugin>
 
+<!-- 
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <executions>
@@ -405,6 +406,7 @@
           </execution>
         </executions>
       </plugin>
+      -->
 
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
