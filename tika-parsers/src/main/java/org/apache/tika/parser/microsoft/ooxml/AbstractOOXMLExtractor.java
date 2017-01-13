@@ -181,6 +181,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         Set<String> seen = new HashSet<>();
         try {
             for (PackagePart source : getMainDocumentParts()) {
+                if (source == null) {
+                    //parts can go missing; silently ignore --  TIKA-2134
+                    continue;
+                }
                 for (PackageRelationship rel : source.getRelationships()) {
                     try {
                         handleEmbeddedPart(source, rel, handler, metadata, seen);
