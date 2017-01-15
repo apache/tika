@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+    <groupId>com.github.lafa.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
     <version>1.0.0</version>
     <relativePath>tika-parent/pom.xml</relativePath>
@@ -35,6 +35,7 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
+    <!-- 
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
@@ -46,6 +47,7 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-external</module>
+    -->
   </modules>
 
   <profiles>
@@ -183,4 +185,14 @@ least three +1 Tika PMC votes are cast.
     <system>Jenkins</system>
     <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>

@@ -23,7 +23,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+    <groupId>com.github.lafa.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
     <version>1.0.0</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
@@ -127,7 +127,7 @@
               </excludes>
               <comparisonArtifacts>
                 <comparisonArtifact>
-                  <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+                  <groupId>com.github.lafa.tikaNoExternal</groupId>
                   <artifactId>tika-core</artifactId>
                   <version>1.0</version>
                   <type>jar</type>

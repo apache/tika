@@ -23,7 +23,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+    <groupId>com.github.lafa.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
     <version>1.0.0</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
@@ -37,28 +37,28 @@
        modules and how to use them at http://mvnrepository.com/artifact/org.apache.tika.-->
   <dependencies>
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-app</artifactId>
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
           <artifactId>tika-parsers</artifactId>
-          <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+          <groupId>com.github.lafa.tikaNoExternal</groupId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-translate</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -68,14 +68,14 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
@@ -118,7 +118,7 @@
     </dependency>
     <!--
     <dependency>
-      <groupId>com.github.lafaspot.tikaNoExternal</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-test-resources</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
