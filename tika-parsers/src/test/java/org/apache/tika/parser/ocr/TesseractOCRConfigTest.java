@@ -22,6 +22,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -91,13 +93,34 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("Invalid overridden resize value", 300 , config.getResize());
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testValidateLanguage() {
+    @Test
+    public void testValidateValidLanguage() {
+        List<String> validLanguages = Arrays.asList(
+                "eng", "slk_frak", "chi_tra", "eng+fra", "tgk+chi_tra+slk_frak");
+
         TesseractOCRConfig config = new TesseractOCRConfig();
-        config.setLanguage("eng");
-        config.setLanguage("eng+fra");
-        assertTrue("Couldn't set valid values", true);
-        config.setLanguage("rm -Rf *");
+
+        for (String language : validLanguages) {
+            config.setLanguage(language);
+            assertEquals("Valid language not set", language, config.getLanguage());
+        }
+    }
+
+    @Test
+    public void testValidateInvalidLanguage() {
+        List<String> invalidLanguages = Arrays.asList(
+                "", "+", "en", "en+", "eng+fra+", "rm -rf *");
+
+        TesseractOCRConfig config = new TesseractOCRConfig();
+
+        for (String language : invalidLanguages) {
+            try {
+                config.setLanguage(language);
+                fail("Invalid language set: " + language);
+            } catch (IllegalArgumentException e) {
+                // expected exception thrown
+            }
+        }
     }
 
     @Test(expected=IllegalArgumentException.class)
