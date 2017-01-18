@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Enable handling of hyphenated language codes in TesseractOCRParser
+    via Graham Russell (TIKA-2231).
+
   * Improve style tags in ODT (TIKA-2242).
 
   * Add container detection for embedded MSEquation files (TIKA-2238).
