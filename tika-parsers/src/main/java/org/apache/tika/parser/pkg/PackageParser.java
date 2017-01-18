@@ -118,7 +118,7 @@ public class PackageParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
        
         // Ensure that the stream supports the mark feature
-        if (! TikaInputStream.isTikaInputStream(stream))
+        if (! stream.markSupported())
             stream = new BufferedInputStream(stream);
         
         
