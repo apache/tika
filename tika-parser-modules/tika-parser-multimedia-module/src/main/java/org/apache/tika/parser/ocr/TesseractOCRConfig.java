@@ -217,9 +217,11 @@ public class TesseractOCRConfig implements Serializable{
 	/**
 	 * Set tesseract language dictionary to be used. Default is "eng".
 	 * Multiple languages may be specified, separated by plus characters.
+	 * e.g. "chi_tra+chi_sim"
 	 */
 	public void setLanguage(String language) {
-		if (!language.matches("([A-Za-z](\\+?))*")) {
+		if (!language.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4})?(\\+?))+")
+				|| language.endsWith("+")) {
 			throw new IllegalArgumentException("Invalid language code");
 		}
 		this.language = language;
