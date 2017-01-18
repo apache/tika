@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -242,6 +243,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Set tesseract page segmentation mode.
      * Default is 1 = Automatic page segmentation with OSD (Orientation and Script Detection)
+     * Valid range is 1-10.
      */
     public void setPageSegMode(String pageSegMode) {
         if (!pageSegMode.matches("[1-9]|10")) {
@@ -374,8 +376,8 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setDepth(int depth) {
         int[] allowedValues = {2, 4, 8, 16, 32, 64, 256, 4096};
-        for (int i = 0; i < allowedValues.length; i++) {
-            if (depth == allowedValues[i]) {
+        for (int allowedValue : allowedValues) {
+            if (depth == allowedValue) {
                 this.depth = depth;
                 return;
             }
@@ -414,14 +416,16 @@ public class TesseractOCRConfig implements Serializable {
      *               Default value is triangle.
      */
     public void setFilter(String filter) {
-        if (filter.equals(null)) {
-            throw new IllegalArgumentException("Filter value cannot be null. Valid values are point, hermite, "
-                    + "cubic, box, gaussian, catrom, triangle, quadratic and mitchell.");
+        final String[] allowedFilters =
+                {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic", "Mitchell"};
+
+        if (filter == null) {
+            throw new IllegalArgumentException(
+                    "Filter value cannot be null. Valid values are " + Arrays.toString(allowedFilters));
         }
 
-        String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic", "Mitchell"};
-        for (int i = 0; i < allowedFilters.length; i++) {
-            if (filter.equalsIgnoreCase(allowedFilters[i])) {
+        for (String allowedFilter : allowedFilters) {
+            if (filter.equalsIgnoreCase(allowedFilter)) {
                 this.filter = filter;
                 return;
             }
@@ -456,7 +460,6 @@ public class TesseractOCRConfig implements Serializable {
      * @see #setImageMagickPath(String ImageMagickPath)
      */
     public String getImageMagickPath() {
-
         return ImageMagickPath;
     }
 
@@ -466,8 +469,10 @@ public class TesseractOCRConfig implements Serializable {
      * @param ImageMagickPath to ImageMagick file.
      */
     public void setImageMagickPath(String ImageMagickPath) {
-        if (!ImageMagickPath.isEmpty() && !ImageMagickPath.endsWith(File.separator))
+        if (!ImageMagickPath.isEmpty() &&
+                !ImageMagickPath.endsWith(File.separator)) {
             ImageMagickPath += File.separator;
+        }
 
         this.ImageMagickPath = ImageMagickPath;
     }
