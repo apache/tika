@@ -56,6 +56,15 @@ public class OpenDocumentContentParser extends AbstractParser {
         public boolean italic;
         public boolean bold;
         public boolean underlined;
+
+        @Override
+        public String toString() {
+            return "TextStyle{" +
+                    "italic=" + italic +
+                    ", bold=" + bold +
+                    ", underlined=" + underlined +
+                    '}';
+        }
     }
 
     private static class ListStyle implements Style {
@@ -74,12 +83,25 @@ public class OpenDocumentContentParser extends AbstractParser {
         private int nodeDepth = 0;
         private int completelyFiltered = 0;
         private Stack<String> headingStack = new Stack<String>();
+        private Map<String, TextStyle> paragraphTextStyleMap = new HashMap<String, TextStyle>();
         private Map<String, TextStyle> textStyleMap = new HashMap<String, TextStyle>();
         private Map<String, ListStyle> listStyleMap = new HashMap<String, ListStyle>();
-        private TextStyle textStyle;
-        private TextStyle lastTextStyle;
+        private String currParagraphStyleName; //paragraph style name
+        private TextStyle currTextStyle; //this is the text style for particular spans/paragraphs
+        private String currTextStyleName;
+
         private Stack<ListStyle> listStyleStack = new Stack<ListStyle>();
         private ListStyle listStyle;
+
+        // True if we are currently in the named style:
+        private boolean curUnderlined;
+        private boolean curBold;
+        private boolean curItalic;
+
+        //have we written the start style tags
+        //yet for the current text style
+        boolean hasWrittenStartStyleTags = false;
+
 
         private OpenDocumentElementMappingContentHandler(ContentHandler handler,
                                                          Map<QName, TargetElement> mappings) {
@@ -93,7 +115,10 @@ public class OpenDocumentContentParser extends AbstractParser {
             // only forward content of tags from text:-namespace
             if (completelyFiltered == 0 && nodeDepth > 0
                     && textNodeStack.get(nodeDepth - 1)) {
-                lazyEndSpan();
+                if (!hasWrittenStartStyleTags) {
+                    updateStyleTags();
+                    hasWrittenStartStyleTags = true;
+                }
                 super.characters(ch, start, length);
             }
         }
@@ -163,59 +188,87 @@ public class OpenDocumentContentParser extends AbstractParser {
             if (name == null) {
                 return;
             }
+            currTextStyle = textStyleMap.get(name);
+            hasWrittenStartStyleTags = false;
+        }
 
-            TextStyle style = textStyleMap.get(name);
-            if (style == null) {
+        private void startParagraph(String styleName) throws SAXException {
+
+            handler.startElement(XHTML, "p", "p", EMPTY_ATTRIBUTES);
+            if (styleName != null) {
+                currTextStyle = paragraphTextStyleMap.get(styleName);
+            }
+            hasWrittenStartStyleTags = false;
+        }
+
+        private void updateStyleTags() throws SAXException {
+
+            if (currTextStyle == null) {
+                closeStyleTags();
                 return;
             }
-
-            // End tags that refer to no longer valid styles
-            if (!style.underlined && lastTextStyle != null && lastTextStyle.underlined) {
-                handler.endElement(XHTML, "u", "u");
-            }
-            if (!style.italic && lastTextStyle != null && lastTextStyle.italic) {
-                handler.endElement(XHTML, "i", "i");
-            }
-            if (!style.bold && lastTextStyle != null && lastTextStyle.bold) {
-                handler.endElement(XHTML, "b", "b");
-            }
-
-            // Start tags for new styles
-            if (style.bold && (lastTextStyle == null || !lastTextStyle.bold)) {
-                handler.startElement(XHTML, "b", "b", EMPTY_ATTRIBUTES);
-            }
-            if (style.italic && (lastTextStyle == null || !lastTextStyle.italic)) {
-                handler.startElement(XHTML, "i", "i", EMPTY_ATTRIBUTES);
-            }
-            if (style.underlined && (lastTextStyle == null || !lastTextStyle.underlined)) {
-                handler.startElement(XHTML, "u", "u", EMPTY_ATTRIBUTES);
+            if (currTextStyle.bold != curBold) {
+                // Enforce nesting -- must close s and i tags
+                if (curUnderlined) {
+                    handler.endElement(XHTML, "u", "u");
+                    curUnderlined = false;
+                }
+                if (curItalic) {
+                    handler.endElement(XHTML, "i", "i");
+                    curItalic = false;
+                }
+                if (currTextStyle.bold) {
+                    handler.startElement(XHTML, "b", "b", EMPTY_ATTRIBUTES);
+                } else {
+                    handler.endElement(XHTML, "b", "b");
+                }
+                curBold = currTextStyle.bold;
             }
 
-            textStyle = style;
-            lastTextStyle = null;
+            if (currTextStyle.italic != curItalic) {
+                // Enforce nesting -- must close s tag
+                if (curUnderlined) {
+                    handler.endElement(XHTML, "u", "u");
+                    curUnderlined = false;
+                }
+                if (currTextStyle.italic) {
+                    handler.startElement(XHTML, "i", "i", EMPTY_ATTRIBUTES);
+                } else {
+                    handler.endElement(XHTML, "i", "i");
+                }
+                curItalic = currTextStyle.italic;
+            }
+
+            if (currTextStyle.underlined != curUnderlined) {
+                if (currTextStyle.underlined) {
+                    handler.startElement(XHTML, "u", "u", EMPTY_ATTRIBUTES);
+                } else {
+                    handler.endElement(XHTML, "u", "u");
+                }
+                curUnderlined = currTextStyle.underlined;
+            }
         }
 
         private void endSpan() throws SAXException {
-            lastTextStyle = textStyle;
-            textStyle = null;
+
         }
 
-        private void lazyEndSpan() throws SAXException {
-            if (lastTextStyle == null) {
-                return;
+        private void closeStyleTags() throws SAXException {
+            // Close any still open style tags
+            if (curUnderlined) {
+                handler.endElement(XHTML,"u", "u");
+                curUnderlined = false;
             }
-
-            if (lastTextStyle.underlined) {
-                handler.endElement(XHTML, "u", "u");
+            if (curItalic) {
+                handler.endElement(XHTML,"i", "i");
+                curItalic = false;
             }
-            if (lastTextStyle.italic) {
-                handler.endElement(XHTML, "i", "i");
+            if (curBold) {
+                handler.endElement(XHTML,"b", "b");
+                curBold = false;
             }
-            if (lastTextStyle.bold) {
-                handler.endElement(XHTML, "b", "b");
-            }
-
-            lastTextStyle = null;
+            currTextStyle = null;
+            hasWrittenStartStyleTags = false;
         }
 
         @Override
@@ -233,29 +286,31 @@ public class OpenDocumentContentParser extends AbstractParser {
             if (STYLE_NS.equals(namespaceURI) && "style".equals(localName)) {
                 String family = attrs.getValue(STYLE_NS, "family");
                 if ("text".equals(family)) {
-                    textStyle = new TextStyle();
-                    String name = attrs.getValue(STYLE_NS, "name");
-                    textStyleMap.put(name, textStyle);
+                    currTextStyle = new TextStyle();
+                    currTextStyleName = attrs.getValue(STYLE_NS, "name");
+                } else if ("paragraph".equals(family)) {
+                    currTextStyle = new TextStyle();
+                    currParagraphStyleName = attrs.getValue(STYLE_NS, "name");
                 }
             } else if (TEXT_NS.equals(namespaceURI) && "list-style".equals(localName)) {
                 listStyle = new ListStyle();
                 String name = attrs.getValue(STYLE_NS, "name");
                 listStyleMap.put(name, listStyle);
-            } else if (textStyle != null && STYLE_NS.equals(namespaceURI)
+            } else if (currTextStyle != null && STYLE_NS.equals(namespaceURI)
                     && "text-properties".equals(localName)) {
                 String fontStyle = attrs.getValue(FORMATTING_OBJECTS_NS, "font-style");
                 if ("italic".equals(fontStyle) || "oblique".equals(fontStyle)) {
-                    textStyle.italic = true;
+                    currTextStyle.italic = true;
                 }
                 String fontWeight = attrs.getValue(FORMATTING_OBJECTS_NS, "font-weight");
                 if ("bold".equals(fontWeight) || "bolder".equals(fontWeight)
                         || (fontWeight != null && Character.isDigit(fontWeight.charAt(0))
                         && Integer.valueOf(fontWeight) > 500)) {
-                    textStyle.bold = true;
+                    currTextStyle.bold = true;
                 }
                 String underlineStyle = attrs.getValue(STYLE_NS, "text-underline-style");
-                if (underlineStyle != null) {
-                    textStyle.underlined = true;
+                if (underlineStyle != null && !underlineStyle.equals("none")) {
+                    currTextStyle.underlined = true;
                 }
             } else if (listStyle != null && TEXT_NS.equals(namespaceURI)) {
                 if ("list-level-style-bullet".equals(localName)) {
@@ -284,6 +339,8 @@ public class OpenDocumentContentParser extends AbstractParser {
                     startList(attrs.getValue(TEXT_NS, "style-name"));
                 } else if (TEXT_NS.equals(namespaceURI) && "span".equals(localName)) {
                     startSpan(attrs.getValue(TEXT_NS, "style-name"));
+                } else if (TEXT_NS.equals(namespaceURI) && "p".equals(localName)) {
+                    startParagraph(attrs.getValue(TEXT_NS, "style-name"));
                 } else if (TEXT_NS.equals(namespaceURI) && "s".equals(localName)) {
                     handler.characters(SPACE, 0, 1);
                 } else {
@@ -297,7 +354,15 @@ public class OpenDocumentContentParser extends AbstractParser {
                 String namespaceURI, String localName, String qName)
                 throws SAXException {
             if (STYLE_NS.equals(namespaceURI) && "style".equals(localName)) {
-                textStyle = null;
+                if (currTextStyle != null && currTextStyleName != null) {
+                    textStyleMap.put(currTextStyleName, currTextStyle);
+                    currTextStyleName = null;
+                    currTextStyle = null;
+                } else if (currTextStyle != null && currParagraphStyleName != null) {
+                    paragraphTextStyleMap.put(currParagraphStyleName, currTextStyle);
+                    currParagraphStyleName = null;
+                    currTextStyle = null;
+                }
             } else if (TEXT_NS.equals(namespaceURI) && "list-style".equals(localName)) {
                 listStyle = null;
             }
@@ -312,11 +377,12 @@ public class OpenDocumentContentParser extends AbstractParser {
                 } else if (TEXT_NS.equals(namespaceURI) && "list".equals(localName)) {
                     endList();
                 } else if (TEXT_NS.equals(namespaceURI) && "span".equals(localName)) {
-                    endSpan();
+                    currTextStyle = null;
+                    hasWrittenStartStyleTags = false;
+                } else if (TEXT_NS.equals(namespaceURI) && "p".equals(localName)) {
+                    closeStyleTags();
+                    handler.endElement(XHTML, "p", "p");
                 } else {
-                    if (TEXT_NS.equals(namespaceURI) && "p".equals(localName)) {
-                        lazyEndSpan();
-                    }
                     super.endElement(namespaceURI, localName, qName);
                 }
 
@@ -491,9 +557,9 @@ public class OpenDocumentContentParser extends AbstractParser {
 
         SAXParser parser = context.getSAXParser();
         parser.parse(
-            new CloseShieldInputStream(stream),
-            new OfflineContentHandler(
-                    new NSNormalizerContentHandler(dh)));
+                new CloseShieldInputStream(stream),
+                new OfflineContentHandler(
+                        new NSNormalizerContentHandler(dh)));
     }
 
 }

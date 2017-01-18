@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
@@ -50,6 +52,8 @@ public class ImageParser extends AbstractParser {
      */
     private static final long serialVersionUID = 7852529269245520335L;
 
+    private static final Logger LOGGER = Logger.getLogger(ImageParser.class.getName());
+
     private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
     private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
 
@@ -68,7 +72,8 @@ public class ImageParser extends AbstractParser {
             Class.forName("com.levigo.jbig2.JBIG2ImageReader");
             TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
         } catch (ClassNotFoundException e) {
-
+            LOGGER.log(Level.WARNING,
+                    "JBIG2ImageReader not loaded. jbig2 files will be ignored");
         }
     }
 

@@ -47,7 +47,16 @@ import org.w3c.dom.Node;
 public class TikaConfigSerializer {
 
     public enum Mode {
-        MINIMAL, CURRENT, STATIC;
+        /** Minimal version of the config, defaults where possible */
+        MINIMAL, 
+        /** Current config, roughly as loaded */
+        CURRENT, 
+        /** Static version of the config, with explicit lists of parsers/decorators/etc */
+        STATIC,
+        /** 
+         * Static version of the config, with explicit lists of decorators etc,
+         * and all parsers given with their detected supported mime types */
+        STATIC_FULL;
     }
 
     /**
@@ -117,7 +126,8 @@ public class TikaConfigSerializer {
                     "for example: <translator class=\"org.apache.tika.language.translate.GoogleTranslator\"/>");
             rootElement.appendChild(mimeComment);
         } else {
-            if (translator instanceof DefaultTranslator && mode == Mode.STATIC) {
+            if (translator instanceof DefaultTranslator && 
+                    (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 translator = ((DefaultTranslator)translator).getTranslator();
             }
             if (translator != null) {
@@ -200,13 +210,14 @@ public class TikaConfigSerializer {
                 outputParser = false;
             }
             // Special case for making Default to static
-            if (mode == Mode.STATIC && parser instanceof DefaultParser) {
+            if (parser instanceof DefaultParser &&
+                    (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 outputParser = false;
             }
         }
 
         if (outputParser) {
-            rootElement = addParser(rootElement, doc, parser, decoration);
+            rootElement = addParser(mode, rootElement, doc, parser, decoration);
         }
         for (Parser childParser : children) {
             addParser(mode, rootElement, doc, childParser);
@@ -214,7 +225,7 @@ public class TikaConfigSerializer {
         // TODO Parser Exclusions
     }
 
-    private static Element addParser(Element rootElement, Document doc, Parser parser, ParserDecorator decorator) throws Exception {
+    private static Element addParser(Mode mode, Element rootElement, Document doc, Parser parser, ParserDecorator decorator) throws Exception {
         ParseContext context = new ParseContext();
 
         Set<MediaType> addedTypes = new TreeSet<>();
@@ -230,6 +241,8 @@ public class TikaConfigSerializer {
                 }
                 addedTypes.remove(type);
             }
+        } else if (mode == Mode.STATIC_FULL) {
+            addedTypes.addAll(parser.getSupportedTypes(context));
         }
 
         String className = parser.getClass().getCanonicalName();

@@ -397,6 +397,9 @@ public class TikaCLI {
         } else if (arg.equals("--dump-static-config")) {
             pipeMode = false;
             dumpConfig(TikaConfigSerializer.Mode.STATIC);
+        } else if (arg.equals("--dump-static-full-config")) {
+            pipeMode = false;
+            dumpConfig(TikaConfigSerializer.Mode.STATIC_FULL);
         } else if (arg.equals("--container-aware")
                 || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
@@ -541,6 +544,7 @@ public class TikaCLI {
         out.println("    --dump-minimal-config  Print minimal TikaConfig");
         out.println("    --dump-current-config  Print current TikaConfig");
         out.println("    --dump-static-config   Print static config");
+        out.println("    --dump-static-full-config  Print static explicit config");
         out.println("");
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");

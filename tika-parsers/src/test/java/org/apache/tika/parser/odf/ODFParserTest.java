@@ -381,4 +381,13 @@ public class ODFParserTest extends TikaTest {
         String xml = getXML("testODTNoMeta.odt").xml;
         assertContains("Test text", xml);
     }
+
+    @Test //TIKA-2242
+    public void testParagraphLevelFontStyles() throws Exception {
+        String xml = getXML("testODTStyles2.odt").xml;
+        //test text span font-style properties
+        assertContains("<p><b>name</b>, advocaat", xml);
+        //test paragraph's font-style properties
+        assertContains("<p><b>Publicatie Onbekwaamverklaring", xml);
+    }
 }
