@@ -17,6 +17,8 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Improve style tags in ODT (TIKA-2242).
+
   * Add container detection for embedded MSEquation files (TIKA-2238).
 
   * Add parsing of JBIG2 and extraction of JBIG2 from PDFs when
