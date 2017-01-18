@@ -60,7 +60,7 @@
 	  <sub-class-of type="application/xml"/>
    </mime-type>
 
-  
+
   <mime-type type="application/atom+xml">
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
     <root-XML localName="feed" namespaceURI="http://www.w3.org/2005/Atom"/>
@@ -1737,7 +1737,7 @@
     <_comment>Outlook Personal Folders File Format</_comment>
     <magic priority="50">
        <match value="!BDN....SM" type="string" offset="0" mask="0xFFFFFFFF00000000FFFF"/>
-    </magic> 
+    </magic>
     <glob pattern="*.pst"/>
     <glob pattern="*.ost"/>
   </mime-type>
@@ -2679,7 +2679,7 @@
   <mime-type type="application/vnd.xara">
     <glob pattern="*.xar"/>
     <magic priority="50">
-      <match value="xar!" type="string" offset="0"> 
+      <match value="xar!" type="string" offset="0">
       </match>
     </magic>
   </mime-type>
@@ -3286,7 +3286,7 @@
     </magic>
     <glob pattern="*.hfa"/>
   </mime-type>
-  
+
   <mime-type type="application/x-filemaker">
     <acronym>FP7</acronym>
     <_comment>FileMaker Pro 7</_comment>
@@ -3404,7 +3404,7 @@
 	 <glob pattern="*.grb1"/>
 	 <glob pattern="*.grb2"/>
   </mime-type>
-  
+
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
@@ -3618,7 +3618,7 @@
   </mime-type>
 
   <mime-type type="application/x-ms-installer">
-    <_comment>Microsoft Windows Installer</_comment> 
+    <_comment>Microsoft Windows Installer</_comment>
     <sub-class-of type="application/x-tika-msoffice"/>
     <alias type="application/x-windows-installer"/>
     <alias type="application/x-msi"/>
@@ -3729,6 +3729,10 @@
     <glob pattern="*.trm"/>
   </mime-type>
   <mime-type type="application/x-mswrite">
+    <magic priority="50">
+      <match value="0x31be0000" type="big32" offset="0"/>
+      <match value="0x32be0000" type="big32" offset="0"/>
+    </magic>
     <glob pattern="*.wri"/>
   </mime-type>
 
@@ -3807,7 +3811,7 @@
     <!-- qp2 and wb3 are currently detected by POIFSContainerDetector
         TODO: add detection for wb2 and wb1 -->
     <glob pattern="*.qpw"/>
-    <glob pattern="*.wb1"/> 
+    <glob pattern="*.wb1"/>
     <glob pattern="*.wb2"/>
     <glob pattern="*.wb3"/>
   </mime-type>
@@ -3818,7 +3822,7 @@
     <glob pattern="*.xquery"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
-  
+
   <mime-type type="application/x-rar-compressed">
     <_comment>RAR archive</_comment>
     <alias type="application/x-rar"/>
@@ -3990,7 +3994,7 @@
     <_comment>Standard Formatted Data Units (SFDUs) data</_comment>
     <sub-class-of type="text/plain"/>
     <glob pattern="*.sfdu"/>
-  </mime-type>  
+  </mime-type>
 
   <mime-type type="application/x-sqlite3">
     <magic priority="50">
@@ -5036,7 +5040,7 @@
       <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
       <match value="II\x2a\x00" type="string" offset="0"/>
       <!-- MM.+ = Big endian (M=Motorola) and 0x002a in big endian-->
-      <match value="MM\x00\x2b" type="string" offset="0"/>  
+      <match value="MM\x00\x2b" type="string" offset="0"/>
     </magic>
     <glob pattern="*.tiff"/>
     <glob pattern="*.tif"/>
@@ -5243,7 +5247,7 @@
     <alias type="image/x-jb2"/>
     <acronym>JBIG2</acronym>
     <_comment>
-      A lossless image compression standard from the 
+      A lossless image compression standard from the
       Joint Bi-level Image Experts Group.
     </_comment>
     <tika:link>http://www.itu.int/rec/T-REC-T.88/en</tika:link>
@@ -6263,7 +6267,7 @@
     <!-- <glob pattern="*.m"/> - conflicts with text/x-objcsrc -->
     <sub-class-of type="text/plain"/>
   </mime-type>
-  
+
   <mime-type type="application/x-matlab-data">
     <comment>MATLAB data file</comment>
     <alias type="application/matlab-mat"/>
