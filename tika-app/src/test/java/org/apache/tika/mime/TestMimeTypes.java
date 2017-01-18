@@ -1023,6 +1023,13 @@ public class TestMimeTypes extends TikaTest {
         // TODO Get sample .onetoc2 and .onepkg files
     }
 
+    @Test
+    public void testMSWriteFile() throws Exception {
+        //This file is govdocs1's 746255.doc
+        assertTypeByName("application/x-mswrite", "testMSWriteFile.wri");
+        assertTypeByData("application/x-mswrite", "testMSWriteFile.wri");
+    }
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }

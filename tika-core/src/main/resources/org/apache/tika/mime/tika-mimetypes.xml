@@ -3676,6 +3676,10 @@
     <glob pattern="*.trm"/>
   </mime-type>
   <mime-type type="application/x-mswrite">
+    <magic priority="50">
+      <match value="0x31be0000" type="big32" offset="0"/>
+      <match value="0x32be0000" type="big32" offset="0"/>
+    </magic>
     <glob pattern="*.wri"/>
   </mime-type>
 
