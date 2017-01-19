@@ -55,8 +55,9 @@
       <subscribe>dev-subscribe@tika.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@tika.apache.org</unsubscribe>
       <post>dev@tika.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/tika-dev/</archive>
+      <archive>https://lists.apache.org/list.html?dev@tika.apache.org</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/tika-dev/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/lucene-tika-dev</otherArchive>
         <otherArchive>http://www.mail-archive.com/dev@tika.apache.org</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-dev@lucene.apache.org/</otherArchive>
@@ -71,8 +72,9 @@
       <subscribe>commits-subscribe@tika.apache.org</subscribe>
       <unsubscribe>commits-unsubscribe@tika.apache.org</unsubscribe>
       <post>commits@tika.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/tika-commits/</archive>
+      <archive>https://lists.apache.org/list.html?commits@tika.apache.org</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/tika-commits/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/lucene-tika-commits/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-commits@lucene.apache.org/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-commits@incubator.apache.org/</otherArchive>
@@ -83,8 +85,9 @@
       <subscribe>user-subscribe@tika.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@tika.apache.org</unsubscribe>
       <post>user@tika.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/tika-user/</archive>
+      <archive>https://lists.apache.org/list.html?user@tika.apache.org</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/tika-user/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/lucene-tika-user/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-user@lucene.apache.org/</otherArchive>
       </otherArchives>
