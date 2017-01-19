@@ -107,7 +107,9 @@ public class CompressorParser extends AbstractParser {
         stream = new CloseShieldInputStream(stream);
 
         // Ensure that the stream supports the mark feature
-        stream = new BufferedInputStream(stream);
+        if (! stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
 
         CompressorInputStream cis;
         try {

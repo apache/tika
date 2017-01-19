@@ -17,6 +17,9 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Be more parsimonious with BufferedInputStreams via Josh Hight
+    (TIKA-2244).
+
   * Enable handling of underscored language codes (e.g. "chi_tra")
     in TesseractOCRParser via Graham Russell (TIKA-2231).
 
