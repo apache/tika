@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Be more parsimonious with BufferedInputStreams via Josh Hight
+    (TIKA-2244).
+
   * Enable handling of hyphenated language codes in TesseractOCRParser
     via Graham Russell (TIKA-2231).
 

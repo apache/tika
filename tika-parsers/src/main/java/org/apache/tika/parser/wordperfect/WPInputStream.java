@@ -39,13 +39,10 @@ class WPInputStream extends InputStream {
      * @param in input stream
      */
     public WPInputStream(InputStream in) {
-        BufferedInputStream bis = null;
-        if (BufferedInputStream.class.isAssignableFrom(in.getClass())) {
-            bis = (BufferedInputStream) in;
-        } else {
-            bis = new BufferedInputStream(in);    
+        if (! in.markSupported()) {
+            in = new BufferedInputStream(in);
         }
-        this.in = new DataInputStream(bis);
+        this.in = new DataInputStream(in);
     }
 
     /**
