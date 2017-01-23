@@ -54,15 +54,15 @@ public class ImageParser extends AbstractParser {
 
     private static final Logger LOGGER = Logger.getLogger(ImageParser.class.getName());
 
-    private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
-    private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
+    private static final MediaType MAIN_BMP_TYPE = MediaType.image("bmp");
+    private static final MediaType OLD_BMP_TYPE = MediaType.image("x-ms-bmp");
 
     private static final Set<MediaType> TMP_SUPPORTED;
 
     static {
         TMP_SUPPORTED = new HashSet<MediaType>(Arrays.asList(
-                CANONICAL_BMP_TYPE,
-                JAVA_BMP_TYPE,
+                MAIN_BMP_TYPE,
+                OLD_BMP_TYPE,
                 MediaType.image("gif"),
                 MediaType.image("png"),
                 MediaType.image("vnd.wap.wbmp"),
@@ -171,10 +171,10 @@ public class ImageParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type != null) {
-            // Java has a different idea of the BMP mime type to
-            //  what the canonical one is, fix this up.
-            if (CANONICAL_BMP_TYPE.toString().equals(type)) {
-                type = JAVA_BMP_TYPE.toString();
+            // If the old (pre-RFC7903) BMP mime type is given,
+            //  fix it up to the new one, so Java is happy
+            if (OLD_BMP_TYPE.toString().equals(type)) {
+                type = MAIN_BMP_TYPE.toString();
             }
 
             try {

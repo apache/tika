@@ -67,7 +67,7 @@ public class AutoDetectParserTest extends TikaTest {
     private static final String WORD       = "application/msword";
     private static final String XML        = "application/xml";
     private static final String RSS        = "application/rss+xml";
-    private static final String BMP        = "image/x-ms-bmp";
+    private static final String BMP        = "image/bmp";
     private static final String GIF        = "image/gif";
     private static final String JPEG       = "image/jpeg";
     private static final String PNG        = "image/png";

@@ -4769,8 +4769,9 @@
     <glob pattern="*.xyz"/>
   </mime-type>
 
-  <mime-type type="image/x-ms-bmp">
-    <alias type="image/bmp"/>
+  <mime-type type="image/bmp">
+    <alias type="image/x-bmp"/>
+    <alias type="image/x-ms-bmp"/>
     <acronym>BMP</acronym>
     <_comment>Windows bitmap</_comment>
     <tika:link>http://en.wikipedia.org/wiki/BMP_file_format</tika:link>
