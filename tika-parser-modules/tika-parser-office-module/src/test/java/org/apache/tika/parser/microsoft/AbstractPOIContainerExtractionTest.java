@@ -46,7 +46,7 @@ public abstract class AbstractPOIContainerExtractionTest extends TikaTest {
     public static final MediaType TYPE_GIF = MediaType.image("gif");
     public static final MediaType TYPE_PNG = MediaType.image("png");
     public static final MediaType TYPE_EMF = MediaType.application("x-emf");
-    public static final MediaType TYPE_WMF = MediaType.application("x-msmetafile");
+    public static final MediaType TYPE_WMF = MediaType.image("wmf");
 
     protected static TikaInputStream getTestFile(String filename) throws Exception {
         URL input = AbstractPOIContainerExtractionTest.class.getResource(
