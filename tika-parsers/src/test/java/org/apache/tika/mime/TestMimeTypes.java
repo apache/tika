@@ -630,9 +630,9 @@ public class TestMimeTypes {
 
     @Test
     public void testWmfDetection() throws Exception {
-        assertTypeByName("application/x-msmetafile", "x.wmf");
-        assertTypeByData("application/x-msmetafile", "testWMF.wmf");
-        assertTypeByName("application/x-msmetafile", "x.WMF");
+        assertTypeByName("image/wmf", "x.wmf");
+        assertTypeByData("image/wmf", "testWMF.wmf");
+        assertTypeByName("image/wmf", "x.WMF");
 
         assertTypeByName("application/x-emf", "x.emf");
         assertTypeByData("application/x-emf","testEMF.emf");

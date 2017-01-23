@@ -3703,16 +3703,6 @@
     <glob pattern="*.m13"/>
     <glob pattern="*.m14"/>
   </mime-type>
-  <mime-type type="application/x-msmetafile">
-    <alias type="image/x-wmf"/>
-    <acronym>WMF</acronym>
-    <_comment>Windows Metafile</_comment>
-    <glob pattern="*.wmf"/>
-    <magic priority="50">
-      <match value="0xd7cdc69a0000" type="string" offset="0"/>
-      <match value="0x010009000003" type="string" offset="0"/>
-    </magic>
-  </mime-type>
   <mime-type type="application/x-msmoney">
     <glob pattern="*.mny"/>
     <magic priority="60">
@@ -5202,6 +5192,18 @@
              mask="0xFFFFFFFF00000000FFFFFFFF"/>
     </magic>
     <glob pattern="*.webp"/>
+  </mime-type>
+
+  <mime-type type="image/wmf">
+    <alias type="image/x-wmf"/>
+    <alias type="application/x-msmetafile"/>
+    <acronym>WMF</acronym>
+    <_comment>Windows Metafile</_comment>
+    <glob pattern="*.wmf"/>
+    <magic priority="50">
+      <match value="0xd7cdc69a0000" type="string" offset="0"/>
+      <match value="0x010009000003" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/vnd.xiff">

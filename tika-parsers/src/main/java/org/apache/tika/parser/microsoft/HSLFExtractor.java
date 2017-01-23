@@ -330,7 +330,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     mediaType = "application/x-emf";
                     break;
                 case WMF:
-                    mediaType = "application/x-msmetafile";
+                    mediaType = "image/wmf";
                     break;
                 case DIB:
                     mediaType = "image/bmp";
