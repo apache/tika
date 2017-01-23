@@ -634,9 +634,10 @@ public class TestMimeTypes {
         assertTypeByData("image/wmf", "testWMF.wmf");
         assertTypeByName("image/wmf", "x.WMF");
 
-        assertTypeByName("application/x-emf", "x.emf");
-        assertTypeByData("application/x-emf","testEMF.emf");
-        assertTypeByName("application/x-emf", "x.EMF");
+        assertTypeByName("image/emf", "x.emf");
+        assertTypeByData("image/emf", "testEMF.emf");
+        assertTypeByName("image/emf", "x.EMF");
+
         // TODO: Need a test wmz file
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");

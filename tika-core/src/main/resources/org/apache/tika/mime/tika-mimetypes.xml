@@ -3268,18 +3268,6 @@
     <glob pattern="*.exe"/>
   </mime-type>
 
-  <mime-type type="application/x-emf">
-    <acronym>EMF</acronym>
-    <_comment>Extended Metafile</_comment>
-    <tika:link>https://msdn.microsoft.com/en-us/library/cc230711.aspx</tika:link>
-    <glob pattern="*.emf"/>
-    <magic priority="50">
-      <match value="0x01000000" type="string" offset="0">
-        <match value="0x464D4520" type="little32" offset="40"/>
-      </match>
-    </magic>
-  </mime-type>
-
   <mime-type type="application/x-erdas-hfa">
     <magic priority="50">
       <match value="EHFA_HEADER_TAG" type="string" offset="0" />
@@ -4889,6 +4877,20 @@
       </match>
     </magic>
     <glob pattern="*.cgm"/>
+  </mime-type>
+
+  <mime-type type="image/emf">
+    <alias type="image/x-emf"/>
+    <alias type="application/x-emf"/>
+    <acronym>EMF</acronym>
+    <_comment>Enhanced Metafile</_comment>
+    <tika:link>https://msdn.microsoft.com/en-us/library/cc230711.aspx</tika:link>
+    <glob pattern="*.emf"/>
+    <magic priority="50">
+      <match value="0x01000000" type="string" offset="0">
+        <match value="0x464D4520" type="little32" offset="40"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="image/example"/>
