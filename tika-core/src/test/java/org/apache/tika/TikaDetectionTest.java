@@ -590,7 +590,8 @@ public class TikaDetectionTest {
         assertEquals("application/x-msmediaview", tika.detect("x.mvb"));
         assertEquals("application/x-msmediaview", tika.detect("x.m13"));
         assertEquals("application/x-msmediaview", tika.detect("x.m14"));
-        assertEquals("application/x-msmetafile", tika.detect("x.wmf"));
+        // Differ from httpd - wmf was properly registered in RFC 7903
+        //assertEquals("application/x-msmetafile", tika.detect("x.wmf"));
         assertEquals("application/x-msmoney", tika.detect("x.mny"));
         assertEquals("application/x-mspublisher", tika.detect("x.pub"));
         assertEquals("application/x-msschedule", tika.detect("x.scd"));
@@ -682,7 +683,8 @@ public class TikaDetectionTest {
         assertEquals("chemical/x-cml", tika.detect("x.cml"));
         assertEquals("chemical/x-csml", tika.detect("x.csml"));
         assertEquals("chemical/x-xyz", tika.detect("x.xyz"));
-        assertEquals("image/x-ms-bmp", tika.detect("x.bmp"));
+        // Differ from httpd - bmp was properly registered in RFC 7903
+        //assertEquals("image/x-ms-bmp", tika.detect("x.bmp"));
         assertEquals("image/cgm", tika.detect("x.cgm"));
         assertEquals("image/g3fax", tika.detect("x.g3"));
         assertEquals("image/gif", tika.detect("x.gif"));

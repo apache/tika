@@ -327,10 +327,10 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
             switch (pic.getType()) {
                 case EMF:
-                    mediaType = "application/x-emf";
+                    mediaType = "image/emf";
                     break;
                 case WMF:
-                    mediaType = "application/x-msmetafile";
+                    mediaType = "image/wmf";
                     break;
                 case DIB:
                     mediaType = "image/bmp";

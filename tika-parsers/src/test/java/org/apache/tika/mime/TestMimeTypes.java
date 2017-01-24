@@ -470,12 +470,12 @@ public class TestMimeTypes {
 
     @Test
     public void testBmpDetection() throws Exception {
-        assertType("image/x-ms-bmp", "testBMP.bmp");
-        assertTypeByData("image/x-ms-bmp", "testBMP.bmp");
-        assertTypeByName("image/x-ms-bmp", "x.bmp");
-        assertTypeByName("image/x-ms-bmp", "x.BMP");
-        assertTypeByName("image/x-ms-bmp", "x.dib");
-        assertTypeByName("image/x-ms-bmp", "x.DIB");
+        assertType("image/bmp", "testBMP.bmp");
+        assertTypeByData("image/bmp", "testBMP.bmp");
+        assertTypeByName("image/bmp", "x.bmp");
+        assertTypeByName("image/bmp", "x.BMP");
+        assertTypeByName("image/bmp", "x.dib");
+        assertTypeByName("image/bmp", "x.DIB");
         //false positive check -- contains part of BMP signature
         assertType("text/plain", "testBMPfp.txt");
     }
@@ -630,13 +630,14 @@ public class TestMimeTypes {
 
     @Test
     public void testWmfDetection() throws Exception {
-        assertTypeByName("application/x-msmetafile", "x.wmf");
-        assertTypeByData("application/x-msmetafile", "testWMF.wmf");
-        assertTypeByName("application/x-msmetafile", "x.WMF");
+        assertTypeByName("image/wmf", "x.wmf");
+        assertTypeByData("image/wmf", "testWMF.wmf");
+        assertTypeByName("image/wmf", "x.WMF");
 
-        assertTypeByName("application/x-emf", "x.emf");
-        assertTypeByData("application/x-emf","testEMF.emf");
-        assertTypeByName("application/x-emf", "x.EMF");
+        assertTypeByName("image/emf", "x.emf");
+        assertTypeByData("image/emf", "testEMF.emf");
+        assertTypeByName("image/emf", "x.EMF");
+
         // TODO: Need a test wmz file
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");
