@@ -63,7 +63,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
         assertContains("supertype: video/ogg", text);
 
-        assertContains("alias:     image/bmp", text);
+        assertContains("alias:     image/x-ms-bmp", text);
     }
 
     @Test
@@ -84,7 +84,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
         assertContains("Super Type: <a href=\"#video/ogg\">video/ogg", text);
 
-        assertContains("Alias: image/bmp", text);
+        assertContains("Alias: image/x-ms-bmp", text);
     }
 
     @Test
@@ -102,13 +102,14 @@ public class TikaMimeTypesTest extends CXFTestBase {
         assertEquals(true, json.containsKey("text/plain"));
         assertEquals(true, json.containsKey("application/xml"));
         assertEquals(true, json.containsKey("video/x-ogm"));
-        assertEquals(true, json.containsKey("image/x-ms-bmp"));
+        assertEquals(true, json.containsKey("image/bmp"));
 
-        Map<String, Object> bmp = json.get("image/x-ms-bmp");
+        Map<String, Object> bmp = json.get("image/bmp");
         assertEquals(true, bmp.containsKey("alias"));
         Object[] aliases = (Object[]) bmp.get("alias");
-        assertEquals(1, aliases.length);
-        assertEquals("image/bmp", aliases[0]);
+        assertEquals(2, aliases.length);
+        assertEquals("image/x-bmp", aliases[0]);
+        assertEquals("image/x-ms-bmp", aliases[1]);
 
         String whichParser = bmp.get("parser").toString();
         assertTrue("Which parser", whichParser.equals("org.apache.tika.parser.ocr.TesseractOCRParser") ||

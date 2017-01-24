@@ -3227,16 +3227,11 @@
     <glob pattern="*.exe"/>
   </mime-type>
 
-  <mime-type type="application/x-emf">
-    <acronym>EMF</acronym>
-    <_comment>Extended Metafile</_comment>
-    <tika:link>https://msdn.microsoft.com/en-us/library/cc230711.aspx</tika:link>
-    <glob pattern="*.emf"/>
+  <mime-type type="application/x-erdas-hfa">
     <magic priority="50">
-      <match value="0x01000000" type="string" offset="0">
-        <match value="0x464D4520" type="little32" offset="40"/>
-      </match>
+      <match value="EHFA_HEADER_TAG" type="string" offset="0" />
     </magic>
+    <glob pattern="*.hfa"/>
   </mime-type>
 
   <mime-type type="application/x-filemaker">
@@ -3649,16 +3644,6 @@
     <glob pattern="*.mvb"/>
     <glob pattern="*.m13"/>
     <glob pattern="*.m14"/>
-  </mime-type>
-  <mime-type type="application/x-msmetafile">
-    <alias type="image/x-wmf"/>
-    <acronym>WMF</acronym>
-    <_comment>Windows Metafile</_comment>
-    <glob pattern="*.wmf"/>
-    <magic priority="50">
-      <match value="0xd7cdc69a0000" type="string" offset="0"/>
-      <match value="0x010009000003" type="string" offset="0"/>
-    </magic>
   </mime-type>
   <mime-type type="application/x-msmoney">
     <glob pattern="*.mny"/>
@@ -4769,8 +4754,9 @@
     <glob pattern="*.xyz"/>
   </mime-type>
 
-  <mime-type type="image/x-ms-bmp">
-    <alias type="image/bmp"/>
+  <mime-type type="image/bmp">
+    <alias type="image/x-bmp"/>
+    <alias type="image/x-ms-bmp"/>
     <acronym>BMP</acronym>
     <_comment>Windows bitmap</_comment>
     <tika:link>http://en.wikipedia.org/wiki/BMP_file_format</tika:link>
@@ -4815,6 +4801,20 @@
       </match>
     </magic>
     <glob pattern="*.cgm"/>
+  </mime-type>
+
+  <mime-type type="image/emf">
+    <alias type="image/x-emf"/>
+    <alias type="application/x-emf"/>
+    <acronym>EMF</acronym>
+    <_comment>Enhanced Metafile</_comment>
+    <tika:link>https://msdn.microsoft.com/en-us/library/cc230711.aspx</tika:link>
+    <glob pattern="*.emf"/>
+    <magic priority="50">
+      <match value="0x01000000" type="string" offset="0">
+        <match value="0x464D4520" type="little32" offset="40"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="image/example"/>
@@ -5076,6 +5076,18 @@
              mask="0xFFFFFFFF00000000FFFFFFFF"/>
     </magic>
     <glob pattern="*.webp"/>
+  </mime-type>
+
+  <mime-type type="image/wmf">
+    <alias type="image/x-wmf"/>
+    <alias type="application/x-msmetafile"/>
+    <acronym>WMF</acronym>
+    <_comment>Windows Metafile</_comment>
+    <glob pattern="*.wmf"/>
+    <magic priority="50">
+      <match value="0xd7cdc69a0000" type="string" offset="0"/>
+      <match value="0x010009000003" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/vnd.xiff">

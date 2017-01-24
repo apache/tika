@@ -131,7 +131,7 @@ public class MimeTypesReaderTest {
      */
     @Test
     public void testReadExtendedMetadata() throws Exception {
-        MimeType mime = this.mimeTypes.forName("image/x-ms-bmp");
+        MimeType mime = this.mimeTypes.forName("image/bmp");
         assertEquals("BMP", mime.getAcronym());
         assertEquals("com.microsoft.bmp", mime.getUniformTypeIdentifier());
         assertEquals("http://en.wikipedia.org/wiki/BMP_file_format", 

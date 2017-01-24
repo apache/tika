@@ -477,8 +477,8 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testEmbeddedLinkedDocument() throws Exception {
         Set<MediaType> skipTypes = new HashSet<MediaType>();
-        skipTypes.add(MediaType.parse("application/x-emf"));
-        skipTypes.add(MediaType.parse("application/x-msmetafile"));
+        skipTypes.add(MediaType.parse("image/emf"));
+        skipTypes.add(MediaType.parse("image/wmf"));
 
         TrackingHandler tracker = new TrackingHandler(skipTypes);
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {

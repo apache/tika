@@ -72,7 +72,7 @@ import org.xml.sax.ContentHandler;
 public class PDFParserTest extends TikaTest {
 
     public static final MediaType TYPE_TEXT = MediaType.TEXT_PLAIN;
-    public static final MediaType TYPE_EMF = MediaType.application("x-emf");
+    public static final MediaType TYPE_EMF = MediaType.image("emf");
     public static final MediaType TYPE_PDF = MediaType.application("pdf");
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     public static final MediaType TYPE_DOC = MediaType.application("msword");

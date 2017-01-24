@@ -82,7 +82,7 @@ public class CompositeParserTest {
 
     @Test
     public void testMimeTypeAliases() throws Exception {
-       MediaType bmpCanonical = MediaType.image("x-ms-bmp");
+       MediaType bmpCanonical = MediaType.image("bmp");
        Map<String,String> bmpCanonicalMetadata = new HashMap<String, String>();
        bmpCanonicalMetadata.put("BMP", "True");
        bmpCanonicalMetadata.put("Canonical", "True");
@@ -91,7 +91,7 @@ public class CompositeParserTest {
              bmpCanonicalMetadata, null
        );
        
-       MediaType bmpAlias = MediaType.image("bmp");
+       MediaType bmpAlias = MediaType.image("x-ms-bmp");
        Map<String,String> bmpAliasMetadata = new HashMap<String, String>();
        bmpAliasMetadata.put("BMP", "True");
        bmpAliasMetadata.put("Alias", "True");

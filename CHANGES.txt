@@ -17,6 +17,9 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Official mime types for BMP, EMF and WMF have been registered with
+    IANA, so switch to these (image/bmp image/emf image/wmf) (TIKA-2250)
+
   * Be more parsimonious with BufferedInputStreams via Josh Hight
     (TIKA-2244).
 
