@@ -91,8 +91,17 @@ public class AutoDetectReader extends BufferedReader {
         }
     }
 
+    /**
+     *
+     * @param stream stream from which to read -- make sure that it supports mark!
+     * @param metadata
+     * @param detectors
+     * @param handler
+     * @throws IOException
+     * @throws TikaException
+     */
     private AutoDetectReader(
-            BufferedInputStream stream, Metadata metadata,
+            InputStream stream, Metadata metadata,
             List<EncodingDetector> detectors, LoadErrorHandler handler)
             throws IOException, TikaException {
         this(stream, detect(stream, metadata, detectors, handler));
@@ -101,14 +110,21 @@ public class AutoDetectReader extends BufferedReader {
     public AutoDetectReader(
             InputStream stream, Metadata metadata,
             ServiceLoader loader) throws IOException, TikaException {
-        this(new BufferedInputStream(stream), metadata,
+        this(getBuffered(stream), metadata,
                 loader.loadServiceProviders(EncodingDetector.class),
                 loader.getLoadErrorHandler());
     }
 
+    private static InputStream getBuffered(InputStream stream) {
+        if (stream.markSupported()) {
+            return stream;
+        }
+        return new BufferedInputStream(stream);
+    }
+
     public AutoDetectReader(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
-        this(new BufferedInputStream(stream), metadata, DEFAULT_LOADER);
+        this(stream, metadata, DEFAULT_LOADER);
     }
 
     public AutoDetectReader(InputStream stream)
