@@ -84,6 +84,14 @@ import org.xml.sax.SAXException;
  * the potentially enormous number and size of inline images.  To
  * turn this feature on, see
  * {@link PDFParserConfig#setExtractInlineImages(boolean)}.
+ * <p/>
+ * Please note that tables are not stored as entities within PDFs. It
+ * takes significant computation to identify and then correctly extract
+ * tables from PDFs. As of this writing, the {@link PDFParser} extracts
+ * text within tables, but it does not compute table cell boundaries or
+ * table row boundaries. Please see
+ * <a href="http://tabula.technology/">tabula</a> for one project that
+ * tries to maintain the structure of tables represented in PDFs.
  */
 public class PDFParser extends AbstractParser {
 
