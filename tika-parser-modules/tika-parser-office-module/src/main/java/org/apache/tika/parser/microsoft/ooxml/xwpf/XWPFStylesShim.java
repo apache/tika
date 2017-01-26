@@ -50,11 +50,10 @@ public class XWPFStylesShim {
 
     }
 
-    public XWPFStylesShim(PackagePart part, ParseContext parseContext) {
+    public XWPFStylesShim(PackagePart part, ParseContext parseContext) throws IOException, TikaException, SAXException {
+
         try (InputStream is = part.getInputStream()) {
             onDocumentLoad(parseContext, is);
-        } catch (IOException|TikaException |SAXException e) {
-            //swallow
         }
     }
 

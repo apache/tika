@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -36,11 +37,13 @@ import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -96,18 +99,27 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         loadCommentAuthors();
 
-        //TODO: should check for custShowLst and order based on sldLst
+
+        PackageRelationshipCollection slidesPRC =
+                null;
         try {
-
-            PackageRelationshipCollection prc = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
-            if (prc.size() == 0) {
-
-            }
-            for (int i = 0; i < prc.size(); i++) {
-                handleSlidePart(mainDocument.getRelatedPart(prc.getRelationship(i)), xhtml);
-            }
+            slidesPRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
         } catch (InvalidFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
+
+        if (slidesPRC != null && slidesPRC.size() > 0) {
+            for (int i = 0; i < slidesPRC.size(); i++) {
+                try {
+                    handleSlidePart(mainDocument.getRelatedPart(slidesPRC.getRelationship(i)), xhtml);
+                } catch (InvalidFormatException|ZipException e) {
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            ExceptionUtils.getStackTrace(e));
+                }
+            }
+        }
+
         handleBasicRelatedParts(XSLFRelation.SLIDE_MASTER.getRelation(),
                 "slide-master",
                 mainDocument,
@@ -127,6 +139,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             prc = mainDocument.getRelationshipsByType(XSLFRelation.COMMENT_AUTHORS.getRelation());
         } catch (InvalidFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
         if (prc == null || prc.size() == 0) {
             return;
@@ -137,7 +151,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 commentAuthorsPart = commentAuthorsPart = mainDocument.getRelatedPart(prc.getRelationship(i));
             } catch (InvalidFormatException e) {
-
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
             }
             if (commentAuthorsPart == null) {
                 continue;
@@ -148,7 +163,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         new OfflineContentHandler(new XSLFCommentAuthorHandler()));
 
             } catch (TikaException | SAXException | IOException e) {
-                //do something with this
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
             }
         }
 
@@ -167,7 +183,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                                     new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))));
 
         } catch (TikaException e) {
-            //do something with this
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
         xhtml.endElement("div");
@@ -193,7 +210,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 null, slidePart,
                 new XSLFCommentsHandler(xhtml));
 
-//        handleBasicRelatedParts("");
     }
 
     /**
@@ -212,7 +228,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             relatedPartPRC = parentPart.getRelationshipsByType(contentType);
         } catch (InvalidFormatException e) {
-            //swallow
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
         if (relatedPartPRC != null && relatedPartPRC.size() > 0) {
             AttributesImpl attributes = new AttributesImpl();
@@ -228,10 +245,13 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                                 new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)));
 
                     } catch (IOException|TikaException e) {
-                        //do something with this
+                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                ExceptionUtils.getStackTrace(e));
                     }
 
                 } catch (InvalidFormatException e) {
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            ExceptionUtils.getStackTrace(e));
                 }
             }
             contentHandler.endElement("", "div", "div");
@@ -248,31 +268,52 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         List<PackagePart> parts = new ArrayList<>();
         //TODO: consider: getPackage().getPartsByName(Pattern.compile("/ppt/embeddings/.*?
         //TODO: consider: getPackage().getPartsByName(Pattern.compile("/ppt/media/.*?
+        PackageRelationshipCollection slidePRC = null;
         try {
-            PackageRelationshipCollection prc = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
-            for (int i = 0; i < prc.size(); i++) {
-                PackagePart slidePart = mainDocument.getRelatedPart(prc.getRelationship(i));
+            slidePRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
+        } catch (InvalidFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+
+        }
+        if (slidePRC != null) {
+            for (int i = 0; i < slidePRC.size(); i++) {
+                PackagePart slidePart = null;
+                try {
+                    slidePart = mainDocument.getRelatedPart(slidePRC.getRelationship(i));
+                } catch (InvalidFormatException e) {
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            ExceptionUtils.getStackTrace(e));
+                }
                 addSlideParts(slidePart, parts);
             }
-        } catch (InvalidFormatException e) {
-            //log
         }
 
         parts.add(mainDocument);
         for (String rel : new String[]{
                 XSLFRelation.SLIDE_MASTER.getRelation(),
                 HANDOUT_MASTER}) {
+
+            PackageRelationshipCollection prc = null;
             try {
-                PackageRelationshipCollection prc = mainDocument.getRelationshipsByType(rel);
+                prc = mainDocument.getRelationshipsByType(rel);
+            } catch (InvalidFormatException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+            }
+            if (prc != null) {
                 for (int i = 0; i < prc.size(); i++) {
-                    PackagePart pp = mainDocument.getRelatedPart(prc.getRelationship(i));
+                    PackagePart pp = null;
+                    try {
+                        pp = mainDocument.getRelatedPart(prc.getRelationship(i));
+                    } catch (InvalidFormatException e) {
+                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                ExceptionUtils.getStackTrace(e));
+                    }
                     if (pp != null) {
                         parts.add(pp);
                     }
                 }
-
-            } catch (InvalidFormatException e) {
-                //log
             }
         }
 
@@ -287,15 +328,28 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 XSLFRelation.NOTES_MASTER.getRelation(),
                 XSLFRelation.NOTES.getRelation()
         }) {
+            PackageRelationshipCollection prc = null;
             try {
-                for (PackageRelationship packageRelationship : slidePart.getRelationshipsByType(relation)) {
+                prc = slidePart.getRelationshipsByType(relation);
+            } catch (InvalidFormatException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+            }
+            if (prc != null) {
+                for (PackageRelationship packageRelationship : prc) {
                     if (packageRelationship.getTargetMode() == TargetMode.INTERNAL) {
-                        PackagePartName relName = PackagingURIHelper.createPartName(packageRelationship.getTargetURI());
-                        parts.add(packageRelationship.getPackage().getPart(relName));
+                        PackagePartName relName = null;
+                        try {
+                            relName = PackagingURIHelper.createPartName(packageRelationship.getTargetURI());
+                        } catch (InvalidFormatException e) {
+                            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                    ExceptionUtils.getStackTrace(e));
+                        }
+                        if (relName != null) {
+                            parts.add(packageRelationship.getPackage().getPart(relName));
+                        }
                     }
                 }
-            } catch (InvalidFormatException e) {
-
             }
         }
         //and slide of course

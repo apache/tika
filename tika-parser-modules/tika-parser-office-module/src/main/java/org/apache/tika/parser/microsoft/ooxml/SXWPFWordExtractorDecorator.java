@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -33,6 +34,7 @@ import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
@@ -41,6 +43,7 @@ import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 
@@ -120,7 +123,13 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //load the numbering/list manager and styles from the main document part
         XWPFNumbering numbering = loadNumbering(documentPart);
         XWPFListManager listManager = new XWPFListManager(numbering);
-        XWPFStylesShim styles = loadStyles(documentPart);
+        XWPFStylesShim styles = null;
+        try {
+            styles = loadStyles(documentPart);
+        } catch (Exception e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+        }
 
         //headers
         try {
@@ -131,13 +140,18 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     handlePart(header, styles, listManager, xhtml);
                 }
             }
-        } catch (InvalidFormatException e) {
-            //swallow
+        } catch (InvalidFormatException|ZipException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
         //main document
-        handlePart(documentPart, styles, listManager, xhtml);
-
+        try {
+            handlePart(documentPart, styles, listManager, xhtml);
+        } catch (ZipException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+        }
         //for now, just dump other components at end
         for (XWPFRelation rel : new XWPFRelation[]{
                 XWPFRelation.FOOTNOTE,
@@ -153,8 +167,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                         handlePart(packagePart, styles, listManager, xhtml);
                     }
                 }
-            } catch (InvalidFormatException e) {
-                //swallow
+            } catch (InvalidFormatException|ZipException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
             }
         }
     }
@@ -171,31 +186,28 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                                     new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
                                             context.get(OfficeParserConfig.class)), linkedRelationships))));
         } catch (TikaException e) {
-            //swallow
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+
         }
 
     }
 
 
-
-    private XWPFStylesShim loadStyles(PackagePart packagePart) {
-        try {
-            PackageRelationshipCollection stylesParts =
-                    packagePart.getRelationshipsByType(XWPFRelation.STYLES.getRelation());
-            if (stylesParts.size() > 0) {
-                PackageRelationship stylesRelationShip = stylesParts.getRelationship(0);
-                if (stylesRelationShip == null) {
-                    return null;
-                }
-                PackagePart stylesPart = packagePart.getRelatedPart(stylesRelationShip);
-                if (stylesPart == null) {
-                    return null;
-                }
-
-                return new XWPFStylesShim(stylesPart, context);
+    private XWPFStylesShim loadStyles(PackagePart packagePart) throws InvalidFormatException, TikaException, IOException, SAXException {
+        PackageRelationshipCollection stylesParts =
+                packagePart.getRelationshipsByType(XWPFRelation.STYLES.getRelation());
+        if (stylesParts.size() > 0) {
+            PackageRelationship stylesRelationShip = stylesParts.getRelationship(0);
+            if (stylesRelationShip == null) {
+                return null;
             }
-        } catch (OpenXML4JException e) {
-            //swallow
+            PackagePart stylesPart = packagePart.getRelatedPart(stylesRelationShip);
+            if (stylesPart == null) {
+                return null;
+            }
+
+            return new XWPFStylesShim(stylesPart, context);
         }
         return null;
 
