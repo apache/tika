@@ -296,8 +296,8 @@
           </plugin>
           <plugin>
             <groupId>com.qmino</groupId>
-            <artifactId>miredot-maven-plugin</artifactId>
-            <version>1.4</version>
+            <artifactId>miredot-plugin</artifactId>
+            <version>2.0.3</version>
             <executions>
               <execution>
                 <goals>
@@ -306,10 +306,17 @@
               </execution>
             </executions>
             <configuration>
-              <licence>
-                <!-- Miredot license key valid until August 1st, 2016 when we can apply for a new one - http://s.apache.org/oE -->
-                UHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAxNi0wOC0wMXx0cnVlI01Dd0NGRklXRzRqRmNTZXNJb2laRElKZVF4RXpieUNTQWhSMHBmTzZCMUdMbDBPQ1B1WmJYQ3NpZElZSCtRPT0=
-              </licence>
+              <organizationId>c579ca2e-c194-4a14-a7f0-f39ef4ec3c2d</organizationId>
+              <restModel>
+                <restFramework>
+                  <name>jax-rs</name>
+                </restFramework>
+              </restModel>
+              <output>
+                <html></html>
+              </output>
+              <!-- Free Miredot license key, valid until Jan 31st, 2020 https://issues.apache.org/jira/browse/TIKA-2253 -->
+              <licence>cHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAyMC0wMS0zMXx0cnVlfC0xI01Dd0NGRUV5QktCTlBJbXhwLzBvaWxuak1MYkxZQW5XQWhScWdwM0c5aFdWMGpOUFA5MlNFc2pVS1FKZStRPT0=</licence>
               <!-- insert other configuration here (optional) -->
             </configuration>
           </plugin>
