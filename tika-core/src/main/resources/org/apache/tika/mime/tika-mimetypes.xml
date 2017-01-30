@@ -3839,6 +3839,16 @@
     <glob pattern="*.st7"/>
     <glob pattern="*.sas7baud"/>
   </mime-type>
+  <mime-type type="application/x-sas-data-v6">
+    <_comment>SAS v6 Data Set</_comment>
+    <glob pattern="*.sd2"/>
+    <magic priority="40">
+      <match value="SAS     6." type="string" offset="0" />
+      <match value="SAS     7." type="string" offset="0" />
+      <match value="SAS     8.0" type="string" offset="0" />
+      <match value="SAS     9.0" type="string" offset="0" />
+    </magic>
+  </mime-type>
   <mime-type type="application/x-sas-data">
     <_comment>SAS Data Set</_comment>
     <glob pattern="*.sd7"/>
