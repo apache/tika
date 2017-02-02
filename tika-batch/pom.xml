@@ -23,9 +23,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.tika</groupId>
+    <groupId>com.github.lafa.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.15-SNAPSHOT</version>
+    <version>1.0.0</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -69,14 +69,14 @@
       <version>${commons.io.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>com.github.lafa.tikaNoExternal</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>

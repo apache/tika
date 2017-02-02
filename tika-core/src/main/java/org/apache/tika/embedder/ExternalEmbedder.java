@@ -37,7 +37,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -64,6 +63,19 @@ public class ExternalEmbedder implements Embedder {
     public static final String METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN = "${METADATA_SERIALIZED}";
 
     /**
+     * The token, which if present in the Command string, will
+     *  be replaced with the input filename. 
+     * Alternately, the input data can be streamed over STDIN.
+     */
+    public static final String INPUT_FILE_TOKEN = "${INPUT}";
+    /**
+     * The token, which if present in the Command string, will
+     *  be replaced with the output filename. 
+     * Alternately, the output data can be collected on STDOUT.
+     */
+    public static final String OUTPUT_FILE_TOKEN = "${OUTPUT}";
+    
+    /**
      * Media types supported by the external program.
      */
     private Set<MediaType> supportedEmbedTypes = Collections.emptySet();
@@ -81,7 +93,7 @@ public class ExternalEmbedder implements Embedder {
     private String[] command = new String[] {
             "sed", "-e",
             "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-            ExternalParser.INPUT_FILE_TOKEN
+            INPUT_FILE_TOKEN
     };
 
     private String commandAssignmentOperator = "=";
@@ -312,16 +324,16 @@ public class ExternalEmbedder implements Embedder {
         List<String> origCmd = Arrays.asList(command);
         List<String> cmd = new ArrayList<String>();
         for (String commandSegment : origCmd) {
-            if (commandSegment.indexOf(ExternalParser.INPUT_FILE_TOKEN) != -1) {
+            if (commandSegment.indexOf(INPUT_FILE_TOKEN) != -1) {
                 commandSegment = commandSegment.replace(
-                        ExternalParser.INPUT_FILE_TOKEN,
+                        INPUT_FILE_TOKEN,
                         tikaInputStream.getFile().toString());
                 inputToStdIn = false;
             }
-            if (commandSegment.indexOf(ExternalParser.OUTPUT_FILE_TOKEN) != -1) {
+            if (commandSegment.indexOf(OUTPUT_FILE_TOKEN) != -1) {
                 tempOutputFile = tmp.createTemporaryFile();
                 commandSegment = commandSegment.replace(
-                        ExternalParser.OUTPUT_FILE_TOKEN,
+                        OUTPUT_FILE_TOKEN,
                         tempOutputFile.toString());
                 outputFromStdOut = false;
             }

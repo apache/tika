@@ -23,9 +23,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.tika</groupId>
+    <groupId>com.github.lafa.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.15-SNAPSHOT</version>
+    <version>1.0.0</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -569,4 +569,15 @@
       </build>
     </profile>
   </profiles>
+  
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>

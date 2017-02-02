@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,19 +16,17 @@
   KIND, either express or implied.  See the License for the
   specific language governing permissions and limitations
   under the License.
--->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.tika</groupId>
+    <groupId>com.github.lafa.tikaNoExternal</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.15-SNAPSHOT</version>
+    <version>1.0.0</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>tika</artifactId>
+  <artifactId>tikaNoExternal</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika</name>
   <url>http://tika.apache.org</url>
@@ -38,6 +35,7 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
+    <!-- 
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
@@ -48,6 +46,8 @@
     <module>tika-langdetect</module>
     <module>tika-example</module>
     <module>tika-java7</module>
+    <module>tika-external</module>
+    -->
   </modules>
 
   <profiles>
@@ -91,28 +91,28 @@
                 <phase>deploy</phase>
                 <configuration>
                   <tasks>
-                    <mkdir dir="${basedir}/target/${project.version}" />
+                    <mkdir dir="${basedir}/target/${project.version}"/>
                     <copy todir="${basedir}/target/${project.version}" flatten="true">
                       <fileset dir="${basedir}">
-                        <include name="CHANGES.txt" />
-                        <include name="target/*-src.zip*" />
-                        <include name="tika-app/target/tika-app-${project.version}.jar*" />
-                        <include name="tika-server/target/tika-server-${project.version}.jar*" />
+                        <include name="CHANGES.txt"/>
+                        <include name="target/*-src.zip*"/>
+                        <include name="tika-app/target/tika-app-${project.version}.jar*"/>
+                        <include name="tika-server/target/tika-server-${project.version}.jar*"/>
                       </fileset>
                     </copy>
                     <checksum algorithm="MD5" fileext=".md5">
                       <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.zip" />
-                        <include name="*.?ar" />
+                        <include name="*.zip"/>
+                        <include name="*.?ar"/>
                       </fileset>
                     </checksum>
                     <checksum algorithm="SHA1" fileext=".sha">
                       <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.zip" />
-                        <include name="*.?ar" />
+                        <include name="*.zip"/>
+                        <include name="*.?ar"/>
                       </fileset>
                     </checksum>
-                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA1" property="checksum" />
+                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA1" property="checksum"/>
                     <echo file="${basedir}/target/vote.txt">
 From: ${username}@apache.org
 To: dev@tika.apache.org
@@ -138,7 +138,7 @@ least three +1 Tika PMC votes are cast.
 [ ] +1 Release this package as Apache Tika ${project.version}
 [ ] -1 Do not release this package because...${line.separator}
                     </echo>
-                    <echo />
+                    <echo/>
                     <echo>
                       The release candidate has been prepared in:
 
@@ -152,7 +152,7 @@ least three +1 Tika PMC votes are cast.
 
                       file://${basedir}/target/vote.txt
                     </echo>
-                    <echo />
+                    <echo/>
                   </tasks>
                 </configuration>
               </execution>
@@ -185,4 +185,14 @@ least three +1 Tika PMC votes are cast.
     <system>Jenkins</system>
     <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 </project>
