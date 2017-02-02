@@ -1098,6 +1098,23 @@ public class TestMimeTypes {
         assertTypeByData("application/x-mswrite", "testMSWriteFile.wri");
     }
 
+    @Test
+    public void testSASProgramming() throws Exception {
+        // Data files we have magic for
+        assertTypeByName("application/x-sas-data-v6", "testSAS.sd2");
+        assertTypeByData("application/x-sas-data-v6", "testSAS.sd2");
+        
+        assertTypeByName("application/x-sas-data", "testSAS.sas7bdat");
+        assertTypeByData("application/x-sas-data", "testSAS.sas7bdat");
+        
+        assertTypeByName("application/x-sas-xport", "testSAS.xpt");
+        assertTypeByData("application/x-sas-xport", "testSAS.xpt");
+        
+        // Programs we don't, so must have mime type to detect
+        assertTypeByName("application/x-sas", "testSAS.sas");
+        assertTypeByData("text/plain", "testSAS.sas");
+    }
+
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
