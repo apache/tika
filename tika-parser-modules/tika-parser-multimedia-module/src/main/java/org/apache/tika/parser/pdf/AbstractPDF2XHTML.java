@@ -25,6 +25,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,7 +64,6 @@ import org.apache.pdfbox.pdmodel.interactive.action.PDFormFieldAdditionalActions
 import org.apache.pdfbox.pdmodel.interactive.action.PDPageAdditionalActions;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationFileAttachment;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationWidget;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
@@ -367,24 +368,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
                 if (config.getExtractAnnotationText()) {
-                    if (annotation instanceof PDAnnotationLink) {
-                        PDAnnotationLink annotationlink = (PDAnnotationLink) annotation;
-                        if (annotationlink.getAction() != null) {
-                            PDAction action = annotationlink.getAction();
-                            if (action instanceof PDActionURI) {
-                                //can't currently associate link to text.
-                                //for now, extract link and repeat the link as if it
-                                //were the visible text
-                                PDActionURI uri = (PDActionURI) action;
-                                String link = uri.getURI();
-                                if (link != null && link.trim().length() > 0) {
-                                    xhtml.startElement("div", "class", "annotation");
-                                    xhtml.startElement("a", "href", link);
-                                    xhtml.characters(link);
-                                    xhtml.endElement("a");
-                                    xhtml.endElement("div");
-                                }
-                            }
+                    PDActionURI uri = getActionURI(annotation);
+                    if (uri != null) {
+                        String link = uri.getURI();
+                        if (link != null && link.trim().length() > 0) {
+                            xhtml.startElement("div", "class", "annotation");
+                            xhtml.startElement("a", "href", link);
+                            xhtml.characters(link);
+                            xhtml.endElement("a");
+                            xhtml.endElement("div");
                         }
                     }
 
@@ -760,5 +752,27 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             xhtml.endElement("ol");
             xhtml.endElement("li");
         }
+    }
+
+
+    private static PDActionURI getActionURI(PDAnnotation annot) {
+        //copied and pasted from PDFBox's PrintURLs
+
+        // use reflection to catch all annotation types that have getAction()
+        // If you can't use reflection, then check for classes
+        // PDAnnotationLink and PDAnnotationWidget, and call getAction() and check for a
+        // PDActionURI result type
+        try {
+            Method actionMethod = annot.getClass().getDeclaredMethod("getAction");
+            if (actionMethod.getReturnType().equals(PDAction.class)) {
+                PDAction action = (PDAction) actionMethod.invoke(annot);
+                if (action instanceof PDActionURI) {
+                    return (PDActionURI) action;
+                }
+            }
+        }
+        catch (NoSuchMethodException|IllegalAccessException|InvocationTargetException e) {
+        }
+        return null;
     }
 }
