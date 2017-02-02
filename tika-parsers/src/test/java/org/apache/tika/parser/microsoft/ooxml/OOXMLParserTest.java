@@ -1263,8 +1263,8 @@ public class OOXMLParserTest extends TikaTest {
         String xml = getXML("testEXCEL_big_numbers.xlsx").xml;
         assertContains("123456789012345", xml);//15 digit number
         assertContains("123456789012346", xml);//15 digit formula
-        assertContains("1.23456789012345E+15", xml);//16 digit number is treated as scientific notation
-        assertContains("1.23456789012345E+15", xml);//16 digit formula, ditto
+        assertContains("1,23456789012345E+15", xml);//16 digit number is treated as scientific notation
+        assertContains("1,23456789012346E+15", xml);//16 digit formula, ditto
     }
 
     @Test
