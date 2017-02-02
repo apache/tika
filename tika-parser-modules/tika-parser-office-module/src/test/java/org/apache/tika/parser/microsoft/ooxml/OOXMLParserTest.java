@@ -30,6 +30,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -1247,9 +1249,11 @@ public class OOXMLParserTest extends TikaTest {
         String xml = getXML("testEXCEL_big_numbers.xlsx").xml;
         assertContains("123456789012345", xml);//15 digit number
         assertContains("123456789012346", xml);//15 digit formula
-        assertContains("1.23456789012345E+15", xml);//16 digit number is treated as scientific notation
-        assertContains("1.23456789012345E+15", xml);//16 digit formula, ditto
-    }
+        Locale locale = LocaleUtil.getUserLocale();
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
+        //16 digit number is treated as scientific notation as is the 16 digit formula
+        assertContains("1"+symbols.getDecimalSeparator()+"23456789012345E+15</td>\t"+
+                "<td>1"+symbols.getDecimalSeparator()+"23456789012345E+15", xml);    }
 
     @Test
     public void testBoldHyperlink() throws Exception {

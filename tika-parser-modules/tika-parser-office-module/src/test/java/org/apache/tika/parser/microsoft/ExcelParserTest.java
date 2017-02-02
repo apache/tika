@@ -21,9 +21,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -416,8 +418,11 @@ public class ExcelParserTest extends TikaTest {
         String xml = getXML("testEXCEL_big_numbers.xls").xml;
         assertContains("123456789012345", xml);//15 digit number
         assertContains("123456789012346", xml);//15 digit formula
-        assertContains("1.23456789012345E15", xml);//16 digit number is treated as scientific notation
-        assertContains("1.23456789012345E15", xml);//16 digit formula, ditto
+        Locale locale = LocaleUtil.getUserLocale();
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
+        //16 digit number is treated as scientific notation as is the 16 digit formula
+        assertContains("1"+symbols.getDecimalSeparator()+"23456789012345E15</td>\t"+
+                "<td>1"+symbols.getDecimalSeparator()+"23456789012345E15", xml);
     }
 
     public void testMacros() throws  Exception {
