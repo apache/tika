@@ -81,6 +81,10 @@ public class ListManager extends AbstractListManager {
 
         if (lc == null) {
             ListData listData = listTables.getListData(paragraph.getList().getLsid());
+            if (listData == null) {
+                //silently skip
+                return "";
+            }
             LevelTuple[] levelTuples = new LevelTuple[listData.getLevels().length];
             for (int i = 0; i < listData.getLevels().length; i++) {
                 levelTuples[i] = buildTuple(i, listData.getLevels()[i]);
