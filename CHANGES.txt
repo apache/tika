@@ -1,5 +1,7 @@
 Release 1.15 - ??
 
+  * Add parsers for EMF/WMF files (TIKA-2246/TIKA-2247).
+
   * Official mime types for BMP, EMF and WMF have been registered with
     IANA, so switch to these (image/bmp image/emf image/wmf) (TIKA-2250)
 
