@@ -260,25 +260,25 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 xhtml.startElement("div", "class", "attachment-entry");
 
                 String filename = null;
-                if (attachment.attachLongFileName != null) {
-                    filename = attachment.attachLongFileName.getValue();
-                } else if (attachment.attachFileName != null) {
-                    filename = attachment.attachFileName.getValue();
+                if (attachment.getAttachLongFileName() != null) {
+                    filename = attachment.getAttachLongFileName().getValue();
+                } else if (attachment.getAttachFileName() != null) {
+                    filename = attachment.getAttachFileName().getValue();
                 }
                 if (filename != null && filename.length() > 0) {
                     xhtml.element("h1", filename);
                 }
 
-                if (attachment.attachData != null) {
+                if (attachment.getAttachData() != null) {
                     handleEmbeddedResource(
-                            TikaInputStream.get(attachment.attachData.getValue()),
+                            TikaInputStream.get(attachment.getAttachData().getValue()),
                             filename, null,
                             null, xhtml, true
                     );
                 }
-                if (attachment.attachmentDirectory != null) {
+                if (attachment.getAttachmentDirectory() != null) {
                     handleEmbeddedOfficeDoc(
-                            attachment.attachmentDirectory.getDirectory(),
+                            attachment.getAttachmentDirectory().getDirectory(),
                             xhtml
                     );
                 }
@@ -449,7 +449,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         } catch(ChunkNotFoundException e) {}
 
         //absolute last resort, try charset detector
-        StringChunk text = mainChunks.textBodyChunk;
+        StringChunk text = mainChunks.getTextBodyChunk();
         if (text != null) {
             CharsetDetector detector = new CharsetDetector();
             detector.setText(text.getRawValue());

@@ -111,6 +111,7 @@
               org.apache.xml.resolver.tools;resolution:=optional,
               org.apache.xml.security;resolution:=optional,
               org.apache.xml.security.c14n;resolution:=optional,
+              org.apache.xml.security.signature;resolution:=optional,
               org.apache.xml.security.utils;resolution:=optional,
               org.apache.xmlbeans.impl.xpath.saxon;resolution:=optional,
               org.apache.xmlbeans.impl.xquery.saxon;resolution:=optional,
