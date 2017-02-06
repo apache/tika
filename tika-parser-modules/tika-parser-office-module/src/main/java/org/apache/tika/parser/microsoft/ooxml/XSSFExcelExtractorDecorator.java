@@ -159,12 +159,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             for (String footer : sheetExtractor.footers) {
                 extractHeaderFooter(footer, xhtml);
             }
-            List<XSSFShape> shapes = null;
-            try {
-                shapes = iter.getShapes();
-            } catch (NullPointerException e) {
-                //missing shape
-            }
+            List<XSSFShape> shapes = iter.getShapes();
             processShapes(shapes, xhtml);
 
             //for now dump sheet hyperlinks at bottom of page
