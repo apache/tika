@@ -51,6 +51,9 @@ import org.xml.sax.SAXException;
  */
 public class Tika {
 
+	/**
+	 * dummy commment
+	 */
     /**
      * The detector instance used by this facade.
      */
