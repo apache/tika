@@ -45,6 +45,10 @@
           "params": {}
         },
         {
+          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
+          "params": {}
+        },
+        {
           "factory": "oala.pattern.PatternReplaceFilterFactory",
           "params": {
             "pattern": "^[\\w+\\.]{1,30}@(?:\\w+\\.){1,10}\\w+$",
@@ -65,10 +69,6 @@
           "params": {
             "outputUnigrams": "false"
           }
-        },
-        {
-          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
-          "params": {}
         }
       ]
     },
@@ -78,6 +78,30 @@
         "params": {}
       },
       "tokenfilters": [
+        {
+          "factory": "oala.icu.ICUFoldingFilterFactory",
+          "params": {}
+        },
+        {
+          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
+          "params": {}
+        },
+        {
+          "factory": "oala.pattern.PatternReplaceFilterFactory",
+          "params": {
+            "pattern": "^[\\w+\\.]{1,30}@(?:\\w+\\.){1,10}\\w+$",
+            "replacement": "___email___",
+            "replace": "all"
+          }
+        },
+        {
+          "factory": "oala.pattern.PatternReplaceFilterFactory",
+          "params": {
+            "pattern": "^(?:(?:ftp|https?):\\/\\/)?(?:\\w+\\.){1,10}\\w+$",
+            "replacement": "___url___",
+            "replace": "all"
+          }
+        },
         {
           "factory": "oala.cjk.CJKBigramFilterFactory",
           "params": {

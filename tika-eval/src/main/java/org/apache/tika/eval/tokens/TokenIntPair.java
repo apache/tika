@@ -17,8 +17,6 @@
 package org.apache.tika.eval.tokens;
 
 
-import org.jetbrains.annotations.NotNull;
-
 public class TokenIntPair implements Comparable<TokenIntPair> {
 
     final String token;
@@ -63,7 +61,7 @@ public class TokenIntPair implements Comparable<TokenIntPair> {
      * @return comparison
      */
     @Override
-    public int compareTo(@NotNull TokenIntPair o) {
+    public int compareTo(TokenIntPair o) {
         if (this.value > o.value) {
             return -1;
         } else if (this.value < o.value) {

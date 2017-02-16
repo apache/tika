@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -47,7 +48,7 @@ public class AnalyzerManager {
 
     public static AnalyzerManager newInstance() throws IOException {
         InputStream is = AnalyzerManager.class.getClassLoader().getResourceAsStream("lucene-analyzers.json");
-        Reader reader = new InputStreamReader(is, "UTF-8");
+        Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeHierarchyAdapter(Map.class, new AnalyzerDeserializer());
         Gson gson = builder.create();

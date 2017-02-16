@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -78,7 +79,7 @@ public class ExtractReader {
                     LOGGER.warn("Can't yet process compression of type: "+fileSuffixes.compression);
                 }
             }
-                reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+                reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 
             if (fileSuffixes.txtOrJson.equals("json")) {
                 metadataList = JsonMetadataList.fromJson(reader);
