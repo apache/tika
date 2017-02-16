@@ -98,7 +98,6 @@
     </report>
 
 
-
     <report reportName="Token Count by Detected Language"
             reportFilename="content/num_tokens_by_detected_langs.xlsx"
             format="xlsx"
@@ -117,10 +116,12 @@
             includeSql="true">
 
         <sql>
-            select LANG_ID_1 as DetectedLang, count(1) as cnt
-            from contents
-            group by LANG_ID_1
-            order by cnt desc
+            select parse_exception_description, count(1) cnt
+            from parse_exceptions e
+            join profiles p on p.id = e.id
+            join ref_parse_exception_types et on et.parse_exception_type_id=e.parse_exception_type_id
+            group by parse_exception_description
+            order by cnt desc;
         </sql>
     </report>
 

@@ -56,7 +56,7 @@
              includeFilePat=""
              excludeFilePat=""
              maxFileSizeBytes="-1"
-            />
+    />
 
     <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
                consumerBuilderClass="org.apache.tika.eval.batch.SingleFileConsumerBuilder"
