@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<reports>
+
+
+    <before>
+        <!-- <sql>create index on x</sql>-->
+    </before>
+
+
+    <!-- MIMES -->
+    <report reportName="All Mimes"
+            reportFilename="mimes/all_mimes.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Container Mimes"
+            reportFilename="mimes/container_mimes.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=false
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <report reportName="Embedded Mimes"
+            reportFilename="mimes/embedded_mimes.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=true
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <!-- content -->
+    <report reportName="Common Tokens by Lang"
+            reportFilename="content/common_tokens_by_lang.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select common_tokens_lang, sum(num_common_tokens) as cnt
+            from contents
+            group by common_tokens_lang
+            order by cnt desc;
+        </sql>
+    </report>
+
+    <report reportName="Detected Languages"
+            reportFilename="content/detected_langs.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select LANG_ID_1 as DetectedLang, count(1) as cnt
+            from contents
+            group by LANG_ID_1
+            order by cnt desc
+        </sql>
+    </report>
+
+
+
+    <report reportName="Token Count by Detected Language"
+            reportFilename="content/num_tokens_by_detected_langs.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select LANG_ID_1 as DetectedLang, sum(num_tokens) as cnt
+            from contents
+            group by LANG_ID_1
+            order by cnt desc;
+        </sql>
+    </report>
+    <report reportName="Exceptions by Type"
+            reportFilename="exceptions/exceptions_by_type.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select LANG_ID_1 as DetectedLang, count(1) as cnt
+            from contents
+            group by LANG_ID_1
+            order by cnt desc
+        </sql>
+    </report>
+
+
+    <report reportName="Embedded Exceptions by Type"
+            reportFilename="exceptions/exceptions_by_type_embedded.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select parse_exception_description, count(1) cnt
+            from parse_exceptions e
+            join profiles p on p.id = e.id
+            join ref_parse_exception_types et on et.parse_exception_type_id=e.parse_exception_type_id
+            where is_embedded=true
+            group by parse_exception_description
+            order by cnt desc;
+        </sql>
+    </report>
+    <after>
+
+        <!--<sql>drop index on x</sql>
+        -->
+    </after>
+</reports>

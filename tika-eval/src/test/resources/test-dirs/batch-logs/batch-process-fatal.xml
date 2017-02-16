@@ -1,0 +1,59 @@
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<log4j:event logger="org.apache.tika.batch.FileResourceConsumer" timestamp="1436376775762" level="ERROR" thread="pool-2-thread-11">
+<log4j:message><![CDATA[<?xml version="1.0" ?><timed_out resourceId="file10_permahang.txt" elapsedMS="340302"></timed_out>]]></log4j:message>
+</log4j:event>
+
+<log4j:event logger="org.apache.tika.batch.FileResourceConsumer" timestamp="1436376775758" level="ERROR" thread="pool-2-thread-10">
+<log4j:message><![CDATA[<?xml version="1.0" ?><oom resourceId="file11_oom.txt">java.lang.OutOfMemoryError: Java heap space
+	at java.io.ByteArrayOutputStream.&lt;init&gt;(ByteArrayOutputStream.java:77)
+	at org.apache.fontbox.ttf.MemoryTTFDataStream.&lt;init&gt;(MemoryTTFDataStream.java:45)
+	at org.apache.fontbox.ttf.TTFParser.parse(TTFParser.java:96)
+	at org.apache.pdfbox.pdmodel.font.PDTrueTypeFont.&lt;init&gt;(PDTrueTypeFont.java:135)
+	at org.apache.pdfbox.pdmodel.font.PDFontFactory.createFont(PDFontFactory.java:75)
+	at org.apache.pdfbox.pdmodel.PDResources.getFont(PDResources.java:96)
+	at org.apache.pdfbox.contentstream.operator.text.SetFontAndSize.process(SetFontAndSize.java:50)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processOperator(PDFStreamEngine.java:795)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processStreamOperators(PDFStreamEngine.java:462)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processStream(PDFStreamEngine.java:438)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.showForm(PDFStreamEngine.java:178)
+	at org.apache.pdfbox.contentstream.operator.DrawObject.process(DrawObject.java:49)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processOperator(PDFStreamEngine.java:795)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processStreamOperators(PDFStreamEngine.java:462)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processStream(PDFStreamEngine.java:438)
+	at org.apache.pdfbox.contentstream.PDFStreamEngine.processPage(PDFStreamEngine.java:149)
+	at org.apache.pdfbox.text.PDFTextStreamEngine.processPage(PDFTextStreamEngine.java:117)
+	at org.apache.pdfbox.text.PDFTextStripper.processPage(PDFTextStripper.java:369)
+	at org.apache.pdfbox.text.PDFTextStripper.processPages(PDFTextStripper.java:305)
+	at org.apache.pdfbox.text.PDFTextStripper.writeText(PDFTextStripper.java:249)
+	at org.apache.tika.parser.pdf.PDF2XHTML.process(PDF2XHTML.java:137)
+	at org.apache.tika.parser.pdf.PDFParser.parse(PDFParser.java:132)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:281)
+	at org.apache.tika.parser.CompositeParser.parse(CompositeParser.java:281)
+	at org.apache.tika.parser.AutoDetectParser.parse(AutoDetectParser.java:120)
+	at org.apache.tika.parser.ParserDecorator.parse(ParserDecorator.java:177)
+	at org.apache.tika.parser.DigestingParser.parse(DigestingParser.java:74)
+	at org.apache.tika.parser.RecursiveParserWrapper.parse(RecursiveParserWrapper.java:158)
+	at org.apache.tika.batch.FileResourceConsumer.parse(FileResourceConsumer.java:410)
+	at org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer.processFileResource(RecursiveParserWrapperFSConsumer.java:104)
+	at org.apache.tika.batch.FileResourceConsumer._processFileResource(FileResourceConsumer.java:182)
+	at org.apache.tika.batch.FileResourceConsumer.call(FileResourceConsumer.java:115)
+</oom>]]></log4j:message>
+</log4j:event>

@@ -1,0 +1,791 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<reports>
+
+
+    <before>
+
+        <sql>drop table if exists md5_multiples_tmp_a</sql>
+        <sql>create table md5_multiples_tmp_a (MD5 char(32), cnt int)
+            as
+            select md5, count(1) cnt
+            from profiles_a
+            where md5 is not null
+            group by md5
+            having cnt &gt; 1
+            order by cnt desc
+        </sql>
+
+        <sql>drop table if exists md5_multiples_tmp_b</sql>
+        <sql>create table md5_multiples_tmp_b (MD5 char(32), cnt int)
+            as
+            select md5, count(1) cnt
+            from profiles_b
+            where md5 is not null
+            group by md5
+            having cnt &gt; 1
+            order by cnt desc
+        </sql>
+        <sql>create index if not exists pa_m_idx
+            on profiles_a (mime_type_id);
+        </sql>
+        <sql>
+            create index if not exists pb_m_idx
+            on profiles_b (mime_type_id);
+        </sql>
+
+        <sql>drop table if exists exceptions_compared</sql>
+        <sql>
+            create table exceptions_compared
+            (mime_type_id integer primary key,
+            exceptions_a integer,
+            total_a integer,
+            percent_exceptions_a double,
+            exceptions_b integer,
+            total_b integer,
+            percent_exceptions_b double)
+        </sql>
+        <sql>
+            insert into exceptions_compared (mime_type_id)
+            select mime_type_id from mimes;
+        </sql>
+
+        <sql>
+            update exceptions_compared ec set total_a=(
+            select count(1) as cnt from profiles_a
+            where profiles_a.mime_type_id= ec.mime_type_id
+            group by mime_type_id
+            )
+        </sql>
+        <sql>
+            update exceptions_compared ec set total_b=(
+            select count(1) as cnt from profiles_b
+            where profiles_b.mime_type_id= ec.mime_type_id
+            group by mime_type_id
+            )
+        </sql>
+        <sql>
+            update exceptions_compared ec set exceptions_a=( select count(1) as
+            cnt from exceptions_a ea
+            join profiles_a pa on ea.id=pa.id
+            where pa.mime_type_id= ec.mime_type_id
+            and parse_exception_type_id=0
+            group by mime_type_id )
+        </sql>
+        <sql>
+            update exceptions_compared ec set exceptions_b=(
+            select count(1) as cnt from exceptions_b eb
+            join profiles_b pb on eb.id=pb.id
+            where pb.mime_type_id= ec.mime_type_id
+            and parse_exception_type_id=0
+            group by mime_type_id )
+        </sql>
+
+    </before>
+
+    <!-- MIMES -->
+    <report reportName="All Mimes In A"
+            reportFilename="mimes/all_mimes_A.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles_a p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <report reportName="All Mimes In B"
+            reportFilename="mimes/all_mimes_B.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles_b p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Container Mimes In A"
+            reportFilename="mimes/container_mimes_A.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles_a p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=false
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <report reportName="Container Mimes In B"
+            reportFilename="mimes/container_mimes_B.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles_b p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=false
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Embedded Mimes In A"
+            reportFilename="mimes/embedded_mimes_A.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles_a p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=true
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <report reportName="Embedded Mimes In B"
+            reportFilename="mimes/embedded_mimes_B.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            profiles_b p
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=true
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Mime Differences A -> B"
+            reportFilename="mimes/mime_diffs_A_to_B.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select concat(ma.mime_string, ' -&gt; ', mb.mime_string) as
+            MIME_A_TO_MIME_B, count(1) as COUNT
+            from profiles_a a
+            join profiles_b b on a.id=b.id
+            join mimes ma on ma.mime_type_id=a.mime_type_id
+            join mimes mb on mb.mime_type_id=b.mime_type_id
+            where a.mime_type_id &lt;&gt; b.mime_type_id
+            group by MIME_A_TO_MIME_B
+            order by COUNT DESC
+        </sql>
+    </report>
+
+	<report reportName="Mime Differences A -> B Details"
+            reportFilename="mimes/mime_diffs_A_to_B_details.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select concat(ma.mime_string, ' -&gt; ', mb.mime_string) as
+            MIME_A_TO_MIME_B, file_path, a.file_name
+            from profiles_a a
+            join profiles_b b on a.id=b.id
+            join mimes ma on ma.mime_type_id=a.mime_type_id
+            join mimes mb on mb.mime_type_id=b.mime_type_id
+            join containers c on a.container_id=c.container_id
+            where a.mime_type_id &lt;&gt; b.mime_type_id
+            order by MIME_A_TO_MIME_B
+        </sql>
+    </report>
+
+    <report reportName="AllExceptionsByMimeA"
+            reportFilename="exceptions/exceptions_by_mime_A.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            exceptions_a e
+            join profiles_a p on p.id=e.id
+            join mimes m on m.mime_type_id = p.mime_type_id
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="AllExceptionsByMimeB"
+            reportFilename="exceptions/exceptions_by_mime_B.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            exceptions_b e
+            join profiles_b p on p.id=e.id
+            join mimes m on m.mime_type_id = p.mime_type_id
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <report reportName="ContainerExceptionsByMimeA"
+            reportFilename="exceptions/container_exceptions_by_mime_A.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            exceptions_a e
+            join profiles_a p on p.id=e.id
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=false
+            and parse_exception_type_id=0
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+
+    <report reportName="ContainerExceptionsByMimeB"
+            reportFilename="exceptions/container_exceptions_by_mime_B.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) cnt from
+            exceptions_b e
+            join profiles_b p on p.id=e.id
+            join mimes m on m.mime_type_id = p.mime_type_id
+            where is_embedded=false
+            and parse_exception_type_id=0
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="AllExceptionsByMimeByTypeA"
+            reportFilename="exceptions/exceptions_by_mime_by_typeA.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string as MIME_TYPE,
+            parse_exception_description as EXCEPTION_TYPE, count(1) as COUNT
+            from exceptions_a e
+            join profiles_a p on p.id=e.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            join ref_parse_exception_types r on
+            r.parse_exception_type_id=e.parse_exception_type_id
+            group by p.mime_type_id, parse_exception_description
+            order by MIME_TYPE, EXCEPTION_TYPE
+        </sql>
+    </report>
+
+    <report reportName="AllExceptionsByMimeByTypeB"
+            reportFilename="exceptions/exceptions_by_mime_by_typeB.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string as MIME_TYPE,
+            parse_exception_description as EXCEPTION_TYPE, count(1) as COUNT
+            from exceptions_b e
+            join profiles_b p on p.id=e.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            join ref_parse_exception_types r on
+            r.parse_exception_type_id=e.parse_exception_type_id
+            group by p.mime_type_id, parse_exception_description
+            order by MIME_TYPE, EXCEPTION_TYPE
+        </sql>
+    </report>
+
+    <report reportName="TextLostFromACausedByNewExceptionsInB"
+            reportFilename="exceptions/textLostFromACausedByNewExceptionsInB.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path as FILE_PATH, ca.NUM_TOKENS as NUM_TOKENS_A,
+            cb.NUM_TOKENS as NUM_TOKENS_B,
+            ca.NUM_UNIQUE_TOKENS as NUM_UNIQUE_TOKENS_A, cb.NUM_UNIQUE_TOKENS
+            as NUM_UNIQUE_TOKENS_B,
+            ca.common_tokens_lang as COMMON_TOKENS_LANG_A,
+            ca.num_common_tokens as NUM_COMMON_TOKENS_A,
+            cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
+            cb.num_common_tokens as NUM_COMMON_TOKENS_B,
+            ca.top_n_tokens as TOP_N_TOKENS_A, cb.top_n_tokens as TOP_N_TOKENS_B,
+            eb.ORIG_STACK_TRACE as ORIG_STACK_TRACE_B
+            from contents_a ca
+            join profiles_a pa on ca.id = pa.id
+            join containers c on pa.container_id=c.container_id
+            left join contents_b cb on ca.id=cb.id
+            left join exceptions_b eb on ca.id = eb.id
+            left join exceptions_a ea on ca.id = ea.id
+            where eb.orig_stack_trace is not null
+            and ea.orig_stack_trace is null
+            order by ca.num_common_tokens - ifnull(cb.num_common_tokens,0) desc
+        </sql>
+    </report>
+
+    <report reportName="FixedExceptionsInBByMimeType"
+            reportFilename="exceptions/fixedExceptionsInBByMimeType.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string as MIME_TYPE, count(1) as COUNT
+            from exceptions_a ea
+            left join exceptions_b eb on ea.id = eb.id
+            join profiles_a pa on pa.id=ea.id
+            join profiles_b pb on pa.id=pb.id
+            join containers c on pa.container_id=c.container_id
+            join mimes m on m.mime_type_id=pa.mime_type_id
+            where eb.id is null
+            and ea.parse_exception_type_id=0
+            group by mime_string
+        </sql>
+    </report>
+
+    <report reportName="FixedExceptionsInByDetails"
+            reportFilename="exceptions/fixedExceptionsInBDetails.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select mime_string as MIME_TYPE,
+            file_path, pa.file_name, pa.is_embedded
+            from exceptions_a ea
+            left join exceptions_b eb on ea.id = eb.id
+            join profiles_a pa on pa.id=ea.id
+            join profiles_b pb on pb.id=pa.id //this ensures that files were actually processed in both runs
+            join containers c on pa.container_id=c.container_id
+            join mimes m on m.mime_type_id=pa.mime_type_id
+            where eb.id is null
+            and ea.parse_exception_type_id=0
+            order by mime_string
+        </sql>
+    </report>
+    <report reportName="ContentsOfFixedExceptionsInB"
+            reportFilename="exceptions/contentsOfFixedExceptionsInB.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path, mime_string as MIME_TYPE,
+            CONTENT_LENGTH,
+            NUM_TOKENS, NUM_UNIQUE_TOKENS,
+            TOP_N_TOKENS, LANG_ID_1,TOKEN_LENGTH_MEAN, TOKEN_LENGTH_STD_DEV
+            from exceptions_a ea
+            left join exceptions_b eb on ea.id = eb.id
+            join profiles_a p on p.id=ea.id
+            join contents_b cb on cb.id=ea.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            where eb.id is null
+            and ea.parse_exception_type_id=0
+        </sql>
+    </report>
+
+    <report reportName="NewExceptionsByMimeType"
+            reportFilename="exceptions/newExceptionsInBByMimeType.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string as MIME_TYPE_A, count(1) as COUNT
+            from exceptions_b eb
+            left join exceptions_a ea on ea.id = eb.id
+            join profiles_a pa on pa.id=eb.id
+            join profiles_b pb on pb.id=pa.id
+            join containers c on pa.container_id=c.container_id
+            join mimes m on m.mime_type_id=pa.mime_type_id
+            where ea.id is null
+            and eb.parse_exception_type_id=0
+            group by mime_string
+            order by COUNT desc
+        </sql>
+    </report>
+
+    <report reportName="NewExceptionsInBByMimeTypeByStackTrace"
+            reportFilename="exceptions/newExceptionsInBByMimeTypeByStackTrace.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select MIME_STRING as MIME_TYPE, eb.sort_stack_trace, count(1) as
+            COUNT
+            from exceptions_b eb
+            left join exceptions_a ea on ea.id = eb.id
+            join profiles_a p on p.id=eb.id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            where ea.id is null
+            and eb.parse_exception_type_id=0
+            group by MIME_TYPE, eb.sort_stack_trace
+            order by MIME_TYPE asc, COUNT desc
+        </sql>
+    </report>
+
+    <report reportName="NewExceptionsInBDetails"
+            reportFilename="exceptions/newExceptionsInBDetails.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path, MIME_STRING as MIME_TYPE, p.length,
+            eb.orig_stack_trace, eb.sort_stack_trace
+            from exceptions_b eb
+            left join exceptions_a ea on ea.id = eb.id
+            join profiles_a p on p.id=eb.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            where ea.id is null
+            and eb.parse_exception_type_id=0
+            order by MIME_TYPE asc, eb.ORIG_STACK_TRACE
+        </sql>
+    </report>
+
+    <report reportName="StackTracesByMimeInA"
+            reportFilename="exceptions/stackTracesByMimeInA.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select MIME_STRING as MIME_TYPE, e.sort_stack_trace, count(1) as
+            COUNT
+            from exceptions_a e
+            join profiles_a p on p.id=e.id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            and e.parse_exception_type_id=0
+            group by MIME_TYPE, e.sort_stack_trace
+            order by MIME_TYPE asc, COUNT desc
+        </sql>
+    </report>
+
+    <report reportName="AllStackTracesInA"
+            reportFilename="exceptions/stackTracesInA.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path, c.length as FILE_LENGTH, MIME_STRING as MIME_TYPE,
+            orig_stack_trace, sort_stack_trace
+            from exceptions_a e
+            join profiles_a p on p.id=e.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            and e.parse_exception_type_id=0
+            order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
+            FILE_LENGTH asc
+        </sql>
+    </report>
+    <report reportName="AllStackTracesInB"
+            reportFilename="exceptions/stackTracesInB.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path, c.length as FILE_LENGTH, MIME_STRING as MIME_TYPE,
+            orig_stack_trace, sort_stack_trace
+            from exceptions_b e
+            join profiles_b p on p.id=e.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            and e.parse_exception_type_id=0
+            order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
+            FILE_LENGTH asc
+        </sql>
+    </report>
+
+    <report reportName="StackTracesByMimeInB"
+            reportFilename="exceptions/stackTracesByMimeInB.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select MIME_STRING as MIME_TYPE, e.sort_stack_trace, count(1) as
+            COUNT
+            from exceptions_b e
+            join profiles_b p on p.id=e.id
+            join mimes m on m.mime_type_id=p.mime_type_id
+            and e.parse_exception_type_id=0
+            group by MIME_TYPE, e.sort_stack_trace
+            order by MIME_TYPE asc, COUNT desc
+        </sql>
+    </report>
+    <report reportName="extractErrorsA"
+            reportFilename="exceptions/extract_errors_a.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select file_path, extract_error_description
+            from extract_errors_a e
+            join ref_extract_error_types t
+            on e.extract_error_type_id=t.extract_error_type_id
+        </sql>
+    </report>
+    <report reportName="extractErrorsB"
+            reportFilename="exceptions/extract_errors_b.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select file_path, extract_error_description
+            from extract_errors_b e
+            join ref_extract_error_types t
+            on e.extract_error_type_id=t.extract_error_type_id
+        </sql>
+    </report>
+    <report reportName="parseExceptionTypesA"
+            reportFilename="exceptions/overall_exception_types_a.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select parse_exception_description, count(1)
+            from exceptions_a e
+            join ref_parse_exception_types t on
+            t.parse_exception_type_id=e.parse_exception_type_id
+            group by e.parse_exception_type_id
+        </sql>
+    </report>
+    <report reportName="parseExceptionTypesB"
+            reportFilename="exceptions/overall_exception_types_b.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select parse_exception_description, count(1)
+            from exceptions_b e
+            join ref_parse_exception_types t on
+            t.parse_exception_type_id=e.parse_exception_type_id
+            group by e.parse_exception_type_id
+        </sql>
+    </report>
+
+    <report reportName="contentDiffsWExceptions"
+            reportFilename="content/content_diffs_with_exceptions.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path,
+            ma.mime_string as mime_string_a,
+            mb.mime_string as mime_string_b,
+            ca.num_unique_tokens as NUM_UNIQUE_TOKENS_A,
+            cb.num_unique_tokens as NUM_UNIQUE_TOKENS_B,
+            ca.num_tokens as NUM_TOKENS_A,
+            cb.num_tokens as NUM_TOKENS_B,
+            ca.common_tokens_lang as COMMON_TOKENS_LANG_A,
+            ca.num_common_tokens as NUM_COMMON_TOKENS_A,
+            cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
+            cb.num_common_tokens as NUM_COMMON_TOKENS_B,
+            ca.top_n_tokens as TOP_N_TOKENS_A,
+            cb.top_n_tokens as TOP_N_TOKENS_B,
+            ca.unicode_char_blocks as UNICODE_CHAR_BLOCKS_A,
+            cb.unicode_char_blocks as UNICODE_CHAR_BLOCKS_B,
+            top_10_unique_token_diffs_a,
+            top_10_unique_token_diffs_b,
+            top_10_more_in_a, top_10_more_in_b, dice_coefficient, overlap
+            from content_comparisons cc
+            join contents_a ca on ca.id=cc.id
+            left join contents_b cb on cb.id=cc.id
+            join profiles_a pa on pa.id = cc.id
+            join profiles_b pb on pb.id=cc.id
+            join containers c on c.container_id=pa.container_id
+            join mimes ma on ma.mime_type_id=pa.mime_type_id
+            join mimes mb on mb.mime_type_id=pb.mime_type_id
+            left join exceptions_a ea on ea.id=cc.id
+            left join exceptions_b eb on eb.id=cc.id
+            where (overlap &lt; 0.95 or abs(ca.NUM_TOKENS-cb.NUM_TOKENS) &gt;30)
+            and (ea.parse_exception_type_id is null or
+            ea.parse_exception_type_id &lt;&gt; 2)
+            and (eb.parse_exception_type_id is null or
+            eb.parse_exception_type_id &lt;&gt; 2)
+            order by ma.mime_string, overlap asc
+            limit 100000
+        </sql>
+    </report>
+    <report reportName="contentDiffsIgnoreExceptions"
+            reportFilename="content/content_diffs_ignore_exceptions.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path,
+            ma.mime_string as mime_string_a,
+            mb.mime_string as mime_string_b,
+            ca.NUM_UNIQUE_TOKENS as NUM_UNIQUE_TOKENS_A,
+            cb.NUM_UNIQUE_TOKENS as NUM_UNIQUE_TOKENS_B,
+            ca.NUM_TOKENS as NUM_TOKENS_A,
+            cb.NUM_TOKENS as NUM_TOKENS_B,
+            ca.common_tokens_lang as COMMON_TOKENS_LANG_A,
+            ca.num_common_tokens as NUM_COMMON_TOKENS_A,
+            cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
+            cb.num_common_tokens as NUM_COMMON_TOKENS_B,
+            ca.top_n_tokens as TOP_N_TOKENS_A,
+            cb.top_n_tokens as TOP_N_TOKENS_B,
+            ca.unicode_char_blocks as UNICODE_CHAR_BLOCKS_A,
+            cb.unicode_char_blocks as UNICODE_CHAR_BLOCKS_B,
+            top_10_unique_token_diffs_a,
+            top_10_unique_token_diffs_b,
+            top_10_more_in_a, top_10_more_in_b, dice_coefficient, overlap
+            from content_comparisons cc
+            join contents_a ca on ca.id=cc.id
+            join contents_b cb on cb.id=cc.id
+            join profiles_a pa on pa.id = cc.id
+            join profiles_b pb on pb.id=cc.id
+            join containers c on c.container_id=pa.container_id
+            join mimes ma on ma.mime_type_id=pa.mime_type_id
+            join mimes mb on mb.mime_type_id=pb.mime_type_id
+            left join exceptions_a ea on ea.id=cc.id
+            left join exceptions_b eb on eb.id=cc.id
+            where (overlap &lt; 0.95 or abs(ca.NUM_TOKENS-cb.NUM_TOKENS) &gt;30)
+            and (ea.parse_exception_type_id is null)
+            and (eb.parse_exception_type_id is null)
+            order by ma.mime_string, overlap asc
+            limit 100000
+        </sql>
+    </report>
+    <!--    <report reportName="MD5 Duplicate Counts A"
+                reportFilename="md5/md5_duplicate_counts_A.xlsx"
+                format="xlsx"
+                            includeSql="true">
+            <sql>
+                select md5, count(1) cnt
+                from profiles_a
+                group by md5
+                having cnt > 2
+                order by cnt desc
+            </sql>
+        </report>
+
+        <report reportName="MD5 Duplicate Counts B"
+                reportFilename="md5/md5_duplicate_counts_B.xlsx"
+                format="xlsx"
+                            includeSql="true">
+
+            <sql>
+                select md5, count(1) cnt
+                from profiles_b
+                group by md5
+                having cnt > 2
+                order by cnt desc
+            </sql>
+        </report>
+
+        <report reportName="MD5 Duplicates A"
+                reportFilename="md5/md5_duplicates_A.xlsx"
+                format="xlsx"
+                            includeSql="true">
+
+            <sql>
+                select file_path, file_name, is_embedded, content_length, NUM_TOKENS, p.md5
+                from md5_multiples_tmp_a t
+                join profiles_a p on p.md5 = t.md5
+                join containers c on p.container_id = c.container_id
+                join contents_a cb on p.id=cb.id
+                order by t.cnt desc
+            </sql>
+        </report>
+
+        <report reportName="MD5 Duplicates B"
+                reportFilename="md5/md5_duplicates_B.xlsx"
+                format="xlsx"
+                            includeSql="true">
+
+            <sql>
+                select file_path, file_name, is_embedded, content_length, NUM_TOKENS, p.md5
+                from md5_multiples_tmp_b t
+                join profiles_b p on p.md5 = t.md5
+                join containers c on p.container_id = c.container_id
+                join contents_b cb on p.id=cb.id
+                order by t.cnt desc
+            </sql>
+        </report>
+    -->
+
+    <report reportName="Attachment Diffs"
+            reportFilename="attachments/attachment_diffs.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path,
+            ma.mime_string as mime_string_a,
+            mb.mime_string as mime_string_b,
+            pa.num_attachments as num_attachments_a,
+            pb.num_attachments as num_attachments_b,
+            ea.parse_exception_type_id as exception_type_id_a,
+            eb.parse_exception_type_id as exception_type_id_b
+            from profiles_a pa
+            join profiles_b pb on pa.id= pb.id
+            join containers c on pa.container_id=c.container_id
+            join mimes ma on pa.mime_type_id=ma.mime_type_id
+            join mimes mb on pb.mime_type_id=mb.mime_type_id
+            left join exceptions_a ea on ea.id=pa.id
+            left join exceptions_b eb on eb.id=pb.id
+            where pa.is_embedded=false and
+            ea.parse_exception_type_id is null and
+            eb.parse_exception_type_id is null
+            and pa.num_attachments &lt;&gt; pb.num_attachments
+            order by ma.mime_string, pb.num_attachments-pa.num_attachments
+            limit 1000;
+        </sql>
+    </report>
+
+    <!-- metadata values -->
+    <report reportName="Metadata Value Diffs"
+            reportFilename="metadata/metadata_value_count_diffs.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path,
+            ma.mime_string as mime_string_a,
+            mb.mime_string as mime_string_b,
+            pa.num_metadata_values as num_metadata_values_a,
+            pb.num_metadata_values as num_metadata_values_b,
+            ea.parse_exception_type_id as parse_ex_type_id_a,
+            eb.parse_exception_type_id as parse_ex_type_id_b
+            from profiles_a pa
+            join profiles_b pb on pa.id= pb.id
+            join containers c on pa.container_id=c.container_id
+            join mimes ma on pa.mime_type_id=ma.mime_type_id
+            join mimes mb on pb.mime_type_id=mb.mime_type_id
+            left join exceptions_a ea on ea.id=pa.id
+            left join exceptions_b eb on eb.id=pb.id
+            where
+            ea.parse_exception_type_id is null and
+            eb.parse_exception_type_id is null
+            and pa.num_metadata_values &lt;&gt; pb.num_metadata_values
+            order by ma.mime_string,
+            pb.num_metadata_values-pa.num_metadata_values
+        </sql>
+    </report>
+
+    <after>
+        <sql>drop table if exists md5_multiples_tmp_a</sql>
+        <sql>drop table if exists md5_multiples_tmp_b</sql>
+    </after>
+</reports>
