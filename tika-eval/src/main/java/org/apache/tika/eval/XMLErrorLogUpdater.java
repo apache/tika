@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.log4j.Level;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.DBUtil;
@@ -40,7 +41,6 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.XMLLogMsgHandler;
 import org.apache.tika.eval.io.XMLLogReader;
 import org.apache.tika.eval.reports.ResultsReporter;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

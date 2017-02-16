@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.log4j.Logger;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.db.ColInfo;
@@ -32,7 +33,6 @@ import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.DBUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
-import org.apache.tika.io.IOExceptionWithCause;
 
 /**
  * This is still in its early stages.  The idea is to

@@ -31,8 +31,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.log4j.Logger;
-import org.apache.tika.io.IOExceptionWithCause;
 
 public abstract class DBUtil {
 
