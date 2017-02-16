@@ -206,7 +206,7 @@
         </sql>
     </report>
 
-	<report reportName="Mime Differences A -> B Details"
+    <report reportName="Mime Differences A -> B Details"
             reportFilename="mimes/mime_diffs_A_to_B_details.xlsx"
             format="xlsx"
             includeSql="true">

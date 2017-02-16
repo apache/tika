@@ -20,34 +20,34 @@
 
 <tika-batch-config
         maxAliveTimeSeconds="-1"
-        pauseOnEarlyTerminationMillis = "500"
+        pauseOnEarlyTerminationMillis="500"
         timeoutCheckPulseMillis="1000"
         maxQueueSize="10000"
         numConsumers="5"
         timeoutThresholdMillis="300000"
-        >
+>
 
     <commandline>
-    <option opt="c" longOpt="tika-config" hasArg="true"
-            description="TikaConfig file"/>
-    <option opt="bc" longOpt="batch-config" hasArg="true"
-            description="xml batch config file" required="true"/>
-    <option opt="inputDir" hasArg="true"
-            description="dir to start crawling"/>
-    <option opt="numConsumers" hasArg="true"
-            description="number of fileConsumers threads"/>
-    <option opt="extractsA" hasArg="true"
-            description="this dir for analysis" required="false"/>
-    <option opt="extractsB" hasArg="true"
-            description="thatDir for analysis"/>
-    <option opt="db" hasArg="true"
-            description="name of db directory or file to which to write results"/>
-    <option opt="alterExtract" hasArg="true"
+        <option opt="c" longOpt="tika-config" hasArg="true"
+                description="TikaConfig file"/>
+        <option opt="bc" longOpt="batch-config" hasArg="true"
+                description="xml batch config file" required="true"/>
+        <option opt="inputDir" hasArg="true"
+                description="dir to start crawling"/>
+        <option opt="numConsumers" hasArg="true"
+                description="number of fileConsumers threads"/>
+        <option opt="extractsA" hasArg="true"
+                description="this dir for analysis" required="false"/>
+        <option opt="extractsB" hasArg="true"
+                description="thatDir for analysis"/>
+        <option opt="db" hasArg="true"
+                description="name of db directory or file to which to write results"/>
+        <option opt="alterExtract" hasArg="true"
                 description="for json-formatted extract files
                 process full metadata list ('as_is'=default),
                 take just the first/container document ('first_only'),
                 concatenate all content into the first metadata item ('concatenate_content')"/>
-    <option opt="includeFilePat" hasArg="true"
+        <option opt="includeFilePat" hasArg="true"
                 description="regex for files to include"/>
     </commandline>
 
@@ -56,15 +56,15 @@
         Can also add startDir: this tells the crawler to start indexing a
         child directory of the srcDir directory.
     -->
-	<crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
-		crawlOrder="sorted"
-        maxConsecWaitMillis="30000"
-		maxFilesToAdd="-1" 
-		maxFilesToConsider="-1" 
-		includeFilePat=""
-		excludeFilePat=""
-		maxFileSizeBytes="10000000"
-        />
+    <crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
+             crawlOrder="sorted"
+             maxConsecWaitMillis="30000"
+             maxFilesToAdd="-1"
+             maxFilesToConsider="-1"
+             includeFilePat=""
+             excludeFilePat=""
+             maxFileSizeBytes="10000000"
+    />
 
     <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
                consumerBuilderClass="org.apache.tika.eval.batch.FileComparerBuilder"
@@ -73,9 +73,10 @@
                minJsonFileSizeBytes="-1"
                maxJsonFileSizeBytes="2000000"
                commonTokens="resources/commontokens"
-            />
+    />
 
-	<!-- reporter and interrupter are optional -->
-	<reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" sleepMillis="1000" staleThresholdMillis="500000"/>
-	<interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
+    <!-- reporter and interrupter are optional -->
+    <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" sleepMillis="1000"
+              staleThresholdMillis="500000"/>
+    <interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
 </tika-batch-config>
