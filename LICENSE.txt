@@ -370,3 +370,11 @@ JUnRAR (https://github.com/edmund-wagner/junrar/)
 Sqlite (bundled in org.xerial's sqlite-jdbc)
     This product bundles Sqlite, which is in the Public Domain.  For details
     see: https://www.sqlite.org/copyright.html
+
+H2 Database in tika-eval
+    This software contains unmodified binary redistributions for
+    H2 database engine (http://www.h2database.com/),
+    which is dual licensed and available under the MPL 2.0
+    (Mozilla Public License) or under the EPL 1.0 (Eclipse Public License).
+    An original copy of the license agreement can be found at:
+    http://www.h2database.com/html/license.html
