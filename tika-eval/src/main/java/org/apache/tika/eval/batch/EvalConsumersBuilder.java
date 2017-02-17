@@ -65,7 +65,7 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
             throw new RuntimeException(e);
         }
 
-        Path commonTokens = getNonNullPath(localAttrs, "commonTokens");
+        Path commonTokens = getPath(localAttrs, "commonTokens");
         try {
             AbstractProfiler.loadCommonTokens(commonTokens);
         } catch (IOException e) {

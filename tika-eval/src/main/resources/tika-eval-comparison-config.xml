@@ -28,8 +28,6 @@
 >
 
     <commandline>
-        <option opt="c" longOpt="tika-config" hasArg="true"
-                description="TikaConfig file"/>
         <option opt="bc" longOpt="batch-config" hasArg="true"
                 description="xml batch config file" required="true"/>
         <option opt="inputDir" hasArg="true"
@@ -47,8 +45,6 @@
                 process full metadata list ('as_is'=default),
                 take just the first/container document ('first_only'),
                 concatenate all content into the first metadata item ('concatenate_content')"/>
-        <option opt="includeFilePat" hasArg="true"
-                description="regex for files to include"/>
     </commandline>
 
 
@@ -72,7 +68,7 @@
                crawlingInputDir="false"
                minJsonFileSizeBytes="-1"
                maxJsonFileSizeBytes="2000000"
-               commonTokens="resources/commontokens"
+               commonTokens="resources/common_tokens"
     />
 
     <!--               langModelDir="resources/langmodels" -->

@@ -38,13 +38,13 @@ public class SingleFileConsumerBuilder extends EvalConsumerBuilder {
 
     @Override
     public FileResourceConsumer build() throws IOException {
-        Path extractDir = PropsUtil.getPath(localAttrs.get("extractDir"), null);
-        if (extractDir == null) {
-            throw new RuntimeException("Must specify \"extractDir\" -- directory to crawl");
+        Path extracts = PropsUtil.getPath(localAttrs.get("extracts"), null);
+        if (extracts == null) {
+            throw new RuntimeException("Must specify \"extracts\" -- directory to crawl");
         }
-        if (!Files.isDirectory(extractDir)) {
+        if (!Files.isDirectory(extracts)) {
             throw new RuntimeException("ROOT DIRECTORY DOES NOT EXIST: " +
-                    extractDir.toAbsolutePath());
+                    extracts.toAbsolutePath());
         }
 
         Path inputDir = PropsUtil.getPath(localAttrs.get("inputDir"), null);
@@ -64,16 +64,16 @@ public class SingleFileConsumerBuilder extends EvalConsumerBuilder {
         } catch (SQLException e) {
             throw new RuntimeException("Can't populate ref tables", e);
         }
-        //we _could_ set this to extractDir (if not null)
+        //we _could_ set this to extracts (if not null)
         //here, but the Crawler defaults to "input" if nothing is passed
         //so this won't work
         if (inputDir == null) {
             throw new RuntimeException("Must specify -inputDir");
         }
-        if (extractDir == null && inputDir != null) {
-            extractDir = inputDir;
+        if (extracts == null && inputDir != null) {
+            extracts = inputDir;
         }
-        return new ExtractProfiler(queue, inputDir, extractDir, writer, alterExtractList);
+        return new ExtractProfiler(queue, inputDir, extracts, writer, alterExtractList);
     }
 
     @Override
