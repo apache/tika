@@ -59,7 +59,7 @@ public class SimpleComparerTest extends TikaTest {
                 Paths.get("extractsA"), Paths.get("extractsB"),
                 writer, -1, -1,
                 ExtractReader.ALTER_METADATA_LIST.AS_IS);
-        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/commontokens").toPath());
+        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath());
         LanguageIDWrapper.loadBuiltInModels();
     }
 

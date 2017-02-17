@@ -30,7 +30,7 @@ public class TikaEvalCLITest {
     public void testBasic() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Profile");
-        args.add("-extractDir");
+        args.add("-extracts");
         args.add("tika");
         args.add("-db");
         args.add("mydb");

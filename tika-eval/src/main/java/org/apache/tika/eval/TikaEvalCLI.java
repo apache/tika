@@ -78,7 +78,7 @@ public class TikaEvalCLI {
 
         boolean containsBC = false;
         String inputDir = null;
-        String extractDir = null;
+        String extracts = null;
         String alterExtract = null;
         //confirm there's a batch-config file
         for (int i = 0; i < argList.size(); i++) {
@@ -93,13 +93,13 @@ public class TikaEvalCLI {
                 }
                 inputDir = argList.get(i+1);
                 i++;
-            } else if (arg.equals("-extractDir")) {
+            } else if (arg.equals("-extracts")) {
                 if (i+1 >= argList.size()) {
-                    System.err.println("Must specify directory after -extractDir");
+                    System.err.println("Must specify directory after -extracts");
                     ExtractProfiler.USAGE();
                     return;
                 }
-                extractDir = argList.get(i+1);
+                extracts = argList.get(i+1);
                 i++;
             } else if (arg.equals("-alterExtract")) {
                 if (i+1 >= argList.size()) {
@@ -122,15 +122,15 @@ public class TikaEvalCLI {
         }
 
         //need to specify each in this commandline
-        //if only extractDir is passed to tika-batch,
+        //if only extracts is passed to tika-batch,
         //the crawler will see no inputDir and start crawling "input".
-        //this allows the user to specify either extractDir or inputDir
-        if (extractDir == null && inputDir != null) {
-            argList.add("-extractDir");
+        //this allows the user to specify either extracts or inputDir
+        if (extracts == null && inputDir != null) {
+            argList.add("-extracts");
             argList.add(inputDir);
-        } else if (inputDir == null && extractDir != null) {
+        } else if (inputDir == null && extracts != null) {
             argList.add("-inputDir");
-            argList.add(extractDir);
+            argList.add(extracts);
         }
 
         Path tmpBCConfig = null;
@@ -210,7 +210,7 @@ public class TikaEvalCLI {
         }
 
         //need to specify each in the commandline that goes into tika-batch
-        //if only extractDir is passed to tika-batch,
+        //if only extracts is passed to tika-batch,
         //the crawler will see no inputDir and start crawling "input".
         //if the user doesn't specify inputDir, crawl extractsA
         if (inputDir == null && extractsA != null) {

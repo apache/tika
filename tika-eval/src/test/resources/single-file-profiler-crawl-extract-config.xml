@@ -36,7 +36,7 @@
                 description="dir to start crawling"/>
         <option opt="numConsumers" hasArg="true"
                 description="number of fileConsumers threads"/>
-        <option opt="extractDir" hasArg="true"
+        <option opt="extracts" hasArg="true"
                 description="this dir contains the files containing extracted metadata/content" required="false"/>
         <option opt="db" hasArg="true"
                 description="name of db directory or file to which to write results"/>
@@ -61,7 +61,7 @@
     <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
                consumerBuilderClass="org.apache.tika.eval.batch.SingleFileConsumerBuilder"
                errorLogFile="src/test/resources/test-dirs/batch-logs/batch-process-fatal.xml"
-               extractDir="src/test/resources/test-dirs/extractsA"
+               extracts="src/test/resources/test-dirs/extractsA"
                commonTokens="src/test/resources/common_tokens_short.txt"/>
 
 

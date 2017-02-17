@@ -44,18 +44,18 @@ public class ExtractProfiler extends AbstractProfiler {
         Option db = new Option("db", true, "db file to which to write results");
         db.setRequired(true);
 
-        //By the time this commandline is parsed, there should be both an extractDir and an inputDir
-        Option extractDir = new Option("extractDir", true, "directory for extract files");
-        extractDir.setRequired(true);
+        //By the time this commandline is parsed, there should be both an extracts and an inputDir
+        Option extracts = new Option("extracts", true, "directory for extract files");
+        extracts.setRequired(true);
 
         Option inputDir = new Option("inputDir", true,
                 "optional: directory for original binary input documents."+
-        " If not specified, -extractDir is crawled as is.");
+        " If not specified, -extracts is crawled as is.");
         inputDir.setRequired(true);
 
         OPTIONS = new Options()
                 .addOption(db)
-                .addOption(extractDir)
+                .addOption(extracts)
                 .addOption(inputDir)
                 .addOption("bc", "optional: tika-batch config file")
                 .addOption("numConsumers", true, "optional: number of consumer threads")
@@ -71,7 +71,7 @@ public class ExtractProfiler extends AbstractProfiler {
         HelpFormatter helpFormatter = new HelpFormatter();
         helpFormatter.printHelp(
                 80,
-                "java -jar tika-eval-x.y.jar Profile -extractDir extracts -db mydb [-inputDir input]",
+                "java -jar tika-eval-x.y.jar Profile -extracts extracts -db mydb [-inputDir input]",
                 "Tool: Profile",
                 ExtractProfiler.OPTIONS,
                 "Note: for h2 db, do not include the .mv.db at the end of the db name.");
@@ -143,16 +143,16 @@ public class ExtractProfiler extends AbstractProfiler {
     );
 
     private final Path inputDir;
-    private final Path extractDir;
+    private final Path extracts;
     private final ExtractReader.ALTER_METADATA_LIST alterExtractList;
     private final ExtractReader extractReader = new ExtractReader();
 
     public ExtractProfiler(ArrayBlockingQueue<FileResource> queue,
-                           Path inputDir, Path extractDir,
+                           Path inputDir, Path extracts,
                            IDBWriter dbWriter, ExtractReader.ALTER_METADATA_LIST alterExtractList) {
         super(queue, dbWriter);
         this.inputDir = inputDir;
-        this.extractDir = extractDir;
+        this.extracts = extracts;
         this.alterExtractList = alterExtractList;
     }
 
@@ -161,11 +161,11 @@ public class ExtractProfiler extends AbstractProfiler {
         Metadata metadata = fileResource.getMetadata();
         EvalFilePaths fps = null;
 
-        if (inputDir != null && inputDir.equals(extractDir)) {
+        if (inputDir != null && inputDir.equals(extracts)) {
             //crawling an extract dir
-            fps = getPathsFromExtractCrawl(metadata, extractDir);
+            fps = getPathsFromExtractCrawl(metadata, extracts);
         } else {
-            fps = getPathsFromSrcCrawl(metadata, inputDir, extractDir);
+            fps = getPathsFromSrcCrawl(metadata, inputDir, extracts);
         }
         List<Metadata> metadataList = extractReader.loadExtract(fps.getExtractFile(), alterExtractList);
 

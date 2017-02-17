@@ -19,6 +19,8 @@ package org.apache.tika.eval.tokens;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,39 +105,57 @@ public class CommonTokenCountManager {
         if (commonTokenMap.get(langCode) != null) {
             return;
         }
-        Path p = commonTokensDir.resolve(langCode);
-        if (!Files.isRegularFile(p)) {
-            LOGGER.warn("Couldn't find common tokens file for: '"+langCode+"': "+
-            p.toAbsolutePath());
-            alreadyTriedToLoad.add(langCode);
-            return;
+        InputStream is = null;
+        Path p = null;
+        if (commonTokensDir != null) {
+            p = commonTokensDir.resolve(langCode);
         }
 
-        Set<String> set = commonTokenMap.get(langCode);
-        if (set == null) {
-            set = new HashSet<>();
-            commonTokenMap.put(langCode, set);
-        }
-        try (BufferedReader reader = Files.newBufferedReader(p, COMMON_TOKENS_CHARSET)) {
-            alreadyTriedToLoad.add(langCode);
-            String line = reader.readLine();
-            while (line != null) {
-                line = line.trim();
-                if (line.startsWith("#")) {
+        try {
+            if (p == null || !Files.isRegularFile(p)) {
+                is = this.getClass().getResourceAsStream("/common_tokens/" + langCode);
+            } else {
+                is = Files.newInputStream(p);
+            }
+
+
+            if (is == null) {
+                LOGGER.warn("Couldn't find common tokens file for: '" + langCode + "': " +
+                        p.toAbsolutePath());
+                alreadyTriedToLoad.add(langCode);
+                return;
+            }
+
+
+            Set<String> set = commonTokenMap.get(langCode);
+            if (set == null) {
+                set = new HashSet<>();
+                commonTokenMap.put(langCode, set);
+            }
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(is, COMMON_TOKENS_CHARSET))) {
+                alreadyTriedToLoad.add(langCode);
+                String line = reader.readLine();
+                while (line != null) {
+                    line = line.trim();
+                    if (line.startsWith("#")) {
+                        line = reader.readLine();
+                        continue;
+                    }
+                    //allow language models with, e.g. tab-delimited counts after the term
+                    String[] cols = line.split("\t");
+                    String t = cols[0].trim();
+                    if (t.length() > 0) {
+                        set.add(t);
+                    }
+
                     line = reader.readLine();
-                    continue;
                 }
-                //allow language models with, e.g. tab-delimited counts after the term
-                String[] cols = line.split("\t");
-                String t = cols[0].trim();
-                if (t.length() > 0) {
-                    set.add(t);
-                }
-
-                line = reader.readLine();
             }
         } catch (IOException e) {
-            LOGGER.warn("IOException trying to read: '"+langCode+"'");
+            LOGGER.warn("IOException trying to read: '" + langCode + "'");
+        } finally {
+            IOUtils.closeQuietly(is);
         }
     }
 

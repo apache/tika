@@ -158,6 +158,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     final LanguageIDWrapper langIder;
     protected IDBWriter writer;
 
+    /**
+     *
+     * @param p path to the common_tokens directory.  If this is null, try to load from classPath
+     * @throws IOException
+     */
     public static void loadCommonTokens(Path p) throws IOException {
         commonTokenCountManager = new CommonTokenCountManager(p);
     }
@@ -536,29 +541,29 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     /**
      *
      * @param metadata
-     * @param extractDir
+     * @param extracts
      * @return evalfilepaths for files if crawling an extract directory
      */
     protected EvalFilePaths getPathsFromExtractCrawl(Metadata metadata,
-                                                     Path extractDir) {
+                                                     Path extracts) {
         String relExtractFilePath = metadata.get(FSProperties.FS_REL_PATH);
         Matcher m = FILE_NAME_CLEANER.matcher(relExtractFilePath);
         Path relativeSourceFilePath = Paths.get(m.replaceAll(""));
         //just try slapping the relextractfilepath on the extractdir
-        Path extractFile = extractDir.resolve(relExtractFilePath);
+        Path extractFile = extracts.resolve(relExtractFilePath);
         if (! Files.isRegularFile(extractFile)) {
             //if that doesn't work, try to find the right extract file.
             //This is necessary if crawling extractsA and trying to find a file in
             //extractsB that is not in the same format: json vs txt or compressed
-            extractFile = findFile(extractDir, relativeSourceFilePath);
+            extractFile = findFile(extracts, relativeSourceFilePath);
         }
         return new EvalFilePaths(relativeSourceFilePath, extractFile);
     }
     //call this if the crawler is crawling through the src directory
     protected EvalFilePaths getPathsFromSrcCrawl(Metadata metadata, Path srcDir,
-                                                 Path extractDir) {
+                                                 Path extracts) {
         Path relativeSourceFilePath = Paths.get(metadata.get(FSProperties.FS_REL_PATH));
-        Path extractFile = findFile(extractDir, relativeSourceFilePath);
+        Path extractFile = findFile(extracts, relativeSourceFilePath);
         Path inputFile = srcDir.resolve(relativeSourceFilePath);
         long srcLen = -1l;
         //try to get the length of the source file in case there was an error
