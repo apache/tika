@@ -16,21 +16,7 @@
  */
 package org.apache.tika.gui;
 
-import javax.swing.Box;
-import javax.swing.JDialog;
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JTabbedPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
-import javax.swing.ProgressMonitorInputStream;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkEvent.EventType;
 import javax.swing.event.HyperlinkListener;
@@ -39,9 +25,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -55,10 +39,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -66,10 +48,15 @@ import javafx.scene.Scene;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import org.apache.commons.io.IOUtils;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.lucene.DocumentIndexer;
+import org.apache.tika.lucene.FoundItem;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
@@ -152,6 +139,11 @@ public class TikaGUI extends JFrame
     private final ImageSavingParser imageParser;
 
     /**
+     * Document indexer
+     */
+    private DocumentIndexer docIndexer;
+
+    /**
      * Container for the editor tabs.
      */
     private final JTabbedPane tabs;
@@ -166,7 +158,9 @@ public class TikaGUI extends JFrame
         TEXT("Plain text", "text/plain"),
         TEXT_MAIN("Main content", "text/plain"),
         XML("Structured XML", "text/plain"),
-        JSON("Recursive JSON", "text/plain");
+        JSON("Recursive JSON", "text/plain"),
+        LUCENE("Lucene", ""),
+        ;
 
         String title, content;
         TabDef(String title, String content) {
@@ -206,6 +200,12 @@ public class TikaGUI extends JFrame
     private final JEditorPane metadata;
 
     /**
+     * Index queries.
+     */
+    private JEditorPane queryEditor;
+    private JEditorPane resultEditor;
+
+    /**
      * File chooser.
      */
     private final JFileChooser chooser = new JFileChooser();
@@ -224,6 +224,7 @@ public class TikaGUI extends JFrame
         textMain = addTab(tabs, TabDef.TEXT_MAIN);
         xml = addTab(tabs, TabDef.XML);
         json = addTab(tabs, TabDef.JSON);
+        addDocIndexerTab(tabs, TabDef.LUCENE);
         add(tabs);
 
         setPreferredSize(new Dimension(640, 480));
@@ -231,6 +232,12 @@ public class TikaGUI extends JFrame
 
         this.context = new ParseContext();
         this.parser = parser;
+        try {
+            this.docIndexer = new DocumentIndexer();
+        } catch (IOException e) {
+            this.docIndexer = null;
+            e.printStackTrace();
+        }
 
         this.imageParser = new ImageSavingParser(parser);
         this.context.set(DocumentSelector.class, new ImageDocumentSelector());
@@ -286,6 +293,8 @@ public class TikaGUI extends JFrame
                             "Invalid URL", JOptionPane.ERROR_MESSAGE);
                 }
             }
+        } else if ("query".equals(command)) {
+            executeQuery();
         } else if ("about".equals(command)) {
             textDialog(
                     "About Apache Tika",
@@ -374,6 +383,7 @@ public class TikaGUI extends JFrame
         setText(text, textBuffer.toString());
         setText(textMain, textMainBuffer.toString());
         setHtml(xhtml, htmlBuffer.toString());
+        addDocumentToIndex(name,htmlBuffer.toString());
         if (!input.markSupported()) {
             setText(json, "InputStream does not support mark/reset for Recursive Parsing");
             selectTab(TabDef.JSON);
@@ -461,6 +471,63 @@ public class TikaGUI extends JFrame
         return jfxPanel;
     }
 
+    private JPanel addDocIndexerTab(JTabbedPane tabs, TabDef tabDef) {
+        JPanel docIndexerPanel = new JPanel();
+        docIndexerPanel.setLayout(new BoxLayout(docIndexerPanel, BoxLayout.PAGE_AXIS));
+
+        this.queryEditor = new JTextPane();
+        this.queryEditor.setText("contents:\"*01*\"");
+        JScrollPane queryScroller = new JScrollPane(queryEditor);
+        queryScroller.setPreferredSize(new Dimension(tabs.getWidth(), 50));
+        queryScroller.setAlignmentX(LEFT_ALIGNMENT);
+
+        //Lay out the buttons from left to right.
+        final JButton queryButton = new JButton("Query");
+        queryButton.setActionCommand("query");
+        queryButton.addActionListener(this);
+        JPanel buttonPane = new JPanel();
+        buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.PAGE_AXIS));
+        buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        buttonPane.add(Box.createHorizontalGlue());
+        buttonPane.add(queryButton);
+
+        this.resultEditor = new JTextPane();
+        JScrollPane resultsScroller = new JScrollPane(resultEditor);
+        resultsScroller.setPreferredSize(new Dimension(tabs.getWidth(), 280));
+        resultsScroller.setAlignmentX(LEFT_ALIGNMENT);
+
+        //Put everything together, using the content pane's BorderLayout.
+        docIndexerPanel.add(queryScroller);
+        docIndexerPanel.add(buttonPane);
+        docIndexerPanel.add(resultsScroller);
+        tabs.add(tabDef.title,docIndexerPanel);
+        return docIndexerPanel;
+    }
+
+    private void addDocumentToIndex(String filename, String contents) {
+        try {
+            docIndexer.addDocument(filename, contents);
+        } catch (IOException e) {
+            this.resultEditor.setText(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    private void executeQuery() {
+        try {
+            List<FoundItem> fis = docIndexer.searchDocuments(this.queryEditor.getText());
+            StringBuffer res = new StringBuffer();
+            for (FoundItem fi : fis) {
+                res.append(fi.getScoreDoc().toString()+"\n  - "+fi.getDocument().toString()+"\n");
+            }
+            this.resultEditor.setText(res.toString());
+        } catch (ParseException e) {
+            this.resultEditor.setText(e.getMessage());
+            e.printStackTrace();
+        } catch (IOException e) {
+            this.resultEditor.setText(e.getMessage());
+            e.printStackTrace();
+        }
+    }
     private void textDialog(String title, URL resource) {
         try {
             JDialog dialog = new JDialog(this, title);
