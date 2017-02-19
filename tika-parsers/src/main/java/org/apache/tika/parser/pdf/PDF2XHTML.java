@@ -61,7 +61,9 @@ import org.xml.sax.helpers.AttributesImpl;
  * stream.
  */
 class PDF2XHTML extends AbstractPDF2XHTML {
-
+    private final static String XHTML_ELEMENT_NAME_P = "p";
+    private final static String XHTML_ELEMENT_NAME_IMG = "img";
+    private final static String XHTML_ELEMENT_NAME_SPAN = "span";
 
     private static final List<String> JPEG = Arrays.asList(
             COSName.DCT_DECODE.getName(),
@@ -238,8 +240,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 AttributesImpl attr = new AttributesImpl();
                 attr.addAttribute("", "src", "src", "CDATA", "embedded:" + fileName);
                 attr.addAttribute("", "alt", "alt", "CDATA", fileName);
-                xhtml.startElement("img", attr);
-                xhtml.endElement("img");
+                xhtml.startElement(XHTML_ELEMENT_NAME_IMG, attr);
+                xhtml.endElement(XHTML_ELEMENT_NAME_IMG);
 
                 //Do we only want to process unique COSObject ids?
                 //If so, have we already processed this one?
@@ -316,7 +318,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     protected void writeParagraphStart() throws IOException {
         super.writeParagraphStart();
         try {
-            xhtml.startElement("p");
+            xhtml.startElement(XHTML_ELEMENT_NAME_P);
         } catch (SAXException e) {
             throw new IOException("Unable to start a paragraph", e);
         }
@@ -326,29 +328,46 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     protected void writeParagraphEnd() throws IOException {
         super.writeParagraphEnd();
         try {
-            xhtml.endElement("p");
+            xhtml.endElement(XHTML_ELEMENT_NAME_P);
         } catch (SAXException e) {
             throw new IOException("Unable to end a paragraph", e);
         }
     }
 
-    @Override
-    protected void writeString(String text) throws IOException {
-        try {
-            xhtml.characters(text);
-        } catch (SAXException e) {
-            throw new IOException(
-                    "Unable to write a string: " + text, e);
+    private AttributesImpl extractSpanAttrs(List<TextPosition> textPositions) {
+        float fontResizeFactor = 0.8f;
+        AttributesImpl attrs = new AttributesImpl();
+        if (textPositions.size() > 0) {
+            TextPosition startPos = textPositions.get(0);
+            attrs.addAttribute("", "", "pdfFontName", null, startPos.getFont().getName());
+            attrs.addAttribute("", "", "pdfPageNo", null, getCurrentPageNo() + "");
+            attrs.addAttribute("", "", "style", null,
+                    "position: absolute; top: " + startPos.getY() + "px; left: " + startPos.getX() + "px; " +
+                            "font-size: " + (startPos.getFontSize()*fontResizeFactor) + "em"
+            );
         }
+        return attrs;
     }
 
     @Override
-    protected void writeCharacters(TextPosition text) throws IOException {
+    protected void writeString(String text, List<TextPosition> textPositions) throws IOException {
+        boolean elementStarted = false;
         try {
-            xhtml.characters(text.getUnicode());
+            xhtml.startElement(XHTML_ELEMENT_NAME_SPAN, extractSpanAttrs(textPositions));
+            elementStarted = true;
+            xhtml.characters(text);
         } catch (SAXException e) {
             throw new IOException(
-                    "Unable to write a character: " + text.getUnicode(), e);
+                    "Unable to write a character: " + text, e);
+        } finally {
+            try {
+                if (elementStarted) {
+                    xhtml.endElement(XHTML_ELEMENT_NAME_SPAN);
+                }
+            } catch (SAXException e) {
+                throw new IOException(
+                        "Unable to end element " + XHTML_ELEMENT_NAME_SPAN, e);
+            }
         }
     }
 
