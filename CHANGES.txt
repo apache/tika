@@ -1,6 +1,8 @@
 Release 1.15 - ??
 
-  * tika-eval module (TIKA-1332).
+  * Added tika-eval module (TIKA-1332).
+
+  * Fix potential NPE in FeedParser via Julien Nioche (TIKA-2269).
 
   * Add parsers for EMF/WMF files (TIKA-2246/TIKA-2247).
 
