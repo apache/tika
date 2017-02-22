@@ -30,9 +30,11 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.tagRatio.TextToTagRatio;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
 
 /**
  * Plain text parser. The text encoding of the document stream is
@@ -47,6 +49,7 @@ import org.xml.sax.SAXException;
  * <dd><code>text/plain; charset=...</code></dd>
  * </dl>
  */
+
 public class TXTParser extends AbstractParser {
 
     /**
@@ -64,10 +67,15 @@ public class TXTParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
+    @SuppressWarnings("static-access")
+	public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+    	
+    	TextToTagRatio ttr = new TextToTagRatio();
+    	
+    	
         // Automatically detect the character encoding
         try (AutoDetectReader reader = new AutoDetectReader(
                 new CloseShieldInputStream(stream), metadata,
@@ -102,6 +110,21 @@ public class TXTParser extends AbstractParser {
             xhtml.endElement("p");
 
             xhtml.endDocument();
+            
+            try {
+            	
+            	if(context.get(org.apache.tika.parser.tagRatio.TextToTagRatio.class) != null){
+            		
+        		String xhtmlOutput = xhtml.toString();
+				
+				String output = ttr.readXhtmlData(xhtmlOutput);
+
+				ttr.getTagRatioOfHtml(output);
+            	}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
         }
     }
 

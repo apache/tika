@@ -67,5 +67,4 @@ public interface Parser extends Serializable {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
-
 }
