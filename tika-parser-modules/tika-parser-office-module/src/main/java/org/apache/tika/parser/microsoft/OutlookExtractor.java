@@ -54,9 +54,11 @@ import org.apache.poi.util.CodePageUtil;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingDetectorProxy;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserProxy;
@@ -74,6 +76,8 @@ import org.xml.sax.SAXException;
 public class OutlookExtractor extends AbstractPOIFSExtractor {
 
 
+    private static final MediaType RTF = MediaType.application("rtf");
+
     private static Pattern HEADER_KEY_PAT =
             Pattern.compile("\\A([\\x21-\\x39\\x3B-\\x7E]+):(.*?)\\Z");
     //this according to the spec; in practice, it is probably more likely
@@ -90,6 +94,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final Parser htmlParserProxy;
 
     private final MAPIMessage msg;
+    private final ParseContext parseContext;
 
     public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
         this(filesystem.getRoot(), context);
@@ -97,6 +102,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
+        this.parseContext = context;
         this.htmlEncodingDetectorProxy = new EncodingDetectorProxy("org.apache.tika.parser.html.HtmlEncodingDetector", getClass().getClassLoader());
         this.htmlParserProxy = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
         this.dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
@@ -233,7 +239,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     htmlParserProxy.parse(
                             new ByteArrayInputStream(data),
                             new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                            new Metadata(), new ParseContext()
+                            new Metadata(), parseContext
                     );
                     doneBody = true;
                 }
@@ -243,11 +249,14 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 MAPIRtfAttribute rtf = new MAPIRtfAttribute(
                         MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
                 );
-                RTFParser rtfParser = new RTFParser();
+                Parser rtfParser = EmbeddedDocumentUtil.tryToFindExistingParser(RTF, parseContext);
+                if (rtfParser == null) {
+                    rtfParser = new RTFParser();
+                }
                 rtfParser.parse(
                         new ByteArrayInputStream(rtf.getData()),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        new Metadata(), new ParseContext());
+                        new Metadata(), parseContext);
                 doneBody = true;
             }
             if (textChunk != null && !doneBody) {

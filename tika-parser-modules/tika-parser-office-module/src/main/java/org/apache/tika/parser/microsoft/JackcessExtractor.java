@@ -49,6 +49,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserProxy;
@@ -70,18 +71,24 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     final static String CURRENCY_FORMAT_KEY = "Format";
     final static byte TEXT_FORMAT = 0;
     final static byte RICH_TEXT_FORMAT = 1;
-    final static ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
 
     final NumberFormat currencyFormatter;
     final DateFormat shortDateTimeFormatter;
+    final ParseContext parseContext;
 
     private final Parser htmlParserProxy;
 
     protected JackcessExtractor(Metadata metadata, ParseContext context, Locale locale) {
         super(context, metadata);
-        this.htmlParserProxy = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
+        this.parseContext = context;
+        Parser tmpHtml = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
+        if (tmpHtml == null) {
+            tmpHtml = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
+
+        }
+        this.htmlParserProxy = tmpHtml;
     }
 
     public void parse(Database db, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
@@ -207,7 +214,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     htmlParserProxy.parse(new ByteArrayInputStream(v.getBytes(UTF_8)),
                             h,
-                           m, EMPTY_PARSE_CONTEXT);
+                           m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     //if something went wrong in htmlparser, just append the characters

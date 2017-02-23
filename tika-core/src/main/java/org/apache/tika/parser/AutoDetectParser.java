@@ -23,6 +23,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -42,8 +44,6 @@ public class AutoDetectParser extends CompositeParser {
      * of a document.
      */
     private Detector detector; // always set in the constructor
-
-    private final TikaConfig tikaConfig;
 
     /**
      * Creates an auto-detecting parser instance using the default Tika
@@ -73,13 +73,11 @@ public class AutoDetectParser extends CompositeParser {
     public AutoDetectParser(Detector detector, Parser...parsers) {
         super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
-        this.tikaConfig = TikaConfig.getDefaultConfig();
     }
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
         setDetector(config.getDetector());
-        this.tikaConfig = config;
     }
 
     /**
@@ -116,10 +114,15 @@ public class AutoDetectParser extends CompositeParser {
             MediaType type = detector.detect(tis, metadata);
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
-            //pass the config to the parsers if
+            //pass self to handle embedded documents if
             //the caller hasn't specified one.
-            if (context.get(TikaConfig.class) == null) {
-                context.set(TikaConfig.class, tikaConfig);
+            if (context.get(EmbeddedDocumentExtractor.class) == null) {
+                Parser p = context.get(Parser.class);
+                if (p == null) {
+                    context.set(Parser.class, this);
+                }
+                context.set(EmbeddedDocumentExtractor.class,
+                        new ParsingEmbeddedDocumentExtractor(context));
             }
 
             // TIKA-216: Zip bomb prevention
