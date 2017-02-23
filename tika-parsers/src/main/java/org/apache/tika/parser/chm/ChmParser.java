@@ -69,6 +69,11 @@ public class ChmParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
+        Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
+        if (htmlParser == null) {
+            htmlParser = new HtmlParser();
+        }
+
         for (DirectoryListingEntry entry : chmExtractor.getChmDirList().getDirectoryListingEntryList()) {
             final String entryName = entry.getName();
             if (entryName.endsWith(".html") 
@@ -80,7 +85,7 @@ public class ChmParser extends AbstractParser {
                 
                 byte[] data = chmExtractor.extractChmEntry(entry);
 
-                parsePage(data, xhtml, context);
+                parsePage(data, htmlParser, xhtml, context);
                 
 //                xhtml.endElement("", "", "document");
             }
@@ -90,13 +95,10 @@ public class ChmParser extends AbstractParser {
     }
 
 
-    private void parsePage(byte[] byteObject, ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
+    private void parsePage(byte[] byteObject, Parser htmlParser,
+                           ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
-        Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
-        if (htmlParser == null) {
-            htmlParser = new HtmlParser();
-        }
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try {
             stream = new ByteArrayInputStream(byteObject);
