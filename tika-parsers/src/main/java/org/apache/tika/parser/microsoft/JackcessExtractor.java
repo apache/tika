@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import com.healthmarketscience.jackcess.Column;
@@ -49,7 +50,10 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -73,7 +77,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     final NumberFormat currencyFormatter;
     final DateFormat shortDateTimeFormatter;
 
-    final HtmlParser htmlParser = new HtmlParser();
+    final Parser htmlParser;
     final ParseContext parseContext;
 
     protected JackcessExtractor(Metadata metadata, ParseContext context, Locale locale) {
@@ -81,6 +85,12 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
         this.parseContext = context;
+        Parser tmpHtmlParser = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
+        if (tmpHtmlParser == null) {
+            htmlParser = new HtmlParser();
+        } else {
+            htmlParser = tmpHtmlParser;
+        }
     }
 
     public void parse(Database db, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {

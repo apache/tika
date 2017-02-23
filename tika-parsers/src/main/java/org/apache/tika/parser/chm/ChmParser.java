@@ -25,10 +25,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
 import org.apache.tika.parser.html.HtmlParser;
@@ -91,7 +93,10 @@ public class ChmParser extends AbstractParser {
     private void parsePage(byte[] byteObject, ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
-        HtmlParser htmlParser = new HtmlParser();
+        Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
+        if (htmlParser == null) {
+            htmlParser = new HtmlParser();
+        }
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         try {
             stream = new ByteArrayInputStream(byteObject);

@@ -20,6 +20,7 @@ package org.apache.tika.extractor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Map;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -31,6 +32,7 @@ import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -67,6 +69,7 @@ public class EmbeddedDocumentUtil implements Serializable {
      * <p/>
      * If you'd prefer not to parse embedded documents, set Parser.class
      * to {@link org.apache.tika.parser.EmptyParser} in the ParseContext.
+     *
      * @param context
      * @return EmbeddedDocumentExtractor
      */
@@ -135,7 +138,7 @@ public class EmbeddedDocumentUtil implements Serializable {
         boolean detected = false;
         if (mimeString != null) {
             try {
-                 mimeType = types.forName(mimeString);
+                mimeType = types.forName(mimeString);
             } catch (MimeTypeException e) {
                 //swallow
             }
@@ -180,6 +183,7 @@ public class EmbeddedDocumentUtil implements Serializable {
         String ex = ExceptionUtils.getFilteredStackTrace(t);
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM, ex);
     }
+
     public boolean shouldParseEmbedded(Metadata m) {
         return getEmbeddedDocumentExtractor().shouldParseEmbedded(m);
     }
@@ -191,5 +195,35 @@ public class EmbeddedDocumentUtil implements Serializable {
     public void parseEmbedded(InputStream inputStream, ContentHandler handler,
                               Metadata metadata, boolean outputHtml) throws IOException, SAXException {
         embeddedDocumentExtractor.parseEmbedded(inputStream, handler, metadata, outputHtml);
+    }
+
+    /**
+     * Tries to find an existing parser within the ParseContext.
+     * Initially tries to find first child parser specific to that mediaType.
+     * Then backs off to the overall parser.
+     * Can return <code>null</code> if the context contains no parser or
+     * if an appropriate parser can't be found.
+     *
+     * @param mediaType
+     * @param context
+     * @return
+     */
+    public static Parser tryToFindExistingParser(MediaType mediaType, ParseContext context) {
+        Parser p = context.get(Parser.class);
+        if (p != null) {
+            //try to find the sub parser
+            if (p instanceof CompositeParser) {
+                Map<MediaType, Parser> map = ((CompositeParser) p).getParsers(context);
+                Parser retParser = map.get(mediaType);
+                if (retParser != null) {
+                    return retParser;
+                }
+            }
+        }
+        if (p != null && p.getSupportedTypes(context).contains(mediaType)) {
+            return p;
+        }
+        return null;
+
     }
 }
