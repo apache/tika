@@ -18,11 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Properties;
 
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
@@ -35,11 +31,6 @@ import org.xml.sax.SAXException;
  * @since Apache Tika 0.10
  */
 public abstract class AbstractParser implements Parser {
-
-    /**
-     * Configuration supplied at runtime
-     */
-    protected ParseContext context;
 
     /**
      * Serial version UID.
