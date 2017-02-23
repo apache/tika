@@ -36,7 +36,7 @@ public class AutoDetectParser extends CompositeParser {
 
     /** Serial version UID */
     private static final long serialVersionUID = 6110455808615143122L;
-    private final TikaConfig config;
+    //private final TikaConfig config;
 
     /**
      * The type detector used by this parser to auto-detect the type
@@ -72,13 +72,13 @@ public class AutoDetectParser extends CompositeParser {
     public AutoDetectParser(Detector detector, Parser...parsers) {
         super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
-        config = TikaConfig.getDefaultConfig();
+        //config = TikaConfig.getDefaultConfig();
     }
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
         setDetector(config.getDetector());
-        this.config = config;
+        //this.config = config;
     }
 
     /**
@@ -122,7 +122,7 @@ public class AutoDetectParser extends CompositeParser {
             //pass the config to the parsers if
             //the caller hasn't specified one.
             if (context.get(TikaConfig.class) == null) {
-                context.set(TikaConfig.class, config);
+            //    context.set(TikaConfig.class, config);
             }
 
             try {
