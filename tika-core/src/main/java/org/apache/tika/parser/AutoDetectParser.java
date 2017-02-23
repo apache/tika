@@ -23,6 +23,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -119,10 +121,15 @@ public class AutoDetectParser extends CompositeParser {
             SecureContentHandler sch = 
                 handler != null ? new SecureContentHandler(handler, tis) : null;
 
-            //pass the config to the parsers if
+            //pass self to handle embedded documents if
             //the caller hasn't specified one.
-            if (context.get(TikaConfig.class) == null) {
-            //    context.set(TikaConfig.class, config);
+            if (context.get(EmbeddedDocumentExtractor.class) == null) {
+                Parser p = context.get(Parser.class);
+                if (p == null) {
+                    context.set(Parser.class, this);
+                }
+                context.set(EmbeddedDocumentExtractor.class,
+                        new ParsingEmbeddedDocumentExtractor(context));
             }
 
             try {
