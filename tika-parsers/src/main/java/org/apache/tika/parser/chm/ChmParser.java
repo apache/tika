@@ -78,7 +78,7 @@ public class ChmParser extends AbstractParser {
                 
                 byte[] data = chmExtractor.extractChmEntry(entry);
 
-                parsePage(data, xhtml);
+                parsePage(data, xhtml, context);
                 
 //                xhtml.endElement("", "", "document");
             }
@@ -88,7 +88,7 @@ public class ChmParser extends AbstractParser {
     }
 
 
-    private void parsePage(byte[] byteObject, ContentHandler xhtml) throws TikaException {// throws IOException
+    private void parsePage(byte[] byteObject, ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
         HtmlParser htmlParser = new HtmlParser();
