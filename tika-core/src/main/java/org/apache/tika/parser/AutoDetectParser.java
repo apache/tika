@@ -43,6 +43,8 @@ public class AutoDetectParser extends CompositeParser {
      */
     private Detector detector; // always set in the constructor
 
+    private final TikaConfig tikaConfig;
+
     /**
      * Creates an auto-detecting parser instance using the default Tika
      * configuration.
@@ -71,11 +73,13 @@ public class AutoDetectParser extends CompositeParser {
     public AutoDetectParser(Detector detector, Parser...parsers) {
         super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
+        this.tikaConfig = TikaConfig.getDefaultConfig();
     }
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
         setDetector(config.getDetector());
+        this.tikaConfig = config;
     }
 
     /**
@@ -111,6 +115,12 @@ public class AutoDetectParser extends CompositeParser {
             // Automatically detect the MIME type of the document
             MediaType type = detector.detect(tis, metadata);
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
+
+            //pass the config to the parsers if
+            //the caller hasn't specified one.
+            if (context.get(TikaConfig.class) == null) {
+                context.set(TikaConfig.class, tikaConfig);
+            }
 
             // TIKA-216: Zip bomb prevention
             SecureContentHandler sch = 
