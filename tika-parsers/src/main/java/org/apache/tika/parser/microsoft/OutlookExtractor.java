@@ -86,6 +86,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     HtmlEncodingDetector detector = new HtmlEncodingDetector();
 
     private final MAPIMessage msg;
+    private final ParseContext parseContext;
 
     public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
         this(filesystem.getRoot(), context);
@@ -93,7 +94,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
-
+        this.parseContext = context;
         try {
             this.msg = new MAPIMessage(root);
         } catch (IOException e) {
@@ -227,7 +228,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     htmlParser.parse(
                             new ByteArrayInputStream(data),
                             new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                            new Metadata(), new ParseContext()
+                            new Metadata(), parseContext
                     );
                     doneBody = true;
                 }
@@ -241,7 +242,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 rtfParser.parse(
                         new ByteArrayInputStream(rtf.getData()),
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        new Metadata(), new ParseContext());
+                        new Metadata(), parseContext);
                 doneBody = true;
             }
             if (textChunk != null && !doneBody) {

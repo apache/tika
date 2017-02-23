@@ -93,10 +93,9 @@ public class ChmParser extends AbstractParser {
         Metadata metadata = new Metadata();
         HtmlParser htmlParser = new HtmlParser();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
-        ParseContext parser = new ParseContext();
         try {
             stream = new ByteArrayInputStream(byteObject);
-            htmlParser.parse(stream, handler, metadata, parser);
+            htmlParser.parse(stream, handler, metadata, context);
         } catch (SAXException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

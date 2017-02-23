@@ -69,17 +69,18 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     final static String CURRENCY_FORMAT_KEY = "Format";
     final static byte TEXT_FORMAT = 0;
     final static byte RICH_TEXT_FORMAT = 1;
-    final static ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
 
     final NumberFormat currencyFormatter;
     final DateFormat shortDateTimeFormatter;
 
     final HtmlParser htmlParser = new HtmlParser();
+    final ParseContext parseContext;
 
     protected JackcessExtractor(Metadata metadata, ParseContext context, Locale locale) {
         super(context, metadata);
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
+        this.parseContext = context;
     }
 
     public void parse(Database db, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
@@ -205,7 +206,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     htmlParser.parse(new ByteArrayInputStream(v.getBytes(UTF_8)),
                             h,
-                           m, EMPTY_PARSE_CONTEXT);
+                           m, parseContext);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     //if something went wrong in htmlparser, just append the characters
