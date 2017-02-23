@@ -35,6 +35,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.ContentHandler;
@@ -199,30 +200,68 @@ public class EmbeddedDocumentUtil implements Serializable {
 
     /**
      * Tries to find an existing parser within the ParseContext.
-     * Initially tries to find first child parser specific to that mediaType.
-     * Then backs off to the overall parser.
+     * It looks inside of CompositeParsers and ParserDecorators.
+     * The use case is when a parser needs to parse an internal stream
+     * that is _part_ of the document, e.g. rtf body inside an msg.
+     * <p/>
      * Can return <code>null</code> if the context contains no parser or
-     * if an appropriate parser can't be found.
+     * the correct parser can't be found.
      *
-     * @param mediaType
+     * @param clazz parser class to search for
      * @param context
      * @return
      */
-    public static Parser tryToFindExistingParser(MediaType mediaType, ParseContext context) {
+    public static Parser tryToFindExistingLeafParser(Class clazz, ParseContext context) {
         Parser p = context.get(Parser.class);
-        if (p != null) {
-            //try to find the sub parser
-            if (p instanceof CompositeParser) {
-                Map<MediaType, Parser> map = ((CompositeParser) p).getParsers(context);
-                Parser retParser = map.get(mediaType);
-                if (retParser != null) {
-                    return retParser;
-                }
-            }
-        }
-        if (p != null && p.getSupportedTypes(context).contains(mediaType)) {
+        if (equals(p, clazz)) {
             return p;
         }
+        Parser returnParser = null;
+        if (p != null) {
+            if (p instanceof ParserDecorator) {
+                p = ((ParserDecorator)p).getWrappedParser();
+            }
+            if (equals(p, clazz)) {
+                return p;
+            }
+            if (p instanceof CompositeParser) {
+                returnParser = findInComposite((CompositeParser) p, clazz, context);
+            }
+        }
+        if (returnParser != null && equals(returnParser, clazz)) {
+            return returnParser;
+        }
+
         return null;
+    }
+
+    private static Parser findInComposite(CompositeParser p, Class clazz, ParseContext context) {
+        Map<MediaType, Parser> map = p.getParsers(context);
+        for (Map.Entry<MediaType, Parser> e : map.entrySet()) {
+            Parser candidate = e.getValue();
+            if (equals(candidate, clazz)) {
+                return candidate;
+            }
+            if (candidate instanceof ParserDecorator) {
+                candidate = ((ParserDecorator)candidate).getWrappedParser();
+            }
+            if (equals(candidate, clazz)) {
+                return candidate;
+            }
+            if (candidate instanceof CompositeParser) {
+                candidate = findInComposite((CompositeParser) candidate, clazz, context);
+            }
+            if (equals(candidate, clazz)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static boolean equals(Parser parser, Class clazz) {
+        if (parser == null) {
+            return false;
+        }
+        return parser.getClass().equals(clazz);
     }
 }

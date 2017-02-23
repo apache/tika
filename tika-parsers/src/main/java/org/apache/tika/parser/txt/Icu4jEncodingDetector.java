@@ -20,12 +20,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
 public class Icu4jEncodingDetector implements EncodingDetector {
+
+    @Field
+    private boolean stripMarkup = false;
 
     public Charset detect(InputStream input, Metadata metadata)
             throws IOException {
@@ -71,4 +75,23 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         return null;
     }
 
+    /**
+     * Whether or not to attempt to strip html-ish markup
+     * from the stream before sending it to the underlying
+     * detector.
+     *
+     * The underlying detector may still apply its own stripping
+     * if this is set to <code>false</code>.
+     *
+     * @param stripMarkup whether or not to attempt to strip markup before
+     *                    sending the stream to the underlying detector
+     */
+    @Field
+    public void setStripMarkup(boolean stripMarkup) {
+        this.stripMarkup = stripMarkup;
+    }
+
+    public boolean getStripMarkup() {
+        return stripMarkup;
+    }
 }

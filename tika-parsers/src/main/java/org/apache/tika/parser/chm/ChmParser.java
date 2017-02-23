@@ -69,7 +69,8 @@ public class ChmParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
+        Parser htmlParser =
+                EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, context);
         if (htmlParser == null) {
             htmlParser = new HtmlParser();
         }

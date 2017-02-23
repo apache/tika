@@ -228,7 +228,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     data = ((StringChunk) htmlChunk).getRawValue();
                 }
                 if (data != null) {
-                    Parser htmlParser = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, parseContext);
+                    Parser htmlParser =
+                            EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, parseContext);
                     if (htmlParser == null) {
                         htmlParser = new HtmlParser();
                     }
@@ -245,7 +246,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 MAPIRtfAttribute rtf = new MAPIRtfAttribute(
                         MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
                 );
-                Parser rtfParser = EmbeddedDocumentUtil.tryToFindExistingParser(RTF, parseContext);
+                Parser rtfParser =
+                        EmbeddedDocumentUtil.tryToFindExistingLeafParser(RTFParser.class, parseContext);
                 if (rtfParser == null) {
                     rtfParser = new RTFParser();
                 }

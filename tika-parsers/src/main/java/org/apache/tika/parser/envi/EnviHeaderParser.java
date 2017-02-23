@@ -19,23 +19,23 @@ package org.apache.tika.parser.envi;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
-import java.nio.charset.Charset;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.sax.XHTMLContentHandler;
-
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class EnviHeaderParser extends AbstractParser {
+public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     private static final long serialVersionUID = -1479368523072408091L;
 
@@ -58,8 +58,12 @@ public class EnviHeaderParser extends AbstractParser {
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
 
+        TikaConfig tikaConfig = context.get(TikaConfig.class);
+        if (tikaConfig == null) {
+            tikaConfig = TikaConfig.getDefaultConfig();
+        }
         try (AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata)) {
+                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
             // deprecated, see TIKA-431

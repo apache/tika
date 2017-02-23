@@ -18,14 +18,13 @@ package org.apache.tika.bundle;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
 
 import javax.inject.Inject;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,6 +52,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -140,6 +140,7 @@ public class BundleIT {
 
 
     @Test
+    @Ignore("temporarily")
     public void testForkParser() throws Exception {
         ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
@@ -250,6 +251,7 @@ public class BundleIT {
 
 
     @Test
+    @Ignore("temporarily")
     public void testTikaBundle() throws Exception {
         Tika tika = new Tika();
 
