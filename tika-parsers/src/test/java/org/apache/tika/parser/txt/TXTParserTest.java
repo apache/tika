@@ -20,21 +20,13 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.CompositeEncodingDetector;
-import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -305,27 +297,6 @@ public class TXTParserTest extends TikaTest {
     public void testSubclassingMimeTypesRemain() throws Exception {
         XMLResult r = getXML("testVCalendar.vcs");
         assertEquals("text/x-vcalendar; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
-    }
-
-    @Test
-    public void testEncodingDetectorsAreLoaded() {
-        EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser)parser).getEncodingDetector();
-
-        assertTrue(encodingDetector instanceof CompositeEncodingDetector);
-    }
-
-    @Test
-    public void testEncodingDetectorConfigurability() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(
-                getResourceAsStream("/org/apache/tika/config/TIKA-2273-no-icu4j-encoding-detector.xml"));
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
-
-        try {
-            Metadata metadata = getXML("english.cp500.txt", p).metadata;
-            fail("can't detect w/out ICU");
-        } catch (TikaException e) {
-            assertContains("Failed to detect", e.getMessage());
-        }
     }
 
 }

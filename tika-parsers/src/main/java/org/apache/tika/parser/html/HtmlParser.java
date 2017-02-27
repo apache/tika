@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -67,6 +68,14 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
+    }
+
+    public HtmlParser() {
+        super();
+    }
+
+    public HtmlParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
     }
 
     public void parse(

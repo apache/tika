@@ -74,13 +74,11 @@ public class AutoDetectParser extends CompositeParser {
     public AutoDetectParser(Detector detector, Parser...parsers) {
         super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
-        //config = TikaConfig.getDefaultConfig();
     }
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
         setDetector(config.getDetector());
-        //this.config = config;
     }
 
     /**

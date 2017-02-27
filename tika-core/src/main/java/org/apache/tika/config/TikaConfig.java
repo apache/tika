@@ -55,6 +55,7 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
@@ -586,11 +587,11 @@ public class TikaConfig {
 
                     // Default constructor fallback
                     if (loaded == null) {
-                        loaded = loadedClass.newInstance();
+                        loaded = newInstance(loadedClass);
                     }
                 } else {
                     // Regular class, create as-is
-                    loaded = loadedClass.newInstance();
+                    loaded = newInstance(loadedClass);
                     // TODO Support arguments, needed for Translators etc
                     // See the thread "Configuring parsers and translators" for details 
                 }
@@ -623,7 +624,16 @@ public class TikaConfig {
             } catch (InstantiationException e) {
                 throw new TikaException(
                         "Unable to instantiate a "+getLoaderTagName()+" class: " + name, e);
+            } catch (NoSuchMethodException e) {
+                throw new TikaException(
+                        "Unable to find the right constructor for "+getLoaderTagName()+" class: " + name, e);
             }
+        }
+
+        T newInstance(Class<? extends T> loadedClass) throws
+                IllegalAccessException, InstantiationException,
+                NoSuchMethodException, InvocationTargetException {
+            return loadedClass.newInstance();
         }
 
         /**
@@ -718,6 +728,14 @@ public class TikaConfig {
             // Try the possible default and composite parser constructors
             if (parser == null) {
                 try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class,
+                            ServiceLoader.class, Collection.class, EncodingDetector.class);
+                    parser = c.newInstance(registry, loader, excludeParsers, encodingDetector);
+                }
+                catch (NoSuchMethodException me) {}
+            }
+            if (parser == null) {
+                try {
                     c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class, Collection.class);
                     parser = c.newInstance(registry, loader, excludeParsers);
                 } 
@@ -752,6 +770,17 @@ public class TikaConfig {
             }
             return parser;
         }
+
+        @Override
+        Parser newInstance(Class<? extends Parser> loadedClass) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+            if (AbstractEncodingDetectorParser.class.isAssignableFrom(loadedClass)) {
+                Constructor ctor = loadedClass.getConstructor(EncodingDetector.class);
+                return (Parser) ctor.newInstance(encodingDetector);
+            } else {
+                return loadedClass.newInstance();
+            }
+        }
+
         @Override
         Parser decorate(Parser created, Element element) throws IOException, TikaException {
             Parser parser = created;
@@ -770,6 +799,7 @@ public class TikaConfig {
             // All done with decoration
             return parser;
         }
+
     }
     private static class DetectorXmlLoader extends XmlLoader<CompositeDetector,Detector> {
         boolean supportsComposite() { return true; }

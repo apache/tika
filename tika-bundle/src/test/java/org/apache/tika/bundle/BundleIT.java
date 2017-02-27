@@ -52,7 +52,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -140,7 +139,6 @@ public class BundleIT {
 
 
     @Test
-    @Ignore("temporarily")
     public void testForkParser() throws Exception {
         ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
@@ -251,7 +249,6 @@ public class BundleIT {
 
 
     @Test
-    @Ignore("temporarily")
     public void testTikaBundle() throws Exception {
         Tika tika = new Tika();
 

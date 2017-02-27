@@ -34,6 +34,7 @@ import com.uwyn.jhighlight.renderer.Renderer;
 import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -71,6 +72,14 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
     //Parse the HTML document
     private static final Schema HTML_SCHEMA = new HTMLSchema();
+
+    public SourceCodeParser() {
+        super();
+    }
+
+    public SourceCodeParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

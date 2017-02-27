@@ -17,6 +17,7 @@
 package org.apache.tika.parser;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 
 
@@ -26,14 +27,18 @@ import org.apache.tika.detect.EncodingDetector;
  */
 public abstract class AbstractEncodingDetectorParser extends AbstractParser {
 
-    //In the most common scenario, this will be set
-    //at the creation via AutoDetectParser and TikaConfig
-    //If it isn't set then, lazily initialize it in the
-    //getter.
+
     private EncodingDetector encodingDetector;
 
     private static final Object lock = new Object();
 
+    public AbstractEncodingDetectorParser() {
+        encodingDetector = new DefaultEncodingDetector();
+    }
+
+    public AbstractEncodingDetectorParser(EncodingDetector encodingDetector) {
+        this.encodingDetector = encodingDetector;
+    }
     /**
      * Look for an EncodingDetetor in the ParseContext.  If it hasn't been
      * passed in, use the original EncodingDetector from initialization.
@@ -52,16 +57,6 @@ public abstract class AbstractEncodingDetectorParser extends AbstractParser {
     }
 
     public EncodingDetector getEncodingDetector() {
-        //lazily initialize to the default if one hasn't been set
-        //via TikaConfig loading
-        if (encodingDetector == null) {
-            synchronized (lock) {
-                //check again
-                if (encodingDetector == null) {
-                    encodingDetector = TikaConfig.getDefaultConfig().getEncodingDetector();
-                }
-            }
-        }
         return encodingDetector;
     }
 

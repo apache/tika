@@ -22,10 +22,11 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.metadata.Metadata;
 
 /**
- * Always returns the charset passed in via the initializer.
+ * Always returns the charset passed in via the initializer
  */
 public class NonDetectingEncodingDetector implements EncodingDetector {
     //would have preferred final, but need mutability for
@@ -48,7 +49,12 @@ public class NonDetectingEncodingDetector implements EncodingDetector {
         return charset;
     }
 
-    public void setCharset(Charset charset) {
-        this.charset = charset;
+    @Field
+    private void setCharset(String charsetName) {
+        this.charset = Charset.forName(charsetName);
+    }
+
+    public Charset getCharset() {
+        return charset;
     }
 }
