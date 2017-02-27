@@ -47,6 +47,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
@@ -77,9 +78,9 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     };
     static final long NON_EXISTENT_FILE_LENGTH = -1l;
 
-    public static TableInfo REF_EXTRACT_ERROR_TYPES = new TableInfo("ref_extract_error_types",
-            new ColInfo(Cols.EXTRACT_ERROR_TYPE_ID, Types.INTEGER),
-            new ColInfo(Cols.EXTRACT_ERROR_DESCRIPTION, Types.VARCHAR, 128)
+    public static TableInfo REF_EXTRACT_EXCEPTION_TYPES = new TableInfo("ref_extract_exception_types",
+            new ColInfo(Cols.EXTRACT_EXCEPTION_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.EXTRACT_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128)
     );
 
 
@@ -97,9 +98,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     public static final String FALSE = Boolean.toString(false);
 
 
-    protected static final AtomicInteger CONTAINER_ID = new AtomicInteger();
     protected static final AtomicInteger ID = new AtomicInteger();
-
 
     private final static String UNKNOWN_EXTENSION = "unk";
     //make this configurable
@@ -111,13 +110,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     final AnalyzerManager analyzerManager;
     final TokenCounter tokenCounter;
 
-    public enum EXTRACT_ERROR_TYPE {
-        //what do you see when you look at the extract file
-        NO_EXTRACT_FILE,
-        ZERO_BYTE_EXTRACT_FILE,
-        EXTRACT_PARSE_EXCEPTION
-    }
-
     public enum EXCEPTION_TYPE {
         RUNTIME,
         ENCRYPTION,
@@ -125,8 +117,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         UNSUPPORTED_VERSION,
     }
 
+    /**
+     * If information was gathered from the log file about
+     * a parse error
+     */
     public enum PARSE_ERROR_TYPE {
-        //what was gathered from the log file during the batch run
         OOM,
         TIMEOUT
     }
@@ -181,29 +176,15 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
     }
 
-    protected void writeError(TableInfo extractErrorTable, String containerId,
-                              String filePath, Path extractsA) throws IOException {
+
+
+    protected void writeExtractException(TableInfo extractExceptionTable, String containerId,
+                                         String filePath, ExtractReaderException.TYPE type) throws IOException {
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.CONTAINER_ID, containerId);
         data.put(Cols.FILE_PATH, filePath);
-        int errorCode = -1;
-        long len = -1;
-        if (extractsA != null) {
-            try {
-                len = Files.size(extractsA);
-            } catch (IOException e) {
-                //swallow
-            }
-        }
-        if (extractsA == null) {
-            errorCode = EXTRACT_ERROR_TYPE.NO_EXTRACT_FILE.ordinal();
-        } else if (len == 0) {
-            errorCode = EXTRACT_ERROR_TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal();
-        } else {
-            errorCode = EXTRACT_ERROR_TYPE.EXTRACT_PARSE_EXCEPTION.ordinal();
-        }
-        data.put(Cols.EXTRACT_ERROR_TYPE_ID, Integer.toString(errorCode));
-        writer.writeRow(extractErrorTable, data);
+        data.put(Cols.EXTRACT_EXCEPTION_TYPE_ID, Integer.toString(type.ordinal()));
+        writer.writeRow(extractExceptionTable, data);
 
     }
 
@@ -235,7 +216,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.FILE_NAME, fps.getRelativeSourceFilePath().getFileName().toString());
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
-            data.put(Cols.FILE_NAME, FilenameUtils.getName(m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
+            data.put(Cols.FILE_NAME, getFileName(m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
         }
         data.put(Cols.FILE_EXTENSION,
                 FilenameUtils.getExtension(fps.getRelativeSourceFilePath().getFileName().toString()));
@@ -264,6 +245,29 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String getFileName(String path) {
+        if (path == null) {
+            return "";
+        }
+        //filenameUtils checks for a null byte in the path.
+        //it will throw an IllegalArgumentException if there is a null byte.
+        //given that we're recording names and not using them on a file path
+        //we should ignore this.
+        try {
+            return FilenameUtils.getName(path);
+        } catch (IllegalArgumentException e) {
+            logger.warn(e.getMessage() + " in "+path);
+        }
+        path = path.replaceAll("\u0000", " ");
+        try {
+            return FilenameUtils.getName(path);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Again: " + e.getMessage() + " in "+path);
+        }
+        //give up
+        return "";
     }
 
     protected void writeExceptionData(String fileId, Metadata m, TableInfo exceptionTable) {

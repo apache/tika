@@ -536,26 +536,26 @@
             order by MIME_TYPE asc, COUNT desc
         </sql>
     </report>
-    <report reportName="extractErrorsA"
-            reportFilename="exceptions/extract_errors_a.xlsx"
+    <report reportName="extractExceptionsA"
+            reportFilename="exceptions/extract_exceptions_a.xlsx"
             format="xlsx"
             includeSql="true">
         <sql>
-            select file_path, extract_error_description
-            from extract_errors_a e
-            join ref_extract_error_types t
-            on e.extract_error_type_id=t.extract_error_type_id
+            select file_path, extract_exception_description
+            from extract_exceptions_a e
+            join ref_extract_exception_types t
+            on e.extract_exception_type_id=t.extract_exception_type_id
         </sql>
     </report>
-    <report reportName="extractErrorsB"
-            reportFilename="exceptions/extract_errors_b.xlsx"
+    <report reportName="extractExceptionsB"
+            reportFilename="exceptions/extract_exceptions_b.xlsx"
             format="xlsx"
             includeSql="true">
         <sql>
-            select file_path, extract_error_description
-            from extract_errors_b e
-            join ref_extract_error_types t
-            on e.extract_error_type_id=t.extract_error_type_id
+            select file_path, extract_exception_description
+            from extract_exceptions_b e
+            join ref_extract_exception_types t
+            on e.extract_exception_type_id=t.extract_exception_type_id
         </sql>
     </report>
     <report reportName="parseExceptionTypesA"

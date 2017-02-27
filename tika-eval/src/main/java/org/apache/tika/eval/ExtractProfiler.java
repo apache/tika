@@ -33,6 +33,7 @@ import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -63,7 +64,9 @@ public class ExtractProfiler extends AbstractProfiler {
                         "for json-formatted extract files, " +
                                 "process full metadata list ('as_is'=default), " +
                                 "take just the first/container document ('first_only'), " +
-                                "concatenate all content into the first metadata item ('concatenate_content')"));
+                                "concatenate all content into the first metadata item ('concatenate_content')"))
+                .addOption("minExtractLength", true, "minimum extract length to process (in bytes)")
+                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)");
 
     }
 
@@ -79,10 +82,10 @@ public class ExtractProfiler extends AbstractProfiler {
 
     private final static String FIELD = "f";
 
-    public static TableInfo ERROR_TABLE = new TableInfo("errors",
+    public static TableInfo EXTRACT_EXCEPTION_TABLE = new TableInfo("extract_exceptions",
             new ColInfo(Cols.CONTAINER_ID, Types.INTEGER),
             new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
-            new ColInfo(Cols.EXTRACT_ERROR_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.EXTRACT_EXCEPTION_TYPE_ID, Types.INTEGER),
             new ColInfo(Cols.PARSE_ERROR_TYPE_ID, Types.INTEGER)
     );
 
@@ -144,15 +147,20 @@ public class ExtractProfiler extends AbstractProfiler {
 
     private final Path inputDir;
     private final Path extracts;
+    private final long minExtractLength;
+    private final long maxExtractLength;
     private final ExtractReader.ALTER_METADATA_LIST alterExtractList;
     private final ExtractReader extractReader = new ExtractReader();
 
     public ExtractProfiler(ArrayBlockingQueue<FileResource> queue,
                            Path inputDir, Path extracts,
-                           IDBWriter dbWriter, ExtractReader.ALTER_METADATA_LIST alterExtractList) {
+                           IDBWriter dbWriter, long minExtractLength,
+                           long maxExtractLength, ExtractReader.ALTER_METADATA_LIST alterExtractList) {
         super(queue, dbWriter);
         this.inputDir = inputDir;
         this.extracts = extracts;
+        this.minExtractLength = minExtractLength;
+        this.maxExtractLength = maxExtractLength;
         this.alterExtractList = alterExtractList;
     }
 
@@ -167,15 +175,25 @@ public class ExtractProfiler extends AbstractProfiler {
         } else {
             fps = getPathsFromSrcCrawl(metadata, inputDir, extracts);
         }
-        List<Metadata> metadataList = extractReader.loadExtract(fps.getExtractFile(), alterExtractList);
+        int containerId = ID.incrementAndGet();
+        String containerIdString = Integer.toString(containerId);
+
+        ExtractReaderException.TYPE extractExceptionType = null;
+
+        List<Metadata> metadataList = null;
+        try {
+            metadataList = extractReader.loadExtract(fps.getExtractFile(),
+                    alterExtractList, minExtractLength, maxExtractLength);
+        } catch (ExtractReaderException e) {
+            extractExceptionType = e.getType();
+        }
 
         Map<Cols, String> contOutput = new HashMap<>();
-        String containerId = Integer.toString(CONTAINER_ID.incrementAndGet());
         Long srcFileLen = getSourceFileLength(fps, metadataList);
         contOutput.put(Cols.LENGTH,
                 srcFileLen > NON_EXISTENT_FILE_LENGTH ?
                         Long.toString(srcFileLen): "");
-        contOutput.put(Cols.CONTAINER_ID, containerId);
+        contOutput.put(Cols.CONTAINER_ID, containerIdString);
         contOutput.put(Cols.FILE_PATH, fps.getRelativeSourceFilePath().toString());
 
         if (fps.getExtractFileLength() > 0) {
@@ -191,23 +209,22 @@ public class ExtractProfiler extends AbstractProfiler {
         }
 
 
-        if (metadataList == null) {
+        if (extractExceptionType != null) {
             try {
-                writeError(ERROR_TABLE, containerId,
-                        fps.getRelativeSourceFilePath().toString(), fps.getExtractFile());
+                writeExtractException(EXTRACT_EXCEPTION_TABLE, containerIdString,
+                        fps.getRelativeSourceFilePath().toString(), extractExceptionType);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             return true;
         }
 
-        //TODO: calculate num_attachments, add to profile table
-
         List<Integer> numAttachments = countAttachments(metadataList);
         int i = 0;
         for (Metadata m : metadataList) {
-            String fileId = Integer.toString(ID.incrementAndGet());
-            writeProfileData(fps, i, m, fileId, containerId, numAttachments, PROFILE_TABLE);
+            //the first file should have the same id as the container id
+            String fileId = (i == 0) ? containerIdString : Integer.toString(ID.incrementAndGet());
+            writeProfileData(fps, i, m, fileId, containerIdString, numAttachments, PROFILE_TABLE);
             writeEmbeddedPathData(i, fileId, m, EMBEDDED_FILE_PATH_TABLE);
             writeExceptionData(fileId, m, EXCEPTION_TABLE);
             try {
@@ -219,6 +236,7 @@ public class ExtractProfiler extends AbstractProfiler {
         }
         return true;
     }
+
 
     private void writeEmbeddedPathData(int i, String fileId, Metadata m,
                                        TableInfo embeddedFilePathTable) {

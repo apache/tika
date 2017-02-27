@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -44,6 +45,8 @@ import org.slf4j.LoggerFactory;
 
 public class ExtractReader {
 
+    public static final long IGNORE_LENGTH = -1L;
+
     public enum ALTER_METADATA_LIST {
         AS_IS,  //leave the metadata list as is
         FIRST_ONLY, //take only the metadata list for the "container" document
@@ -52,34 +55,63 @@ public class ExtractReader {
     private final static Logger LOGGER = LoggerFactory.getLogger(ExtractReader.class);
     TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 
-    public List<Metadata> loadExtract(Path thisFile, ALTER_METADATA_LIST alterExtractList) {
+    public List<Metadata> loadExtract(Path extractFile, ALTER_METADATA_LIST alterExtractList,
+                                      long minExtractLength, long maxExtractLength) throws ExtractReaderException {
+
         List<Metadata> metadataList = null;
-        if (thisFile == null || !Files.isRegularFile(thisFile)) {
-            return metadataList;
-        }
-        Reader reader = null;
-        InputStream is = null;
-        FileSuffixes fileSuffixes = parseSuffixes(thisFile.getFileName().toString());
-        if (fileSuffixes.txtOrJson == null) {
-            LOGGER.warn("file must end with .txt or .json: "+thisFile.getFileName().toString());
-            return metadataList;
+        if (extractFile == null || !Files.isRegularFile(extractFile)) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.NO_EXTRACT_FILE);
         }
 
+        FileSuffixes fileSuffixes = parseSuffixes(extractFile.getFileName().toString());
+        if (fileSuffixes.txtOrJson == null) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.INCORRECT_EXTRACT_FILE_SUFFIX);
+        }
+        if (! Files.isRegularFile(extractFile)) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.NO_EXTRACT_FILE);
+        }
+
+        long length = -1L;
         try {
-            is = Files.newInputStream(thisFile);
+            length = Files.size(extractFile);
+        } catch (IOException e) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
+        }
+
+        if (length == 0L) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE);
+        }
+
+        if (minExtractLength > IGNORE_LENGTH && length < minExtractLength) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_SHORT);
+        }
+        if (maxExtractLength > IGNORE_LENGTH && length > maxExtractLength) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_FILE_TOO_LONG);
+        }
+
+        Reader reader = null;
+        InputStream is = null;
+        try {
+            is = Files.newInputStream(extractFile);
             if (fileSuffixes.compression != null) {
                 if (fileSuffixes.compression.equals("bz2")) {
                     is = new BZip2CompressorInputStream(is);
-                } else if (fileSuffixes.compression.equals("gz")) {
+                } else if (fileSuffixes.compression.equals("gz")
+                        || fileSuffixes.compression.equals("gzip")) {
                     is = new GzipCompressorInputStream(is);
                 } else if (fileSuffixes.compression.equals("zip")) {
                     is = new ZCompressorInputStream(is);
                 } else {
-                    LOGGER.warn("Can't yet process compression of type: "+fileSuffixes.compression);
+                    LOGGER.warn("Can't yet process compression of type: " + fileSuffixes.compression);
+                    return metadataList;
                 }
             }
-                reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
+        }
 
+        try {
             if (fileSuffixes.txtOrJson.equals("json")) {
                 metadataList = JsonMetadataList.fromJson(reader);
                 if (alterExtractList.equals(ALTER_METADATA_LIST.FIRST_ONLY) && metadataList.size() > 1) {
@@ -103,15 +135,13 @@ public class ExtractReader {
                         metadataList.remove(metadataList.size()-1);
                     }
                 }
-
-
             } else {
                 metadataList = generateListFromTextFile(reader, fileSuffixes);
             }
         } catch (IOException e) {
-            LOGGER.warn("couldn't open:" + thisFile.toAbsolutePath(), e);
+            throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION);
         } catch (TikaException e) {
-            LOGGER.warn("couldn't open:" + thisFile.toAbsolutePath(), e);
+            throw new ExtractReaderException(ExtractReaderException.TYPE.EXTRACT_PARSE_EXCEPTION);
         } finally {
             IOUtils.closeQuietly(reader);
             IOUtils.closeQuietly(is);
@@ -120,7 +150,7 @@ public class ExtractReader {
     }
 
     private List<Metadata> generateListFromTextFile(Reader reader,
-                                                           FileSuffixes fileSuffixes) throws IOException {
+                                                    FileSuffixes fileSuffixes) throws IOException {
         List<Metadata> metadataList = new ArrayList<>();
         String content = IOUtils.toString(reader);
         Metadata m = new Metadata();

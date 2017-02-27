@@ -40,6 +40,10 @@
                 description="this dir contains the files containing extracted metadata/content" required="false"/>
         <option opt="db" hasArg="true"
                 description="name of db directory or file to which to write results"/>
+        <option opt="minExtractLength" hasArg="true"
+                description="minimum extract length to process"/>
+        <option opt="maxExtractLength" hasArg="true"
+                description="maximum extract length to process"/>
     </commandline>
 
 

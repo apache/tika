@@ -37,6 +37,7 @@ import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.eval.tokens.ContrastStatistics;
 import org.apache.tika.eval.tokens.TokenContraster;
@@ -74,8 +75,9 @@ public class ExtractComparer extends AbstractProfiler {
                         "for json-formatted extract files, " +
                                 "process full metadata list ('as_is'=default), " +
                                 "take just the first/container document ('first_only'), " +
-                                "concatenate all content into the first metadata item ('concatenate_content')")
-                );
+                                "concatenate all content into the first metadata item ('concatenate_content')"))
+                .addOption("minExtractLength", true, "minimum extract length to process (in bytes)")
+                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)");
     }
 
     public static void USAGE() {
@@ -85,7 +87,7 @@ public class ExtractComparer extends AbstractProfiler {
                 "java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb",
                 "Tool: Compare",
                 ExtractComparer.OPTIONS,
-                "Note: for h2 db, do not include the .mv.db at the end of the db name.");
+                "Note: do not include the .mv.db at the end of the db name.");
     }
 
     private final static String FIELD_A = "fa";
@@ -140,10 +142,10 @@ public class ExtractComparer extends AbstractProfiler {
     public static TableInfo EXCEPTION_TABLE_B = new TableInfo ("exceptions_b",
             ExtractProfiler.EXCEPTION_TABLE.getColInfos());
 
-    public static TableInfo ERROR_TABLE_A = new TableInfo("extract_errors_a",
-            ExtractProfiler.ERROR_TABLE.getColInfos());
-    public static TableInfo ERROR_TABLE_B = new TableInfo("extract_errors_b",
-            ExtractProfiler.ERROR_TABLE.getColInfos());
+    public static TableInfo EXTRACT_EXCEPTION_TABLE_A = new TableInfo("extract_exceptions_a",
+            ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
+    public static TableInfo EXTRACT_EXCEPTION_TABLE_B = new TableInfo("extract_exceptions_b",
+            ExtractProfiler.EXTRACT_EXCEPTION_TABLE.getColInfos());
 
 
     //need to parameterize?
@@ -153,8 +155,8 @@ public class ExtractComparer extends AbstractProfiler {
     private final Path extractsA;
     private final Path extractsB;
 
-    private final long minJsonLength;
-    private final long maxJsonLength;
+    private final long minExtractLength;
+    private final long maxExtractLength;
     private final ExtractReader.ALTER_METADATA_LIST alterExtractList;
 
     private final TokenContraster tokenContraster = new TokenContraster();
@@ -165,8 +167,8 @@ public class ExtractComparer extends AbstractProfiler {
                            IDBWriter writer, long minJsonLength,
                            long maxJsonLength, ExtractReader.ALTER_METADATA_LIST alterExtractList) {
         super(queue, writer);
-        this.minJsonLength = minJsonLength;
-        this.maxJsonLength = maxJsonLength;
+        this.minExtractLength = minJsonLength;
+        this.maxExtractLength = maxJsonLength;
         this.inputDir = inputDir;
         this.extractsA = extractsA;
         this.extractsB = extractsB;
@@ -190,23 +192,6 @@ public class ExtractComparer extends AbstractProfiler {
             fpsB = getPathsFromSrcCrawl(metadata, inputDir, extractsB);
         }
 
-            if (minJsonLength > -1) {
-                //if both files exist and are < minJsonLength, skip em
-                if (fpsA.getExtractFileLength() > NON_EXISTENT_FILE_LENGTH
-                        && fpsA.getExtractFileLength() < minJsonLength
-                        && fpsB.getExtractFileLength() > NON_EXISTENT_FILE_LENGTH
-                        && fpsB.getExtractFileLength() < minJsonLength) {
-                    return false;
-                }
-            }
-            if (maxJsonLength > -1) {
-                if ((fpsA.getExtractFileLength() > maxJsonLength) ||
-                        (fpsB.getExtractFileLength() > maxJsonLength)) {
-                    return false;
-                }
-            }
-
-
         try {
             compareFiles(fpsA, fpsB);
         } catch (Throwable e) {
@@ -219,17 +204,33 @@ public class ExtractComparer extends AbstractProfiler {
     }
 
     //protected for testing, should find better way so that this can be private!
-    protected void compareFiles(EvalFilePaths fpsA, EvalFilePaths fpsB) throws IOException {
+    protected void compareFiles(EvalFilePaths fpsA,
+                                EvalFilePaths fpsB) throws IOException {
 
-        List<Metadata> metadataListA =
-                extractReader.loadExtract(fpsA.getExtractFile(), alterExtractList);
-        List<Metadata> metadataListB =
-                extractReader.loadExtract(fpsB.getExtractFile(), alterExtractList);
+        ExtractReaderException.TYPE extractExceptionA = null;
+        ExtractReaderException.TYPE extractExceptionB = null;
 
-        //array indices for those metadata items handled in
-        //"that"
+        List<Metadata> metadataListA = null;
+        if (extractExceptionA == null) {
+            try {
+                metadataListA = extractReader.loadExtract(fpsA.getExtractFile(),
+                        alterExtractList, minExtractLength, maxExtractLength);
+            } catch (ExtractReaderException e) {
+                extractExceptionA = e.getType();
+            }
+        }
+
+        List<Metadata> metadataListB = null;
+        try {
+            metadataListB = extractReader.loadExtract(fpsB.getExtractFile(),
+                    alterExtractList, minExtractLength, maxExtractLength);
+        } catch (ExtractReaderException e) {
+            extractExceptionB = e.getType();
+        }
+
+        //array indices for those metadata items handled in B
         Set<Integer> handledB = new HashSet<>();
-        String containerID = Integer.toString(CONTAINER_ID.getAndIncrement());
+        String containerID = Integer.toString(ID.getAndIncrement());
         //container table
         Map<Cols, String> contData = new HashMap<>();
         contData.put(Cols.CONTAINER_ID, containerID);
@@ -245,19 +246,19 @@ public class ExtractComparer extends AbstractProfiler {
         contData.put(Cols.EXTRACT_FILE_LENGTH_A, extractFileLengthA > NON_EXISTENT_FILE_LENGTH ?
                 Long.toString(extractFileLengthA) : "");
 
-        long extractFileLengthB = getFileLength(fpsA.getExtractFile());
+        long extractFileLengthB = getFileLength(fpsB.getExtractFile());
         contData.put(Cols.EXTRACT_FILE_LENGTH_B, extractFileLengthB > NON_EXISTENT_FILE_LENGTH ?
                 Long.toString(extractFileLengthB) : "");
 
         writer.writeRow(COMPARISON_CONTAINERS, contData);
 
-        if (metadataListA == null) {
-            writeError(ERROR_TABLE_A, containerID, fpsA.getRelativeSourceFilePath().toString(),
-                    fpsA.getExtractFile());
+        if (extractExceptionA != null) {
+            writeExtractException(EXTRACT_EXCEPTION_TABLE_A, containerID, fpsA.getRelativeSourceFilePath().toString(),
+                    extractExceptionA);
         }
-        if (metadataListB == null) {
-            writeError(ERROR_TABLE_B, containerID, fpsB.getRelativeSourceFilePath().toString(),
-                    fpsB.getExtractFile());
+        if (extractExceptionB != null) {
+            writeExtractException(EXTRACT_EXCEPTION_TABLE_B, containerID, fpsB.getRelativeSourceFilePath().toString(),
+                    extractExceptionB);
         }
 
         if (metadataListA == null && metadataListB == null) {
@@ -269,7 +270,8 @@ public class ExtractComparer extends AbstractProfiler {
         //now get that metadata
         if (metadataListA != null) {
             for (int i = 0; i < metadataListA.size(); i++) {
-                String fileId = Integer.toString(ID.getAndIncrement());
+                //the first file should have the same id as the container id
+                String fileId = (i == 0) ? containerID : Integer.toString(ID.getAndIncrement());
                 Metadata metadataA = metadataListA.get(i);
                 Metadata metadataB = null;
                 //TODO: shouldn't be fileA!!!!
@@ -277,7 +279,7 @@ public class ExtractComparer extends AbstractProfiler {
                 writeExceptionData(fileId, metadataA, EXCEPTION_TABLE_A);
                 int matchIndex = getMatch(i, metadataListA, metadataListB);
 
-                if (matchIndex > -1) {
+                if (matchIndex > -1 && ! handledB.contains(matchIndex)) {
                     metadataB = metadataListB.get(matchIndex);
                     handledB.add(matchIndex);
                 }
@@ -315,7 +317,7 @@ public class ExtractComparer extends AbstractProfiler {
                 }
             }
         }
-        //now try to get any Metadata objects in "that"
+        //now try to get any Metadata objects in B
         //that haven't yet been handled.
         if (metadataListB != null) {
             for (int i = 0; i < metadataListB.size(); i++) {
@@ -323,7 +325,8 @@ public class ExtractComparer extends AbstractProfiler {
                     continue;
                 }
                 Metadata metadataB = metadataListB.get(i);
-                String fileId = Integer.toString(ID.getAndIncrement());
+                //the first file should have the same id as the container id
+                String fileId = (i == 0) ? containerID : Integer.toString(ID.getAndIncrement());
                 writeProfileData(fpsB, i, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
                 writeEmbeddedFilePathData(i, fileId, null, metadataB);
                 writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);

@@ -31,9 +31,11 @@ import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.batch.builders.AbstractConsumersBuilder;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.db.DBUtil;
 import org.apache.tika.eval.db.H2Util;
+import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.util.LanguageIDWrapper;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.PropsUtil;
@@ -84,15 +86,17 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
         if (consumerBuilder == null) {
             throw new RuntimeException("Must specify consumerBuilderClass in config file");
         }
-        consumerBuilder.init(queue, localAttrs, util);
 
+
+        MimeBuffer mimeBuffer = null;
         try {
             util.createDB(consumerBuilder.getTableInfo(), append);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+            mimeBuffer = new MimeBuffer(util.getConnection(true), TikaConfig.getDefaultConfig());
+            consumerBuilder.init(queue, localAttrs, util, mimeBuffer);
+        } catch (IOException | SQLException e) {
             throw new RuntimeException(e);
         }
+
         for (int i = 0; i < numConsumers; i++) {
             try {
                 consumers.add(consumerBuilder.build());
@@ -103,7 +107,7 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
 
         DBConsumersManager manager;
         try {
-            manager = new DBConsumersManager(util, consumers);
+            manager = new DBConsumersManager(util, mimeBuffer, consumers);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

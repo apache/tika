@@ -23,11 +23,11 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.log4j.Logger;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.DBUtil;
@@ -40,29 +40,30 @@ import org.apache.tika.eval.db.TableInfo;
  * as necessary.
  *
  * Beware, this deletes the db file with each initialization.
+ *
+ * Each thread must construct its own DBWriter because each
+ * DBWriter creates its own PreparedStatements at initialization.
  */
 public class DBWriter implements IDBWriter {
-    
+    private static final AtomicInteger WRITER_ID = new AtomicInteger();
+
     private static Logger logger = Logger.getLogger(DBWriter.class);
     private final AtomicLong insertedRows = new AtomicLong();
     private final Long commitEveryX = 1000L;
 
-    private final List<TableInfo> tableInfos;
     private final Connection conn;
     private final DBUtil dbUtil;
-    private static MimeBuffer mimeBuffer;
+    private final MimeBuffer mimeBuffer;
+    private final int myId = WRITER_ID.getAndIncrement();
 
     //<tableName, preparedStatement>
     private final Map<String, PreparedStatement> inserts = new HashMap<>();
 
-    public DBWriter(List<TableInfo> tableInfos, TikaConfig tikaConfig, DBUtil dbUtil)
+    public DBWriter(Connection connection, List<TableInfo> tableInfos, DBUtil dbUtil, MimeBuffer mimeBuffer)
             throws IOException, SQLException {
 
-        this.conn = dbUtil.getConnection(true);
-        if (mimeBuffer == null) {
-            mimeBuffer = new MimeBuffer(conn, tikaConfig);
-        }
-        this.tableInfos = tableInfos;
+        this.conn = connection;
+        this.mimeBuffer = mimeBuffer;
         this.dbUtil = dbUtil;
         for (TableInfo tableInfo : tableInfos) {
             try {
@@ -115,7 +116,7 @@ public class DBWriter implements IDBWriter {
             dbUtil.insert(p, table, data);
             long rows = insertedRows.incrementAndGet();
             if (rows % commitEveryX == 0) {
-                logger.info("writer is committing after "+ rows + " rows");
+                logger.debug("writer ("+myId+") is committing after "+ rows + " rows");
                 conn.commit();
             }
         } catch (SQLException e) {
@@ -125,7 +126,6 @@ public class DBWriter implements IDBWriter {
 
     public void close() throws IOException {
         try {
-            mimeBuffer.close();
             conn.commit();
         } catch (SQLException e){
             e.printStackTrace();

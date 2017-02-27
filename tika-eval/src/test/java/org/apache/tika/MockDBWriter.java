@@ -27,11 +27,14 @@ import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.IDBWriter;
 
+
 public class MockDBWriter implements IDBWriter {
     //Map of tableName and tables
     //each table consists of a list of rows.
     //Each row consists of a map of columns/values
     Map<String, List<Map<Cols, String>>> db = new HashMap<String, List<Map<Cols, String>>>();
+
+    public Map<String, Integer> mimes = new HashMap<>();
 
     public MockDBWriter() throws Exception {
     }
@@ -53,8 +56,14 @@ public class MockDBWriter implements IDBWriter {
 
     @Override
     public int getMimeId(String mimeString) {
-        //TODO: fix this
-        return 0;
+        Integer val = mimes.get(mimeString);
+        if (val != null) {
+            return val;
+        }
+
+        int id = mimes.size();
+        mimes.put(mimeString, id);
+        return id;
     }
 
     public List<Map<Cols, String>> getTable(TableInfo tableInfo) {

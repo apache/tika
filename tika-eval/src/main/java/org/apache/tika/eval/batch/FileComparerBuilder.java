@@ -24,18 +24,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.batch.FileResourceConsumer;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.ExtractComparer;
 import org.apache.tika.eval.db.TableInfo;
-import org.apache.tika.eval.io.DBWriter;
 import org.apache.tika.eval.io.ExtractReader;
-import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.util.PropsUtil;
 
 public class FileComparerBuilder extends EvalConsumerBuilder {
-    private final static String WHICH_DB = "h2";//TODO: allow flexibility
-
 
     @Override
     public FileResourceConsumer build() throws IOException, SQLException {
@@ -50,27 +45,19 @@ public class FileComparerBuilder extends EvalConsumerBuilder {
 
         Path inputRootDir = PropsUtil.getPath(localAttrs.get("inputDir"), null);
 
-        long minJsonLength = PropsUtil.getLong(localAttrs.get("minJsonFileSizeBytes"), -1L);
-        long maxJsonLength = PropsUtil.getLong(localAttrs.get("maxJsonFileSizeBytes"), -1L);
+        long minExtractLength = PropsUtil.getLong(localAttrs.get("minExtractLength"), -1L);
+        long maxExtractLength = PropsUtil.getLong(localAttrs.get("maxExtractLength"), -1L);
 
         ExtractReader.ALTER_METADATA_LIST alterExtractList = getAlterMetadata(localAttrs);
 
-
-        IDBWriter writer = getDBWriter();
-        //TODO: clean up the writing of the ref tables!!!
-        try {
-            populateRefTables(writer);
-        } catch (SQLException e) {
-            throw new RuntimeException("Can't populate ref tables", e);
-        }
 
         if (inputRootDir == null) {
             //this is for the sake of the crawler
             throw new RuntimeException("Must specify an -inputDir");
         }
 
-        return new ExtractComparer(queue, inputRootDir, thisRootDir, thatRootDir, writer,
-                minJsonLength, maxJsonLength, alterExtractList);
+        return new ExtractComparer(queue, inputRootDir, thisRootDir, thatRootDir, getDBWriter(),
+                minExtractLength, maxExtractLength, alterExtractList);
     }
 
     @Override
@@ -79,12 +66,12 @@ public class FileComparerBuilder extends EvalConsumerBuilder {
         tableInfos.add(ExtractComparer.COMPARISON_CONTAINERS);
         tableInfos.add(ExtractComparer.PROFILES_A);
         tableInfos.add(ExtractComparer.PROFILES_B);
-        tableInfos.add(ExtractComparer.ERROR_TABLE_A);
-        tableInfos.add(ExtractComparer.ERROR_TABLE_B);
+        tableInfos.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
+        tableInfos.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         tableInfos.add(ExtractComparer.EXCEPTION_TABLE_A);
         tableInfos.add(ExtractComparer.EXCEPTION_TABLE_B);
-        tableInfos.add(ExtractComparer.ERROR_TABLE_A);
-        tableInfos.add(ExtractComparer.ERROR_TABLE_B);
+        tableInfos.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
+        tableInfos.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         tableInfos.add(ExtractComparer.CONTENTS_TABLE_A);
         tableInfos.add(ExtractComparer.CONTENTS_TABLE_B);
         tableInfos.add(ExtractComparer.EMBEDDED_FILE_PATH_TABLE_A);
@@ -95,14 +82,10 @@ public class FileComparerBuilder extends EvalConsumerBuilder {
         tableInfos.add(ExtractComparer.REF_PAIR_NAMES);
         tableInfos.add(AbstractProfiler.REF_PARSE_ERROR_TYPES);
         tableInfos.add(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES);
-        tableInfos.add(AbstractProfiler.REF_EXTRACT_ERROR_TYPES);
+        tableInfos.add(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES);
         return tableInfos;
     }
 
-    @Override
-    protected IDBWriter getDBWriter() throws IOException, SQLException {
-        return new DBWriter(getTableInfo(), TikaConfig.getDefaultConfig(), dbUtil);
-    }
 
     @Override
     protected void addErrorLogTablePairs(DBConsumersManager manager) {
@@ -110,12 +93,12 @@ public class FileComparerBuilder extends EvalConsumerBuilder {
         if (errorLogA == null) {
             return;
         }
-        manager.addErrorLogTablePair(errorLogA, ExtractComparer.ERROR_TABLE_A);
+        manager.addErrorLogTablePair(errorLogA, ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
         Path errorLogB = PropsUtil.getPath(localAttrs.get("errorLogFileB"), null);
         if (errorLogB == null) {
             return;
         }
-        manager.addErrorLogTablePair(errorLogB, ExtractComparer.ERROR_TABLE_B);
+        manager.addErrorLogTablePair(errorLogB, ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
 
     }
 

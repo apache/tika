@@ -38,6 +38,7 @@ import java.util.Map;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.TableInfo;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -116,7 +117,7 @@ public class ProfilerBatchTest {
         debugTable(ExtractProfiler.PROFILE_TABLE);
         debugTable(ExtractProfiler.CONTENTS_TABLE);
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
-        debugTable(ExtractProfiler.ERROR_TABLE);
+        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
         assertEquals(10, fNameList.size());
         assertTrue("file1.pdf", fNameList.contains("file1.pdf"));
         assertTrue("file2_attachANotB.doc", fNameList.contains("file2_attachANotB.doc"));
@@ -127,7 +128,7 @@ public class ProfilerBatchTest {
 
     @Test
     public void testExtractErrors() throws Exception {
-        String sql = "select EXTRACT_ERROR_TYPE_ID from errors e" +
+        String sql = "select EXTRACT_EXCEPTION_TYPE_ID from extract_exceptions e" +
                 " join containers c on c.container_id = e.container_id "+
                 " where c.file_path='file9_noextract.txt'";
 
@@ -137,15 +138,15 @@ public class ProfilerBatchTest {
         debugTable(ExtractProfiler.PROFILE_TABLE);
         debugTable(ExtractProfiler.CONTENTS_TABLE);
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
-        debugTable(ExtractProfiler.ERROR_TABLE);
+        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
 
-        sql = "select EXTRACT_ERROR_TYPE_ID from errors e" +
+        sql = "select EXTRACT_EXCEPTION_TYPE_ID from errors e" +
                 " join containers c on c.container_id = e.container_id "+
                 " where c.file_path='file5_emptyA.pdf'";
         assertEquals("empty extract: file5_emptyA.pdf", "1",
                 getSingleResult(sql));
 
-        sql = "select EXTRACT_ERROR_TYPE_ID from errors e" +
+        sql = "select EXTRACT_EXCEPTION_TYPE_ID from errors e" +
                 " join containers c on c.container_id = e.container_id "+
                 " where c.file_path='file7_badJson.pdf'";
         assertEquals("extract error:file7_badJson.pdf", "2",
@@ -155,18 +156,18 @@ public class ProfilerBatchTest {
 
     @Test
     public void testParseErrors() throws Exception {
-        debugTable(ExtractProfiler.ERROR_TABLE);
+        debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
         String sql = "select file_path from errors where container_id is null";
         assertEquals("file10_permahang.txt",
                 getSingleResult(sql));
 
-        sql = "select extract_error_type_id from errors where file_path='file11_oom.txt'";
-        assertEquals(Integer.toString(AbstractProfiler.
-                        EXTRACT_ERROR_TYPE.
-                        ZERO_BYTE_EXTRACT_FILE.ordinal()),
+        sql = "select extract_error_type_id from extract_exceptions " +
+                "where file_path='file11_oom.txt'";
+        assertEquals(Integer.toString(
+                        ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
                 getSingleResult(sql));
 
-        sql = "select parse_error_type_id from errors where file_path='file11_oom.txt'";
+        sql = "select parse_error_type_id from extract_exceptions where file_path='file11_oom.txt'";
         assertEquals(Integer.toString(AbstractProfiler.
                         PARSE_ERROR_TYPE.
                         OOM.ordinal()),
