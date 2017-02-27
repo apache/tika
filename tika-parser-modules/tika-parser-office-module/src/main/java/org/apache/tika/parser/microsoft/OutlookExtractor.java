@@ -91,7 +91,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private static final Metadata EMPTY_METADATA = new Metadata();
     private final SimpleDateFormat dateFormat;
     private final EncodingDetector htmlEncodingDetectorProxy;
-    private final Parser htmlParserProxy;
 
     private final MAPIMessage msg;
     private final ParseContext parseContext;
@@ -104,7 +103,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         super(context);
         this.parseContext = context;
         this.htmlEncodingDetectorProxy = new EncodingDetectorProxy("org.apache.tika.parser.html.HtmlEncodingDetector", getClass().getClassLoader());
-        this.htmlParserProxy = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
         this.dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         try {
             this.msg = new MAPIMessage(root);
@@ -235,8 +233,15 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 } else if (htmlChunk instanceof StringChunk) {
                     data = ((StringChunk) htmlChunk).getRawValue();
                 }
+                Parser htmlParser =
+                        EmbeddedDocumentUtil.tryToFindExistingLeafParser(
+                                "org.apache.tika.parser.html.HtmlParser", parseContext);
+                if (htmlParser == null) {
+                    htmlParser = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
+                }
+
                 if (data != null) {
-                    htmlParserProxy.parse(
+                    htmlParser.parse(
                             new ByteArrayInputStream(data),
                             new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                             new Metadata(), parseContext
@@ -249,7 +254,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 MAPIRtfAttribute rtf = new MAPIRtfAttribute(
                         MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
                 );
-                Parser rtfParser = EmbeddedDocumentUtil.tryToFindExistingParser(RTF, parseContext);
+                Parser rtfParser =
+                        EmbeddedDocumentUtil.tryToFindExistingLeafParser(
+                                RTFParser.class.getCanonicalName(), parseContext);
                 if (rtfParser == null) {
                     rtfParser = new RTFParser();
                 }

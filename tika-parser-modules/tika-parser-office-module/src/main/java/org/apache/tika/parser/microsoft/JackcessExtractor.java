@@ -83,12 +83,13 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
         this.parseContext = context;
-        Parser tmpHtml = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
-        if (tmpHtml == null) {
-            tmpHtml = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
+        Parser tmpHtmlParser =
+                EmbeddedDocumentUtil.tryToFindExistingLeafParser("org.apache.tika.parser.html.HtmlParser", context);
 
+        if (tmpHtmlParser == null) {
+            tmpHtmlParser = new ParserProxy("org.apache.tika.parser.html.HtmlParser", getClass().getClassLoader());
         }
-        this.htmlParserProxy = tmpHtml;
+        this.htmlParserProxy = tmpHtmlParser;
     }
 
     public void parse(Database db, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {

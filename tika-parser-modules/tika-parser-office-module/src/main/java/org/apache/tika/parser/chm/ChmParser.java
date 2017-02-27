@@ -60,7 +60,7 @@ public class ChmParser extends AbstractParser {
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         ChmExtractor chmExtractor = new ChmExtractor(stream);
-        Parser htmlProxy = EmbeddedDocumentUtil.tryToFindExistingParser(MediaType.TEXT_HTML, context);
+        Parser htmlProxy = EmbeddedDocumentUtil.tryToFindExistingLeafParser("org.apache.tika.parser.html.HtmlParser", context);
         if (htmlProxy == null) {
             htmlProxy = createParserProxy("org.apache.tika.parser.html.HtmlParser");
         }
