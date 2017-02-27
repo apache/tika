@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Enabled configuration of the EncodingDetector used by
+    parsers that extend AbstractEncodingDetectorParser (TIKA-2273).
+
   * Added tika-eval module (TIKA-1332).
 
   * Fix potential NPE in FeedParser via Julien Nioche (TIKA-2269).

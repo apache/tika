@@ -30,8 +30,6 @@ public abstract class AbstractEncodingDetectorParser extends AbstractParser {
 
     private EncodingDetector encodingDetector;
 
-    private static final Object lock = new Object();
-
     public AbstractEncodingDetectorParser() {
         encodingDetector = new DefaultEncodingDetector();
     }
