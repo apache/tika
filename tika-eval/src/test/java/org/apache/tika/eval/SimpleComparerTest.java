@@ -17,8 +17,8 @@
 package org.apache.tika.eval;
 
 import static org.apache.tika.eval.AbstractProfiler.EXCEPTION_TYPE;
-import static org.apache.tika.eval.AbstractProfiler.EXTRACT_ERROR_TYPE;
 import static org.apache.tika.eval.AbstractProfiler.getContent;
+import static org.apache.tika.eval.io.ExtractReader.IGNORE_LENGTH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -36,6 +36,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.util.LanguageIDWrapper;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -57,7 +58,7 @@ public class SimpleComparerTest extends TikaTest {
         writer = new MockDBWriter();
         comparer = new ExtractComparer(null, null,
                 Paths.get("extractsA"), Paths.get("extractsB"),
-                writer, -1, -1,
+                writer, IGNORE_LENGTH, IGNORE_LENGTH,
                 ExtractReader.ALTER_METADATA_LIST.AS_IS);
         AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath());
         LanguageIDWrapper.loadBuiltInModels();
@@ -146,11 +147,11 @@ public class SimpleComparerTest extends TikaTest {
                 getResourceAsFile("/test-dirs/extractsB/file4_emptyB.pdf.json").toPath()
         );
         comparer.compareFiles(fpsA, fpsB);
-        List<Map<Cols, String>> table = writer.getTable(ExtractComparer.ERROR_TABLE_B);
+        List<Map<Cols, String>> table = writer.getTable(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         Map<Cols, String> row = table.get(0);
         //debugPrintRow(row);
-        assertEquals(Integer.toString(EXTRACT_ERROR_TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
-                row.get(Cols.EXTRACT_ERROR_TYPE_ID));
+        assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
+                row.get(Cols.EXTRACT_EXCEPTION_TYPE_ID));
     }
 
 
@@ -250,8 +251,8 @@ public class SimpleComparerTest extends TikaTest {
         comparer.compareFiles(fpsA, fpsB);
         for (TableInfo t : new TableInfo[]{
                 ExtractComparer.COMPARISON_CONTAINERS,
-                ExtractComparer.ERROR_TABLE_A,
-                ExtractComparer.ERROR_TABLE_B,
+                ExtractComparer.EXTRACT_EXCEPTION_TABLE_A,
+                ExtractComparer.EXTRACT_EXCEPTION_TABLE_B,
                 ExtractComparer.EXCEPTION_TABLE_A,
                 ExtractComparer.EXCEPTION_TABLE_B,
                 ExtractComparer.PROFILES_A,

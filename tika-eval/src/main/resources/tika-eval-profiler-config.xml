@@ -42,6 +42,11 @@
                 process full metadata list ('as_is'=default),
                 take just the first/container document ('first_only'),
                 concatenate all content into the first metadata item ('concatenate_content')"/>
+        <option opt="minExtractLength" hasArg="true"
+                description="minimum extract length to process"/>
+        <option opt="maxExtractLength" hasArg="true"
+                description="maximum extract length to process"/>
+
 
     </commandline>
 
@@ -63,6 +68,8 @@
 
     <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
                consumerBuilderClass="org.apache.tika.eval.batch.SingleFileConsumerBuilder"
+               minExtractLength="-1"
+               maxExtractLength="2000000"
                commonTokens="resources/common_tokens"/>
 
 

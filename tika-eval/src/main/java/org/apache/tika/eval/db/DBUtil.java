@@ -101,6 +101,7 @@ public abstract class DBUtil {
             return insertStatement.executeUpdate();
         } catch (SQLException e) {
             logger.warn("couldn't insert data for this row: "+e.getMessage());
+            e.printStackTrace();
             return -1;
         }
     }
@@ -130,7 +131,7 @@ public abstract class DBUtil {
                     st.setDouble(dbColOffset, Float.parseFloat(value));
                     break;
                 case Types.INTEGER:
-                    st.setDouble(dbColOffset, Integer.parseInt(value));
+                    st.setInt(dbColOffset, Integer.parseInt(value));
                     break;
                 case Types.BIGINT:
                     st.setLong(dbColOffset, Long.parseLong(value));

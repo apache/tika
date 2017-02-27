@@ -18,6 +18,7 @@
 package org.apache.tika.eval.batch;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -30,8 +31,11 @@ import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.DBUtil;
+import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
+import org.apache.tika.eval.io.DBWriter;
 import org.apache.tika.eval.io.ExtractReader;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 
 public abstract class EvalConsumerBuilder {
@@ -39,27 +43,29 @@ public abstract class EvalConsumerBuilder {
     protected ArrayBlockingQueue<FileResource> queue;
     Map<String, String> localAttrs;
     DBUtil dbUtil;
+    private MimeBuffer mimeBuffer;
+    AtomicInteger initialized = new AtomicInteger(0);
 
     public void init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs,
-                     DBUtil dbUtil) {
+                     DBUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
         this.queue = queue;
         this.localAttrs = localAttrs;
         this.dbUtil = dbUtil;
+        this.mimeBuffer = mimeBuffer;
+        populateRefTables();
+        if (initialized.getAndIncrement() > 0) {
+            throw new RuntimeException("Can only init a consumer builder once!");
+        }
     }
 
     public abstract FileResourceConsumer build() throws IOException, SQLException;
 
     protected abstract List<TableInfo> getTableInfo();
 
-    protected abstract IDBWriter getDBWriter() throws IOException, SQLException;
-
     protected abstract void addErrorLogTablePairs(DBConsumersManager manager);
 
-    public void populateRefTables(IDBWriter writer) throws IOException, SQLException {
-        //figure out cleaner way of doing this!
-        if (count.getAndIncrement() > 0) {
-            return;
-        }
+    public void populateRefTables() throws IOException, SQLException {
+        IDBWriter writer = getDBWriter();
         Map<Cols, String> m = new HashMap<>();
         for (AbstractProfiler.PARSE_ERROR_TYPE t : AbstractProfiler.PARSE_ERROR_TYPE.values()) {
             m.clear();
@@ -75,14 +81,19 @@ public abstract class EvalConsumerBuilder {
             writer.writeRow(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES, m);
         }
 
-        for (AbstractProfiler.EXTRACT_ERROR_TYPE t :
-                AbstractProfiler.EXTRACT_ERROR_TYPE.values()) {
+        for (ExtractReaderException.TYPE t :
+                ExtractReaderException.TYPE.values()) {
             m.clear();
-            m.put(Cols.EXTRACT_ERROR_TYPE_ID, Integer.toString(t.ordinal()));
-            m.put(Cols.EXTRACT_ERROR_DESCRIPTION, t.name());
-            writer.writeRow(AbstractProfiler.REF_EXTRACT_ERROR_TYPES, m);
+            m.put(Cols.EXTRACT_EXCEPTION_TYPE_ID, Integer.toString(t.ordinal()));
+            m.put(Cols.EXTRACT_EXCEPTION_DESCRIPTION, t.name());
+            writer.writeRow(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES, m);
         }
+        writer.close();
+    }
 
+    protected IDBWriter getDBWriter() throws IOException, SQLException {
+        Connection conn = dbUtil.getConnection(true);
+        return new DBWriter(conn, getTableInfo(), dbUtil, mimeBuffer);
     }
 
     ExtractReader.ALTER_METADATA_LIST getAlterMetadata(Map<String, String> localAttrs) {
