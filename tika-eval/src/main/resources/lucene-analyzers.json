@@ -23,18 +23,19 @@
           "params": {
             "outputUnigrams": "false"
           }
+        },
+        {
+          "factory": "oala.miscellaneous.LimitTokenCountFilterFactory",
+          "params": {
+            "maxTokenCount": "100000",
+            "consumeAllTokens": "false"
+          }
         }
       ]
     },
-    "alpha": {
-      "charfilters": [
-        {
-          "factory": "oala.charfilter.MappingCharFilterFactory",
-          "params": {
-            "mapping": "/lucene-char-mapping.txt"
-          }
-        }
-      ],
+    "common_tokens": {
+      "_comment" : "Use this analyzer for counting common tokens in a corpus.",
+      "_comment" : "This isn't used by tika-eval during profiling or comparing",
       "tokenizer": {
         "factory": "oala.standard.UAX29URLEmailTokenizerFactory",
         "params": {}
@@ -42,6 +43,10 @@
       "tokenfilters": [
         {
           "factory": "oala.icu.ICUFoldingFilterFactory",
+          "params": {}
+        },
+        {
+          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
           "params": {}
         },
         {
@@ -60,24 +65,6 @@
             "replace": "all"
           }
         },
-        {
-          "factory": "oala.cjk.CJKBigramFilterFactory",
-          "params": {
-            "outputUnigrams": "false"
-          }
-        },
-        {
-          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
-          "params": {}
-        }
-      ]
-    },
-    "common_tokens": {
-      "tokenizer": {
-        "factory": "oala.standard.UAX29URLEmailTokenizerFactory",
-        "params": {}
-      },
-      "tokenfilters": [
         {
           "factory": "oala.cjk.CJKBigramFilterFactory",
           "params": {

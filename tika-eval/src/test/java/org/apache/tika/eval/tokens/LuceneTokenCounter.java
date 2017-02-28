@@ -41,17 +41,15 @@ public class LuceneTokenCounter {
     private final LeafReader leafReader;
     private final MemoryIndex memoryIndex;
     private final Analyzer generalAnalyzer;
-    private final Analyzer alphaIdeographAnalyzer;
     private int topN = 10;
 
     Map<String, TokenStatistics> fieldStats = new HashMap<>();
 
-    public LuceneTokenCounter(Analyzer generalAnalyzer, Analyzer alphaIdeographAnalyzer) throws IOException {
+    public LuceneTokenCounter(Analyzer generalAnalyzer) throws IOException {
         memoryIndex = new MemoryIndex();
         IndexSearcher searcher = memoryIndex.createSearcher();
         leafReader = (LeafReader)searcher.getIndexReader();
         this.generalAnalyzer = generalAnalyzer;
-        this.alphaIdeographAnalyzer = alphaIdeographAnalyzer;
     }
 
     public void add(String field, String content) throws IOException {
@@ -128,9 +126,7 @@ public class LuceneTokenCounter {
     public TokenStatistics getTokenStatistics(String field) {
         return fieldStats.get(field);
     }
-    public Terms getAlphaTerms(String field) throws IOException {
-        return leafReader.terms(field+ALPHA_IDEOGRAPH_SUFFIX);
-    }
+
     public Terms getTerms(String field) throws IOException {
         return leafReader.terms(field);
     }

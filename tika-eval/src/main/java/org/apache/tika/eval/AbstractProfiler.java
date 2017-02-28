@@ -169,8 +169,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         langIder = new LanguageIDWrapper();
         try {
             analyzerManager = AnalyzerManager.newInstance();
-            tokenCounter = new TokenCounter(analyzerManager.getGeneralAnalyzer(),
-                    analyzerManager.getAlphaIdeoAnalyzer());
+            tokenCounter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -317,20 +316,19 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         CommonTokenResult commonTokenResult = null;
         try {
             commonTokenResult = commonTokenCountManager.countTokenOverlaps(langid,
-                    tokenCounter.getAlphaTokens(fieldName));
+                    tokenCounter.getTokens(fieldName));
         } catch (IOException e) {
             logger.error(e.getMessage(), e);
         }
         data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
-        data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getTokens()));
+        data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
         TokenStatistics tokenStatistics = tokenCounter.getTokenStatistics(fieldName);
-        TokenStatistics alphaTokenStatistics = tokenCounter.getAlphaTokenStatistics(fieldName);
         data.put(Cols.NUM_UNIQUE_TOKENS,
                 Integer.toString(tokenStatistics.getTotalUniqueTokens()));
         data.put(Cols.NUM_TOKENS,
                 Integer.toString(tokenStatistics.getTotalTokens()));
         data.put(Cols.NUM_ALPHABETIC_TOKENS,
-                Integer.toString(alphaTokenStatistics.getTotalTokens()));
+                Integer.toString(commonTokenResult.getAlphabeticTokens()));
 
         data.put(Cols.TOKEN_ENTROPY_RATE,
                 Double.toString(tokenStatistics.getEntropy()));

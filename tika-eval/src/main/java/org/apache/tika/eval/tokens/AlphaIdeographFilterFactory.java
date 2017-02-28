@@ -53,22 +53,26 @@ public class AlphaIdeographFilterFactory extends TokenFilterFactory {
 
         @Override
         protected boolean accept() throws IOException {
-            char[] buff = termAtt.buffer();
-            for (int i = 0; i < termAtt.length(); i++) {
-                int cp = buff[i];
-                if (Character.isHighSurrogate(buff[i])) {
-                    if (i < termAtt.length()-1) {
-                        cp = Character.toCodePoint(buff[i], buff[i + 1]);
-                        i++;
-                    }
-                }
-
-                if (Character.isAlphabetic(cp) ||
-                        Character.isIdeographic(cp)) {
-                    return true;
-                }
-            }
-            return false;
+            return isAlphabetic(termAtt.buffer());
         }
     }
+
+    public static boolean isAlphabetic(char[] token) {
+        for (int i = 0; i < token.length; i++) {
+            int cp = token[i];
+            if (Character.isHighSurrogate(token[i])) {
+                if (i < token.length-1) {
+                    cp = Character.toCodePoint(token[i], token[i + 1]);
+                    i++;
+                }
+            }
+
+            if (Character.isAlphabetic(cp) ||
+                    Character.isIdeographic(cp)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

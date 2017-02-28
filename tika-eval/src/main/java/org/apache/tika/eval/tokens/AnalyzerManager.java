@@ -34,14 +34,10 @@ public class AnalyzerManager {
     private static final String COMMON_TOKENS = "common_tokens";
 
     private final Analyzer generalAnalyzer;
-    private final Analyzer alphaIdeoAnalyzer;
     private final Analyzer commonTokensAnalyzer;
 
-    private AnalyzerManager(Analyzer generalAnalyzer,
-                            Analyzer alphaIdeoAnalyzer,
-                            Analyzer commonTokensAnalyzer) {
+    private AnalyzerManager(Analyzer generalAnalyzer, Analyzer commonTokensAnalyzer) {
         this.generalAnalyzer = generalAnalyzer;
-        this.alphaIdeoAnalyzer = alphaIdeoAnalyzer;
         this.commonTokensAnalyzer = commonTokensAnalyzer;
     }
 
@@ -58,14 +54,11 @@ public class AnalyzerManager {
         if (general == null) {
             throw new JsonParseException("Must specify "+GENERAL + " analyzer");
         }
-        if (alphaIdeo == null) {
-            throw new JsonParseException("Must specify "+ ALPHA_IDEOGRAPH + " analyzer");
-        }
         if (common == null) {
             throw new JsonParseException("Must specify "+ COMMON_TOKENS + " analyzer");
         }
 
-        return new AnalyzerManager(general, alphaIdeo, common);
+        return new AnalyzerManager(general,common);
     }
 
     /**
@@ -74,14 +67,6 @@ public class AnalyzerManager {
      */
     public Analyzer getGeneralAnalyzer() {
         return generalAnalyzer;
-    }
-
-    /**
-     * This analyzer is used to extract "alphabetic" tokens.
-     * @return
-     */
-    public Analyzer getAlphaIdeoAnalyzer() {
-        return alphaIdeoAnalyzer;
     }
 
     /**

@@ -30,8 +30,6 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 public class TokenCounter {
 
-    private static final String ALPHA_IDEOGRAPH_SUFFIX = "_a";
-
 
     Map<String, Map<String, MutableInt>> map = new HashMap<>(); //Map<field, Map<token, count>>
     Map<String, TokenStatistics> tokenStatistics = new HashMap<>();
@@ -40,18 +38,15 @@ public class TokenCounter {
             0, 0, new TokenIntPair[0], 0.0d, new SummaryStatistics());
 
     private final Analyzer generalAnalyzer;
-    private final Analyzer alphaIdeoAnalyzer;
 
     private int topN = 10;
 
-    public TokenCounter(Analyzer generalAnalyzer, Analyzer alphaIdeoAnalyzer) throws IOException {
+    public TokenCounter(Analyzer generalAnalyzer) throws IOException {
         this.generalAnalyzer = generalAnalyzer;
-        this.alphaIdeoAnalyzer = alphaIdeoAnalyzer;
     }
 
     public void add(String field, String content) throws IOException {
         _add(field, generalAnalyzer, content);
-        _add(field+ALPHA_IDEOGRAPH_SUFFIX, alphaIdeoAnalyzer, content);
     }
 
     private void _add(String field, Analyzer analyzer, String content) throws IOException {
@@ -136,21 +131,8 @@ public class TokenCounter {
         if (tokenMap != null) {
             tokenMap.clear();
         }
-        Map<String, MutableInt> alphaMap = map.get(field+ALPHA_IDEOGRAPH_SUFFIX);
-        if (alphaMap != null) {
-            alphaMap.clear();
-        }
 
-        tokenStatistics.put(field+ALPHA_IDEOGRAPH_SUFFIX, NULL_TOKEN_STAT);
         tokenStatistics.put(field, NULL_TOKEN_STAT);
-    }
-
-    public Map<String, MutableInt> getAlphaTokens(String field) {
-        Map<String, MutableInt> ret = map.get(field+ALPHA_IDEOGRAPH_SUFFIX);
-        if (ret == null) {
-            return Collections.emptyMap();
-        }
-        return ret;
     }
 
     public Map<String, MutableInt> getTokens(String field) {
@@ -159,9 +141,5 @@ public class TokenCounter {
             return Collections.emptyMap();
         }
         return ret;
-    }
-
-    public TokenStatistics getAlphaTokenStatistics(String fieldName) {
-        return getTokenStatistics(fieldName+ALPHA_IDEOGRAPH_SUFFIX);
     }
 }

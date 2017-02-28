@@ -17,6 +17,8 @@
 
 package org.apache.tika.eval;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -26,6 +28,7 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.tika.eval.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.junit.Test;
 
@@ -55,13 +58,14 @@ public class AnalyzerManagerTest {
     @Test
     public void testCommon() throws Exception {
         AnalyzerManager analyzerManager = AnalyzerManager.newInstance();
-        Analyzer common = analyzerManager.getAlphaIdeoAnalyzer();
+        Analyzer common = analyzerManager.getCommonTokensAnalyzer();
         TokenStream ts = common.tokenStream("f", "the 5,000.12 and dirty dog");
         ts.reset();
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
         Set<String> seen = new HashSet<>();
         while (ts.incrementToken()) {
-            if (termAtt.toString().contains("5")) {
+            String t = termAtt.toString();
+            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray()) && t.contains("5")) {
                 fail("Shouldn't have found a numeric");
             }
             seen.add(termAtt.toString());
@@ -69,10 +73,28 @@ public class AnalyzerManagerTest {
         ts.end();
         ts.close();
 
-        assertTrue(seen.contains("the"));
-        assertTrue(seen.contains("and"));
-        assertTrue(seen.contains("dog"));
+        assertTrue(seen.contains("dirty"));
+        assertFalse(seen.contains("the"));
 
+    }
+
+    @Test
+    public void testTokenCountFilter() throws Exception {
+        AnalyzerManager analyzerManager = AnalyzerManager.newInstance();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 101000; i++) {
+            sb.append("the ");
+        }
+        TokenStream ts = analyzerManager.getGeneralAnalyzer().tokenStream("f", sb.toString());
+        ts.reset();
+        CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
+        Set<String> seen = new HashSet<>();
+        int tokens = 0;
+        while (ts.incrementToken()) {
+            tokens++;
+        }
+
+        assertEquals(100000, tokens);
 
     }
 
