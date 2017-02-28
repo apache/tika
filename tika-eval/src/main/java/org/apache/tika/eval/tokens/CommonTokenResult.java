@@ -20,18 +20,29 @@ package org.apache.tika.eval.tokens;
 public class CommonTokenResult {
 
     private final String langCode;
-    private final int tokens;
+    private final int commonTokens;
+    private final int alphabeticTokens;
 
-    public CommonTokenResult(String langCode, int tokens) {
+    public CommonTokenResult(String langCode, int commonTokens, int alphabeticTokens) {
         this.langCode = langCode;
-        this.tokens = tokens;
+        this.commonTokens = commonTokens;
+        this.alphabeticTokens = alphabeticTokens;
     }
 
     public String getLangCode() {
         return langCode;
     }
 
-    public int getTokens() {
-        return tokens;
+    public int getCommonTokens() {
+        return commonTokens;
+    }
+
+    /**
+     *
+     * @return number of tokens that had at least one alphabetic/ideographic character
+     * whether or not a common token
+     */
+    public int getAlphabeticTokens() {
+        return alphabeticTokens;
     }
 }

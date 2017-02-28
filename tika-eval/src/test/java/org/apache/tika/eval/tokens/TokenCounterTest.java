@@ -48,12 +48,10 @@ public class TokenCounterTest {
     @Test
     public void testBasic() throws Exception {
         String s = " bde cde def abc efg f f f f ghijklmnop a a a a a a a a a a a a a a a a a b b b b b b b b b b b b b";
-        TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer(),
-                analyzerManager.getAlphaIdeoAnalyzer());
+        TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
         counter.add(FIELD, s);
         TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
-        LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer(),
-                analyzerManager.getAlphaIdeoAnalyzer());
+        LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
         tokenCounter.add(FIELD, s);
         assertEquals(simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
     }
@@ -67,30 +65,25 @@ public class TokenCounterTest {
         for (int i = 0; i < numberOfTests; i++) {
             String s = generateString();
             long start = new Date().getTime();
-            TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer(),
-                    analyzerManager.getAlphaIdeoAnalyzer());
+            TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
             counter.add(FIELD, s);
             simple += new Date().getTime()-start;
             TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
 
             start = new Date().getTime();
-            LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer(),
-                    analyzerManager.getAlphaIdeoAnalyzer());
+            LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
             tokenCounter.add(FIELD, s);
             lucene += new Date().getTime()-start;
             assertEquals(s, simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
         }
-
-        //System.out.println("SIMPLE: " + simple + " lucene: "+lucene);
     }
 
     @Test
     public void testCommonTokens() throws Exception {
-        TokenCounter tokenCounter = new TokenCounter(analyzerManager.getGeneralAnalyzer(),
-                analyzerManager.getAlphaIdeoAnalyzer());
+        TokenCounter tokenCounter = new TokenCounter(analyzerManager.getCommonTokensAnalyzer());
         String s = "the http://www.cnn.com and blahdeblah@apache.org are in valuable www.sites.org 普林斯顿大学";
         tokenCounter.add(FIELD, s);
-        Map<String, MutableInt> tokens = tokenCounter.getAlphaTokens(FIELD);
+        Map<String, MutableInt> tokens = tokenCounter.getTokens(FIELD);
         assertEquals(new MutableInt(2), tokens.get("___url___"));
         assertEquals(new MutableInt(1), tokens.get("___email___"));
     }

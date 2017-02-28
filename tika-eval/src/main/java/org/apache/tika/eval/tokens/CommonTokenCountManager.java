@@ -65,14 +65,22 @@ public class CommonTokenCountManager {
                                                 Map<String, MutableInt> tokens) throws IOException {
         String actualLangCode = getActualLangCode(langCode);
         int overlap = 0;
+        int alphabeticTokens = 0;
         Set<String> commonTokens = commonTokenMap.get(actualLangCode);
         for (Map.Entry<String, MutableInt> e : tokens.entrySet()) {
-            if (commonTokens.contains(e.getKey())) {
-                overlap += e.getValue().intValue();
+            String token = e.getKey();
+            int count = e.getValue().intValue();
+            if (AlphaIdeographFilterFactory.isAlphabetic(token.toCharArray())) {
+                alphabeticTokens += count;
             }
+            if (commonTokens.contains(token)) {
+                overlap += count;
+            }
+
         }
-        return new CommonTokenResult(actualLangCode, overlap);
+        return new CommonTokenResult(actualLangCode, overlap, alphabeticTokens);
     }
+
 
     //return langcode for lang that you are actually using
     //lazily load the appropriate model

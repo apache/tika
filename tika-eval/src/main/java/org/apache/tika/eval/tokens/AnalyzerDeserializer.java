@@ -44,12 +44,13 @@ import org.apache.lucene.analysis.util.TokenizerFactory;
 class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
 
 
-    private static String ANALYZERS = "analyzers";
-    private static String CHAR_FILTERS = "charfilters";
-    private static String TOKEN_FILTERS = "tokenfilters";
-    private static String TOKENIZER = "tokenizer";
-    private static String FACTORY = "factory";
-    private static String PARAMS = "params";
+    private static final String ANALYZERS = "analyzers";
+    private static final String CHAR_FILTERS = "charfilters";
+    private static final String TOKEN_FILTERS = "tokenfilters";
+    private static final String TOKENIZER = "tokenizer";
+    private static final String FACTORY = "factory";
+    private static final String PARAMS = "params";
+    private static final String COMMENT = "_comment";
 
     @Override
     public Map<String, Analyzer> deserialize(JsonElement element, Type type,
@@ -100,7 +101,7 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
                 tokenFilterFactories = buildTokenFilterFactories(e.getValue(), analyzerName);
             } else if (k.equals(TOKENIZER)) {
                 tokenizerFactory = buildTokenizerFactory(e.getValue(), analyzerName);
-            } else {
+            } else if (! k.equals(COMMENT)) {
                 throw new IllegalArgumentException("Should have one of three values here:"+
                         CHAR_FILTERS + ", "+
                         TOKENIZER+", "+
