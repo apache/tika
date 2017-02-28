@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -217,8 +218,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.IS_EMBEDDED, TRUE);
             data.put(Cols.FILE_NAME, getFileName(m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
         }
-        data.put(Cols.FILE_EXTENSION,
-                FilenameUtils.getExtension(fps.getRelativeSourceFilePath().getFileName().toString()));
+
+        String ext = FilenameUtils.getExtension(data.get(Cols.FILE_NAME));
+        ext = (ext == null) ? "" : ext.toLowerCase(Locale.US);
+        data.put(Cols.FILE_EXTENSION, ext);
+
         long srcFileLen = getSourceFileLength(m);
         if (srcFileLen > NON_EXISTENT_FILE_LENGTH) {
             data.put(Cols.LENGTH, Long.toString(srcFileLen));
