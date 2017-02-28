@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.tika.config.LoadErrorHandler;
@@ -109,17 +110,17 @@ public class AutoDetectReader extends BufferedReader {
 
     public AutoDetectReader(
             InputStream stream, Metadata metadata,
+            EncodingDetector encodingDetector) throws IOException, TikaException {
+        this(getBuffered(stream), metadata, Collections.singletonList(encodingDetector),
+                DEFAULT_LOADER.getLoadErrorHandler());
+    }
+
+    public AutoDetectReader(
+            InputStream stream, Metadata metadata,
             ServiceLoader loader) throws IOException, TikaException {
         this(getBuffered(stream), metadata,
                 loader.loadServiceProviders(EncodingDetector.class),
                 loader.getLoadErrorHandler());
-    }
-
-    private static InputStream getBuffered(InputStream stream) {
-        if (stream.markSupported()) {
-            return stream;
-        }
-        return new BufferedInputStream(stream);
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata)
@@ -131,6 +132,14 @@ public class AutoDetectReader extends BufferedReader {
             throws IOException, TikaException {
         this(stream, new Metadata());
     }
+
+    private static InputStream getBuffered(InputStream stream) {
+        if (stream.markSupported()) {
+            return stream;
+        }
+        return new BufferedInputStream(stream);
+    }
+
 
     public Charset getCharset() {
         return charset;

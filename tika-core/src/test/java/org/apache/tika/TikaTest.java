@@ -82,7 +82,12 @@ public abstract class TikaTest {
    }
 
     public Path getTestDocumentAsTempFile(String name) throws IOException {
-        Path tmp = Files.createTempFile("tika-test", "");
+        String suffix = "";
+        int i = name.lastIndexOf(".");
+        if (i > -1) {
+            suffix = name.substring(i);
+        }
+        Path tmp = Files.createTempFile("tika-test", suffix);
         Files.copy(getResourceAsStream("/test-documents/" + name), tmp, StandardCopyOption.REPLACE_EXISTING);
         return tmp;
     }
@@ -199,7 +204,9 @@ public abstract class TikaTest {
     }
 
     protected XMLResult getXML(String filePath, Parser parser) throws Exception {
-        return getXML(filePath, parser, new Metadata());
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, filePath);
+        return getXML(filePath, parser, metadata);
     }
 
     protected XMLResult getXML(String filePath) throws Exception {

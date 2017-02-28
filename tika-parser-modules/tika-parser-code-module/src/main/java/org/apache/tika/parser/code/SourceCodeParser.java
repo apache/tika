@@ -30,23 +30,22 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.uwyn.jhighlight.renderer.Renderer;
+import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import com.uwyn.jhighlight.renderer.Renderer;
-import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 /**
  * Generic Source code parser for Java, Groovy, C++.
  * Aware: This parser uses JHightlight library (https://github.com/codelibs/jhighlight) under CDDL/LGPL dual license
@@ -54,7 +53,7 @@ import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
  * @author Hong-Thai.Nguyen
  * @since 1.6
  */
-public class SourceCodeParser implements Parser {
+public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
   private static final long serialVersionUID = -4543476498190054160L;
 
@@ -69,11 +68,18 @@ public class SourceCodeParser implements Parser {
     }
   };
 
-  private static final ServiceLoader LOADER = new ServiceLoader(SourceCodeParser.class.getClassLoader());
-  
+
   //Parse the HTML document
   private static final Schema HTML_SCHEMA = new HTMLSchema();
-  
+
+    public SourceCodeParser() {
+        super();
+    }
+
+    public SourceCodeParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
+    }
+
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
     return TYPES_TO_RENDERER.keySet();
@@ -85,7 +91,7 @@ public class SourceCodeParser implements Parser {
 
     try (AutoDetectReader reader = new AutoDetectReader(
             new CloseShieldInputStream(stream), metadata,
-            context.get(ServiceLoader.class, LOADER))) {
+            getEncodingDetector())) {
       Charset charset = reader.getCharset();
       String mediaType = metadata.get(Metadata.CONTENT_TYPE);
       String name = metadata.get(Metadata.RESOURCE_NAME_KEY);

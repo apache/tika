@@ -29,7 +29,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -39,9 +39,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
 public class ISATabUtils {
-	
-	private static final ServiceLoader LOADER = new ServiceLoader(ISATabUtils.class.getClassLoader());
-	
+
 	/**
 	 * INVESTIGATION
 	 */
@@ -61,9 +59,14 @@ public class ISATabUtils {
 	private static final String studyFileNameField = "Study File Name";
 	
 	public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler, Metadata metadata, ParseContext context, String studyFileName) throws IOException, TikaException, SAXException {
+
+		TikaConfig tikaConfig = context.get(TikaConfig.class);
+		if (tikaConfig == null) {
+			tikaConfig = TikaConfig.getDefaultConfig();
+		}
 		// Automatically detect the character encoding
 		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
-				metadata, context.get(ServiceLoader.class, LOADER))) {
+				metadata, tikaConfig.getEncodingDetector())) {
 			extractMetadata(reader, metadata, studyFileName);
 		}
 	}
@@ -75,9 +78,12 @@ public class ISATabUtils {
 	public static void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
 		TikaInputStream tis = TikaInputStream.get(stream);
 		// Automatically detect the character encoding
-
+		TikaConfig tikaConfig = context.get(TikaConfig.class);
+		if (tikaConfig == null) {
+			tikaConfig = TikaConfig.getDefaultConfig();
+		}
 		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
-				metadata, context.get(ServiceLoader.class, LOADER));
+				metadata, tikaConfig.getEncodingDetector());
 			 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 			Iterator<CSVRecord> iterator = csvParser.iterator();
 
@@ -116,8 +122,12 @@ public class ISATabUtils {
 		
 		// Automatically detect the character encoding
 
+		TikaConfig tikaConfig = context.get(TikaConfig.class);
+		if (tikaConfig == null) {
+			tikaConfig = TikaConfig.getDefaultConfig();
+		}
 		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
-				metadata, context.get(ServiceLoader.class, LOADER));
+				metadata, tikaConfig.getEncodingDetector());
 			 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 			xhtml.startElement("table");
 
