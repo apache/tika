@@ -394,10 +394,19 @@ public class BatchProcessDriverCLI {
 
 
     public static void main(String[] args) throws Exception {
+        final BatchProcessDriverCLI runner = new BatchProcessDriverCLI(args);
 
-        BatchProcessDriverCLI runner = new BatchProcessDriverCLI(args);
+        //make absolutely certain that the child process is killed
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                runner.stop();
+            }
+        });
+
         runner.execute();
         System.out.println("FSBatchProcessDriver has gracefully completed");
         System.exit(0);
     }
+
 }
