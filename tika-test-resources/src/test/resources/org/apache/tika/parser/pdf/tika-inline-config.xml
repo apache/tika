@@ -11,7 +11,9 @@
                 <param name="catchIntermediateExceptions" type="bool">false</param>
                 <param name="extractUniqueInlineImagesOnly" type="bool">false</param>
                 <param name="catchIntermediateExceptions" type="bool">false</param>
-                <param name="ocrDPI" type="int">314159</param>
+                <param name="ocrDPI" type="int">314</param>
+                <param name="ocrImageQuality" type="float">2.1</param>
+                <param name="ocrImageFormatName" type="string">jpeg</param>
                 <!-- we really should throw an exception for this!! -->
                 <param name="someRandomThingOrOther" type="bool">true</param>
             </params>

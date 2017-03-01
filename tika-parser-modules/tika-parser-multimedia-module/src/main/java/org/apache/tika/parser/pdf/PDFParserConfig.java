@@ -106,6 +106,7 @@ public class PDFParserConfig implements Serializable {
     private int ocrDPI = 300;
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
+    private float ocrImageQuality = 1.0f;
 
     private AccessChecker accessChecker;
 
@@ -318,7 +319,6 @@ public class PDFParserConfig implements Serializable {
      */
     public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
         this.extractUniqueInlineImagesOnly = extractUniqueInlineImagesOnly;
-
     }
 
     /**
@@ -540,7 +540,9 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * Dots per inche used to render the page image for OCR
+     * Dots per inch used to render the page image for OCR.
+     * This does not apply to all image formats.
+     *
      * @param ocrDPI
      */
     public void setOCRDPI(int ocrDPI) {
@@ -554,6 +556,24 @@ public class PDFParserConfig implements Serializable {
             }
         }
         return null;
+    }
+
+    /**
+     * Image quality used to render the page image for OCR.
+     * This does not apply to all image formats
+     * @return
+     */
+    public float getOcrImageQuality() {
+        return ocrImageQuality;
+    }
+
+    /**
+     * Image quality used to render the page image for OCR.
+     * This does not apply to all image formats
+     * @return
+     */
+    public void setOcrImageQuality(float ocrImageQuality) {
+        this.ocrImageQuality = ocrImageQuality;
     }
 
     /**
