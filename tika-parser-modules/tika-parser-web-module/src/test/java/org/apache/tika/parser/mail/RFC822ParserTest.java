@@ -47,6 +47,7 @@ import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -72,7 +73,7 @@ public class RFC822ParserTest extends TikaTest {
     }
 
     @Test
-    public void testSimple() {
+    public void testSimple() throws Exception {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822");
@@ -99,6 +100,31 @@ public class RFC822ParserTest extends TikaTest {
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
+    }
+
+    @Test
+    public void testExtendedToFromMetadata() throws Exception {
+        Metadata m = getXML("testRFC822").metadata;
+        assertEquals("Julien Nioche (JIRA)", m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("jira@apache.org", m.get(Message.MESSAGE_FROM_EMAIL));
+
+        m = getXML("testRFC822-multipart").metadata;
+        assertEquals("DigitalPebble", m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("julien@digitalpebble.com", m.get(Message.MESSAGE_FROM_EMAIL));
+
+        m = getXML("testRFC822_quoted").metadata;
+        assertEquals("Another Person", m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("another.person@another-example.com", m.get(Message.MESSAGE_FROM_EMAIL));
+
+        m = getXML("testRFC822_i18nheaders").metadata;
+        assertEquals("Keld Jørn Simonsen", m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("keld@dkuug.dk", m.get(Message.MESSAGE_FROM_EMAIL));
+
+        //this is currently detected as mbox!!!
+        m = getXML("testEmailWithPNGAtt.eml", new RFC822Parser()).metadata;
+        assertEquals("Tika Test", m.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("XXXX@apache.org", m.get(Message.MESSAGE_FROM_EMAIL));
+
     }
 
     @Test

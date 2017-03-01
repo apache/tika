@@ -28,7 +28,9 @@ import java.util.List;
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -107,4 +109,21 @@ public class OutlookPSTParserTest extends TikaTest {
     }
 
   }
+
+    @Test
+    public void testExtendedMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPST.pst");
+        Metadata m1 = metadataList.get(1);
+        assertEquals("Jörn Kottmann", m1.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("kottmann@gmail.com", m1.get(Message.MESSAGE_FROM_EMAIL));
+        assertEquals("Jörn Kottmann", m1.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("kottmann@gmail.com", m1.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+
+        Metadata m6 = metadataList.get(6);
+        assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
+        assertEquals("Couchbase", m6.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("couchbase@couchbase.com", m6.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+
+    }
 }

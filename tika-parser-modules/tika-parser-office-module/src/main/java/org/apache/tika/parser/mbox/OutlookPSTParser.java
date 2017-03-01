@@ -35,11 +35,14 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OutlookExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -151,6 +154,30 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set("importance", valueOf(pstMail.getImportance()));
         mailMetadata.set("priority", valueOf(pstMail.getPriority()));
         mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
+
+        if (pstMail.getSenderAddrtype().equalsIgnoreCase("ex")) {
+            OutlookExtractor.addExchange(pstMail.getSenderEmailAddress(),
+                    Office.MAPI_EXCHANGE_FROM_O,
+                    Office.MAPI_EXCHANGE_FROM_OU,
+                    Office.MAPI_EXCHANGE_FROM_CN, mailMetadata);
+        } {
+            OutlookExtractor.addChunks(pstMail.getSenderEmailAddress(), Message.MESSAGE_FROM_EMAIL,
+                    true, mailMetadata);
+        }
+        if (pstMail.getSentRepresentingAddressType().equalsIgnoreCase("ex")) {
+            OutlookExtractor.addExchange(pstMail.getSentRepresentingEmailAddress(),
+                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_O,
+                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_OU,
+                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN, mailMetadata);
+
+        } else {
+            OutlookExtractor.addChunks(pstMail.getSentRepresentingEmailAddress(),
+                    Office.MAPI_FROM_REPRESENTING_EMAIL,
+                    true, mailMetadata);
+        }
+        mailMetadata.set(Message.MESSAGE_FROM_NAME, pstMail.getSenderName());
+        mailMetadata.set(Office.MAPI_FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
+
 
         byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
