@@ -50,6 +50,7 @@ import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -222,11 +223,16 @@ class MailContentHandler implements ContentHandler {
                 if (fromField.isValidField() && mailboxList != null) {
                     for (Address address : mailboxList) {
                         String from = getDisplayString(address);
+                        MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME,
+                                Message.MESSAGE_FROM_EMAIL, metadata);
                         metadata.add(Metadata.MESSAGE_FROM, from);
                         metadata.add(TikaCoreProperties.CREATOR, from);
                     }
                 } else {
                     String from = stripOutFieldPrefix(field, "From:");
+                    MailUtil.setPersonAndEmail(from, Message.MESSAGE_FROM_NAME,
+                            Message.MESSAGE_FROM_EMAIL, metadata);
+
                     if (from.startsWith("<")) {
                         from = from.substring(1);
                     }

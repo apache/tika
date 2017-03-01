@@ -38,11 +38,13 @@ import java.util.regex.Pattern;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.mail.MailUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -168,6 +170,8 @@ public class MboxParser extends AbstractParser {
 
         if (headerTag.equalsIgnoreCase("From")) {
             metadata.set(TikaCoreProperties.CREATOR, headerContent);
+            MailUtil.setPersonAndEmail(headerContent, Message.MESSAGE_FROM_NAME,
+                    Message.MESSAGE_FROM_EMAIL, metadata);
         } else if (headerTag.equalsIgnoreCase("To") || headerTag.equalsIgnoreCase("Cc")
                 || headerTag.equalsIgnoreCase("Bcc")) {
             Matcher address = EMAIL_ADDRESS_PATTERN.matcher(headerContent);

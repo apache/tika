@@ -62,6 +62,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.mail.MailUtil;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
@@ -326,9 +327,15 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             senderAddressTypeString = senderAddresType.get(0).toString();
         }
 
-        addChunks(mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME, metadata);
-        addChunks(mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME),
-                Office.MAPI_FROM_REPRESENTING_NAME, metadata);
+        //sometimes in SMTP .msg files there is an email in the sender name field
+        //make sure to rule those out.
+        addChunks(
+                mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME,
+                    false, metadata);
+        addChunks(
+                mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME),
+                    Office.MAPI_FROM_REPRESENTING_NAME, false, metadata);
+
         if (senderAddressTypeString.equalsIgnoreCase("ex")) {
             addExchange(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
                     Office.MAPI_EXCHANGE_FROM_O, Office.MAPI_EXCHANGE_FROM_OU,
@@ -338,19 +345,25 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN, metadata);
         } else {
             addChunks(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
-                    Message.MESSAGE_FROM_EMAIL, metadata);
+                    Message.MESSAGE_FROM_EMAIL, true, metadata);
             addChunks(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
-                    Office.MAPI_FROM_REPRESENTING_EMAIL, metadata);
+                    Office.MAPI_FROM_REPRESENTING_EMAIL, true, metadata);
         }
     }
 
-    private void addExchange(List<Chunk> chunks,Property propertyO,
-                             Property propertyOU, Property propertyCN, Metadata metadata) {
+
+    private static void addExchange(List<Chunk> chunks,
+                                    Property propertyO,
+                                    Property propertyOU, Property propertyCN, Metadata metadata ) {
         if (chunks == null || chunks.size() == 0) {
             return;
         }
-        String exchange = chunks.get(0).toString();
-        if (exchange == null || exchange.length() == 0) {
+        addExchange(chunks.get(0).toString(), propertyO, propertyOU, propertyCN, metadata);
+    }
+
+    public static void addExchange(String exchange,Property propertyO,
+                             Property propertyOU, Property propertyCN, Metadata metadata) {
+        if (exchange == null || exchange.length() < 1) {
             return;
         }
         Matcher matcherO = EXCHANGE_O.matcher(exchange);
@@ -371,11 +384,21 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    private void addChunks(List<Chunk> chunks, Property property, Metadata metadata) {
-        if (chunks == null || chunks.size() == 0) {
+    private static void addChunks(List<Chunk> chunks, Property property, boolean mustContainEmail,
+                                 Metadata metadata) {
+        if (chunks == null || chunks.size() < 1) {
             return;
         }
-        metadata.set(property, chunks.get(0).toString());
+        addChunks(chunks.get(0).toString(), property, mustContainEmail, metadata);
+    }
+    public static void addChunks(String chunk, Property property, boolean mustContainEmail,
+                           Metadata metadata) {
+        if (chunk == null || chunk.length() == 0) {
+            return;
+        }
+        if (mustContainEmail == MailUtil.containsEmail(chunk)) {
+                metadata.set(property, chunk);
+        }
     }
 
     //TODO: replace this with getMessageClassEnum when we upgrade POI
