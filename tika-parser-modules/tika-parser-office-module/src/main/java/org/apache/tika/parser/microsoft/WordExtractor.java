@@ -108,6 +108,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      * what style should be applied to it.
      */
     public static TagAndStyle buildParagraphTagAndStyle(String styleName, boolean isTable) {
+
+        if (styleName == null || styleName.length() < 2) {
+            return defaultParagraphStyle;
+        }
+
         TagAndStyle tagAndStyle = fixedParagraphStyles.get(styleName);
         if (tagAndStyle != null) {
             return tagAndStyle;
