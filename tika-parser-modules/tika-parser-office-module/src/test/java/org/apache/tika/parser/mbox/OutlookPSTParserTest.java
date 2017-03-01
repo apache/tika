@@ -118,12 +118,14 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("kottmann@gmail.com", m1.get(Message.MESSAGE_FROM_EMAIL));
         assertEquals("Jörn Kottmann", m1.get(Office.MAPI_FROM_REPRESENTING_NAME));
         assertEquals("kottmann@gmail.com", m1.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+        assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
 
         Metadata m6 = metadataList.get(6);
         assertEquals("Couchbase", m6.get(Message.MESSAGE_FROM_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
         assertEquals("Couchbase", m6.get(Office.MAPI_FROM_REPRESENTING_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+        assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
 
     }
 }

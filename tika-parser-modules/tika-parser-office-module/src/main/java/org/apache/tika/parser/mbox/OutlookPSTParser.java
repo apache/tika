@@ -154,6 +154,8 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set("importance", valueOf(pstMail.getImportance()));
         mailMetadata.set("priority", valueOf(pstMail.getPriority()));
         mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
+        mailMetadata.set(Office.MAPI_MESSAGE_CLASS,
+                OutlookExtractor.getMessageClass(pstMail.getMessageClass()));
 
         if (pstMail.getSenderAddrtype().equalsIgnoreCase("ex")) {
             OutlookExtractor.addExchange(pstMail.getSenderEmailAddress(),

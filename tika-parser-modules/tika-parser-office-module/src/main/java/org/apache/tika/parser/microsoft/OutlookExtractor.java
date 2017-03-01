@@ -122,8 +122,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         try {
             msg.setReturnNullOnMissingChunk(true);
 
-            String messageClass = getMessageClass(msg);
-            metadata.set(Office.MAPI_MESSAGE_CLASS, messageClass);
+            try {
+                metadata.set(Office.MAPI_MESSAGE_CLASS, getMessageClass(msg.getMessageClass()));
+            } catch (ChunkNotFoundException e){}
 
             // If the message contains strings that aren't stored
             //  as Unicode, try to sort out an encoding for them
@@ -409,21 +410,20 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     }
 
     //TODO: replace this with getMessageClassEnum when we upgrade POI
-    private String getMessageClass(MAPIMessage msg) throws ChunkNotFoundException {
-        String mc = msg.getMessageClass();
-        if (mc == null || mc.trim().length() == 0) {
+    public static String getMessageClass(String messageClass){
+        if (messageClass == null || messageClass.trim().length() == 0) {
             return "UNSPECIFIED";
-        } else if (mc.equalsIgnoreCase("IPM.Note")) {
+        } else if (messageClass.equalsIgnoreCase("IPM.Note")) {
             return "NOTE";
-        } else if (mc.equalsIgnoreCase("IPM.Contact")) {
+        } else if (messageClass.equalsIgnoreCase("IPM.Contact")) {
             return "CONTACT";
-        } else if (mc.equalsIgnoreCase("IPM.Appointment")) {
+        } else if (messageClass.equalsIgnoreCase("IPM.Appointment")) {
             return "APPOINTMENT";
-        } else if (mc.equalsIgnoreCase("IPM.StickyNote")) {
+        } else if (messageClass.equalsIgnoreCase("IPM.StickyNote")) {
             return "STICKY_NOTE";
-        } else if (mc.equalsIgnoreCase("IPM.Task")) {
+        } else if (messageClass.equalsIgnoreCase("IPM.Task")) {
             return "TASK";
-        } else if (mc.equalsIgnoreCase("IPM.Post")) {
+        } else if (messageClass.equalsIgnoreCase("IPM.Post")) {
             return "POST";
         } else {
             return "UNKNOWN";
