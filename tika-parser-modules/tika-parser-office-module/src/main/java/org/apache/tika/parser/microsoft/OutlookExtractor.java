@@ -57,6 +57,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -115,6 +116,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             throws TikaException, SAXException, IOException {
         try {
             msg.setReturnNullOnMissingChunk(true);
+
+            String messageClass = getMessageClass(msg);
+            metadata.set(Office.MAPI_MESSAGE_CLASS, messageClass);
 
             // If the message contains strings that aren't stored
             //  as Unicode, try to sort out an encoding for them
@@ -310,6 +314,28 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             //can reside in the same file system.  After the first
             //child is read, the fs is closed, and the other children
             //get a java.nio.channels.ClosedChannelException
+        }
+    }
+
+    //TODO: replace this with getMessageClassEnum when we upgrad POI
+    private String getMessageClass(MAPIMessage msg) throws ChunkNotFoundException {
+        String mc = msg.getMessageClass();
+        if (mc == null || mc.trim().length() == 0) {
+            return "UNSPECIFIED";
+        } else if (mc.equalsIgnoreCase("IPM.Note")) {
+            return "NOTE";
+        } else if (mc.equalsIgnoreCase("IPM.Contact")) {
+            return "CONTACT";
+        } else if (mc.equalsIgnoreCase("IPM.Appointment")) {
+            return "APPOINTMENT";
+        } else if (mc.equalsIgnoreCase("IPM.StickyNote")) {
+            return "STICKY_NOTE";
+        } else if (mc.equalsIgnoreCase("IPM.Task")) {
+            return "TASK";
+        } else if (mc.equalsIgnoreCase("IPM.Post")) {
+            return "POST";
+        } else {
+            return "UNKNOWN";
         }
     }
 

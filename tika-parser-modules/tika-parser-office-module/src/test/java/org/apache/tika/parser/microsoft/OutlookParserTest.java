@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -250,5 +251,24 @@ public class OutlookParserTest extends TikaTest {
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+    }
+
+    @Test
+    public void testMAPIMessageClasses() throws Exception {
+
+        for (String messageClass : new String[]{
+                "Appointment", "Contact", "Post", "StickyNote", "Task"
+        }) {
+            testMsgClass(messageClass,
+                    getXML("testMSG_" + messageClass + ".msg").metadata);
+        }
+
+        testMsgClass("NOTE", getXML("test-outlook2003.msg").metadata);
+
+    }
+
+    private void testMsgClass(String expected, Metadata metadata) {
+        assertTrue(expected + ", but got: " + metadata.get(Office.MAPI_MESSAGE_CLASS),
+                expected.equalsIgnoreCase(metadata.get(Office.MAPI_MESSAGE_CLASS).replaceAll("_", "")));
     }
 }
