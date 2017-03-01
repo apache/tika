@@ -56,13 +56,15 @@ import org.apache.tika.detect.EncodingDetectorProxy;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserProxy;
+import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
@@ -76,8 +78,11 @@ import org.xml.sax.SAXException;
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
 
+    private final static String RECIPIENTS = "recipients";
+    private final static Pattern EXCHANGE_O = Pattern.compile("(?i)/o=([^/]+)");
+    private final static Pattern EXCHANGE_OU = Pattern.compile("(?i)/ou=([^/]+)");
+    private final static Pattern EXCHANGE_CN = Pattern.compile("(?i)/cn=([^/]+)");
 
-    private static final MediaType RTF = MediaType.application("rtf");
 
     private static Pattern HEADER_KEY_PAT =
             Pattern.compile("\\A([\\x21-\\x39\\x3B-\\x7E]+):(.*?)\\Z");
@@ -128,13 +133,10 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
             // Start with the metadata
             String subject = msg.getSubject();
+            Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
             String from = msg.getDisplayFrom();
 
-            metadata.set(TikaCoreProperties.CREATOR, from);
-            metadata.set(Metadata.MESSAGE_FROM, from);
-            metadata.set(Metadata.MESSAGE_TO, msg.getDisplayTo());
-            metadata.set(Metadata.MESSAGE_CC, msg.getDisplayCC());
-            metadata.set(Metadata.MESSAGE_BCC, msg.getDisplayBCC());
+            handleFromTo(headers, metadata);
 
             metadata.set(TikaCoreProperties.TITLE, subject);
             // TODO: Move to description in Tika 2.0
@@ -148,49 +150,39 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 }
             } catch (ChunkNotFoundException he) {
             } // Will be fixed in POI 3.7 Final
-            try {
-                Map<String, String[]> headers = normalizeHeaders(msg.getHeaders());
-                for (Map.Entry<String, String[]> e : headers.entrySet()) {
-                    String headerKey = e.getKey();
-                    for (String headerValue : e.getValue()) {
-                        metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX+headerKey, headerValue);
-                    }
-                }
-            } catch (ChunkNotFoundException e) {
 
+            for (Map.Entry<String, String[]> e : headers.entrySet()) {
+                String headerKey = e.getKey();
+                for (String headerValue : e.getValue()) {
+                    metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
+                }
             }
 
-                    // Date - try two ways to find it
+            // Date - try two ways to find it
             // First try via the proper chunk
             if (msg.getMessageDate() != null) {
                 metadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
                 metadata.set(TikaCoreProperties.MODIFIED, msg.getMessageDate().getTime());
             } else {
-                try {
-                    // Failing that try via the raw headers
-                    String[] headers = msg.getHeaders();
-                    if (headers != null && headers.length > 0) {
-                        for (String header : headers) {
-                            if (header.toLowerCase(Locale.ROOT).startsWith("date:")) {
-                                String date = header.substring(header.indexOf(':') + 1).trim();
+                if (headers != null && headers.size() > 0) {
+                    for (Map.Entry<String, String[]> header : headers.entrySet()) {
+                        String headerKey = header.getKey();
+                        if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
+                            String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
 
-                                // See if we can parse it as a normal mail date
-                                try {
-                                    
-                                    Date d = dateFormat.parse(date);
-                                    metadata.set(TikaCoreProperties.CREATED, d);
-                                    metadata.set(TikaCoreProperties.MODIFIED, d);
-                                } catch (ParseException e) {
-                                    // Store it as-is, and hope for the best...
-                                    metadata.set(TikaCoreProperties.CREATED, date);
-                                    metadata.set(TikaCoreProperties.MODIFIED, date);
-                                }
-                                break;
+                            // See if we can parse it as a normal mail date
+                            try {
+                                Date d = MboxParser.parseDate(date);
+                                metadata.set(TikaCoreProperties.CREATED, d);
+                                metadata.set(TikaCoreProperties.MODIFIED, d);
+                            } catch (ParseException e) {
+                                // Store it as-is, and hope for the best...
+                                metadata.set(TikaCoreProperties.CREATED, date);
+                                metadata.set(TikaCoreProperties.MODIFIED, date);
                             }
+                            break;
                         }
                     }
-                } catch (ChunkNotFoundException he) {
-                    // We can't find the date, sorry...
                 }
             }
 
@@ -317,7 +309,83 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    //TODO: replace this with getMessageClassEnum when we upgrad POI
+    private void handleFromTo(Map<String, String[]> headers, Metadata metadata) throws ChunkNotFoundException {
+        String from = msg.getDisplayFrom();
+        metadata.set(TikaCoreProperties.CREATOR, from);
+        metadata.set(Metadata.MESSAGE_FROM, from);
+        metadata.set(Metadata.MESSAGE_TO, msg.getDisplayTo());
+        metadata.set(Metadata.MESSAGE_CC, msg.getDisplayCC());
+        metadata.set(Metadata.MESSAGE_BCC, msg.getDisplayBCC());
+
+
+        Chunks chunks = msg.getMainChunks();
+        StringChunk sentByServerType = chunks.getSentByServerType();
+        if (sentByServerType != null) {
+            metadata.set(Office.MAPI_SENT_BY_SERVER_TYPE,
+                    sentByServerType.getValue());
+        }
+
+        Map<MAPIProperty, List<Chunk>> mainChunks = msg.getMainChunks().getAll();
+
+        List<Chunk> senderAddresType = mainChunks.get(MAPIProperty.SENDER_ADDRTYPE);
+        String senderAddressTypeString = "";
+        if (senderAddresType != null && senderAddresType.size() > 0) {
+            senderAddressTypeString = senderAddresType.get(0).toString();
+        }
+
+        addChunks(mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME, metadata);
+        addChunks(mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME),
+                Office.MAPI_FROM_REPRESENTING_NAME, metadata);
+        if (senderAddressTypeString.equalsIgnoreCase("ex")) {
+            addExchange(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
+                    Office.MAPI_EXCHANGE_FROM_O, Office.MAPI_EXCHANGE_FROM_OU,
+                    Office.MAPI_EXCHANGE_FROM_CN, metadata);
+            addExchange(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
+                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_O, Office.MAPI_EXCHANGE_FROM_REPRESENTING_OU,
+                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN, metadata);
+        } else {
+            addChunks(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
+                    Message.MESSAGE_FROM_EMAIL, metadata);
+            addChunks(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
+                    Office.MAPI_FROM_REPRESENTING_EMAIL, metadata);
+        }
+    }
+
+    private void addExchange(List<Chunk> chunks,Property propertyO,
+                             Property propertyOU, Property propertyCN, Metadata metadata) {
+        if (chunks == null || chunks.size() == 0) {
+            return;
+        }
+        String exchange = chunks.get(0).toString();
+        if (exchange == null || exchange.length() == 0) {
+            return;
+        }
+        Matcher matcherO = EXCHANGE_O.matcher(exchange);
+        if (matcherO.find()) {
+            metadata.set(propertyO, matcherO.group(1));
+        }
+        Matcher matcherOU = EXCHANGE_OU.matcher(exchange);
+        if (matcherOU.find()) {
+            metadata.set(propertyOU, matcherOU.group(1));
+        }
+
+        Matcher matcherCN = EXCHANGE_CN.matcher(exchange);
+        while (matcherCN.find()) {
+            String cn = matcherCN.group(1);
+            if (!cn.equalsIgnoreCase(RECIPIENTS)) {
+                metadata.add(propertyCN, cn);
+            }
+        }
+    }
+
+    private void addChunks(List<Chunk> chunks, Property property, Metadata metadata) {
+        if (chunks == null || chunks.size() == 0) {
+            return;
+        }
+        metadata.set(property, chunks.get(0).toString());
+    }
+
+    //TODO: replace this with getMessageClassEnum when we upgrade POI
     private String getMessageClass(MAPIMessage msg) throws ChunkNotFoundException {
         String mc = msg.getMessageClass();
         if (mc == null || mc.trim().length() == 0) {
@@ -338,7 +406,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             return "UNKNOWN";
         }
     }
-
     //As of 3.15, POI currently returns header[] by splitting on /\r?\n/
     //this rebuilds headers that are broken up over several lines
     //this also decodes encoded headers.

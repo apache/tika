@@ -31,6 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -56,7 +57,6 @@ public class OutlookParserTest extends TikaTest {
                 "/test-documents/test-outlook.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
-
         assertEquals(
                 "application/vnd.ms-outlook",
                 metadata.get(Metadata.CONTENT_TYPE));
@@ -124,6 +124,12 @@ public class OutlookParserTest extends TikaTest {
         assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
                 "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 -0800",
                 Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
+        assertEquals("EX", metadata.get(Office.MAPI_SENT_BY_SERVER_TYPE));
+        assertEquals("NOTE", metadata.get(Office.MAPI_MESSAGE_CLASS));
+        assertEquals("Jukka Zitting", metadata.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("jukka.zitting@gmail.com", metadata.get(Message.MESSAGE_FROM_EMAIL));
+        assertEquals("Jukka Zitting", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("jukka.zitting@gmail.com", metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
     }
 
     /**
@@ -141,7 +147,6 @@ public class OutlookParserTest extends TikaTest {
                 "/test-documents/test-outlook2003.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
-
         assertEquals(
                 "application/vnd.ms-outlook",
                 metadata.get(Metadata.CONTENT_TYPE));
@@ -189,6 +194,14 @@ public class OutlookParserTest extends TikaTest {
         // Make sure that the Chinese actually came through
         assertContains("\u5F35\u6BD3\u502B", metadata.get(TikaCoreProperties.CREATOR));
         assertContains("\u9673\u60E0\u73CD", content);
+
+        assertEquals("FT GROUP", metadata.get(Office.MAPI_EXCHANGE_FROM_O));
+        assertEquals("FT", metadata.get(Office.MAPI_EXCHANGE_FROM_OU));
+        assertEquals("LYDIACHANG", metadata.get(Office.MAPI_EXCHANGE_FROM_CN));
+        assertEquals("Tests Chang@FT (張毓倫)", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("FT GROUP", metadata.get(Office.MAPI_EXCHANGE_FROM_REPRESENTING_O));
+        assertEquals("FT", metadata.get(Office.MAPI_EXCHANGE_FROM_REPRESENTING_OU));
+        assertEquals("LYDIACHANG", metadata.get(Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN));
     }
 
     @Test

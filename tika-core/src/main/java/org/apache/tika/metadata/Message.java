@@ -16,10 +16,10 @@
  */
 package org.apache.tika.metadata;
 
-import org.apache.tika.Tika;
-
 /**
  * A collection of Message related property names.
+ *
+ * See also {@link Office}'s MAPI-specific properties.
  */
 public interface Message {
     String MESSAGE_PREFIX = "Message"+ Metadata.NAMESPACE_PREFIX_DELIMITER;
@@ -35,4 +35,32 @@ public interface Message {
     String MESSAGE_CC = "Message-Cc";
     
     String MESSAGE_BCC = "Message-Bcc";
+
+    /**
+     * Where possible, we try to separate the name from the email address
+     * in Message files.  This is multivalued for cases where an email is sent
+     * "on behalf of" someone...this is still to be implemented, though.
+     * The name may be an organization name.
+     */
+    Property MESSAGE_FROM_NAME = Property.internalTextBag(MESSAGE_PREFIX+"From-Name");
+
+    /**
+     * Where possible, we try to separate the name from the email address
+     * in Message files.  This is multivalued for cases where an email is sent
+     * "on behalf of" someone...this is still to be implemented, though.
+     */
+    Property MESSAGE_FROM_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"From-Email");
+
+    Property MESSAGE_TO_NAME = Property.internalTextBag(MESSAGE_PREFIX+"To-Name");
+
+    Property MESSAGE_TO_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"To-Name");
+
+    Property MESSAGE_CC_NAME = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+
+    Property MESSAGE_CC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+
+    Property MESSAGE_BCC_NAME = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+
+    Property MESSAGE_BCC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+
 }
