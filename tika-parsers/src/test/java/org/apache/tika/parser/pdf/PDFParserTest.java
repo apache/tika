@@ -1332,7 +1332,9 @@ public class PDFParserTest extends TikaTest {
             assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
             assertEquals(true, pdfParserConfig.getExtractInlineImages());
             assertEquals(false, pdfParserConfig.getExtractUniqueInlineImagesOnly());
-            assertEquals(314159, pdfParserConfig.getOcrDPI());
+            assertEquals(314, pdfParserConfig.getOcrDPI());
+            assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
+            assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
             assertEquals(false, pdfParserConfig.getCatchIntermediateIOExceptions());
         }
     }

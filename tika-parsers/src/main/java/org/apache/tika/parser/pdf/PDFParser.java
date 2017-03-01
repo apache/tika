@@ -636,6 +636,16 @@ public class PDFParser extends AbstractParser {
     }
 
     @Field
+    void setOcrImageQuality(float imageQuality) {
+        defaultConfig.setOcrImageQuality(imageQuality);
+    }
+
+    @Field
+    void setOcrImageFormatName(String formatName) {
+        defaultConfig.setOcrImageFormatName(formatName);
+    }
+
+    @Field
     void setExtractInlineImages(boolean extractInlineImages) {
         defaultConfig.setExtractInlineImages(extractInlineImages);
     }

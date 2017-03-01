@@ -330,7 +330,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
                 ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
-                        os, config.getOcrDPI());
+                        os, config.getOcrDPI(), config.getOcrImageQuality());
             }
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 tesseractOCRParser.parseInline(is, xhtml, tesseractConfig);
