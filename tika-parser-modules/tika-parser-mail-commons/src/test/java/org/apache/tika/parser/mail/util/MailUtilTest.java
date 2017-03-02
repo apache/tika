@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.mail;
+package org.apache.tika.parser.mail.util;
 
 
 import static org.junit.Assert.assertEquals;

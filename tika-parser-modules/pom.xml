@@ -54,6 +54,7 @@
     <module>tika-parser-database-module</module>
     <module>tika-parser-ebook-module</module>
     <module>tika-parser-journal-module</module>
+    <module>tika-parser-mail-commons</module>
     <module>tika-parser-multimedia-module</module>
     <module>tika-parser-office-module</module>
     <module>tika-parser-package-module</module>

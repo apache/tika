@@ -62,6 +62,7 @@
             <Bundle-Activator>org.apache.tika.module.office.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-office-module;inline=true,
+              tika-parser-mail-commons;inline=true,
               commons-lang;inline=true,
               commons-io;inline=true,
               commons-codec;inline=true,

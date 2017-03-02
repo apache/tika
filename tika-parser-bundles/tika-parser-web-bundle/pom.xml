@@ -47,6 +47,7 @@
             <Bundle-Activator>org.apache.tika.module.web.internal.Activator</Bundle-Activator>
             <Embed-Dependency>
               tika-parser-web-module;inline=true,
+              tika-parser-mail-commons;inline=true,
               tagsoup;inline=true,
               boilerpipe;inline=true,
               rome;inline=true,

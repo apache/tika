@@ -64,6 +64,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserProxy;
+import org.apache.tika.parser.mail.util.MailUtil;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;

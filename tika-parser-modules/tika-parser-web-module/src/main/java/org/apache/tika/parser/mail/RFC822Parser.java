@@ -38,7 +38,7 @@ import org.xml.sax.SAXException;
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
  * <p/>
- * A {@link MimeEntityConfig} object can be passed in the parsing context
+ * A {@link ParseContext} object can be passed in the parsing context
  * to better control the parsing process.
  *
  * @author jnioche@digitalpebble.com

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.mail;
+package org.apache.tika.parser.mail.util;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
