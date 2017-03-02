@@ -33,6 +33,13 @@ public class MailUtilTest {
 
         s = "\"Julien Nioche (JIRA)\" <jira@apache.org>";
         assertExtracted("Julien Nioche (JIRA)", "jira@apache.org", s);
+
+        s = "<jira@apache.org> Julien Nioche (JIRA) ";
+        assertExtracted("Julien Nioche (JIRA)", "jira@apache.org", s);
+
+        s = "<jira@apache.org> \"Julien Nioche (JIRA)\" ";
+        assertExtracted("Julien Nioche (JIRA)", "jira@apache.org", s);
+
     }
 
     private void assertExtracted(String person, String email, String string) {

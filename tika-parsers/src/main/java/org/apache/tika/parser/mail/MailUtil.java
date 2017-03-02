@@ -89,10 +89,12 @@ public class MailUtil {
     private static String extractEmail(String string, StringBuffer sb) {
         Matcher emailMatcher = EMAIL.matcher(string);
         String email = "";
+        //TODO: warn if more than one email is found?
         while (emailMatcher.find()) {
             emailMatcher.appendReplacement(sb, "");
             email = emailMatcher.group(1);
         }
+        emailMatcher.appendTail(sb);
         return email;
     }
 
