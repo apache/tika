@@ -27,15 +27,43 @@ public class TikaEvalCLITest {
 
     @Test
     @Ignore("TODO: add real tests")
-    public void testBasic() throws Exception {
+    public void testBasicCompare() throws Exception {
+        List<String> args = new ArrayList<>();
+        args.add("Compare");
+        args.add("-extractsA");
+        args.add("watson2");
+        args.add("-extractsB");
+        args.add("tika");
+        args.add("-db");
+        args.add("comparedb");
+        args.add("-drop");
+        args.add("-jdbc");
+        args.add("jdbc:postgresql:tika_eval?user=user&password=password");
+        args.add("-maxFilesToAdd");
+        args.add("100");
+        TikaEvalCLI.main(args.toArray(new String[args.size()]));
+    }
+
+    @Ignore("TODO: add real tests")
+    @Test
+    public void testBasicProfile() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Profile");
         args.add("-extracts");
-        args.add("tika");
+        args.add("watson2");
         args.add("-db");
-        args.add("mydb");
-        args.add("-alterExtract");
-        args.add("first_only");
+        args.add("testdb");
+        TikaEvalCLI.main(args.toArray(new String[args.size()]));
+    }
+
+    @Test
+    @Ignore("TODO: add real tests")
+    public void testReports() throws Exception {
+        List<String> args = new ArrayList<>();
+        args.add("Report");
+        args.add("-db");
+        args.add("comparedb.mv.db");
+
         TikaEvalCLI.main(args.toArray(new String[args.size()]));
     }
 

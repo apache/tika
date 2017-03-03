@@ -29,6 +29,8 @@ public class TableInfo {
     private final List<ColInfo> colInfos = new ArrayList<>();
     private final Set<Cols> colNames = new HashSet<>();
 
+    private String prefix;
+
     public TableInfo(String name, ColInfo... cols) {
         Collections.addAll(colInfos, cols);
         Collections.unmodifiableList(colInfos);
@@ -50,7 +52,14 @@ public class TableInfo {
     }
 
     public String getName() {
-        return name;
+        if (prefix == null) {
+            return name;
+        }
+        return prefix+name;
+    }
+
+    public void setNamePrefix(String prefix) {
+        this.prefix = prefix;
     }
 
     public List<ColInfo> getColInfos() {

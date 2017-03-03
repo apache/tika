@@ -73,7 +73,7 @@ public class ProfilerBatchTest {
         System.out.println(streamStrings.getErrString());
         System.out.println(streamStrings.getOutString());*/
         H2Util dbUtil = new H2Util(db);
-        conn = dbUtil.getConnection(true);
+        conn = dbUtil.getConnection();
     }
     @AfterClass
     public static void tearDown() throws IOException {

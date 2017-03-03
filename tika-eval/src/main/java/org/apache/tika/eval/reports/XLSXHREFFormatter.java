@@ -27,9 +27,7 @@ import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-/**
- * Created by TALLISON on 4/20/2016.
- */
+
 public class XLSXHREFFormatter implements XSLXCellFormatter {
     //xlsx files can only have this many hyperlinks
     //if they have more Excel can't read the file

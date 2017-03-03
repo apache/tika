@@ -58,8 +58,9 @@ public class SimpleComparerTest extends TikaTest {
         writer = new MockDBWriter();
         comparer = new ExtractComparer(null, null,
                 Paths.get("extractsA"), Paths.get("extractsB"),
-                writer, IGNORE_LENGTH, IGNORE_LENGTH,
-                ExtractReader.ALTER_METADATA_LIST.AS_IS);
+                new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
+                        IGNORE_LENGTH, IGNORE_LENGTH),
+                writer);
         AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath());
         LanguageIDWrapper.loadBuiltInModels();
     }

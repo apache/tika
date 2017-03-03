@@ -34,8 +34,8 @@ import java.sql.Statement;
 
 import org.apache.log4j.Level;
 import org.apache.tika.eval.db.Cols;
-import org.apache.tika.eval.db.DBUtil;
 import org.apache.tika.eval.db.H2Util;
+import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.XMLLogMsgHandler;
 import org.apache.tika.eval.io.XMLLogReader;
@@ -60,8 +60,8 @@ public class XMLErrorLogUpdater {
         Path xmlLogFileA = Paths.get(args[0]);
         Path xmlLogFileB = Paths.get(args[1]);
         Path db = Paths.get(args[2]);
-        DBUtil dbUtil = new H2Util(db);
-        Connection connection = dbUtil.getConnection(true);
+        JDBCUtil dbUtil = new H2Util(db);
+        Connection connection = dbUtil.getConnection();
         writer.update(connection, ExtractComparer.EXTRACT_EXCEPTION_TABLE_A, xmlLogFileA);
         writer.update(connection, ExtractComparer.EXTRACT_EXCEPTION_TABLE_B, xmlLogFileB);
         connection.commit();

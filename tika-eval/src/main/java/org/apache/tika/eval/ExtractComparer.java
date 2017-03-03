@@ -55,19 +55,14 @@ public class ExtractComparer extends AbstractProfiler {
         Option extractsB = new Option("extractsB", true, "directory for extractsB files");
         extractsB.setRequired(true);
 
-        Option db = new Option("db", true, "db file to which to write results");
-        db.setRequired(true);
-
         Option inputDir = new Option("inputDir", true,
                 "optional: directory of original binary input files if it exists " +
                         "or can be the same as -extractsA or -extractsB. If not specified, -inputDir=-extractsA");
-        inputDir.setRequired(true);
 
 
         OPTIONS = new Options()
                 .addOption(extractsA)
                 .addOption(extractsB)
-                .addOption(db)
                 .addOption(inputDir)
                 .addOption("bc", "optional: tika-batch config file")
                 .addOption("numConsumers", true, "optional: number of consumer threads")
@@ -77,7 +72,15 @@ public class ExtractComparer extends AbstractProfiler {
                                 "take just the first/container document ('first_only'), " +
                                 "concatenate all content into the first metadata item ('concatenate_content')"))
                 .addOption("minExtractLength", true, "minimum extract length to process (in bytes)")
-                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)");
+                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)")
+                .addOption("db", true, "db file to which to write results")
+                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
+                .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
+                .addOption("tablePrefixA", true, "EXPERT: optional prefix for table names for A")
+                .addOption("tablePrefixB", true, "EXPERT: optional prefix for table names for B")
+                .addOption("drop", true, "drop tables if they exist")
+                .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+        ;
     }
 
     public static void USAGE() {
@@ -87,7 +90,7 @@ public class ExtractComparer extends AbstractProfiler {
                 "java -jar tika-eval-x.y.jar Compare -extractsA extractsA -extractsB extractsB -db mydb",
                 "Tool: Compare",
                 ExtractComparer.OPTIONS,
-                "Note: do not include the .mv.db at the end of the db name.");
+                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
     }
 
     private final static String FIELD_A = "fa";
@@ -155,24 +158,17 @@ public class ExtractComparer extends AbstractProfiler {
     private final Path extractsA;
     private final Path extractsB;
 
-    private final long minExtractLength;
-    private final long maxExtractLength;
-    private final ExtractReader.ALTER_METADATA_LIST alterExtractList;
-
     private final TokenContraster tokenContraster = new TokenContraster();
-    private final ExtractReader extractReader = new ExtractReader();
+    private final ExtractReader extractReader;
 
     public ExtractComparer(ArrayBlockingQueue<FileResource> queue,
-                           Path inputDir, Path extractsA, Path extractsB,
-                           IDBWriter writer, long minJsonLength,
-                           long maxJsonLength, ExtractReader.ALTER_METADATA_LIST alterExtractList) {
+                           Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader,
+                           IDBWriter writer) {
         super(queue, writer);
-        this.minExtractLength = minJsonLength;
-        this.maxExtractLength = maxJsonLength;
         this.inputDir = inputDir;
         this.extractsA = extractsA;
         this.extractsB = extractsB;
-        this.alterExtractList = alterExtractList;
+        this.extractReader = extractReader;
     }
 
     @Override
@@ -213,8 +209,7 @@ public class ExtractComparer extends AbstractProfiler {
         List<Metadata> metadataListA = null;
         if (extractExceptionA == null) {
             try {
-                metadataListA = extractReader.loadExtract(fpsA.getExtractFile(),
-                        alterExtractList, minExtractLength, maxExtractLength);
+                metadataListA = extractReader.loadExtract(fpsA.getExtractFile());
             } catch (ExtractReaderException e) {
                 extractExceptionA = e.getType();
             }
@@ -222,8 +217,7 @@ public class ExtractComparer extends AbstractProfiler {
 
         List<Metadata> metadataListB = null;
         try {
-            metadataListB = extractReader.loadExtract(fpsB.getExtractFile(),
-                    alterExtractList, minExtractLength, maxExtractLength);
+            metadataListB = extractReader.loadExtract(fpsB.getExtractFile());
         } catch (ExtractReaderException e) {
             extractExceptionB = e.getType();
         }
@@ -429,9 +423,6 @@ public class ExtractComparer extends AbstractProfiler {
         }
         return -1;
     }
-
-
-
 
     private void writeContrasts(Map<Cols, String> data, ContrastStatistics contrastStatistics) {
         writeContrastString(data, Cols.TOP_10_MORE_IN_A, contrastStatistics.getTopNMoreA());

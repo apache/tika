@@ -63,7 +63,7 @@
     />
 
     <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
-               consumerBuilderClass="org.apache.tika.eval.batch.SingleFileConsumerBuilder"
+               consumerBuilderClass="org.apache.tika.eval.batch.ExtractProfilerBuilder"
                errorLogFile="src/test/resources/test-dirs/batch-logs/batch-process-fatal.xml"
                extracts="src/test/resources/test-dirs/extractsA"
                commonTokens="src/test/resources/common_tokens"/>

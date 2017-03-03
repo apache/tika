@@ -22,7 +22,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,7 +32,7 @@ import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.db.Cols;
-import org.apache.tika.eval.db.DBUtil;
+import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.DBWriter;
@@ -42,12 +44,12 @@ public abstract class EvalConsumerBuilder {
     private AtomicInteger count = new AtomicInteger(0);
     protected ArrayBlockingQueue<FileResource> queue;
     Map<String, String> localAttrs;
-    DBUtil dbUtil;
+    JDBCUtil dbUtil;
     private MimeBuffer mimeBuffer;
     AtomicInteger initialized = new AtomicInteger(0);
 
     public void init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs,
-                     DBUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
+                     JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
         this.queue = queue;
         this.localAttrs = localAttrs;
         this.dbUtil = dbUtil;
@@ -60,11 +62,29 @@ public abstract class EvalConsumerBuilder {
 
     public abstract FileResourceConsumer build() throws IOException, SQLException;
 
-    protected abstract List<TableInfo> getTableInfo();
+    protected abstract List<TableInfo> getTableInfo(String tableNamePrefixA, String tableNamePrefixB);
 
     protected abstract void addErrorLogTablePairs(DBConsumersManager manager);
 
     public void populateRefTables() throws IOException, SQLException {
+        //test for one ref table.  If it exists, don't populate ref tables
+        //TODO: test one at a time
+        boolean tableExists = false;
+        try (Connection connection = dbUtil.getConnection()) {
+            Set<String> tables = dbUtil.getTables(connection);
+            if (tables.contains(
+                    AbstractProfiler.REF_PARSE_ERROR_TYPES.getName().toLowerCase(Locale.US)
+            )) {
+                tableExists = true;
+            }
+        } catch (SQLException e) {
+            //swallow
+        }
+
+        if (tableExists) {
+            return;
+        }
+
         IDBWriter writer = getDBWriter();
         Map<Cols, String> m = new HashMap<>();
         for (AbstractProfiler.PARSE_ERROR_TYPE t : AbstractProfiler.PARSE_ERROR_TYPE.values()) {
@@ -92,8 +112,8 @@ public abstract class EvalConsumerBuilder {
     }
 
     protected IDBWriter getDBWriter() throws IOException, SQLException {
-        Connection conn = dbUtil.getConnection(true);
-        return new DBWriter(conn, getTableInfo(), dbUtil, mimeBuffer);
+        Connection conn = dbUtil.getConnection();
+        return new DBWriter(conn, getTableInfo(null, null), dbUtil, mimeBuffer);
     }
 
     ExtractReader.ALTER_METADATA_LIST getAlterMetadata(Map<String, String> localAttrs) {

@@ -19,70 +19,123 @@ package org.apache.tika.eval.db;
 
 
 import java.io.IOException;
-import java.nio.file.Path;
+import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
-import org.apache.tika.io.IOExceptionWithCause;
 
-public abstract class DBUtil {
+public class JDBCUtil {
 
-    public static Logger logger = Logger.getLogger(DBUtil.class);
-    public abstract String getJDBCDriverClass();
-    public abstract boolean dropTableIfExists(Connection conn, String tableName) throws SQLException;
-    private final Path db;
-    public DBUtil(Path db) {
-        this.db = db;
+    public static Logger logger = Logger.getLogger(JDBCUtil.class);
+    private final String connectionString;
+    private String driverClass;
+
+    public JDBCUtil(String connectionString, String driverClass) {
+        this.connectionString = connectionString;
+        this.driverClass = driverClass;
+        if (driverClass == null || driverClass.length() == 0) {
+            if (System.getProperty("jdbc.drivers") != null) {
+                //user has specified it on the command line
+                //stop now
+            } else {
+                //try to use the mappings in db.properties to determine the class
+                try (InputStream is = JDBCUtil.class.getResourceAsStream("/db.properties")) {
+                    Properties properties = new Properties();
+                    properties.load(is);
+                    for (String k : properties.stringPropertyNames()) {
+                        Matcher m = Pattern.compile("(?i)jdbc:"+k).matcher(connectionString);
+                        if (m.find()) {
+                            this.driverClass = properties.getProperty(k);
+                        }
+                    }
+
+                } catch (IOException e) {
+
+                }
+            }
+        }
     }
 
     /**
-     * This is intended for a file/directory based db.
-     * <p>
      * Override this any optimizations you want to do on the db
      * before writing/reading.
      *
      * @return
      * @throws IOException
      */
-    public Connection getConnection(boolean createIfDoesntExist) throws IOException {
-        String connectionString = getConnectionString(db, createIfDoesntExist);
+    public Connection getConnection() throws SQLException {
+        String connectionString = getConnectionString();
         Connection conn = null;
-        try {
+        String jdbcDriver = getJDBCDriverClass();
+        if (jdbcDriver != null) {
             try {
                 Class.forName(getJDBCDriverClass());
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
-            conn = DriverManager.getConnection(connectionString);
-            conn.setAutoCommit(false);
-        } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
         }
+        conn = DriverManager.getConnection(connectionString);
+        conn.setAutoCommit(false);
+
         return conn;
     }
 
-    abstract public String getConnectionString(Path db, boolean createIfDoesntExist);
-
     /**
-     *
-     * @param connection
-     * @return a list of uppercased table names
-     * @throws SQLException
+     * JDBC driver class.  Override as necessary.
+     * @return
      */
-    abstract public Set<String> getTables(Connection connection) throws SQLException;
+    public String getJDBCDriverClass() {
+        return driverClass;
+    }
+
+
+    public boolean dropTableIfExists(Connection conn, String tableName) throws SQLException {
+        if (containsTable(tableName)) {
+            try (Statement st = conn.createStatement()) {
+                String sql = "drop table " + tableName;
+                return st.execute(sql);
+            }
+        }
+        return true;
+    }
+
+
+    public String getConnectionString() {
+        return connectionString;
+    }
+
+
+    public Set<String> getTables(Connection connection) throws SQLException {
+        Set<String> tables = new HashSet<>();
+
+        DatabaseMetaData dbMeta = connection.getMetaData();
+
+        try (ResultSet rs = dbMeta.getTables(null, null, "%", null)) {
+            while (rs.next()) {
+                tables.add(rs.getString(3).toLowerCase(Locale.US));
+            }
+        }
+        return tables;
+    }
 
     public static int insert(PreparedStatement insertStatement,
-                              TableInfo table,
-                              Map<Cols, String> data) throws SQLException {
+                             TableInfo table,
+                             Map<Cols, String> data) throws SQLException {
 
         //clear parameters before setting
         insertStatement.clearParameters();
@@ -93,21 +146,21 @@ public abstract class DBUtil {
                 i++;
             }
             for (Cols c : data.keySet()) {
-                if (! table.containsColumn(c)) {
-                    throw new IllegalArgumentException("Can't add data to "+c +
-                    " because it doesn't exist in the table: "+table.getName());
+                if (!table.containsColumn(c)) {
+                    throw new IllegalArgumentException("Can't add data to " + c +
+                            " because it doesn't exist in the table: " + table.getName());
                 }
             }
             return insertStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.warn("couldn't insert data for this row: "+e.getMessage());
+            logger.warn("couldn't insert data for this row: " + e.getMessage());
             e.printStackTrace();
             return -1;
         }
     }
 
     public static void updateInsertStatement(int dbColOffset, PreparedStatement st,
-                                             ColInfo colInfo, String value ) throws SQLException {
+                                             ColInfo colInfo, String value) throws SQLException {
         if (value == null) {
             st.setNull(dbColOffset, colInfo.getType());
             return;
@@ -117,7 +170,7 @@ public abstract class DBUtil {
                 case Types.VARCHAR:
                     if (value != null && value.length() > colInfo.getPrecision()) {
                         value = value.substring(0, colInfo.getPrecision());
-                        logger.warn("truncated varchar value in " + colInfo.getName() + " : "+value);
+                        logger.warn("truncated varchar value in " + colInfo.getName() + " : " + value);
                     }
                     st.setString(dbColOffset, value);
                     break;
@@ -143,38 +196,54 @@ public abstract class DBUtil {
                     throw new UnsupportedOperationException("Don't yet support type: " + colInfo.getType());
             }
         } catch (NumberFormatException e) {
-            if (! "".equals(value)) {
+            if (!"".equals(value)) {
                 logger.warn("number format exception: " + colInfo.getName() + " : " + value);
             }
             st.setNull(dbColOffset, colInfo.getType());
         } catch (SQLException e) {
-            logger.warn("sqlexception: "+colInfo+ " : " + value);
+            logger.warn("sqlexception: " + colInfo + " : " + value);
             st.setNull(dbColOffset, colInfo.getType());
         }
     }
 
-    public void createDB(List<TableInfo> tableInfos, boolean append) throws SQLException, IOException {
-        Connection conn = getConnection(true);
-        Set<String> tables = getTables(conn);
+    public void createTables(List<TableInfo> tableInfos, boolean forceDrop) throws SQLException, IOException {
 
-        for (TableInfo tableInfo : tableInfos) {
+        try (Connection conn = getConnection ()) {
+            for (TableInfo tableInfo : tableInfos) {
 
-            if (append && tables.contains(tableInfo.getName().toUpperCase(Locale.ROOT))) {
-                continue;
+                if (forceDrop) {
+                    dropTableIfExists(conn, tableInfo.getName());
+                }
+                createTable(conn, tableInfo);
             }
-            if (! append) {
-                dropTableIfExists(conn, tableInfo.getName());
-            }
-            createTable(conn, tableInfo);
+            conn.commit();
         }
-
-        conn.commit();
-        conn.close();
     }
 
+    public boolean containsTable(String tableName) throws SQLException {
+        try (Connection connection = getConnection()) {
+            Set<String> tables = getTables(connection);
+            if (tables.contains(normalizeTableName(tableName))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Override for custom behavior
+     * @param tableName
+     * @return
+     */
+    String normalizeTableName(String tableName) {
+        tableName = tableName.toLowerCase(Locale.US);
+        return tableName;
+    }
+
+    //does not close the connection
     private void createTable(Connection conn, TableInfo tableInfo) throws SQLException {
         StringBuilder createSql = new StringBuilder();
-        createSql.append("CREATE TABLE "+tableInfo.getName());
+        createSql.append("CREATE TABLE " + tableInfo.getName());
         createSql.append("(");
 
         int last = 0;
@@ -193,10 +262,10 @@ public abstract class DBUtil {
             }
         }
         createSql.append(")");
-        Statement st = conn.createStatement();
-        st.execute(createSql.toString());
-
-        st.close();
+        try (Statement st = conn.createStatement()) {
+            st.execute(createSql.toString());
+            st.close();
+        }
         conn.commit();
     }
 }

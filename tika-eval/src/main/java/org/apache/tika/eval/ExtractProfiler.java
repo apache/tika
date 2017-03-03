@@ -42,9 +42,6 @@ public class ExtractProfiler extends AbstractProfiler {
 
     static Options OPTIONS;
     static {
-        Option db = new Option("db", true, "db file to which to write results");
-        db.setRequired(true);
-
         //By the time this commandline is parsed, there should be both an extracts and an inputDir
         Option extracts = new Option("extracts", true, "directory for extract files");
         extracts.setRequired(true);
@@ -52,10 +49,8 @@ public class ExtractProfiler extends AbstractProfiler {
         Option inputDir = new Option("inputDir", true,
                 "optional: directory for original binary input documents."+
         " If not specified, -extracts is crawled as is.");
-        inputDir.setRequired(true);
 
         OPTIONS = new Options()
-                .addOption(db)
                 .addOption(extracts)
                 .addOption(inputDir)
                 .addOption("bc", "optional: tika-batch config file")
@@ -66,7 +61,15 @@ public class ExtractProfiler extends AbstractProfiler {
                                 "take just the first/container document ('first_only'), " +
                                 "concatenate all content into the first metadata item ('concatenate_content')"))
                 .addOption("minExtractLength", true, "minimum extract length to process (in bytes)")
-                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)");
+                .addOption("maxExtractLength", true, "maximum extract length to process (in bytes)")
+                .addOption("db", true, "db file to which to write results")
+                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
+                .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
+                .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
+                .addOption("drop", true, "drop tables if they exist")
+                .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+
+        ;
 
     }
 
@@ -77,7 +80,7 @@ public class ExtractProfiler extends AbstractProfiler {
                 "java -jar tika-eval-x.y.jar Profile -extracts extracts -db mydb [-inputDir input]",
                 "Tool: Profile",
                 ExtractProfiler.OPTIONS,
-                "Note: for h2 db, do not include the .mv.db at the end of the db name.");
+                "Note: for the default h2 db, do not include the .mv.db at the end of the db name.");
     }
 
     private final static String FIELD = "f";
@@ -132,8 +135,8 @@ public class ExtractProfiler extends AbstractProfiler {
             new ColInfo(Cols.NUM_UNIQUE_TOKENS, Types.INTEGER),
             new ColInfo(Cols.COMMON_TOKENS_LANG, Types.VARCHAR, 12),
             new ColInfo(Cols.NUM_COMMON_TOKENS, Types.INTEGER),
-            new ColInfo(Cols.TOP_N_TOKENS, Types.VARCHAR, 1024),
             new ColInfo(Cols.NUM_ALPHABETIC_TOKENS, Types.INTEGER),
+            new ColInfo(Cols.TOP_N_TOKENS, Types.VARCHAR, 1024),
             new ColInfo(Cols.LANG_ID_1, Types.VARCHAR, 12),
             new ColInfo(Cols.LANG_ID_PROB_1, Types.FLOAT),
             new ColInfo(Cols.LANG_ID_2, Types.VARCHAR, 12),
@@ -147,21 +150,15 @@ public class ExtractProfiler extends AbstractProfiler {
 
     private final Path inputDir;
     private final Path extracts;
-    private final long minExtractLength;
-    private final long maxExtractLength;
-    private final ExtractReader.ALTER_METADATA_LIST alterExtractList;
-    private final ExtractReader extractReader = new ExtractReader();
+    private final ExtractReader extractReader;
 
     public ExtractProfiler(ArrayBlockingQueue<FileResource> queue,
                            Path inputDir, Path extracts,
-                           IDBWriter dbWriter, long minExtractLength,
-                           long maxExtractLength, ExtractReader.ALTER_METADATA_LIST alterExtractList) {
+                           ExtractReader extractReader, IDBWriter dbWriter) {
         super(queue, dbWriter);
         this.inputDir = inputDir;
         this.extracts = extracts;
-        this.minExtractLength = minExtractLength;
-        this.maxExtractLength = maxExtractLength;
-        this.alterExtractList = alterExtractList;
+        this.extractReader = extractReader;
     }
 
     @Override
@@ -182,8 +179,7 @@ public class ExtractProfiler extends AbstractProfiler {
 
         List<Metadata> metadataList = null;
         try {
-            metadataList = extractReader.loadExtract(fps.getExtractFile(),
-                    alterExtractList, minExtractLength, maxExtractLength);
+            metadataList = extractReader.loadExtract(fps.getExtractFile());
         } catch (ExtractReaderException e) {
             extractExceptionType = e.getType();
         }
