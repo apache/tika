@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.ParseException;
 import org.apache.tika.batch.fs.FSBatchProcessCLI;
@@ -103,7 +104,8 @@ public class TikaEvalCLI {
                 i++;
             } else if (arg.equals("-alterExtract")) {
                 if (i+1 >= argList.size()) {
-                    System.err.println("Must specify directory after -extractsB");
+                    System.err.println("Must specify type 'as_is', 'first_only' or " +
+                            "'concatenate_content' after -alterExtract");
                     ExtractComparer.USAGE();
                     return;
                 }
@@ -147,7 +149,12 @@ public class TikaEvalCLI {
             String[] updatedArgs = argList.toArray(new String[argList.size()]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
-                defaultCLIParser.parse(ExtractProfiler.OPTIONS, updatedArgs);
+                CommandLine commandLine = defaultCLIParser.parse(ExtractProfiler.OPTIONS, updatedArgs);
+                if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
+                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
+                    ExtractProfiler.USAGE();
+                    return;
+                }
             } catch (ParseException e) {
                 System.out.println(e.getMessage()+"\n");
                 ExtractProfiler.USAGE();
@@ -192,7 +199,8 @@ public class TikaEvalCLI {
                 i++;
             } else if (arg.equals("-alterExtract")) {
                 if (i+1 >= argList.size()) {
-                    System.err.println("Must specify directory after -extractsB");
+                    System.err.println("Must specify type 'as_is', 'first_only' or " +
+                            "'concatenate_content' after -alterExtract");
                     ExtractComparer.USAGE();
                     return;
                 }
@@ -232,7 +240,12 @@ public class TikaEvalCLI {
             String[] updatedArgs = argList.toArray(new String[argList.size()]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
-                defaultCLIParser.parse(ExtractComparer.OPTIONS, updatedArgs);
+                CommandLine commandLine = defaultCLIParser.parse(ExtractComparer.OPTIONS, updatedArgs);
+                if (commandLine.hasOption("db") && commandLine.hasOption("jdbc")) {
+                    System.out.println("Please specify either the default -db or the full -jdbc, not both");
+                    ExtractComparer.USAGE();
+                    return;
+                }
             } catch (ParseException e) {
                 System.out.println(e.getMessage()+"\n");
                 ExtractComparer.USAGE();

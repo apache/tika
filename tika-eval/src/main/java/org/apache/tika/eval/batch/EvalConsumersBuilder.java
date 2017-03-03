@@ -33,8 +33,8 @@ import org.apache.tika.batch.builders.AbstractConsumersBuilder;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.AbstractProfiler;
-import org.apache.tika.eval.db.DBUtil;
 import org.apache.tika.eval.db.H2Util;
+import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.util.LanguageIDWrapper;
 import org.apache.tika.util.ClassLoaderUtil;
@@ -55,6 +55,9 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
 
 
         Path db = getPath(localAttrs, "db");
+        String jdbcConnectionString = localAttrs.get("jdbc");
+
+
         Path langModelDir = getPath(localAttrs, "langModelDir");
 
         try {
@@ -68,31 +71,43 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
         }
 
         Path commonTokens = getPath(localAttrs, "commonTokens");
+        //can be null, in which case will load from memory
         try {
             AbstractProfiler.loadCommonTokens(commonTokens);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
-        boolean append = PropsUtil.getBoolean(localAttrs.get("dbAppend"), false);
+        boolean forceDrop = PropsUtil.getBoolean(localAttrs.get("drop"), false);
 
-        if (db == null) {
-            throw new RuntimeException("Must specify: -db");
+        JDBCUtil jdbcUtil = null;
+        if (db != null) {
+            jdbcUtil = new H2Util(db);
+        } else if (jdbcConnectionString != null) {
+            jdbcUtil = new JDBCUtil(jdbcConnectionString, localAttrs.get("jdbcDriver"));
+        } else {
+            throw new RuntimeException("Must specify: -db or -jdbc");
         }
-        //parameterize which db util to use
-        DBUtil util = new H2Util(db);
         EvalConsumerBuilder consumerBuilder = ClassLoaderUtil.buildClass(EvalConsumerBuilder.class,
                 PropsUtil.getString(localAttrs.get("consumerBuilderClass"), null));
         if (consumerBuilder == null) {
             throw new RuntimeException("Must specify consumerBuilderClass in config file");
         }
 
+        String tablePrefixA = localAttrs.get("tablePrefix");
+        if (tablePrefixA == null) {
+            tablePrefixA = localAttrs.get("tablePrefixA");
+        }
+        String tablePrefixB = localAttrs.get("tablePrefixB");
+
+        tablePrefixA = (tablePrefixA == null || tablePrefixA.endsWith("_")) ? tablePrefixA : tablePrefixA+"_";
+        tablePrefixB = (tablePrefixB == null || tablePrefixB.endsWith("_")) ? tablePrefixB : tablePrefixB+"_";
 
         MimeBuffer mimeBuffer = null;
         try {
-            util.createDB(consumerBuilder.getTableInfo(), append);
-            mimeBuffer = new MimeBuffer(util.getConnection(true), TikaConfig.getDefaultConfig());
-            consumerBuilder.init(queue, localAttrs, util, mimeBuffer);
+            jdbcUtil.createTables(consumerBuilder.getTableInfo(tablePrefixA, tablePrefixB), forceDrop);
+            mimeBuffer = new MimeBuffer(jdbcUtil.getConnection(), TikaConfig.getDefaultConfig());
+            consumerBuilder.init(queue, localAttrs, jdbcUtil, mimeBuffer);
         } catch (IOException | SQLException e) {
             throw new RuntimeException(e);
         }
@@ -107,8 +122,8 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
 
         DBConsumersManager manager;
         try {
-            manager = new DBConsumersManager(util, mimeBuffer, consumers);
-        } catch (IOException e) {
+            manager = new DBConsumersManager(jdbcUtil, mimeBuffer, consumers);
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
         consumerBuilder.addErrorLogTablePairs(manager);

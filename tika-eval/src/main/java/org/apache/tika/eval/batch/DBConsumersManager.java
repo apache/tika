@@ -27,7 +27,7 @@ import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.XMLErrorLogUpdater;
-import org.apache.tika.eval.db.DBUtil;
+import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
 
@@ -38,10 +38,10 @@ public class DBConsumersManager extends ConsumersManager {
     private final MimeBuffer mimeBuffer;
     private final List<LogTablePair> errorLogs = new ArrayList<>();
 
-    public DBConsumersManager(DBUtil dbUtil, MimeBuffer mimeBuffer, List<FileResourceConsumer> consumers)
-            throws IOException {
+    public DBConsumersManager(JDBCUtil dbUtil, MimeBuffer mimeBuffer, List<FileResourceConsumer> consumers)
+            throws SQLException {
         super(consumers);
-        this.conn = dbUtil.getConnection(true);
+        this.conn = dbUtil.getConnection();
         this.mimeBuffer = mimeBuffer;
     }
 
@@ -89,10 +89,10 @@ public class DBConsumersManager extends ConsumersManager {
         }
     }
 
-    public void addErrorLogTablePair(Path log, TableInfo tableName) {
+    public void addErrorLogTablePair(Path log, TableInfo tableInfo) {
         LogTablePair p = new LogTablePair();
         p.log = log;
-        p.tableInfo = tableName;
+        p.tableInfo = tableInfo;
         errorLogs.add(p);
     }
 

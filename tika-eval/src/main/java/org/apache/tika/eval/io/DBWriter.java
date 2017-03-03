@@ -30,7 +30,7 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.log4j.Logger;
 import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
-import org.apache.tika.eval.db.DBUtil;
+import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
 
@@ -52,14 +52,14 @@ public class DBWriter implements IDBWriter {
     private final Long commitEveryX = 1000L;
 
     private final Connection conn;
-    private final DBUtil dbUtil;
+    private final JDBCUtil dbUtil;
     private final MimeBuffer mimeBuffer;
     private final int myId = WRITER_ID.getAndIncrement();
 
     //<tableName, preparedStatement>
     private final Map<String, PreparedStatement> inserts = new HashMap<>();
 
-    public DBWriter(Connection connection, List<TableInfo> tableInfos, DBUtil dbUtil, MimeBuffer mimeBuffer)
+    public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer)
             throws IOException, SQLException {
 
         this.conn = connection;

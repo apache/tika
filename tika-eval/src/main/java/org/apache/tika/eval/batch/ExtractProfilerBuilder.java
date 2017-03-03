@@ -21,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.tika.batch.FileResourceConsumer;
@@ -31,7 +32,26 @@ import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.util.PropsUtil;
 
 
-public class SingleFileConsumerBuilder extends EvalConsumerBuilder {
+public class ExtractProfilerBuilder extends EvalConsumerBuilder {
+    private final List<TableInfo> tableInfos;
+    private final List<TableInfo> refTableInfos;
+    public ExtractProfilerBuilder() {
+        List<TableInfo> tableInfos = new ArrayList();
+        tableInfos.add(AbstractProfiler.MIME_TABLE);
+        tableInfos.add(ExtractProfiler.CONTAINER_TABLE);
+        tableInfos.add(ExtractProfiler.PROFILE_TABLE);
+        tableInfos.add(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
+        tableInfos.add(ExtractProfiler.EXCEPTION_TABLE);
+        tableInfos.add(ExtractProfiler.CONTENTS_TABLE);
+        tableInfos.add(ExtractProfiler.EMBEDDED_FILE_PATH_TABLE);
+        this.tableInfos = Collections.unmodifiableList(tableInfos);
+
+        List<TableInfo> refTableInfos = new ArrayList<>();
+        refTableInfos.add(AbstractProfiler.REF_PARSE_ERROR_TYPES);
+        refTableInfos.add(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES);
+        refTableInfos.add(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES);
+        this.refTableInfos = Collections.unmodifiableList(refTableInfos);
+    }
 
     @Override
     public FileResourceConsumer build() throws IOException, SQLException {
@@ -60,24 +80,24 @@ public class SingleFileConsumerBuilder extends EvalConsumerBuilder {
         if (extracts == null && inputDir != null) {
             extracts = inputDir;
         }
-        return new ExtractProfiler(queue, inputDir, extracts, getDBWriter(),
-                minExtractLength, maxExtractLength, alterExtractList);
+        return new ExtractProfiler(queue, inputDir, extracts,
+                new ExtractReader(alterExtractList, minExtractLength, maxExtractLength),
+                getDBWriter());
     }
 
+    //TODO: clean up the interface so we don't need vestigial B
     @Override
-    protected List<TableInfo> getTableInfo() {
-        List<TableInfo> tableInfos = new ArrayList<TableInfo>();
-        tableInfos.add(AbstractProfiler.MIME_TABLE);
-        tableInfos.add(AbstractProfiler.REF_PARSE_ERROR_TYPES);
-        tableInfos.add(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES);
-        tableInfos.add(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES);
-        tableInfos.add(ExtractProfiler.CONTAINER_TABLE);
-        tableInfos.add(ExtractProfiler.PROFILE_TABLE);
-        tableInfos.add(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
-        tableInfos.add(ExtractProfiler.EXCEPTION_TABLE);
-        tableInfos.add(ExtractProfiler.CONTENTS_TABLE);
-        tableInfos.add(ExtractProfiler.EMBEDDED_FILE_PATH_TABLE);
-        return tableInfos;
+    protected List<TableInfo> getTableInfo(String tableNamePrefix, String tableNamePrefixB) {
+        //ignore b
+        if (tableNamePrefix != null && !tableNamePrefix.equals("null")) {
+            for (TableInfo tableInfo : tableInfos) {
+                tableInfo.setNamePrefix(tableNamePrefix);
+            }
+        }
+        List allTables = new ArrayList();
+        allTables.addAll(tableInfos);
+        allTables.addAll(refTableInfos);
+        return Collections.unmodifiableList(allTables);
     }
 
 

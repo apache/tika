@@ -37,14 +37,13 @@ import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.tika.eval.ExtractComparer;
 import org.apache.tika.eval.ExtractProfiler;
-import org.apache.tika.eval.db.DBUtil;
 import org.apache.tika.eval.db.H2Util;
+import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.parser.ParseContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,18 +60,15 @@ public class ResultsReporter {
 
     static {
         OPTIONS = new Options();
-
-        Option db = new Option("db", "database");
-        db.setRequired(true);
-        db.setArgs(1);
-
-        OPTIONS.addOption(db)
-                .addOption("rd", "reportsDir", true, "directory for the reports. " +
-                                "If not specified, will write to 'reports'" +
-                        "BEWARE: Will overwrite existing reports without warning!"
-                )
+        OPTIONS.addOption("rd", "reportsDir", true, "directory for the reports. " +
+                "If not specified, will write to 'reports'" +
+                "BEWARE: Will overwrite existing reports without warning!")
                 .addOption("rf", "reportsFile", true, "xml specifying sql to call for the reports." +
-                        "If not specified, will use default reports in resources/tika-eval-*-config.xml");
+                        "If not specified, will use default reports in resources/tika-eval-*-config.xml")
+                .addOption("db", true, "default database (in memory H2). Specify a file name for the H2 database.")
+                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Specify this or use -db <h2db_name>")
+                .addOption("jdbcdriver", true, "EXPERT: specify the jdbc driver class if all else fails")
+                .addOption("tablePrefix", true, "EXPERT: if not using the default tables, specify your table name prefix");
 
     }
 
@@ -111,11 +107,11 @@ public class ResultsReporter {
 
         DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
         Document doc;
-        try(InputStream is = Files.newInputStream(p)) {
+        try (InputStream is = Files.newInputStream(p)) {
             doc = docBuilder.parse(is);
         }
         Node docElement = doc.getDocumentElement();
-        assert(docElement.getNodeName().equals("reports"));
+        assert (docElement.getNodeName().equals("reports"));
         NodeList children = docElement.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node n = children.item(i);
@@ -158,7 +154,7 @@ public class ResultsReporter {
             } else if ("colformats".equals(child.getNodeName())) {
                 r.cellFormatters = getCellFormatters(child);
             } else {
-                throw new IllegalArgumentException("Not expecting to see:"+child.getNodeName());
+                throw new IllegalArgumentException("Not expecting to see:" + child.getNodeName());
             }
         }
         return r;
@@ -174,12 +170,12 @@ public class ResultsReporter {
             }
             NamedNodeMap attrs = child.getAttributes();
             String columnName = attrs.getNamedItem("name").getNodeValue();
-            assert(!ret.containsKey(columnName));
+            assert (!ret.containsKey(columnName));
             String type = attrs.getNamedItem("type").getNodeValue();
             if ("numberFormatter".equals(type)) {
                 String format = attrs.getNamedItem("format").getNodeValue();
                 XSLXCellFormatter f = new XLSXNumFormatter(format);
-                ret.put(columnName,f);
+                ret.put(columnName, f);
             } else if ("urlLink".equals(type)) {
                 String base = "";
                 Node baseNode = attrs.getNamedItem("base");
@@ -227,10 +223,27 @@ public class ResultsReporter {
             USAGE();
             return;
         }
-        Path db = Paths.get(commandLine.getOptionValue("db"));
-        DBUtil dbUtil = new H2Util(db);
-
-        try (Connection c = dbUtil.getConnection(true)) {
+        JDBCUtil dbUtil = null;
+        if (commandLine.hasOption("db")) {
+            Path db = Paths.get(commandLine.getOptionValue("db"));
+            if (!H2Util.databaseExists(db)) {
+                throw new RuntimeException("I'm sorry, but I couldn't find this h2 database: "
+                        + db+ "\nMake sure not to include the .mv.db at the end.");
+            }
+            dbUtil = new H2Util(db);
+        } else if (commandLine.hasOption("jdbc")) {
+            String driverClass = null;
+            if (commandLine.hasOption("jdbcdriver")) {
+                driverClass = commandLine.getOptionValue("jdbcdriver");
+            }
+            dbUtil = new JDBCUtil(commandLine.getOptionValue("jdbc"), driverClass);
+        } else {
+            System.err.println("Must specify either -db for the default in-memory h2 database\n" +
+                    "or -jdbc for a full jdbc connection string");
+            USAGE();
+            return;
+        }
+        try (Connection c = dbUtil.getConnection()) {
             Path tmpReportsFile = null;
             try {
                 ResultsReporter resultsReporter = null;

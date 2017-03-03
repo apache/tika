@@ -46,6 +46,16 @@
                 description="minimum extract length to process"/>
         <option opt="maxExtractLength" hasArg="true"
                 description="maximum extract length to process"/>
+        <option opt="jdbc" hasArg="true"
+                description="full jdbc connection string"/>
+        <option opt="jdbcDriver" hasArg="true"
+                description="canonical class name for jdbc driver"/>
+        <option opt="tablePrefix" hasArg="true"
+                description="EXPERT: prefix for table names"/>
+        <option opt="drop" hasArg="false" description="drop tables if they exist"/>
+        <option opt="maxFilesToAdd" hasArg="true" description="maximum number of files to add to the crawler"/>
+
+
 
 
     </commandline>
@@ -67,7 +77,7 @@
     />
 
     <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
-               consumerBuilderClass="org.apache.tika.eval.batch.SingleFileConsumerBuilder"
+               consumerBuilderClass="org.apache.tika.eval.batch.ExtractProfilerBuilder"
                minExtractLength="-1"
                maxExtractLength="2000000"
                commonTokens="resources/common_tokens"/>

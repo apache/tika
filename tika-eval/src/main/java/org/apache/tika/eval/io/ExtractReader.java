@@ -55,8 +55,31 @@ public class ExtractReader {
     private final static Logger LOGGER = LoggerFactory.getLogger(ExtractReader.class);
     TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 
-    public List<Metadata> loadExtract(Path extractFile, ALTER_METADATA_LIST alterExtractList,
-                                      long minExtractLength, long maxExtractLength) throws ExtractReaderException {
+    private final ALTER_METADATA_LIST alterMetadataList;
+    private final long minExtractLength;
+    private final long maxExtractLength;
+
+    /**
+     * Reads full extract, no modification of metadata list, no min or max extract length checking
+     */
+    public ExtractReader() {
+        this(ALTER_METADATA_LIST.AS_IS, IGNORE_LENGTH, IGNORE_LENGTH);
+    }
+
+    public ExtractReader(ALTER_METADATA_LIST alterMetadataList) {
+        this(alterMetadataList, IGNORE_LENGTH, IGNORE_LENGTH);
+    }
+
+    public ExtractReader(ALTER_METADATA_LIST alterMetadataList, long minExtractLength, long maxExtractLength) {
+        this.alterMetadataList = alterMetadataList;
+        this.minExtractLength = minExtractLength;
+        this.maxExtractLength = maxExtractLength;
+        if (maxExtractLength > IGNORE_LENGTH && minExtractLength >= maxExtractLength) {
+            throw new IllegalArgumentException("minExtractLength("+minExtractLength+
+                    ") must be < maxExtractLength("+maxExtractLength+")");
+        }
+    }
+    public List<Metadata> loadExtract(Path extractFile) throws ExtractReaderException {
 
         List<Metadata> metadataList = null;
         if (extractFile == null || !Files.isRegularFile(extractFile)) {
@@ -114,11 +137,11 @@ public class ExtractReader {
         try {
             if (fileSuffixes.txtOrJson.equals("json")) {
                 metadataList = JsonMetadataList.fromJson(reader);
-                if (alterExtractList.equals(ALTER_METADATA_LIST.FIRST_ONLY) && metadataList.size() > 1) {
+                if (alterMetadataList.equals(ALTER_METADATA_LIST.FIRST_ONLY) && metadataList.size() > 1) {
                     while (metadataList.size() > 1) {
                         metadataList.remove(metadataList.size()-1);
                     }
-                } else if (alterExtractList.equals(ALTER_METADATA_LIST.AS_IS.CONCATENATE_CONTENT_INTO_FIRST) &&
+                } else if (alterMetadataList.equals(ALTER_METADATA_LIST.AS_IS.CONCATENATE_CONTENT_INTO_FIRST) &&
                         metadataList.size() > 1) {
                     StringBuilder sb = new StringBuilder();
                     Metadata containerMetadata = metadataList.get(0);

@@ -18,6 +18,7 @@ package org.apache.tika.eval.db;
 
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -27,12 +28,25 @@ import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
 
 
-public class H2Util extends DBUtil {
+public class H2Util extends JDBCUtil {
+
+    private final static String DRIVER_CLASS = "org.h2.Driver";
+
+    private final Path db;
 
     public H2Util(Path db) {
-        super(db);
+        super(getConnectionString(db, true), DRIVER_CLASS);
+        this.db = db;
     }
 
+    public static boolean databaseExists(Path db) {
+        String connString = getConnectionString(db, false);
+        try (Connection conn = DriverManager.getConnection(connString)) {
+        } catch (SQLException e) {
+            return false;
+        }
+        return true;
+    }
     @Override
     public String getJDBCDriverClass() {
         return "org.h2.Driver";
@@ -48,9 +62,13 @@ public class H2Util extends DBUtil {
     }
 
     @Override
-    public String getConnectionString(Path db, boolean createIfDoesntExist) {
+    public String getConnectionString() {
+        return getConnectionString(db, true);
+    }
+
+    private static String getConnectionString(Path db, boolean createDBIfItDoesntExist) {
         String s = "jdbc:h2:"+ FilenameUtils.separatorsToUnix(db.toAbsolutePath().toString());
-        if (! createIfDoesntExist) {
+        if (! createDBIfItDoesntExist) {
             s += ";IFEXISTS=TRUE";
         }
         return s;
