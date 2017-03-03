@@ -101,7 +101,7 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
     }
 
     @Override
-    protected List<TableInfo> getTableInfo(String tableNamePrefixA, String tableNamePrefixB) {
+    protected List<TableInfo> getTableInfos(String tableNamePrefixA, String tableNamePrefixB) {
         List<TableInfo> allTables = new ArrayList<>();
         if (tableNamePrefixA != null) {
             for (TableInfo tableInfo : tableInfosA) {
@@ -131,6 +131,10 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
         return allTables;
     }
 
+    @Override
+    protected List<TableInfo> getRefTableInfos() {
+        return refTableInfos;
+    }
 
     @Override
     protected void addErrorLogTablePairs(DBConsumersManager manager) {

@@ -87,19 +87,22 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
 
     //TODO: clean up the interface so we don't need vestigial B
     @Override
-    protected List<TableInfo> getTableInfo(String tableNamePrefix, String tableNamePrefixB) {
+    protected List<TableInfo> getTableInfos(String tableNamePrefix, String tableNamePrefixB) {
         //ignore b
         if (tableNamePrefix != null && !tableNamePrefix.equals("null")) {
             for (TableInfo tableInfo : tableInfos) {
                 tableInfo.setNamePrefix(tableNamePrefix);
             }
         }
-        List allTables = new ArrayList();
+        List<TableInfo> allTables = new ArrayList<>();
         allTables.addAll(tableInfos);
-        allTables.addAll(refTableInfos);
         return Collections.unmodifiableList(allTables);
     }
 
+    @Override
+    protected List<TableInfo> getRefTableInfos() {
+        return refTableInfos;
+    }
 
     @Override
     protected void addErrorLogTablePairs(DBConsumersManager manager) {

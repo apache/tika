@@ -42,6 +42,12 @@ import org.apache.log4j.Logger;
 
 public class JDBCUtil {
 
+    public enum CREATE_TABLE {
+        DROP_IF_EXISTS,
+        SKIP_IF_EXISTS,
+        THROW_EX_IF_EXISTS,
+    }
+
     public static Logger logger = Logger.getLogger(JDBCUtil.class);
     private final String connectionString;
     private String driverClass;
@@ -207,13 +213,17 @@ public class JDBCUtil {
         }
     }
 
-    public void createTables(List<TableInfo> tableInfos, boolean forceDrop) throws SQLException, IOException {
+    public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable) throws SQLException, IOException {
 
         try (Connection conn = getConnection ()) {
             for (TableInfo tableInfo : tableInfos) {
 
-                if (forceDrop) {
+                if (createTable.equals(CREATE_TABLE.DROP_IF_EXISTS)) {
                     dropTableIfExists(conn, tableInfo.getName());
+                } else if (createTable.equals(CREATE_TABLE.SKIP_IF_EXISTS)) {
+                    if (containsTable(tableInfo.getName())) {
+                        continue;
+                    }
                 }
                 createTable(conn, tableInfo);
             }
