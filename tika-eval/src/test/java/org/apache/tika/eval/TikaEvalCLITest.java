@@ -31,9 +31,9 @@ public class TikaEvalCLITest {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-extractsA");
-        args.add("watson2");
+        args.add("extractsA");
         args.add("-extractsB");
-        args.add("tika");
+        args.add("extractsB");
         args.add("-db");
         args.add("comparedb");
         args.add("-drop");
@@ -50,7 +50,7 @@ public class TikaEvalCLITest {
         List<String> args = new ArrayList<>();
         args.add("Profile");
         args.add("-extracts");
-        args.add("watson2");
+        args.add("extracts");
         args.add("-db");
         args.add("testdb");
         TikaEvalCLI.main(args.toArray(new String[args.size()]));

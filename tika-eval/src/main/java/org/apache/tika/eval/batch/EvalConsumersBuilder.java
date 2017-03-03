@@ -104,8 +104,11 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
         tablePrefixB = (tablePrefixB == null || tablePrefixB.endsWith("_")) ? tablePrefixB : tablePrefixB+"_";
 
         MimeBuffer mimeBuffer = null;
+        JDBCUtil.CREATE_TABLE createTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
+                JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
         try {
-            jdbcUtil.createTables(consumerBuilder.getTableInfo(tablePrefixA, tablePrefixB), forceDrop);
+            jdbcUtil.createTables(consumerBuilder.getTableInfos(tablePrefixA, tablePrefixB), createTable);
+            jdbcUtil.createTables(consumerBuilder.getRefTableInfos(), JDBCUtil.CREATE_TABLE.SKIP_IF_EXISTS);
             mimeBuffer = new MimeBuffer(jdbcUtil.getConnection(), TikaConfig.getDefaultConfig());
             consumerBuilder.init(queue, localAttrs, jdbcUtil, mimeBuffer);
         } catch (IOException | SQLException e) {

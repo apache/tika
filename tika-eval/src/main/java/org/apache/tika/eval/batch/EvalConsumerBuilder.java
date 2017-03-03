@@ -62,7 +62,9 @@ public abstract class EvalConsumerBuilder {
 
     public abstract FileResourceConsumer build() throws IOException, SQLException;
 
-    protected abstract List<TableInfo> getTableInfo(String tableNamePrefixA, String tableNamePrefixB);
+    protected abstract List<TableInfo> getTableInfos(String tableNamePrefixA, String tableNamePrefixB);
+
+    protected abstract List<TableInfo> getRefTableInfos();
 
     protected abstract void addErrorLogTablePairs(DBConsumersManager manager);
 
@@ -113,7 +115,7 @@ public abstract class EvalConsumerBuilder {
 
     protected IDBWriter getDBWriter() throws IOException, SQLException {
         Connection conn = dbUtil.getConnection();
-        return new DBWriter(conn, getTableInfo(null, null), dbUtil, mimeBuffer);
+        return new DBWriter(conn, getTableInfos(null, null), dbUtil, mimeBuffer);
     }
 
     ExtractReader.ALTER_METADATA_LIST getAlterMetadata(Map<String, String> localAttrs) {
