@@ -126,6 +126,14 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("Couchbase", m6.get(Office.MAPI_FROM_REPRESENTING_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(Office.MAPI_MESSAGE_CLASS));
+        //test full EX email
+        assertEquals("/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)/cn=Recipients/cn=polyspot1.onmicrosoft.com-50609-Hong-Thai.Ng",
+                m6.get(Message.MESSAGE_TO_EMAIL));
+        assertEquals("Hong-Thai Nguyen",
+                m6.get(Message.MESSAGE_TO_DISPLAY_NAME));
+
+        assertEquals("Couchbase",m6.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
 
     }
 }

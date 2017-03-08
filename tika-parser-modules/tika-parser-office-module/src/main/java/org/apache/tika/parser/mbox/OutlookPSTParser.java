@@ -27,9 +27,11 @@ import java.io.InputStream;
 import java.util.Set;
 
 import com.pff.PSTAttachment;
+import com.pff.PSTException;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
+import com.pff.PSTRecipient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -157,29 +159,45 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set(Office.MAPI_MESSAGE_CLASS,
                 OutlookExtractor.getMessageClass(pstMail.getMessageClass()));
 
-        if (pstMail.getSenderAddrtype().equalsIgnoreCase("ex")) {
-            OutlookExtractor.addExchange(pstMail.getSenderEmailAddress(),
-                    Office.MAPI_EXCHANGE_FROM_O,
-                    Office.MAPI_EXCHANGE_FROM_OU,
-                    Office.MAPI_EXCHANGE_FROM_CN, mailMetadata);
-        } {
-            OutlookExtractor.addChunks(pstMail.getSenderEmailAddress(), Message.MESSAGE_FROM_EMAIL,
-                    true, mailMetadata);
-        }
-        if (pstMail.getSentRepresentingAddressType().equalsIgnoreCase("ex")) {
-            OutlookExtractor.addExchange(pstMail.getSentRepresentingEmailAddress(),
-                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_O,
-                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_OU,
-                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN, mailMetadata);
+        mailMetadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
 
-        } else {
-            OutlookExtractor.addChunks(pstMail.getSentRepresentingEmailAddress(),
-                    Office.MAPI_FROM_REPRESENTING_EMAIL,
-                    true, mailMetadata);
-        }
+        mailMetadata.set(Office.MAPI_FROM_REPRESENTING_EMAIL,
+                pstMail.getSentRepresentingEmailAddress());
+
         mailMetadata.set(Message.MESSAGE_FROM_NAME, pstMail.getSenderName());
         mailMetadata.set(Office.MAPI_FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
 
+        //add recipient details
+        try {
+            for (int i = 0; i < pstMail.getNumberOfRecipients(); i++) {
+                PSTRecipient recipient = pstMail.getRecipient(i);
+                switch (OutlookExtractor.RECIPIENT_TYPE.getTypeFromVal(recipient.getRecipientType())) {
+                    case TO:
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME,
+                                recipient.getDisplayName(), mailMetadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_EMAIL,
+                                recipient.getEmailAddress(), mailMetadata);
+                        break;
+                    case CC:
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_DISPLAY_NAME,
+                                recipient.getDisplayName(), mailMetadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_EMAIL,
+                                recipient.getEmailAddress(), mailMetadata);
+                        break;
+                    case BCC:
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME,
+                                recipient.getDisplayName(), mailMetadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_EMAIL,
+                                recipient.getEmailAddress(), mailMetadata);
+                        break;
+                    default:
+                        //do we want to handle unspecified or unknown?
+                        break;
+                }
+            }
+        } catch (PSTException e) {
+            //swallow
+        }
 
         byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);

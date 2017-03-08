@@ -37,30 +37,69 @@ public interface Message {
     String MESSAGE_BCC = "Message-Bcc";
 
     /**
-     * Where possible, we try to separate the name from the email address
-     * in Message files.  This is multivalued for cases where an email is sent
-     * "on behalf of" someone...this is still to be implemented, though.
-     * The name may be an organization name.
+     * Where possible, this records the value from the name field.
+     * Even in MAPI messages, though, this can be an email address.
      */
     Property MESSAGE_FROM_NAME = Property.internalTextBag(MESSAGE_PREFIX+"From-Name");
 
     /**
-     * Where possible, we try to separate the name from the email address
-     * in Message files.  This is multivalued for cases where an email is sent
-     * "on behalf of" someone...this is still to be implemented, though.
+     * Where possible, this records the value from the name field.
+     * Even in MAPI messages, though, this can be a name.
+     * <p/>
+     * Note that the value may also be an X400/x500 Exchange format:
+     * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
      */
     Property MESSAGE_FROM_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"From-Email");
 
+    /**
+     * In Outlook messages, there are sometimes separate fields for "to-name" and
+     * "to-display-name" name.
+     */
     Property MESSAGE_TO_NAME = Property.internalTextBag(MESSAGE_PREFIX+"To-Name");
 
-    Property MESSAGE_TO_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"To-Name");
+    Property MESSAGE_TO_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX+"To-Display-Name");
 
+    /**
+     * Where possible, this records the email value in the to field.
+     * Even in MAPI messages, though, this can be a name.
+     * <p/>
+     * Note that the value may also be an X400/x500 Exchange format:
+     * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
+     */
+    Property MESSAGE_TO_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"To-Email");
+
+    /**
+     * In Outlook messages, there are sometimes separate fields for "cc-name" and
+     * "cc-display-name" name.
+     */
     Property MESSAGE_CC_NAME = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
 
-    Property MESSAGE_CC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+    Property MESSAGE_CC_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX+"CC-Display-Name");
 
-    Property MESSAGE_BCC_NAME = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+    /**
+     * Where possible, this records the email value in the cc field.
+     * Even in MAPI messages, though, this can be a name.
+     * <p/>
+     * Note that the value may also be an X400/x500 Exchange format:
+     * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
+     */
+    Property MESSAGE_CC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"CC-Email");
 
-    Property MESSAGE_BCC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"CC-Name");
+    /**
+     * In Outlook messages, there are sometimes separate fields for "bcc-name" and
+     * "bcc-display-name" name.
+     */
+    Property MESSAGE_BCC_NAME = Property.internalTextBag(MESSAGE_PREFIX+"BCC-Name");
+
+    Property MESSAGE_BCC_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX+"BCC-Display-Name");
+
+    /**
+     * Where possible, this records the email value in the bcc field.
+     * Even in MAPI messages, though, this can be a name.
+     * <p/>
+     * Note that the value may also be an X400/x500 Exchange format:
+     * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
+     */
+    Property MESSAGE_BCC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX+"BCC-Email");
 
 }

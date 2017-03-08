@@ -27,8 +27,10 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -45,6 +47,7 @@ import org.apache.poi.hsmf.datatypes.Chunk;
 import org.apache.poi.hsmf.datatypes.Chunks;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
 import org.apache.poi.hsmf.datatypes.PropertyValue;
+import org.apache.poi.hsmf.datatypes.RecipientChunks;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
@@ -64,7 +67,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserProxy;
-import org.apache.tika.parser.mail.util.MailUtil;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
@@ -79,10 +81,32 @@ import org.xml.sax.SAXException;
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
 
-    private final static String RECIPIENTS = "recipients";
-    private final static Pattern EXCHANGE_O = Pattern.compile("(?i)/o=([^/]+)");
-    private final static Pattern EXCHANGE_OU = Pattern.compile("(?i)/ou=([^/]+)");
-    private final static Pattern EXCHANGE_CN = Pattern.compile("(?i)/cn=([^/]+)");
+    public enum RECIPIENT_TYPE {
+        TO(1),
+        CC(2),
+        BCC(3),
+        UNRECOGNIZED(-1),
+        UNSPECIFIED(-1);
+
+        private final int val;
+
+        RECIPIENT_TYPE(int val) {
+            this.val = val;
+        }
+
+        public static RECIPIENT_TYPE getTypeFromVal(int val) {
+            //mild hackery, clean up
+            if (val > 0 && val < 4) {
+                return RECIPIENT_TYPE.values()[val - 1];
+            }
+            return UNRECOGNIZED;
+        }
+    };
+
+    private enum ADDRESS_TYPE {
+        EX,
+        SMTP
+    }
 
 
     private static Pattern HEADER_KEY_PAT =
@@ -335,79 +359,66 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             senderAddressTypeString = senderAddresType.get(0).toString();
         }
 
-        //sometimes in SMTP .msg files there is an email in the sender name field
-        //make sure to rule those out.
-        addChunks(
-                mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME,
-                    false, metadata);
-        addChunks(
+        //sometimes in SMTP .msg files there is an email in the sender name field.
+
+        setFirstChunk(
+                mainChunks.get(MAPIProperty.SENDER_NAME), Message.MESSAGE_FROM_NAME, metadata);
+        setFirstChunk(
                 mainChunks.get(MAPIProperty.SENT_REPRESENTING_NAME),
-                    Office.MAPI_FROM_REPRESENTING_NAME, false, metadata);
+                Office.MAPI_FROM_REPRESENTING_NAME, metadata);
 
-        if (senderAddressTypeString.equalsIgnoreCase("ex")) {
-            addExchange(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
-                    Office.MAPI_EXCHANGE_FROM_O, Office.MAPI_EXCHANGE_FROM_OU,
-                    Office.MAPI_EXCHANGE_FROM_CN, metadata);
-            addExchange(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
-                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_O, Office.MAPI_EXCHANGE_FROM_REPRESENTING_OU,
-                    Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN, metadata);
-        } else {
-            addChunks(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
-                    Message.MESSAGE_FROM_EMAIL, true, metadata);
-            addChunks(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
-                    Office.MAPI_FROM_REPRESENTING_EMAIL, true, metadata);
-        }
-    }
+        setFirstChunk(mainChunks.get(MAPIProperty.SENDER_EMAIL_ADDRESS),
+                Message.MESSAGE_FROM_EMAIL, metadata);
+        setFirstChunk(mainChunks.get(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS),
+                Office.MAPI_FROM_REPRESENTING_EMAIL, metadata);
 
-
-    private static void addExchange(List<Chunk> chunks,
-                                    Property propertyO,
-                                    Property propertyOU, Property propertyCN, Metadata metadata ) {
-        if (chunks == null || chunks.size() == 0) {
-            return;
-        }
-        addExchange(chunks.get(0).toString(), propertyO, propertyOU, propertyCN, metadata);
-    }
-
-    public static void addExchange(String exchange,Property propertyO,
-                             Property propertyOU, Property propertyCN, Metadata metadata) {
-        if (exchange == null || exchange.length() < 1) {
-            return;
-        }
-        Matcher matcherO = EXCHANGE_O.matcher(exchange);
-        if (matcherO.find()) {
-            metadata.set(propertyO, matcherO.group(1));
-        }
-        Matcher matcherOU = EXCHANGE_OU.matcher(exchange);
-        if (matcherOU.find()) {
-            metadata.set(propertyOU, matcherOU.group(1));
-        }
-
-        Matcher matcherCN = EXCHANGE_CN.matcher(exchange);
-        while (matcherCN.find()) {
-            String cn = matcherCN.group(1);
-            if (!cn.equalsIgnoreCase(RECIPIENTS)) {
-                metadata.add(propertyCN, cn);
+        for (Recipient recipient : buildRecipients()) {
+            switch(recipient.recipientType) {
+                case TO:
+                    addEvenIfNull(Message.MESSAGE_TO_NAME, recipient.name, metadata);
+                    addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME, recipient.displayName, metadata);
+                    addEvenIfNull(Message.MESSAGE_TO_EMAIL, recipient.emailAddress, metadata);
+                    break;
+                case CC:
+                    addEvenIfNull(Message.MESSAGE_CC_NAME, recipient.name, metadata);
+                    addEvenIfNull(Message.MESSAGE_CC_DISPLAY_NAME, recipient.displayName, metadata);
+                    addEvenIfNull(Message.MESSAGE_CC_EMAIL, recipient.emailAddress, metadata);
+                    break;
+                case BCC:
+                    addEvenIfNull(Message.MESSAGE_BCC_NAME, recipient.name, metadata);
+                    addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME, recipient.displayName, metadata);
+                    addEvenIfNull(Message.MESSAGE_BCC_EMAIL, recipient.emailAddress, metadata);
+                    break;
+                default:
+                    //log unknown or undefined?
+                    break;
             }
         }
     }
 
-    private static void addChunks(List<Chunk> chunks, Property property, boolean mustContainEmail,
-                                 Metadata metadata) {
-        if (chunks == null || chunks.size() < 1) {
-            return;
+    //need to add empty string to ensure that parallel arrays are parallel
+    //even if one value is null.
+    public static void addEvenIfNull(Property property, String value, Metadata metadata) {
+        if (value == null) {
+            value = "";
         }
-        addChunks(chunks.get(0).toString(), property, mustContainEmail, metadata);
+        metadata.add(property, value);
     }
 
-    public static void addChunks(String chunk, Property property, boolean mustContainEmail,
-                           Metadata metadata) {
-        if (chunk == null || chunk.length() == 0) {
+    private static void setFirstChunk(List<Chunk> chunks, Property property,
+                                      Metadata metadata) {
+        if (chunks == null || chunks.size() < 1 || chunks.get(0) == null) {
             return;
         }
-        if (mustContainEmail == MailUtil.containsEmail(chunk)) {
-                metadata.set(property, chunk);
+        metadata.set(property, chunks.get(0).toString());
+    }
+
+    private static void addFirstChunk(List<Chunk> chunks, Property property,
+                                      Metadata metadata) {
+        if (chunks == null || chunks.size() < 1 || chunks.get(0) == null) {
+            return;
         }
+        metadata.add(property, chunks.get(0).toString());
     }
 
     //TODO: replace this with getMessageClassEnum when we upgrade POI
@@ -430,6 +441,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             return "UNKNOWN";
         }
     }
+
     //As of 3.15, POI currently returns header[] by splitting on /\r?\n/
     //this rebuilds headers that are broken up over several lines
     //this also decodes encoded headers.
@@ -611,5 +623,56 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             //swallow
         }
         return false;
+    }
+
+
+    private List<Recipient> buildRecipients() {
+        RecipientChunks[] recipientChunks = msg.getRecipientDetailsChunks();
+        if (recipientChunks == null) {
+            return Collections.EMPTY_LIST;
+        }
+        List<Recipient> recipients = new LinkedList<>();
+
+        for (RecipientChunks chunks : recipientChunks) {
+            Recipient r = new Recipient();
+            r.displayName = (chunks.recipientDisplayNameChunk != null) ? chunks.recipientDisplayNameChunk.toString() : null;
+            r.name = (chunks.recipientNameChunk != null) ? chunks.recipientNameChunk.toString() : null;
+            r.emailAddress = chunks.getRecipientEmailAddress();
+            List<PropertyValue> vals = chunks.getProperties().get(MAPIProperty.RECIPIENT_TYPE);
+
+            RECIPIENT_TYPE recipientType = RECIPIENT_TYPE.UNSPECIFIED;
+            if (vals != null && vals.size() > 0) {
+                Object val = vals.get(0).getValue();
+                if (val instanceof Integer) {
+                    recipientType = RECIPIENT_TYPE.getTypeFromVal((int)val);
+                }
+            }
+            r.recipientType = recipientType;
+
+            vals = chunks.getProperties().get(MAPIProperty.ADDRTYPE);
+            if (vals != null && vals.size() > 0) {
+                String val = vals.get(0).toString();
+                if (val != null) {
+                    val = val.toLowerCase(Locale.US);
+                    //need to find example of this for testing
+                    if (val.equals("ex")) {
+                        r.addressType = ADDRESS_TYPE.EX;
+                    } else if (val.equals("smtp")) {
+                        r.addressType = ADDRESS_TYPE.SMTP;
+                    }
+                }
+            }
+            recipients.add(r);
+        }
+        return recipients;
+    }
+
+
+    private static class Recipient {
+        String name;
+        String displayName;
+        RECIPIENT_TYPE recipientType;
+        String emailAddress;
+        ADDRESS_TYPE addressType;
     }
 }

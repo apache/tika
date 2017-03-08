@@ -78,6 +78,14 @@ public class OutlookParserTest extends TikaTest {
                 "L'\u00C9quipe Microsoft Outlook Express <msoe@microsoft.com>",
                 metadata.get(Metadata.MESSAGE_RAW_HEADER_PREFIX+"From"));
 
+        assertEquals("Nouvel utilisateur de Outlook Express",
+                metadata.get(Message.MESSAGE_TO_EMAIL));
+
+        assertEquals("",
+                metadata.get(Message.MESSAGE_TO_NAME));
+
+        assertEquals("Nouvel utilisateur de Outlook Express",
+                metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
 
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals(
@@ -130,6 +138,11 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("jukka.zitting@gmail.com", metadata.get(Message.MESSAGE_FROM_EMAIL));
         assertEquals("Jukka Zitting", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
         assertEquals("jukka.zitting@gmail.com", metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+
+        //to-name is empty, make sure that we get an empty string.
+        assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_EMAIL));
+        assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
+        assertEquals("", metadata.get(Message.MESSAGE_TO_NAME));
     }
 
     /**
@@ -158,6 +171,12 @@ public class OutlookParserTest extends TikaTest {
         assertContains("Outlook 2003", content);
         assertContains("Streamlined Mail Experience", content);
         assertContains("Navigation Pane", content);
+
+        //make sure these are parallel
+        assertEquals("", metadata.get(Message.MESSAGE_TO_EMAIL));
+        assertEquals("New Outlook User", metadata.get(Message.MESSAGE_TO_NAME));
+        assertEquals("New Outlook User", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
+
     }
 
     @Test
@@ -195,14 +214,11 @@ public class OutlookParserTest extends TikaTest {
         assertContains("\u5F35\u6BD3\u502B", metadata.get(TikaCoreProperties.CREATOR));
         assertContains("\u9673\u60E0\u73CD", content);
 
-        assertEquals("FT GROUP", metadata.get(Office.MAPI_EXCHANGE_FROM_O));
-        assertEquals("FT", metadata.get(Office.MAPI_EXCHANGE_FROM_OU));
-        assertEquals("LYDIACHANG", metadata.get(Office.MAPI_EXCHANGE_FROM_CN));
-        //this no longer works because we forbid email like contents...do we want to do this?
-        //assertEquals("Tests Chang@FT (張毓倫)", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
-        assertEquals("FT GROUP", metadata.get(Office.MAPI_EXCHANGE_FROM_REPRESENTING_O));
-        assertEquals("FT", metadata.get(Office.MAPI_EXCHANGE_FROM_REPRESENTING_OU));
-        assertEquals("LYDIACHANG", metadata.get(Office.MAPI_EXCHANGE_FROM_REPRESENTING_CN));
+        assertEquals("tests.chang@fengttt.com", metadata.get(Message.MESSAGE_TO_EMAIL));
+
+        assertEquals("Tests Chang@FT (張毓倫)", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("/O=FT GROUP/OU=FT/CN=RECIPIENTS/CN=LYDIACHANG",
+                metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
     }
 
     @Test
