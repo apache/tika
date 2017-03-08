@@ -679,7 +679,7 @@ public class PDFParserTest extends TikaTest {
             return;
         }
         PDFParserConfig config = new PDFParserConfig();
-        config.setOCRStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
         context.set(Parser.class, new AutoDetectParser());
@@ -1229,7 +1229,7 @@ public class PDFParserTest extends TikaTest {
 
         for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
             PDFParserConfig config = new PDFParserConfig();
-            config.setOCRStrategy(strategy);
+            config.setOcrStrategy(strategy);
             ParseContext context = new ParseContext();
             context.set(PDFParserConfig.class, config);
             context.set(Parser.class, new AutoDetectParser());
