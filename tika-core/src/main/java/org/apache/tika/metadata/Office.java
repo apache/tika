@@ -130,24 +130,6 @@ public interface Office {
         PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "mapi-message-class",
             "APPOINTMENT", "CONTACT", "NOTE", "STICKY_NOTE", "POST", "TASK", "UNKNOWN", "UNSPECIFIED" );
 
-    Property MAPI_EXCHANGE_FROM_O = Property.internalText(
-            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-exchange-from-o");
-
-    Property MAPI_EXCHANGE_FROM_OU = Property.internalText(
-            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-exchange-from-ou");
-
-    Property MAPI_EXCHANGE_FROM_CN = Property.internalTextBag(
-            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-exchange-from-cn");
-
-    Property MAPI_EXCHANGE_FROM_REPRESENTING_O = Property.internalText(
-            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-exchange-from-representing-o");
-
-    Property MAPI_EXCHANGE_FROM_REPRESENTING_OU = Property.internalText(
-            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-exchange-from-representing-ou");
-
-    Property MAPI_EXCHANGE_FROM_REPRESENTING_CN = Property.internalTextBag(
-            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-exchange-from-representing-cn");
-
     Property MAPI_SENT_BY_SERVER_TYPE = Property.internalText(
             PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-sent-by-server-type");
 
