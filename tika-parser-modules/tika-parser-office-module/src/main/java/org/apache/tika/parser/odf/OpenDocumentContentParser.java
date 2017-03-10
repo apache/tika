@@ -79,7 +79,16 @@ public class OpenDocumentContentParser extends AbstractParser {
             ElementMappingContentHandler {
 
         private static final char[] SPACE = new char[]{ ' '};
+        private static final String CLASS = "class";
+        private static final Attributes ANNOTATION_ATTRIBUTES = buildAttributes(CLASS, "annotation");
+        private static final Attributes NOTE_ATTRIBUTES = buildAttributes(CLASS, "note");
+        private static final Attributes NOTES_ATTRIBUTES = buildAttributes(CLASS, "notes");
 
+        private static Attributes buildAttributes(String key, String value) {
+            AttributesImpl attrs = new AttributesImpl();
+            attrs.addAttribute("", key, key, "CDATA", value);
+            return attrs;
+        }
         private final ContentHandler handler;
         private final BitSet textNodeStack = new BitSet();
         private int nodeDepth = 0;
@@ -103,6 +112,9 @@ public class OpenDocumentContentParser extends AbstractParser {
         //have we written the start style tags
         //yet for the current text style
         boolean hasWrittenStartStyleTags = false;
+
+        private int pDepth = 0;  //<p> can appear inside comments and other things that are already inside <p>
+                                //we need to track our pDepth and only output <p> if we're at the main level
 
 
         private OpenDocumentElementMappingContentHandler(ContentHandler handler,
@@ -195,12 +207,27 @@ public class OpenDocumentContentParser extends AbstractParser {
         }
 
         private void startParagraph(String styleName) throws SAXException {
-
-            handler.startElement(XHTML, "p", "p", EMPTY_ATTRIBUTES);
-            if (styleName != null) {
-                currTextStyle = paragraphTextStyleMap.get(styleName);
+            if (pDepth == 0) {
+                handler.startElement(XHTML, "p", "p", EMPTY_ATTRIBUTES);
+                if (styleName != null) {
+                    currTextStyle = paragraphTextStyleMap.get(styleName);
+                }
+                hasWrittenStartStyleTags = false;
+            } else {
+                handler.characters(SPACE, 0, SPACE.length);
             }
-            hasWrittenStartStyleTags = false;
+            pDepth++;
+        }
+
+        private void endParagraph() throws SAXException {
+            closeStyleTags();
+            if (pDepth == 1) {
+                handler.endElement(XHTML, "p", "p");
+            } else {
+                handler.characters(SPACE, 0, SPACE.length);
+            }
+            pDepth--;
+
         }
 
         private void updateStyleTags() throws SAXException {
@@ -252,7 +279,7 @@ public class OpenDocumentContentParser extends AbstractParser {
         }
 
         private void endSpan() throws SAXException {
-
+            updateStyleTags();
         }
 
         private void closeStyleTags() throws SAXException {
@@ -345,6 +372,15 @@ public class OpenDocumentContentParser extends AbstractParser {
                     startParagraph(attrs.getValue(TEXT_NS, "style-name"));
                 } else if (TEXT_NS.equals(namespaceURI) && "s".equals(localName)) {
                     handler.characters(SPACE, 0, 1);
+                } else if ("annotation".equals(localName)) {
+                    closeStyleTags();
+                    handler.startElement(XHTML, "span", "p", ANNOTATION_ATTRIBUTES);
+                } else if ("note".equals(localName)) {
+                    closeStyleTags();
+                    handler.startElement(XHTML, "span", "p", NOTE_ATTRIBUTES);
+                } else if ("notes".equals(localName)) {
+                    closeStyleTags();
+                    handler.startElement(XHTML, "span", "p", NOTES_ATTRIBUTES);
                 } else {
                     super.startElement(namespaceURI, localName, qName, attrs);
                 }
@@ -382,8 +418,11 @@ public class OpenDocumentContentParser extends AbstractParser {
                     currTextStyle = null;
                     hasWrittenStartStyleTags = false;
                 } else if (TEXT_NS.equals(namespaceURI) && "p".equals(localName)) {
-                    closeStyleTags();
-                    handler.endElement(XHTML, "p", "p");
+                    endParagraph();
+                } else if ("annotation".equals(localName) || "note".equals(localName) ||
+                        "notes".equals(localName)) {
+                        closeStyleTags();
+                        handler.endElement("", localName, localName);
                 } else {
                     super.endElement(namespaceURI, localName, qName);
                 }
@@ -470,13 +509,13 @@ public class OpenDocumentContentParser extends AbstractParser {
                 new TargetElement(XHTML, "li"));
         MAPPINGS.put(
                 new QName(TEXT_NS, "note"),
-                new TargetElement(XHTML, "div"));
+                new TargetElement(XHTML, "span"));
         MAPPINGS.put(
                 new QName(OFFICE_NS, "annotation"),
-                new TargetElement(XHTML, "div"));
+                new TargetElement(XHTML, "span"));
         MAPPINGS.put(
                 new QName(PRESENTATION_NS, "notes"),
-                new TargetElement(XHTML, "div"));
+                new TargetElement(XHTML, "span"));
         MAPPINGS.put(
                 new QName(DRAW_NS, "object"),
                 new TargetElement(XHTML, "object"));

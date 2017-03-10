@@ -178,7 +178,7 @@ public class ODFParserTest extends TikaTest {
         assertEquals(null, metadata.get("nbCharacter"));
 
         // Note - contents of maths files not currently supported
-        assertContains("<body />", r.xml);
+        assertContains("<body><span class=\"annotation\" /></body></html>", r.xml);
 
    }
 
@@ -345,5 +345,13 @@ public class ODFParserTest extends TikaTest {
         assertContains("<p><b>name</b>, advocaat", xml);
         //test paragraph's font-style properties
         assertContains("<p><b>Publicatie Onbekwaamverklaring", xml);
+    }
+
+    @Test //TIKA-2242
+    public void testAnnotationsAndPDepthGt1() throws Exception {
+        //not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
+        String xml = getXML("testODTStyles3.odt").xml;
+        System.out.println(xml);
+        assertContains("<p><b>WOUTERS Rolf</b><span class=\"annotation\"> Beschermde persoon is overleden </annotation>", xml);
     }
 }

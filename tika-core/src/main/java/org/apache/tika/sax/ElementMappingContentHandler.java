@@ -16,13 +16,13 @@
  */
 package org.apache.tika.sax;
 
-import java.util.Map;
-import java.util.Collections;
 import javax.xml.namespace.QName;
+import java.util.Collections;
+import java.util.Map;
 
-import org.xml.sax.SAXException;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
