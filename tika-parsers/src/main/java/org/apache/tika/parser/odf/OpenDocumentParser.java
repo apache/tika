@@ -31,12 +31,17 @@ import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -220,6 +225,29 @@ public class OpenDocumentParser extends AbstractParser {
                 // Foreign content parser was set:
                 content.parse(zip, handler, metadata, context);
             }
+        } else {
+            String embeddedName = entry.getName();
+            //scrape everything under Thumbnails/ and Pictures/
+            if (embeddedName.contains("Thumbnails/") ||
+                    embeddedName.contains("Pictures/")) {
+                EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                Metadata embeddedMetadata = new Metadata();
+                embeddedMetadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, entry.getName());
+                /* if (embeddedName.startsWith("Thumbnails/")) {
+                    embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
+                }*/
+                if (embeddedName.contains("Pictures/")) {
+                    embeddedMetadata.set(TikaMetadataKeys.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                }
+                if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+                    embeddedDocumentExtractor.parseEmbedded(zip,
+                            new EmbeddedContentHandler(handler), embeddedMetadata, false);
+                }
+            }
+
         }
     }
 }

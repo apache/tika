@@ -1,5 +1,7 @@
 Release 1.15 - ??
 
+  * Extract images and thumbnails from ODT via Sam Bayer (TIKA-2295).
+
   * Enabled configuration of the EncodingDetector used by
     parsers that extend AbstractEncodingDetectorParser (TIKA-2273).
 

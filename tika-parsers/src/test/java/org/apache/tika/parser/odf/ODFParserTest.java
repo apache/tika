@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
+import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -398,4 +399,11 @@ public class ODFParserTest extends TikaTest {
         System.out.println(xml);
         assertContains("<p><b>WOUTERS Rolf</b><span class=\"annotation\"> Beschermde persoon is overleden </annotation>", xml);
     }
+
+    @Test
+    public void testEmbedded() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
+        assertEquals(3, metadataList.size());
+    }
+    
 }
