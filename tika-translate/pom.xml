@@ -34,6 +34,10 @@
   <name>Apache Tika translate</name>
   <url>http://tika.apache.org/</url>
 
+  <properties>
+    <cxf.version>3.0.12</cxf.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -54,7 +58,7 @@
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-      <version>3.0.3</version>
+      <version>${cxf.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
