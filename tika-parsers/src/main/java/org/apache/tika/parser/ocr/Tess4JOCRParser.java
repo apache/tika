@@ -86,9 +86,11 @@ public class Tess4JOCRParser extends AbstractParser {
 
         TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
 
-//        TemporaryResources tmp = new TemporaryResources();
+        /* for metadata extraction
+        TemporaryResources tmp = new TemporaryResources();
 
-//            _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, new DefaultHandler(), metadata, parseContext);
+        _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, new DefaultHandler(), metadata, parseContext);
+        */
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -104,15 +106,17 @@ public class Tess4JOCRParser extends AbstractParser {
         instance.setLanguage(config.getLanguage());
         instance.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
 
-//        List<String> confs = new ArrayList<String>();
+        /*
+        List<String> confs = new ArrayList<String>();
 
-//        if (config.getPreserveInterwordSpacing()) {
-//            confs.add(0, "preserve_interword_spaces=1");
-//            instance.setConfigs(confs);
-//        } else {
-//            confs.add(0, "preserve_interword_spaces=0");
-//            instance.setConfigs(confs);
-//        }
+        if (config.getPreserveInterwordSpacing()) {
+            confs.add(0, "preserve_interword_spaces=1");
+            instance.setConfigs(confs);
+        } else {
+            confs.add(0, "preserve_interword_spaces=0");
+            instance.setConfigs(confs);
+        }
+        */
 
         try {
             // We can set our own data path if we have it
@@ -136,7 +140,6 @@ public class Tess4JOCRParser extends AbstractParser {
             e.printStackTrace();
         }
     }
-
 
     // copied from tesseract ocr passer
 
