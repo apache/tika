@@ -143,7 +143,6 @@ public class Tess4JOCRParser extends AbstractParser {
         parse(file, xhtml, parseContext, config);
         xhtml.endDocument();
 
-//        System.out.println(metadata);
     }
 
     private void parse(File file, XHTMLContentHandler xhtml, ParseContext parseContext, TesseractOCRConfig config) throws IOException {
@@ -168,9 +167,7 @@ public class Tess4JOCRParser extends AbstractParser {
             // We can set our own data path if we have it
             instance.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
 
-            // Printing the OCR output for debugging purposes
             String ocrData = instance.doOCR(file);
-//            System.out.println(ocrData);
 
             InputStream is = new ByteArrayInputStream(ocrData.getBytes(StandardCharsets.UTF_8));
 
@@ -179,7 +176,6 @@ public class Tess4JOCRParser extends AbstractParser {
             } else {
                 extractOutput(is, xhtml);
             }
-
 
         } catch (TesseractException e) {
             e.printStackTrace();
