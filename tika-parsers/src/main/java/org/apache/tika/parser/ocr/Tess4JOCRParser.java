@@ -16,149 +16,116 @@
  */
 package org.apache.tika.parser.ocr;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.*;
-
-
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.util.LoadLibs;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.parser.image.ImageParser;
-import org.apache.tika.parser.image.TiffParser;
-import org.apache.tika.parser.jpeg.JpegParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import net.sourceforge.tess4j.util.LoadLibs;
-import net.sourceforge.tess4j.*;
-
 import javax.imageio.ImageIO;
 import javax.xml.parsers.SAXParser;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class Tess4JOCRParser extends AbstractParser {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Tess4JOCRParser.class);
     private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(new MediaType[]{
+            new HashSet<>(Arrays.asList(new MediaType[]{
                     MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
                     MediaType.image("bmp"), MediaType.image("gif"), MediaType.image("jp2"),
                     MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
-    private static Map<String, Boolean> TESSERACT_PRESENT = new HashMap<String, Boolean>();
 
+    //instance variable. The tesseract model is loaded once and it will be reused
+    private ITesseract tesseract;
+
+    private ITesseract getOrInit(ParseContext context){
+        if (tesseract == null){
+            synchronized (this){
+                if (tesseract == null){
+                    TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+                    tesseract = new Tesseract();
+                    tesseract.setLanguage(config.getLanguage());
+                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
+                    // We can set our own data path if we have it
+                    tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
+                }
+            }
+        }
+        return tesseract;
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
+    public void parse(InputStream stream, ContentHandler handler,
+                      Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
-
-    }
-
-    public void parse(File file, ContentHandler handler, Metadata metadata, ParseContext parseContext)
-            throws IOException, SAXException, TikaException {
-
-        TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-
-        /* for metadata extraction
-        TemporaryResources tmp = new TemporaryResources();
-
-        _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, new DefaultHandler(), metadata, parseContext);
-        */
-
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        parse(file, xhtml, parseContext, config);
+        parse(stream, xhtml, parseContext);
         xhtml.endDocument();
-
     }
 
-    private void parse(File file, XHTMLContentHandler xhtml, ParseContext parseContext, TesseractOCRConfig config) throws IOException {
-
-        ITesseract instance = new Tesseract();
-
-        instance.setLanguage(config.getLanguage());
-        instance.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
-
-        /*
-        List<String> confs = new ArrayList<String>();
-
-        if (config.getPreserveInterwordSpacing()) {
-            confs.add(0, "preserve_interword_spaces=1");
-            instance.setConfigs(confs);
-        } else {
-            confs.add(0, "preserve_interword_spaces=0");
-            instance.setConfigs(confs);
-        }
-        */
-
+    private void parse(InputStream stream, XHTMLContentHandler xhtml,
+                       ParseContext context) throws IOException {
         try {
-            // We can set our own data path if we have it
-            instance.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
-
-            String ocrData = instance.doOCR(file);
-
-            InputStream is = new ByteArrayInputStream(ocrData.getBytes(StandardCharsets.UTF_8));
-
-            if (config.getOutputType().equals(TesseractOCRConfig.OUTPUT_TYPE.HOCR)) {
-                extractHOCROutput(is, parseContext, xhtml);
+            ITesseract instance = getOrInit(context);
+            assert instance != null;
+            BufferedImage image = ImageIO.read(stream);
+            String ocrData = instance.doOCR(image);
+            TesseractOCRConfig.OUTPUT_TYPE outputType = context.get(
+                    TesseractOCRConfig.class, DEFAULT_CONFIG).getOutputType();
+            if (TesseractOCRConfig.OUTPUT_TYPE.HOCR.equals(outputType)) {
+                try (InputStream txtStream = new ByteArrayInputStream(
+                        ocrData.getBytes(StandardCharsets.UTF_8))) {
+                    extractHOCROutput(txtStream, context, xhtml);
+                }
             } else {
-                extractOutput(is, xhtml);
+                extractOutput(ocrData, xhtml);
             }
-
-        } catch (TesseractException e) {
-            e.printStackTrace();
-        } catch (TikaException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            LOG.warn(e.getMessage(), e);
+        } catch (Throwable e){
+            LOG.error(e.getMessage(), e);
         }
     }
 
     // copied from tesseract ocr passer
-
-    private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
+    private void extractOutput(String content, XHTMLContentHandler xhtml)
+            throws SAXException {
 
         xhtml.startElement("div", "class", "ocr");
-        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
-            char[] buffer = new char[1024];
-            for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                if (n > 0) {
-                    xhtml.characters(buffer, 0, n);
-                }
-            }
-        }
+        xhtml.characters(content);
         xhtml.endElement("div");
     }
 
     private void extractHOCROutput(InputStream is, ParseContext parseContext,
-                                   XHTMLContentHandler xhtml) throws TikaException, IOException, SAXException {
+                                   XHTMLContentHandler xhtml)
+            throws TikaException, IOException, SAXException {
         if (parseContext == null) {
             parseContext = new ParseContext();
         }
