@@ -21,6 +21,9 @@ import org.apache.tika.parser.ocr.Tess4JOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
@@ -47,7 +50,7 @@ public class Tess4JOCRParserTest extends TikaTest {
 
     // This is a test I wrote to compare content extraction times between terseractocrpasser and tess4jocrparser
     @Test
-    public void testImages() throws IOException, TikaException, SAXException {
+    public void testImages() throws IOException, TikaException, SAXException, URISyntaxException {
 
         final ContentHandler tesseractHandler = new BodyContentHandler();
         final ContentHandler tess4JHandler = new BodyContentHandler();
@@ -55,16 +58,14 @@ public class Tess4JOCRParserTest extends TikaTest {
         final ParseContext tesseractContext = new ParseContext();
         final ParseContext tess4JContext = new ParseContext();
 
-        // OCR Test Images
-        File folder = new File("/home/thejan/IdeaProjects/GSoC/tika/tika-parsers/src/test/resources/test-documents/OCR_Compare/");
+        URL dirUrl = getClass().getClassLoader().getResource("test-documents/OCR_Compare/");
+        assert dirUrl != null;
+        File folder = new File(dirUrl.toURI());
         File[] listOfFiles = folder.listFiles();
-
 
         // Initializing parsers
         final Tess4JOCRParser tess4JParser = new Tess4JOCRParser();
         final TesseractOCRParser tesseractParser = new TesseractOCRParser();
-        final AutoDetectParser autoDetectParser = new AutoDetectParser();
-
 
         if (listOfFiles != null) {
             long tess4JElapsedTime = 0;
@@ -74,21 +75,24 @@ public class Tess4JOCRParserTest extends TikaTest {
                 if (file.isFile()) {
 
                     // For tess4JParser
-                    long tess4JStartTime = System.currentTimeMillis();
-                    tess4JParser.parse(file, tess4JHandler, metadata, tess4JContext);
-                    long tess4jStopTime = System.currentTimeMillis();
-                    tess4JElapsedTime += tess4jStopTime - tess4JStartTime;
+                    try (FileInputStream stream = new FileInputStream(file)) {
+                        long tess4JStartTime = System.currentTimeMillis();
+                        tess4JParser.parse(stream, tess4JHandler, metadata, tess4JContext);
+                        long tess4jStopTime = System.currentTimeMillis();
+                        tess4JElapsedTime += tess4jStopTime - tess4JStartTime;
+                    }
 
                     // Uncomment this if you want to see what is being printed
                     // System.out.println(tess4JHandler.toString());
 
                     // For tesseractParser
-                    FileInputStream stream = new FileInputStream(file);
-                    long tesseractStartTime = System.currentTimeMillis();
-                    tesseractParser.parse(stream, tesseractHandler, metadata, tesseractContext);
-                    long tesseractStopTime = System.currentTimeMillis();
-                    tesseractElapsedTime += tesseractStopTime - tesseractStartTime;
-                    stream.close();
+                    try (FileInputStream stream = new FileInputStream(file)) {
+                        long tesseractStartTime = System.currentTimeMillis();
+                        tesseractParser.parse(stream, tesseractHandler, metadata, tesseractContext);
+                        long tesseractStopTime = System.currentTimeMillis();
+                        tesseractElapsedTime += tesseractStopTime - tesseractStartTime;
+                        stream.close();
+                    }
 
                     // Uncomment this if you want to see what is being printed
                     // System.out.println(tesseractHandler.toString());
@@ -101,15 +105,6 @@ public class Tess4JOCRParserTest extends TikaTest {
             System.out.println("For tesseractOCRParser: " + tesseractElapsedTime / 1000 + " s");
         }
     }
-        /* For metadata
-
-        String[] metadataNames = metadata.names();
-
-        for (String name : metadataNames) {
-            System.out.println(name + " : " + metadata.get(name));
-        }
-
-        */
 
 }
 
