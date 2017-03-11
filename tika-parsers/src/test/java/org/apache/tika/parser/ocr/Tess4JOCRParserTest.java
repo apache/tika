@@ -16,13 +16,6 @@
  */
 package org.apache.tika.parser.ocr;
 
-import static org.apache.tika.parser.ocr.TesseractOCRParser.getTesseractProg;
-import static org.bouncycastle.crypto.tls.CipherType.stream;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
-
-import org.apache.poi.ss.formula.functions.T;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ocr.Tess4JOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -55,40 +48,58 @@ public class Tess4JOCRParserTest extends TikaTest {
     // This is a test I wrote to compare content extraction times between terseractocrpasser and tess4jocrparser
     @Test
     public void testImages() throws IOException, TikaException, SAXException {
-        final File imageFile = new File("/home/thejan/Desktop/test.jpg");
+
         final ContentHandler tesseractHandler = new BodyContentHandler();
         final ContentHandler tess4JHandler = new BodyContentHandler();
         final Metadata metadata = new Metadata();
         final ParseContext tesseractContext = new ParseContext();
         final ParseContext tess4JContext = new ParseContext();
 
+        // OCR Test Images
+        File folder = new File("/home/thejan/IdeaProjects/GSoC/tika/tika-parsers/src/test/resources/test-documents/OCR_Compare/");
+        File[] listOfFiles = folder.listFiles();
+
+
         // Initializing parsers
         final Tess4JOCRParser tess4JParser = new Tess4JOCRParser();
         final TesseractOCRParser tesseractParser = new TesseractOCRParser();
-        AutoDetectParser autoDetectParser = new AutoDetectParser();
+        final AutoDetectParser autoDetectParser = new AutoDetectParser();
 
 
-        // For tess4JParser
-        long tess4JStartTime = System.currentTimeMillis();
-        tess4JParser.parse(imageFile, tess4JHandler, metadata, tess4JContext);
-        long tess4jStopTime = System.currentTimeMillis();
-        System.out.println("For tess4JOCRParser: " + (tess4jStopTime - tess4JStartTime) + " ms");
+        if (listOfFiles != null) {
+            long tess4JElapsedTime = 0;
+            long tesseractElapsedTime = 0;
+            int progress = 0;
+            for (File file : listOfFiles) {
+                if (file.isFile()) {
 
-        System.out.println(tess4JHandler.toString());
+                    // For tess4JParser
+                    long tess4JStartTime = System.currentTimeMillis();
+                    tess4JParser.parse(file, tess4JHandler, metadata, tess4JContext);
+                    long tess4jStopTime = System.currentTimeMillis();
+                    tess4JElapsedTime += tess4jStopTime - tess4JStartTime;
 
+                    // Uncomment this if you want to see what is being printed
+                    // System.out.println(tess4JHandler.toString());
 
-        // For tesseractParser
-        FileInputStream stream = new FileInputStream(imageFile);
-        long TesseractStartTime = System.currentTimeMillis();
-        tesseractParser.parse(stream, tesseractHandler, metadata, tesseractContext);
-        long TesseractStopTime = System.currentTimeMillis();
-        System.out.println("For tesseractOCRParser: " + (TesseractStopTime - TesseractStartTime) + " ms");
+                    // For tesseractParser
+                    FileInputStream stream = new FileInputStream(file);
+                    long tesseractStartTime = System.currentTimeMillis();
+                    tesseractParser.parse(stream, tesseractHandler, metadata, tesseractContext);
+                    long tesseractStopTime = System.currentTimeMillis();
+                    tesseractElapsedTime += tesseractStopTime - tesseractStartTime;
+                    stream.close();
 
-        System.out.println(tesseractHandler.toString());
-        stream.close();
+                    // Uncomment this if you want to see what is being printed
+                    // System.out.println(tesseractHandler.toString());
 
-
-
+                }
+                progress += 1;
+                System.out.println("Current Progress: " + progress + "%");
+            }
+            System.out.println("For tess4JOCRParser: " + tess4JElapsedTime / 1000 + " s");
+            System.out.println("For tesseractOCRParser: " + tesseractElapsedTime / 1000 + " s");
+        }
     }
         /* For metadata
 
