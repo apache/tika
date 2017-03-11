@@ -72,50 +72,8 @@ public class Tess4JOCRParser extends AbstractParser {
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        // If Tesseract is installed, offer our supported image types
         TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-        if (hasTesseract(config))
-            return SUPPORTED_TYPES;
-
-        // Otherwise don't advertise anything, so the other image parsers
-        //  can be selected instead
-        return Collections.emptySet();
-    }
-
-    // not needed in the future
-    public boolean hasTesseract(TesseractOCRConfig config) {
-        // Fetch where the config says to find Tesseract
-        String tesseract = config.getTesseractPath() + getTesseractProg();
-
-        // Have we already checked for a copy of Tesseract there?
-        if (TESSERACT_PRESENT.containsKey(tesseract)) {
-            return TESSERACT_PRESENT.get(tesseract);
-        }
-        // Try running Tesseract from there, and see if it exists + works
-        String[] checkCmd = {tesseract};
-        boolean hasTesseract = ExternalParser.check(checkCmd);
-        TESSERACT_PRESENT.put(tesseract, hasTesseract);
-        return hasTesseract;
-
-    }
-
-    // not needed in the future
-    static String getTesseractProg() {
-        return System.getProperty("os.name").startsWith("Windows") ? "tesseract.exe" : "tesseract";
-    }
-
-    // TIKA-1445 workaround parser
-    // might not need in the future
-    private static Parser _TMP_IMAGE_METADATA_PARSER = new Tess4JOCRParser.CompositeImageParser();
-
-    private static class CompositeImageParser extends CompositeParser {
-        private static List<Parser> imageParsers = Arrays.asList(new Parser[]{
-                new ImageParser(), new JpegParser(), new TiffParser()
-        });
-
-        CompositeImageParser() {
-            super(new MediaTypeRegistry(), imageParsers);
-        }
+        return SUPPORTED_TYPES;
     }
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
@@ -123,16 +81,10 @@ public class Tess4JOCRParser extends AbstractParser {
 
     }
 
-
     public void parse(File file, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
 
         TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-        // If Tesseract is not on the path with the current config, do not try to run OCR
-        // getSupportedTypes shouldn't have listed us as handling it, so this should only
-        //  occur if someone directly calls this parser, not via DefaultParser or similar
-        if (!hasTesseract(config))
-            return;
 
 //        TemporaryResources tmp = new TemporaryResources();
 
@@ -152,8 +104,7 @@ public class Tess4JOCRParser extends AbstractParser {
         instance.setLanguage(config.getLanguage());
         instance.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
 
-        List<String> confs = new ArrayList<String>();
-
+//        List<String> confs = new ArrayList<String>();
 
 //        if (config.getPreserveInterwordSpacing()) {
 //            confs.add(0, "preserve_interword_spaces=1");
@@ -262,10 +213,3 @@ public class Tess4JOCRParser extends AbstractParser {
         }
     }
 }
-
-
-
-
-
-
-

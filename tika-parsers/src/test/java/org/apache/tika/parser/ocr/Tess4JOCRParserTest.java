@@ -49,19 +49,21 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class Tess4JOCRParserTest extends TikaTest {
 
+//    This is a test I wrote to compare content extraction times between terseractocrpasser and tess4jocrparser
     @Test
-    public  void testSingleImage() throws IOException, TikaException, SAXException {
+    public void testImages() throws IOException, TikaException, SAXException {
         File imageFile = new File("/home/thejan/Desktop/test2.jpg");
-        //        Image stream = ImageIO.read(new File("/home/thejan/Desktop/test.jpg"));
+//        Image stream = ImageIO.read(new File("/home/thejan/Desktop/test.jpg"));
 //        FileInputStream stream = new FileInputStream(imageFile);
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
-        Tess4JOCRParser tessParser = new Tess4JOCRParser();
+        Tess4JOCRParser tess4JParser = new Tess4JOCRParser();
+        TesseractOCRParser tesseractParser = new TesseractOCRParser();
 //        AutoDetectParser tessParser = new AutoDetectParser();
 
-        tessParser.parse(imageFile, handler, metadata, context);
+        tess4JParser.parse(imageFile, handler, metadata, context);
 //        stream.close();
         System.out.println(handler.toString());
 
