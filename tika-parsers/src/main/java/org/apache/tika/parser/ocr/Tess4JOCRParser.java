@@ -95,8 +95,7 @@ public class Tess4JOCRParser extends AbstractParser {
         try {
             ITesseract instance = getOrInit(context);
             assert instance != null;
-            BufferedImage image = ImageIO.read(stream);
-            String ocrData = instance.doOCR(image);
+            String ocrData = instance.doOCR(ImageIO.read(stream));
             TesseractOCRConfig.OUTPUT_TYPE outputType = context.get(
                     TesseractOCRConfig.class, DEFAULT_CONFIG).getOutputType();
             if (TesseractOCRConfig.OUTPUT_TYPE.HOCR.equals(outputType)) {

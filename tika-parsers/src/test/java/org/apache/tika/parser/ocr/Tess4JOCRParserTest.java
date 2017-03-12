@@ -52,8 +52,8 @@ public class Tess4JOCRParserTest extends TikaTest {
     @Test
     public void testImages() throws IOException, TikaException, SAXException, URISyntaxException {
 
-        final ContentHandler tesseractHandler = new BodyContentHandler();
-        final ContentHandler tess4JHandler = new BodyContentHandler();
+        final ContentHandler tesseractHandler = new BodyContentHandler(-1);
+        final ContentHandler tess4JHandler = new BodyContentHandler(-1);
         final Metadata metadata = new Metadata();
         final ParseContext tesseractContext = new ParseContext();
         final ParseContext tess4JContext = new ParseContext();
@@ -76,10 +76,9 @@ public class Tess4JOCRParserTest extends TikaTest {
 
                     // For tess4JParser
                     try (FileInputStream stream = new FileInputStream(file)) {
-                        long tess4JStartTime = System.currentTimeMillis();
+                        long startTime = System.currentTimeMillis();
                         tess4JParser.parse(stream, tess4JHandler, metadata, tess4JContext);
-                        long tess4jStopTime = System.currentTimeMillis();
-                        tess4JElapsedTime += tess4jStopTime - tess4JStartTime;
+                        tess4JElapsedTime += System.currentTimeMillis() - startTime;
                     }
 
                     // Uncomment this if you want to see what is being printed
@@ -87,11 +86,9 @@ public class Tess4JOCRParserTest extends TikaTest {
 
                     // For tesseractParser
                     try (FileInputStream stream = new FileInputStream(file)) {
-                        long tesseractStartTime = System.currentTimeMillis();
+                        long startTime = System.currentTimeMillis();
                         tesseractParser.parse(stream, tesseractHandler, metadata, tesseractContext);
-                        long tesseractStopTime = System.currentTimeMillis();
-                        tesseractElapsedTime += tesseractStopTime - tesseractStartTime;
-                        stream.close();
+                        tesseractElapsedTime += System.currentTimeMillis() - startTime;
                     }
 
                     // Uncomment this if you want to see what is being printed
@@ -101,8 +98,8 @@ public class Tess4JOCRParserTest extends TikaTest {
                 progress += 1;
                 System.out.println("Current Progress: " + progress + "%");
             }
-            System.out.println("For tess4JOCRParser: " + tess4JElapsedTime / 1000 + " s");
-            System.out.println("For tesseractOCRParser: " + tesseractElapsedTime / 1000 + " s");
+            System.out.println("For tess4JOCRParser: " + tess4JElapsedTime / 1000 + " S");
+            System.out.println("For tesseractOCRParser: " + tesseractElapsedTime / 1000 + " S");
         }
     }
 
