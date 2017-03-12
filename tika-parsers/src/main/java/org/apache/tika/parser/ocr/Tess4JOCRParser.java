@@ -63,16 +63,16 @@ public class Tess4JOCRParser extends AbstractParser {
     private ITesseract getOrInit(ParseContext context) {
         if (tesseract == null) {
             synchronized (this) {
-                if (tesseract == null) {
+//                if (tesseract == null) {
                     TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
                     tesseract = new Tesseract();
                     // We can set our own data path if we have it
                     tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
                     // Tesseract's quiet command-line option. Comment this if you need to see the log messages Tess4J gives
                     tesseract.setTessVariable("debug_file", "/dev/null");
-                    tesseract.setLanguage(config.getLanguage());
-                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
-                }
+//                    tesseract.setLanguage(config.getLanguage());
+//                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
+//                }
             }
         }
         return tesseract;
@@ -114,7 +114,7 @@ public class Tess4JOCRParser extends AbstractParser {
         xhtml.characters(content);
         xhtml.endElement("div");
     }
-    
+
     private static class HOCRPassThroughHandler extends DefaultHandler {
         private final ContentHandler xhtml;
         public static final Set<String> IGNORE = unmodifiableSet(

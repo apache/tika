@@ -81,7 +81,7 @@ public class Tess4JOCRParserTest extends TikaTest {
                     tess4JElapsedTime += System.currentTimeMillis() - startTime;
                 }
                 // Uncomment this if you want to see what is being printed
-                 System.out.println(tess4JHandler.toString());
+                // System.out.println(tess4JHandler.toString());
 
                 // For tesseractParser
                 try (FileInputStream stream = new FileInputStream(file)) {
@@ -94,9 +94,6 @@ public class Tess4JOCRParserTest extends TikaTest {
             }
             progress += 1;
             System.out.println("Current Progress: " + progress + "%");
-            if (progress == 10){
-                break;
-            }
         }
         System.out.println("For tess4JOCRParser: " + tess4JElapsedTime / 1000 + " S");
         System.out.println("For tesseractOCRParser: " + tesseractElapsedTime / 1000 + " S");
