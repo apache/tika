@@ -60,16 +60,18 @@ public class Tess4JOCRParser extends AbstractParser {
     //instance variable. The tesseract model is loaded once and it will be reused
     private ITesseract tesseract;
 
-    private ITesseract getOrInit(ParseContext context){
-        if (tesseract == null){
-            synchronized (this){
-                if (tesseract == null){
+    private ITesseract getOrInit(ParseContext context) {
+        if (tesseract == null) {
+            synchronized (this) {
+                if (tesseract == null) {
                     TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
                     tesseract = new Tesseract();
-                    tesseract.setLanguage(config.getLanguage());
-                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
                     // We can set our own data path if we have it
                     tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
+                    // Tesseract's quiet command-line option. Comment this if you need to see the log messages Tess4J gives
+                    tesseract.setTessVariable("debug_file", "/dev/null");
+                    tesseract.setLanguage(config.getLanguage());
+                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
                 }
             }
         }
@@ -96,19 +98,10 @@ public class Tess4JOCRParser extends AbstractParser {
             ITesseract instance = getOrInit(context);
             assert instance != null;
             String ocrData = instance.doOCR(ImageIO.read(stream));
-            TesseractOCRConfig.OUTPUT_TYPE outputType = context.get(
-                    TesseractOCRConfig.class, DEFAULT_CONFIG).getOutputType();
-            if (TesseractOCRConfig.OUTPUT_TYPE.HOCR.equals(outputType)) {
-                try (InputStream txtStream = new ByteArrayInputStream(
-                        ocrData.getBytes(StandardCharsets.UTF_8))) {
-                    extractHOCROutput(txtStream, context, xhtml);
-                }
-            } else {
-                extractOutput(ocrData, xhtml);
-            }
+            extractOutput(ocrData, xhtml);
         } catch (Exception e) {
             LOG.warn(e.getMessage(), e);
-        } catch (Throwable e){
+        } catch (Throwable e) {
             LOG.error(e.getMessage(), e);
         }
     }
@@ -121,20 +114,7 @@ public class Tess4JOCRParser extends AbstractParser {
         xhtml.characters(content);
         xhtml.endElement("div");
     }
-
-    private void extractHOCROutput(InputStream is, ParseContext parseContext,
-                                   XHTMLContentHandler xhtml)
-            throws TikaException, IOException, SAXException {
-        if (parseContext == null) {
-            parseContext = new ParseContext();
-        }
-        SAXParser parser = parseContext.getSAXParser();
-        xhtml.startElement("div", "class", "ocr");
-        parser.parse(is, new OfflineContentHandler(new Tess4JOCRParser.HOCRPassThroughHandler(xhtml)));
-        xhtml.endElement("div");
-    }
-
-
+    
     private static class HOCRPassThroughHandler extends DefaultHandler {
         private final ContentHandler xhtml;
         public static final Set<String> IGNORE = unmodifiableSet(
