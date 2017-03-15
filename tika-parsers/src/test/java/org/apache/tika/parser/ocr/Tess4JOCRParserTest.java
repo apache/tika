@@ -93,6 +93,9 @@ public class Tess4JOCRParserTest extends TikaTest {
                 // System.out.println(tesseractHandler.toString());
             }
             progress += 1;
+            if (progress==10){
+                break;
+            }
             System.out.println("Current Progress: " + progress + "%");
         }
         System.out.println("For tess4JOCRParser: " + tess4JElapsedTime / 1000 + " S");
