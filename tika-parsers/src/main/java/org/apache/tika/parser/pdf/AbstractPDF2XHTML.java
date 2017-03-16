@@ -16,9 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
-
-import javax.xml.stream.XMLStreamException;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -38,7 +35,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-
+import javax.xml.stream.XMLStreamException;
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -94,6 +91,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
 
@@ -523,7 +522,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
             // Extract text for any bookmarks:
-            extractBookmarkText();
+			if(config.getExtractBookmarksText())
+            	extractBookmarkText();
             try {
                 extractEmbeddedDocuments(pdf);
             } catch (IOException e) {

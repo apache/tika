@@ -96,6 +96,9 @@ public class PDFParserConfig implements Serializable {
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
 
+	//True if bookmarks content should be extracted
+    private boolean extractBookmarksText = true;
+
     //True if inline PDXImage objects should be extracted
     private boolean extractInlineImages = false;
 
@@ -178,6 +181,9 @@ public class PDFParserConfig implements Serializable {
         setExtractAcroFormContent(
                 getBooleanProp(props.getProperty("extractAcroFormContent"),
                         getExtractAcroFormContent()));
+		setExtractBookmarksText(
+				getBooleanProp(props.getProperty("extractBookmarksText"),
+						getExtractBookmarksText()));
         setExtractInlineImages(
                 getBooleanProp(props.getProperty("extractInlineImages"),
                         getExtractInlineImages()));
@@ -275,8 +281,24 @@ public class PDFParserConfig implements Serializable {
         this.ifXFAExtractOnlyXFA = ifXFAExtractOnlyXFA;
     }
 
+	/**
+	 * @see #setExtractBookmarksText(boolean)
+	 */
+	public boolean getExtractBookmarksText() {
+		return extractBookmarksText;
+	}
 
-    /**
+	/**
+	 * If true, extract bookmarks (document outline) text.
+	 * <p/>
+	 * Te default is <code>true</code>
+	 * @param extractBookmarksText
+	 */
+	public void setExtractBookmarksText(boolean extractBookmarksText) {
+		this.extractBookmarksText = extractBookmarksText;
+	}
+
+	/**
      * @see #setExtractInlineImages(boolean)
      */
     public boolean getExtractInlineImages() {
@@ -644,6 +666,7 @@ public class PDFParserConfig implements Serializable {
         if (getExtractAnnotationText() != config.getExtractAnnotationText()) return false;
         if (getSortByPosition() != config.getSortByPosition()) return false;
         if (getExtractAcroFormContent() != config.getExtractAcroFormContent()) return false;
+		if (getExtractBookmarksText() != config.getExtractBookmarksText()) return false;
         if (getExtractInlineImages() != config.getExtractInlineImages()) return false;
         if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
         if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
@@ -666,6 +689,7 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + (getExtractAnnotationText() ? 1 : 0);
         result = 31 * result + (getSortByPosition() ? 1 : 0);
         result = 31 * result + (getExtractAcroFormContent() ? 1 : 0);
+		result = 31 * result + (getExtractBookmarksText() ? 1 : 0);
         result = 31 * result + (getExtractInlineImages() ? 1 : 0);
         result = 31 * result + (getExtractUniqueInlineImagesOnly() ? 1 : 0);
         result = 31 * result + getAverageCharTolerance().hashCode();
@@ -689,6 +713,7 @@ public class PDFParserConfig implements Serializable {
                 ", extractAnnotationText=" + extractAnnotationText +
                 ", sortByPosition=" + sortByPosition +
                 ", extractAcroFormContent=" + extractAcroFormContent +
+				", extractBookmarksText=" + extractBookmarksText +
                 ", extractInlineImages=" + extractInlineImages +
                 ", extractUniqueInlineImagesOnly=" + extractUniqueInlineImagesOnly +
                 ", averageCharTolerance=" + averageCharTolerance +
