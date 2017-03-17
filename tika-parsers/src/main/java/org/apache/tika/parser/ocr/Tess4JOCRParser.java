@@ -16,14 +16,23 @@
  */
 package org.apache.tika.parser.ocr;
 
+import com.recognition.software.jdeskew.ImageDeskew;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
+import net.sourceforge.tess4j.util.ImageHelper;
 import net.sourceforge.tess4j.util.LoadLibs;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.image.ImageParser;
+import org.apache.tika.parser.image.TiffParser;
+import org.apache.tika.parser.jpeg.JpegParser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.slf4j.Logger;
@@ -37,13 +46,11 @@ import javax.imageio.ImageIO;
 import javax.xml.parsers.SAXParser;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 
 public class Tess4JOCRParser extends AbstractParser {
@@ -52,10 +59,11 @@ public class Tess4JOCRParser extends AbstractParser {
     private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(new MediaType[]{
-                    MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
-                    MediaType.image("bmp"), MediaType.image("gif"), MediaType.image("jp2"),
-                    MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
+                    MediaType.image("png"), MediaType.image("jpg"), MediaType.image("jpeg"),
+                    MediaType.image("tiff"), MediaType.image("bmp"), MediaType.image("gif"),
+                    MediaType.image("jp2"), MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
+    private static final double MINIMUM_DESKEW_THRESHOLD = 0.05d;
 
     //instance variable. The tesseract model is loaded once and it will be reused
     private ITesseract tesseract;
@@ -64,12 +72,12 @@ public class Tess4JOCRParser extends AbstractParser {
         if (tesseract == null) {
             synchronized (this) {
 //                if (tesseract == null) {
-                    TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-                    tesseract = new Tesseract();
-                    // We can set our own data path if we have it
-                    tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
-                    // Tesseract's quiet command-line option. Comment this if you need to see the log messages Tess4J gives
-                    tesseract.setTessVariable("debug_file", "/dev/null");
+                TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+                tesseract = new Tesseract();
+                // We can set our own data path if we have it
+                tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
+                // Tesseract's quiet command-line option. Comment this if you need to see the log messages Tess4J gives
+                tesseract.setTessVariable("debug_file", "/dev/null");
 //                    tesseract.setLanguage(config.getLanguage());
 //                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
 //                }
@@ -86,24 +94,42 @@ public class Tess4JOCRParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
+
+        TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        parse(stream, xhtml, parseContext);
+        parse(stream, xhtml, parseContext, config);
         xhtml.endDocument();
     }
 
     private void parse(InputStream stream, XHTMLContentHandler xhtml,
-                       ParseContext context) throws IOException {
+                       ParseContext context, TesseractOCRConfig config) throws IOException {
         try {
             ITesseract instance = getOrInit(context);
             assert instance != null;
-            String ocrData = instance.doOCR(ImageIO.read(stream));
+            BufferedImage bufferedImage = ImageIO.read(stream);
+            if (config.isEnableImageProcessing() == 1) {
+                bufferedImage = processImage(bufferedImage, config);
+            }
+            String ocrData = instance.doOCR(bufferedImage);
             extractOutput(ocrData, xhtml);
         } catch (Exception e) {
             LOG.warn(e.getMessage(), e);
         } catch (Throwable e) {
             LOG.error(e.getMessage(), e);
         }
+    }
+
+    // only supports processing rotated text at the moment
+    // TODO: adding density, depth, colorspace, filter, resize options for images
+    private BufferedImage processImage(BufferedImage bufferedImage, TesseractOCRConfig config) {
+        ImageDeskew id = new ImageDeskew(bufferedImage);
+        double imageSkewAngle = id.getSkewAngle();
+        if ((imageSkewAngle > MINIMUM_DESKEW_THRESHOLD || imageSkewAngle < -(MINIMUM_DESKEW_THRESHOLD))) {
+            bufferedImage = ImageHelper.rotateImage(bufferedImage, -imageSkewAngle);
+        }
+        return bufferedImage;
     }
 
     // copied from tesseract ocr passer
