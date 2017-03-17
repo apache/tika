@@ -162,7 +162,7 @@ public class Tess4JOCRParserTest extends TikaTest {
         ParseContext tesseractContext = new ParseContext();
         ParseContext tess4JContext = new ParseContext();
 
-        URL dirUrl = getClass().getClassLoader().getResource("test-documents/OCR_Compare/");
+        URL dirUrl = getClass().getClassLoader().getResource("test-documents/tess4JOCR/OCR_Compare/");
         assert dirUrl != null;
         File folder = new File(dirUrl.toURI());
         File[] listOfFiles = folder.listFiles();
