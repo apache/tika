@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.JDBCUtil;
@@ -39,6 +40,7 @@ import org.apache.tika.eval.io.DBWriter;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
+import org.apache.tika.util.PropsUtil;
 
 public abstract class EvalConsumerBuilder {
     private AtomicInteger count = new AtomicInteger(0);
@@ -48,23 +50,52 @@ public abstract class EvalConsumerBuilder {
     private MimeBuffer mimeBuffer;
     AtomicInteger initialized = new AtomicInteger(0);
 
-    public void init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs,
-                     JDBCUtil dbUtil, MimeBuffer mimeBuffer) throws IOException, SQLException {
-        this.queue = queue;
-        this.localAttrs = localAttrs;
-        this.dbUtil = dbUtil;
-        this.mimeBuffer = mimeBuffer;
-        populateRefTables();
+    public MimeBuffer init(ArrayBlockingQueue<FileResource> queue, Map<String, String> localAttrs,
+                     JDBCUtil dbUtil, boolean forceDrop) throws IOException, SQLException {
         if (initialized.getAndIncrement() > 0) {
             throw new RuntimeException("Can only init a consumer builder once!");
         }
+        this.queue = queue;
+        this.localAttrs = localAttrs;
+        this.dbUtil = dbUtil;
+        //the order of the following is critical
+        //step 1. update the table names with prefixes
+        updateTableInfosWithPrefixes(localAttrs);
+
+        JDBCUtil.CREATE_TABLE createRegularTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
+                JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
+
+        JDBCUtil.CREATE_TABLE createRefTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
+                JDBCUtil.CREATE_TABLE.SKIP_IF_EXISTS;
+
+        //step 2. create the tables
+        dbUtil.createTables(getNonRefTableInfos(), createRegularTable);
+        dbUtil.createTables(getRefTableInfos(), createRefTable);
+
+        //step 3. create mime buffer
+        this.mimeBuffer = new MimeBuffer(dbUtil.getConnection(), TikaConfig.getDefaultConfig());
+
+        //step 4. populate the reference tabless
+        populateRefTables();
+
+        return mimeBuffer;
     }
 
     public abstract FileResourceConsumer build() throws IOException, SQLException;
 
-    protected abstract List<TableInfo> getTableInfos(String tableNamePrefixA, String tableNamePrefixB);
+    protected abstract void updateTableInfosWithPrefixes(Map<String, String> attrs);
 
+    /**
+     *
+     * @return only the ref tables
+     */
     protected abstract List<TableInfo> getRefTableInfos();
+
+    /**
+     *
+     * @return the main tables, not including the ref tables
+     */
+    protected abstract List<TableInfo> getNonRefTableInfos();
 
     protected abstract void addErrorLogTablePairs(DBConsumersManager manager);
 
@@ -87,7 +118,7 @@ public abstract class EvalConsumerBuilder {
             return;
         }
 
-        IDBWriter writer = getDBWriter();
+        IDBWriter writer = getDBWriter(getRefTableInfos());
         Map<Cols, String> m = new HashMap<>();
         for (AbstractProfiler.PARSE_ERROR_TYPE t : AbstractProfiler.PARSE_ERROR_TYPE.values()) {
             m.clear();
@@ -113,15 +144,15 @@ public abstract class EvalConsumerBuilder {
         writer.close();
     }
 
-    protected IDBWriter getDBWriter() throws IOException, SQLException {
+    protected IDBWriter getDBWriter(List<TableInfo> tableInfos) throws IOException, SQLException {
         Connection conn = dbUtil.getConnection();
-        return new DBWriter(conn, getTableInfos(null, null), dbUtil, mimeBuffer);
+        return new DBWriter(conn, tableInfos, dbUtil, mimeBuffer);
     }
 
     ExtractReader.ALTER_METADATA_LIST getAlterMetadata(Map<String, String> localAttrs) {
 
         String alterExtractString = localAttrs.get("alterExtract");
-        ExtractReader.ALTER_METADATA_LIST alterExtractList = ExtractReader.ALTER_METADATA_LIST.AS_IS;
+        ExtractReader.ALTER_METADATA_LIST alterExtractList;
         if (alterExtractString == null || alterExtractString.equalsIgnoreCase("as_is")) {
             alterExtractList = ExtractReader.ALTER_METADATA_LIST.AS_IS;
         } else if (alterExtractString.equalsIgnoreCase("first_only")) {
@@ -133,6 +164,14 @@ public abstract class EvalConsumerBuilder {
                     " I don't understand:" + alterExtractString);
         }
         return alterExtractList;
+    }
+
+    protected ExtractReader buildExtractReader(Map<String, String> localAttrs) {
+        long minExtractLength = PropsUtil.getLong(localAttrs.get("minExtractLength"), -1L);
+        long maxExtractLength = PropsUtil.getLong(localAttrs.get("maxExtractLength"), -1L);
+
+        ExtractReader.ALTER_METADATA_LIST alterExtractList = getAlterMetadata(localAttrs);
+        return new ExtractReader(alterExtractList, minExtractLength, maxExtractLength);
     }
 
 

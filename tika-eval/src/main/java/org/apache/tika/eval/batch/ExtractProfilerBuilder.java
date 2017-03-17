@@ -23,16 +23,19 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.ExtractProfiler;
 import org.apache.tika.eval.db.TableInfo;
-import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.util.PropsUtil;
 
 
 public class ExtractProfilerBuilder extends EvalConsumerBuilder {
+
+    public final static String TABLE_PREFIX_KEY = "tablePrefix";
+
     private final List<TableInfo> tableInfos;
     private final List<TableInfo> refTableInfos;
     public ExtractProfilerBuilder() {
@@ -66,11 +69,6 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
 
         Path inputDir = PropsUtil.getPath(localAttrs.get("inputDir"), null);
 
-        long minExtractLength = PropsUtil.getLong(localAttrs.get("minExtractLength"), -1L);
-        long maxExtractLength = PropsUtil.getLong(localAttrs.get("maxExtractLength"), -1L);
-
-        ExtractReader.ALTER_METADATA_LIST alterExtractList = getAlterMetadata(localAttrs);
-
         //we _could_ set this to extracts (if not null)
         //here, but the Crawler defaults to "input" if nothing is passed
         //so this won't work
@@ -81,27 +79,29 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
             extracts = inputDir;
         }
         return new ExtractProfiler(queue, inputDir, extracts,
-                new ExtractReader(alterExtractList, minExtractLength, maxExtractLength),
-                getDBWriter());
+                buildExtractReader(localAttrs),
+                getDBWriter(tableInfos));
     }
 
-    //TODO: clean up the interface so we don't need vestigial B
     @Override
-    protected List<TableInfo> getTableInfos(String tableNamePrefix, String tableNamePrefixB) {
-        //ignore b
+    protected void updateTableInfosWithPrefixes(Map<String, String> attrs) {
+        String tableNamePrefix = attrs.get(TABLE_PREFIX_KEY);
         if (tableNamePrefix != null && !tableNamePrefix.equals("null")) {
             for (TableInfo tableInfo : tableInfos) {
                 tableInfo.setNamePrefix(tableNamePrefix);
             }
         }
-        List<TableInfo> allTables = new ArrayList<>();
-        allTables.addAll(tableInfos);
-        return Collections.unmodifiableList(allTables);
     }
+
 
     @Override
     protected List<TableInfo> getRefTableInfos() {
         return refTableInfos;
+    }
+
+    @Override
+    protected List<TableInfo> getNonRefTableInfos() {
+        return tableInfos;
     }
 
     @Override

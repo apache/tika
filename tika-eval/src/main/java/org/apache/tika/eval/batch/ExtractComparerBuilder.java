@@ -23,15 +23,18 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.ExtractComparer;
 import org.apache.tika.eval.db.TableInfo;
-import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.util.PropsUtil;
 
 public class ExtractComparerBuilder extends EvalConsumerBuilder {
+    public final static String TABLE_PREFIX_A_KEY = "tablePrefixA";
+    public final static String TABLE_PREFIX_B_KEY = "tablePrefixB";
+
     private final List<TableInfo> tableInfosA;
     private final List<TableInfo> tableInfosB;
     private final List<TableInfo> tableInfosAandB;
@@ -42,14 +45,12 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
         List<TableInfo> tableInfosB = new ArrayList<>();
         List<TableInfo> tableInfosAandB = new ArrayList<>();
         tableInfosA.add(ExtractComparer.PROFILES_A);
-        tableInfosA.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
         tableInfosA.add(ExtractComparer.EXCEPTION_TABLE_A);
         tableInfosA.add(ExtractComparer.CONTENTS_TABLE_A);
         tableInfosA.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
         tableInfosA.add(ExtractComparer.EMBEDDED_FILE_PATH_TABLE_A);
 
         tableInfosB.add(ExtractComparer.PROFILES_B);
-        tableInfosB.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         tableInfosB.add(ExtractComparer.EXCEPTION_TABLE_B);
         tableInfosB.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         tableInfosB.add(ExtractComparer.CONTENTS_TABLE_B);
@@ -84,56 +85,59 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
 
         Path inputRootDir = PropsUtil.getPath(localAttrs.get("inputDir"), null);
 
-        long minExtractLength = PropsUtil.getLong(localAttrs.get("minExtractLength"), -1L);
-        long maxExtractLength = PropsUtil.getLong(localAttrs.get("maxExtractLength"), -1L);
-
-        ExtractReader.ALTER_METADATA_LIST alterExtractList = getAlterMetadata(localAttrs);
-
-
         if (inputRootDir == null) {
             //this is for the sake of the crawler
             throw new RuntimeException("Must specify an -inputDir");
         }
 
         return new ExtractComparer(queue, inputRootDir, extractsA, extractsB,
-                new ExtractReader(alterExtractList, minExtractLength, maxExtractLength),
-                getDBWriter());
+                buildExtractReader(localAttrs),
+                getDBWriter(getNonRefTableInfos()));
     }
 
+
     @Override
-    protected List<TableInfo> getTableInfos(String tableNamePrefixA, String tableNamePrefixB) {
-        List<TableInfo> allTables = new ArrayList<>();
-        if (tableNamePrefixA != null) {
+    protected void updateTableInfosWithPrefixes(Map<String, String> attrs) {
+        String tablePrefixA = localAttrs.get(TABLE_PREFIX_A_KEY);
+
+        String tablePrefixB = localAttrs.get(TABLE_PREFIX_B_KEY);
+
+        tablePrefixA = (tablePrefixA == null || tablePrefixA.endsWith("_")) ? tablePrefixA : tablePrefixA+"_";
+        tablePrefixB = (tablePrefixB == null || tablePrefixB.endsWith("_")) ? tablePrefixB : tablePrefixB+"_";
+
+        if (tablePrefixA != null) {
             for (TableInfo tableInfo : tableInfosA) {
-                tableInfo.setNamePrefix(tableNamePrefixA);
+                tableInfo.setNamePrefix(tablePrefixA);
             }
         }
 
-        if (tableNamePrefixB != null) {
+        if (tablePrefixB != null) {
             for (TableInfo tableInfo : tableInfosB) {
-                tableInfo.setNamePrefix(tableNamePrefixB);
+                tableInfo.setNamePrefix(tablePrefixB);
             }
         }
 
-        if (tableNamePrefixA != null || tableNamePrefixB != null) {
-            String aAndB = (tableNamePrefixA == null) ? "" : tableNamePrefixA;
-            aAndB = (tableNamePrefixB == null) ? aAndB : aAndB+tableNamePrefixB;
+        if (tablePrefixA != null || tablePrefixB != null) {
+            String aAndB = (tablePrefixA == null) ? "" : tablePrefixA;
+            aAndB = (tablePrefixB == null) ? aAndB : aAndB+tablePrefixB;
             for (TableInfo tableInfo : tableInfosAandB) {
                 tableInfo.setNamePrefix(aAndB);
             }
         }
-
-        allTables.addAll(tableInfosA);
-        allTables.addAll(tableInfosB);
-        allTables.addAll(tableInfosAandB);
-        allTables.addAll(refTableInfos);
-        allTables = Collections.unmodifiableList(allTables);
-        return allTables;
     }
 
     @Override
     protected List<TableInfo> getRefTableInfos() {
         return refTableInfos;
+    }
+
+    @Override
+    protected List<TableInfo> getNonRefTableInfos() {
+        List<TableInfo> allNonRefTables = new ArrayList<>();
+        allNonRefTables.addAll(tableInfosA);
+        allNonRefTables.addAll(tableInfosB);
+        allNonRefTables.addAll(tableInfosAandB);
+        return Collections.unmodifiableList(allNonRefTables);
     }
 
     @Override

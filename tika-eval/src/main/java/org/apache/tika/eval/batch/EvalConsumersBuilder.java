@@ -31,7 +31,6 @@ import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.batch.builders.AbstractConsumersBuilder;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.JDBCUtil;
@@ -78,8 +77,6 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
             throw new RuntimeException(e);
         }
 
-        boolean forceDrop = PropsUtil.getBoolean(localAttrs.get("drop"), false);
-
         JDBCUtil jdbcUtil = null;
         if (db != null) {
             jdbcUtil = new H2Util(db);
@@ -94,23 +91,10 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
             throw new RuntimeException("Must specify consumerBuilderClass in config file");
         }
 
-        String tablePrefixA = localAttrs.get("tablePrefix");
-        if (tablePrefixA == null) {
-            tablePrefixA = localAttrs.get("tablePrefixA");
-        }
-        String tablePrefixB = localAttrs.get("tablePrefixB");
-
-        tablePrefixA = (tablePrefixA == null || tablePrefixA.endsWith("_")) ? tablePrefixA : tablePrefixA+"_";
-        tablePrefixB = (tablePrefixB == null || tablePrefixB.endsWith("_")) ? tablePrefixB : tablePrefixB+"_";
-
+        boolean forceDrop = PropsUtil.getBoolean(localAttrs.get("drop"), false);
         MimeBuffer mimeBuffer = null;
-        JDBCUtil.CREATE_TABLE createTable = (forceDrop) ? JDBCUtil.CREATE_TABLE.DROP_IF_EXISTS :
-                JDBCUtil.CREATE_TABLE.THROW_EX_IF_EXISTS;
         try {
-            jdbcUtil.createTables(consumerBuilder.getTableInfos(tablePrefixA, tablePrefixB), createTable);
-            jdbcUtil.createTables(consumerBuilder.getRefTableInfos(), JDBCUtil.CREATE_TABLE.SKIP_IF_EXISTS);
-            mimeBuffer = new MimeBuffer(jdbcUtil.getConnection(), TikaConfig.getDefaultConfig());
-            consumerBuilder.init(queue, localAttrs, jdbcUtil, mimeBuffer);
+            mimeBuffer = consumerBuilder.init(queue, localAttrs, jdbcUtil, forceDrop);
         } catch (IOException | SQLException e) {
             throw new RuntimeException(e);
         }
