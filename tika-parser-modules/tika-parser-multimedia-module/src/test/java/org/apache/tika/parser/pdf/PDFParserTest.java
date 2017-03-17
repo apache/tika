@@ -652,7 +652,7 @@ public class PDFParserTest extends TikaTest {
         context.set(PDFParserConfig.class, config);
 
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
-
+        debug(metadatas);
         assertContains("test images compressed using JBIG2",
                 metadatas.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
 
@@ -664,12 +664,9 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
 
         assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
-
-        //TODO mime/extension should be tested against JBIG2 once better
-        //supported by PDFBox and Levigo jbig2-imageio
-        assertEquals("image0.png",
+        assertEquals("image0.jb2",
                 metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals(MediaType.image("png").toString(),
+        assertEquals(MediaType.image("x-jbig2").toString(),
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));
     }
 
