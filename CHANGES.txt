@@ -75,6 +75,9 @@ Release 1.15 - ??
 
   * Upgrade SQLite "provided" dependency to 3.15.1.
 
+  * Update Apache CXF version to 3.0.12 (TIKA-2292).
+
+  * Add Lingo24 Language Detector (TIKA-2297).
 
 Release 1.14 - 10/19/2016
 
