@@ -43,7 +43,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore("need to fix tika-batch tests to make this work")
+@Ignore("move these tests to TikaEvalCLITest")
 public class ComparerBatchTest extends FSBatchTestBase {
 
     public final static String COMPARER_PROCESS_CLASS = "org.apache.tika.batch.fs.FSBatchProcessCLI";
