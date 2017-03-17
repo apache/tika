@@ -645,6 +645,11 @@ public class PDFParser extends AbstractParser {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
+	@Field
+	void setExtractBookmarksText(boolean extractBookmarksText) {
+		defaultConfig.setExtractBookmarksText(extractBookmarksText);
+	}
+
     @Field
     void setExtractInlineImages(boolean extractInlineImages) {
         defaultConfig.setExtractInlineImages(extractInlineImages);
