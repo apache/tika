@@ -204,12 +204,6 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 Metadata embeddedMetadata = new Metadata();
                 String extension = image.getSuffix();
                 
-                //TODO remove this next block when upgrading to PDFBox 2.0.5.
-                //See: https://issues.apache.org/jira/browse/PDFBOX-3634
-                if (extension == null) {
-                    extension = getJBIG2Suffix(image);
-                }
-                
                 if (extension == null || extension.equals("png")) {
                     embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
                     extension = "png";
@@ -371,16 +365,6 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     "Unable to write a newline character", e);
         }
     }
-    
-    //TODO remove this method once upgrading to PDFBox 2.0.5 which will
-    // then return jb2 suffix properly.
-    //See: https://issues.apache.org/jira/browse/PDFBOX-3634
-    private String getJBIG2Suffix(PDImageXObject image) {
-        List<COSName> filters = image.getStream().getFilters();
-        if (filters != null && filters.contains(COSName.JBIG2_DECODE)) {
-            return "jb2";
-        }
-        return null;
-    }
+
 }
 
