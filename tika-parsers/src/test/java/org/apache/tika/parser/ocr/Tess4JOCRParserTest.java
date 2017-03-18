@@ -17,8 +17,6 @@
 package org.apache.tika.parser.ocr;
 
 import java.io.*;
-import java.net.URISyntaxException;
-import java.net.URL;
 
 import net.sourceforge.tess4j.util.LoggHelper;
 import org.apache.tika.exception.TikaException;
@@ -39,8 +37,7 @@ import org.xml.sax.SAXException;
 public class Tess4JOCRParserTest extends TikaTest {
 
     private static final Logger logger = LoggerFactory.getLogger(new LoggHelper().toString());
-    private final String testResourcesDataPath = "src/test/resources/test-documents/tess4JOCR/";
-
+    
     @Test
     public void testSingleImageBMP() throws Exception {
 
@@ -135,85 +132,9 @@ public class Tess4JOCRParserTest extends TikaTest {
         assertEquals(expOutput, output.substring(0, expOutput.length()));
     }
 
-    // This test uses TesseractOCRParser's "Rotation.py" python script to detect the rotation angle,
-    // and ImageMagick to rotate the image, But this doesn't seem to be working.
-    @Test
-    public void testSingleSkewedImageTesseract() throws Exception {
-
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        config.setEnableImageProcessing(1);
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(TesseractOCRConfig.class, config);
-        String output = runTesseractOCR("eurotext_deskew.png", parseContext);
-        // logger.info(output);          // Uncomment this to witness OCR output
-        String expOutput = "The (quick) [brown] {fox} jumps!\nOver the $43,456.78 <lazy> #90 dog";
-        assertEquals(expOutput, output.substring(0, expOutput.length()));
-    }
-
-    // TesseractOCRParser vs Tess4JOCRParser
-    @Test
-    public void runBenchmark() throws IOException, TikaException, SAXException, URISyntaxException {
-
-        logger.info("Running Benchmark");
-        ContentHandler tesseractHandler = new BodyContentHandler(-1);
-        ContentHandler tess4JHandler = new BodyContentHandler(-1);
-        Metadata tesseractMetadata = new Metadata();
-        Metadata tess4JMetadata = new Metadata();
-        ParseContext tesseractContext = new ParseContext();
-        ParseContext tess4JContext = new ParseContext();
-
-        URL dirUrl = getClass().getClassLoader().getResource("test-documents/tess4JOCR/OCR_Compare/");
-        assert dirUrl != null;
-        File folder = new File(dirUrl.toURI());
-        File[] listOfFiles = folder.listFiles();
-        assert listOfFiles != null;
-
-        // Initializing parsers
-        Tess4JOCRParser tess4JParser = new Tess4JOCRParser();
-        TesseractOCRParser tesseractParser = new TesseractOCRParser();
-
-        long tess4JElapsedTime = 0;
-        long tesseractElapsedTime = 0;
-        int progress = 0;
-
-        for (File file : listOfFiles) {
-            progress += 1;
-            if (file.isFile()) {
-
-                // For tess4JParser
-                try (FileInputStream stream = new FileInputStream(file)) {
-                    long startTime = System.currentTimeMillis();
-                    tess4JParser.parse(stream, tess4JHandler, tess4JMetadata, tess4JContext);
-                    tess4JElapsedTime += System.currentTimeMillis() - startTime;
-                }
-                // logger.info(tess4JHandler.toString());           // Uncomment this to witness OCR output of Tess4J
-
-                // For tesseractParser
-                try (FileInputStream stream = new FileInputStream(file)) {
-                    long startTime = System.currentTimeMillis();
-                    tesseractParser.parse(stream, tesseractHandler, tesseractMetadata, tesseractContext);
-                    tesseractElapsedTime += System.currentTimeMillis() - startTime;
-                }
-                // logger.info(tesseractHandler.toString());        // Uncomment this to witness OCR output of Tesseract
-            }
-            logger.info("Current Progress: " + progress + "% |" +
-                    " Tess4JOCRParser: " + tess4JElapsedTime / 1000 + " S |" +
-                    " TesseractOCRParser: " + tesseractElapsedTime / 1000 + " S");
-        }
-    }
-
-    private String runTesseractOCR(String resource, ParseContext parseContext) throws IOException, TikaException, SAXException {
-
-        FileInputStream stream = new FileInputStream(testResourcesDataPath + resource);
-        TesseractOCRParser tesseractParser = new TesseractOCRParser();
-        ContentHandler handler = new BodyContentHandler(-1);
-        Metadata metadata = new Metadata();
-        tesseractParser.parse(stream, handler, metadata, parseContext);
-        return handler.toString();
-    }
-
     private String runTess4JOCR(String resource, ParseContext parseContext) throws IOException, TikaException, SAXException {
 
+        final String testResourcesDataPath = "src/test/resources/test-documents/tess4JOCR/";
         FileInputStream stream = new FileInputStream(testResourcesDataPath + resource);
         Tess4JOCRParser tess4JParser = new Tess4JOCRParser();
         ContentHandler handler = new BodyContentHandler(-1);
