@@ -135,8 +135,8 @@ public class Tess4JOCRParserTest extends TikaTest {
         assertEquals(expOutput, output.substring(0, expOutput.length()));
     }
 
-    // This test uses TesseractOCRParser's "Rotation.py" python script to rotate the image.
-    // But this doesn't seem to be working.
+    // This test uses TesseractOCRParser's "Rotation.py" python script to detect the rotation angle,
+    // and ImageMagick to rotate the image, But this doesn't seem to be working.
     @Test
     public void testSingleSkewedImageTesseract() throws Exception {
 

@@ -63,24 +63,26 @@ public class Tess4JOCRParser extends AbstractParser {
                     MediaType.image("tiff"), MediaType.image("bmp"), MediaType.image("gif"),
                     MediaType.image("jp2"), MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
-    private static final double MINIMUM_DESKEW_THRESHOLD = 0.05d;
 
     //instance variable. The tesseract model is loaded once and it will be reused
-    private ITesseract tesseract;
+    private volatile ITesseract tesseract;
 
     private ITesseract getOrInit(ParseContext context) {
         if (tesseract == null) {
             synchronized (this) {
-//                if (tesseract == null) {
-                TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-                tesseract = new Tesseract();
-                // We can set our own data path if we have it
-                tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
-                // Tesseract's quiet command-line option. Comment this if you need to see the log messages Tess4J gives
-                tesseract.setTessVariable("debug_file", "/dev/null");
-//                    tesseract.setLanguage(config.getLanguage());
-//                    tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
-//                }
+                if (tesseract == null) {
+                    TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+                    tesseract = new Tesseract();
+                    tesseract.setDatapath(LoadLibs.extractTessResources("tessdata").getParent());
+                    tesseract.setTessVariable("debug_file", "/dev/null");
+
+                    /** setting user's custom configs in the tesseract model is as simple as this,
+                     *  tesseract.setDatapath("custom datapath")
+                     *  tesseract.setLanguage(config.getLanguage());
+                     *  tesseract.setPageSegMode(Integer.parseInt(config.getPageSegMode()));
+                     *  But instead, we will create a XML based approach to set custom configs, similar to TIKA-1986
+                     */
+                }
             }
         }
         return tesseract;
@@ -122,17 +124,17 @@ public class Tess4JOCRParser extends AbstractParser {
     }
 
     // only supports processing rotated text at the moment
-    // TODO: adding density, depth, colorspace, filter, resize options for images
+    // TODO: adding density, depth, colorspace, filter, resize options
     private BufferedImage processImage(BufferedImage bufferedImage, TesseractOCRConfig config) {
         ImageDeskew id = new ImageDeskew(bufferedImage);
         double imageSkewAngle = id.getSkewAngle();
+        final double MINIMUM_DESKEW_THRESHOLD = 0.05d;
         if ((imageSkewAngle > MINIMUM_DESKEW_THRESHOLD || imageSkewAngle < -(MINIMUM_DESKEW_THRESHOLD))) {
             bufferedImage = ImageHelper.rotateImage(bufferedImage, -imageSkewAngle);
         }
         return bufferedImage;
     }
 
-    // copied from tesseract ocr passer
     private void extractOutput(String content, XHTMLContentHandler xhtml)
             throws SAXException {
 
