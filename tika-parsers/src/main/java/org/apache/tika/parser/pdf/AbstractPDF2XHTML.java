@@ -523,7 +523,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
             // Extract text for any bookmarks:
-            extractBookmarkText();
+			if(config.getExtractBookmarksText()) {
+                extractBookmarkText();
+            }
+
             try {
                 extractEmbeddedDocuments(pdf);
             } catch (IOException e) {

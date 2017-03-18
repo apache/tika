@@ -1,5 +1,6 @@
 Release 1.15 - ??
 
+
   * Extract images and thumbnails from ODT via Sam Bayer (TIKA-2295).
 
   * Enabled configuration of the EncodingDetector used by
@@ -40,7 +41,7 @@ Release 1.15 - ??
   * Added experimental SAX parser for .pptx files. To select this parser,
     set useSAXPptxExtractor(true) on OfficeParserConfig (TIKA-2210).
 
-  * Upgrade to PDFBox 2.0.4 (TIKA-2209).
+  * Upgrade to PDFBox 2.0.5 and JempBox 1.8.13 (TIKA-2209/TIKA-2236).
 
   * Refactor MockParser to consolidate service loading
     and mime types into tika-core/src/test (TIKA-2195).

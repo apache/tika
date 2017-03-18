@@ -513,6 +513,18 @@ public class PDFParserTest extends TikaTest {
         assertTrue(i < j);
     }
 
+    // TIKA-2303
+    @Test
+    public void testTurningOffBookmarks() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractBookmarksText(false);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, config);
+        String xml = getXML("testPDF_bookmarks.pdf", parseContext).xml;
+        assertNotContained("Denmark bookmark is here", xml);
+    }
+
+
     //TIKA-1124
     @Test
     public void testEmbeddedPDFEmbeddingAnotherDocument() throws Exception {
