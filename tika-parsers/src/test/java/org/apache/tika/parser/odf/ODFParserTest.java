@@ -29,6 +29,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
@@ -363,8 +364,8 @@ public class ODFParserTest extends TikaTest {
         Parser parser = new OpenDocumentParser();
         try (InputStream input = ODFParserTest.class.getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
             Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler(-1);
-            parser.parse(input, handler, metadata, new ParseContext());
+            ContentHandler handler = new BodyContentHandler();
+            parser.parse(input, handler, metadata, getNonRecursingParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -385,7 +386,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test //TIKA-2242
     public void testParagraphLevelFontStyles() throws Exception {
-        String xml = getXML("testODTStyles2.odt").xml;
+        String xml = getXML("testODTStyles2.odt", getNonRecursingParseContext()).xml;
         //test text span font-style properties
         assertContains("<p><b>name</b>, advocaat", xml);
         //test paragraph's font-style properties
@@ -404,5 +405,10 @@ public class ODFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
         assertEquals(3, metadataList.size());
     }
-    
+
+    private ParseContext getNonRecursingParseContext() {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, new EmptyParser());
+        return parseContext;
+    }
 }
