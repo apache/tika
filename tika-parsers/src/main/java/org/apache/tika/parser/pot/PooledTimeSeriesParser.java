@@ -74,7 +74,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
             isAvailable ? Collections.unmodifiableSet(
                     new HashSet<>(Arrays.asList(new MediaType[]{
                             MediaType.video("avi"), MediaType.video("mp4")
-                    }))) : Collections.EMPTY_SET;
+                    }))) : Collections.<MediaType>emptySet();
     ;
     // TODO: Add all supported video types
 

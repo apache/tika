@@ -76,7 +76,7 @@ public class RecursiveMetadataResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces({"application/json"})
-    @Path("form{"+HANDLER_TYPE_PARAM+" : (\\w+)?}")
+    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info,
                                              @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
@@ -110,7 +110,7 @@ public class RecursiveMetadataResource {
 
     @PUT
     @Produces("application/json")
-    @Path("{"+HANDLER_TYPE_PARAM+" : (\\w+)?}")
+    @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadata(InputStream is,
                                 @Context HttpHeaders httpHeaders,
                                 @Context UriInfo info,

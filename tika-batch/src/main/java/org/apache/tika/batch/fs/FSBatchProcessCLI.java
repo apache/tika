@@ -145,8 +145,7 @@ public class FSBatchProcessCLI {
     }
 
     public static void main(String[] args) throws Exception {
-
-        try{
+        try {
             FSBatchProcessCLI cli = new FSBatchProcessCLI(args);
             cli.execute(args);
         } catch (Throwable t) {

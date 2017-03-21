@@ -45,7 +45,7 @@ class QPWTextExtractor {
 
     private static final String OLE_DOCUMENT_NAME = "NativeContent_MAIN";
 
-    private enum Extractor{
+    private enum Extractor {
         IGNORE { @Override public void extract(Context ctx) throws IOException {
             ctx.in.skipWPByte(ctx.bodyLength);
         }},
@@ -62,7 +62,7 @@ class QPWTextExtractor {
             ctx.metadata.set(TikaCoreProperties.CREATOR, getQstrLabel(ctx.in));
             ctx.metadata.set(TikaCoreProperties.MODIFIER, getQstrLabel(ctx.in));
         }},
-        EXT_LINK { @Override public void extract(Context ctx) 
+        EXT_LINK { @Override public void extract(Context ctx)
                 throws IOException, SAXException {
             ctx.in.readWPShort(); // index
             ctx.in.readWPShort(); // page first
@@ -70,7 +70,7 @@ class QPWTextExtractor {
             ctx.xhtml.characters(getQstrLabel(ctx.in));
             ctx.xhtml.characters(System.lineSeparator());
         }},
-        STRING_TABLE { @Override public void extract(Context ctx) 
+        STRING_TABLE { @Override public void extract(Context ctx)
                 throws IOException, SAXException {
             long entries = ctx.in.readWPLong();
             ctx.in.readWPLong();  // Total used
@@ -92,26 +92,26 @@ class QPWTextExtractor {
             ctx.xhtml.characters(getQstrLabel(ctx.in));
             ctx.xhtml.characters(System.lineSeparator());
         }},
-        SHEET_HEADFOOT { @Override public void extract(Context ctx) 
+        SHEET_HEADFOOT { @Override public void extract(Context ctx)
                 throws IOException, SAXException {
             ctx.in.readWPShort(); // flag
             ctx.xhtml.characters(getQstrLabel(ctx.in));
             ctx.xhtml.characters(System.lineSeparator());
         }},
-        FORMULA_STRING_VALUE { @Override public void extract(Context ctx) 
+        FORMULA_STRING_VALUE { @Override public void extract(Context ctx)
                 throws IOException, SAXException {
             ctx.in.readWPShort(); // column
             ctx.in.readWPLong();  // row
             ctx.xhtml.characters(getQstrLabel(ctx.in));
         }},
-        CGENERICLABEL { @Override public void extract(Context ctx) 
+        CGENERICLABEL { @Override public void extract(Context ctx)
                 throws IOException, SAXException {
             ctx.in.readWPShort(); // column
             ctx.in.readWPLong();  // row
             ctx.in.readWPShort(); // format index
             ctx.xhtml.characters(getQstrLabel(ctx.in));
         }},
-        CCOMMENT { @Override public void extract(Context ctx) 
+        CCOMMENT { @Override public void extract(Context ctx)
                 throws IOException, SAXException {
             ctx.in.readWPShort(); // column
             ctx.in.readWPLong();  // row
@@ -123,13 +123,13 @@ class QPWTextExtractor {
         DEBUG { @Override public void extract(Context ctx) throws IOException {
             LOG.error("REC ({}/{}):{}", Integer.toHexString(ctx.type), ctx.bodyLength, ctx.in.readWPString(ctx.bodyLength));
         }};
-        public abstract void extract(Context ctx) 
+        public abstract void extract(Context ctx)
                 throws IOException, SAXException;
     }
-    
+
     // Holds extractors for each record types we are interested in.
     // All record types not defined here will be skipped.
-    private static final Map<Integer, Extractor> EXTRACTORS = 
+    private static final Map<Integer, Extractor> EXTRACTORS =
             new HashMap<>();
     static {
         //--- Global Records ---
@@ -146,18 +146,18 @@ class QPWTextExtractor {
         EXTRACTORS.put(0x0606, Extractor.SHEET_HEADFOOT); // Sheet footer
 
         //--- Cells ---
-        EXTRACTORS.put(0x0c02, Extractor.FORMULA_STRING_VALUE); 
-        EXTRACTORS.put(0x0c72, Extractor.CGENERICLABEL); 
-        EXTRACTORS.put(0x0c80, Extractor.CCOMMENT); 
+        EXTRACTORS.put(0x0c02, Extractor.FORMULA_STRING_VALUE);
+        EXTRACTORS.put(0x0c72, Extractor.CGENERICLABEL);
+        EXTRACTORS.put(0x0c80, Extractor.CCOMMENT);
     }
-    
+
     class Context {
         private final WPInputStream in;
         private final XHTMLContentHandler xhtml;
         private final Metadata metadata;
         private int type;
         private int bodyLength;
-        public Context(WPInputStream in, XHTMLContentHandler xhtml, 
+        public Context(WPInputStream in, XHTMLContentHandler xhtml,
                 Metadata metadata) {
             super();
             this.in = in;
@@ -165,20 +165,20 @@ class QPWTextExtractor {
             this.metadata = metadata;
         }
     }
-    
+
     @SuppressWarnings("resource")
     public void extract(
             InputStream input, XHTMLContentHandler xhtml, Metadata metadata)
                     throws IOException, SAXException, TikaException {
-        
+
         POIFSFileSystem pfs = new POIFSFileSystem(input);
         DirectoryNode rootNode = pfs.getRoot();
         if (rootNode == null || !rootNode.hasEntry(OLE_DOCUMENT_NAME)) {
             throw new UnsupportedFormatException("Unsupported QuattroPro file format. "
                     + "Looking for OLE entry \"" + OLE_DOCUMENT_NAME
-                    + "\". Found: "+ rootNode.getEntryNames());
+                    + "\". Found: " + (rootNode == null ? "null" : rootNode.getEntryNames()));
         }
-        
+
         //TODO shall we validate and throw warning/error if the file does not 
         //start with a BOF and ends with a EOF?
         xhtml.startElement("p");
@@ -200,7 +200,7 @@ class QPWTextExtractor {
         }
         xhtml.endElement("p");
     }
-    
+
     private boolean hasNext(InputStream in) throws IOException {
         try {
             in.mark(1);
@@ -209,7 +209,7 @@ class QPWTextExtractor {
             in.reset();
         }
     }
-    
+
     private static String getQstrLabel(WPInputStream in) throws IOException {
         // QSTR
         int count = in.readWPShort();

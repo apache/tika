@@ -108,7 +108,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
             thrown = t;
             metadataList = parser.getMetadata();
             if (metadataList == null) {
-                metadataList = new LinkedList<Metadata>();
+                metadataList = new LinkedList<>();
             }
             Metadata m = null;
             if (metadataList.size() == 0) {

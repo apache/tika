@@ -125,7 +125,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             long pulse = 100;
             for (int i = 0; i < totalTime; i += pulse) {
                 try {
-                    Thread.currentThread().sleep(pulse);
+                    Thread.sleep(pulse);
                 } catch (InterruptedException e) {
                     //swallow
                 }
@@ -221,12 +221,12 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         Path outputDir = Paths.get(args[1]);
         int totalThreads = Integer.parseInt(args[2]);
 
-        List<String> commandLine = new ArrayList<String>();
+        List<String> commandLine = new ArrayList<>();
         commandLine.addAll(Arrays.asList(args).subList(3, args.length));
         totalThreads = (totalThreads < 1) ? 1 : totalThreads;
         ExecutorService ex = Executors.newFixedThreadPool(totalThreads);
         ExecutorCompletionService<Integer> completionService =
-                new ExecutorCompletionService<Integer>(ex);
+                new ExecutorCompletionService<>(ex);
 
         for (int i = 0; i < totalThreads; i++) {
             StrawManTikaAppDriver driver =

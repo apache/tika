@@ -82,7 +82,7 @@ import org.xml.sax.SAXException;
 
 @Path("/tika")
 public class TikaResource {
-    public static final String GREETING = "This is Tika Server ("+new Tika().toString()+"). Please PUT\n";
+    public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
 

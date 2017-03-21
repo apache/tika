@@ -95,12 +95,12 @@ public class TesseractOCRParser extends AbstractParser {
     private static final long serialVersionUID = -8167538283213097265L;
     private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(new MediaType[] {
+            new HashSet<>(Arrays.asList(new MediaType[]{
                     MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
                     MediaType.image("bmp"), MediaType.image("gif"), MediaType.image("jp2"),
                     MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
-    private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<String, Boolean>();
+    private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<>();
 
 
 
@@ -182,7 +182,6 @@ public class TesseractOCRParser extends AbstractParser {
     
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-
         TemporaryResources tmp = new TemporaryResources();
         FileOutputStream fos = null;
         TikaInputStream tis = null;
@@ -195,7 +194,6 @@ public class TesseractOCRParser extends AbstractParser {
             ImageIO.write(bImage, "png", fos);
             tis = TikaInputStream.get(file);
             parse(tis, handler, metadata, context);
-
         } finally {
             tmp.dispose();
             if (tis != null)
@@ -203,13 +201,11 @@ public class TesseractOCRParser extends AbstractParser {
             if (fos != null)
                 fos.close();
         }
-
     }
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
-
         TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
         // If Tesseract is not on the path with the current config, do not try to run OCR
         // getSupportedTypes shouldn't have listed us as handling it, so this should only
@@ -290,7 +286,6 @@ public class TesseractOCRParser extends AbstractParser {
         } finally {
             tmp.dispose();
         }
-
     }
 
     /**
@@ -420,7 +415,6 @@ public class TesseractOCRParser extends AbstractParser {
      *           if an input error occurred
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
-
         String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
                 config.getLanguage(), "-psm", config.getPageSegMode(),
                 config.getOutputType().name().toLowerCase(Locale.US),
@@ -437,7 +431,7 @@ public class TesseractOCRParser extends AbstractParser {
         logStream("OCR MSG", out, input);
         logStream("OCR ERROR", err, input);
 
-        FutureTask<Integer> waitTask = new FutureTask<Integer>(new Callable<Integer>() {
+        FutureTask<Integer> waitTask = new FutureTask<>(new Callable<Integer>() {
             public Integer call() throws Exception {
                 return process.waitFor();
             }
@@ -448,22 +442,18 @@ public class TesseractOCRParser extends AbstractParser {
 
         try {
             waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
-
         } catch (InterruptedException e) {
             waitThread.interrupt();
             process.destroy();
             Thread.currentThread().interrupt();
             throw new TikaException("TesseractOCRParser interrupted", e);
-
         } catch (ExecutionException e) {
             // should not be thrown
-
         } catch (TimeoutException e) {
             waitThread.interrupt();
             process.destroy();
             throw new TikaException("TesseractOCRParser timeout", e);
         }
-
     }
 
     /**
@@ -480,7 +470,6 @@ public class TesseractOCRParser extends AbstractParser {
      *           if an input error occurred
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
-
         xhtml.startElement("div", "class", "ocr");
         try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             char[] buffer = new char[1024];
@@ -581,7 +570,7 @@ public class TesseractOCRParser extends AbstractParser {
 
         private static Set<String> unmodifiableSet(String... elements) {
             return Collections.unmodifiableSet(
-                    new HashSet<String>(Arrays.asList(elements)));
+                    new HashSet<>(Arrays.asList(elements)));
         }
     }
 }

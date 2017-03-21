@@ -190,7 +190,7 @@ public class TikaServerCli {
             TikaResource.init(tika, digester, inputStreamFactory);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
-            List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
+            List<ResourceProvider> rCoreProviders = new ArrayList<>();
             rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
             rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
             rCoreProviders.add(new SingletonResourceProvider(new DetectorResource()));
@@ -202,11 +202,11 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaParsers()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
-            List<ResourceProvider> rAllProviders = new ArrayList<ResourceProvider>(rCoreProviders);
+            List<ResourceProvider> rAllProviders = new ArrayList<>(rCoreProviders);
             rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(rCoreProviders)));
             sf.setResourceProviders(rAllProviders);
 
-            List<Object> providers = new ArrayList<Object>();
+            List<Object> providers = new ArrayList<>();
             providers.add(new TarWriter());
             providers.add(new ZipWriter());
             providers.add(new CSVMessageBodyWriter());
@@ -229,8 +229,7 @@ public class TikaServerCli {
             BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
             JAXRSBindingFactory factory = new JAXRSBindingFactory();
             factory.setBus(sf.getBus());
-            manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
-                    factory);
+            manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
             sf.create();
             LOG.info("Started Apache Tika server at {}", url);
         } catch (Exception ex) {

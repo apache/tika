@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class BatchProcessDriverCLI {
-
     /**
      * This relies on an special exit values of 254 (do not restart),
      * 0 ended correctly, 253 ended with exception (do restart)
@@ -56,10 +55,8 @@ public class BatchProcessDriverCLI {
     //how many times to wait pulseMillis milliseconds if a restart
     //message has been received through stdout, but the
     //child process has not yet exited
-    private int waitNumLoopsAfterRestartmessage = 60;
-    int loopsAfterRestartMessageReceived = 0;
-
-
+    private int waitNumLoopsAfterRestartMessage = 60;
+    private int loopsAfterRestartMessageReceived = 0;
 
     private volatile boolean userInterrupted = false;
     private boolean receivedRestartMsg = false;

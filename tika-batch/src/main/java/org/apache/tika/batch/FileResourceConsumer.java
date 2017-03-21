@@ -128,7 +128,6 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         return new FileConsumerFutureResult(currentFile, numResourcesConsumed);
     }
 
-
     /**
      * Main piece of code that needs to be implemented.  Clients
      * are responsible for closing streams and handling the exceptions
@@ -419,5 +418,4 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             close(is);
         }
     }
-
 }

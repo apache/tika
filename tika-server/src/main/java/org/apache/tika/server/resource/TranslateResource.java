@@ -108,5 +108,4 @@ public class TranslateResource {
 		}
 		return null;
 	}
-
 }

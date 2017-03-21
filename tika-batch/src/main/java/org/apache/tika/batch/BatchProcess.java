@@ -51,7 +51,6 @@ import org.slf4j.LoggerFactory;
  * communicate without interference with the parent process on stderr.
  */
 public class BatchProcess implements Callable<ParallelFileProcessingResult> {
-
     public enum BATCH_CONSTANTS {
         BATCH_PROCESS_EXCEEDED_MAX_ALIVE_TIME,
         BATCH_PROCESS_FATAL_MUST_RESTART
@@ -110,7 +109,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         this.consumersManager = consumersManager;
         this.reporter = reporter;
         this.interrupter = interrupter;
-        timedOuts = new ArrayBlockingQueue<FileStarted>(consumersManager.getConsumers().size());
+        timedOuts = new ArrayBlockingQueue<>(consumersManager.getConsumers().size());
         this.consumersManagerMaxMillis = consumersManager.getConsumersManagerMaxMillis();
     }
 
@@ -146,8 +145,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             ExecutorService ex = Executors.newFixedThreadPool(numConsumers
                     + numNonConsumers);
             CompletionService<IFileProcessorFutureResult> completionService =
-                    new ExecutorCompletionService<IFileProcessorFutureResult>(
-                            ex);
+                    new ExecutorCompletionService<>(ex);
             TimeoutChecker timeoutChecker = new TimeoutChecker();
 
             try {
@@ -175,13 +173,11 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         State state = new State();
         LOG.info("BatchProcess starting up");
 
-
         state.start = new Date().getTime();
         completionService.submit(interrupter);
         completionService.submit(fileResourceCrawler);
         completionService.submit(reporter);
         completionService.submit(timeoutChecker);
-
 
         for (FileResourceConsumer consumer : consumersManager.getConsumers()) {
             completionService.submit(consumer);
@@ -543,7 +539,6 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
     }
 
     private class TimeoutChecker implements Callable<IFileProcessorFutureResult> {
-
         @Override
         public TimeoutFutureResult call() throws Exception {
             while (timedOuts.size() == 0) {

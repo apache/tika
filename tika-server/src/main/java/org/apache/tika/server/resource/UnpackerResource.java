@@ -77,7 +77,7 @@ public class UnpackerResource {
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
-            ArrayList<String> list = new ArrayList<String>(values.length + 1);
+            ArrayList<String> list = new ArrayList<>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
             writer.writeNext(list.toArray(values));
@@ -135,7 +135,7 @@ public class UnpackerResource {
             ch = new DefaultHandler();
         }
 
-        Map<String, byte[]> files = new HashMap<String, byte[]>();
+        Map<String, byte[]> files = new HashMap<>();
         MutableInt count = new MutableInt();
 
         pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));

@@ -54,8 +54,7 @@ public class ForkParser extends AbstractParser {
 
     private int currentlyInUse = 0;
 
-    private final Queue<ForkClient> pool =
-        new LinkedList<ForkClient>();
+    private final Queue<ForkClient> pool = new LinkedList<>();
 
     private long serverPulseMillis = 5000;
 
@@ -134,7 +133,7 @@ public class ForkParser extends AbstractParser {
      * @param java java command line
      */
     public void setJavaCommand(List<String> java) {
-        this.java = new ArrayList<String>(java);
+        this.java = new ArrayList<>(java);
     }
 
     /**

@@ -266,7 +266,8 @@
               org.xml.sax.helpers;resolution:=optional,
               org.xmlpull.v1;resolution:=optional,
               com.microsoft.schemas.office.powerpoint;resolution:=optional,
-              com.microsoft.schemas.office.word;resolution:=optional,              sun.misc;resolution:=optional,
+              com.microsoft.schemas.office.word;resolution:=optional,
+              sun.misc;resolution:=optional,
               ucar.units;resolution:=optional,
               ucar.httpservices;resolution:=optional,
               ucar.nc2.util;resolution:=optional,
@@ -443,4 +444,4 @@
     <system>Jenkins</system>
     <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
-</project>  
+</project>

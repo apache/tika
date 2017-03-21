@@ -59,7 +59,7 @@ public class ImageParser extends AbstractParser {
     private static final Set<MediaType> TMP_SUPPORTED;
 
     static {
-        TMP_SUPPORTED = new HashSet<MediaType>(Arrays.asList(
+        TMP_SUPPORTED = new HashSet<>(Arrays.asList(
                 MAIN_BMP_TYPE,
                 OLD_BMP_TYPE,
                 MediaType.image("gif"),
@@ -217,5 +217,4 @@ public class ImageParser extends AbstractParser {
         xhtml.startDocument();
         xhtml.endDocument();
     }
-
 }

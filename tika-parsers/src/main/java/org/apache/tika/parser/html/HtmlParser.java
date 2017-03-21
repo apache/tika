@@ -58,7 +58,7 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
     private static final MediaType X_ASP = MediaType.application("x-asp");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.text("html"),
                     XHTML,
                     WAP_XHTML,
