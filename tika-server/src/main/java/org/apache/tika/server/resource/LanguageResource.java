@@ -29,16 +29,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/language")
 public class LanguageResource {
-
-	private static final Log logger = LogFactory.getLog(LanguageResource.class
-			.getName());
+	private static final Logger LOG = LoggerFactory.getLogger(LanguageResource.class);
 
 	@PUT
 	@POST
@@ -49,8 +47,7 @@ public class LanguageResource {
 		String fileTxt = IOUtils.toString(is, UTF_8);
 		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(fileTxt);
 		String detectedLang = language.getLanguage();
-		logger.info("Detecting language for incoming resource: ["
-				+ detectedLang + "]");
+		LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
 		return detectedLang;
 	}
 
@@ -62,8 +59,7 @@ public class LanguageResource {
 	public String detect(final String string) throws IOException {
 		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(string);
 		String detectedLang = language.getLanguage();
-		logger.info("Detecting language for incoming resource: ["
-				+ detectedLang + "]");
+		LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
 		return detectedLang;
 	}
 

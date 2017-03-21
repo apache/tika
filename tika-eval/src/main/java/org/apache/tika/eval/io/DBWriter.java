@@ -26,13 +26,14 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.io.IOExceptionWithCause;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is still in its early stages.  The idea is to
@@ -45,9 +46,9 @@ import org.apache.tika.io.IOExceptionWithCause;
  * DBWriter creates its own PreparedStatements at initialization.
  */
 public class DBWriter implements IDBWriter {
-    private static final AtomicInteger WRITER_ID = new AtomicInteger();
+    private static final Logger LOG = LoggerFactory.getLogger(DBWriter.class);
 
-    private static Logger logger = Logger.getLogger(DBWriter.class);
+    private static final AtomicInteger WRITER_ID = new AtomicInteger();
     private final AtomicLong insertedRows = new AtomicLong();
     private final Long commitEveryX = 1000L;
 
@@ -116,7 +117,7 @@ public class DBWriter implements IDBWriter {
             dbUtil.insert(p, table, data);
             long rows = insertedRows.incrementAndGet();
             if (rows % commitEveryX == 0) {
-                logger.debug("writer ("+myId+") is committing after "+ rows + " rows");
+                LOG.debug("writer ({}) is committing after {} rows", myId, rows);
                 conn.commit();
             }
         } catch (SQLException e) {

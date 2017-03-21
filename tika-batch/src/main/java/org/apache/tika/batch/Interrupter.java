@@ -36,8 +36,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * In the future, this may implement a common IInterrupter interface for more flexibility.
  */
 public class Interrupter implements Callable<IFileProcessorFutureResult> {
+    private static final Logger LOG = LoggerFactory.getLogger(Interrupter.class);
 
-    private Logger logger = LoggerFactory.getLogger(Interrupter.class);
 	public IFileProcessorFutureResult call(){
 		try{
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, UTF_8));
@@ -52,7 +52,7 @@ public class Interrupter implements Callable<IFileProcessorFutureResult> {
 		} catch (InterruptedException e){
 		    //canceller was interrupted
 		} catch (IOException e){
-            logger.error("IOException from STDIN in CommandlineInterrupter.");
+            LOG.error("IOException from STDIN in CommandlineInterrupter.");
 		}
 		return new InterrupterFutureResult();
 	}

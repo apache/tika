@@ -31,18 +31,18 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Path("/meta")
 public class MetadataResource {
-    private static final Log logger = LogFactory.getLog(MetadataResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
     @POST
     @Consumes("multipart/form-data")
@@ -98,7 +98,7 @@ public class MetadataResource {
             // if we did not see the field
             defaultErrorResponse = Response.Status.NOT_FOUND;
         } catch (Exception e) {
-            logger.info("Failed to process field " + field, e);
+            LOG.info("Failed to process field {}", field, e);
         }
 
         if (metadata == null || metadata.get(field) == null) {
@@ -122,8 +122,8 @@ public class MetadataResource {
         TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
         //no need to pass parser for embedded document parsing
         TikaResource.fillParseContext(context, httpHeaders, null);
-        TikaResource.logRequest(logger, info, metadata);
-        TikaResource.parse(parser, logger, info.getPath(), is,
+        TikaResource.logRequest(LOG, info, metadata);
+        TikaResource.parse(parser, LOG, info.getPath(), is,
                 new LanguageHandler() {
                     public void endDocument() {
                         metadata.set("language", getLanguage().getLanguage());

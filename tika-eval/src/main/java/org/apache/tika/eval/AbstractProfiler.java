@@ -258,13 +258,13 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         try {
             return FilenameUtils.getName(path);
         } catch (IllegalArgumentException e) {
-            logger.warn(e.getMessage() + " in "+path);
+            LOG.warn("{} in {}", e.getMessage(), path);
         }
         path = path.replaceAll("\u0000", " ");
         try {
             return FilenameUtils.getName(path);
         } catch (IllegalArgumentException e) {
-            logger.warn("Again: " + e.getMessage() + " in "+path);
+            LOG.warn("Again: {} in {}", e.getMessage(), path);
         }
         //give up
         return "";
@@ -319,7 +319,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             commonTokenResult = commonTokenCountManager.countTokenOverlaps(langid,
                     tokenCounter.getTokens(fieldName));
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            LOG.error("{}", e.getMessage(), e);
         }
         data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
         data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
@@ -574,7 +574,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         try {
             srcLen = Files.size(inputFile);
         } catch (IOException e) {
-            logger.warn("Couldn't get length for: "+inputFile.toAbsolutePath());
+            LOG.warn("Couldn't get length for: {}", inputFile.toAbsolutePath());
         }
         return new EvalFilePaths(relativeSourceFilePath, extractFile, srcLen);
     }

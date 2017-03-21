@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.wordperfect;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * WordPerfect 5.x constant values used for mapping WordPerfect charsets to
@@ -25,8 +25,7 @@ import org.apache.log4j.Logger;
  * @author Pascal Essiembre
  */
 final class WP5Charsets {
-
-    private static final Logger LOG = LogManager.getLogger(WP5Charsets.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WP5Charsets.class);
 
     /**
      * Extended character sets used when fixed-length multi-byte functions
@@ -192,11 +191,10 @@ final class WP5Charsets {
 
     public static void append(StringBuilder out, int charset, int charval) {
         if (charset >= WP5Charsets.EXTENDED_CHARSETS.length) {
-            LOG.debug("Unsupported WordPerfect 5.x charset: " + charset);
+            LOG.debug("Unsupported WordPerfect 5.x charset: {}", charset);
             out.append(' ');
         } else if (charval >= WP5Charsets.EXTENDED_CHARSETS[charset].length) {
-            LOG.debug("Unsupported WordPerfect 5.x charset (" + charset 
-                    + ") character value: " + charval);
+            LOG.debug("Unsupported WordPerfect 5.x charset ({}) character value: {}", charset, charval);
             out.append(' ');
         } else {
             out.append(WP5Charsets.EXTENDED_CHARSETS[charset][charval]);

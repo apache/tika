@@ -51,8 +51,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.tika.Tika;
@@ -77,6 +75,8 @@ import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.server.InputStreamFactory;
 import org.apache.tika.server.TikaServerParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -86,8 +86,7 @@ public class TikaResource {
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
 
-
-    private static final Log logger = LogFactory.getLog(TikaResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
 
     private static TikaConfig tikaConfig;
     private static DigestingParser.Digester digester = null;
@@ -147,12 +146,7 @@ public class TikaResource {
                 }
             } catch (ParseException e) {
                 // not a valid content-disposition field
-            	e.printStackTrace();
-            	logger.warn(String.format(
-                        Locale.ROOT,
-                        "Parse exception %s determining content disposition",
-                        e.getMessage()
-                ), e);
+                LOG.warn("Parse exception {} determining content disposition", e.getMessage(), e);
             }
         }
 
@@ -308,43 +302,26 @@ public class TikaResource {
 
     }
 
-    public static void parse(Parser parser, Log logger, String path, InputStream inputStream,
+    public static void parse(Parser parser, Logger logger, String path, InputStream inputStream,
                              ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
         try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream)) {
             parser.parse(tikaInputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
             throw new TikaServerParseException(e);
         } catch (EncryptedDocumentException e) {
-            logger.warn(String.format(
-                    Locale.ROOT,
-                    "%s: Encrypted document",
-                    path
-            ), e);
+            logger.warn("{}: Encrypted document", path, e);
             throw new TikaServerParseException(e);
         } catch (Exception e) {
-            logger.warn(String.format(
-                    Locale.ROOT,
-                    "%s: Text extraction failed",
-                    path
-            ), e);
+            logger.warn("{}: Text extraction failed", path, e);
             throw new TikaServerParseException(e);
         }
     }
 
-    public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
+    public static void logRequest(Logger logger, UriInfo info, Metadata metadata) {
         if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE) == null) {
-            logger.info(String.format(
-                    Locale.ROOT,
-                    "%s (autodetecting type)",
-                    info.getPath()
-            ));
+            logger.info("{} (autodetecting type)", info.getPath());
         } else {
-            logger.info(String.format(
-                    Locale.ROOT,
-                    "%s (%s)",
-                    info.getPath(),
-                    metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)
-            ));
+            logger.info("{} ({})", info.getPath(), metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
         }
     }
 
@@ -377,7 +354,7 @@ public class TikaResource {
         fillMetadata(parser, metadata, context, httpHeaders);
         fillParseContext(context, httpHeaders, parser);
 
-        logRequest(logger, info, metadata);
+        logRequest(LOG, info, metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
@@ -386,7 +363,7 @@ public class TikaResource {
                 BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
                 try (InputStream inputStream = is) {
-                    parse(parser, logger, info.getPath(), inputStream, body, metadata, context);
+                    parse(parser, LOG, info.getPath(), inputStream, body, metadata, context);
                 }
             }
         };
@@ -432,7 +409,7 @@ public class TikaResource {
         fillParseContext(context, httpHeaders, parser);
 
 
-        logRequest(logger, info, metadata);
+        logRequest(LOG, info, metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream)
@@ -452,7 +429,7 @@ public class TikaResource {
                     throw new WebApplicationException(e);
                 }
 
-                parse(parser, logger, info.getPath(), is, content, metadata, context);
+                parse(parser, LOG, info.getPath(), is, content, metadata, context);
             }
         };
     }

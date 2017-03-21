@@ -52,7 +52,6 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -69,6 +68,8 @@ import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.parser.jpeg.JpegParser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -89,6 +90,8 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  */
 public class TesseractOCRParser extends AbstractParser {
+    private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
+
     private static final long serialVersionUID = -8167538283213097265L;
     private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
@@ -521,8 +524,7 @@ public class TesseractOCRParser extends AbstractParser {
                     IOUtils.closeQuietly(stream);
                 }
 
-                String msg = out.toString();
-                LogFactory.getLog(TesseractOCRParser.class).debug(msg);
+                LOG.debug("{}", out);
             }
         }.start();
     }

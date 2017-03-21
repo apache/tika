@@ -57,7 +57,6 @@ import java.util.Set;
  *
  */
 public class NamedEntityParser extends AbstractParser {
-
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
     public static final String MD_KEY_PREFIX = "NER_";

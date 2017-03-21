@@ -53,8 +53,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class ResultsReporter {
-
-    protected static Logger LOGGER = LoggerFactory.getLogger(ResultsReporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ResultsReporter.class);
 
     private static Options OPTIONS;
 
@@ -257,7 +256,7 @@ public class ResultsReporter {
 
                 Path reportsRootDirectory = Paths.get(commandLine.getOptionValue("rd", "reports"));
                 if (Files.isDirectory(reportsRootDirectory)) {
-                    LOGGER.warn("'Reports' directory exists.  Will overwrite existing reports.");
+                    LOG.warn("'Reports' directory exists.  Will overwrite existing reports.");
                 }
 
                 resultsReporter.execute(c, reportsRootDirectory);

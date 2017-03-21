@@ -26,14 +26,14 @@ import java.io.InputStream;
 import java.sql.SQLException;
 
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.ParseContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class XMLLogReader {
-
-    private final static Logger logger = Logger.getLogger(XMLLogReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(XMLLogReader.class);
     //class that wraps a logger's xml output
     //into a single xml parseable input stream.
 
@@ -59,10 +59,10 @@ public class XMLLogReader {
                             handler.handleMsg(level, reader.getElementText());
                         } catch (IOException e) {
                             e.printStackTrace();
-                            logger.warn("Error parsing: "+reader.getElementText());
+                            LOG.warn("Error parsing: {}", reader.getElementText());
                         } catch (SQLException e) {
                             e.printStackTrace();
-                            logger.warn("SQLException: "+e.getMessage());
+                            LOG.warn("SQLException: {}", e.getMessage());
                         }
                     }
                     break;

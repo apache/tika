@@ -49,13 +49,11 @@ import org.slf4j.LoggerFactory;
  * the "comparisons" table.  It should not be run in a multithreaded environment.
  */
 public class XMLErrorLogUpdater {
-
-    protected static Logger LOGGER = LoggerFactory.getLogger(ResultsReporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ResultsReporter.class);
 
     private Statement statement;
 
     public static void main(String[] args) throws Exception {
-
         XMLErrorLogUpdater writer = new XMLErrorLogUpdater();
         Path xmlLogFileA = Paths.get(args[0]);
         Path xmlLogFileB = Paths.get(args[1]);
@@ -174,9 +172,9 @@ public class XMLErrorLogUpdater {
             int updated = statement.executeUpdate(sql);
             if (updated == 0) {
                 //TODO: log
-                LOGGER.warn("made no updates in xmlerrorlogupdater!");
+                LOG.warn("made no updates in xmlerrorlogupdater!");
             } else if (updated > 1) {
-                LOGGER.warn("made too many updates");
+                LOG.warn("made too many updates");
             }
         }
 
@@ -195,9 +193,9 @@ public class XMLErrorLogUpdater {
             rs.close();
 
             if (resultCount == 0) {
-                LOGGER.warn("Should have found a container for: "+resourceId);
+                LOG.warn("Should have found a container for: {}", resourceId);
             } else if (resultCount > 1) {
-                LOGGER.error("Records ids should be unique:"+resourceId);
+                LOG.error("Records ids should be unique: {}", resourceId);
             }
 /*
             if (containerId < 0) {

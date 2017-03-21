@@ -19,8 +19,6 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hpsf.ClassID;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
@@ -48,7 +46,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
 abstract class AbstractPOIFSExtractor {
-    private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private PasswordProvider passwordProvider;
     protected final Metadata parentMetadata;//metadata of the parent/container document

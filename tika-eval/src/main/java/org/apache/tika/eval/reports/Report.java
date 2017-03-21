@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Row;
@@ -39,13 +38,14 @@ import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class represents a single report.
  */
 public class Report {
-
-    static final Logger logger = Logger.getLogger(Report.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Report.class);
 
     final String NULL_VALUE = "";//TODO: make this configurable!!!
     Map<String, XSLXCellFormatter> cellFormatters = new HashMap<>();
@@ -60,7 +60,7 @@ public class Report {
     String reportName;
 
     public void writeReport(Connection c, Path reportsRoot) throws SQLException, IOException {
-        logger.info("Writing report: "+reportName + " to "+reportFilename);
+        LOG.info("Writing report: {} to {}", reportName, reportFilename);
         dumpXLSX(c, reportsRoot);
     }
 
@@ -189,8 +189,7 @@ public class Report {
                 } else {
                     cell.setCellValue(rs.getString(colIndex));
                 }
-                logger.warn("Couldn't find type for: " + meta.getColumnType(colIndex) +
-                        ". Defaulting to String");
+                LOG.warn("Couldn't find type for: {}. Defaulting to String", meta.getColumnType(colIndex));
         }
     }
 

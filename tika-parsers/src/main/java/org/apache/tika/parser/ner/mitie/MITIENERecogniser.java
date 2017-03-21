@@ -40,7 +40,6 @@ import java.util.ArrayList;
  *
  */
 public class MITIENERecogniser implements NERecogniser {
-
     private static final Logger LOG = LoggerFactory.getLogger(MITIENERecogniser.class);
 
     public static final String MODEL_PROP_NAME = "ner.mitie.model";

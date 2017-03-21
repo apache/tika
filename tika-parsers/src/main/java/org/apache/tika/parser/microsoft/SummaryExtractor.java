@@ -22,8 +22,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.MarkUnsupportedException;
@@ -44,12 +42,14 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extractor for Common OLE2 (HPSF) metadata
  */
 public class SummaryExtractor {
-    private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractPOIFSExtractor.class);
 
     private static final String SUMMARY_INFORMATION =
             SummaryInformation.DEFAULT_STREAM_NAME;
@@ -97,7 +97,7 @@ public class SummaryExtractor {
         } catch (MarkUnsupportedException e) {
             throw new TikaException("Invalid DocumentInputStream", e);
         } catch (Exception e) {
-            logger.warn("Ignoring unexpected exception while parsing summary entry " + entryName, e);
+            LOG.warn("Ignoring unexpected exception while parsing summary entry {}", entryName, e);
         }
     }
 

@@ -77,7 +77,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         //os can be null if fsOSFactory is set to skip processing a file if the output
         //file already exists
         if (os == null) {
-            logger.debug("Skipping: " + fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
+            LOG.debug("Skipping: {}", fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
             return false;
         }
 
@@ -91,8 +91,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
             handler = contentHandlerFactory.getNewContentHandler(os, getOutputEncoding());
         } catch (UnsupportedEncodingException e) {
             incrementHandledExceptions();
-            logger.error(getXMLifiedLogMsg("output_encoding_ex",
-                    fileResource.getResourceId(), e));
+            LOG.error(getXMLifiedLogMsg("output_encoding_ex", fileResource.getResourceId(), e));
             flushAndClose(os);
             throw new RuntimeException(e);
         }

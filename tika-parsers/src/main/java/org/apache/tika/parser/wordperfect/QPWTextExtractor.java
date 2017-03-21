@@ -21,8 +21,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import com.google.common.base.Strings;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
@@ -32,6 +31,8 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.QuattroPro;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 /**
@@ -40,10 +41,8 @@ import org.xml.sax.SAXException;
  * @author Pascal Essiembre
  */
 class QPWTextExtractor {
+    private static final Logger LOG = LoggerFactory.getLogger(QPWTextExtractor.class);
 
-    private static final Logger LOG = 
-            LogManager.getLogger(QPWTextExtractor.class);
-    
     private static final String OLE_DOCUMENT_NAME = "NativeContent_MAIN";
 
     private enum Extractor{
@@ -122,9 +121,7 @@ class QPWTextExtractor {
         }},
         // Use to print out a chunk
         DEBUG { @Override public void extract(Context ctx) throws IOException {
-            LOG.error("REC ("
-                    + Integer.toHexString(ctx.type) + "/" + ctx.bodyLength 
-                    + "):" + ctx.in.readWPString(ctx.bodyLength));
+            LOG.error("REC ({}/{}):{}", Integer.toHexString(ctx.type), ctx.bodyLength, ctx.in.readWPString(ctx.bodyLength));
         }};
         public abstract void extract(Context ctx) 
                 throws IOException, SAXException;

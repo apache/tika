@@ -68,8 +68,8 @@ import java.util.Set;
  * @since Apache Tika 1.14
  */
 public class ObjectRecognitionParser extends AbstractParser implements Initializable {
+    private static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
 
-    public static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
     public static final String MD_KEY = "OBJECT";
     public static final String MD_REC_IMPL_KEY =
             ObjectRecognitionParser.class.getPackage().getName() + ".object.rec.impl";

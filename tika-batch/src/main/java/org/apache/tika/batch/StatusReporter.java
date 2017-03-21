@@ -32,8 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class StatusReporter implements Callable<IFileProcessorFutureResult> {
-
-    private final Logger logger = LoggerFactory.getLogger(StatusReporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StatusReporter.class);
 
     //require references to these so that the
     //StatusReporter can query them when it wakes up
@@ -70,7 +69,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
      * @param s string to report
      */
     protected void report(String s) {
-        logger.info(s);
+        LOG.info(s);
     }
 
     /**

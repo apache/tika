@@ -28,8 +28,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -59,14 +57,15 @@ import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.writer.TextMessageBodyWriter;
 import org.apache.tika.server.writer.XMPMessageBodyWriter;
 import org.apache.tika.server.writer.ZipWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TikaServerCli {
     public static final int DEFAULT_PORT = 9998;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20*1024*1024;
     public static final String DEFAULT_HOST = "localhost";
-    public static final Set<String> LOG_LEVELS =
-            new HashSet<String>(Arrays.asList("debug", "info"));
-    private static final Log logger = LogFactory.getLog(TikaServerCli.class);
+    public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
+    private static final Logger LOG = LoggerFactory.getLogger(TikaServerCli.class);
 
     private static final String FILE_URL_WARNING =
             "WARNING: You have chosen to run tika-server with fileUrl enabled.\n"+
@@ -93,8 +92,7 @@ public class TikaServerCli {
     }
 
     public static void main(String[] args) {
-
-        logger.info("Starting " + new Tika().toString() + " server");
+        LOG.info("Starting {} server", new Tika());
 
         try {
             Options options = getOptions();
@@ -135,7 +133,7 @@ public class TikaServerCli {
                     boolean isInfoLevel = "info".equals(logLevel);
                     logFilter = new TikaLoggingFilter(isInfoLevel);
                 } else {
-                    logger.info("Unsupported request URI log level: " + logLevel);
+                    LOG.info("Unsupported request URI log level: {}", logLevel);
                 }
             }
 
@@ -152,12 +150,11 @@ public class TikaServerCli {
             TikaConfig tika;
             
             if (line.hasOption("config")){
-              String configFilePath = line.getOptionValue("config");
-	      logger.info("Using custom config: "+configFilePath);
-              tika = new TikaConfig(configFilePath);
-            }
-            else{
-              tika = TikaConfig.getDefaultConfig();
+                String configFilePath = line.getOptionValue("config");
+                LOG.info("Using custom config: {}", configFilePath);
+                tika = new TikaConfig(configFilePath);
+            } else{
+                tika = TikaConfig.getDefaultConfig();
             }
 
             DigestingParser.Digester digester = null;
@@ -226,17 +223,18 @@ public class TikaServerCli {
             }
             sf.setProviders(providers);
 
-            sf.setAddress("http://" + host + ":" + port + "/");
-            BindingFactoryManager manager = sf.getBus().getExtension(
-                    BindingFactoryManager.class);
+
+            String url = "http://" + host + ":" + port + "/";
+            sf.setAddress(url);
+            BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
             JAXRSBindingFactory factory = new JAXRSBindingFactory();
             factory.setBus(sf.getBus());
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
                     factory);
             sf.create();
-            logger.info("Started");
+            LOG.info("Started Apache Tika server at {}", url);
         } catch (Exception ex) {
-            logger.fatal("Can't start", ex);
+            LOG.error("Can't start", ex);
             System.exit(-1);
         }
     }
