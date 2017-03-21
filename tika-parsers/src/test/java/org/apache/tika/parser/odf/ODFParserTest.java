@@ -192,7 +192,7 @@ public class ODFParserTest extends TikaTest {
             assertEquals(null, metadata.get("nbCharacter"));
 
             // Note - contents of maths files not currently supported
-            String content = handler.toString();
+            String content = handler.toString().trim();
             assertEquals("", content);
         }
    }
@@ -363,7 +363,7 @@ public class ODFParserTest extends TikaTest {
         Parser parser = new OpenDocumentParser();
         try (InputStream input = ODFParserTest.class.getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
             Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
+            ContentHandler handler = new BodyContentHandler(-1);
             parser.parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text", metadata.get(Metadata.CONTENT_TYPE));
@@ -396,7 +396,6 @@ public class ODFParserTest extends TikaTest {
     public void testAnnotationsAndPDepthGt1() throws Exception {
         //not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
         String xml = getXML("testODTStyles3.odt").xml;
-        System.out.println(xml);
         assertContains("<p><b>WOUTERS Rolf</b><span class=\"annotation\"> Beschermde persoon is overleden </annotation>", xml);
     }
 
