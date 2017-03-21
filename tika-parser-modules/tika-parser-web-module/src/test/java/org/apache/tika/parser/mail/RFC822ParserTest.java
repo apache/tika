@@ -107,7 +107,6 @@ public class RFC822ParserTest extends TikaTest {
         Metadata m = getXML("testRFC822").metadata;
         assertEquals("Julien Nioche (JIRA)", m.get(Message.MESSAGE_FROM_NAME));
         assertEquals("jira@apache.org", m.get(Message.MESSAGE_FROM_EMAIL));
-        debug(m);
 
         m = getXML("testRFC822-multipart").metadata;
         assertEquals("DigitalPebble", m.get(Message.MESSAGE_FROM_NAME));

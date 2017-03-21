@@ -29,6 +29,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
@@ -321,7 +322,8 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testNullStylesInODTFooter() throws Exception {
 
-        XMLResult r = getXML("testODT-TIKA-6000.odt", new OpenDocumentParser(), new Metadata(), new ParseContext());
+        XMLResult r = getXML("testODT-TIKA-6000.odt", new OpenDocumentParser(), new Metadata(),
+                getNonRecursingParseContext());
 
         assertEquals("application/vnd.oasis.opendocument.text", r.metadata.get(Metadata.CONTENT_TYPE));
 
@@ -351,8 +353,7 @@ public class ODFParserTest extends TikaTest {
     @Test //TIKA-2242
     public void testAnnotationsAndPDepthGt1() throws Exception {
         //not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
-        String xml = getXML("testODTStyles3.odt").xml;
-        System.out.println(xml);
+        String xml = getXML("testODTStyles3.odt", getNonRecursingParseContext()).xml;
         assertContains("<p><b>WOUTERS Rolf</b><span class=\"annotation\"> Beschermde persoon is overleden </annotation>", xml);
     }
 
@@ -360,5 +361,11 @@ public class ODFParserTest extends TikaTest {
     public void testEmbedded() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
         assertEquals(3, metadataList.size());
+    }
+
+    private ParseContext getNonRecursingParseContext() {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, new EmptyParser());
+        return parseContext;
     }
 }
