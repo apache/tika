@@ -1018,8 +1018,17 @@ public class TestMimeTypes {
 
     @Test
     public void testWebVTT() throws Exception {
+        // With the most common text header
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
+
+        // With no text header, just plain WebVTT one
+        assertType("text/vtt", "testWebVTT_simple.vtt");
+        assertTypeByData("text/vtt", "testWebVTT_simple.vtt");
+
+        // With a custom text header
+        assertType("text/vtt", "testWebVTT_header.vtt");
+        assertTypeByData("text/vtt", "testWebVTT_header.vtt");
     }
     
     @Test
