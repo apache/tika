@@ -42,23 +42,39 @@ public class OOXMLParser extends AbstractOfficeParser {
     }
 
     protected static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("x-tika-ooxml"),
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
                     MediaType.application("vnd.ms-powerpoint.presentation.macroenabled.12"),
                     MediaType.application("vnd.openxmlformats-officedocument.presentationml.template"),
                     MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow"),
                     MediaType.application("vnd.ms-powerpoint.slideshow.macroenabled.12"),
                     MediaType.application("vnd.ms-powerpoint.addin.macroenabled.12"),
+                    MediaType.application("vnd.ms-powerpoint.template.macroenabled.12"),
+                    MediaType.application("vnd.ms-powerpoint.slide.macroenabled.12"),
+                    MediaType.application("vnd.openxmlformats-officedocument.presentationml.slide"),
+
                     MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                     MediaType.application("vnd.ms-excel.sheet.macroenabled.12"),
                     MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template"),
                     MediaType.application("vnd.ms-excel.template.macroenabled.12"),
                     MediaType.application("vnd.ms-excel.addin.macroenabled.12"),
+                    MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"),
+
                     MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
                     MediaType.application("vnd.ms-word.document.macroenabled.12"),
                     MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template"),
-                    MediaType.application("vnd.ms-word.template.macroenabled.12"))));
+                    MediaType.application("vnd.ms-word.template.macroenabled.12"),
+
+                    MediaType.application("vnd.ms-visio.drawing"),
+                    MediaType.application("vnd.ms-visio.drawing.macroenabled.12"),
+                    MediaType.application("vnd.ms-visio.stencil"),
+                    MediaType.application("vnd.ms-visio.stencil.macroenabled.12"),
+                    MediaType.application("vnd.ms-visio.template"),
+                    MediaType.application("vnd.ms-visio.template.macroenabled.12"),
+                    MediaType.application("vnd.ms-visio.drawing"),
+                    MediaType.application("vnd.ms-xpsdocument"),
+                    MediaType.parse("model/vnd.dwfx+xps")
+                    )));
     /**
      * We claim to support all OOXML files, but we actually don't support a small
      * number of them.
