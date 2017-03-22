@@ -189,7 +189,7 @@ public class PackageParser extends AbstractParser {
                 throw new EncryptedDocumentException(zfe);
             }
             // Otherwise throw the exception
-            throw zfe;
+            throw new TikaException("UnsupportedZipFeature", zfe);
         } catch (PasswordRequiredException pre) {
             throw new EncryptedDocumentException(pre);
         } finally {
