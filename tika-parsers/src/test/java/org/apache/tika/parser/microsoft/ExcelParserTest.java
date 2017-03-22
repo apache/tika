@@ -290,8 +290,8 @@ public class ExcelParserTest extends TikaTest {
         // OfficeParser won't handle it
         assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
 
-        // OOXMLParser won't handle it
-        assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+        // OOXMLParser will (soon) handle it
+        assertTrue((new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
 
         // AutoDetectParser doesn't break on it
         try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
