@@ -188,7 +188,8 @@ public class PackageParser extends AbstractParser {
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
             }
-            // Otherwise fall through to raise the exception as normal
+            // Otherwise throw the exception
+            throw zfe;
         } catch (PasswordRequiredException pre) {
             throw new EncryptedDocumentException(pre);
         } finally {
