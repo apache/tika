@@ -421,6 +421,20 @@
         <scope>test</scope>
     </dependency>
 
+    <!-- https://mvnrepository.com/artifact/net.sourceforge.tess4j/tess4j -->
+    <dependency>
+      <groupId>net.sourceforge.tess4j</groupId>
+      <artifactId>tess4j</artifactId>
+      <version>3.3.0</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>log4j-over-slf4j</artifactId>
+          <groupId>org.slf4j</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+
   </dependencies>
 
   <build>
