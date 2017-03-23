@@ -1364,6 +1364,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    @Ignore("until poi-3.16-beta3")
     public void testXLSBVarious() throws Exception {
         //make sure to turn MACROs on, after we turn them off by default
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
