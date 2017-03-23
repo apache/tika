@@ -80,6 +80,8 @@ Release 1.15 - ??
 
   * Add Lingo24 Language Detector (TIKA-2297).
 
+  * Further mime magic for WebVTT (TIKA-1772)
+
 Release 1.14 - 10/19/2016
 
   * Extract all headers from MSG/RFC822 (TIKA-2122).
