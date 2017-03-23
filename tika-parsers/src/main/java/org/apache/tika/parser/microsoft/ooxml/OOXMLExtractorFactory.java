@@ -32,6 +32,7 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -102,9 +103,12 @@ public class OOXMLExtractorFactory {
             }
 
             POIXMLDocument document = poiExtractor.getDocument();
-            if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
+
+            if (poiExtractor instanceof XSSFBEventBasedExcelExtractor) {
+                extractor = new XSSFBExcelExtractorDecorator(context, poiExtractor, locale);
+            } else if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
                 extractor = new XSSFExcelExtractorDecorator(
-                        context, (XSSFEventBasedExcelExtractor) poiExtractor, locale);
+                        context, poiExtractor, locale);
             } else if (poiExtractor instanceof XWPFEventBasedWordExtractor) {
                 extractor = new SXWPFWordExtractorDecorator(metadata, context,
                         (XWPFEventBasedWordExtractor) poiExtractor);

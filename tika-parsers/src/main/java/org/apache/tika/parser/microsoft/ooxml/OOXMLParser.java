@@ -83,7 +83,6 @@ public class OOXMLParser extends AbstractOfficeParser {
      */
     protected static final Set<MediaType> UNSUPPORTED_OOXML_TYPES =
             Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"),
                     MediaType.application("vnd.ms-xpsdocument")
             )));
     /**

@@ -1363,6 +1363,53 @@ public class OOXMLParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testXLSBVarious() throws Exception {
+        //make sure to turn MACROs on, after we turn them off by default
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_various.xlsb", parseContext);
+        assertEquals(4, metadataList.size());
+
+        String xml = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        assertContains("<td>13</td>", xml);
+        assertContains("<td>13.1211231321</td>", xml);
+        assertContains("<td>$   3.03</td>", xml);
+        assertContains("<td>20%</td>", xml);
+        assertContains("<td>13.12</td>", xml);
+        assertContains("<td>123456789012345</td>", xml);
+        assertContains("<td>1.23456789012345E+15</td>", xml);
+        assertContains("test comment2", xml);
+
+        assertContains("comment4 (end of row)", xml);
+
+
+        assertContains("<td>1/4</td>", xml);
+        assertContains("<td>3/9/17</td>", xml);
+        assertContains("<td>4</td>", xml);
+        assertContains("<td>2</td>", xml);
+
+        assertContains("<td>   46/1963</td>", xml);
+        assertContains("<td>  3/128</td>", xml);
+        assertContains("test textbox", xml);
+
+        assertContains("test WordArt", xml);
+
+        assertContains("<a href=\"http://lucene.apache.org/\">http://lucene.apache.org/</a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\">http://tika.apache.org/</a>", xml);
+
+        assertContains("OddLeftHeader OddCenterHeader OddRightHeader", xml);
+        assertContains("EvenLeftHeader EvenCenterHeader EvenRightHeader", xml);
+
+        assertContains("FirstPageLeftHeader FirstPageCenterHeader FirstPageRightHeader", xml);
+        assertContains("OddLeftFooter OddCenterFooter OddRightFooter", xml);
+        assertContains("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
+        assertContains("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
+
+
+    }
+
 }
 
 
