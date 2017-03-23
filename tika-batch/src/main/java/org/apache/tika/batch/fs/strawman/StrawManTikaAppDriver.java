@@ -53,6 +53,7 @@ import org.slf4j.MarkerFactory;
  *
  */
 public class StrawManTikaAppDriver implements Callable<Integer> {
+    private static final Logger LOG = LoggerFactory.getLogger(StrawManTikaAppDriver.class);
 
     private static AtomicInteger threadCount = new AtomicInteger(0);
     private final int totalThreads;
@@ -60,8 +61,6 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     private Path inputRoot = null;
     private Path outputRoot = null;
     private String[] args = null;
-    private Logger logger = LoggerFactory.getLogger(StrawManTikaAppDriver.class);
-
 
     public StrawManTikaAppDriver(Path inputRoot, Path outputRoot,
                                  int totalThreads, String[] args) {
@@ -95,8 +94,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             try {
                 Files.createDirectories(outputFile.getParent());
             } catch (IOException e) {
-                logger.error(MarkerFactory.getMarker("FATAL"),
-                        "parent directory for "+ outputFile + " was not made!");
+                LOG.error(MarkerFactory.getMarker("FATAL"),
+                        "parent directory for {} was not made!", outputFile);
                 throw new RuntimeException("couldn't make parent file for " + outputFile);
             }
             List<String> commandLine = new ArrayList<>();
@@ -106,7 +105,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             commandLine.add("-t");
             commandLine.add("\""+outputFile.toAbsolutePath()+"\"");
             ProcessBuilder builder = new ProcessBuilder(commandLine.toArray(new String[commandLine.size()]));
-            logger.info("about to process: "+file.toAbsolutePath());
+            LOG.info("about to process: {}", file.toAbsolutePath());
             Process proc = null;
             RedirectGobbler gobbler = null;
             Thread gobblerThread = null;
@@ -117,7 +116,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 gobblerThread = new Thread(gobbler);
                 gobblerThread.start();
             } catch (IOException e) {
-                logger.error(e.getMessage(), e);
+                LOG.error(e.getMessage(), e);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -126,7 +125,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             long pulse = 100;
             for (int i = 0; i < totalTime; i += pulse) {
                 try {
-                    Thread.currentThread().sleep(pulse);
+                    Thread.sleep(pulse);
                 } catch (InterruptedException e) {
                     //swallow
                 }
@@ -139,7 +138,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 }
             }
             if (!finished) {
-                logger.warn("Had to kill process working on: " + file.toAbsolutePath());
+                LOG.warn("Had to kill process working on: {}", file.toAbsolutePath());
                 proc.destroy();
             }
             gobbler.close();
@@ -159,7 +158,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         Files.walkFileTree(inputRoot, v);
         int processed = v.getProcessed();
         double elapsedSecs = ((double)new Date().getTime()-(double)start)/(double)1000;
-        logger.info("Finished processing " + processed + " files in " + elapsedSecs + " seconds.");
+        LOG.info("Finished processing {} files in {} seconds.", processed, elapsedSecs);
         return processed;
     }
 
@@ -177,17 +176,17 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 try {
                     redirectOs.flush();
                 } catch (IOException e) {
-                    logger.error("can't flush");
+                    LOG.error("can't flush");
                 }
                 try {
                     redirectIs.close();
                 } catch (IOException e) {
-                    logger.error("can't close input in redirect gobbler");
+                    LOG.error("can't close input in redirect gobbler");
                 }
                 try {
                     redirectOs.close();
                 } catch (IOException e) {
-                    logger.error("can't close output in redirect gobbler");
+                    LOG.error("can't close output in redirect gobbler");
                 }
             }
         }
@@ -197,7 +196,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             try {
                 IOUtils.copy(redirectIs, redirectOs);
             } catch (IOException e) {
-                logger.error("IOException while gobbling");
+                LOG.error("IOException while gobbling");
             }
         }
     }
@@ -222,12 +221,12 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         Path outputDir = Paths.get(args[1]);
         int totalThreads = Integer.parseInt(args[2]);
 
-        List<String> commandLine = new ArrayList<String>();
+        List<String> commandLine = new ArrayList<>();
         commandLine.addAll(Arrays.asList(args).subList(3, args.length));
         totalThreads = (totalThreads < 1) ? 1 : totalThreads;
         ExecutorService ex = Executors.newFixedThreadPool(totalThreads);
         ExecutorCompletionService<Integer> completionService =
-                new ExecutorCompletionService<Integer>(ex);
+                new ExecutorCompletionService<>(ex);
 
         for (int i = 0; i < totalThreads; i++) {
             StrawManTikaAppDriver driver =
@@ -242,13 +241,11 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 if (future != null) {
                     totalFilesProcessed += future.get();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            } catch (InterruptedException | ExecutionException e) {
+                LOG.error(e.getMessage(), e);
             }
         }
-        double elapsedSeconds = (double)(new Date().getTime()-start)/(double)1000;
-        System.out.println("Processed "+totalFilesProcessed + " in " + elapsedSeconds + " seconds");
+        double elapsedSeconds = (double)(new Date().getTime() - start) / (double)1000;
+        LOG.info("Processed {} in {} seconds", totalFilesProcessed, elapsedSeconds);
     }
 }

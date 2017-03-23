@@ -64,10 +64,10 @@ import java.util.regex.Pattern;
  * @since Apache Tika 1.14
  */
 public class TensorflowImageRecParser extends ExternalParser implements ObjectRecogniser {
-
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowImageRecParser.class);
+
     private static final String SCRIPT_FILE_NAME = "classify_image.py";
-    public static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
+    static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
     private static final File DEFAULT_SCRIPT_FILE = new File("tensorflow" + File.separator + SCRIPT_FILE_NAME);
     private static final File DEFAULT_MODEL_FILE = new File("tensorflow" + File.separator + "tf-objectrec-model");
     private static final LineConsumer IGNORED_LINE_LOGGER = new LineConsumer() {

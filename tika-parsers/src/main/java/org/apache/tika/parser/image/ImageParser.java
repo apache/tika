@@ -28,8 +28,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
@@ -40,19 +38,20 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class ImageParser extends AbstractParser {
-
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = 7852529269245520335L;
 
-    private static final Logger LOGGER = Logger.getLogger(ImageParser.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(ImageParser.class);
 
     private static final MediaType MAIN_BMP_TYPE = MediaType.image("bmp");
     private static final MediaType OLD_BMP_TYPE = MediaType.image("x-ms-bmp");
@@ -60,7 +59,7 @@ public class ImageParser extends AbstractParser {
     private static final Set<MediaType> TMP_SUPPORTED;
 
     static {
-        TMP_SUPPORTED = new HashSet<MediaType>(Arrays.asList(
+        TMP_SUPPORTED = new HashSet<>(Arrays.asList(
                 MAIN_BMP_TYPE,
                 OLD_BMP_TYPE,
                 MediaType.image("gif"),
@@ -72,8 +71,7 @@ public class ImageParser extends AbstractParser {
             Class.forName("com.levigo.jbig2.JBIG2ImageReader");
             TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
         } catch (ClassNotFoundException e) {
-            LOGGER.log(Level.WARNING,
-                    "JBIG2ImageReader not loaded. jbig2 files will be ignored");
+            LOG.warn("JBIG2ImageReader not loaded. jbig2 files will be ignored");
         }
     }
 
@@ -219,5 +217,4 @@ public class ImageParser extends AbstractParser {
         xhtml.startDocument();
         xhtml.endDocument();
     }
-
 }

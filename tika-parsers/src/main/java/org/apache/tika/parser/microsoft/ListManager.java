@@ -18,8 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import java.util.NoSuchElementException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.ListData;
 import org.apache.poi.hwpf.model.ListFormatOverrideLevel;
@@ -35,8 +33,6 @@ import org.apache.poi.hwpf.usermodel.Paragraph;
  * <p>Further, this class does not yet handle overrides</p>
  */
 public class ListManager extends AbstractListManager {
-
-    private static final Log logger = LogFactory.getLog(ListManager.class);
     private final ListTables listTables;
 
     /**

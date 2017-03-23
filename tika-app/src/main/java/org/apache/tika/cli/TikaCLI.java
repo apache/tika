@@ -61,11 +61,8 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -108,6 +105,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -116,17 +115,16 @@ import org.xml.sax.helpers.DefaultHandler;
  * Simple command line interface for Apache Tika.
  */
 public class TikaCLI {
-
     private final int MAX_MARK = 20*1024*1024;//20MB
 
     private File extractDir = new File(".");
 
-    private static final Log logger = LogFactory.getLog(TikaCLI.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
 
     public static void main(String[] args) throws Exception {
-
         TikaCLI cli = new TikaCLI();
-        if (! isConfigured()) {
+
+        if (!isConfigured()) {
             PropertyConfigurator.configure(cli.getClass().getResourceAsStream("/log4j.properties"));
         }
 
@@ -171,15 +169,15 @@ public class TikaCLI {
         else {
             Enumeration loggers = LogManager.getCurrentLoggers() ;
             while (loggers.hasMoreElements()) {
-                Logger c = (Logger) loggers.nextElement();
+                org.apache.log4j.Logger c = (org.apache.log4j.Logger) loggers.nextElement();
                 if (c.getAllAppenders().hasMoreElements())
                     return true;
             }
         }
         return false;
     }
-    private class OutputType {
 
+    private class OutputType {
         public void process(
                 InputStream input, OutputStream output, Metadata metadata)
                 throws Exception {
@@ -359,7 +357,7 @@ public class TikaCLI {
             pipeMode = false;
             version();
         } else if (arg.equals("-v") || arg.equals("--verbose")) {
-            Logger.getRootLogger().setLevel(Level.DEBUG);
+            org.apache.log4j.Logger.getRootLogger().setLevel(Level.DEBUG);
         } else if (arg.equals("-g") || arg.equals("--gui")) {
             pipeMode = false;
             if (configFilePath != null){
@@ -1072,7 +1070,7 @@ public class TikaCLI {
                     e.getMessage()
                 );
                 System.err.println(msg);
-                logger.warn(msg, e);
+                LOG.warn(msg, e);
             }
         }
 

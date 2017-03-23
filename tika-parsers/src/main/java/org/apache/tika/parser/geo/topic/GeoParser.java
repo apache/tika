@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +34,8 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
 import org.apache.tika.parser.geo.topic.gazetteer.Location;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -43,7 +44,7 @@ import opennlp.tools.namefind.TokenNameFinderModel;
 
 public class GeoParser extends AbstractParser {
     private static final long serialVersionUID = -2241391757440215491L;
-    private static final Logger LOG = Logger.getLogger(GeoParser.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(GeoParser.class);
     private static final MediaType MEDIA_TYPE = 
                                     MediaType.application("geotopic");
     private static final Set<MediaType> SUPPORTED_TYPES = 
@@ -87,10 +88,9 @@ public class GeoParser extends AbstractParser {
                 TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
                 this.nameFinder = new NameFinderME(model);
             } catch (Exception e) {
-                LOG.warning("Named Entity Extractor setup failed: " + e);
+                LOG.warn("Named Entity Extractor setup failed: {}", e.getMessage(), e);
                 this.available = false;
             }
-        	
         }
         initialized = true;
     }
@@ -112,7 +112,7 @@ public class GeoParser extends AbstractParser {
         try {
             extractor = new NameEntityExtractor(nameFinder);
         } catch (Exception e) {
-            LOG.warning("Named Entity Extractor setup failed: " + e);
+            LOG.warn("Named Entity Extractor setup failed: {}", e.getMessage(), e);
             return;
         }
 

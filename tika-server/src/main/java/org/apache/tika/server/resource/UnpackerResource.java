@@ -40,8 +40,6 @@ import java.util.Map;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -61,6 +59,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -68,15 +68,16 @@ import org.xml.sax.helpers.DefaultHandler;
 @Path("/unpack")
 public class UnpackerResource {
     public static final String TEXT_FILENAME = "__TEXT__";
-    private static final Log logger = LogFactory.getLog(UnpackerResource.class);
     private static final String META_FILENAME = "__METADATA__";
+
+    private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 
     public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
         CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, UTF_8));
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
-            ArrayList<String> list = new ArrayList<String>(values.length + 1);
+            ArrayList<String> list = new ArrayList<>(values.length + 1);
             list.add(name);
             list.addAll(Arrays.asList(values));
             writer.writeNext(list.toArray(values));
@@ -123,7 +124,7 @@ public class UnpackerResource {
         }
 
         TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
-        TikaResource.logRequest(logger, info, metadata);
+        TikaResource.logRequest(LOG, info, metadata);
 
         ContentHandler ch;
         ByteArrayOutputStream text = new ByteArrayOutputStream();
@@ -134,11 +135,11 @@ public class UnpackerResource {
             ch = new DefaultHandler();
         }
 
-        Map<String, byte[]> files = new HashMap<String, byte[]>();
+        Map<String, byte[]> files = new HashMap<>();
         MutableInt count = new MutableInt();
 
         pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
-        TikaResource.parse(parser, logger, info.getPath(), is, ch, metadata, pc);
+        TikaResource.parse(parser, LOG, info.getPath(), is, ch, metadata, pc);
 
         if (count.intValue() == 0 && !saveAll) {
             throw new WebApplicationException(Response.Status.NO_CONTENT);
@@ -189,7 +190,7 @@ public class UnpackerResource {
                         name += ext;
                     }
                 } catch (MimeTypeException e) {
-                    logger.warn("Unexpected MimeTypeException", e);
+                    LOG.warn("Unexpected MimeTypeException", e);
                 }
             }
 
@@ -212,7 +213,7 @@ public class UnpackerResource {
                             data = ole.getDataBuffer();
                         }
                     } catch (Ole10NativeException ex) {
-                        logger.warn("Skipping invalid part", ex);
+                        LOG.warn("Skipping invalid part", ex);
                     }
                 } else {
                     name += '.' + type.getExtension();

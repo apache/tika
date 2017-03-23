@@ -31,7 +31,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
@@ -51,6 +50,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.mp4.MP4Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -73,11 +74,11 @@ public class PooledTimeSeriesParser extends AbstractParser {
             isAvailable ? Collections.unmodifiableSet(
                     new HashSet<>(Arrays.asList(new MediaType[]{
                             MediaType.video("avi"), MediaType.video("mp4")
-                    }))) : Collections.EMPTY_SET;
+                    }))) : Collections.<MediaType>emptySet();
     ;
     // TODO: Add all supported video types
 
-    private static final Logger LOG = Logger.getLogger(PooledTimeSeriesParser.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PooledTimeSeriesParser.class);
 
     /**
      * Returns the set of media types supported by this parser when used with the
@@ -118,8 +119,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
             SAXException, TikaException {
 
         if (!isAvailable) {
-            LOG.warning(
-                    "PooledTimeSeries not installed!");
+            LOG.warn("PooledTimeSeries not installed!");
             return;
         }
 
@@ -177,7 +177,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         cmdLine.addArgument("-f");
         cmdLine.addArgument(input.getAbsolutePath());
-        LOG.fine("Executing: " + cmdLine);
+        LOG.trace("Executing: {}", cmdLine);
         DefaultExecutor exec = new DefaultExecutor();
         exec.setExitValue(0);
         ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);

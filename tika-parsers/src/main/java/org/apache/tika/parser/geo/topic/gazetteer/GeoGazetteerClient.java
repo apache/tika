@@ -20,7 +20,6 @@ package org.apache.tika.parser.geo.topic.gazetteer;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -33,6 +32,8 @@ import org.apache.tika.parser.geo.topic.GeoParserConfig;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class GeoGazetteerClient {
@@ -40,7 +41,7 @@ public class GeoGazetteerClient {
 	private static final String SEARCH_PARAM = "s";
 	private static final String PING = "/api/ping";
 
-	private static final Logger LOG = Logger.getLogger(GeoGazetteerClient.class.getName());
+	private static final Logger LOG = LoggerFactory.getLogger(GeoGazetteerClient.class);
 
 	private String url;
 	
@@ -80,7 +81,7 @@ public class GeoGazetteerClient {
 			return new Gson().fromJson(respJson, typeDef);
 			
 		} catch (Exception e) {
-			LOG.severe(e.getMessage());
+			LOG.error(e.getMessage(), e);
 		}
 		
 		return null;
@@ -102,7 +103,7 @@ public class GeoGazetteerClient {
 			}
 			
 		} catch (Exception e) {
-			LOG.severe(e.getMessage());
+			LOG.error(e.getMessage(), e);
 		}
 		
 		return false;

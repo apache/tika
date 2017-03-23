@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.wordperfect;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * WordPerfect 6+ constant values used for mapping WordPerfect charsets to
@@ -25,8 +25,7 @@ import org.apache.log4j.Logger;
  * @author Pascal Essiembre
  */
 final class WP6Charsets {
-
-    private static final Logger LOG = LogManager.getLogger(WP6Charsets.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WP6Charsets.class);
 
     public static final char[] DEFAULT_EXTENDED_INTL_CHARS = new char[] {
         '\0',     '\u00E5', '\u00C5', '\u00E6', '\u00C6',
@@ -434,11 +433,10 @@ final class WP6Charsets {
 
     public static void append(StringBuilder out, int charset, int charval) {
         if (charset >= WP6Charsets.EXTENDED_CHARSETS.length) {
-            LOG.debug("Unsupported WordPerfect 6+ charset: " + charset);
+            LOG.debug("Unsupported WordPerfect 6+ charset: {}", charset);
             out.append(' ');
         } else if (charval >= WP6Charsets.EXTENDED_CHARSETS[charset].length) {
-            LOG.debug("Unsupported WordPerfect 6+ charset (" + charset 
-                    + ") character value: " + charval);
+            LOG.debug("Unsupported WordPerfect 6+ charset ({}) character value: {}", charset, charval);
             out.append(' ');
         } else {
             out.append(WP6Charsets.EXTENDED_CHARSETS[charset][charval]);

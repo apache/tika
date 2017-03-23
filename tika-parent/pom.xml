@@ -289,12 +289,12 @@
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>jul-to-slf4j</artifactId>
+        <artifactId>jcl-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
+        <artifactId>jul-to-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
     </dependencies>
@@ -439,5 +439,4 @@
     <url>https://github.com/apache/tika</url>
     <tag>HEAD</tag>
   </scm>
-
 </project>

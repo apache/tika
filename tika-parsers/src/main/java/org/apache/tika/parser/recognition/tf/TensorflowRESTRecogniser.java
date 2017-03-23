@@ -57,11 +57,11 @@ import java.util.Set;
  * @since Apache Tika 1.14
  */
 public class TensorflowRESTRecogniser implements ObjectRecogniser {
+    private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTRecogniser.class);
 
     /**
      * Maximum buffer size for image
      */
-    private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTRecogniser.class);
     private static final String LABEL_LANG = "en";
 
     @Field
@@ -119,9 +119,9 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
                     JSONObject jReply = new JSONObject(replyMessage);
                     JSONArray jClasses = jReply.getJSONArray("classnames");
                     JSONArray jConfidence = jReply.getJSONArray("confidence");
-		    if (jClasses.length() != jConfidence.length()){
-			LOG.warn("Classes of size {} is not equal to confidence of size {}", jClasses.length(), jConfidence.length());
-		    }
+            if (jClasses.length() != jConfidence.length()) {
+                LOG.warn("Classes of size {} is not equal to confidence of size {}", jClasses.length(), jConfidence.length());
+            }
                     assert jClasses.length() == jConfidence.length();
                     for (int i = 0; i < jClasses.length(); i++) {
                         RecognisedObject recObj = new RecognisedObject(jClasses.getString(i),

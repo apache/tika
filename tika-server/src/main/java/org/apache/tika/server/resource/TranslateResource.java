@@ -31,24 +31,22 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/translate")
 public class TranslateResource {
-
 	private Translator defaultTranslator;
 
 	private ServiceLoader loader;
 
-	private static final Log logger = LogFactory.getLog(TranslateResource.class
-			.getName());
+	private static final Logger LOG = LoggerFactory.getLogger(TranslateResource.class);
 
 	public TranslateResource() {
 		this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader(),
@@ -84,18 +82,17 @@ public class TranslateResource {
 		}
 		
 		String sLang = language.getLanguage();
-		logger.info("LanguageIdentifier: detected source lang: [" + sLang + "]");
+		LOG.info("LanguageIdentifier: detected source lang: [{}]", sLang);
 		return doTranslate(content, translator, sLang, dLang);
 	}
 
 	private String doTranslate(String content, String translator, String sLang,
 			String dLang) throws TikaException, IOException {
-		logger.info("Using translator: [" + translator + "]: src: [" + sLang
-				+ "]: dest: [" + dLang + "]");
+		LOG.info("Using translator: [{}]: src: [{}]: dest: [{}]", translator, sLang, dLang);
 		Translator translate = byClassName(translator);
 		if (translate == null) {
 			translate = this.defaultTranslator;
-			logger.info("Using default translator");
+			LOG.info("Using default translator");
 		}
 
 		return translate.translate(content, sLang, dLang);
@@ -111,5 +108,4 @@ public class TranslateResource {
 		}
 		return null;
 	}
-
 }

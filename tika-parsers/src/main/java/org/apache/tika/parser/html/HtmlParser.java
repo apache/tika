@@ -34,6 +34,8 @@ import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -49,12 +51,14 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
      */
     private static final long serialVersionUID = 7895315240498733128L;
 
+    private static final Logger LOG = LoggerFactory.getLogger(HtmlParser.class);
+
     private static final MediaType XHTML = MediaType.application("xhtml+xml");
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
     private static final MediaType X_ASP = MediaType.application("x-asp");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.text("html"),
                     XHTML,
                     WAP_XHTML,

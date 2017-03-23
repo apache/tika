@@ -41,7 +41,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <pax.exam.version>4.4.0</pax.exam.version>
+    <pax.exam.version>4.10.0</pax.exam.version>
   </properties>
 
   <dependencies>
@@ -61,6 +61,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.ops4j.pax.exam</groupId>
@@ -93,11 +94,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
       <version>1</version>
@@ -107,6 +103,13 @@
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
       <version>5.0.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- use non-log4j slf4j backend to prevent main classloader from loading log4j classes -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -160,6 +163,7 @@
               !org.apache.ctakes.*,
               !org.apache.uima.*,
               *,
+              org.slf4j, org.slf4j.event, org.slf4j.helpers, org.slf4j.spi,
               org.apache.tika.fork,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
@@ -255,7 +259,6 @@
               org.osgi.framework;resolution:=optional,
               org.quartz;resolution:=optional,
               org.quartz.impl;resolution:=optional,
-              org.slf4j;resolution:=optional,
               org.sqlite;resolution:=optional,
               org.w3c.dom;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
@@ -264,7 +267,8 @@
               org.xml.sax.helpers;resolution:=optional,
               org.xmlpull.v1;resolution:=optional,
               com.microsoft.schemas.office.powerpoint;resolution:=optional,
-              com.microsoft.schemas.office.word;resolution:=optional,              sun.misc;resolution:=optional,
+              com.microsoft.schemas.office.word;resolution:=optional,
+              sun.misc;resolution:=optional,
               ucar.units;resolution:=optional,
               ucar.httpservices;resolution:=optional,
               ucar.nc2.util;resolution:=optional,
@@ -352,6 +356,11 @@
               org.apache.http.protocol;resolution:=optional,
               org.apache.http.util;resolution:=optional
             </Import-Package>
+            <DynamicImport-Package>
+              org.slf4j.impl, org.slf4j.bridge,
+              org.apache.log4j, org.apache.log4j.*,
+              org.apache.commons.logging, org.apache.commons.logging.*
+            </DynamicImport-Package>
           </instructions>
         </configuration>
       </plugin>
@@ -418,13 +427,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <systemPropertyVariables>
-            <org.ops4j.pax.logging.DefaultServiceLog.level>
-              WARN
-            </org.ops4j.pax.logging.DefaultServiceLog.level>
-          </systemPropertyVariables>
-        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -441,4 +443,4 @@
     <system>Jenkins</system>
     <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
-</project>  
+</project>

@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 
 public class ExtractReader {
+    private static final Logger LOG = LoggerFactory.getLogger(ExtractReader.class);
 
     public static final long IGNORE_LENGTH = -1L;
 
@@ -52,8 +53,8 @@ public class ExtractReader {
         FIRST_ONLY, //take only the metadata list for the "container" document
         CONCATENATE_CONTENT_INTO_FIRST // concatenate all of the content into the first
     }
-    private final static Logger LOGGER = LoggerFactory.getLogger(ExtractReader.class);
-    TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+
+    private TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 
     private final ALTER_METADATA_LIST alterMetadataList;
     private final long minExtractLength;
@@ -125,7 +126,7 @@ public class ExtractReader {
                 } else if (fileSuffixes.compression.equals("zip")) {
                     is = new ZCompressorInputStream(is);
                 } else {
-                    LOGGER.warn("Can't yet process compression of type: " + fileSuffixes.compression);
+                    LOG.warn("Can't yet process compression of type: {}", fileSuffixes.compression);
                     return metadataList;
                 }
             }

@@ -16,16 +16,13 @@
  */
 package org.apache.tika.parser.ner.nltk;
 
-import org.apache.commons.logging.Log;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ner.NamedEntityParser;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -38,15 +35,13 @@ public class NLTKNERecogniserTest {
     public void testGetEntityTypes() throws Exception {
         String text = "America is a big country.";
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, NLTKNERecogniser.class.getName());
+
         Tika tika = new Tika(new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
         Metadata md = new Metadata();
         tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
 
         Set<String> names = new HashSet<>(Arrays.asList(md.getValues("NER_NAMES")));
-        if(names.size() == 0) {
-            return;
-        }
-        else {
+        if(names.size() != 0) {
             assertTrue(names.contains("America"));
             assertTrue(names.size() == 1); 
         }

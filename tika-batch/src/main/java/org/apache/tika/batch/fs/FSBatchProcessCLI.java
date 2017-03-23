@@ -45,10 +45,10 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 public class FSBatchProcessCLI {
-
     public static String FINISHED_STRING = "Main thread in TikaFSBatchCLI has finished processing.";
 
-    private static Logger logger = LoggerFactory.getLogger(FSBatchProcessCLI.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FSBatchProcessCLI.class);
+
     private final Options options;
 
     public FSBatchProcessCLI(String[] args) throws IOException {
@@ -76,7 +76,7 @@ public class FSBatchProcessCLI {
             is = TikaInputStream.get(batchConfigFile);
         } else {
             if (logDefault) {
-                logger.info("No config file set via -bc, relying on tika-app-batch-config.xml or default-tika-batch-config.xml");
+                LOG.info("No config file set via -bc, relying on tika-app-batch-config.xml or default-tika-batch-config.xml");
             }
             //test to see if there's a tika-app-batch-config.xml on the path
             URL config = FSBatchProcessCLI.class.getResource("/tika-app-batch-config.xml");
@@ -145,14 +145,13 @@ public class FSBatchProcessCLI {
     }
 
     public static void main(String[] args) throws Exception {
-
-        try{
+        try {
             FSBatchProcessCLI cli = new FSBatchProcessCLI(args);
             cli.execute(args);
         } catch (Throwable t) {
             t.printStackTrace();
-            logger.error(MarkerFactory.getMarker("FATAL"),
-                    "Fatal exception from FSBatchProcessCLI: " + t.getMessage(), t);
+            LOG.error(MarkerFactory.getMarker("FATAL"),
+                    "Fatal exception from FSBatchProcessCLI: {}", t.getMessage(), t);
             System.exit(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE);
         }
     }

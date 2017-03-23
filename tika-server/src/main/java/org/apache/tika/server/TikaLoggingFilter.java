@@ -17,6 +17,9 @@
 
 package org.apache.tika.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.PreMatching;
@@ -24,13 +27,11 @@ import javax.ws.rs.ext.Provider;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 @Provider
 @PreMatching
 public class TikaLoggingFilter implements ContainerRequestFilter {
-    private static final Log logger = LogFactory.getLog(TikaLoggingFilter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TikaLoggingFilter.class);
+
     private boolean infoLevel;
 
     public TikaLoggingFilter(boolean infoLevel) {
@@ -40,12 +41,10 @@ public class TikaLoggingFilter implements ContainerRequestFilter {
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         String requestUri = requestContext.getUriInfo().getRequestUri().toString();
-        String logMessage = "Request URI: " + requestUri;
         if (infoLevel) {
-            logger.info(logMessage);
+            LOG.info("Request URI: {}", requestUri);
         } else {
-            logger.debug(logMessage);
+            LOG.debug("Request URI: {}", requestUri);
         }
     }
-
 }
