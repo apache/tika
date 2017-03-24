@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Unified logging across Tika: SLF4J as logging API, Apache Log4j as
+    implementation with JCL and JUL bridges in standalone tools like
+    tika-app, tika-batch and tika-server (TIKA-2245).
 
   * Extract images and thumbnails from ODT via Sam Bayer (TIKA-2295).
 
