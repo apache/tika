@@ -197,10 +197,11 @@ class Classifier(flask.Flask):
     Classifier Service class
     '''
     def __init__(self, name):
+        dest_directory = FLAGS.model_dir
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
         init_fn = slim.assign_from_checkpoint_fn(
-        os.path.join(checkpoints_dir, 'inception_v4.ckpt'),
+        os.path.join(dest_directory, 'inception_v4.ckpt'),
         slim.get_model_variables('InceptionV4'))
         self.sess = tf.Session()
         init_fn(self.sess)
