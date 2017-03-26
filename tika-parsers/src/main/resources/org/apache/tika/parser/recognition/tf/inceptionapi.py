@@ -333,7 +333,7 @@ def classify_image():
     read_time = current_time() - st
     st = current_time() # reset start time
     try:
-        classes = app.classify(image_data=image_data, topk=topk)
+        classes = app.classify(image_string=image_data, topk=topk)
     except Exception as e:
         app.logger.error(e)
         return Response(status=400, response=str(e))
