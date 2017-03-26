@@ -212,7 +212,7 @@ class Classifier(flask.Flask):
         self.logger.addHandler(file_handler)
 
     def classify(self, image_string, topk):
-
+        dest_directory = FLAGS.model_dir
         init_fn = slim.assign_from_checkpoint_fn(
         os.path.join(dest_directory, 'inception_v4.ckpt'),
         slim.get_model_variables('InceptionV4'))
