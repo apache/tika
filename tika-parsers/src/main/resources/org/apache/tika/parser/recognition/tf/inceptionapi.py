@@ -200,11 +200,7 @@ class Classifier(flask.Flask):
         dest_directory = FLAGS.model_dir
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
-        init_fn = slim.assign_from_checkpoint_fn(
-        os.path.join(dest_directory, 'inception_v4.ckpt'),
-        slim.get_model_variables('InceptionV4'))
         self.sess = tf.Session()
-        init_fn(self.sess)
         
         print("Logs are directed to %s" % FLAGS.log)
         import logging
@@ -217,6 +213,11 @@ class Classifier(flask.Flask):
 
     def classify(self, image_string, topk):
 
+        init_fn = slim.assign_from_checkpoint_fn(
+        os.path.join(dest_directory, 'inception_v4.ckpt'),
+        slim.get_model_variables('InceptionV4'))
+        init_fn(self.sess)
+        
         image_size = inception.inception_v4.default_image_size
         image = tf.image.decode_jpeg(image_string, channels=3)
         processed_image = inception_preprocessing.preprocess_image(image, image_size, image_size, is_training=False)
