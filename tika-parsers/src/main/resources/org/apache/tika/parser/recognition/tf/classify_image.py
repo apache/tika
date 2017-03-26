@@ -52,17 +52,17 @@ slim = tf.contrib.slim
 
 FLAGS = tf.app.flags.FLAGS
 
-# classify_image_graph_def.pb:
-#   Binary representation of the GraphDef protocol buffer.
-# imagenet_synset_to_human_label_map.txt:
+# inception_v4.ckpt
+#   Inception V4 checkpoint file.
+# imagenet_metadata.txt
 #   Map from synset ID to a human readable string.
-# imagenet_2012_challenge_label_map_proto.pbtxt:
+# imagenet_lsvrc_2015_synsets.txt
 #   Text representation of a protocol buffer mapping a label to synset ID.
 tf.app.flags.DEFINE_string(
     'model_dir', '/tmp/imagenet',
-    """Path to classify_image_graph_def.pb, """
-    """imagenet_synset_to_human_label_map.txt, and """
-    """imagenet_2012_challenge_label_map_proto.pbtxt.""")
+    """Path to inception_v4.ckpt, """
+    """imagenet_lsvrc_2015_synsets.txt, and """
+    """imagenet_metadata.txt.""")
 tf.app.flags.DEFINE_string('image_file', '',
                            """Absolute path to image file.""")
 tf.app.flags.DEFINE_integer('num_top_predictions', 5,
@@ -169,6 +169,14 @@ def run_inference_on_image(image):
 
 
 def util_download(url, dest_directory):
+  """Downloads the file.
+
+  Args:
+    url: URL to download the file from.
+    dest_directory: Destination directory
+  Returns:
+    Nothing
+  """
   filename = url.split('/')[-1]
   filepath = os.path.join(dest_directory, filename)
 
@@ -182,6 +190,14 @@ def util_download(url, dest_directory):
   print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
 
 def util_download_tar(url, dest_directory):
+  """Downloads a file and extracts it.
+
+  Args:
+    url: URL to download the file from.
+    dest_directory: Destination directory
+  Returns:
+    Nothing
+  """
   filename = url.split('/')[-1]
   filepath = os.path.join(dest_directory, filename)
 
@@ -214,9 +230,7 @@ def maybe_download_and_extract():
 
 def main(_):
   maybe_download_and_extract()
-  image = (FLAGS.image_file if FLAGS.image_file else
-           os.path.join(FLAGS.model_dir, 'lion.jpg'))
-  #print(image)
+  image = (FLAGS.image_file if FLAGS.image_file)
   run_inference_on_image(image)
 
 
