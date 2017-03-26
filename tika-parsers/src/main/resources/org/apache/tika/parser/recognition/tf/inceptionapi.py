@@ -197,7 +197,6 @@ class Classifier(flask.Flask):
     Classifier Service class
     '''
     def __init__(self, name):
-        dest_directory = FLAGS.model_dir
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
         self.sess = tf.Session()
