@@ -200,15 +200,6 @@ class Classifier(flask.Flask):
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
         self.sess = tf.Session()
-        
-        print("Logs are directed to %s" % FLAGS.log)
-        import logging
-        from logging.handlers import RotatingFileHandler
-        file_handler = RotatingFileHandler(FLAGS.log, maxBytes=1024 * 1024 * 100, backupCount=20)
-        file_handler.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
 
     def classify(self, image_string, topk):
         dest_directory = FLAGS.model_dir
