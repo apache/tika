@@ -41,10 +41,18 @@ import tarfile
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
+from datasets import imagenet, dataset_utils
+from nets import inception
+from preprocessing import inception_preprocessing
+
+slim = tf.contrib.slim
+
 import requests
 import json
 json.encoder.FLOAT_REPR = lambda o: format(o, '.2f') # JSON serialization of floats
 from time import time
+
+
 
 import flask
 
@@ -59,108 +67,124 @@ FLAGS = tf.app.flags.FLAGS
 #   Text representation of a protocol buffer mapping a label to synset ID.
 tf.app.flags.DEFINE_string(
     'model_dir', '/tmp/imagenet',
-    """Path to classify_image_graph_def.pb, """
-    """imagenet_synset_to_human_label_map.txt, and """
-    """imagenet_2012_challenge_label_map_proto.pbtxt.""")
+    """Path to inception_v4.ckpt, """
+    """imagenet_lsvrc_2015_synsets.txt, and """
+    """imagenet_metadata.txt.""")
 tf.app.flags.DEFINE_integer('port', '8764', """Server PORT, default:8764""")
 tf.app.flags.DEFINE_string('log', 'inception.log', """Log file name, default: inception.log""")
 
 # pylint: disable=line-too-long
-DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
+DATA_URL = 'http://download.tensorflow.org/models/inception_v4_2016_09_09.tar.gz'
 # pylint: enable=line-too-long
 
-class NodeLookup(object):
-    """Converts integer node ID's to human readable labels."""
+def create_readable_names_for_imagenet_labels():
+  """Create a dict mapping label id to human readable string.
 
-    def __init__(self,
-                 label_lookup_path=None,
-                 uid_lookup_path=None):
-        if not label_lookup_path:
-            label_lookup_path = os.path.join(
-                FLAGS.model_dir, 'imagenet_2012_challenge_label_map_proto.pbtxt')
-        if not uid_lookup_path:
-            uid_lookup_path = os.path.join(
-                FLAGS.model_dir, 'imagenet_synset_to_human_label_map.txt')
-        self.node_lookup = self.load(label_lookup_path, uid_lookup_path)
+  Returns:
+      labels_to_names: dictionary where keys are integers from to 1000
+      and values are human-readable names.
 
-    def load(self, label_lookup_path, uid_lookup_path):
-        """Loads a human readable English name for each softmax node.
+  We retrieve a synset file, which contains a list of valid synset labels used
+  by ILSVRC competition. There is one synset one per line, eg.
+          #   n01440764
+          #   n01443537
+  We also retrieve a synset_to_human_file, which contains a mapping from synsets
+  to human-readable names for every synset in Imagenet. These are stored in a
+  tsv format, as follows:
+          #   n02119247    black fox
+          #   n02119359    silver fox
+  We assign each synset (in alphabetical order) an integer, starting from 1
+  (since 0 is reserved for the background class).
 
-    Args:
-      label_lookup_path: string UID to integer node ID.
-      uid_lookup_path: string UID to human-readable string.
+  Code is based on
+  https://github.com/tensorflow/models/blob/master/inception/inception/data/build_imagenet_data.py#L463
+  """
 
-    Returns:
-      dict from integer node ID to human-readable string.
-    """
-        if not tf.gfile.Exists(uid_lookup_path):
-            tf.logging.fatal('File does not exist %s', uid_lookup_path)
-        if not tf.gfile.Exists(label_lookup_path):
-            tf.logging.fatal('File does not exist %s', label_lookup_path)
+  # pylint: disable=line-too-long
+  
+  dest_directory = FLAGS.model_dir
 
-        # Loads mapping from string UID to human-readable string
-        proto_as_ascii_lines = tf.gfile.GFile(uid_lookup_path).readlines()
-        uid_to_human = {}
-        p = re.compile(r'[n\d]*[ \S,]*')
-        for line in proto_as_ascii_lines:
-            parsed_items = p.findall(line)
-            uid = parsed_items[0]
-            human_string = parsed_items[2]
-            uid_to_human[uid] = human_string
+  synset_list = [s.strip() for s in open(os.path.join(dest_directory, 'imagenet_lsvrc_2015_synsets.txt')).readlines()]
+  num_synsets_in_ilsvrc = len(synset_list)
+  assert num_synsets_in_ilsvrc == 1000
 
-        # Loads mapping from string UID to integer node ID.
-        node_id_to_uid = {}
-        proto_as_ascii = tf.gfile.GFile(label_lookup_path).readlines()
-        for line in proto_as_ascii:
-            if line.startswith('  target_class:'):
-                target_class = int(line.split(': ')[1])
-            if line.startswith('  target_class_string:'):
-                target_class_string = line.split(': ')[1]
-                node_id_to_uid[target_class] = target_class_string[1:-2]
+  synset_to_human_list = open(os.path.join(dest_directory, 'imagenet_metadata.txt')).readlines()
+  num_synsets_in_all_imagenet = len(synset_to_human_list)
+  assert num_synsets_in_all_imagenet == 21842
 
-        # Loads the final mapping of integer node ID to human-readable string
-        node_id_to_name = {}
-        for key, val in node_id_to_uid.items():
-            if val not in uid_to_human:
-                tf.logging.fatal('Failed to locate: %s', val)
-            name = uid_to_human[val]
-            node_id_to_name[key] = name
+  synset_to_human = {}
+  for s in synset_to_human_list:
+    parts = s.strip().split('\t')
+    assert len(parts) == 2
+    synset = parts[0]
+    human = parts[1]
+    synset_to_human[synset] = human
 
-        return node_id_to_name
+  label_index = 1
+  labels_to_names = {0: 'background'}
+  for synset in synset_list:
+    name = synset_to_human[synset]
+    labels_to_names[label_index] = name
+    label_index += 1
 
-    def id_to_string(self, node_id):
-        if node_id not in self.node_lookup:
-            return ''
-        return self.node_lookup[node_id]
+  return labels_to_names
 
-def create_graph():
-    """Creates a graph from saved GraphDef file and returns a saver."""
-    # Creates graph from saved graph_def.pb.
-    with tf.gfile.FastGFile(os.path.join(
-            FLAGS.model_dir, 'classify_image_graph_def.pb'), 'rb') as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
-        _ = tf.import_graph_def(graph_def, name='')
+def util_download(url, dest_directory):
+  """Downloads the file.
 
+  Args:
+    url: URL to download the file from.
+    dest_directory: Destination directory
+  Returns:
+    Nothing
+  """
+  filename = url.split('/')[-1]
+  filepath = os.path.join(dest_directory, filename)
+
+  def _progress(count, block_size, total_size):
+    sys.stdout.write('\r>> Downloading %s %.1f%%' % (
+        filename, float(count * block_size) / float(total_size) * 100.0))
+    sys.stdout.flush()
+  filepath, _ = urllib.request.urlretrieve(url, filepath, _progress)
+  print()
+  statinfo = os.stat(filepath)
+  print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
+
+def util_download_tar(url, dest_directory):
+  """Downloads a file and extracts it.
+
+  Args:
+    url: URL to download the file from.
+    dest_directory: Destination directory
+  Returns:
+    Nothing
+  """
+  filename = url.split('/')[-1]
+  filepath = os.path.join(dest_directory, filename)
+
+  def _progress(count, block_size, total_size):
+    sys.stdout.write('\r>> Downloading %s %.1f%%' % (
+        filename, float(count * block_size) / float(total_size) * 100.0))
+    sys.stdout.flush()
+  filepath, _ = urllib.request.urlretrieve(url, filepath, _progress)
+  print()
+  statinfo = os.stat(filepath)
+  print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
+  tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
 def maybe_download_and_extract():
-    """Download and extract model tar file."""
-    dest_directory = FLAGS.model_dir
-    if not os.path.exists(dest_directory):
-        os.makedirs(dest_directory)
-    filename = DATA_URL.split('/')[-1]
-    filepath = os.path.join(dest_directory, filename)
-    if not os.path.exists(filepath):
-        def _progress(count, block_size, total_size):
-            sys.stdout.write('\r>> Downloading %s %.1f%%' % (
-                filename, float(count * block_size) / float(total_size) * 100.0))
-            sys.stdout.flush()
-
-        filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
-        print()
-        statinfo = os.stat(filepath)
-        print('Succesfully downloaded', filename, statinfo.st_size, 'bytes.')
-    tarfile.open(filepath, 'r:gz').extractall(dest_directory)
+  """Download and extract model tar file."""
+  dest_directory = FLAGS.model_dir
+  if not tf.gfile.Exists(dest_directory):
+    tf.gfile.MakeDirs(dest_directory)
+  if not tf.gfile.Exists(os.path.join(dest_directory, 'inception_v4.ckpt')):
+    util_download_tar(DATA_URL, dest_directory)
+  # pylint: disable=line-too-long
+  if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_lsvrc_2015_synsets.txt')):
+    util_download('https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_lsvrc_2015_synsets.txt', dest_directory)
+  if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_metadata.txt')):
+    util_download('https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_metadata.txt', dest_directory)
+  # pylint: enable=line-too-long
 
 def current_time():
     """
@@ -175,10 +199,12 @@ class Classifier(flask.Flask):
     def __init__(self, name):
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
-        create_graph()
+        init_fn = slim.assign_from_checkpoint_fn(
+        os.path.join(checkpoints_dir, 'inception_v4.ckpt'),
+        slim.get_model_variables('InceptionV4'))
         self.sess = tf.Session()
-        self.softmax_tensor = self.sess.graph.get_tensor_by_name('softmax:0')
-        self.node_lookup = NodeLookup()
+        init_fn(self.sess)
+        
         print("Logs are directed to %s" % FLAGS.log)
         import logging
         from logging.handlers import RotatingFileHandler
@@ -188,16 +214,31 @@ class Classifier(flask.Flask):
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
-    def classify(self, image_data, topk):
-        predictions = self.sess.run(self.softmax_tensor,
-                                    {'DecodeJpeg/contents:0': image_data})
-        predictions = np.squeeze(predictions)
-        top_k = predictions.argsort()[-topk:][::-1]
+    def classify(self, image_string, topk):
+
+        image_size = inception.inception_v4.default_image_size
+        image = tf.image.decode_jpeg(image_string, channels=3)
+        processed_image = inception_preprocessing.preprocess_image(image, image_size, image_size, is_training=False)
+        processed_images  = tf.expand_dims(processed_image, 0)
+
+        # Create the model, use the default arg scope to configure the batch norm parameters.
+        with slim.arg_scope(inception.inception_v4_arg_scope()):
+            logits, _ = inception.inception_v4(processed_images, num_classes=1001, is_training=False)
+        probabilities = tf.nn.softmax(logits)
+
+
+
+        _, probabilities = self.sess.run([image, probabilities])
+        probabilities = probabilities[0, 0:]
+        sorted_inds = [i[0] for i in sorted(enumerate(-probabilities), key=lambda x:x[1])]
+
+
+        names = imagenet.create_readable_names_for_imagenet_labels()
         res = []
-        for node_id in top_k:
-            class_name = self.node_lookup.id_to_string(node_id)
-            score = float(predictions[node_id])
-            res.append((node_id, class_name, score))
+        for i in range(topk):
+            index = sorted_inds[i]
+            score = float(probabilities[index])
+            res.append((index, names[index], score))
         return res
 
 

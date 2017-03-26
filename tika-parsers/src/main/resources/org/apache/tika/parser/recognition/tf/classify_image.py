@@ -29,6 +29,11 @@ Please see the tutorial and website for a detailed description of how
 to use this script to perform image recognition.
 
 https://tensorflow.org/tutorials/image_recognition/
+
+Requirements:
+  tensorflow
+  tensorflow models (for TF-slim)
+
 """
 
 from __future__ import absolute_import
@@ -157,7 +162,7 @@ def run_inference_on_image(image):
     
     with tf.Session() as sess:
         init_fn(sess)
-        np_image, probabilities = sess.run([image, probabilities])
+        _, probabilities = sess.run([image, probabilities])
         probabilities = probabilities[0, 0:]
         sorted_inds = [i[0] for i in sorted(enumerate(-probabilities), key=lambda x:x[1])]
         
@@ -166,7 +171,6 @@ def run_inference_on_image(image):
     for i in range(top_k):
         index = sorted_inds[i]
         print('%s (score = %.5f)' % (names[index], probabilities[index]))
-
 
 def util_download(url, dest_directory):
   """Downloads the file.
@@ -210,7 +214,6 @@ def util_download_tar(url, dest_directory):
   statinfo = os.stat(filepath)
   print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
   tarfile.open(filepath, 'r:gz').extractall(dest_directory)
-
 
 def maybe_download_and_extract():
   """Download and extract model tar file."""
