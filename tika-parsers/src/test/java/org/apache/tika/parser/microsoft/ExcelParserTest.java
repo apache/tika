@@ -27,6 +27,7 @@ import java.util.Locale;
 
 import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -480,6 +481,19 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testMacros() throws  Exception {
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xls")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extract macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
@@ -487,7 +501,13 @@ public class ExcelParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls"));
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", context));
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", parser));
+
     }
 
 }

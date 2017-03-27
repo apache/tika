@@ -54,6 +54,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
@@ -91,9 +92,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
+    private final ParseContext context;
     protected POIXMLTextExtractor extractor;
 
     public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor) {
+        this.context = context;
         this.extractor = extractor;
         embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
     }
@@ -382,14 +385,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
     void handleMacros(PackagePart macroPart, ContentHandler handler) throws TikaException, SAXException {
+        OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
-        try (InputStream is = macroPart.getInputStream()) {
-            try (NPOIFSFileSystem npoifs = new NPOIFSFileSystem(is)) {
-                //Macro reading exceptions are already swallowed here
-                OfficeParser.extractMacros(npoifs, handler, embeddedExtractor);
+        if (officeParserConfig.getExtractMacros()) {
+            try (InputStream is = macroPart.getInputStream()) {
+                try (NPOIFSFileSystem npoifs = new NPOIFSFileSystem(is)) {
+                    //Macro reading exceptions are already swallowed here
+                    OfficeParser.extractMacros(npoifs, handler, embeddedExtractor);
+                }
+            } catch (IOException e) {
+                throw new TikaException("Broken OOXML file", e);
             }
-        } catch (IOException e) {
-            throw new TikaException("Broken OOXML file", e);
         }
     }
 
