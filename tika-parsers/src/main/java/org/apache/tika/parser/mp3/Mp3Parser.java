@@ -241,6 +241,22 @@ public class Mp3Parser extends AbstractParser {
         private AudioFrame audio;
         private LyricsHandler lyrics;
         private float duration;
+
+        protected ID3Tags[] getTags() {
+            return tags;
+        }
+
+        protected AudioFrame getAudio() {
+            return audio;
+        }
+
+        protected LyricsHandler getLyrics() {
+            return lyrics;
+        }
+
+        protected float getDuration() {
+            return duration;
+        }
     }
 
 }
