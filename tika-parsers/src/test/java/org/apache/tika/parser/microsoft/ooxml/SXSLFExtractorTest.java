@@ -533,7 +533,7 @@ public class SXSLFExtractorTest extends TikaTest {
         //test default is "don't extract macros"
         for (Metadata metadata : metadataList) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extract macros as default");
+                fail("Shouldn't have extracted macros as default");
             }
         }
 

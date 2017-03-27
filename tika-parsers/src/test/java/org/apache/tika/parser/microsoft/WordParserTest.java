@@ -531,7 +531,7 @@ public class WordParserTest extends TikaTest {
         //test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testWORD_macros.doc")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extract macros as default");
+                fail("Shouldn't have extracted macros as default");
             }
         }
 

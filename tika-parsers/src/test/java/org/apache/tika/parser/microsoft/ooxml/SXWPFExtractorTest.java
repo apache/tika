@@ -712,7 +712,7 @@ public class SXWPFExtractorTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.docm", parseContext);
         for (Metadata metadata : metadataList) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extract macros as default");
+                fail("Shouldn't have extracted macros as default");
             }
         }
         assertContainsAtLeast(parsedBy, metadataList);

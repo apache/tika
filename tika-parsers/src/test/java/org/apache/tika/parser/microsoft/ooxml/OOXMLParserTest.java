@@ -1293,7 +1293,7 @@ public class OOXMLParserTest extends TikaTest {
         //test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testWORD_macros.docm")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extract macros as default");
+                fail("Shouldn't have extracted macros as default");
             }
         }
 
@@ -1326,7 +1326,7 @@ public class OOXMLParserTest extends TikaTest {
         //test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testPPT_macros.pptm")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extract macros as default");
+                fail("Shouldn't have extracted macros as default");
             }
         }
 
@@ -1358,7 +1358,7 @@ public class OOXMLParserTest extends TikaTest {
         //test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xlsm")) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extract macros as default");
+                fail("Shouldn't have extracted macros as default");
             }
         }
 
