@@ -129,10 +129,13 @@ public class OfficeParser extends AbstractOfficeParser {
                 }
             }
             parse(root, context, metadata, xhtml);
+            OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
-            //now try to get macros
-            extractMacros(root.getNFileSystem(), xhtml,
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+            if (officeParserConfig.getExtractMacros()) {
+                //now try to get macros
+                extractMacros(root.getNFileSystem(), xhtml,
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+            }
         } finally {
             IOUtils.closeQuietly(mustCloseFs);
         }

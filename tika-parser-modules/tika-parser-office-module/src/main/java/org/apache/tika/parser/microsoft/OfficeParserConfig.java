@@ -21,12 +21,31 @@ import java.io.Serializable;
 
 public class OfficeParserConfig implements Serializable {
 
+    private boolean extractMacros = false;
+
     private boolean includeDeletedContent = false;
     private boolean includeMoveFromContent = false;
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
 
+    /**
+     * Sets whether or not MSOffice parsers should extract macros.
+     * As of Tika 1.15, the default is <code>false</code>.
+     *
+     * @param extractMacros
+     */
+    public void setExtractMacros(boolean extractMacros) {
+        this.extractMacros = extractMacros;
+    }
+
+    /**
+     *
+     * @return whether or not to extract macros
+     */
+    public boolean getExtractMacros() {
+        return extractMacros;
+    }
     /**
      * Sets whether or not the parser should include deleted content.
      * <p/>

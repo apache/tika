@@ -49,6 +49,18 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         return defaultOfficeParserConfig.getUseSAXDocxExtractor();
     }
 
+    /**
+     * @see OfficeParserConfig#getExtractMacros()
+     * @return whether or not to extract macros
+     */
+    public boolean getExtractMacros() {
+        return defaultOfficeParserConfig.getExtractMacros();
+    }
+
+    //@Field
+    public void setExtractMacros(boolean extractMacros) {
+        defaultOfficeParserConfig.setExtractMacros(extractMacros);
+    }
 
 //    @Field
     public void setIncludeDeletedContent(boolean includeDeletedConent) {

@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -1272,6 +1273,21 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testMacrosInDocm() throws Exception {
+
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testWORD_macros.docm")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extract macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
@@ -1279,11 +1295,31 @@ public class OOXMLParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm"));
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", context));
+/*
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-dom-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", parser));
+*/
     }
 
     @Test
     public void testMacrosInPptm() throws Exception {
+
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testPPT_macros.pptm")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extract macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
@@ -1291,11 +1327,31 @@ public class OOXMLParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm"));
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", context));
+/*
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-dom-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
+*/
     }
 
     @Test
     public void testMacroinXlsm() throws Exception {
+
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xlsm")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extract macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
@@ -1303,7 +1359,14 @@ public class OOXMLParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm"));
+        assertContainsAtLeast(minExpected,
+                getRecursiveMetadata("testEXCEL_macro.xlsm", context));
+/*
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-dom-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
+*/
     }
 
     //@Test //use this for lightweight benchmarking to compare xwpf options
