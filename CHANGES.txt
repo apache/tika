@@ -88,7 +88,9 @@ Release 1.15 -???
 
   * Upgrade provided SQLite parser to 3.15.1 (TIKA-2171).
 
-Release 1.14 - 11/9/2016
+  * Further mime magic for WebVTT (TIKA-1772)
+
+Release 1.14 - 10/19/2016
 
   * Extract all headers from MSG/RFC822 (TIKA-2122).
 

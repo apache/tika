@@ -5842,8 +5842,31 @@
     <_comment>Web Video Text Tracks Format</_comment>
     <acronym>WebVTT</acronym>
     <magic priority="40">
+      <!-- Simple Form -->
+      <match value="WEBVTT\r" type="string" offset="0"/>
+      <match value="WEBVTT\n" type="string" offset="0"/>
+      <!-- With Byte Order Mark -->
+      <match value="0xfeff" offset="0">
+         <match value="WEBVTT\r" type="string" offset="2"/>
+      </match>
+      <match value="0xfeff" offset="0">
+         <match value="WEBVTT\n" type="string" offset="2"/>
+      </match>
+      <!-- Common Header -->
       <match value="WEBVTT FILE\r" type="string" offset="0"/>
       <match value="WEBVTT FILE\n" type="string" offset="0"/>
+    </magic>
+    <magic priority="30">
+      <!-- With a custom header - needs a lower priority -->
+      <match value="WEBVTT " type="string" offset="0">
+        <match value="\n\n" type="string" offset="10:50" />
+      </match>
+      <match value="WEBVTT " type="string" offset="0">
+        <match value="\r\r" type="string" offset="10:50" />
+      </match>
+      <match value="WEBVTT " type="string" offset="0">
+        <match value="\r\n\r\n" type="string" offset="10:50" />
+      </match>
     </magic>
     <glob pattern="*.vtt"/>
     <sub-class-of type="text/plain"/>
