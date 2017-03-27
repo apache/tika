@@ -199,39 +199,46 @@ class Classifier(flask.Flask):
     def __init__(self, name):
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
-        self.sess = tf.Session()
+        import logging
+        from logging.handlers import RotatingFileHandler
+        file_handler = RotatingFileHandler(FLAGS.log, maxBytes=1024 * 1024 * 100, backupCount=20)
+        file_handler.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
+        
 
     def classify(self, image_string, topk):
         dest_directory = FLAGS.model_dir
-        init_fn = slim.assign_from_checkpoint_fn(
-        os.path.join(dest_directory, 'inception_v4.ckpt'),
-        slim.get_model_variables('InceptionV4'))
-        init_fn(self.sess)
-        
+
         image_size = inception.inception_v4.default_image_size
-        image = tf.image.decode_jpeg(image_string, channels=3)
-        processed_image = inception_preprocessing.preprocess_image(image, image_size, image_size, is_training=False)
-        processed_images  = tf.expand_dims(processed_image, 0)
-
-        # Create the model, use the default arg scope to configure the batch norm parameters.
-        with slim.arg_scope(inception.inception_v4_arg_scope()):
-            logits, _ = inception.inception_v4(processed_images, num_classes=1001, is_training=False)
-        probabilities = tf.nn.softmax(logits)
-
-
-
-        _, probabilities = self.sess.run([image, probabilities])
-        probabilities = probabilities[0, 0:]
-        sorted_inds = [i[0] for i in sorted(enumerate(-probabilities), key=lambda x:x[1])]
-
-
-        names = imagenet.create_readable_names_for_imagenet_labels()
-        res = []
-        for i in range(topk):
-            index = sorted_inds[i]
-            score = float(probabilities[index])
-            res.append((index, names[index], score))
-        return res
+        with tf.Graph().as_default():
+          image = tf.image.decode_jpeg(image_string, channels=3)
+          processed_image = inception_preprocessing.preprocess_image(image, image_size, image_size, is_training=False)
+          processed_images  = tf.expand_dims(processed_image, 0)
+          
+          # Create the model, use the default arg scope to configure the batch norm parameters.
+          with slim.arg_scope(inception.inception_v4_arg_scope()):
+              logits, _ = inception.inception_v4(processed_images, num_classes=1001, is_training=False)
+          probabilities = tf.nn.softmax(logits)
+          
+          init_fn = slim.assign_from_checkpoint_fn(
+              os.path.join(dest_directory, 'inception_v4.ckpt'),
+              slim.get_model_variables('InceptionV4'))
+          
+          with tf.Session() as sess:
+              init_fn(sess)
+              _, probabilities = sess.run([image, probabilities])
+              probabilities = probabilities[0, 0:]
+              sorted_inds = [i[0] for i in sorted(enumerate(-probabilities), key=lambda x:x[1])]
+        
+          names = imagenet.create_readable_names_for_imagenet_labels()
+          res = []
+          for i in range(topk):
+              index = sorted_inds[i]
+              score = float(probabilities[index])
+              res.append((index, names[index], score))
+          return res
 
 
 from flask import Flask, request, abort, g, Response, jsonify
@@ -246,6 +253,7 @@ def get_remotefile(url, success=200, timeout=10):
         app.logger.info("GET: %s" % url)
         auth = None
         res = requests.get(url, stream=True, timeout=timeout, auth=auth)
+        print(res)
         if res.status_code == success:
             return res.headers.get('Content-Type', 'application/octet-stream'), res.raw.data
     except:
@@ -262,14 +270,11 @@ def index():
     <h1> Inception REST API </h1>
     <h3> The following API end points are valid </h3>
         <ul>
-            <h4> Inception V3 </h4>
-            <li> <code>/inception/v3/classes </code> - <br/>
-                <b> Description : </b> This API gets all classes/object types known to the current model
-            </li>
-            <li> <code>/inception/v3/ping </code> - <br/>
+            <h4> Inception V4 </h4>
+            <li> <code>/inception/v4/ping </code> - <br/>
                 <b> Description : </b> checks availability of the service. returns "pong" with status 200 when it is available
             </li>
-            <li> <code>/inception/v3/classify</code> - <br/>
+            <li> <code>/inception/v4/classify</code> - <br/>
                 <table>
                 <tr><th align="left"> Description </th><td> This is a classifier service that can classify images</td></tr>
                 <tr><td></td> <td>Query Params : <br/>
@@ -279,11 +284,11 @@ def index():
                 <tr><th align="left"> How to supply Image Content </th></tr>
                 <tr><th align="left"> With HTTP GET : </th> <td>
                     Include a query parameter <code>url </code> which is an http url of JPEG image <br/>
-                    Example: <code> curl "localhost:8764/inception/v3/classify?url=http://xyz.com/example.jpg"</code>
+                    Example: <code> curl "localhost:8764/inception/v4/classify?url=http://xyz.com/example.jpg"</code>
                 </td></tr>
                 <tr><th align="left"> With HTTP POST :</th><td>
                     POST JPEG image content as binary data in request body. <br/>
-                    Example: <code> curl -X POST "localhost:8764/inception/v3/classify?topk=10&human=false" --data-binary @example.jpg </code>
+                    Example: <code> curl -X POST "localhost:8764/inception/v4/classify?topk=10&human=false" --data-binary @example.jpg </code>
                 </td></tr>
                 </table>
             </li>
@@ -291,19 +296,14 @@ def index():
     </div>
     """
 
-@app.route("/inception/v3/classes", methods=["GET"])
-def get_classes():
-    """API to list all known classes
-    """
-    return jsonify(app.node_lookup.node_lookup)
 
-@app.route("/inception/v3/ping", methods=["GET"])
+@app.route("/inception/v4/ping", methods=["GET"])
 def ping_pong():
     """API to do health check. If this says status code 200, then healthy
     """
     return "pong"
 
-@app.route("/inception/v3/classify", methods=["GET", "POST"])
+@app.route("/inception/v4/classify", methods=["GET", "POST"])
 def classify_image():
     """
     API to classify images
