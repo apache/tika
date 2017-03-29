@@ -277,7 +277,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.11</version>
+        <version>4.12</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -381,7 +381,7 @@
     <!--sync commons compress with tukaani in tika-parser-package-module -->
     <commons.compress.version>1.11</commons.compress.version>
     <commons.io.version>2.5</commons.io.version>
-    <slf4j.version>1.7.12</slf4j.version>
+    <slf4j.version>1.7.24</slf4j.version>
     <log4j.version>1.2.17</log4j.version>
     <pax.exam.version>4.4.0</pax.exam.version>
   </properties>
