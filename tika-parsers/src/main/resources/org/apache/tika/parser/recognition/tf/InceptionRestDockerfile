@@ -46,4 +46,4 @@ ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
 # expose API port, this is the default port
 EXPOSE 8764
 
-#CMD inceptionapi.py
+CMD inceptionapi.py
