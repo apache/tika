@@ -32,7 +32,7 @@ RUN git clone https://github.com/tensorflow/models/
 
 # TODO: Change the URL to Apache/Tika Repo when this PR gets merged
 RUN \
-  wget https://gist.githubusercontent.com/KranthiGV/22646c0c1586802b0a7a1f3d88dc238f/raw/ab94212f53ae9be6b79fec5f94b694737fac3bab/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  wget https://raw.githubusercontent.com/KranthiGV/tika/TIKA-2306/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/inceptionapi.py
 
 
