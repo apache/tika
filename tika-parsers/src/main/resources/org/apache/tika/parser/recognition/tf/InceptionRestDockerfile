@@ -27,8 +27,9 @@ RUN \
   pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl && \
   pip install flask requests
 
-# Get the TF-slim dependencies
-RUN git clone https://github.com/tensorflow/models/
+# Get the TF-slim dependencies 
+# Forked for future compatibility
+RUN git clone https://github.com/KranthiGV/models
 
 # TODO: Change the URL to Apache/Tika Repo when this PR gets merged
 RUN \
