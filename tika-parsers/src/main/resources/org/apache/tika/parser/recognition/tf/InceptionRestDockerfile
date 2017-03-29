@@ -16,26 +16,33 @@
 #
 FROM ubuntu
 
-MAINTAINER Thamme Gowda <thammegowda@apache.org>
+MAINTAINER Thamme Gowda <thammegowda@apache.org> and Kranthi Kiran GV <kkranthi@student.nitw.ac.in>
 
-# install missing part of ubuntu core + python stuff
+# Install missing part of ubuntu core + python stuff
 RUN apt-get update && \
-    apt-get install -y python-pip python-dev wget
+    apt-get install -y python-pip python-dev wget libtcmalloc-minimal4 git
 
 # Install tensorflow and other dependencies
 RUN \
-  pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.9.0-cp27-none-linux_x86_64.whl && \
+  pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl && \
   pip install flask requests
+
+# Get the TF-slim dependencies
+RUN git clone https://github.com/tensorflow/models/
 
 # TODO: Change the URL to Apache/Tika Repo when this PR gets merged
 RUN \
-  wget https://raw.githubusercontent.com/thammegowda/tika/TIKA-1993/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  wget https://gist.githubusercontent.com/KranthiGV/22646c0c1586802b0a7a1f3d88dc238f/raw/ab94212f53ae9be6b79fec5f94b694737fac3bab/inceptionapi.py -O /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/inceptionapi.py
+
+
+# clean up cache, so we can publish smaller image to hub
+RUN apt-get clean
+ENV	PYTHONPATH="$PYTHONPATH:/models/slim"
+ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
+
 
 # expose API port, this is the default port
 EXPOSE 8764
 
-# clean up cache, so we can publish smaller image to hub
-RUN apt-get clean
-
-CMD inceptionapi.py
+#CMD inceptionapi.py

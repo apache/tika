@@ -59,11 +59,11 @@ import flask
 
 FLAGS = tf.app.flags.FLAGS
 
-# classify_image_graph_def.pb:
-#   Binary representation of the GraphDef protocol buffer.
-# imagenet_synset_to_human_label_map.txt:
+# inception_v4.ckpt
+#   Inception V4 checkpoint file.
+# imagenet_metadata.txt
 #   Map from synset ID to a human readable string.
-# imagenet_2012_challenge_label_map_proto.pbtxt:
+# imagenet_lsvrc_2015_synsets.txt
 #   Text representation of a protocol buffer mapping a label to synset ID.
 tf.app.flags.DEFINE_string(
     'model_dir', '/tmp/imagenet',
@@ -206,15 +206,16 @@ class Classifier(flask.Flask):
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
-        
+        self.names = imagenet.create_readable_names_for_imagenet_labels()
+        self.image_size = inception.inception_v4.default_image_size
 
     def classify(self, image_string, topk):
         dest_directory = FLAGS.model_dir
 
-        image_size = inception.inception_v4.default_image_size
+        
         with tf.Graph().as_default():
           image = tf.image.decode_jpeg(image_string, channels=3)
-          processed_image = inception_preprocessing.preprocess_image(image, image_size, image_size, is_training=False)
+          processed_image = inception_preprocessing.preprocess_image(image, self.image_size, self.image_size, is_training=False)
           processed_images  = tf.expand_dims(processed_image, 0)
           
           # Create the model, use the default arg scope to configure the batch norm parameters.
@@ -232,12 +233,12 @@ class Classifier(flask.Flask):
               probabilities = probabilities[0, 0:]
               sorted_inds = [i[0] for i in sorted(enumerate(-probabilities), key=lambda x:x[1])]
         
-          names = imagenet.create_readable_names_for_imagenet_labels()
+          
           res = []
           for i in range(topk):
               index = sorted_inds[i]
               score = float(probabilities[index])
-              res.append((index, names[index], score))
+              res.append((index, self.names[index], score))
           return res
 
 
@@ -253,7 +254,6 @@ def get_remotefile(url, success=200, timeout=10):
         app.logger.info("GET: %s" % url)
         auth = None
         res = requests.get(url, stream=True, timeout=timeout, auth=auth)
-        print(res)
         if res.status_code == success:
             return res.headers.get('Content-Type', 'application/octet-stream'), res.raw.data
     except:
