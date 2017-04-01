@@ -20,17 +20,14 @@ import org.apache.tika.config.Field;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.recognition.RecognisedObject;
-import org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.modelimport.keras.KerasModelImport;
 import org.deeplearning4j.nn.modelimport.keras.trainedmodels.TrainedModelHelper;
 import org.deeplearning4j.nn.modelimport.keras.trainedmodels.TrainedModels;
 import org.deeplearning4j.util.ModelSerializer;
@@ -42,10 +39,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,39 +82,31 @@ public class DL4JImageRecogniser extends ExternalParser implements ObjectRecogni
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
-        	if(modelType.equals("VGG16NOTOP"))
-            {
+        	if(modelType.equals("VGG16NOTOP")) {
         		throw new TikaConfigException("VGG16NOTOP is not supported right now");
 				/*# TODO hookup VGGNOTOP by uncommenting following code once the issue is resolved by dl4j team
 				modelFile = new File(MODEL_DIR_PREPROCESSED+File.separator+"vgg16_notop.zip");
 				locationToSave= new File(MODEL_DIR+File.separator+"tikaPreprocessed"+File.separator+"vgg16.zip");*/
-            }else if(modelType.equals("VGG16"))
-            {
+            }else if(modelType.equals("VGG16")) {
             	modelFile = new File(MODEL_DIR_PREPROCESSED+File.separator+"vgg16.zip");
 				locationToSave= new File(MODEL_DIR+File.separator+"tikaPreprocessed"+File.separator+"vgg16.zip");
             }
-        	if(!modelFile.exists())
-    		{
+        	if(!modelFile.exists()) {
                     modelFile.getParentFile().mkdirs();
                     LOG.warn("Preprocessed Model doesn't exist at {}", modelFile);
                     TrainedModelHelper helper;
-                   if(modelType.equals("VGG16NOTOP"))
-                    {
+                   if(modelType.equals("VGG16NOTOP")) {
                     	helper = new TrainedModelHelper(TrainedModels.VGG16NOTOP);
-                    }else if(modelType.equals("VGG16"))
-                    {
+                    }else if(modelType.equals("VGG16")) {
                     	helper = new TrainedModelHelper(TrainedModels.VGG16);
-                    }else
-                    {
+                    }else {
                     	throw new TikaConfigException("Unknown or unsupported model");
                     }
                     model = helper.loadModel();
-    				/*model= KerasModelImport.importKerasModelAndWeights(MODEL_DIR+File.separator+"VGG16NoTop.json",MODEL_DIR+File.separator+"vgg16_weights_th_dim_ordering_th_kernels_notop",false);*/
     				LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resource.");
     				ModelSerializer.writeModel(model,locationToSave,true);
     				available=true;
-    		}else
-    		{
+    		}else {
     			model = ModelSerializer.restoreComputationGraph(locationToSave);
     			LOG.info("Preprocessed Model Loaded from {}",locationToSave);
     			available=true;
@@ -153,8 +140,7 @@ public class DL4JImageRecogniser extends ExternalParser implements ObjectRecogni
 		modelOutput=modelOutput.replace("%","");
 		String objs[]=modelOutput.split("\n");
 		List<RecognisedObject> objects = new ArrayList<>();
-		for(String obj : objs)
-		{
+		for(String obj : objs) {
 			String data[];
 			data=obj.split(",");
 			 double confidence = Double.parseDouble(data[0]);
