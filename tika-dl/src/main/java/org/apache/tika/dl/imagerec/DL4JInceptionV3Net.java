@@ -178,7 +178,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     public static synchronized File cachedDownload(File cacheDir, URI uri)
             throws IOException {
 
-        if ("file://".equals(uri.getScheme()) || uri.getScheme() == null) {
+        if ("file".equals(uri.getScheme()) || uri.getScheme() == null) {
             return new File(uri);
         }
         if (!cacheDir.exists()) {
