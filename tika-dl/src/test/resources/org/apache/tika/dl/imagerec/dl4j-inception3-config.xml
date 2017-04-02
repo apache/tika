@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+    <parsers>
+        <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
+            <mime>image/jpeg</mime>
+            <params>
+                <param name="topN" type="int">10</param>
+                <param name="minConfidence" type="double">0.015</param>
+                <param name="class" type="string">org.apache.tika.dl.imagerec.DL4JInceptionV3Net</param>
+            </params>
+        </parser>
+    </parsers>
+</properties>
