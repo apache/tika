@@ -205,12 +205,12 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
         File successFlag = new File(cacheFile.getAbsolutePath() + ".success");
 
         if (cacheFile.exists() && successFlag.exists()) {
-            LOG.info("Cache exists at {}. Not downloading it", cacheFile.getAbsolutePath());
+            LOG.info("Cache exist at {}. Not downloading it", cacheFile.getAbsolutePath());
         } else {
             if (successFlag.exists()) {
                 successFlag.delete();
             }
-            LOG.info("Cache doesn't exists. Going to make a copy");
+            LOG.info("Cache doesn't exist. Going to make a copy");
             LOG.info("This might take a while! GET {}", uri);
             FileUtils.copyURLToFile(uri.toURL(), cacheFile, 5000, 5000);
             //restore the success flag again
@@ -235,7 +235,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
         } else {
             File modelFile = retrieveFile(modelWeightsPath);
             if (!modelFile.exists()) {
-                LOG.error("modelWeights does not exists at :: {}", modelWeightsPath);
+                LOG.error("modelWeights does not exist at :: {}", modelWeightsPath);
                 return;
             }
             modelWeightsPath = modelFile.getAbsolutePath();
@@ -284,7 +284,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
      * @return processed image
      */
     public INDArray preProcessImage(INDArray input) {
-        // Transform to [1.0, 1.0] range
+        // Transform to [-1.0, 1.0] range
         return input.div(255.0).sub(0.5).mul(2.0);
     }
 
