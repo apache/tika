@@ -26,9 +26,7 @@
       <params>
         <param name="topN" type="int">10</param>
         <param name="minConfidence" type="double">0.015</param>
-        <param name="class" type="string">
-          org.apache.tika.dl.imagerec.DL4JInceptionV3Net
-        </param>
+        <param name="class" type="string">org.apache.tika.dl.imagerec.DL4JInceptionV3Net</param>
       </params>
     </parser>
   </parsers>
