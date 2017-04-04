@@ -1,4 +1,3 @@
-//package it.notartel.cons.verifyfiles.custom;
 package org.apache.tika.parser.crypto;
 
 import java.io.IOException;
@@ -54,14 +53,14 @@ public class TSDParser extends AbstractParser {
      */
     private static final long serialVersionUID = 6139181424595882376L;
     
-    private final String TSD_LOOP_LABEL = "Time Stamp n. ";
+    private final String TSD_LOOP_LABEL = "Time-Stamp-n.";
     private final String TSD_DESCRIPTION_VALUE = "Time Stamped Data Envelope";
-    private final String TSD_PARSED_LABEL = "File Parsed";
-    private final String TSD_PARSED_DATE = "File Parsed DateTime";
-    private final String TSD_DATE = "Time Stamp DateTime";
+    private final String TSD_PARSED_LABEL = "File-Parsed";
+    private final String TSD_PARSED_DATE = "File-Parsed-DateTime";
+    private final String TSD_DATE = "Time-Stamp-DateTime";
     private final String TSD_DATE_FORMAT = "UTC";
-    private final String TSD_POLICY_ID = "Policy Id";
-    private final String TSD_SERIAL_NUMBER = "Serial Number";
+    private final String TSD_POLICY_ID = "Policy-Id";
+    private final String TSD_SERIAL_NUMBER = "Serial-Number";
     private final String TSD_TSA = "TSA";
     private final String TSD_ALGORITHM = "Algorithm";
     
@@ -122,7 +121,7 @@ public class TSDParser extends AbstractParser {
                  
                  tsdMetasList.add(tsdMetas);
              }
-                          
+             
         } catch (Exception ex) {
               tsdMetasList = new ArrayList<TSDMetas>();
         }
@@ -179,7 +178,7 @@ public class TSDParser extends AbstractParser {
         }
         
         public String getEmitDateStr() {
-            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ITALY);
+            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ROOT);
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             return sdf.format(this.getEmitDate()!=null ? 
                               this.getEmitDate(): new Date());
@@ -198,7 +197,7 @@ public class TSDParser extends AbstractParser {
         }
         
         public String getSerialNumberFormatted() {
-            String outsn = String.format(Locale.ITALY, "%12x", getSerialNumber());
+            String outsn = String.format(Locale.ROOT, "%12x", getSerialNumber());
             return outsn !=null ? outsn.trim() : "" + getSerialNumber();
         }
         
@@ -235,7 +234,7 @@ public class TSDParser extends AbstractParser {
         }
         
         public String getParsedDateStr() {
-            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ITALY);
+            SimpleDateFormat sdf = new SimpleDateFormat(this.DATE_FORMAT, Locale.ROOT);
             sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             return sdf.format(this.getParsedDate()!=null ? 
                               this.getParsedDate(): new Date());
