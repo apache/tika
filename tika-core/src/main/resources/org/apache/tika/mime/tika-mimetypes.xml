@@ -626,7 +626,7 @@
       </match>
     </magic>
   </mime-type>
-  
+
   <mime-type type="application/timestamped-data">
       <glob pattern="*.tsd"/>
       <glob pattern="*.TSD"/>
@@ -634,7 +634,7 @@
           <match value="0x3080060B2A864886F7" type="string" offset="0"/>
      </magic>
   </mime-type>
-    
+
   <mime-type type="application/pkix-cert">
     <glob pattern="*.cer"/>
   </mime-type>

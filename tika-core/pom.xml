@@ -55,7 +55,6 @@
       <artifactId>bndlib</artifactId>
       <scope>provided</scope>
     </dependency>
-    
     <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
