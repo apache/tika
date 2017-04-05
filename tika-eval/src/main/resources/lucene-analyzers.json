@@ -27,7 +27,7 @@
         {
           "factory": "oala.miscellaneous.LimitTokenCountFilterFactory",
           "params": {
-            "maxTokenCount": "100000",
+            "maxTokenCount": "1000000",
             "consumeAllTokens": "false"
           }
         }

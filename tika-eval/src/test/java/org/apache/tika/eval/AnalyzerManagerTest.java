@@ -82,7 +82,7 @@ public class AnalyzerManagerTest {
     public void testTokenCountFilter() throws Exception {
         AnalyzerManager analyzerManager = AnalyzerManager.newInstance();
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 101000; i++) {
+        for (int i = 0; i < 1001000; i++) {
             sb.append("the ");
         }
         TokenStream ts = analyzerManager.getGeneralAnalyzer().tokenStream("f", sb.toString());
@@ -94,7 +94,7 @@ public class AnalyzerManagerTest {
             tokens++;
         }
 
-        assertEquals(100000, tokens);
+        assertEquals(1000000, tokens);
 
     }
 
