@@ -108,8 +108,9 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     private static CommonTokenCountManager commonTokenCountManager;
     private String lastExtractExtension = null;
 
-    final AnalyzerManager analyzerManager;
-    final TokenCounter tokenCounter;
+    AnalyzerManager analyzerManager;
+    TokenCounter tokenCounter;
+
 
     public enum EXCEPTION_TYPE {
         RUNTIME,
@@ -136,9 +137,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
 
 
-    final static int FILE_PATH_MAX_LEN = 512;//max len for varchar for file_path
-    final static int MAX_STRING_LENGTH = 1000000;
-    final static int MAX_LEN_FOR_LANG_ID = 20000;
+    final static int FILE_PATH_MAX_LEN = 1024;//max len for varchar for file_path
+    int maxContentLength = 10000000;
+    int maxContentLengthForLangId = 50000;
+    int maxTokens = 200000;
+
 
     //these remove runtime info from the stacktraces so
     //that actual causes can be counted.
@@ -168,14 +171,45 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         super(fileQueue);
         this.writer = writer;
         langIder = new LanguageIDWrapper();
+        initAnalyzersAndTokenCounter(maxTokens);
+    }
+
+    private void initAnalyzersAndTokenCounter(int maxTokens) {
         try {
-            analyzerManager = AnalyzerManager.newInstance();
+            analyzerManager = AnalyzerManager.newInstance(maxTokens);
             tokenCounter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
     }
 
+    /**
+     * Truncate the content string if greater than this length to this length
+     * @param maxContentLength
+     */
+    public void setMaxContentLength(int maxContentLength) {
+        this.maxContentLength = maxContentLength;
+    }
+
+    /**
+     * Truncate content string if greater than this length to this length for lang id
+     *
+     * @param maxContentLengthForLangId
+     */
+    public void setMaxContentLengthForLangId(int maxContentLengthForLangId) {
+        this.maxContentLengthForLangId = maxContentLengthForLangId;
+    }
+
+    /**
+     * Add a LimitTokenCountFilterFactory if > -1
+     *
+     * @param maxTokens
+     */
+    public void setMaxTokens(int maxTokens) {
+        this.maxTokens = maxTokens;
+        initAnalyzersAndTokenCounter(maxTokens);
+    }
 
 
     protected void writeExtractException(TableInfo extractExceptionTable, String containerId,
@@ -211,18 +245,15 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
         //if the outer wrapper document
         if (i == 0) {
-
             data.put(Cols.IS_EMBEDDED, FALSE);
             data.put(Cols.FILE_NAME, fps.getRelativeSourceFilePath().getFileName().toString());
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
             data.put(Cols.FILE_NAME, getFileName(m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
         }
-
         String ext = FilenameUtils.getExtension(data.get(Cols.FILE_NAME));
         ext = (ext == null) ? "" : ext.toLowerCase(Locale.US);
         data.put(Cols.FILE_EXTENSION, ext);
-
         long srcFileLen = getSourceFileLength(m);
         if (srcFileLen > NON_EXISTENT_FILE_LENGTH) {
             data.put(Cols.LENGTH, Long.toString(srcFileLen));
@@ -236,7 +267,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.ELAPSED_TIME_MILLIS,
                 getTime(m));
 
-        String content = getContent(m, MAX_STRING_LENGTH);
+        String content = getContent(m, maxContentLength);
         if (content == null || content.trim().length() == 0) {
             data.put(Cols.HAS_CONTENT, FALSE);
         } else {
@@ -261,13 +292,13 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         try {
             return FilenameUtils.getName(path);
         } catch (IllegalArgumentException e) {
-            logger.warn(e.getMessage() + " in "+path);
+            logger.warn("{} in {}", e.getMessage(), path);
         }
         path = path.replaceAll("\u0000", " ");
         try {
             return FilenameUtils.getName(path);
         } catch (IllegalArgumentException e) {
-            logger.warn("Again: " + e.getMessage() + " in "+path);
+            logger.warn("Again: {} in {}", e.getMessage(), path);
         }
         //give up
         return "";
@@ -301,15 +332,14 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (m == null) {
             return;
         }
-
-        String content = getContent(m, MAX_STRING_LENGTH);
+        Map<Cols, String> data = new HashMap<>();
+        String content = getContent(m, maxContentLength, data);
         if (content == null || content.trim().length() == 0) {
             return;
         }
         tokenCounter.clear(fieldName);
         tokenCounter.add(fieldName, content);
 
-        Map<Cols, String> data = new HashMap<>();
         data.put(Cols.ID, fileId);
         data.put(Cols.CONTENT_LENGTH, Integer.toString(content.length()));
         langid(m, data);
@@ -322,7 +352,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             commonTokenResult = commonTokenCountManager.countTokenOverlaps(langid,
                     tokenCounter.getTokens(fieldName));
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
+            logger.error("{}", e.getMessage(), e);
         }
         data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
         data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
@@ -418,6 +448,24 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
     }
 
+    /**
+     * Get the content and record in the data {@link Cols#CONTENT_TRUNCATED_AT_MAX_LEN} whether the string was truncated
+     *
+     * @param metadata
+     * @param maxLength
+     * @param data
+     * @return
+     */
+    protected static String getContent(Metadata metadata, int maxLength, Map<Cols, String> data) {
+        data.put(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, "FALSE");
+        String c = getContent(metadata, maxLength);
+        if (c.length() > maxLength) {
+            c = c.substring(0, maxLength);
+            data.put(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, "TRUE");
+        }
+        return c;
+
+    }
     protected static String getContent(Metadata metadata, int maxLength) {
         if (metadata == null) {
             return "";
@@ -426,20 +474,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (c == null) {
             return "";
         }
-        if (c.length() > maxLength) {
-            c = c.substring(0, maxLength);
-        }
         return c;
     }
 
     void unicodeBlocks(Metadata metadata, Map<Cols, String> data) {
-        String content = getContent(metadata, MAX_LEN_FOR_LANG_ID);
+        String content = getContent(metadata, maxContentLengthForLangId);
         if (content.length() < 200) {
             return;
         }
         String s = content;
-        if (content.length() > MAX_LEN_FOR_LANG_ID) {
-            s = content.substring(0, MAX_LEN_FOR_LANG_ID);
+        if (content.length() > maxContentLengthForLangId) {
+            s = content.substring(0, maxContentLengthForLangId);
         }
         Map<String, Integer> m = new HashMap<>();
         Reader r = new StringReader(s);
@@ -486,13 +531,13 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     void langid(Metadata metadata, Map<Cols, String> data) {
-        String content = getContent(metadata, MAX_LEN_FOR_LANG_ID);
+        String content = getContent(metadata, maxContentLengthForLangId);
         if (content.length() < 50) {
             return;
         }
         String s = content;
-        if (content.length() > MAX_LEN_FOR_LANG_ID) {
-            s = content.substring(0, MAX_LEN_FOR_LANG_ID);
+        if (content.length() > maxContentLengthForLangId) {
+            s = content.substring(0, maxContentLengthForLangId);
         }
         List<DetectedLanguage> probabilities = langIder.getProbabilities(s);
         if (probabilities.size() > 0) {
@@ -577,7 +622,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         try {
             srcLen = Files.size(inputFile);
         } catch (IOException e) {
-            logger.warn("Couldn't get length for: "+inputFile.toAbsolutePath());
+            logger.warn("Couldn't get length for: {}", inputFile.toAbsolutePath());
         }
         return new EvalFilePaths(relativeSourceFilePath, extractFile, srcLen);
     }

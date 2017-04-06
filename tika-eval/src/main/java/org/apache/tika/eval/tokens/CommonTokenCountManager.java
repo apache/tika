@@ -36,9 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CommonTokenCountManager {
+    private static final Logger LOG = LoggerFactory.getLogger(CommonTokenCountManager.class);
 
     private final static Charset COMMON_TOKENS_CHARSET = StandardCharsets.UTF_8;
-    private final static Logger LOGGER = LoggerFactory.getLogger(CommonTokenCountManager.class);
 
     private final Path commonTokensDir;
 
@@ -56,7 +56,7 @@ public class CommonTokenCountManager {
         //set to prevent npes later
         Set<String> set = commonTokenMap.get(defaultLangCode);
         if (set == null) {
-            LOGGER.warn("No common tokens for default language: '"+defaultLangCode+"'");
+            LOG.warn("No common tokens for default language: '"+defaultLangCode+"'");
             commonTokenMap.put(defaultLangCode, new HashSet<String>());
         }
     }
@@ -128,7 +128,7 @@ public class CommonTokenCountManager {
 
 
             if (is == null) {
-                LOGGER.warn("Couldn't find common tokens file for: '" + langCode + "': " +
+                LOG.warn("Couldn't find common tokens file for: '" + langCode + "': " +
                         p.toAbsolutePath());
                 alreadyTriedToLoad.add(langCode);
                 return;
@@ -161,7 +161,7 @@ public class CommonTokenCountManager {
                 }
             }
         } catch (IOException e) {
-            LOGGER.warn("IOException trying to read: '" + langCode + "'");
+            LOG.warn("IOException trying to read: '" + langCode + "'");
         } finally {
             IOUtils.closeQuietly(is);
         }

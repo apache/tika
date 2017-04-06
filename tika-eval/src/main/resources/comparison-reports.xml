@@ -45,59 +45,161 @@
             having cnt &gt; 1
             order by cnt desc
         </sql>
+        <!-- build mime indexes -->
+
         <sql>create index if not exists pa_m_idx
             on profiles_a (mime_type_id);
         </sql>
+
         <sql>
             create index if not exists pb_m_idx
             on profiles_b (mime_type_id);
         </sql>
 
+        <!-- build exceptions comparison table -->
         <sql>drop table if exists exceptions_compared</sql>
         <sql>
             create table exceptions_compared
-            (mime_type_id integer primary key,
-            exceptions_a integer,
-            total_a integer,
-            percent_exceptions_a double,
-            exceptions_b integer,
-            total_b integer,
-            percent_exceptions_b double)
+            (mime_type_id_a integer, mime_type_id_b integer,
+            exceptions_a integer default 0,
+            total_a integer default 0,
+            percent_exceptions_a double default 0.0,
+            exceptions_b integer default 0,
+            total_b integer default 0,
+            percent_exceptions_b double default 0.0);
         </sql>
         <sql>
-            insert into exceptions_compared (mime_type_id)
-            select mime_type_id from mimes;
+
+            insert into exceptions_compared (mime_type_id_a, mime_type_id_b)
+            select ma.mime_type_id, mb.mime_type_id
+            from profiles_a a
+            join profiles_b b on a.id=b.id
+            join mimes ma on ma.mime_type_id=a.mime_type_id
+            join mimes mb on mb.mime_type_id=b.mime_type_id
+            group by ma.mime_type_id, mb.mime_type_id
         </sql>
 
         <sql>
             update exceptions_compared ec set total_a=(
-            select count(1) as cnt from profiles_a
-            where profiles_a.mime_type_id= ec.mime_type_id
-            group by mime_type_id
-            )
+            select count(1) as cnt from profiles_a pa
+            join profiles_b pb on pa.id=pb.id
+            where pa.mime_type_id= ec.mime_type_id_a
+            and pb.mime_type_id=ec.mime_type_id_b
+            group by pa.mime_type_id, pb.mime_type_id);
         </sql>
         <sql>
             update exceptions_compared ec set total_b=(
-            select count(1) as cnt from profiles_b
-            where profiles_b.mime_type_id= ec.mime_type_id
-            group by mime_type_id
-            )
+            select count(1) as cnt from profiles_b pb
+            join profiles_a pa on pa.id=pb.id
+            where pa.mime_type_id= ec.mime_type_id_a
+            and pb.mime_type_id=ec.mime_type_id_b
+            group by pb.mime_type_id, pa.mime_type_id);
         </sql>
         <sql>
-            update exceptions_compared ec set exceptions_a=( select count(1) as
-            cnt from exceptions_a ea
+            update exceptions_compared ec set exceptions_a=
+            ( select count(1) as cnt from exceptions_a ea
             join profiles_a pa on ea.id=pa.id
-            where pa.mime_type_id= ec.mime_type_id
+            join profiles_b pb on pa.id=pb.id
+            where pa.mime_type_id= ec.mime_type_id_a
+            and pb.mime_type_id=ec.mime_type_id_b
             and parse_exception_type_id=0
-            group by mime_type_id )
+            group by pa.mime_type_id, pb.mime_type_id);
         </sql>
         <sql>
-            update exceptions_compared ec set exceptions_b=(
-            select count(1) as cnt from exceptions_b eb
-            join profiles_b pb on eb.id=pb.id
-            where pb.mime_type_id= ec.mime_type_id
+            update exceptions_compared ec set exceptions_b=
+            ( select count(1) as cnt from exceptions_b eb
+            join profiles_b pb on eb.id=pa.id
+            join profiles_a pa on pa.id=pb.id
+            where pa.mime_type_id= ec.mime_type_id_a
+            and pb.mime_type_id=ec.mime_type_id_b
             and parse_exception_type_id=0
-            group by mime_type_id )
+            group by pb.mime_type_id, pa.mime_type_id);
+        </sql>
+
+        <sql>
+            update exceptions_compared
+            set percent_exceptions_a =
+            (cast (exceptions_a as decimal))/(cast (total_a as decimal))
+            where total_a &gt; 0
+        </sql>
+        <sql>
+            update exceptions_compared
+            set percent_exceptions_b =
+            (cast (exceptions_b as decimal))/(cast (total_b as decimal))
+            where total_b &gt; 0
+        </sql>
+
+        <!-- build tmp common words table -->
+        <!-- build exceptions comparison table -->
+        <sql>drop table if exists token_counts_compared</sql>
+        <sql>
+            create table token_counts_compared
+            (mime_type_id integer primary key,
+            num_tokens_a integer default 0,
+            num_alphabetic_tokens_a integer default 0,
+            num_common_tokens_a integer default 0,
+            num_tokens_b integer default 0,
+            num_alphabetic_tokens_b integer default 0,
+            num_common_tokens_b integer default 0,
+            );
+        </sql>
+        <sql>
+            insert into token_counts_compared (mime_type_id)
+            select mime_type_id from mimes;
+        </sql>
+
+        <sql>
+            update token_counts_compared tcc set num_tokens_a=(
+            select sum(num_tokens) as cnt from profiles_a p
+            join contents_a c on c.id = p.id
+            where p.mime_type_id= tcc.mime_type_id
+            group by mime_type_id
+            );
+        </sql>
+
+        <sql>
+            update token_counts_compared tcc set num_tokens_b=(
+            select sum(num_tokens) as cnt from profiles_b p
+            join contents_a c on c.id = p.id
+            where p.mime_type_id= tcc.mime_type_id
+            group by mime_type_id
+            );
+        </sql>
+
+        <sql>
+            update token_counts_compared tcc set num_alphabetic_tokens_a=(
+            select sum(num_alphabetic_tokens) as cnt from profiles_a p
+            join contents_a c on c.id = p.id
+            where p.mime_type_id= tcc.mime_type_id
+            group by mime_type_id
+            );
+        </sql>
+
+        <sql>
+            update token_counts_compared tcc set num_alphabetic_tokens_b=(
+            select sum(num_alphabetic_tokens) as cnt from profiles_b p
+            join contents_b c on c.id = p.id
+            where p.mime_type_id= tcc.mime_type_id
+            group by mime_type_id
+            );
+        </sql>
+
+        <sql>
+            update token_counts_compared tcc set num_common_tokens_a=(
+            select sum(num_common_tokens) as cnt from profiles_a p
+            join contents_a c on c.id = p.id
+            where p.mime_type_id= tcc.mime_type_id
+            group by mime_type_id
+            );
+        </sql>
+
+        <sql>
+            update token_counts_compared tcc set num_common_tokens_b=(
+            select sum(num_common_tokens) as cnt from profiles_b p
+            join contents_b c on c.id = p.id
+            where p.mime_type_id= tcc.mime_type_id
+            group by mime_type_id
+            );
         </sql>
 
     </before>
@@ -665,6 +767,21 @@
             and (eb.parse_exception_type_id is null)
             order by ma.mime_string, overlap asc
             limit 100000
+        </sql>
+    </report>
+    <report reportName="ExceptionComparisonsByMimeType"
+            reportFilename="exceptions/exceptions_compared_by_mime_type.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select ma.mime_string, mb.mime_string, exceptions_a,
+            total_a, percent_exceptions_a,
+            exceptions_b, total_b, percent_exceptions_b
+            from exceptions_compared c
+            join mimes ma on ma.mime_type_id=c.mime_type_id_a
+            join mimes mb on mb.mime_type_id=c.mime_type_id_b
+            order by percent_exceptions_b desc, total_b desc;
         </sql>
     </report>
     <!--    <report reportName="MD5 Duplicate Counts A"

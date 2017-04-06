@@ -66,7 +66,7 @@
                consumerBuilderClass="org.apache.tika.eval.batch.ExtractProfilerBuilder"
                errorLogFile="src/test/resources/test-dirs/batch-logs/batch-process-fatal.xml"
                extracts="src/test/resources/test-dirs/extractsA"
-               commonTokens="src/test/resources/common_tokens_short.txt"/>
+               commonTokens="src/test/resources/common_tokens"/>
 
 
     <!-- reporter and interrupter are optional -->

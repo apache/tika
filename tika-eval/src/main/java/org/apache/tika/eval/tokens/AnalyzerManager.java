@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -41,11 +42,11 @@ public class AnalyzerManager {
         this.commonTokensAnalyzer = commonTokensAnalyzer;
     }
 
-    public static AnalyzerManager newInstance() throws IOException {
+    public static AnalyzerManager newInstance(int maxTokens) throws IOException {
         InputStream is = AnalyzerManager.class.getClassLoader().getResourceAsStream("lucene-analyzers.json");
-        Reader reader = new InputStreamReader(is, "UTF-8");
+        Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
         GsonBuilder builder = new GsonBuilder();
-        builder.registerTypeHierarchyAdapter(Map.class, new AnalyzerDeserializer());
+        builder.registerTypeHierarchyAdapter(Map.class, new AnalyzerDeserializer(maxTokens));
         Gson gson = builder.create();
         Map<String, Analyzer> map = gson.fromJson(reader, Map.class);
         Analyzer general = map.get(GENERAL);
@@ -58,7 +59,7 @@ public class AnalyzerManager {
             throw new JsonParseException("Must specify "+ COMMON_TOKENS + " analyzer");
         }
 
-        return new AnalyzerManager(general,common);
+        return new AnalyzerManager(general, common);
     }
 
     /**

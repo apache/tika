@@ -37,10 +37,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOExceptionWithCause;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JDBCUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(JDBCUtil.class);
 
     public enum CREATE_TABLE {
         DROP_IF_EXISTS,
@@ -48,7 +49,6 @@ public class JDBCUtil {
         THROW_EX_IF_EXISTS,
     }
 
-    public static Logger logger = Logger.getLogger(JDBCUtil.class);
     private final String connectionString;
     private String driverClass;
 
@@ -160,7 +160,7 @@ public class JDBCUtil {
             }
             return insertStatement.executeUpdate();
         } catch (SQLException e) {
-            logger.warn("couldn't insert data for this row: " + e.getMessage());
+            LOG.warn("couldn't insert data for this row: {}", e.getMessage());
             e.printStackTrace();
             return -1;
         }
@@ -177,7 +177,7 @@ public class JDBCUtil {
                 case Types.VARCHAR:
                     if (value != null && value.length() > colInfo.getPrecision()) {
                         value = value.substring(0, colInfo.getPrecision());
-                        logger.warn("truncated varchar value in " + colInfo.getName() + " : " + value);
+                        LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
                     }
                     st.setString(dbColOffset, value);
                     break;
@@ -204,11 +204,11 @@ public class JDBCUtil {
             }
         } catch (NumberFormatException e) {
             if (!"".equals(value)) {
-                logger.warn("number format exception: " + colInfo.getName() + " : " + value);
+                LOG.warn("number format exception: {} : {}", colInfo.getName(), value);
             }
             st.setNull(dbColOffset, colInfo.getType());
         } catch (SQLException e) {
-            logger.warn("sqlexception: " + colInfo + " : " + value);
+            LOG.warn("sqlexception: {} : {}", colInfo, value);
             st.setNull(dbColOffset, colInfo.getType());
         }
     }

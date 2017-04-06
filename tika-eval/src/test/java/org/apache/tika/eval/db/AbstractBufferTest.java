@@ -47,7 +47,7 @@ public class AbstractBufferTest {
         Collections.addAll(keys, new String[]{
                 "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"});
 
-        int numGets = 1000;
+        int numGets = 100;
         int numTesters = 20;
         AbstractDBBuffer b = new TestBuffer();
 

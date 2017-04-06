@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -160,20 +161,24 @@ public class SimpleComparerTest extends TikaTest {
     public void testGetContent() throws Exception {
         Metadata m = new Metadata();
         m.add(RecursiveParserWrapper.TIKA_CONTENT, "0123456789");
-
-        String content = getContent(m, 10);
+        Map<Cols, String> data = new HashMap<>();
+        String content = getContent(m, 10, data);
         assertEquals(10, content.length());
+        assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
-        content = getContent(m, 4);
+        content = getContent(m, 4, data);
         assertEquals(4, content.length());
+        assertEquals("TRUE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test Metadata with no content
-        content = getContent(new Metadata(), 10);
+        content = getContent(new Metadata(), 10, data);
         assertEquals(0, content.length());
+        assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test null Metadata
-        content = getContent(null, 10);
+        content = getContent(null, 10, data);
         assertEquals(0, content.length());
+        assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
     }
 
     @Test
@@ -287,5 +292,36 @@ public class SimpleComparerTest extends TikaTest {
         for (Cols key : keys) {
             System.out.println(key + " : " + row.get(key));
         }
+    }
+
+    @Test
+    @Ignore("useful for testing 2 files not in test set")
+    public void oneOff() throws Exception {
+        Path p1 = Paths.get("");
+        Path p2 = Paths.get("");
+
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file1.pdf.json"),
+                p1
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("file1.pdf.json"),
+                p2
+        );
+        comparer.compareFiles(fpsA, fpsB);
+        for (TableInfo t : new TableInfo[]{
+                ExtractComparer.COMPARISON_CONTAINERS,
+                ExtractComparer.EXTRACT_EXCEPTION_TABLE_A,
+                ExtractComparer.EXTRACT_EXCEPTION_TABLE_B,
+                ExtractComparer.EXCEPTION_TABLE_A,
+                ExtractComparer.EXCEPTION_TABLE_B,
+                ExtractComparer.PROFILES_A,
+                ExtractComparer.PROFILES_B,
+                ExtractComparer.CONTENTS_TABLE_A,
+                ExtractComparer.CONTENTS_TABLE_B,
+                ExtractComparer.CONTENT_COMPARISONS}) {
+            debugPrintTable(t);
+        }
+
     }
 }

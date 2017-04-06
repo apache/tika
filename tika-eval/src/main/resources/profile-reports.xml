@@ -114,6 +114,7 @@
             reportFilename="exceptions/exceptions_by_type.xlsx"
             format="xlsx"
             includeSql="true">
+
         <sql>
             select parse_exception_description, count(1) cnt
             from parse_exceptions e

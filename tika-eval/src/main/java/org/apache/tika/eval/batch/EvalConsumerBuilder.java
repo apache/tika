@@ -174,6 +174,27 @@ public abstract class EvalConsumerBuilder {
         return new ExtractReader(alterExtractList, minExtractLength, maxExtractLength);
     }
 
+    FileResourceConsumer parameterizeProfiler(AbstractProfiler abstractProfiler) {
+
+        int maxContentLength = PropsUtil.getInt(localAttrs.get("maxContentLength"), -1);
+        if (maxContentLength > -1) {
+            abstractProfiler.setMaxContentLength(maxContentLength);
+        }
+
+        int maxContentLengthForLangId = PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -1);
+        if (maxContentLengthForLangId > -1) {
+            abstractProfiler.setMaxContentLengthForLangId(maxContentLengthForLangId);
+        }
+
+        int maxTokens = PropsUtil.getInt(localAttrs.get("maxTokens"), -1);
+        if (maxTokens > -1) {
+            abstractProfiler.setMaxTokens(maxTokens);
+        }
+
+
+        return abstractProfiler;
+    }
+
 
 /*
     public abstract Map<String, String> getIndexInfo();

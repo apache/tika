@@ -35,6 +35,7 @@ import com.google.gson.JsonParseException;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.miscellaneous.LimitTokenCountFilterFactory;
 import org.apache.lucene.analysis.util.CharFilterFactory;
 import org.apache.lucene.analysis.util.ClasspathResourceLoader;
 import org.apache.lucene.analysis.util.ResourceLoaderAware;
@@ -52,6 +53,12 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
     private static final String PARAMS = "params";
     private static final String COMMENT = "_comment";
 
+    private final int maxTokens;
+
+    AnalyzerDeserializer(int maxTokens) {
+        this.maxTokens = maxTokens;
+    }
+
     @Override
     public Map<String, Analyzer> deserialize(JsonElement element, Type type,
                                              JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
@@ -64,14 +71,14 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
             throw new IllegalArgumentException("Expecting top level 'analyzers:{}");
         }
         try {
-            return buildAnalyzers(root);
+            return buildAnalyzers(root, maxTokens);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
     }
 
-    public static Map<String, Analyzer> buildAnalyzers(JsonElement value) throws IOException {
+    public static Map<String, Analyzer> buildAnalyzers(JsonElement value, int maxTokens) throws IOException {
         if (! value.isJsonObject()) {
             throw new IllegalArgumentException("Expecting map with analyzer names/analyzer definitions");
         }
@@ -79,13 +86,13 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
         JsonObject root = (JsonObject)value;
         for (Map.Entry<String, JsonElement> e : root.entrySet()) {
             String analyzerName = e.getKey();
-            Analyzer analyzer = buildAnalyzer(analyzerName, e.getValue());
+            Analyzer analyzer = buildAnalyzer(analyzerName, e.getValue(), maxTokens);
             analyzers.put(analyzerName, analyzer);
         }
         return analyzers;
     }
 
-    public static Analyzer buildAnalyzer(String analyzerName, JsonElement value) throws IOException {
+    public static Analyzer buildAnalyzer(String analyzerName, JsonElement value, int maxTokens) throws IOException {
         if (! value.isJsonObject()) {
             throw new IllegalArgumentException("Expecting map of charfilter, tokenizer, tokenfilters");
         }
@@ -98,7 +105,7 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
             if (k.equals(CHAR_FILTERS)) {
                 charFilters = buildCharFilters(e.getValue(), analyzerName);
             } else if (k.equals(TOKEN_FILTERS)) {
-                tokenFilterFactories = buildTokenFilterFactories(e.getValue(), analyzerName);
+                tokenFilterFactories = buildTokenFilterFactories(e.getValue(), analyzerName, maxTokens);
             } else if (k.equals(TOKENIZER)) {
                 tokenizerFactory = buildTokenizerFactory(e.getValue(), analyzerName);
             } else if (! k.equals(COMMENT)) {
@@ -212,7 +219,7 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
     }
 
     private static TokenFilterFactory[] buildTokenFilterFactories(JsonElement el,
-                                                                  String analyzerName) throws IOException {
+                                                                  String analyzerName, int maxTokens) throws IOException {
         if (el == null || el.isJsonNull()) {
             return null;
         }
@@ -261,6 +268,13 @@ class AnalyzerDeserializer implements JsonDeserializer<Map<String, Analyzer>> {
                 throw new IllegalArgumentException("While loading "+analyzerName, e);
             }
         }
+
+        if (maxTokens > -1) {
+            Map<String, String> m = new HashMap<>();
+            m.put("maxTokenCount", Integer.toString(maxTokens));
+            ret.add(new LimitTokenCountFilterFactory(m));
+        }
+
         if (ret.size() == 0) {
             return new TokenFilterFactory[0];
         }
