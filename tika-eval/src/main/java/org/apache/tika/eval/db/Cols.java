@@ -57,6 +57,7 @@ public enum Cols {
     TOKEN_LENGTH_STD_DEV,
     UNICODE_CHAR_BLOCKS,
     NUM_PAGES, //number of pages a document alleges it has
+    CONTENT_TRUNCATED_AT_MAX_LEN, // was the string truncated at AbstractProfiler.MAX_STRING_LENGTH
 
     //content comparisons
     TOP_10_UNIQUE_TOKEN_DIFFS_A,
@@ -86,5 +87,5 @@ public enum Cols {
 
     DIR_NAME_A,//for comparisons in REF_PAIR_NAMES
     DIR_NAME_B
-    }
+}
 

@@ -80,6 +80,12 @@ public class ExtractComparer extends AbstractProfiler {
                 .addOption("tablePrefixB", true, "EXPERT: optional prefix for table names for B")
                 .addOption("drop", true, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats")
+                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id")
+                .addOption("maxTokens", true, "maximum tokens to process, default=200000")
+                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
+                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
+
         ;
     }
 

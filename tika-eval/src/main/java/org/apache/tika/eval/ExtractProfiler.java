@@ -68,6 +68,9 @@ public class ExtractProfiler extends AbstractProfiler {
                 .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
                 .addOption("drop", true, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+                .addOption("maxTokens", true, "maximum tokens to process, default=200000")
+                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
+                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
 
         ;
 
@@ -145,7 +148,8 @@ public class ExtractProfiler extends AbstractProfiler {
             new ColInfo(Cols.TOKEN_ENTROPY_RATE, Types.FLOAT),
             new ColInfo(Cols.TOKEN_LENGTH_SUM, Types.INTEGER),
             new ColInfo(Cols.TOKEN_LENGTH_MEAN, Types.FLOAT),
-            new ColInfo(Cols.TOKEN_LENGTH_STD_DEV, Types.FLOAT)
+            new ColInfo(Cols.TOKEN_LENGTH_STD_DEV, Types.FLOAT),
+            new ColInfo(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, Types.BOOLEAN)
     );
 
     private final Path inputDir;

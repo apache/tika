@@ -23,13 +23,6 @@
           "params": {
             "outputUnigrams": "false"
           }
-        },
-        {
-          "factory": "oala.miscellaneous.LimitTokenCountFilterFactory",
-          "params": {
-            "maxTokenCount": "1000000",
-            "consumeAllTokens": "false"
-          }
         }
       ]
     },

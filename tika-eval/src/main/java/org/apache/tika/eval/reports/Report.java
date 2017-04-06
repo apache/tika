@@ -173,6 +173,7 @@ public class Report {
                 }
                 break;
             //fall through strings
+            case Types.BOOLEAN:
             case Types.CHAR:
             case Types.VARCHAR:
             case Types.LONGNVARCHAR:

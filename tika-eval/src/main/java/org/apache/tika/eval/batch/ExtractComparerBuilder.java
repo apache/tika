@@ -90,9 +90,9 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
             throw new RuntimeException("Must specify an -inputDir");
         }
 
-        return new ExtractComparer(queue, inputRootDir, extractsA, extractsB,
+        return parameterizeProfiler(new ExtractComparer(queue, inputRootDir, extractsA, extractsB,
                 buildExtractReader(localAttrs),
-                getDBWriter(getNonRefTableInfos()));
+                getDBWriter(getNonRefTableInfos())));
     }
 
 
