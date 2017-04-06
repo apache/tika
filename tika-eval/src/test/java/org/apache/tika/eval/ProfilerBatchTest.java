@@ -128,7 +128,7 @@ public class ProfilerBatchTest {
 
     @Test
     public void testExtractErrors() throws Exception {
-        String sql = "select EXTRACT_EXCEPTION_TYPE_ID from extract_exceptions e" +
+        String sql = "select EXTRACT_EXCEPTION_ID from extract_exceptions e" +
                 " join containers c on c.container_id = e.container_id "+
                 " where c.file_path='file9_noextract.txt'";
 
@@ -140,13 +140,13 @@ public class ProfilerBatchTest {
         debugTable(ExtractProfiler.EXCEPTION_TABLE);
         debugTable(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
 
-        sql = "select EXTRACT_EXCEPTION_TYPE_ID from errors e" +
+        sql = "select EXTRACT_EXCEPTION_ID from errors e" +
                 " join containers c on c.container_id = e.container_id "+
                 " where c.file_path='file5_emptyA.pdf'";
         assertEquals("empty extract: file5_emptyA.pdf", "1",
                 getSingleResult(sql));
 
-        sql = "select EXTRACT_EXCEPTION_TYPE_ID from errors e" +
+        sql = "select EXTRACT_EXCEPTION_ID from errors e" +
                 " join containers c on c.container_id = e.container_id "+
                 " where c.file_path='file7_badJson.pdf'";
         assertEquals("extract error:file7_badJson.pdf", "2",
@@ -161,13 +161,13 @@ public class ProfilerBatchTest {
         assertEquals("file10_permahang.txt",
                 getSingleResult(sql));
 
-        sql = "select extract_error_type_id from extract_exceptions " +
+        sql = "select extract_error_id from extract_exceptions " +
                 "where file_path='file11_oom.txt'";
         assertEquals(Integer.toString(
                         ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
                 getSingleResult(sql));
 
-        sql = "select parse_error_type_id from extract_exceptions where file_path='file11_oom.txt'";
+        sql = "select parse_error_id from extract_exceptions where file_path='file11_oom.txt'";
         assertEquals(Integer.toString(AbstractProfiler.
                         PARSE_ERROR_TYPE.
                         OOM.ordinal()),
