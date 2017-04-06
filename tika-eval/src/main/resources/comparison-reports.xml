@@ -134,71 +134,90 @@
         <sql>drop table if exists token_counts_compared</sql>
         <sql>
             create table token_counts_compared
-            (mime_type_id integer primary key,
+            (mime_type_id_a integer,
+            mime_type_id_b integer,
             num_tokens_a integer default 0,
-            num_alphabetic_tokens_a integer default 0,
-            num_common_tokens_a integer default 0,
             num_tokens_b integer default 0,
+            num_alphabetic_tokens_a integer default 0,
             num_alphabetic_tokens_b integer default 0,
+            num_common_tokens_a integer default 0,
             num_common_tokens_b integer default 0,
             );
         </sql>
         <sql>
-            insert into token_counts_compared (mime_type_id)
-            select mime_type_id from mimes;
+            insert into token_counts_compared (mime_type_id_a, mime_type_id_b)
+            select ma.mime_type_id, mb.mime_type_id
+            from profiles_a a
+            join profiles_b b on a.id=b.id
+            join mimes ma on ma.mime_type_id=a.mime_type_id
+            join mimes mb on mb.mime_type_id=b.mime_type_id
+            group by ma.mime_type_id, mb.mime_type_id
+
         </sql>
 
         <sql>
             update token_counts_compared tcc set num_tokens_a=(
-            select sum(num_tokens) as cnt from profiles_a p
-            join contents_a c on c.id = p.id
-            where p.mime_type_id= tcc.mime_type_id
-            group by mime_type_id
+            select sum(num_tokens) as cnt from profiles_a pa
+            join profiles_b pb on pa.id=pb.id
+            join contents_a c on c.id = pa.id
+            where pb.mime_type_id= tcc.mime_type_id_b
+            and pa.mime_type_id=tcc.mime_type_id_a
+            group by mime_type_id_a, mime_type_id_b
             );
         </sql>
 
         <sql>
             update token_counts_compared tcc set num_tokens_b=(
-            select sum(num_tokens) as cnt from profiles_b p
-            join contents_a c on c.id = p.id
-            where p.mime_type_id= tcc.mime_type_id
-            group by mime_type_id
+            select sum(num_tokens) as cnt from profiles_b pb
+            join profiles_a pa on pa.id=pb.id
+            join contents_b c on c.id = pb.id
+            where pb.mime_type_id= tcc.mime_type_id_b
+            and pa.mime_type_id=tcc.mime_type_id_a
+            group by mime_type_id_a, mime_type_id_b
             );
         </sql>
 
         <sql>
             update token_counts_compared tcc set num_alphabetic_tokens_a=(
-            select sum(num_alphabetic_tokens) as cnt from profiles_a p
-            join contents_a c on c.id = p.id
-            where p.mime_type_id= tcc.mime_type_id
-            group by mime_type_id
+            select sum(num_alphabetic_tokens) as cnt from profiles_a pa
+            join profiles_b pb on pa.id=pb.id
+            join contents_a c on c.id = pa.id
+            where pb.mime_type_id= tcc.mime_type_id_b
+            and pa.mime_type_id=tcc.mime_type_id_a
+            group by mime_type_id_a, mime_type_id_b
             );
         </sql>
 
         <sql>
             update token_counts_compared tcc set num_alphabetic_tokens_b=(
-            select sum(num_alphabetic_tokens) as cnt from profiles_b p
-            join contents_b c on c.id = p.id
-            where p.mime_type_id= tcc.mime_type_id
-            group by mime_type_id
+            select sum(num_alphabetic_tokens) as cnt from profiles_b pb
+            join profiles_a pa on pb.id=pa.id
+            join contents_b c on c.id = pb.id
+            where pb.mime_type_id= tcc.mime_type_id_b
+            and pa.mime_type_id=tcc.mime_type_id_a
+            group by mime_type_id_a, mime_type_id_b
             );
         </sql>
 
         <sql>
             update token_counts_compared tcc set num_common_tokens_a=(
-            select sum(num_common_tokens) as cnt from profiles_a p
-            join contents_a c on c.id = p.id
-            where p.mime_type_id= tcc.mime_type_id
-            group by mime_type_id
+            select sum(num_common_tokens) as cnt from profiles_a pa
+            join profiles_b pb on pa.id=pb.id
+            join contents_a c on c.id = pa.id
+            where pb.mime_type_id= tcc.mime_type_id_b
+            and pa.mime_type_id=tcc.mime_type_id_a
+            group by mime_type_id_a, mime_type_id_b
             );
         </sql>
 
         <sql>
             update token_counts_compared tcc set num_common_tokens_b=(
-            select sum(num_common_tokens) as cnt from profiles_b p
-            join contents_b c on c.id = p.id
-            where p.mime_type_id= tcc.mime_type_id
-            group by mime_type_id
+            select sum(num_common_tokens) as cnt from profiles_b pb
+            join profiles_a pa on pa.id=pb.id
+            join contents_b c on c.id = pb.id
+            where pb.mime_type_id= tcc.mime_type_id_b
+            and pa.mime_type_id=tcc.mime_type_id_a
+            group by mime_type_id_a, mime_type_id_b
             );
         </sql>
 
@@ -326,6 +345,8 @@
         </sql>
     </report>
 
+
+    <!-- Exceptions -->
     <report reportName="AllExceptionsByMimeA"
             reportFilename="exceptions/exceptions_by_mime_A.xlsx"
             format="xlsx"
@@ -702,6 +723,8 @@
             ca.num_common_tokens as NUM_COMMON_TOKENS_A,
             cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
             cb.num_common_tokens as NUM_COMMON_TOKENS_B,
+            ifnull(cb.num_common_tokens,0)-
+            ifnull(ca.num_common_tokens, 0) as NUM_COMMON_TOKENS_DIFF_IN_B,
             ca.top_n_tokens as TOP_N_TOKENS_A,
             cb.top_n_tokens as TOP_N_TOKENS_B,
             ca.unicode_char_blocks as UNICODE_CHAR_BLOCKS_A,
@@ -745,6 +768,8 @@
             ca.num_common_tokens as NUM_COMMON_TOKENS_A,
             cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
             cb.num_common_tokens as NUM_COMMON_TOKENS_B,
+            ifnull(cb.num_common_tokens,0)-
+            ifnull(ca.num_common_tokens, 0) as NUM_COMMON_TOKENS_DIFF_IN_B,
             ca.top_n_tokens as TOP_N_TOKENS_A,
             cb.top_n_tokens as TOP_N_TOKENS_B,
             ca.unicode_char_blocks as UNICODE_CHAR_BLOCKS_A,
@@ -769,6 +794,26 @@
             limit 100000
         </sql>
     </report>
+
+    <report reportName="CommonTokenComparisonsByMimeType"
+            reportFilename="content/common_token_comparisons_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select ma.mime_string, mb.mime_string,
+            num_tokens_a, num_tokens_b
+            num_alphabetic_tokens_a, num_alphabetic_tokens_b,
+            num_common_tokens_a, num_common_tokens_b,
+            ifnull(num_common_tokens_b, 0)-ifnull(num_common_tokens_a, 0) as change_in_common_tokens_b
+            from token_counts_compared tcc
+            join mimes ma on tcc.mime_type_id_a = ma.mime_type_id
+            join mimes mb on tcc.mime_type_id_b = mb.mime_type_id
+            order by change_in_common_tokens_b desc
+        </sql>
+    </report>
+
+
     <report reportName="ExceptionComparisonsByMimeType"
             reportFilename="exceptions/exceptions_compared_by_mime_type.xlsx"
             format="xlsx"
