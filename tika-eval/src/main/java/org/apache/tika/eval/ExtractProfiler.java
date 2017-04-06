@@ -91,15 +91,15 @@ public class ExtractProfiler extends AbstractProfiler {
     public static TableInfo EXTRACT_EXCEPTION_TABLE = new TableInfo("extract_exceptions",
             new ColInfo(Cols.CONTAINER_ID, Types.INTEGER),
             new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
-            new ColInfo(Cols.EXTRACT_EXCEPTION_TYPE_ID, Types.INTEGER),
-            new ColInfo(Cols.PARSE_ERROR_TYPE_ID, Types.INTEGER)
+            new ColInfo(Cols.EXTRACT_EXCEPTION_ID, Types.INTEGER),
+            new ColInfo(Cols.PARSE_ERROR_ID, Types.INTEGER)
     );
 
     public static TableInfo EXCEPTION_TABLE = new TableInfo("parse_exceptions",
             new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.ORIG_STACK_TRACE, Types.VARCHAR, 8192),
             new ColInfo(Cols.SORT_STACK_TRACE, Types.VARCHAR, 8192),
-            new ColInfo(Cols.PARSE_EXCEPTION_TYPE_ID, Types.INTEGER)
+            new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER)
     );
 
 
@@ -118,7 +118,7 @@ public class ExtractProfiler extends AbstractProfiler {
             new ColInfo(Cols.LENGTH, Types.BIGINT),
             new ColInfo(Cols.IS_EMBEDDED, Types.BOOLEAN),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12),
-            new ColInfo(Cols.MIME_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.MIME_ID, Types.INTEGER),
             new ColInfo(Cols.ELAPSED_TIME_MILLIS, Types.INTEGER),
             new ColInfo(Cols.NUM_ATTACHMENTS, Types.INTEGER),
             new ColInfo(Cols.NUM_METADATA_VALUES, Types.INTEGER),

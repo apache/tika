@@ -48,19 +48,19 @@
         <!-- build mime indexes -->
 
         <sql>create index if not exists pa_m_idx
-            on profiles_a (mime_type_id);
+            on profiles_a (mime_id);
         </sql>
 
         <sql>
             create index if not exists pb_m_idx
-            on profiles_b (mime_type_id);
+            on profiles_b (mime_id);
         </sql>
 
         <!-- build exceptions comparison table -->
         <sql>drop table if exists exceptions_compared</sql>
         <sql>
             create table exceptions_compared
-            (mime_type_id_a integer, mime_type_id_b integer,
+            (mime_id_a integer, mime_id_b integer,
             exceptions_a integer default 0,
             total_a integer default 0,
             percent_exceptions_a double default 0.0,
@@ -70,50 +70,50 @@
         </sql>
         <sql>
 
-            insert into exceptions_compared (mime_type_id_a, mime_type_id_b)
-            select ma.mime_type_id, mb.mime_type_id
+            insert into exceptions_compared (mime_id_a, mime_id_b)
+            select ma.mime_id, mb.mime_id
             from profiles_a a
             join profiles_b b on a.id=b.id
-            join mimes ma on ma.mime_type_id=a.mime_type_id
-            join mimes mb on mb.mime_type_id=b.mime_type_id
-            group by ma.mime_type_id, mb.mime_type_id
+            join mimes ma on ma.mime_id=a.mime_id
+            join mimes mb on mb.mime_id=b.mime_id
+            group by ma.mime_id, mb.mime_id
         </sql>
 
         <sql>
             update exceptions_compared ec set total_a=(
             select count(1) as cnt from profiles_a pa
             join profiles_b pb on pa.id=pb.id
-            where pa.mime_type_id= ec.mime_type_id_a
-            and pb.mime_type_id=ec.mime_type_id_b
-            group by pa.mime_type_id, pb.mime_type_id);
+            where pa.mime_id= ec.mime_id_a
+            and pb.mime_id=ec.mime_id_b
+            group by pa.mime_id, pb.mime_id);
         </sql>
         <sql>
             update exceptions_compared ec set total_b=(
             select count(1) as cnt from profiles_b pb
             join profiles_a pa on pa.id=pb.id
-            where pa.mime_type_id= ec.mime_type_id_a
-            and pb.mime_type_id=ec.mime_type_id_b
-            group by pb.mime_type_id, pa.mime_type_id);
+            where pa.mime_id= ec.mime_id_a
+            and pb.mime_id=ec.mime_id_b
+            group by pb.mime_id, pa.mime_id);
         </sql>
         <sql>
             update exceptions_compared ec set exceptions_a=
             ( select count(1) as cnt from exceptions_a ea
             join profiles_a pa on ea.id=pa.id
             join profiles_b pb on pa.id=pb.id
-            where pa.mime_type_id= ec.mime_type_id_a
-            and pb.mime_type_id=ec.mime_type_id_b
-            and parse_exception_type_id=0
-            group by pa.mime_type_id, pb.mime_type_id);
+            where pa.mime_id= ec.mime_id_a
+            and pb.mime_id=ec.mime_id_b
+            and parse_exception_id=0
+            group by pa.mime_id, pb.mime_id);
         </sql>
         <sql>
             update exceptions_compared ec set exceptions_b=
             ( select count(1) as cnt from exceptions_b eb
             join profiles_b pb on eb.id=pa.id
             join profiles_a pa on pa.id=pb.id
-            where pa.mime_type_id= ec.mime_type_id_a
-            and pb.mime_type_id=ec.mime_type_id_b
-            and parse_exception_type_id=0
-            group by pb.mime_type_id, pa.mime_type_id);
+            where pa.mime_id= ec.mime_id_a
+            and pb.mime_id=ec.mime_id_b
+            and parse_exception_id=0
+            group by pb.mime_id, pa.mime_id);
         </sql>
 
         <sql>
@@ -130,12 +130,11 @@
         </sql>
 
         <!-- build tmp common words table -->
-        <!-- build exceptions comparison table -->
         <sql>drop table if exists token_counts_compared</sql>
         <sql>
             create table token_counts_compared
-            (mime_type_id_a integer,
-            mime_type_id_b integer,
+            (mime_id_a integer,
+            mime_id_b integer,
             num_tokens_a integer default 0,
             num_tokens_b integer default 0,
             num_alphabetic_tokens_a integer default 0,
@@ -145,13 +144,13 @@
             );
         </sql>
         <sql>
-            insert into token_counts_compared (mime_type_id_a, mime_type_id_b)
-            select ma.mime_type_id, mb.mime_type_id
+            insert into token_counts_compared (mime_id_a, mime_id_b)
+            select ma.mime_id, mb.mime_id
             from profiles_a a
             join profiles_b b on a.id=b.id
-            join mimes ma on ma.mime_type_id=a.mime_type_id
-            join mimes mb on mb.mime_type_id=b.mime_type_id
-            group by ma.mime_type_id, mb.mime_type_id
+            join mimes ma on ma.mime_id=a.mime_id
+            join mimes mb on mb.mime_id=b.mime_id
+            group by ma.mime_id, mb.mime_id
 
         </sql>
 
@@ -160,9 +159,9 @@
             select sum(num_tokens) as cnt from profiles_a pa
             join profiles_b pb on pa.id=pb.id
             join contents_a c on c.id = pa.id
-            where pb.mime_type_id= tcc.mime_type_id_b
-            and pa.mime_type_id=tcc.mime_type_id_a
-            group by mime_type_id_a, mime_type_id_b
+            where pb.mime_id= tcc.mime_id_b
+            and pa.mime_id=tcc.mime_id_a
+            group by mime_id_a, mime_id_b
             );
         </sql>
 
@@ -171,9 +170,9 @@
             select sum(num_tokens) as cnt from profiles_b pb
             join profiles_a pa on pa.id=pb.id
             join contents_b c on c.id = pb.id
-            where pb.mime_type_id= tcc.mime_type_id_b
-            and pa.mime_type_id=tcc.mime_type_id_a
-            group by mime_type_id_a, mime_type_id_b
+            where pb.mime_id= tcc.mime_id_b
+            and pa.mime_id=tcc.mime_id_a
+            group by mime_id_a, mime_id_b
             );
         </sql>
 
@@ -182,9 +181,9 @@
             select sum(num_alphabetic_tokens) as cnt from profiles_a pa
             join profiles_b pb on pa.id=pb.id
             join contents_a c on c.id = pa.id
-            where pb.mime_type_id= tcc.mime_type_id_b
-            and pa.mime_type_id=tcc.mime_type_id_a
-            group by mime_type_id_a, mime_type_id_b
+            where pb.mime_id= tcc.mime_id_b
+            and pa.mime_id=tcc.mime_id_a
+            group by mime_id_a, mime_id_b
             );
         </sql>
 
@@ -193,9 +192,9 @@
             select sum(num_alphabetic_tokens) as cnt from profiles_b pb
             join profiles_a pa on pb.id=pa.id
             join contents_b c on c.id = pb.id
-            where pb.mime_type_id= tcc.mime_type_id_b
-            and pa.mime_type_id=tcc.mime_type_id_a
-            group by mime_type_id_a, mime_type_id_b
+            where pb.mime_id= tcc.mime_id_b
+            and pa.mime_id=tcc.mime_id_a
+            group by mime_id_a, mime_id_b
             );
         </sql>
 
@@ -204,9 +203,9 @@
             select sum(num_common_tokens) as cnt from profiles_a pa
             join profiles_b pb on pa.id=pb.id
             join contents_a c on c.id = pa.id
-            where pb.mime_type_id= tcc.mime_type_id_b
-            and pa.mime_type_id=tcc.mime_type_id_a
-            group by mime_type_id_a, mime_type_id_b
+            where pb.mime_id= tcc.mime_id_b
+            and pa.mime_id=tcc.mime_id_a
+            group by mime_id_a, mime_id_b
             );
         </sql>
 
@@ -215,9 +214,9 @@
             select sum(num_common_tokens) as cnt from profiles_b pb
             join profiles_a pa on pa.id=pb.id
             join contents_b c on c.id = pb.id
-            where pb.mime_type_id= tcc.mime_type_id_b
-            and pa.mime_type_id=tcc.mime_type_id_a
-            group by mime_type_id_a, mime_type_id_b
+            where pb.mime_id= tcc.mime_id_b
+            and pa.mime_id=tcc.mime_id_a
+            group by mime_id_a, mime_id_b
             );
         </sql>
 
@@ -232,7 +231,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles_a p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             group by mime_string
             order by cnt desc
         </sql>
@@ -246,7 +245,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles_b p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             group by mime_string
             order by cnt desc
         </sql>
@@ -259,7 +258,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles_a p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=false
             group by mime_string
             order by cnt desc
@@ -274,7 +273,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles_b p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=false
             group by mime_string
             order by cnt desc
@@ -288,7 +287,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles_a p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=true
             group by mime_string
             order by cnt desc
@@ -303,7 +302,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles_b p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=true
             group by mime_string
             order by cnt desc
@@ -319,9 +318,9 @@
             MIME_A_TO_MIME_B, count(1) as COUNT
             from profiles_a a
             join profiles_b b on a.id=b.id
-            join mimes ma on ma.mime_type_id=a.mime_type_id
-            join mimes mb on mb.mime_type_id=b.mime_type_id
-            where a.mime_type_id &lt;&gt; b.mime_type_id
+            join mimes ma on ma.mime_id=a.mime_id
+            join mimes mb on mb.mime_id=b.mime_id
+            where a.mime_id &lt;&gt; b.mime_id
             group by MIME_A_TO_MIME_B
             order by COUNT DESC
         </sql>
@@ -337,10 +336,10 @@
             MIME_A_TO_MIME_B, file_path, a.file_name
             from profiles_a a
             join profiles_b b on a.id=b.id
-            join mimes ma on ma.mime_type_id=a.mime_type_id
-            join mimes mb on mb.mime_type_id=b.mime_type_id
+            join mimes ma on ma.mime_id=a.mime_id
+            join mimes mb on mb.mime_id=b.mime_id
             join containers c on a.container_id=c.container_id
-            where a.mime_type_id &lt;&gt; b.mime_type_id
+            where a.mime_id &lt;&gt; b.mime_id
             order by MIME_A_TO_MIME_B
         </sql>
     </report>
@@ -356,7 +355,7 @@
             select mime_string, count(1) cnt from
             exceptions_a e
             join profiles_a p on p.id=e.id
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             group by mime_string
             order by cnt desc
         </sql>
@@ -370,7 +369,7 @@
             select mime_string, count(1) cnt from
             exceptions_b e
             join profiles_b p on p.id=e.id
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             group by mime_string
             order by cnt desc
         </sql>
@@ -385,9 +384,9 @@
             select mime_string, count(1) cnt from
             exceptions_a e
             join profiles_a p on p.id=e.id
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=false
-            and parse_exception_type_id=0
+            and parse_exception_id=0
             group by mime_string
             order by cnt desc
         </sql>
@@ -402,15 +401,15 @@
             select mime_string, count(1) cnt from
             exceptions_b e
             join profiles_b p on p.id=e.id
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=false
-            and parse_exception_type_id=0
+            and parse_exception_id=0
             group by mime_string
             order by cnt desc
         </sql>
     </report>
     <report reportName="AllExceptionsByMimeByTypeA"
-            reportFilename="exceptions/exceptions_by_mime_by_typeA.xlsx"
+            reportFilename="exceptions/exceptions_by_mime_by_type_A.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -420,16 +419,16 @@
             from exceptions_a e
             join profiles_a p on p.id=e.id
             join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_type_id=p.mime_type_id
+            join mimes m on m.mime_id=p.mime_id
             join ref_parse_exception_types r on
-            r.parse_exception_type_id=e.parse_exception_type_id
-            group by p.mime_type_id, parse_exception_description
+            r.parse_exception_id=e.parse_exception_id
+            group by p.mime_id, parse_exception_description
             order by MIME_TYPE, EXCEPTION_TYPE
         </sql>
     </report>
 
     <report reportName="AllExceptionsByMimeByTypeB"
-            reportFilename="exceptions/exceptions_by_mime_by_typeB.xlsx"
+            reportFilename="exceptions/exceptions_by_mime_by_type_B.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -439,16 +438,16 @@
             from exceptions_b e
             join profiles_b p on p.id=e.id
             join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_type_id=p.mime_type_id
+            join mimes m on m.mime_id=p.mime_id
             join ref_parse_exception_types r on
-            r.parse_exception_type_id=e.parse_exception_type_id
-            group by p.mime_type_id, parse_exception_description
+            r.parse_exception_id=e.parse_exception_id
+            group by p.mime_id, parse_exception_description
             order by MIME_TYPE, EXCEPTION_TYPE
         </sql>
     </report>
 
     <report reportName="TextLostFromACausedByNewExceptionsInB"
-            reportFilename="exceptions/textLostFromACausedByNewExceptionsInB.xlsx"
+            reportFilename="exceptions/text_lost_from_A_caused_by_new_exceptions_in_B.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -476,7 +475,7 @@
     </report>
 
     <report reportName="FixedExceptionsInBByMimeType"
-            reportFilename="exceptions/fixedExceptionsInBByMimeType.xlsx"
+            reportFilename="exceptions/fixed_exceptions_in_B_by_mime.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -487,15 +486,15 @@
             join profiles_a pa on pa.id=ea.id
             join profiles_b pb on pa.id=pb.id
             join containers c on pa.container_id=c.container_id
-            join mimes m on m.mime_type_id=pa.mime_type_id
+            join mimes m on m.mime_id=pa.mime_id
             where eb.id is null
-            and ea.parse_exception_type_id=0
+            and ea.parse_exception_id=0
             group by mime_string
         </sql>
     </report>
 
     <report reportName="FixedExceptionsInByDetails"
-            reportFilename="exceptions/fixedExceptionsInBDetails.xlsx"
+            reportFilename="exceptions/fixed_exceptions_in_B_details.xlsx"
             format="xlsx"
             includeSql="true">
         <sql>
@@ -506,14 +505,14 @@
             join profiles_a pa on pa.id=ea.id
             join profiles_b pb on pb.id=pa.id //this ensures that files were actually processed in both runs
             join containers c on pa.container_id=c.container_id
-            join mimes m on m.mime_type_id=pa.mime_type_id
+            join mimes m on m.mime_id=pa.mime_id
             where eb.id is null
-            and ea.parse_exception_type_id=0
+            and ea.parse_exception_id=0
             order by mime_string
         </sql>
     </report>
     <report reportName="ContentsOfFixedExceptionsInB"
-            reportFilename="exceptions/contentsOfFixedExceptionsInB.xlsx"
+            reportFilename="exceptions/contents_of_fixed_exceptions_in_B.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -527,14 +526,14 @@
             join profiles_a p on p.id=ea.id
             join contents_b cb on cb.id=ea.id
             join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_type_id=p.mime_type_id
+            join mimes m on m.mime_id=p.mime_id
             where eb.id is null
-            and ea.parse_exception_type_id=0
+            and ea.parse_exception_id=0
         </sql>
     </report>
 
     <report reportName="NewExceptionsByMimeType"
-            reportFilename="exceptions/newExceptionsInBByMimeType.xlsx"
+            reportFilename="exceptions/new_exceptions_in_B_by_mime.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -545,16 +544,16 @@
             join profiles_a pa on pa.id=eb.id
             join profiles_b pb on pb.id=pa.id
             join containers c on pa.container_id=c.container_id
-            join mimes m on m.mime_type_id=pa.mime_type_id
+            join mimes m on m.mime_id=pa.mime_id
             where ea.id is null
-            and eb.parse_exception_type_id=0
+            and eb.parse_exception_id=0
             group by mime_string
             order by COUNT desc
         </sql>
     </report>
 
     <report reportName="NewExceptionsInBByMimeTypeByStackTrace"
-            reportFilename="exceptions/newExceptionsInBByMimeTypeByStackTrace.xlsx"
+            reportFilename="exceptions/new_exceptions_in_B_by_mime_by_stack_trace.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -564,16 +563,16 @@
             from exceptions_b eb
             left join exceptions_a ea on ea.id = eb.id
             join profiles_a p on p.id=eb.id
-            join mimes m on m.mime_type_id=p.mime_type_id
+            join mimes m on m.mime_id=p.mime_id
             where ea.id is null
-            and eb.parse_exception_type_id=0
+            and eb.parse_exception_id=0
             group by MIME_TYPE, eb.sort_stack_trace
             order by MIME_TYPE asc, COUNT desc
         </sql>
     </report>
 
     <report reportName="NewExceptionsInBDetails"
-            reportFilename="exceptions/newExceptionsInBDetails.xlsx"
+            reportFilename="exceptions/new_exceptions_in_B_details.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -584,15 +583,15 @@
             left join exceptions_a ea on ea.id = eb.id
             join profiles_a p on p.id=eb.id
             join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_type_id=p.mime_type_id
+            join mimes m on m.mime_id=p.mime_id
             where ea.id is null
-            and eb.parse_exception_type_id=0
+            and eb.parse_exception_id=0
             order by MIME_TYPE asc, eb.ORIG_STACK_TRACE
         </sql>
     </report>
 
     <report reportName="StackTracesByMimeInA"
-            reportFilename="exceptions/stackTracesByMimeInA.xlsx"
+            reportFilename="exceptions/stack_traces_by_mime_A.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -601,15 +600,15 @@
             COUNT
             from exceptions_a e
             join profiles_a p on p.id=e.id
-            join mimes m on m.mime_type_id=p.mime_type_id
-            and e.parse_exception_type_id=0
+            join mimes m on m.mime_id=p.mime_id
+            and e.parse_exception_id=0
             group by MIME_TYPE, e.sort_stack_trace
             order by MIME_TYPE asc, COUNT desc
         </sql>
     </report>
 
     <report reportName="AllStackTracesInA"
-            reportFilename="exceptions/stackTracesInA.xlsx"
+            reportFilename="exceptions/stack_traces_A.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -619,14 +618,14 @@
             from exceptions_a e
             join profiles_a p on p.id=e.id
             join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_type_id=p.mime_type_id
-            and e.parse_exception_type_id=0
+            join mimes m on m.mime_id=p.mime_id
+            and e.parse_exception_id=0
             order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
             FILE_LENGTH asc
         </sql>
     </report>
     <report reportName="AllStackTracesInB"
-            reportFilename="exceptions/stackTracesInB.xlsx"
+            reportFilename="exceptions/stack_traces_B.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -636,15 +635,15 @@
             from exceptions_b e
             join profiles_b p on p.id=e.id
             join containers c on p.container_id=c.container_id
-            join mimes m on m.mime_type_id=p.mime_type_id
-            and e.parse_exception_type_id=0
+            join mimes m on m.mime_id=p.mime_id
+            and e.parse_exception_id=0
             order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
             FILE_LENGTH asc
         </sql>
     </report>
 
     <report reportName="StackTracesByMimeInB"
-            reportFilename="exceptions/stackTracesByMimeInB.xlsx"
+            reportFilename="exceptions/stack_traces_by_mime_B.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -653,8 +652,8 @@
             COUNT
             from exceptions_b e
             join profiles_b p on p.id=e.id
-            join mimes m on m.mime_type_id=p.mime_type_id
-            and e.parse_exception_type_id=0
+            join mimes m on m.mime_id=p.mime_id
+            and e.parse_exception_id=0
             group by MIME_TYPE, e.sort_stack_trace
             order by MIME_TYPE asc, COUNT desc
         </sql>
@@ -667,7 +666,7 @@
             select file_path, extract_exception_description
             from extract_exceptions_a e
             join ref_extract_exception_types t
-            on e.extract_exception_type_id=t.extract_exception_type_id
+            on e.extract_exception_id=t.extract_exception_id
         </sql>
     </report>
     <report reportName="extractExceptionsB"
@@ -678,7 +677,7 @@
             select file_path, extract_exception_description
             from extract_exceptions_b e
             join ref_extract_exception_types t
-            on e.extract_exception_type_id=t.extract_exception_type_id
+            on e.extract_exception_id=t.extract_exception_id
         </sql>
     </report>
     <report reportName="parseExceptionTypesA"
@@ -689,8 +688,8 @@
             select parse_exception_description, count(1)
             from exceptions_a e
             join ref_parse_exception_types t on
-            t.parse_exception_type_id=e.parse_exception_type_id
-            group by e.parse_exception_type_id
+            t.parse_exception_id=e.parse_exception_id
+            group by e.parse_exception_id
         </sql>
     </report>
     <report reportName="parseExceptionTypesB"
@@ -701,8 +700,8 @@
             select parse_exception_description, count(1)
             from exceptions_b e
             join ref_parse_exception_types t on
-            t.parse_exception_type_id=e.parse_exception_type_id
-            group by e.parse_exception_type_id
+            t.parse_exception_id=e.parse_exception_id
+            group by e.parse_exception_id
         </sql>
     </report>
 
@@ -738,15 +737,15 @@
             join profiles_a pa on pa.id = cc.id
             join profiles_b pb on pb.id=cc.id
             join containers c on c.container_id=pa.container_id
-            join mimes ma on ma.mime_type_id=pa.mime_type_id
-            join mimes mb on mb.mime_type_id=pb.mime_type_id
+            join mimes ma on ma.mime_id=pa.mime_id
+            join mimes mb on mb.mime_id=pb.mime_id
             left join exceptions_a ea on ea.id=cc.id
             left join exceptions_b eb on eb.id=cc.id
             where (overlap &lt; 0.95 or abs(ca.NUM_TOKENS-cb.NUM_TOKENS) &gt;30)
-            and (ea.parse_exception_type_id is null or
-            ea.parse_exception_type_id &lt;&gt; 2)
-            and (eb.parse_exception_type_id is null or
-            eb.parse_exception_type_id &lt;&gt; 2)
+            and (ea.parse_exception_id is null or
+            ea.parse_exception_id &lt;&gt; 2)
+            and (eb.parse_exception_id is null or
+            eb.parse_exception_id &lt;&gt; 2)
             order by ma.mime_string, overlap asc
             limit 100000
         </sql>
@@ -783,13 +782,13 @@
             join profiles_a pa on pa.id = cc.id
             join profiles_b pb on pb.id=cc.id
             join containers c on c.container_id=pa.container_id
-            join mimes ma on ma.mime_type_id=pa.mime_type_id
-            join mimes mb on mb.mime_type_id=pb.mime_type_id
+            join mimes ma on ma.mime_id=pa.mime_id
+            join mimes mb on mb.mime_id=pb.mime_id
             left join exceptions_a ea on ea.id=cc.id
             left join exceptions_b eb on eb.id=cc.id
             where (overlap &lt; 0.95 or abs(ca.NUM_TOKENS-cb.NUM_TOKENS) &gt;30)
-            and (ea.parse_exception_type_id is null)
-            and (eb.parse_exception_type_id is null)
+            and (ea.parse_exception_id is null)
+            and (eb.parse_exception_id is null)
             order by ma.mime_string, overlap asc
             limit 100000
         </sql>
@@ -807,8 +806,8 @@
             num_common_tokens_a, num_common_tokens_b,
             ifnull(num_common_tokens_b, 0)-ifnull(num_common_tokens_a, 0) as change_in_common_tokens_b
             from token_counts_compared tcc
-            join mimes ma on tcc.mime_type_id_a = ma.mime_type_id
-            join mimes mb on tcc.mime_type_id_b = mb.mime_type_id
+            join mimes ma on tcc.mime_id_a = ma.mime_id
+            join mimes mb on tcc.mime_id_b = mb.mime_id
             order by change_in_common_tokens_b desc
         </sql>
     </report>
@@ -824,8 +823,8 @@
             total_a, percent_exceptions_a,
             exceptions_b, total_b, percent_exceptions_b
             from exceptions_compared c
-            join mimes ma on ma.mime_type_id=c.mime_type_id_a
-            join mimes mb on mb.mime_type_id=c.mime_type_id_b
+            join mimes ma on ma.mime_id=c.mime_id_a
+            join mimes mb on mb.mime_id=c.mime_id_b
             order by percent_exceptions_b desc, total_b desc;
         </sql>
     </report>
@@ -898,18 +897,18 @@
             mb.mime_string as mime_string_b,
             pa.num_attachments as num_attachments_a,
             pb.num_attachments as num_attachments_b,
-            ea.parse_exception_type_id as exception_type_id_a,
-            eb.parse_exception_type_id as exception_type_id_b
+            ea.parse_exception_id as exception_id_a,
+            eb.parse_exception_id as exception_id_b
             from profiles_a pa
             join profiles_b pb on pa.id= pb.id
             join containers c on pa.container_id=c.container_id
-            join mimes ma on pa.mime_type_id=ma.mime_type_id
-            join mimes mb on pb.mime_type_id=mb.mime_type_id
+            join mimes ma on pa.mime_id=ma.mime_id
+            join mimes mb on pb.mime_id=mb.mime_id
             left join exceptions_a ea on ea.id=pa.id
             left join exceptions_b eb on eb.id=pb.id
             where pa.is_embedded=false and
-            ea.parse_exception_type_id is null and
-            eb.parse_exception_type_id is null
+            ea.parse_exception_id is null and
+            eb.parse_exception_id is null
             and pa.num_attachments &lt;&gt; pb.num_attachments
             order by ma.mime_string, pb.num_attachments-pa.num_attachments
             limit 1000;
@@ -928,18 +927,18 @@
             mb.mime_string as mime_string_b,
             pa.num_metadata_values as num_metadata_values_a,
             pb.num_metadata_values as num_metadata_values_b,
-            ea.parse_exception_type_id as parse_ex_type_id_a,
-            eb.parse_exception_type_id as parse_ex_type_id_b
+            ea.parse_exception_id as parse_ex_id_a,
+            eb.parse_exception_id as parse_ex_id_b
             from profiles_a pa
             join profiles_b pb on pa.id= pb.id
             join containers c on pa.container_id=c.container_id
-            join mimes ma on pa.mime_type_id=ma.mime_type_id
-            join mimes mb on pb.mime_type_id=mb.mime_type_id
+            join mimes ma on pa.mime_id=ma.mime_id
+            join mimes mb on pb.mime_id=mb.mime_id
             left join exceptions_a ea on ea.id=pa.id
             left join exceptions_b eb on eb.id=pb.id
             where
-            ea.parse_exception_type_id is null and
-            eb.parse_exception_type_id is null
+            ea.parse_exception_id is null and
+            eb.parse_exception_id is null
             and pa.num_metadata_values &lt;&gt; pb.num_metadata_values
             order by ma.mime_string,
             pb.num_metadata_values-pa.num_metadata_values

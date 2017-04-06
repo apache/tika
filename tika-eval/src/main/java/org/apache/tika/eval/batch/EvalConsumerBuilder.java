@@ -122,14 +122,14 @@ public abstract class EvalConsumerBuilder {
         Map<Cols, String> m = new HashMap<>();
         for (AbstractProfiler.PARSE_ERROR_TYPE t : AbstractProfiler.PARSE_ERROR_TYPE.values()) {
             m.clear();
-            m.put(Cols.PARSE_ERROR_TYPE_ID, Integer.toString(t.ordinal()));
+            m.put(Cols.PARSE_ERROR_ID, Integer.toString(t.ordinal()));
             m.put(Cols.PARSE_ERROR_DESCRIPTION, t.name());
             writer.writeRow(AbstractProfiler.REF_PARSE_ERROR_TYPES, m);
         }
 
         for (AbstractProfiler.EXCEPTION_TYPE t : AbstractProfiler.EXCEPTION_TYPE.values()) {
             m.clear();
-            m.put(Cols.PARSE_EXCEPTION_TYPE_ID, Integer.toString(t.ordinal()));
+            m.put(Cols.PARSE_EXCEPTION_ID, Integer.toString(t.ordinal()));
             m.put(Cols.PARSE_EXCEPTION_DESCRIPTION, t.name());
             writer.writeRow(AbstractProfiler.REF_PARSE_EXCEPTION_TYPES, m);
         }
@@ -137,7 +137,7 @@ public abstract class EvalConsumerBuilder {
         for (ExtractReaderException.TYPE t :
                 ExtractReaderException.TYPE.values()) {
             m.clear();
-            m.put(Cols.EXTRACT_EXCEPTION_TYPE_ID, Integer.toString(t.ordinal()));
+            m.put(Cols.EXTRACT_EXCEPTION_ID, Integer.toString(t.ordinal()));
             m.put(Cols.EXTRACT_EXCEPTION_DESCRIPTION, t.name());
             writer.writeRow(AbstractProfiler.REF_EXTRACT_EXCEPTION_TYPES, m);
         }

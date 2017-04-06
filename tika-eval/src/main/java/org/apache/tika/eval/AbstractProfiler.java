@@ -80,18 +80,18 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     static final long NON_EXISTENT_FILE_LENGTH = -1l;
 
     public static TableInfo REF_EXTRACT_EXCEPTION_TYPES = new TableInfo("ref_extract_exception_types",
-            new ColInfo(Cols.EXTRACT_EXCEPTION_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.EXTRACT_EXCEPTION_ID, Types.INTEGER),
             new ColInfo(Cols.EXTRACT_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128)
     );
 
 
     public static TableInfo REF_PARSE_ERROR_TYPES = new TableInfo("ref_parse_error_types",
-            new ColInfo(Cols.PARSE_ERROR_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.PARSE_ERROR_ID, Types.INTEGER),
             new ColInfo(Cols.PARSE_ERROR_DESCRIPTION, Types.VARCHAR, 128)
     );
 
     public static TableInfo REF_PARSE_EXCEPTION_TYPES = new TableInfo("ref_parse_exception_types",
-            new ColInfo(Cols.PARSE_EXCEPTION_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER),
             new ColInfo(Cols.PARSE_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128)
     );
 
@@ -129,7 +129,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     public static TableInfo MIME_TABLE = new TableInfo("mimes",
-            new ColInfo(Cols.MIME_TYPE_ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12)
     );
@@ -217,7 +217,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.CONTAINER_ID, containerId);
         data.put(Cols.FILE_PATH, filePath);
-        data.put(Cols.EXTRACT_EXCEPTION_TYPE_ID, Integer.toString(type.ordinal()));
+        data.put(Cols.EXTRACT_EXCEPTION_ID, Integer.toString(type.ordinal()));
         writer.writeRow(extractExceptionTable, data);
 
     }
@@ -419,18 +419,18 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
             Matcher matcher = ACCESS_PERMISSION_EXCEPTION.matcher(fullTrace);
             if (matcher.find()) {
-                data.put(Cols.PARSE_EXCEPTION_TYPE_ID,
+                data.put(Cols.PARSE_EXCEPTION_ID,
                         Integer.toString(EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()));
                 return;
             }
             matcher = ENCRYPTION_EXCEPTION.matcher(fullTrace);
             if (matcher.find()) {
-                data.put(Cols.PARSE_EXCEPTION_TYPE_ID,
+                data.put(Cols.PARSE_EXCEPTION_ID,
                         Integer.toString(EXCEPTION_TYPE.ENCRYPTION.ordinal()));
                 return;
             }
 
-            data.put(Cols.PARSE_EXCEPTION_TYPE_ID,
+            data.put(Cols.PARSE_EXCEPTION_ID,
                     Integer.toString(EXCEPTION_TYPE.RUNTIME.ordinal()));
 
             data.put(Cols.ORIG_STACK_TRACE, fullTrace);
@@ -562,7 +562,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             return;
         }
         int mimeId = writer.getMimeId(type);
-        output.put(Cols.MIME_TYPE_ID, Integer.toString(mimeId));
+        output.put(Cols.MIME_ID, Integer.toString(mimeId));
     }
 
     void writeTokenCounts(Map<Cols, String> data, String field,

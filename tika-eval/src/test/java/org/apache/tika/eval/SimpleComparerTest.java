@@ -153,7 +153,7 @@ public class SimpleComparerTest extends TikaTest {
         Map<Cols, String> row = table.get(0);
         //debugPrintRow(row);
         assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
-                row.get(Cols.EXTRACT_EXCEPTION_TYPE_ID));
+                row.get(Cols.EXTRACT_EXCEPTION_ID));
     }
 
 
@@ -198,7 +198,7 @@ public class SimpleComparerTest extends TikaTest {
             Map<Cols, String> rowA = table.get(0);
             //debugPrintRow(rowA);
             assertEquals(Integer.toString(EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()),
-                    rowA.get(Cols.PARSE_EXCEPTION_TYPE_ID));
+                    rowA.get(Cols.PARSE_EXCEPTION_ID));
             assertNull(rowA.get(Cols.ORIG_STACK_TRACE));
             assertNull(rowA.get(Cols.SORT_STACK_TRACE));
         }
