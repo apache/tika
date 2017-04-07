@@ -19,6 +19,7 @@ import java.util.TimeZone;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -56,13 +57,13 @@ File extension:     .tsd
 public class TSDParser extends AbstractParser {
     
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 3268158344501763323L;
-	
-	private static final Logger LOG = LoggerFactory.getLogger(TSDParser.class); 
-	
-	private static final String TSD_LOOP_LABEL = "Time-Stamp-n.";
+     * 
+     */
+    private static final long serialVersionUID = 3268158344501763323L;
+    
+    private static final Logger LOG = LoggerFactory.getLogger(TSDParser.class); 
+    
+    private static final String TSD_LOOP_LABEL = "Time-Stamp-n.";
     private static final String TSD_DESCRIPTION_LABEL = "Description";
     private static final String TSD_DESCRIPTION_VALUE = "Time Stamped Data Envelope";
     private static final String TSD_PARSED_LABEL = "File-Parsed";
@@ -87,32 +88,31 @@ public class TSDParser extends AbstractParser {
                       Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         
         //Try to parse TSD File
-    	try(RereadableInputStream ris = new RereadableInputStream(stream, 2048, true, true)) {
-    	    
-	        List<TSDMetas> tsdMetasList = this.buildMetas(ris);
-	        
-	        Integer count = 1;
-	        
-	        for(TSDMetas tsdm: tsdMetasList) {
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL, TSD_DESCRIPTION_VALUE);
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL, tsdm.getParseBuiltStr());
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_DATE, tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE, tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_POLICY_ID, tsdm.getPolicyId());
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER, tsdm.getSerialNumberFormatted());
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_TSA, tsdm.getTsaStr());
-	            metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_ALGORITHM, tsdm.getAlgorithmName());
-	            count++;
-	        }
+        try(RereadableInputStream ris = new RereadableInputStream(stream, 2048, true, true)) {
             
-	        ris.rewind();
-	        this.parseTSDContent(ris, handler, metadata, context);
+            List<TSDMetas> tsdMetasList = this.buildMetas(ris);
             
-	        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-	        xhtml.startDocument();
-	        xhtml.endDocument();
-    	}
+            Integer count = 1;
+            
+            for(TSDMetas tsdm: tsdMetasList) {
+                metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL, TSD_DESCRIPTION_VALUE);
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL, tsdm.getParseBuiltStr());
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_DATE, tsdm.getParsedDateStr() + " " + TSD_DATE_FORMAT);
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DATE, tsdm.getEmitDateStr() + " " + TSD_DATE_FORMAT);
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_POLICY_ID, tsdm.getPolicyId());
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_SERIAL_NUMBER, tsdm.getSerialNumberFormatted());
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_TSA, tsdm.getTsaStr());
+                metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_ALGORITHM, tsdm.getAlgorithmName());
+                count++;
+            }
+            
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            ris.rewind();
+            this.parseTSDContent(ris, handler, metadata, context);
+            xhtml.endDocument();
+        }
     }
     
     private List<TSDMetas> buildMetas(InputStream stream) {
@@ -146,18 +146,17 @@ public class TSDParser extends AbstractParser {
     }
     
     private void parseTSDContent(InputStream stream, ContentHandler handler, 
-    		                     Metadata metadata, ParseContext context) {
-    	
-	    EmbeddedDocumentExtractor embeddedDocumentExtractor = 
-					              new ParsingEmbeddedDocumentExtractor(context);
-	    
-		if(embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
-		   try(InputStream is = TikaInputStream.get(new CMSTimeStampedData(stream).getContent())) {
-			   embeddedDocumentExtractor.parseEmbedded(is, handler, metadata, true);
-		   } catch(Exception ex) {
-			 LOG.error("Error in TSDParser.parseTSDContent ", ex.getMessage());
-		   }
-		}
+                                 Metadata metadata, ParseContext context) {
+                
+        EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        
+        if(edx.shouldParseEmbedded(metadata)) {
+           try(InputStream is = TikaInputStream.get(new CMSTimeStampedData(stream).getContent())) {
+               edx.parseEmbedded(is, handler, metadata, true);
+           } catch(Exception ex) {
+             LOG.error("Error in TSDParser.parseTSDContent ", ex.getMessage());
+           }
+        }
     }
     
     private class TSDMetas {
@@ -245,7 +244,7 @@ public class TSDParser extends AbstractParser {
         }
         
         public void setTSA(GeneralName tsa) {
-        	this.tsa = tsa;
+            this.tsa = tsa;
         }
         
         public String getAlgorithm() {
