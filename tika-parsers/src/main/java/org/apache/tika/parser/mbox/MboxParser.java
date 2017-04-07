@@ -26,18 +26,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -51,13 +47,13 @@ import org.xml.sax.SAXException;
 
 /**
  * Mbox (mailbox) parser. This version extracts each mail from Mbox and uses the
- * DelegatingParser to process each mail.
+ * {@link org.apache.tika.parser.DelegatingParser} to process each mail.
  */
 public class MboxParser extends AbstractParser {
 
     public static final String MBOX_MIME_TYPE = "application/mbox";
-    public static final String MBOX_RECORD_DIVIDER = "From ";
-    public static final int MAIL_MAX_SIZE = 50000000;
+    public static final String RECORD_DIVIDER = "From ";
+    public static final int MAIL_MAX_SIZE = 50_000_000;
     /**
      * Serial version UID
      */
@@ -67,23 +63,73 @@ public class MboxParser extends AbstractParser {
     private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile("<(.*@.*)>");
 
     private static final String EMAIL_HEADER_METADATA_PREFIX = "MboxParser-";
-    private static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
-    private final Map<Integer, Metadata> trackingMetadata = new HashMap<Integer, Metadata>();
-    private boolean tracking = false;
+    static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
 
     public static Date parseDate(String headerContent) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
-        return dateFormat.parse(headerContent);
+        return DATE_FORMAT.parse(headerContent);
     }
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    /**
+     * Helper class to manage state while parsing mbox files
+     */
+    private static class ParserState {
+        boolean isFirstRecord = true;
+        boolean isBody = false;
+        
+        ByteArrayOutputStream currentMessage = null;
+        StringBuilder currentHeader = null;
+        Metadata currentMailMetadata = null;
+        
+        BufferedReader reader;
+        // Null if we have not looked ahead yet, the next line otherwise
+        String nextLine;
+        
+        private ParserState(BufferedReader reader) {
+            this.reader = reader;
+        }
+        
+        
+        private String lookAhead() throws IOException {
+            if (this.nextLine == null) {
+                this.nextLine = reader.readLine();
+            }
+            
+            return this.nextLine;
+        }
+        
+        String readNextLine() throws IOException {
+            if (this.nextLine == null) {
+                return reader.readLine();
+            }
+            
+            String temp = this.nextLine;
+            this.nextLine = null;
+            return temp;
+        }
+
+        void reset(String curLine) {
+            isBody = false;
+            currentMessage = new ByteArrayOutputStream(100_000);
+            currentHeader = new StringBuilder();
+            currentMailMetadata = new Metadata();
+            currentMailMetadata.add(EMAIL_FROMLINE_METADATA, curLine.substring(RECORD_DIVIDER.length()));
+            currentMailMetadata.set(Metadata.CONTENT_TYPE, "message/rfc822");
+        }
+    }
+    
+    @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
 
-        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor extractor = context.get(
+                EmbeddedDocumentExtractor.class,
+                new ParsingEmbeddedDocumentExtractor(context));
 
         String charsetName = "windows-1252";
 
@@ -95,72 +141,83 @@ public class MboxParser extends AbstractParser {
 
         InputStreamReader isr = new InputStreamReader(stream, charsetName);
         try (BufferedReader reader = new BufferedReader(isr)) {
-            String curLine = reader.readLine();
-            int mailItem = 0;
-            do {
-                if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
-                    Metadata mailMetadata = new Metadata();
-                    Queue<String> multiline = new LinkedList<String>();
-                    mailMetadata.add(EMAIL_FROMLINE_METADATA, curLine.substring(MBOX_RECORD_DIVIDER.length()));
-                    mailMetadata.set(Metadata.CONTENT_TYPE, "message/rfc822");
-                    curLine = reader.readLine();
-                    if (curLine == null) {
+            ParserState state = new ParserState(reader);
+            while (true) {
+                String curLine = state.readNextLine();
+                
+                if (curLine == null) {
+                    completeRecord(extractor, xhtml, state);
+                    break;
+                }
+                
+                if (isRecordDivider(curLine, state)) {
+                    if (state.isFirstRecord) {
+                        state.isFirstRecord = false;
+                    } else {
+                        completeRecord(extractor, xhtml, state);
+                    }
+                    
+                    state.reset(curLine);
+                    
+                    if (Thread.currentThread().isInterrupted()) {
                         break;
                     }
-                    ByteArrayOutputStream message = new ByteArrayOutputStream(100000);
-                    do {
-                        if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
-                            String latestLine = multiline.poll();
-                            latestLine += " " + curLine.trim();
-                            multiline.add(latestLine);
-                        } else {
-                            multiline.add(curLine);
-                        }
-
-                        message.write(curLine.getBytes(charsetName));
-                        message.write(0x0A);
-                        curLine = reader.readLine();
+                } else if (curLine.isEmpty()) {
+                    state.isBody = true;
+                } else if (!state.isBody) {
+                    // Append for multi-line messages
+                    if (curLine.startsWith(" ") || curLine.startsWith("\t")) {
+                        state.currentHeader.append(" ").append(curLine.trim());
+                    } else {
+                        // If it is non-empty and not prepended with whitespace, then it is the start
+                        // of a new header, so save the last header
+                        saveHeaderInMetadata(state.currentMailMetadata, state.currentHeader.toString());
+                        state.currentHeader = new StringBuilder().append(curLine);
                     }
-                    while (curLine != null && !curLine.startsWith(MBOX_RECORD_DIVIDER) && message.size() < MAIL_MAX_SIZE);
-
-                    for (String item : multiline) {
-                        saveHeaderInMetadata(mailMetadata, item);
-                    }
-
-                    ByteArrayInputStream messageStream = new ByteArrayInputStream(message.toByteArray());
-                    message = null;
-
-                    if (extractor.shouldParseEmbedded(mailMetadata)) {
-                        extractor.parseEmbedded(messageStream, xhtml, mailMetadata, true);
-                    }
-
-                    if (tracking) {
-                        getTrackingMetadata().put(mailItem++, mailMetadata);
-                    }
-                } else {
-                    curLine = reader.readLine();
                 }
-
-            } while (curLine != null && !Thread.currentThread().isInterrupted());
+                
+                state.currentMessage.write(curLine.getBytes(charsetName));
+                state.currentMessage.write(0x0A);
+            }
         }
-
+        
         xhtml.endDocument();
     }
-
-    public boolean isTracking() {
-        return tracking;
+    
+    /**
+     * Save the last recorded header into the current record's {@link Metadata}
+     * and pass the completed record to the {@link EmbeddedDocumentExtractor}
+     */
+    private void completeRecord(EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml, ParserState state) throws SAXException, IOException {
+        // Save the last header recorded
+        saveHeaderInMetadata(state.currentMailMetadata, state.currentHeader.toString());
+        
+        // Extract the message if needed
+        if (extractor.shouldParseEmbedded(state.currentMailMetadata)) {
+            ByteArrayInputStream messageStream = new ByteArrayInputStream(state.currentMessage.toByteArray());
+            extractor.parseEmbedded(messageStream, xhtml, state.currentMailMetadata, true);
+        }
+    }
+    
+    private boolean isRecordDivider(String line, ParserState state) throws IOException, TikaException {
+        if (!line.startsWith(RECORD_DIVIDER)) {
+            return false;
+        }
+        
+        // If "From " is part of the message body, then RFC 4155 indicates that
+        // different mbox formats may escape the message with e.g. '>' characters, etc
+        // which would be parsed properly.  Here, we add handling if a "From" in a message body
+        // is NOT escaped at all.
+        String nextLine = state.lookAhead();
+        if (nextLine == null) {
+            throw new TikaException("Expected mbox to end with newline characters");
+        }
+        
+        return nextLine.isEmpty() || EMAIL_HEADER_PATTERN.matcher(nextLine).matches();
     }
 
-    public void setTracking(boolean tracking) {
-        this.tracking = tracking;
-    }
-
-    public Map<Integer, Metadata> getTrackingMetadata() {
-        return trackingMetadata;
-    }
-
-    private void saveHeaderInMetadata(Metadata metadata, String curLine) {
-        Matcher headerMatcher = EMAIL_HEADER_PATTERN.matcher(curLine);
+    private void saveHeaderInMetadata(Metadata metadata, String rawHeader) {
+        Matcher headerMatcher = EMAIL_HEADER_PATTERN.matcher(rawHeader);
         if (!headerMatcher.matches()) {
             return; // ignore malformed header lines
         }
@@ -168,12 +225,18 @@ public class MboxParser extends AbstractParser {
         String headerTag = headerMatcher.group(1).toLowerCase(Locale.ROOT);
         String headerContent = headerMatcher.group(2);
 
-        if (headerTag.equalsIgnoreCase("From")) {
+        switch (headerTag) {
+        case "from":
             metadata.set(TikaCoreProperties.CREATOR, headerContent);
-            MailUtil.setPersonAndEmail(headerContent, Message.MESSAGE_FROM_NAME,
-                    Message.MESSAGE_FROM_EMAIL, metadata);
-        } else if (headerTag.equalsIgnoreCase("To") || headerTag.equalsIgnoreCase("Cc")
-                || headerTag.equalsIgnoreCase("Bcc")) {
+            MailUtil.setPersonAndEmail(
+                    headerContent,
+                    Message.MESSAGE_FROM_NAME,
+                    Message.MESSAGE_FROM_EMAIL,
+                    metadata);
+            break;
+        case "to":
+        case "cc":
+        case "bcc":
             Matcher address = EMAIL_ADDRESS_PATTERN.matcher(headerContent);
             if (address.find()) {
                 metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, address.group(1));
@@ -188,26 +251,32 @@ public class MboxParser extends AbstractParser {
                 property = Metadata.MESSAGE_BCC;
             }
             metadata.add(property, headerContent);
-        } else if (headerTag.equalsIgnoreCase("Subject")) {
+            break;
+        case "subject":
             metadata.add(Metadata.SUBJECT, headerContent);
-        } else if (headerTag.equalsIgnoreCase("Date")) {
+            break;
+        case "date":
             try {
                 Date date = parseDate(headerContent);
                 metadata.set(TikaCoreProperties.CREATED, date);
             } catch (ParseException e) {
                 // ignoring date because format was not understood
             }
-        } else if (headerTag.equalsIgnoreCase("Message-Id")) {
+            break;
+        case "message-id":
             metadata.set(TikaCoreProperties.IDENTIFIER, headerContent);
-        } else if (headerTag.equalsIgnoreCase("In-Reply-To")) {
+            break;
+        case "in-reply-to":
             metadata.set(TikaCoreProperties.RELATION, headerContent);
-        } else if (headerTag.equalsIgnoreCase("Content-Type")) {
+            break;
+        case "content-type":
             // TODO - key off content-type in headers to
             // set mapping to use for content and convert if necessary.
 
             metadata.add(Metadata.CONTENT_TYPE, headerContent);
             metadata.set(TikaCoreProperties.FORMAT, headerContent);
-        } else {
+            break;
+        default:
             metadata.add(EMAIL_HEADER_METADATA_PREFIX + headerTag, headerContent);
         }
     }

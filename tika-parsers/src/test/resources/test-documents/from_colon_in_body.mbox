@@ -1,0 +1,26 @@
+From 1563685564519032849@xxx Mon Apr 03 19:12:41 +0000 2017
+X-GM-THRID: 1563685564519032849
+X-Gmail-Labels: Important,Test,Sent,Inbox
+MIME-Version: 1.0
+Received: by 10.140.35.211 with HTTP; Mon, 3 Apr 2017 12:12:41 -0700 (PDT)
+Date: Mon, 3 Apr 2017 12:12:41 -0700
+Delivered-To: mboxtest@gmail.com
+Message-ID: <CAOpBqrLsSzRKWNx7CPh0e=Wc6_QR9bxzOAK6r8DtJKkxz4eTQA@mail.gmail.com>
+Subject: From: in body test
+From: Mbox Test <mboxtest@gmail.com>
+To: Mbox Test <mboxtest@gmail.com>
+Content-Type: multipart/alternative; boundary=001a113a86287fe854054c47f1cd
+
+--001a113a86287fe854054c47f1cd
+Content-Type: text/plain; charset=UTF-8
+
+From: myself@break.this.com
+
+This should not override the 'From: ' line in the header
+
+--001a113a86287fe854054c47f1cd
+Content-Type: text/html; charset=UTF-8
+
+<div dir="ltr">From: <a href="mailto:myself@break.this.com">myself@break.this.com</a><div><br></div><div>This should not override the 'From: ' line in the header</div><div>
+
+--001a113a86287fe854054c47f1cd--

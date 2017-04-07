@@ -1,0 +1,27 @@
+From 1563760229482419905@xxx Tue Apr 04 14:59:27 +0000 2017
+X-GM-THRID: 1563760229482419905
+X-Gmail-Labels: Important,Test,Sent,Inbox
+MIME-Version: 1.0
+Received: by 10.140.35.211 with HTTP; Tue, 4 Apr 2017 07:59:28 -0700 (PDT)
+Date: Tue, 4 Apr 2017 23:59:28 +0900
+Delivered-To: mboxtest@gmail.com
+Message-ID: <CAOpBqrKrwi4mMTj8eujd+Hhy+OTgy-DsOXgUFmHFsXcSvGMiFQ@mail.gmail.com>
+Subject: From in body test
+From: Mbox Test <mboxtest@gmail.com>
+To: Mbox Test <mboxtest@gmail.com>
+Content-Type: multipart/alternative; boundary=001a11c16d58bcf245054c588564
+
+--001a11c16d58bcf245054c588564
+Content-Type: text/plain; charset=UTF-8
+
+>From myself@break.this.com Mon Jun 01 10:00:00 2009
+
+What unhappiness does this cause?
+
+--001a11c16d58bcf245054c588564
+Content-Type: text/html; charset=UTF-8
+
+<div dir="ltr">From <a href="mailto:mboxtest@gmail.com">mboxtest@gmail.com</a> Mon <span class="gmail-s1">Jun</span> 01 10:00:00 2009<div><br></div><div>What unhappiness does this cause?</div></div>
+
+--001a11c16d58bcf245054c588564--
+

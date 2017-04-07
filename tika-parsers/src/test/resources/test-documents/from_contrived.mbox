@@ -1,0 +1,32 @@
+From 1563841070467693497@xxx Wed Apr 05 12:24:23 +0000 2017
+X-GM-THRID: 1563841070467693497
+X-Gmail-Labels: Important,Test,Sent,Inbox
+MIME-Version: 1.0
+Received: by 10.140.35.211 with HTTP; Wed, 5 Apr 2017 05:24:23 -0700 (PDT)
+Date: Wed, 5 Apr 2017 21:24:23 +0900
+Delivered-To: mboxtest@gmail.com
+Message-ID: <CAOpBqrKAVZjYLUmKrdZy-sQqiSFaEBH7gcZsFXREKBhbQ9L9Yw@mail.gmail.com>
+Subject: mbox from in body nonescaped
+From: Mbox Test <mboxtest@gmail.com>
+To: Mbox Test <mboxtest@gmail.com>
+Content-Type: multipart/alternative; boundary=001a11c11df8ffd2ad054c6a7851
+
+--001a11c11df8ffd2ad054c6a7851
+Content-Type: text/plain; charset=UTF-8
+
+From mboxtest@gmail.com Mon Jun 01 10:00:00 2009
+This is somewhat contrived (see RFC 1455)
+
+--001a11c11df8ffd2ad054c6a7851
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><span style=3D"font-size:12.8px">From=C2=A0</span><a href=
+=3D"mailto:mboxtest@gmail.com" target=3D"_blank" style=3D"font-size:1=
+2.8px">mboxtest@gmail.com</a><span style=3D"font-size:12.8px">=C2=A0M=
+on=C2=A0</span><span class=3D"gmail-m_-571947120026308262gmail-s1" style=3D=
+"font-size:12.8px">Jun</span><span style=3D"font-size:12.8px">=C2=A001 10:0=
+0:00 2009</span><br><div><br></div><div><br></div></div>
+
+--001a11c11df8ffd2ad054c6a7851--
+
