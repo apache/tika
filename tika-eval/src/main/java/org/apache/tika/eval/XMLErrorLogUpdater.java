@@ -145,7 +145,7 @@ public class XMLErrorLogUpdater {
             //if it does, update all records matching that path or container id
             if (hitCount > 0) {
                 sql = "UPDATE " + errorTableName +
-                        " SET " + Cols.PARSE_ERROR_TYPE_ID +
+                        " SET " + Cols.PARSE_ERROR_ID +
                         " = " + type.ordinal() + ","+
                         Cols.FILE_PATH + "='" +filePath+"'"+
                         " where "+Cols.CONTAINER_ID +
@@ -157,13 +157,13 @@ public class XMLErrorLogUpdater {
                 //insert full record
                 if (containerId > -1) {
                     sql = "INSERT INTO " + errorTableName +
-                            " ("+Cols.CONTAINER_ID+","+Cols.FILE_PATH +","+Cols.PARSE_ERROR_TYPE_ID+")"+
+                            " ("+Cols.CONTAINER_ID+","+Cols.FILE_PATH +","+Cols.PARSE_ERROR_ID +")"+
                             " values (" + containerId + ", '" + filePath + "'," +
                             type.ordinal() + ");";
                 } else {
                     //if container id == -1, insert only file path and parse error type id
                     sql = "INSERT INTO " + errorTableName +
-                            " ("+Cols.FILE_PATH.name()+","+Cols.PARSE_ERROR_TYPE_ID+")"+
+                            " ("+Cols.FILE_PATH.name()+","+Cols.PARSE_ERROR_ID +")"+
                             "values ('" + filePath + "'," +
                             type.ordinal() + ");";
                 }
