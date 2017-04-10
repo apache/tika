@@ -1,8 +1,11 @@
 package org.apache.tika.parser.crypto;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -14,7 +17,7 @@ import org.xml.sax.ContentHandler;
 public class TSDParserTest extends TikaTest {
 
     @Test
-    public void testDetachedSignature() throws Exception {
+    public void testTSDFileData() throws Exception {
 
         try (InputStream inputXml = 
                          TSDParserTest.class.getResourceAsStream("/test-documents/MANIFEST.XML.TSD");
@@ -33,7 +36,41 @@ public class TSDParserTest extends TikaTest {
 
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            tsdParser.parse(inputXml, handler, metadata, new ParseContext());
+            ParseContext parseContext = new ParseContext();
+            tsdParser.parse(inputXml, handler, metadata, parseContext);
+
+            assertNotNull(handler);
+            assertNotNull(metadata);
+            assertContains("Description=Time Stamped Data Envelope", metadata.toString());
+            assertContains("Content-Type=application/timestamped-data", metadata.toString());
+            assertContains("File-Parsed=true", metadata.toString());
+                        
+            handler = new BodyContentHandler();
+            metadata = new Metadata();
+            parseContext = new ParseContext();
+            tsdParser.parse(inputTxt1, handler, metadata, parseContext);
+            
+            assertNotNull(handler);
+            assertNotNull(metadata);
+            assertContains("Description=Time Stamped Data Envelope", metadata.toString());
+            assertContains("Content-Type=application/timestamped-data", metadata.toString());
+            assertContains("File-Parsed=true", metadata.toString());
+                        
+            handler = new BodyContentHandler();
+            metadata = new Metadata();
+            parseContext = new ParseContext();
+            tsdParser.parse(inputTxt2, handler, metadata, parseContext);
+
+            assertNotNull(handler);
+            assertNotNull(metadata);
+            assertContains("Description=Time Stamped Data Envelope", metadata.toString());
+            assertContains("Content-Type=application/timestamped-data", metadata.toString());
+            assertContains("File-Parsed=true", metadata.toString());
+            
+            handler = new BodyContentHandler();
+            metadata = new Metadata(); 
+            parseContext = new ParseContext();
+            tsdParser.parse(inputDocx, handler, metadata, parseContext);
 
             assertNotNull(handler);
             assertNotNull(metadata);
@@ -43,7 +80,8 @@ public class TSDParserTest extends TikaTest {
             
             handler = new BodyContentHandler();
             metadata = new Metadata();
-            tsdParser.parse(inputTxt1, handler, metadata, new ParseContext());
+            parseContext = new ParseContext();
+            tsdParser.parse(inputPdf, handler, metadata, parseContext);
 
             assertNotNull(handler);
             assertNotNull(metadata);
@@ -53,37 +91,8 @@ public class TSDParserTest extends TikaTest {
             
             handler = new BodyContentHandler();
             metadata = new Metadata();
-            tsdParser.parse(inputTxt2, handler, metadata, new ParseContext());
-
-            assertNotNull(handler);
-            assertNotNull(metadata);
-            assertContains("Description=Time Stamped Data Envelope", metadata.toString());
-            assertContains("Content-Type=application/timestamped-data", metadata.toString());
-            assertContains("File-Parsed=true", metadata.toString());
-            
-            handler = new BodyContentHandler();
-            metadata = new Metadata();           
-            tsdParser.parse(inputDocx, handler, metadata, new ParseContext());
-
-            assertNotNull(handler);
-            assertNotNull(metadata);
-            assertContains("Description=Time Stamped Data Envelope", metadata.toString());
-            assertContains("Content-Type=application/timestamped-data", metadata.toString());
-            assertContains("File-Parsed=true", metadata.toString());
-            
-            handler = new BodyContentHandler();
-            metadata = new Metadata();
-            tsdParser.parse(inputPdf, handler, metadata, new ParseContext());
-
-            assertNotNull(handler);
-            assertNotNull(metadata);
-            assertContains("Description=Time Stamped Data Envelope", metadata.toString());
-            assertContains("Content-Type=application/timestamped-data", metadata.toString());
-            assertContains("File-Parsed=true", metadata.toString());
-            
-            handler = new BodyContentHandler();
-            metadata = new Metadata();
-            tsdParser.parse(inputPng, handler, metadata, new ParseContext());
+            parseContext = new ParseContext();
+            tsdParser.parse(inputPng, handler, metadata, parseContext);
 
             assertNotNull(handler);
             assertNotNull(metadata);
@@ -93,4 +102,60 @@ public class TSDParserTest extends TikaTest {
             
         } 
     }
+
+    @Test
+    public void testTSDFileDataRecursiveMetadataXML() throws Exception {
+        
+        List<Metadata> list = getRecursiveMetadata("MANIFEST.XML.TSD");
+        assertEquals(2, list.size());
+        assertContains(TSDParser.class.getName(),
+                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+
+    }
+
+    @Test
+    public void testTSDFileDataRecursiveMetadataTxt1() throws Exception {
+        
+        List<Metadata> list = getRecursiveMetadata("Test1.txt.tsd");
+        assertEquals(2, list.size());
+        assertContains(TSDParser.class.getName(),
+                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+    }
+
+    @Test
+    public void testTSDFileDataRecursiveMetadataTxt2() throws Exception {
+        
+        List<Metadata> list = getRecursiveMetadata("Test2.txt.tsd");
+        assertEquals(2, list.size());
+        assertContains(TSDParser.class.getName(),
+                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+    }
+
+    @Test
+    public void testTSDFileDataRecursiveMetadataDocx() throws Exception {
+        
+        List<Metadata> list = getRecursiveMetadata("Test3.docx.tsd");
+        assertEquals(2, list.size());
+        assertContains(TSDParser.class.getName(),
+                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+    }
+
+    @Test
+    public void testTSDFileDataRecursiveMetadataPdf() throws Exception {
+        
+        List<Metadata> list = getRecursiveMetadata("Test4.pdf.tsd");
+        assertEquals(2, list.size());
+        assertContains(TSDParser.class.getName(),
+                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+    }
+
+    //@Test
+    public void testTSDFileDataRecursiveMetadataPng() throws Exception {
+        
+        List<Metadata> list = getRecursiveMetadata("Test5.PNG.tsd");
+        assertEquals(2, list.size());
+        assertContains(TSDParser.class.getName(),
+                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+    }
+
 }
