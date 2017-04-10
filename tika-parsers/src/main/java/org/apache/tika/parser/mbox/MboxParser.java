@@ -64,10 +64,10 @@ public class MboxParser extends AbstractParser {
 
     private static final String EMAIL_HEADER_METADATA_PREFIX = "MboxParser-";
     static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
 
     public static Date parseDate(String headerContent) throws ParseException {
-        return DATE_FORMAT.parse(headerContent);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
+        return dateFormat.parse(headerContent);
     }
 
     @Override
@@ -93,7 +93,6 @@ public class MboxParser extends AbstractParser {
         private ParserState(BufferedReader reader) {
             this.reader = reader;
         }
-        
         
         private String lookAhead() throws IOException {
             if (this.nextLine == null) {
