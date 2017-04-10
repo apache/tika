@@ -43,12 +43,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 public class DL4JImageRecogniser extends ExternalParser implements ObjectRecogniser {
@@ -71,6 +66,8 @@ public class DL4JImageRecogniser extends ExternalParser implements ObjectRecogni
     private File modelFile;
     @Field
     private String outPattern = "(.*) \\(score = ([0-9]+\\.[0-9]+)\\)$";
+    @Field
+    private String serialize = "yes";
     private File locationToSave;
     private boolean available = false;
     private ComputationGraph model;
@@ -87,37 +84,43 @@ public class DL4JImageRecogniser extends ExternalParser implements ObjectRecogni
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
-            if (modelType.equals("VGG16NOTOP")) {
-                throw new TikaConfigException("VGG16NOTOP is not supported right now");
+            TrainedModelHelper helper;
+            switch (modelType) {
+                case "VGG16NOTOP":
+                    throw new TikaConfigException("VGG16NOTOP is not supported right now");
                 /*# TODO hookup VGGNOTOP by uncommenting following code once the issue is resolved by dl4j team
                 modelFile = new File(MODEL_DIR_PREPROCESSED+File.separator+"vgg16_notop.zip");
-				locationToSave= new File(MODEL_DIR+File.separator+"tikaPreprocessed"+File.separator+"vgg16.zip");*/
-            } else if (modelType.equals("VGG16")) {
-                modelFile = new File(MODEL_DIR_PREPROCESSED + File.separator + "vgg16.zip");
-                locationToSave = new File(MODEL_DIR + File.separator + "tikaPreprocessed" + File.separator + "vgg16.zip");
+				locationToSave= new File(MODEL_DIR+File.separator+"tikaPreprocessed"+File.separator+"vgg16.zip");
+                    helper = new TrainedModelHelper(TrainedModels.VGG16NOTOP);
+                    break;*/
+                case "VGG16":
+                    helper = new TrainedModelHelper(TrainedModels.VGG16);
+                    modelFile = new File(MODEL_DIR_PREPROCESSED + File.separator + "vgg16.zip");
+                    locationToSave = new File(MODEL_DIR + File.separator + "tikaPreprocessed" + File.separator + "vgg16.zip");
+                    break;
+                default:
+                    throw new TikaConfigException("Unknown or unsupported model");
             }
-            if (!modelFile.exists()) {
-                modelFile.getParentFile().mkdirs();
-                LOG.warn("Preprocessed Model doesn't exist at {}", modelFile);
-                TrainedModelHelper helper;
-                switch (modelType) {
-                    case "VGG16NOTOP":
-                        helper = new TrainedModelHelper(TrainedModels.VGG16NOTOP);
-                        break;
-                    case "VGG16":
-                        helper = new TrainedModelHelper(TrainedModels.VGG16);
-                        break;
-                    default:
-                        throw new TikaConfigException("Unknown or unsupported model");
+            if (serialize.trim().toLowerCase(Locale.ROOT).equals("yes")) {
+                if (!modelFile.exists()) {
+                    LOG.warn("Preprocessed Model doesn't exist at {}", modelFile);
+                    modelFile.getParentFile().mkdirs();
+                    model = helper.loadModel();
+                    LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resources.");
+                    ModelSerializer.writeModel(model, locationToSave, true);
+                    available = true;
+                } else {
+                    model = ModelSerializer.restoreComputationGraph(locationToSave);
+                    LOG.info("Preprocessed Model Loaded from {}", locationToSave);
+                    available = true;
                 }
+
+            } else if (serialize.trim().toLowerCase(Locale.ROOT).equals("no")) {
+                LOG.info("Weight graph model loaded via dl4j Helper functions");
                 model = helper.loadModel();
-                LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resource.");
-                ModelSerializer.writeModel(model, locationToSave, true);
                 available = true;
             } else {
-                model = ModelSerializer.restoreComputationGraph(locationToSave);
-                LOG.info("Preprocessed Model Loaded from {}", locationToSave);
-                available = true;
+                throw new TikaConfigException("Configuration Error. serialization can be either yes or no.");
             }
 
             if (!available) {
