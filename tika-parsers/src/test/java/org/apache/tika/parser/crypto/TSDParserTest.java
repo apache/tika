@@ -110,7 +110,6 @@ public class TSDParserTest extends TikaTest {
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
                 Arrays.asList(list.get(0).getValues("X-Parsed-By")));
-
     }
 
     @Test
