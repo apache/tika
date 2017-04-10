@@ -37,7 +37,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>0.8.0</dl4j.version>
+    <dl4j.version>0.8.1-SNAPSHOT</dl4j.version> <!-- Fixme: update this to release version when release is made-->
   </properties>
 
   <dependencies>
@@ -98,4 +98,14 @@
       </plugin>
     </plugins>
   </build>
+  <repositories>
+    <repository>
+      <id>oss-sonatype</id>
+      <name>oss-sonatype</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>
