@@ -267,7 +267,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.ELAPSED_TIME_MILLIS,
                 getTime(m));
 
-        String content = getContent(m, maxContentLength);
+        String content = getContent(m);
         if (content == null || content.trim().length() == 0) {
             data.put(Cols.HAS_CONTENT, FALSE);
         } else {
@@ -458,15 +458,15 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      */
     protected static String getContent(Metadata metadata, int maxLength, Map<Cols, String> data) {
         data.put(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, "FALSE");
-        String c = getContent(metadata, maxLength);
-        if (c.length() > maxLength) {
+        String c = getContent(metadata);
+        if (maxLength > -1 && c.length() > maxLength) {
             c = c.substring(0, maxLength);
             data.put(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, "TRUE");
         }
         return c;
 
     }
-    protected static String getContent(Metadata metadata, int maxLength) {
+    protected static String getContent(Metadata metadata) {
         if (metadata == null) {
             return "";
         }
@@ -478,7 +478,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     void unicodeBlocks(Metadata metadata, Map<Cols, String> data) {
-        String content = getContent(metadata, maxContentLengthForLangId);
+        String content = getContent(metadata);
         if (content.length() < 200) {
             return;
         }
@@ -531,7 +531,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     void langid(Metadata metadata, Map<Cols, String> data) {
-        String content = getContent(metadata, maxContentLengthForLangId);
+        String content = getContent(metadata);
         if (content.length() < 50) {
             return;
         }

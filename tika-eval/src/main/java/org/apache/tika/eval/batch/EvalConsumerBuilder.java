@@ -176,18 +176,18 @@ public abstract class EvalConsumerBuilder {
 
     FileResourceConsumer parameterizeProfiler(AbstractProfiler abstractProfiler) {
 
-        int maxContentLength = PropsUtil.getInt(localAttrs.get("maxContentLength"), -1);
-        if (maxContentLength > -1) {
+        int maxContentLength = PropsUtil.getInt(localAttrs.get("maxContentLength"), -2);
+        if (maxContentLength > -2) {
             abstractProfiler.setMaxContentLength(maxContentLength);
         }
 
-        int maxContentLengthForLangId = PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -1);
-        if (maxContentLengthForLangId > -1) {
+        int maxContentLengthForLangId = PropsUtil.getInt(localAttrs.get("maxContentLengthForLangId"), -2);
+        if (maxContentLengthForLangId > -2) {
             abstractProfiler.setMaxContentLengthForLangId(maxContentLengthForLangId);
         }
 
-        int maxTokens = PropsUtil.getInt(localAttrs.get("maxTokens"), -1);
-        if (maxTokens > -1) {
+        int maxTokens = PropsUtil.getInt(localAttrs.get("maxTokens"), -2);
+        if (maxTokens > -2) {
             abstractProfiler.setMaxTokens(maxTokens);
         }
 
