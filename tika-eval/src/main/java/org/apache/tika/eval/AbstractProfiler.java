@@ -162,8 +162,8 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      * @param p path to the common_tokens directory.  If this is null, try to load from classPath
      * @throws IOException
      */
-    public static void loadCommonTokens(Path p) throws IOException {
-        commonTokenCountManager = new CommonTokenCountManager(p);
+    public static void loadCommonTokens(Path p, String defaultLangCode) throws IOException {
+        commonTokenCountManager = new CommonTokenCountManager(p, defaultLangCode);
     }
 
     public AbstractProfiler(ArrayBlockingQueue<FileResource> fileQueue,
@@ -541,16 +541,29 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
         List<DetectedLanguage> probabilities = langIder.getProbabilities(s);
         if (probabilities.size() > 0) {
-            data.put(Cols.LANG_ID_1, probabilities.get(0).getLocale().getLanguage());
+            data.put(Cols.LANG_ID_1, getLangString(probabilities.get(0)));
             data.put(Cols.LANG_ID_PROB_1,
             Double.toString(probabilities.get(0).getProbability()));
         }
         if (probabilities.size() > 1) {
-            data.put(Cols.LANG_ID_2, probabilities.get(1).getLocale().getLanguage());
+            data.put(Cols.LANG_ID_2, getLangString(probabilities.get(1)));
             data.put(Cols.LANG_ID_PROB_2,
             Double.toString(probabilities.get(1).getProbability()));
         }
+    }
 
+    private String getLangString(DetectedLanguage detectedLanguage) {
+        //So that we have mapping between lang id and common-tokens file names
+        String lang = detectedLanguage.getLocale().getLanguage();
+        if ("zh".equals(lang)) {
+            if (detectedLanguage.getLocale().getRegion().isPresent()) {
+                lang += "-" + detectedLanguage.getLocale().getRegion().get().toLowerCase(Locale.US);
+            } else {
+                //hope for the best
+                lang += "-cn";
+            }
+        }
+        return lang;
     }
 
     void getFileTypes(Metadata metadata, Map<Cols, String> output) {
