@@ -36,12 +36,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Tensor Flow image recogniser which has high performance.
+ * Tensor Flow video recogniser which has high performance.
  * This implementation uses Tensorflow via REST API.
  * <p>
  * NOTE : //TODO: link to wiki page here
  *
- * @since Apache Tika 1.14
+ * @since Apache Tika 1.15
  */
 public class TensorflowRESTVideoRecogniser extends TensorflowRESTRecogniser{
 
