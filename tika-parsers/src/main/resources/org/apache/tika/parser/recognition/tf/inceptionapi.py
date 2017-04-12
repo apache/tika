@@ -54,6 +54,8 @@ json.encoder.FLOAT_REPR = lambda o: format(
 from time import time
 
 
+import tempfile
+from video_util import get_center_frame, get_frames_interval, get_n_frames
 import flask
 
 
@@ -250,6 +252,15 @@ class Classifier(flask.Flask):
         sorted_inds = [i[0] for i in sorted(
             enumerate(-eval_probabilities), key=lambda x:x[1])]
 
+    def classify(self, image_data, topk):
+        predictions = self.sess.run(self.softmax_tensor,
+                                    {'DecodeJpeg/contents:0': image_data})
+        predictions = np.squeeze(predictions)
+        
+        if topk:
+            top_k = predictions.argsort()[-topk:][::-1]
+        else :
+            top_k = predictions.argsort()
         res = []
         for i in range(topk):
             index = sorted_inds[i]
@@ -310,6 +321,32 @@ def index():
                 </td></tr>
                 </table>
             </li>
+            <li> <code>/inception/v3/classify/video</code> - <br/>
+                <table>
+                <tr><th align="left"> Description </th><td> This is a classifier service that can classify videos</td></tr>
+                <tr><td></td> <td>Query Params : <br/>
+                   <code>topk </code>: type = int : top classes to get; default : 10 <br/>
+                   <code>human </code>: type = boolean : human readable class names; default : true <br/>
+                   <code>mode </code>: options = <code>{"center", "interval", "fixed"}</code> : Modes of frame extraction; default : center <br/>
+                    &emsp; <code>"center"</code> - Just one frame in center. <br/>
+                    &emsp; <code>"interval"</code> - Extracts frames after fixed interval. <br/>
+                    &emsp; <code>"fixed"</code> - Extract fixed number of frames.<br/>
+                   <code>frame-interval </code>: type = int : Interval for frame extraction to be used with INTERVAL mode. If frame_interval=10 then every 10th frame will be extracted; default : 10 <br/>
+                   <code>num-frame </code>: type = int : Number of frames to be extracted from video while using FIXED model. If num_frame=10 then 10 frames equally distant from each other will be extracted; default : 10 <br/>
+      
+                 </td></tr>
+                <tr><th align="left"> How to supply Video Content </th></tr>
+                <tr><th align="left"> With HTTP GET : </th> <td>
+                    Include a query parameter <code>url </code> which is path on file system <br/>
+                    Example: <code> curl "localhost:8764/inception/v3/classify/video?url=filesystem/path/to/video"</code><br/>
+                </td></tr><br/>
+                <tr><th align="left"> With HTTP POST :</th><td>
+                    POST video content as binary data in request body. If video can be decoded by OpenCV it should be fine. It's tested on mp4 and avi on mac <br/>
+                    Include a query parameter <code>ext </code>this extension is needed to tell OpenCV which decoder to use, default is ".mp4" </br>
+                    Example: <code> curl -X POST "localhost:8764/inception/v3/classify?topk=10&human=false" --data-binary @example.mp4 </code>
+                </td></tr>
+                </table>
+            </li>
         <ul>
     </div>
     """
@@ -362,6 +399,111 @@ def classify_image():
         res['classnames'] = classnames
     return Response(response=json.dumps(res), status=200, mimetype="application/json")
 
+CENTER = "center"
+INTERVAL = "interval"
+FIXED = "fixed"
+
+ALLOWED_MODE = set([CENTER ,INTERVAL , FIXED])
+
+@app.route("/inception/v3/classify/video", methods=["GET", "POST"])
+def classify_video():
+    """
+    API to classify videos
+    Request args -
+     url - PATH of file
+     topk - number of labels
+     human - human readable or not
+     mode - Modes of frame extraction {"center", "interval", "fixed"}
+        "center" - Just one frame in center. <Default option>
+        "interval" - Extracts frames after fixed interval. 
+        "fixed" - Extract fixed number of frames.
+     frame-interval - Interval for frame extraction to be used with INTERVAL mode. If frame_interval=10 then every 10th frame will be extracted.
+     num-frame - Number of frames to be extracted from video while using FIXED model. If num_frame=10 then 10 frames equally distant from each other will be extracted
+     
+     ext - If video is sent in binary format, then ext is needed to tell OpenCV which decoder to use. eg ".mp4"
+    """
+    
+    st = current_time()
+    topk = int(request.args.get("topk", "10"))
+    human = request.args.get("human", "true").lower() in ("true", "1", "yes")
+    
+    mode = request.args.get("mode", CENTER).lower()
+    if mode not in ALLOWED_MODE:
+        '''
+        Throw invalid request error
+        '''
+        return flask.Response(status=400, response=jsonify(error="not a valid mode. Available mode %s" % str(ALLOWED_MODE)))
+    
+    frame_interval = int(request.args.get("frame-interval", "10"))
+    num_frame = int(request.args.get("num-frame", "10"))
+    
+    if request.method == 'POST':
+        video_data = request.get_data()
+        ext = request.args.get("ext", ".mp4").lower()
+        
+        temp_file = tempfile.NamedTemporaryFile(suffix=ext)
+        temp_file.file.write(video_data)
+        temp_file.file.close()
+        
+        url = temp_file.name
+        
+    else:
+        url = request.args.get("url")
+    
+    read_time = current_time() - st
+    st = current_time() # reset start time
+    
+    if mode == CENTER:
+        image_data_arr = [get_center_frame(url)]
+    elif mode == INTERVAL:
+        image_data_arr = get_frames_interval(url, frame_interval)
+    else:
+        image_data_arr = get_n_frames(url, num_frame)
+    
+    classes = []
+    for image_data in image_data_arr:
+        try:
+            _classes = app.classify(image_data=image_data , topk=None)
+        except Exception as e:
+            app.logger.error(e)
+            return Response(status=400, response=str(e))
+        
+        _classes.sort()
+        if len(classes) == 0:
+            classes = _classes
+        else:
+            for idx,_c in enumerate(_classes):
+                c = list(classes[idx])
+                c[2] += _c[2]
+                classes[idx] = tuple(c)
+                
+    
+    # avg out confidence score
+    for idx,c in enumerate(classes):
+        c = list(c)
+        c[2] = c[2]/len(image_data_arr)
+        
+        classes[idx] = tuple(c)
+    
+    classes = sorted(classes, key=lambda tup: tup[2])[-topk:][::-1]
+
+    classids, classnames, confidence = zip(*classes)
+    
+    
+    classifier_time = current_time() - st
+    app.logger.info("Classifier time : %d" % classifier_time)
+    res = {
+        'classids' : classids,
+        'confidence': confidence,
+        'time': {
+            'read' : read_time,
+            'classification': classifier_time,
+            'units': 'ms'
+        }
+    }
+    if human:
+        res['classnames'] = classnames
+    return Response(response=json.dumps(res), status=200, mimetype="application/json")
 
 def main(_):
     if not app.debug:
