@@ -62,7 +62,7 @@ public class SimpleComparerTest extends TikaTest {
                 new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
                         IGNORE_LENGTH, IGNORE_LENGTH),
                 writer);
-        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath());
+        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath(), "en");
         LanguageIDWrapper.loadBuiltInModels();
     }
 
@@ -137,6 +137,30 @@ public class SimpleComparerTest extends TikaTest {
 
     }
 
+    @Test
+    public void testChinese() throws Exception {
+        //make sure that language id matches common words
+        //file names.  The test file contains MT'd Simplified Chinese with
+        //known "common words" appended at end.
+
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file13_attachANotB.doc.json"),
+                getResourceAsFile("/test-dirs/extractsA/file13_attachANotB.doc.json").toPath()
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("non-existent.json"),
+                getResourceAsFile("/test-dirs/extractsB/non-existent.json").toPath());
+
+        comparer.compareFiles(fpsA, fpsB);
+
+        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENTS_TABLE_A);
+
+        Map<Cols, String> row = tableInfos.get(0);
+        assertEquals("122", row.get(Cols.TOKEN_LENGTH_SUM));
+        assertEquals("3", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("zh-cn", row.get(Cols.COMMON_TOKENS_LANG));
+
+    }
 
     @Test
     public void testEmpty() throws Exception {
@@ -245,7 +269,7 @@ public class SimpleComparerTest extends TikaTest {
     @Ignore
     public void testDebug() throws Exception {
         Path commonTokens = Paths.get(getResourceAsFile("/common_tokens_short.txt").toURI());
-        AbstractProfiler.loadCommonTokens(commonTokens);
+        AbstractProfiler.loadCommonTokens(commonTokens, "en");
         EvalFilePaths fpsA = new EvalFilePaths(
                 Paths.get("file1.pdf.json"),
                 getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath()

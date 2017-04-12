@@ -70,9 +70,13 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
         }
 
         Path commonTokens = getPath(localAttrs, "commonTokens");
+        String defaultLangCode = localAttrs.get("defaultLangCode");
+        if (defaultLangCode == null || "".equals(defaultLangCode)) {
+            defaultLangCode = "en";
+        }
         //can be null, in which case will load from memory
         try {
-            AbstractProfiler.loadCommonTokens(commonTokens);
+            AbstractProfiler.loadCommonTokens(commonTokens, defaultLangCode);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

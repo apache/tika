@@ -42,7 +42,6 @@ import org.junit.Test;
 
 public class TikaEvalCLITest extends TikaTest {
     //TODO: these barely reach the minimal acceptable stage for unit tests
-    //but we have to start somewhere on the integration tests
 
     private static Path extractsDir = Paths.get("src/test/resources/test-dirs");
 

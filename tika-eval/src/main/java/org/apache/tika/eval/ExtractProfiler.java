@@ -71,6 +71,7 @@ public class ExtractProfiler extends AbstractProfiler {
                 .addOption("maxTokens", true, "maximum tokens to process, default=200000")
                 .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
                 .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
+                .addOption("defaultLangCode", true, "which language to use for common words if no 'common words' file exists for the langid result")
 
         ;
 
