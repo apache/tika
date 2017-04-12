@@ -16,21 +16,32 @@
  */
 package org.apache.tika.gui;
 
-import javax.swing.Box;
-import javax.swing.JDialog;
-import javax.swing.JEditorPane;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
-import javax.swing.ProgressMonitorInputStream;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import org.apache.commons.io.IOUtils;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.lucene.DocumentIndexer;
+import org.apache.tika.lucene.FoundItem;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.*;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.sax.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkEvent.EventType;
 import javax.swing.event.HyperlinkListener;
@@ -39,53 +50,16 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-import java.awt.CardLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.DocumentSelector;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.parser.utils.CommonsDigester;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ContentHandlerDecorator;
-import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
+import java.util.*;
+import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -148,19 +122,40 @@ public class TikaGUI extends JFrame
     private final ImageSavingParser imageParser;
 
     /**
-     * The card layout for switching between different views.
+     * Document indexer
      */
-    private final CardLayout layout = new CardLayout();
+    private DocumentIndexer docIndexer;
 
     /**
-     * Container for the editor cards.
+     * Container for the editor tabs.
      */
-    private final JPanel cards;
+    private final JTabbedPane tabs;
+
+    /**
+     * Tabs definitions.
+     */
+    private enum TabDef {
+        WELCOME("Welcome", ""),
+        METADATA("Metadata", "text/plain"),
+        XHTML("Formatted XHTML", ""),
+        TEXT("Plain text", "text/plain"),
+        TEXT_MAIN("Main content", "text/plain"),
+        XML("Structured XML", "text/plain"),
+        JSON("Recursive JSON", "text/plain"),
+        LUCENE("Lucene", ""),
+        ;
+
+        String title, content;
+        TabDef(String title, String content) {
+            this.title=title;
+            this.content=content;
+        }
+    }
 
     /**
      * Formatted XHTML output.
      */
-    private final JEditorPane html;
+    private final JFXPanel xhtml;
 
     /**
      * Plain text output.
@@ -188,6 +183,12 @@ public class TikaGUI extends JFrame
     private final JEditorPane metadata;
 
     /**
+     * Index queries.
+     */
+    private JEditorPane queryEditor;
+    private JEditorPane resultEditor;
+
+    /**
      * File chooser.
      */
     private final JFileChooser chooser = new JFileChooser();
@@ -198,22 +199,28 @@ public class TikaGUI extends JFrame
 
         addMenuBar();
 
-        cards = new JPanel(layout);
-        addWelcomeCard(cards, "welcome");
-        metadata = addCard(cards, "text/plain", "metadata");
-        html = addCard(cards, "text/html", "html");
-        text = addCard(cards, "text/plain", "text");
-        textMain = addCard(cards, "text/plain", "main");
-        xml = addCard(cards, "text/plain", "xhtml");
-        json = addCard(cards, "text/plain", "json");
-        add(cards);
-        layout.show(cards, "welcome");
+        tabs = new JTabbedPane();
+        addWelcomeTab(tabs, TabDef.WELCOME);
+        metadata = addTab(tabs, TabDef.METADATA);
+        xhtml = addWebViewTab(tabs, TabDef.XHTML);
+        text = addTab(tabs, TabDef.TEXT);
+        textMain = addTab(tabs, TabDef.TEXT_MAIN);
+        xml = addTab(tabs, TabDef.XML);
+        json = addTab(tabs, TabDef.JSON);
+        addDocIndexerTab(tabs, TabDef.LUCENE);
+        add(tabs);
 
         setPreferredSize(new Dimension(640, 480));
         pack();
 
         this.context = new ParseContext();
         this.parser = parser;
+        try {
+            this.docIndexer = new DocumentIndexer();
+        } catch (IOException e) {
+            this.docIndexer = null;
+            e.printStackTrace();
+        }
 
         this.imageParser = new ImageSavingParser(parser);
         this.context.set(DocumentSelector.class, new ImageDocumentSelector());
@@ -230,16 +237,6 @@ public class TikaGUI extends JFrame
         file.addSeparator();
         addMenuItem(file, "Exit", "exit", KeyEvent.VK_X);
         bar.add(file);
-
-        JMenu view = new JMenu("View");
-        view.setMnemonic(KeyEvent.VK_V);
-        addMenuItem(view, "Metadata", "metadata", KeyEvent.VK_M);
-        addMenuItem(view, "Formatted text", "html", KeyEvent.VK_F);
-        addMenuItem(view, "Plain text", "text", KeyEvent.VK_P);
-        addMenuItem(view, "Main content", "main", KeyEvent.VK_C);
-        addMenuItem(view, "Structured text", "xhtml", KeyEvent.VK_S);
-        addMenuItem(view, "Recursive JSON", "json", KeyEvent.VK_J);
-        bar.add(view);
 
         bar.add(Box.createHorizontalGlue());
         JMenu help = new JMenu("Help");
@@ -279,18 +276,8 @@ public class TikaGUI extends JFrame
                             "Invalid URL", JOptionPane.ERROR_MESSAGE);
                 }
             }
-        } else if ("html".equals(command)) {
-            layout.show(cards, command);
-        } else if ("text".equals(command)) {
-            layout.show(cards, command);
-        } else if ("main".equals(command)) {
-            layout.show(cards, command);
-        } else if ("xhtml".equals(command)) {
-            layout.show(cards, command);
-        } else if ("metadata".equals(command)) {
-            layout.show(cards, command);
-        } else if ("json".equals(command)) {
-            layout.show(cards, command);
+        } else if ("query".equals(command)) {
+            executeQuery();
         } else if ("about".equals(command)) {
             textDialog(
                     "About Apache Tika",
@@ -378,10 +365,11 @@ public class TikaGUI extends JFrame
         setText(xml, xmlBuffer.toString());
         setText(text, textBuffer.toString());
         setText(textMain, textMainBuffer.toString());
-        setText(html, htmlBuffer.toString());
+        setHtml(xhtml, htmlBuffer.toString());
+        addDocumentToIndex(name,htmlBuffer.toString());
         if (!input.markSupported()) {
             setText(json, "InputStream does not support mark/reset for Recursive Parsing");
-            layout.show(cards, "metadata");
+            selectTab(TabDef.JSON);
             return;
         }
         boolean isReset = false;
@@ -404,7 +392,7 @@ public class TikaGUI extends JFrame
             JsonMetadataList.toJson(wrapper.getMetadata(), jsonBuffer);
             setText(json, jsonBuffer.toString());
         }
-        layout.show(cards, "metadata");
+        selectTab(TabDef.XHTML);
     }
 
     private void handleError(String name, Throwable t) {
@@ -427,7 +415,7 @@ public class TikaGUI extends JFrame
         dialog.setVisible(true);
     }
 
-    private void addWelcomeCard(JPanel panel, String name) {
+    private void addWelcomeTab(JTabbedPane panel, TabDef tabDef) {
         try {
             JEditorPane editor =
                 new JEditorPane(TikaGUI.class.getResource("welcome.html"));
@@ -436,22 +424,93 @@ public class TikaGUI extends JFrame
             editor.setBackground(Color.WHITE);
             editor.setTransferHandler(new ParsingTransferHandler(
                     editor.getTransferHandler(), this));
-            panel.add(new JScrollPane(editor), name);
+            panel.addTab(tabDef.title, new JScrollPane(editor));
+            selectTab(tabDef);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private JEditorPane addCard(JPanel panel, String type, String name) {
+    private JEditorPane addTab(JTabbedPane panel, TabDef tabDef) {
         JEditorPane editor = new JTextPane();
         editor.setBackground(Color.WHITE);
-        editor.setContentType(type);
+        editor.setContentType(tabDef.content);
         editor.setTransferHandler(new ParsingTransferHandler(
                 editor.getTransferHandler(), this));
-        panel.add(new JScrollPane(editor), name);
+        panel.addTab(tabDef.title, new JScrollPane(editor));
         return editor;
     }
 
+    private JFXPanel addWebViewTab(final JTabbedPane panel, final TabDef tabDef){
+        final JFXPanel jfxPanel = new JFXPanel();
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                WebView webView = new WebView();
+                jfxPanel.setScene( new Scene( webView ) );
+                panel.addTab(tabDef.title,jfxPanel);
+            }
+        });
+        return jfxPanel;
+    }
+
+    private JPanel addDocIndexerTab(JTabbedPane tabs, TabDef tabDef) {
+        JPanel docIndexerPanel = new JPanel();
+        docIndexerPanel.setLayout(new BoxLayout(docIndexerPanel, BoxLayout.PAGE_AXIS));
+
+        this.queryEditor = new JTextPane();
+        this.queryEditor.setText("");
+        JScrollPane queryScroller = new JScrollPane(queryEditor);
+        queryScroller.setPreferredSize(new Dimension(tabs.getWidth(), 50));
+        queryScroller.setAlignmentX(LEFT_ALIGNMENT);
+
+        //Lay out the buttons from left to right.
+        final JButton queryButton = new JButton("Execute query");
+        queryButton.setActionCommand("query");
+        queryButton.addActionListener(this);
+        JPanel buttonPane = new JPanel();
+        buttonPane.setLayout(new BoxLayout(buttonPane, BoxLayout.PAGE_AXIS));
+        buttonPane.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        buttonPane.add(Box.createHorizontalGlue());
+        buttonPane.add(queryButton);
+
+        this.resultEditor = new JTextPane();
+        JScrollPane resultsScroller = new JScrollPane(resultEditor);
+        resultsScroller.setPreferredSize(new Dimension(tabs.getWidth(), 280));
+        resultsScroller.setAlignmentX(LEFT_ALIGNMENT);
+
+        //Put everything together, using the content pane's BorderLayout.
+        docIndexerPanel.add(queryScroller);
+        docIndexerPanel.add(buttonPane);
+        docIndexerPanel.add(resultsScroller);
+        tabs.add(tabDef.title,docIndexerPanel);
+        return docIndexerPanel;
+    }
+
+    private void addDocumentToIndex(String filename, String contents) {
+        try {
+            docIndexer.addDocument(filename, contents);
+        } catch (IOException e) {
+            this.resultEditor.setText(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    private void executeQuery() {
+        try {
+            List<FoundItem> fis = docIndexer.searchDocuments(this.queryEditor.getText());
+            StringBuffer res = new StringBuffer();
+            for (FoundItem fi : fis) {
+                res.append(fi.getScoreDoc().toString()+"\n  - "+fi.getDocument().toString()+"\n");
+            }
+            this.resultEditor.setText(res.toString());
+        } catch (ParseException e) {
+            this.resultEditor.setText(e.getMessage());
+            e.printStackTrace();
+        } catch (IOException e) {
+            this.resultEditor.setText(e.getMessage());
+            e.printStackTrace();
+        }
+    }
     private void textDialog(String title, URL resource) {
         try {
             JDialog dialog = new JDialog(this, title);
@@ -498,6 +557,23 @@ public class TikaGUI extends JFrame
     private void setText(JEditorPane editor, String text) {
         editor.setText(text);
         editor.setCaretPosition(0);
+    }
+
+    private void setHtml(final JFXPanel htmlPanel, final String html) {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                WebView webView = (WebView)htmlPanel.getScene().getRoot();
+                WebEngine engine = webView.getEngine();
+                //webView.getEngine().setUserStyleSheetLocation();
+                engine.loadContent(html);
+            }
+        });
+    }
+
+    private void selectTab(TabDef tabDef){
+        tabs.setSelectedIndex(tabs.indexOfTab(tabDef.title));
+
     }
 
     /**
