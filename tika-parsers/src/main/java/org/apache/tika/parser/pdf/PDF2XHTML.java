@@ -16,19 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -54,6 +41,10 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.util.*;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -335,14 +326,16 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     }
 
     private AttributesImpl extractSpanAttrs(List<TextPosition> textPositions) {
-        float fontResizeFactor = 0.8f;
+        float fontResizeFactor = 0.7f;
         AttributesImpl attrs = new AttributesImpl();
         if (textPositions.size() > 0) {
             TextPosition startPos = textPositions.get(0);
-            attrs.addAttribute("", "", "pdfFontName", null, startPos.getFont().getName());
-            attrs.addAttribute("", "", "pdfPageNo", null, getCurrentPageNo() + "");
-            attrs.addAttribute("", "", "style", null,
-                    "position: absolute; top: " + startPos.getY() + "px; left: " + startPos.getX() + "px; " +
+            int pageNo = getCurrentPageNo();
+            float x = startPos.getX();
+            float y = startPos.getY();
+            attrs.addAttribute("", "coordinates", "coordinates", null, pageNo+"-"+x+"-"+y);
+            attrs.addAttribute("", "style", "style", null,
+                    "position: absolute; top: "+y+"px; left: "+x+"px; " +
                             "font-size: " + (startPos.getFontSize()*fontResizeFactor) + "em"
             );
         }
