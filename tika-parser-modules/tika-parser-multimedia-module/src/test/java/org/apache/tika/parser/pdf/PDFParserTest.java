@@ -652,7 +652,6 @@ public class PDFParserTest extends TikaTest {
         context.set(PDFParserConfig.class, config);
 
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
-        debug(metadatas);
         assertContains("test images compressed using JBIG2",
                 metadatas.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
 
