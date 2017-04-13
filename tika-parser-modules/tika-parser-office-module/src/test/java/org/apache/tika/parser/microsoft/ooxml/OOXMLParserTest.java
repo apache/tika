@@ -27,6 +27,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -43,6 +44,7 @@ import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -62,6 +64,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -1411,6 +1414,21 @@ public class OOXMLParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testTruncated() throws Exception {
+        Parser p = new AutoDetectParser();
+        ContentHandler handler = new DefaultHandler();
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        try (InputStream is = getTestDocument("testWORD_truncated.docx")) {
+            p.parse(is, handler, metadata, parseContext);
+            fail("should have thrown an EOF exception?!");
+        } catch (TikaException e) {
+            Throwable cause = e.getCause();
+            assertTrue(cause instanceof EOFException);
+            assertEquals("application/x-tika-ooxml", metadata.get(Metadata.CONTENT_TYPE));
+        }
+    }
 }
 
 
