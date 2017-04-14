@@ -240,8 +240,8 @@
       <version>1.5.1</version>
       <exclusions>
         <exclusion>
-        <groupId>org.jdom</groupId>
-        <artifactId>jdom</artifactId>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -285,7 +285,7 @@
       <artifactId>cxf-rt-rs-client</artifactId>
       <version>${cxf.version}</version>
     </dependency>
-    <!-- TIKA-2021: Tesseract OCR Parser dependencies, 
+    <!-- TIKA-2021: Tesseract OCR Parser dependencies,
     used for executing image processing script -->
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -305,7 +305,7 @@
     <dependency>
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
-      <version>1.5.3</version>
+      <version>1.6.0</version>
     </dependency>
 
     <dependency>
@@ -325,7 +325,7 @@
         </exclusion>
       </exclusions>
     </dependency>
-    
+
     <dependency>
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
@@ -335,7 +335,7 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.2.4</version>
-    </dependency>    
+    </dependency>
 
     <!-- logging dependencies -->
     <dependency>
@@ -454,6 +454,43 @@
       <version>3.0.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>edu.usc.ir</groupId>
+      <artifactId>sentiment-analysis-parser</artifactId>
+      <version>0.1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-parsers</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-batch</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.opennlp</groupId>
+          <artifactId>opennlp-tools</artifactId>
+          <!--  because it is already added above -->
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>jul-to-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>jcl-over-slf4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
     <!-- Apache cTAKES -->
     <dependency>
       <groupId>org.apache.ctakes</groupId>
@@ -495,16 +532,16 @@
       <version>2.8.1</version>
     </dependency>
 
-    <!-- Java ImageIO plugin for JBIG2 support (often used in PDF) 
-         This jbig2 dep is not distributed with Tika due to licensing 
+    <!-- Java ImageIO plugin for JBIG2 support (often used in PDF)
+         This jbig2 dep is not distributed with Tika due to licensing
          issue (GPLV3). That's why it is included here as "test".
          https://github.com/levigo/jbig2-imageio
       -->
     <dependency>
-        <groupId>com.levigo.jbig2</groupId>
-        <artifactId>levigo-jbig2-imageio</artifactId>
-        <version>1.6.5</version>
-        <scope>test</scope>
+      <groupId>com.levigo.jbig2</groupId>
+      <artifactId>levigo-jbig2-imageio</artifactId>
+      <version>1.6.5</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -533,9 +570,12 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
+            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java
+            </exclude>
             <exclude>src/test/resources/test-documents/**</exclude>
-            <exclude>src/test/resources/META-INF/services/org.apache.tika.parser.Parser</exclude>
+            <exclude>
+              src/test/resources/META-INF/services/org.apache.tika.parser.Parser
+            </exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -573,7 +613,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <execute />
+                    <execute/>
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -616,7 +656,9 @@
       <activation>
         <!-- auto activate -->
         <file>
-          <missing>${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ner-person.bin</missing>
+          <missing>
+            ${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ner-person.bin
+          </missing>
         </file>
       </activation>
       <build>
