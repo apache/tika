@@ -261,7 +261,13 @@ public class PowerPointParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.ppt");
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+
+
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.ppt", parseContext);
         assertContainsAtLeast(minExpected, metadataList);
     }
 

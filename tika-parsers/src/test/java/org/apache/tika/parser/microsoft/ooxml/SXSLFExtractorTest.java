@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -521,6 +523,29 @@ public class SXSLFExtractorTest extends TikaTest {
 
     @Test
     public void testMacrosInPptm() throws Exception {
+
+        Metadata parsedBy = new Metadata();
+        parsedBy.add("X-Parsed-By",
+                "org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor");
+
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.pptm", parseContext);
+
+        //test default is "don't extract macros"
+        for (Metadata metadata : metadataList) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extracted macros as default");
+            }
+        }
+
+        assertContainsAtLeast(parsedBy, metadataList);
+
+        //now test that they are extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        officeParserConfig.setUseSAXPptxExtractor(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
@@ -528,6 +553,17 @@ public class SXSLFExtractorTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parseContext));
+        metadataList = getRecursiveMetadata("testPPT_macros.pptm", context);
+
+        assertContainsAtLeast(minExpected, metadataList);
+        assertContainsAtLeast(parsedBy, metadataList);
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-sax-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        metadataList = getRecursiveMetadata("testPPT_macros.pptm", parser);
+        assertContainsAtLeast(minExpected, metadataList);
+        assertContainsAtLeast(parsedBy, metadataList);
+
     }
 }

@@ -34,7 +34,7 @@ public enum Cols {
     NUM_METADATA_VALUES,
     IS_EMBEDDED,
     EMBEDDED_FILE_PATH,
-    MIME_TYPE_ID,
+    MIME_ID,
     MD5,
     NUM_ATTACHMENTS,
     HAS_CONTENT,
@@ -57,6 +57,7 @@ public enum Cols {
     TOKEN_LENGTH_STD_DEV,
     UNICODE_CHAR_BLOCKS,
     NUM_PAGES, //number of pages a document alleges it has
+    CONTENT_TRUNCATED_AT_MAX_LEN, // was the string truncated at AbstractProfiler.MAX_STRING_LENGTH
 
     //content comparisons
     TOP_10_UNIQUE_TOKEN_DIFFS_A,
@@ -67,24 +68,24 @@ public enum Cols {
     DICE_COEFFICIENT,
 
     //errors
-    PARSE_ERROR_TYPE_ID,
+    PARSE_ERROR_ID,
 
     PARSE_ERROR_DESCRIPTION,
     PARSE_EXCEPTION_DESCRIPTION,
 
-    EXTRACT_EXCEPTION_TYPE_ID,
+    EXTRACT_EXCEPTION_ID,
     EXTRACT_EXCEPTION_DESCRIPTION,
 
 
     //exceptions
     ORIG_STACK_TRACE,
     SORT_STACK_TRACE,
-    PARSE_EXCEPTION_TYPE_ID,
+    PARSE_EXCEPTION_ID,
 
 
     MIME_STRING,//string representation of mime type
 
     DIR_NAME_A,//for comparisons in REF_PAIR_NAMES
     DIR_NAME_B
-    }
+}
 

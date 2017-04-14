@@ -41,7 +41,7 @@ public class TokenCounterTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        analyzerManager = AnalyzerManager.newInstance();
+        analyzerManager = AnalyzerManager.newInstance(100000);
 
     }
 

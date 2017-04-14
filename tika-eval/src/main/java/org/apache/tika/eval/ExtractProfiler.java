@@ -68,6 +68,10 @@ public class ExtractProfiler extends AbstractProfiler {
                 .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
                 .addOption("drop", true, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+                .addOption("maxTokens", true, "maximum tokens to process, default=200000")
+                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
+                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
+                .addOption("defaultLangCode", true, "which language to use for common words if no 'common words' file exists for the langid result")
 
         ;
 
@@ -88,15 +92,15 @@ public class ExtractProfiler extends AbstractProfiler {
     public static TableInfo EXTRACT_EXCEPTION_TABLE = new TableInfo("extract_exceptions",
             new ColInfo(Cols.CONTAINER_ID, Types.INTEGER),
             new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
-            new ColInfo(Cols.EXTRACT_EXCEPTION_TYPE_ID, Types.INTEGER),
-            new ColInfo(Cols.PARSE_ERROR_TYPE_ID, Types.INTEGER)
+            new ColInfo(Cols.EXTRACT_EXCEPTION_ID, Types.INTEGER),
+            new ColInfo(Cols.PARSE_ERROR_ID, Types.INTEGER)
     );
 
     public static TableInfo EXCEPTION_TABLE = new TableInfo("parse_exceptions",
             new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.ORIG_STACK_TRACE, Types.VARCHAR, 8192),
             new ColInfo(Cols.SORT_STACK_TRACE, Types.VARCHAR, 8192),
-            new ColInfo(Cols.PARSE_EXCEPTION_TYPE_ID, Types.INTEGER)
+            new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER)
     );
 
 
@@ -115,7 +119,7 @@ public class ExtractProfiler extends AbstractProfiler {
             new ColInfo(Cols.LENGTH, Types.BIGINT),
             new ColInfo(Cols.IS_EMBEDDED, Types.BOOLEAN),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12),
-            new ColInfo(Cols.MIME_TYPE_ID, Types.INTEGER),
+            new ColInfo(Cols.MIME_ID, Types.INTEGER),
             new ColInfo(Cols.ELAPSED_TIME_MILLIS, Types.INTEGER),
             new ColInfo(Cols.NUM_ATTACHMENTS, Types.INTEGER),
             new ColInfo(Cols.NUM_METADATA_VALUES, Types.INTEGER),
@@ -145,7 +149,8 @@ public class ExtractProfiler extends AbstractProfiler {
             new ColInfo(Cols.TOKEN_ENTROPY_RATE, Types.FLOAT),
             new ColInfo(Cols.TOKEN_LENGTH_SUM, Types.INTEGER),
             new ColInfo(Cols.TOKEN_LENGTH_MEAN, Types.FLOAT),
-            new ColInfo(Cols.TOKEN_LENGTH_STD_DEV, Types.FLOAT)
+            new ColInfo(Cols.TOKEN_LENGTH_STD_DEV, Types.FLOAT),
+            new ColInfo(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, Types.BOOLEAN)
     );
 
     private final Path inputDir;

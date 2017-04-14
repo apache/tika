@@ -26,6 +26,7 @@ import static org.junit.Assert.assertTrue;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -61,7 +62,7 @@ public class SimpleComparerTest extends TikaTest {
                 new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
                         IGNORE_LENGTH, IGNORE_LENGTH),
                 writer);
-        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath());
+        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath(), "en");
         LanguageIDWrapper.loadBuiltInModels();
     }
 
@@ -136,6 +137,30 @@ public class SimpleComparerTest extends TikaTest {
 
     }
 
+    @Test
+    public void testChinese() throws Exception {
+        //make sure that language id matches common words
+        //file names.  The test file contains MT'd Simplified Chinese with
+        //known "common words" appended at end.
+
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file13_attachANotB.doc.json"),
+                getResourceAsFile("/test-dirs/extractsA/file13_attachANotB.doc.json").toPath()
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("non-existent.json"),
+                getResourceAsFile("/test-dirs/extractsB/non-existent.json").toPath());
+
+        comparer.compareFiles(fpsA, fpsB);
+
+        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENTS_TABLE_A);
+
+        Map<Cols, String> row = tableInfos.get(0);
+        assertEquals("122", row.get(Cols.TOKEN_LENGTH_SUM));
+        assertEquals("3", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("zh-cn", row.get(Cols.COMMON_TOKENS_LANG));
+
+    }
 
     @Test
     public void testEmpty() throws Exception {
@@ -152,7 +177,7 @@ public class SimpleComparerTest extends TikaTest {
         Map<Cols, String> row = table.get(0);
         //debugPrintRow(row);
         assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
-                row.get(Cols.EXTRACT_EXCEPTION_TYPE_ID));
+                row.get(Cols.EXTRACT_EXCEPTION_ID));
     }
 
 
@@ -160,20 +185,24 @@ public class SimpleComparerTest extends TikaTest {
     public void testGetContent() throws Exception {
         Metadata m = new Metadata();
         m.add(RecursiveParserWrapper.TIKA_CONTENT, "0123456789");
-
-        String content = getContent(m, 10);
+        Map<Cols, String> data = new HashMap<>();
+        String content = getContent(m, 10, data);
         assertEquals(10, content.length());
+        assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
-        content = getContent(m, 4);
+        content = getContent(m, 4, data);
         assertEquals(4, content.length());
+        assertEquals("TRUE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test Metadata with no content
-        content = getContent(new Metadata(), 10);
+        content = getContent(new Metadata(), 10, data);
         assertEquals(0, content.length());
+        assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test null Metadata
-        content = getContent(null, 10);
+        content = getContent(null, 10, data);
         assertEquals(0, content.length());
+        assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
     }
 
     @Test
@@ -193,7 +222,7 @@ public class SimpleComparerTest extends TikaTest {
             Map<Cols, String> rowA = table.get(0);
             //debugPrintRow(rowA);
             assertEquals(Integer.toString(EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()),
-                    rowA.get(Cols.PARSE_EXCEPTION_TYPE_ID));
+                    rowA.get(Cols.PARSE_EXCEPTION_ID));
             assertNull(rowA.get(Cols.ORIG_STACK_TRACE));
             assertNull(rowA.get(Cols.SORT_STACK_TRACE));
         }
@@ -240,7 +269,7 @@ public class SimpleComparerTest extends TikaTest {
     @Ignore
     public void testDebug() throws Exception {
         Path commonTokens = Paths.get(getResourceAsFile("/common_tokens_short.txt").toURI());
-        AbstractProfiler.loadCommonTokens(commonTokens);
+        AbstractProfiler.loadCommonTokens(commonTokens, "en");
         EvalFilePaths fpsA = new EvalFilePaths(
                 Paths.get("file1.pdf.json"),
                 getResourceAsFile("/test-dirs/extractsA/file1.pdf.json").toPath()
@@ -287,5 +316,36 @@ public class SimpleComparerTest extends TikaTest {
         for (Cols key : keys) {
             System.out.println(key + " : " + row.get(key));
         }
+    }
+
+    @Test
+    @Ignore("useful for testing 2 files not in test set")
+    public void oneOff() throws Exception {
+        Path p1 = Paths.get("");
+        Path p2 = Paths.get("");
+
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file1.pdf.json"),
+                p1
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("file1.pdf.json"),
+                p2
+        );
+        comparer.compareFiles(fpsA, fpsB);
+        for (TableInfo t : new TableInfo[]{
+                ExtractComparer.COMPARISON_CONTAINERS,
+                ExtractComparer.EXTRACT_EXCEPTION_TABLE_A,
+                ExtractComparer.EXTRACT_EXCEPTION_TABLE_B,
+                ExtractComparer.EXCEPTION_TABLE_A,
+                ExtractComparer.EXCEPTION_TABLE_B,
+                ExtractComparer.PROFILES_A,
+                ExtractComparer.PROFILES_B,
+                ExtractComparer.CONTENTS_TABLE_A,
+                ExtractComparer.CONTENTS_TABLE_B,
+                ExtractComparer.CONTENT_COMPARISONS}) {
+            debugPrintTable(t);
+        }
+
     }
 }

@@ -35,7 +35,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             group by mime_string
             order by cnt desc
         </sql>
@@ -48,7 +48,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=false
             group by mime_string
             order by cnt desc
@@ -63,7 +63,7 @@
         <sql>
             select mime_string, count(1) cnt from
             profiles p
-            join mimes m on m.mime_type_id = p.mime_type_id
+            join mimes m on m.mime_id = p.mime_id
             where is_embedded=true
             group by mime_string
             order by cnt desc
@@ -119,7 +119,7 @@
             select parse_exception_description, count(1) cnt
             from parse_exceptions e
             join profiles p on p.id = e.id
-            join ref_parse_exception_types et on et.parse_exception_type_id=e.parse_exception_type_id
+            join ref_parse_exception_types et on et.parse_exception_id=e.parse_exception_id
             group by parse_exception_description
             order by cnt desc;
         </sql>
@@ -135,7 +135,7 @@
             select parse_exception_description, count(1) cnt
             from parse_exceptions e
             join profiles p on p.id = e.id
-            join ref_parse_exception_types et on et.parse_exception_type_id=e.parse_exception_type_id
+            join ref_parse_exception_types et on et.parse_exception_id=e.parse_exception_id
             where is_embedded=true
             group by parse_exception_description
             order by cnt desc;

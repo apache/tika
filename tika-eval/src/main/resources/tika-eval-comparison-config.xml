@@ -59,6 +59,14 @@
                 description="EXPERT: prefix for table names for B"/>
         <option opt="drop" hasArg="false" description="drop tables if they exist"/>
         <option opt="maxFilesToAdd" hasArg="true" description="maximum number of files to add to the crawler"/>
+        <option opt="maxTokens" hasArg="true" description="maximum tokens to process, default=200000"/>
+        <option opt="maxContentLength" hasArg="true"
+                description="truncate content beyond this length for calculating 'contents' stats, default=1000000"/>
+        <option opt="maxContentLengthForLangId" hasArg="true"
+                description="truncate content beyond this length for language id, default=50000"/>
+        <option opt="defaultLangCode" hasArg="true"
+                description="which language to use for common words if no 'common words' file exists for the langid result"/>
+
 
     </commandline>
 

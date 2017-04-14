@@ -42,7 +42,6 @@ import org.junit.Test;
 
 public class TikaEvalCLITest extends TikaTest {
     //TODO: these barely reach the minimal acceptable stage for unit tests
-    //but we have to start somewhere on the integration tests
 
     private static Path extractsDir = Paths.get("src/test/resources/test-dirs");
 
@@ -58,7 +57,7 @@ public class TikaEvalCLITest extends TikaTest {
         compareDBDir = Files.createTempDirectory("tika-eval-cli-compare-db-");
         profileDBDir = Files.createTempDirectory("tika-eval-cli-profile-db-");
         compareReportsDir = Files.createTempDirectory("tika-eval-cli-compare-reports-");
-        profileReportsDir = Files.createTempDirectory("tika-eval-cli-compare-reports-");
+        profileReportsDir = Files.createTempDirectory("tika-eval-cli-profile-reports-");
         compare();
         profile();
         reportCompare();
@@ -115,7 +114,7 @@ public class TikaEvalCLITest extends TikaTest {
                 cnt++;
             }
         }
-        assertTrue(cnt > 5);
+        assertTrue(cnt > 33);
 
     }
 
@@ -127,6 +126,14 @@ public class TikaEvalCLITest extends TikaTest {
         args.add(extractsDir.resolve("extractsA").toAbsolutePath().toString());
         args.add("-extractsB");
         args.add(extractsDir.resolve("extractsB").toAbsolutePath().toString());
+        //add these just to confirm this info doesn't cause problems w cli
+        args.add("-maxTokens");
+        args.add("10000000");
+        args.add("-maxContentLength");
+        args.add("100000000");
+        args.add("-maxContentLengthForLangId");
+        args.add("100000");
+
         args.add("-db");
         args.add(compareDBDir.toAbsolutePath().toString()+"/"+dbName);
 
@@ -139,6 +146,14 @@ public class TikaEvalCLITest extends TikaTest {
         args.add("Profile");
         args.add("-extracts");
         args.add(extractsDir.resolve("extractsA").toAbsolutePath().toString());
+        //add these just to confirm this info doesn't cause problems w cli
+        args.add("-maxTokens");
+        args.add("10000000");
+        args.add("-maxContentLength");
+        args.add("100000000");
+        args.add("-maxContentLengthForLangId");
+        args.add("100000");
+
         args.add("-db");
         args.add(profileDBDir.toAbsolutePath().toString()+"/"+dbName);
         execute(args, 60000);

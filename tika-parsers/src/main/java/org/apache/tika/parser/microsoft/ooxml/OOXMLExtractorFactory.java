@@ -90,7 +90,9 @@ public class OOXMLExtractorFactory {
 
             // Have the appropriate OOXML text extractor picked
             POIXMLTextExtractor poiExtractor = null;
-            OfficeParserConfig config = context.get(OfficeParserConfig.class, new OfficeParserConfig());
+            //This has already been set by OOXMLParser's call to configure()
+            //We can rely on this being non-null.
+            OfficeParserConfig config = context.get(OfficeParserConfig.class);
             if (config.getUseSAXDocxExtractor()) {
                 poiExtractor = trySXWPF(pkg);
             }
@@ -109,11 +111,11 @@ public class OOXMLExtractorFactory {
             } else if (poiExtractor instanceof XWPFEventBasedWordExtractor) {
                 extractor = new SXWPFWordExtractorDecorator(metadata, context,
                         (XWPFEventBasedWordExtractor) poiExtractor);
-                metadata.add("X-Parsed-By", XWPFEventBasedWordExtractor.class.getSimpleName());
+                metadata.add("X-Parsed-By", XWPFEventBasedWordExtractor.class.getCanonicalName());
             } else if (poiExtractor instanceof XSLFEventBasedPowerPointExtractor) {
                 extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
                         (XSLFEventBasedPowerPointExtractor) poiExtractor);
-                metadata.add("X-Parsed-By", XSLFEventBasedPowerPointExtractor.class.getSimpleName());
+                metadata.add("X-Parsed-By", XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
             } else if (document == null) {
                 throw new TikaException(
                         "Expecting UserModel based POI OOXML extractor with a document, but none found. " +

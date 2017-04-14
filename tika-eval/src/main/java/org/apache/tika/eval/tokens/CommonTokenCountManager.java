@@ -47,9 +47,10 @@ public class CommonTokenCountManager {
 
     //if we have no model or if no langid is passed in
     //make this configurable
-    String defaultLangCode = "en";
+    private final String defaultLangCode;
 
-    public CommonTokenCountManager(Path commonTokensDir) throws IOException {
+    public CommonTokenCountManager(Path commonTokensDir, String defaultLangCode) throws IOException {
+        this.defaultLangCode = defaultLangCode;
         this.commonTokensDir = commonTokensDir;
         tryToLoad(defaultLangCode);
         //if you couldn't load it, make sure to add an empty
