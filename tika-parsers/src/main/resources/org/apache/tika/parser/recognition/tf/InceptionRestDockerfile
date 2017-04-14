@@ -20,7 +20,7 @@ MAINTAINER Thamme Gowda <thammegowda@apache.org> and Kranthi Kiran GV <kkranthi@
 
 # Install missing part of ubuntu core + python stuff
 RUN apt-get update && \
-    apt-get install -y python-pip python-dev wget libtcmalloc-minimal4 git
+    apt-get install -y python-pip python-dev wget libtcmalloc-minimal4 git unzip
 
 # Install tensorflow and other dependencies
 RUN \
@@ -28,8 +28,9 @@ RUN \
   pip install flask requests
 
 # Get the TF-slim dependencies 
-# Forked for future compatibility
-RUN git clone https://github.com/KranthiGV/models
+# Downloading from a specific commit for future compatibility
+RUN wget https://github.com/tensorflow/models/archive/c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip && \
+	unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip 
 
 # TODO: Change the URL to Apache/Tika Repo when this PR gets merged
 RUN \
@@ -39,7 +40,7 @@ RUN \
 
 # clean up cache, so we can publish smaller image to hub
 RUN apt-get clean
-ENV	PYTHONPATH="$PYTHONPATH:/models/slim"
+ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
 ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
 
 
