@@ -223,39 +223,39 @@ class Classifier(flask.Flask):
         self.names = imagenet.create_readable_names_for_imagenet_labels()
         self.image_size = inception.inception_v4.default_image_size
 
-    def classify(self, image_string, topk):
+        self.image_str_placeholder = tf.placeholder(tf.string)
+        image = tf.image.decode_jpeg(self.image_str_placeholder, channels=3)
+        processed_image = inception_preprocessing.preprocess_image(
+            image, self.image_size, self.image_size, is_training=False)
+        processed_images = tf.expand_dims(processed_image, 0)
+        # Create the model, use the default arg scope to configure the
+        # batch norm parameters.
+        with slim.arg_scope(inception.inception_v4_arg_scope()):
+            logits, _ = inception.inception_v4(
+                processed_images, num_classes=1001, is_training=False)
+        self.probabilities = tf.nn.softmax(logits)
+
         dest_directory = FLAGS.model_dir
+        init_fn = slim.assign_from_checkpoint_fn(
+            os.path.join(dest_directory, 'inception_v4.ckpt'),
+            slim.get_model_variables('InceptionV4'))
 
-        with tf.Graph().as_default():
-            image = tf.image.decode_jpeg(image_string, channels=3)
-            processed_image = inception_preprocessing.preprocess_image(
-                image, self.image_size, self.image_size, is_training=False)
-            processed_images = tf.expand_dims(processed_image, 0)
+        self.sess = tf.Session()
+        init_fn(self.sess)
 
-            # Create the model, use the default arg scope to configure the
-            # batch norm parameters.
-            with slim.arg_scope(inception.inception_v4_arg_scope()):
-                logits, _ = inception.inception_v4(
-                    processed_images, num_classes=1001, is_training=False)
-            probabilities = tf.nn.softmax(logits)
+    def classify(self, image_string, topk):
+        eval_probabilities = self.sess.run(self.probabilities, feed_dict={
+                                           self.image_str_placeholder: image_string})
+        eval_probabilities = eval_probabilities[0, 0:]
+        sorted_inds = [i[0] for i in sorted(
+            enumerate(-eval_probabilities), key=lambda x:x[1])]
 
-            init_fn = slim.assign_from_checkpoint_fn(
-                os.path.join(dest_directory, 'inception_v4.ckpt'),
-                slim.get_model_variables('InceptionV4'))
-
-            with tf.Session() as sess:
-                init_fn(sess)
-                _, probabilities = sess.run([image, probabilities])
-                probabilities = probabilities[0, 0:]
-                sorted_inds = [i[0] for i in sorted(
-                    enumerate(-probabilities), key=lambda x:x[1])]
-
-            res = []
-            for i in range(topk):
-                index = sorted_inds[i]
-                score = float(probabilities[index])
-                res.append((index, self.names[index], score))
-            return res
+        res = []
+        for i in range(topk):
+            index = sorted_inds[i]
+            score = float(eval_probabilities[index])
+            res.append((index, self.names[index], score))
+        return res
 
 
 from flask import Flask, request, abort, g, Response, jsonify
