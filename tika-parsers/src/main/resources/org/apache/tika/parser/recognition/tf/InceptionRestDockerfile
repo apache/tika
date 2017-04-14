@@ -40,7 +40,7 @@ RUN \
 # clean up cache, so we can publish smaller image to hub
 RUN apt-get clean
 ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
-#ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
+ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
 
 # expose API port, this is the default port
 EXPOSE 8764

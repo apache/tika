@@ -169,7 +169,7 @@ def run_inference_on_image(image):
 
         with tf.Session() as sess:
             init_fn(sess)
-            _, probabilities = sess.run([image, probabilities])
+            probabilities = sess.run(probabilities)
             probabilities = probabilities[0, 0:]
             sorted_inds = [i[0] for i in sorted(
                 enumerate(-probabilities), key=lambda x:x[1])]
