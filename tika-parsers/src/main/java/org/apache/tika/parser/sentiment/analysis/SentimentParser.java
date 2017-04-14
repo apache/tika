@@ -84,7 +84,7 @@ public class SentimentParser extends AbstractParser implements Initializable {
             if (modelPath.startsWith("http://") || modelPath.startsWith("https://")) {
                 resolvedUrl = new URL(modelPath);
             } else {
-                getClass().getClassLoader().getResource(modelPath);
+                resolvedUrl = getClass().getClassLoader().getResource(modelPath);
                 File file = new File(modelPath);
                 if (file.exists()) { // file on filesystem gets higher priority
                     resolvedUrl = file.toURI().toURL();
