@@ -570,12 +570,9 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java
-            </exclude>
+            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
             <exclude>src/test/resources/test-documents/**</exclude>
-            <exclude>
-              src/test/resources/META-INF/services/org.apache.tika.parser.Parser
-            </exclude>
+            <exclude>src/test/resources/META-INF/services/org.apache.tika.parser.Parser</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -656,9 +653,7 @@
       <activation>
         <!-- auto activate -->
         <file>
-          <missing>
-            ${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ner-person.bin
-          </missing>
+          <missing>${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ner-person.bin</missing>
         </file>
       </activation>
       <build>
