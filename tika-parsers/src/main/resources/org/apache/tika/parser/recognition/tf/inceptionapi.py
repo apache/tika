@@ -41,126 +41,160 @@ import tarfile
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
+from datasets import imagenet, dataset_utils
+from nets import inception
+from preprocessing import inception_preprocessing
+
+slim = tf.contrib.slim
+
 import requests
 import json
-json.encoder.FLOAT_REPR = lambda o: format(o, '.2f') # JSON serialization of floats
+json.encoder.FLOAT_REPR = lambda o: format(
+    o, '.2f')  # JSON serialization of floats
 from time import time
+
 
 import flask
 
 
 FLAGS = tf.app.flags.FLAGS
 
-# classify_image_graph_def.pb:
-#   Binary representation of the GraphDef protocol buffer.
-# imagenet_synset_to_human_label_map.txt:
+# inception_v4.ckpt
+#   Inception V4 checkpoint file.
+# imagenet_metadata.txt
 #   Map from synset ID to a human readable string.
-# imagenet_2012_challenge_label_map_proto.pbtxt:
+# imagenet_lsvrc_2015_synsets.txt
 #   Text representation of a protocol buffer mapping a label to synset ID.
 tf.app.flags.DEFINE_string(
     'model_dir', '/tmp/imagenet',
-    """Path to classify_image_graph_def.pb, """
-    """imagenet_synset_to_human_label_map.txt, and """
-    """imagenet_2012_challenge_label_map_proto.pbtxt.""")
+    """Path to inception_v4.ckpt, """
+    """imagenet_lsvrc_2015_synsets.txt, and """
+    """imagenet_metadata.txt.""")
 tf.app.flags.DEFINE_integer('port', '8764', """Server PORT, default:8764""")
-tf.app.flags.DEFINE_string('log', 'inception.log', """Log file name, default: inception.log""")
+tf.app.flags.DEFINE_string('log', 'inception.log',
+                           """Log file name, default: inception.log""")
 
 # pylint: disable=line-too-long
-DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
+DATA_URL = 'http://download.tensorflow.org/models/inception_v4_2016_09_09.tar.gz'
 # pylint: enable=line-too-long
 
-class NodeLookup(object):
-    """Converts integer node ID's to human readable labels."""
 
-    def __init__(self,
-                 label_lookup_path=None,
-                 uid_lookup_path=None):
-        if not label_lookup_path:
-            label_lookup_path = os.path.join(
-                FLAGS.model_dir, 'imagenet_2012_challenge_label_map_proto.pbtxt')
-        if not uid_lookup_path:
-            uid_lookup_path = os.path.join(
-                FLAGS.model_dir, 'imagenet_synset_to_human_label_map.txt')
-        self.node_lookup = self.load(label_lookup_path, uid_lookup_path)
-
-    def load(self, label_lookup_path, uid_lookup_path):
-        """Loads a human readable English name for each softmax node.
-
-    Args:
-      label_lookup_path: string UID to integer node ID.
-      uid_lookup_path: string UID to human-readable string.
+def create_readable_names_for_imagenet_labels():
+    """Create a dict mapping label id to human readable string.
 
     Returns:
-      dict from integer node ID to human-readable string.
+        labels_to_names: dictionary where keys are integers from to 1000
+        and values are human-readable names.
+
+    We retrieve a synset file, which contains a list of valid synset labels used
+    by ILSVRC competition. There is one synset one per line, eg.
+            #   n01440764
+            #   n01443537
+    We also retrieve a synset_to_human_file, which contains a mapping from synsets
+    to human-readable names for every synset in Imagenet. These are stored in a
+    tsv format, as follows:
+            #   n02119247    black fox
+            #   n02119359    silver fox
+    We assign each synset (in alphabetical order) an integer, starting from 1
+    (since 0 is reserved for the background class).
+
+    Code is based on
+    https://github.com/tensorflow/models/blob/master/inception/inception/data/build_imagenet_data.py#L463
     """
-        if not tf.gfile.Exists(uid_lookup_path):
-            tf.logging.fatal('File does not exist %s', uid_lookup_path)
-        if not tf.gfile.Exists(label_lookup_path):
-            tf.logging.fatal('File does not exist %s', label_lookup_path)
 
-        # Loads mapping from string UID to human-readable string
-        proto_as_ascii_lines = tf.gfile.GFile(uid_lookup_path).readlines()
-        uid_to_human = {}
-        p = re.compile(r'[n\d]*[ \S,]*')
-        for line in proto_as_ascii_lines:
-            parsed_items = p.findall(line)
-            uid = parsed_items[0]
-            human_string = parsed_items[2]
-            uid_to_human[uid] = human_string
+    # pylint: disable=line-too-long
 
-        # Loads mapping from string UID to integer node ID.
-        node_id_to_uid = {}
-        proto_as_ascii = tf.gfile.GFile(label_lookup_path).readlines()
-        for line in proto_as_ascii:
-            if line.startswith('  target_class:'):
-                target_class = int(line.split(': ')[1])
-            if line.startswith('  target_class_string:'):
-                target_class_string = line.split(': ')[1]
-                node_id_to_uid[target_class] = target_class_string[1:-2]
+    dest_directory = FLAGS.model_dir
 
-        # Loads the final mapping of integer node ID to human-readable string
-        node_id_to_name = {}
-        for key, val in node_id_to_uid.items():
-            if val not in uid_to_human:
-                tf.logging.fatal('Failed to locate: %s', val)
-            name = uid_to_human[val]
-            node_id_to_name[key] = name
+    synset_list = [s.strip() for s in open(os.path.join(
+        dest_directory, 'imagenet_lsvrc_2015_synsets.txt')).readlines()]
+    num_synsets_in_ilsvrc = len(synset_list)
+    assert num_synsets_in_ilsvrc == 1000
 
-        return node_id_to_name
+    synset_to_human_list = open(os.path.join(
+        dest_directory, 'imagenet_metadata.txt')).readlines()
+    num_synsets_in_all_imagenet = len(synset_to_human_list)
+    assert num_synsets_in_all_imagenet == 21842
 
-    def id_to_string(self, node_id):
-        if node_id not in self.node_lookup:
-            return ''
-        return self.node_lookup[node_id]
+    synset_to_human = {}
+    for s in synset_to_human_list:
+        parts = s.strip().split('\t')
+        assert len(parts) == 2
+        synset = parts[0]
+        human = parts[1]
+        synset_to_human[synset] = human
 
-def create_graph():
-    """Creates a graph from saved GraphDef file and returns a saver."""
-    # Creates graph from saved graph_def.pb.
-    with tf.gfile.FastGFile(os.path.join(
-            FLAGS.model_dir, 'classify_image_graph_def.pb'), 'rb') as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
-        _ = tf.import_graph_def(graph_def, name='')
+    label_index = 1
+    labels_to_names = {0: 'background'}
+    for synset in synset_list:
+        name = synset_to_human[synset]
+        labels_to_names[label_index] = name
+        label_index += 1
+
+    return labels_to_names
+
+
+def util_download(url, dest_directory):
+    """Downloads the file.
+
+    Args:
+      url: URL to download the file from.
+      dest_directory: Destination directory
+    Returns:
+      Nothing
+    """
+    filename = url.split('/')[-1]
+    filepath = os.path.join(dest_directory, filename)
+
+    def _progress(count, block_size, total_size):
+        sys.stdout.write('\r>> Downloading %s %.1f%%' % (
+            filename, float(count * block_size) / float(total_size) * 100.0))
+        sys.stdout.flush()
+    filepath, _ = urllib.request.urlretrieve(url, filepath, _progress)
+    print()
+    statinfo = os.stat(filepath)
+    print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
+
+
+def util_download_tar(url, dest_directory):
+    """Downloads a file and extracts it.
+
+    Args:
+      url: URL to download the file from.
+      dest_directory: Destination directory
+    Returns:
+      Nothing
+    """
+    filename = url.split('/')[-1]
+    filepath = os.path.join(dest_directory, filename)
+
+    def _progress(count, block_size, total_size):
+        sys.stdout.write('\r>> Downloading %s %.1f%%' % (
+            filename, float(count * block_size) / float(total_size) * 100.0))
+        sys.stdout.flush()
+    filepath, _ = urllib.request.urlretrieve(url, filepath, _progress)
+    print()
+    statinfo = os.stat(filepath)
+    print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
+    tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
 
 def maybe_download_and_extract():
     """Download and extract model tar file."""
     dest_directory = FLAGS.model_dir
-    if not os.path.exists(dest_directory):
-        os.makedirs(dest_directory)
-    filename = DATA_URL.split('/')[-1]
-    filepath = os.path.join(dest_directory, filename)
-    if not os.path.exists(filepath):
-        def _progress(count, block_size, total_size):
-            sys.stdout.write('\r>> Downloading %s %.1f%%' % (
-                filename, float(count * block_size) / float(total_size) * 100.0))
-            sys.stdout.flush()
+    if not tf.gfile.Exists(dest_directory):
+        tf.gfile.MakeDirs(dest_directory)
+    if not tf.gfile.Exists(os.path.join(dest_directory, 'inception_v4.ckpt')):
+        util_download_tar(DATA_URL, dest_directory)
+    # pylint: disable=line-too-long
+    if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_lsvrc_2015_synsets.txt')):
+        util_download(
+            'https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_lsvrc_2015_synsets.txt', dest_directory)
+    if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_metadata.txt')):
+        util_download(
+            'https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_metadata.txt', dest_directory)
+    # pylint: enable=line-too-long
 
-        filepath, _ = urllib.request.urlretrieve(DATA_URL, filepath, _progress)
-        print()
-        statinfo = os.stat(filepath)
-        print('Succesfully downloaded', filename, statinfo.st_size, 'bytes.')
-    tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
 def current_time():
     """
@@ -168,41 +202,65 @@ def current_time():
     """
     return int(1000 * time())
 
+
 class Classifier(flask.Flask):
     '''
     Classifier Service class
     '''
+
     def __init__(self, name):
         super(Classifier, self).__init__(name)
         maybe_download_and_extract()
-        create_graph()
-        self.sess = tf.Session()
-        self.softmax_tensor = self.sess.graph.get_tensor_by_name('softmax:0')
-        self.node_lookup = NodeLookup()
-        print("Logs are directed to %s" % FLAGS.log)
         import logging
         from logging.handlers import RotatingFileHandler
-        file_handler = RotatingFileHandler(FLAGS.log, maxBytes=1024 * 1024 * 100, backupCount=20)
+        file_handler = RotatingFileHandler(
+            FLAGS.log, maxBytes=1024 * 1024 * 100, backupCount=20)
         file_handler.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        formatter = logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
+        self.names = imagenet.create_readable_names_for_imagenet_labels()
+        self.image_size = inception.inception_v4.default_image_size
 
-    def classify(self, image_data, topk):
-        predictions = self.sess.run(self.softmax_tensor,
-                                    {'DecodeJpeg/contents:0': image_data})
-        predictions = np.squeeze(predictions)
-        top_k = predictions.argsort()[-topk:][::-1]
-        res = []
-        for node_id in top_k:
-            class_name = self.node_lookup.id_to_string(node_id)
-            score = float(predictions[node_id])
-            res.append((node_id, class_name, score))
-        return res
+    def classify(self, image_string, topk):
+        dest_directory = FLAGS.model_dir
+
+        with tf.Graph().as_default():
+            image = tf.image.decode_jpeg(image_string, channels=3)
+            processed_image = inception_preprocessing.preprocess_image(
+                image, self.image_size, self.image_size, is_training=False)
+            processed_images = tf.expand_dims(processed_image, 0)
+
+            # Create the model, use the default arg scope to configure the
+            # batch norm parameters.
+            with slim.arg_scope(inception.inception_v4_arg_scope()):
+                logits, _ = inception.inception_v4(
+                    processed_images, num_classes=1001, is_training=False)
+            probabilities = tf.nn.softmax(logits)
+
+            init_fn = slim.assign_from_checkpoint_fn(
+                os.path.join(dest_directory, 'inception_v4.ckpt'),
+                slim.get_model_variables('InceptionV4'))
+
+            with tf.Session() as sess:
+                init_fn(sess)
+                _, probabilities = sess.run([image, probabilities])
+                probabilities = probabilities[0, 0:]
+                sorted_inds = [i[0] for i in sorted(
+                    enumerate(-probabilities), key=lambda x:x[1])]
+
+            res = []
+            for i in range(topk):
+                index = sorted_inds[i]
+                score = float(probabilities[index])
+                res.append((index, self.names[index], score))
+            return res
 
 
 from flask import Flask, request, abort, g, Response, jsonify
 app = Classifier(__name__)
+
 
 def get_remotefile(url, success=200, timeout=10):
     """
@@ -219,6 +277,7 @@ def get_remotefile(url, success=200, timeout=10):
         pass
     return None, None
 
+
 @app.route("/")
 def index():
     """
@@ -229,14 +288,11 @@ def index():
     <h1> Inception REST API </h1>
     <h3> The following API end points are valid </h3>
         <ul>
-            <h4> Inception V3 </h4>
-            <li> <code>/inception/v3/classes </code> - <br/>
-                <b> Description : </b> This API gets all classes/object types known to the current model
-            </li>
-            <li> <code>/inception/v3/ping </code> - <br/>
+            <h4> Inception V4 </h4>
+            <li> <code>/inception/v4/ping </code> - <br/>
                 <b> Description : </b> checks availability of the service. returns "pong" with status 200 when it is available
             </li>
-            <li> <code>/inception/v3/classify</code> - <br/>
+            <li> <code>/inception/v4/classify</code> - <br/>
                 <table>
                 <tr><th align="left"> Description </th><td> This is a classifier service that can classify images</td></tr>
                 <tr><td></td> <td>Query Params : <br/>
@@ -246,11 +302,11 @@ def index():
                 <tr><th align="left"> How to supply Image Content </th></tr>
                 <tr><th align="left"> With HTTP GET : </th> <td>
                     Include a query parameter <code>url </code> which is an http url of JPEG image <br/>
-                    Example: <code> curl "localhost:8764/inception/v3/classify?url=http://xyz.com/example.jpg"</code>
+                    Example: <code> curl "localhost:8764/inception/v4/classify?url=http://xyz.com/example.jpg"</code>
                 </td></tr>
                 <tr><th align="left"> With HTTP POST :</th><td>
                     POST JPEG image content as binary data in request body. <br/>
-                    Example: <code> curl -X POST "localhost:8764/inception/v3/classify?topk=10&human=false" --data-binary @example.jpg </code>
+                    Example: <code> curl -X POST "localhost:8764/inception/v4/classify?topk=10&human=false" --data-binary @example.jpg </code>
                 </td></tr>
                 </table>
             </li>
@@ -258,19 +314,15 @@ def index():
     </div>
     """
 
-@app.route("/inception/v3/classes", methods=["GET"])
-def get_classes():
-    """API to list all known classes
-    """
-    return jsonify(app.node_lookup.node_lookup)
 
-@app.route("/inception/v3/ping", methods=["GET"])
+@app.route("/inception/v4/ping", methods=["GET"])
 def ping_pong():
     """API to do health check. If this says status code 200, then healthy
     """
     return "pong"
 
-@app.route("/inception/v3/classify", methods=["GET", "POST"])
+
+@app.route("/inception/v4/classify", methods=["GET", "POST"])
 def classify_image():
     """
     API to classify images
@@ -288,9 +340,9 @@ def classify_image():
         if 'image/jpeg' not in c_type:
             return flask.Response(status=400, response=jsonify(error="Content of %s is not JPEG" % url))
     read_time = current_time() - st
-    st = current_time() # reset start time
+    st = current_time()  # reset start time
     try:
-        classes = app.classify(image_data=image_data, topk=topk)
+        classes = app.classify(image_string=image_data, topk=topk)
     except Exception as e:
         app.logger.error(e)
         return Response(status=400, response=str(e))
@@ -298,10 +350,10 @@ def classify_image():
     classifier_time = current_time() - st
     app.logger.info("Classifier time : %d" % classifier_time)
     res = {
-        'classids' : classids,
+        'classids': classids,
         'confidence': confidence,
         'time': {
-            'read' : read_time,
+            'read': read_time,
             'classification': classifier_time,
             'units': 'ms'
         }
@@ -309,6 +361,7 @@ def classify_image():
     if human:
         res['classnames'] = classnames
     return Response(response=json.dumps(res), status=200, mimetype="application/json")
+
 
 def main(_):
     if not app.debug:

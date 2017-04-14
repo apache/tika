@@ -65,9 +65,9 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     private static final String LABEL_LANG = "en";
 
     @Field
-    private URI apiUri = URI.create("http://localhost:8764/inception/v3/classify?topk=10");
+    private URI apiUri = URI.create("http://localhost:8764/inception/v4/classify?topk=10");
     @Field
-    private URI healthUri = URI.create("http://localhost:8764/inception/v3/ping");
+    private URI healthUri = URI.create("http://localhost:8764/inception/v4/ping");
 
     private boolean available;
 
