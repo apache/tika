@@ -47,7 +47,6 @@ public class TensorflowVideoRecParserTest {
             Set<String> objectLabels = new HashSet<>();
             for (RecognisedObject object : objects) {
                 objectLabels.add(object.getLabel());
-                System.out.println(object.getLabel());
             }
             Assert.assertTrue(objectLabels.size() > 0);
         }

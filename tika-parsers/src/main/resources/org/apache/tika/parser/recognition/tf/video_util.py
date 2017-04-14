@@ -102,11 +102,3 @@ def get_n_frames(video_path, num_frame):
             
     return image_arr
 
-    
-    
-if __name__ == '__main__':
-    img_data = get_center_frame("/Users/sharan/Documents/workspace/data/prep_13-28-video.mp4")
-    
-#     with open("./img.jpg","w") as f:
-#         f.write(img_data)
-
