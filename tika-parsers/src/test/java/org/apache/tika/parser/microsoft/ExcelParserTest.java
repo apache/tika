@@ -267,44 +267,6 @@ public class ExcelParserTest extends TikaTest {
         }
     }
 
-    /**
-     * We don't currently support the .xlsb file format 
-     *  (an OOXML container with binary blobs), but we 
-     *  shouldn't break on these files either (TIKA-826)  
-     */
-    @Test
-    public void testExcelXLSB() throws Exception {
-        Detector detector = new DefaultDetector();
-        AutoDetectParser parser = new AutoDetectParser();
-
-        Metadata m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "excel.xlsb");
-
-        // Should be detected correctly
-        MediaType type;
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xlsb")) {
-            type = detector.detect(input, m);
-            assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
-        }
-
-        // OfficeParser won't handle it
-        assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
-
-        // OOXMLParser will (soon) handle it
-        assertTrue((new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
-
-        // AutoDetectParser doesn't break on it
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            parser.parse(input, handler, m, context);
-
-            String content = handler.toString();
-            assertEquals("", content);
-        }
-    }
 
     /**
      * Excel 5 and 95 are older formats, and only get basic support

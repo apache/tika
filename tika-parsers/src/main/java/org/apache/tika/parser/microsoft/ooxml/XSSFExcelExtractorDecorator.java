@@ -71,7 +71,6 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      * Allows access to headers/footers from raw xml strings
      */
     protected static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
-    private final XSSFEventBasedExcelExtractor extractor;
     protected final DataFormatter formatter;
     protected final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
     protected final Map<String, String> drawingHyperlinks = new HashMap<>();
@@ -84,15 +83,18 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         this.parseContext = context;
         this.extractor = (XSSFEventBasedExcelExtractor)extractor;
-        // not yet supported in POI-3.16-beta3
-        // this.extractor.setFormulasNotResults(false);
-        this.extractor.setLocale(locale);
+        configureExtractor(this.extractor, locale);
 
         if (locale == null) {
             formatter = new TikaExcelDataFormatter();
         } else {
             formatter = new TikaExcelDataFormatter(locale);
         }
+    }
+
+    protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
+        ((XSSFEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
+        ((XSSFEventBasedExcelExtractor)extractor).setLocale(locale);
     }
 
     @Override

@@ -74,6 +74,8 @@ public class OOXMLParser extends AbstractOfficeParser {
                     MediaType.application("vnd.ms-visio.drawing"),
                     MediaType.application("vnd.ms-xpsdocument"),
                     MediaType.parse("model/vnd.dwfx+xps")
+                          //  MediaType.application("x-tika-ooxml")
+
                     )));
     /**
      * We claim to support all OOXML files, but we actually don't support a small
@@ -82,10 +84,9 @@ public class OOXMLParser extends AbstractOfficeParser {
      * by Tika and/or POI.
      */
     protected static final Set<MediaType> UNSUPPORTED_OOXML_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    MediaType.application("vnd.ms-xpsdocument"),
-                    MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12")
-            )));
+            Collections.singleton(
+                    MediaType.application("vnd.ms-xpsdocument")
+            );
     /**
      * Serial version UID
      */

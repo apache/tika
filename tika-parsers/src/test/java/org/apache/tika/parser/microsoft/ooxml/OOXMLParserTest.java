@@ -27,7 +27,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
 import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -43,8 +42,9 @@ import java.util.Map;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -52,19 +52,21 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.microsoft.ExcelParserTest;
+import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -1430,10 +1432,43 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("until poi-3.16-beta3")
+    public void testExcelXLSB() throws Exception {
+        Detector detector = new DefaultDetector();
+        AutoDetectParser parser = new AutoDetectParser();
+
+        Metadata m = new Metadata();
+        m.add(Metadata.RESOURCE_NAME_KEY, "excel.xlsb");
+
+        // Should be detected correctly
+        MediaType type;
+        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL.xlsb")) {
+            type = detector.detect(input, m);
+            assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
+        }
+
+        // OfficeParser won't handle it
+        assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+
+        // OOXMLParser will (soon) handle it
+        assertTrue((new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+
+        // AutoDetectParser doesn't break on it
+        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            parser.parse(input, handler, m, context);
+
+            String content = handler.toString();
+            assertContains("This is an example spreadsheet", content);
+        }
+    }
+
+    @Test
     public void testXLSBVarious() throws Exception {
-        //make sure to turn MACROs on, after we turn them off by default
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
         ParseContext parseContext = new ParseContext();
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
         List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_various.xlsb", parseContext);
@@ -1473,22 +1508,8 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("OddLeftFooter OddCenterFooter OddRightFooter", xml);
         assertContains("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
         assertContains("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
-    }
 
-    @Test
-    public void testTruncated() throws Exception {
-        Parser p = new AutoDetectParser();
-        ContentHandler handler = new DefaultHandler();
-        Metadata metadata = new Metadata();
-        ParseContext parseContext = new ParseContext();
-        try (InputStream is = getTestDocument("testWORD_truncated.docx")) {
-            p.parse(is, handler, metadata, parseContext);
-            fail("should have thrown an EOF exception?!");
-        } catch (TikaException e) {
-            Throwable cause = e.getCause();
-            assertTrue(cause instanceof EOFException);
-            assertEquals("application/x-tika-ooxml", metadata.get(Metadata.CONTENT_TYPE));
-        }
+
     }
 
 }
