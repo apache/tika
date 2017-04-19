@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
@@ -70,27 +71,29 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      * Allows access to headers/footers from raw xml strings
      */
     private static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
-    private final XSSFEventBasedExcelExtractor extractor;
-    private final DataFormatter formatter;
-    private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
-    private final Map<String, String> drawingHyperlinks = new HashMap<>();
-    private Metadata metadata;
-    private ParseContext parseContext;
+    protected final DataFormatter formatter;
+    protected final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
+    protected final Map<String, String> drawingHyperlinks = new HashMap<>();
+    protected Metadata metadata;
+    protected ParseContext parseContext;
 
     public XSSFExcelExtractorDecorator(
-            ParseContext context, XSSFEventBasedExcelExtractor extractor, Locale locale) {
+            ParseContext context, POIXMLTextExtractor extractor, Locale locale) {
         super(context, extractor);
 
         this.parseContext = context;
-        this.extractor = extractor;
-        extractor.setFormulasNotResults(false);
-        extractor.setLocale(locale);
+        configureExtractor(extractor, locale);
 
         if (locale == null) {
             formatter = new TikaExcelDataFormatter();
         } else {
             formatter = new TikaExcelDataFormatter(locale);
         }
+    }
+
+    protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
+        ((XSSFEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
+        ((XSSFEventBasedExcelExtractor)extractor).setLocale(locale);
     }
 
     @Override
@@ -172,7 +175,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void addDrawingHyperLinks(PackagePart sheetPart) {
+    protected void addDrawingHyperLinks(PackagePart sheetPart) {
         try {
             for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
                 if (rel.getTargetMode() == TargetMode.INTERNAL) {
@@ -340,8 +343,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     protected static class SheetTextAsHTML implements SheetContentsHandler {
         private XHTMLContentHandler xhtml;
-        private List<String> headers;
-        private List<String> footers;
+        protected List<String> headers;
+        protected List<String> footers;
 
         protected SheetTextAsHTML(XHTMLContentHandler xhtml) {
             this.xhtml = xhtml;

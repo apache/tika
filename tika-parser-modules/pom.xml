@@ -35,7 +35,7 @@
   <url>http://tika.apache.org/</url>
   
   <properties>
-    <poi.version>3.16-beta2</poi.version>
+    <poi.version>3.16</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.10</codec.version>
     <pdfbox.version>2.0.5</pdfbox.version>

@@ -43,6 +43,8 @@ import java.util.Map;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -52,12 +54,15 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.microsoft.ExcelParserTest;
+import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
@@ -1428,6 +1433,84 @@ public class OOXMLParserTest extends TikaTest {
             assertTrue(cause instanceof EOFException);
             assertEquals("application/x-tika-ooxml", metadata.get(Metadata.CONTENT_TYPE));
         }
+    }
+
+    @Test
+    public void testExcelXLSB() throws Exception {
+        Detector detector = new DefaultDetector();
+        AutoDetectParser parser = new AutoDetectParser();
+
+        Metadata m = new Metadata();
+        m.add(Metadata.RESOURCE_NAME_KEY, "excel.xlsb");
+
+        // Should be detected correctly
+        MediaType type;
+        try (InputStream input = getTestDocument("testEXCEL.xlsb")) {
+            type = detector.detect(input, m);
+            assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
+        }
+
+        // OfficeParser won't handle it
+        assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+
+        // OOXMLParser will (soon) handle it
+        assertTrue((new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+
+        // AutoDetectParser doesn't break on it
+        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            parser.parse(input, handler, m, context);
+
+            String content = handler.toString();
+            assertContains("This is an example spreadsheet", content);
+        }
+    }
+
+    @Test
+    public void testXLSBVarious() throws Exception {
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_various.xlsb", parseContext);
+        assertEquals(4, metadataList.size());
+
+        String xml = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        assertContains("<td>13</td>", xml);
+        assertContains("<td>13.1211231321</td>", xml);
+        assertContains("<td>$   3.03</td>", xml);
+        assertContains("<td>20%</td>", xml);
+        assertContains("<td>13.12</td>", xml);
+        assertContains("<td>123456789012345</td>", xml);
+        assertContains("<td>1.23456789012345E+15</td>", xml);
+        assertContains("test comment2", xml);
+
+        assertContains("comment4 (end of row)", xml);
+
+
+        assertContains("<td>1/4</td>", xml);
+        assertContains("<td>3/9/17</td>", xml);
+        assertContains("<td>4</td>", xml);
+        assertContains("<td>2</td>", xml);
+
+        assertContains("<td>   46/1963</td>", xml);
+        assertContains("<td>  3/128</td>", xml);
+        assertContains("test textbox", xml);
+
+        assertContains("test WordArt", xml);
+
+        assertContains("<a href=\"http://lucene.apache.org/\">http://lucene.apache.org/</a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\">http://tika.apache.org/</a>", xml);
+
+        assertContains("OddLeftHeader OddCenterHeader OddRightHeader", xml);
+        assertContains("EvenLeftHeader EvenCenterHeader EvenRightHeader", xml);
+
+        assertContains("FirstPageLeftHeader FirstPageCenterHeader FirstPageRightHeader", xml);
+        assertContains("OddLeftFooter OddCenterFooter OddRightFooter", xml);
+        assertContains("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
+        assertContains("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
     }
 }
 

@@ -17,6 +17,13 @@ Release 2.0 - ???
 
 Release 1.15 -???
 
+  * Change default behavior to parse embedded documents even if the user
+    forgets to specify a Parser.class in the ParseContext (TIKA-2096).
+    Users who wish to parse only the container document should set
+    an EmptyParser as the Parser.class in the ParseContext.
+
+  * Add support for the XLSB format (TIKA-1195).
+
   * Change default behavior of Office Parsers to _not_ extract
     Macros.  User needs to setExtractMacros to "true" (TIKA-2302).
 
@@ -71,14 +78,9 @@ Release 1.15 -???
   * Added experimental SAX parser for .docx files. To select this parser,
     set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321).
 
-  * Change default behavior to parse embedded documents even if the user
-    forgets to specify a Parser.class in the ParseContext (TIKA-2096).
-    Users who wish to parse only the container document should set
-    an EmptyParser as the Parser.class in the ParseContext.
-
   * Add mime detection and parser for Word 2006ML format (TIKA-2179).
 
-  * Upgrade to POI 3.16-beta2 (TIKA-2116, TIKA-2181).
+  * Upgrade to POI 3.16 (TIKA-2116, TIKA-2181, TIKA-2329).
 
   * Allow configuration of timeout for ForkParser (TIKA-2170).
 
