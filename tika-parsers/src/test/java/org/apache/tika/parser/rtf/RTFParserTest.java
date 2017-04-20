@@ -35,6 +35,7 @@ import java.util.Set;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
@@ -522,6 +523,20 @@ public class RTFParserTest extends TikaTest {
         }
         //should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(2, tracker.filenames.size());
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        //test that memory allocation of the bin element is limited
+        //via the config file.  Unfortunately, this test file's bin embedding contains 10 bytes
+        //so we had to set the config to 0.
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/rtf/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testBinControlWord.rtf", p);
+        assertEquals(1, metadataList.size());
+        assertContains("TikaMemoryLimitException", metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
     private Result getResult(String filename) throws Exception {

@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -70,11 +71,13 @@ class RTFEmbObjHandler {
     private StringBuilder sb = new StringBuilder();
     private Metadata metadata;
     private EMB_STATE state = EMB_STATE.NADA;
+    private final int memoryLimitInKb;
 
-    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
+    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context, int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         os = new ByteArrayOutputStream();
+        this.memoryLimitInKb = memoryLimitInKb;
     }
 
     protected void startPict() {
@@ -145,8 +148,13 @@ class RTFEmbObjHandler {
     }
 
     protected void writeBytes(InputStream is, int len) throws IOException, TikaException {
-        if (len < 0 || len > RTFParser.getMaxBytesForEmbeddedObject()) {
-            throw new IOException("length of bytes to read out of bounds: " + len);
+        if (len < 0) {
+            throw new TikaException("Requesting I read < 0 bytes ?!");
+        }
+        if (len > memoryLimitInKb) {
+            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
+                    ") bytes), but maximum allowed is ("+memoryLimitInKb+")."+
+                    "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
         }
 
         byte[] bytes = new byte[len];
