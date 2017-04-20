@@ -29,6 +29,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
@@ -185,6 +186,7 @@ class RTFEmbObjHandler {
             if (filePath != null && filePath.length() > 0) {
                 metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, filePath);
                 metadata.set(Metadata.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
+                metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, filePath);
             }
             metadata.set(RTFMetadata.THUMBNAIL, Boolean.toString(inObject));
             extractObj(bytes, handler, metadata);
