@@ -39,7 +39,7 @@
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.10</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-    <tukaani.version>1.5</tukaani.version>
+    <tukaani.version>1.6</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.5</pdfbox.version>

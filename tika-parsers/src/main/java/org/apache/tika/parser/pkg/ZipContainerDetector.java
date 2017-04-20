@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,8 +35,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -51,8 +51,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -105,14 +103,8 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
-            CompressorStreamFactory factory = new CompressorStreamFactory();
-            CompressorInputStream cis = factory.createCompressorInputStream(
-                    new ByteArrayInputStream(prefix, 0, length));
-            try {
-                return CompressorParser.getMediaType(cis);
-            } finally {
-                IOUtils.closeQuietly(cis);
-            }
+            String type = TikaCompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            return CompressorParser.getMediaType(type);
         } catch (CompressorException e) {
             return MediaType.OCTET_STREAM;
         }

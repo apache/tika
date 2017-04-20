@@ -18,9 +18,11 @@ package org.apache.tika.parser.pkg;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
@@ -98,4 +100,24 @@ public class CompressParserTest extends AbstractPkgTest {
        // Tar file starts with the directory name
        assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, US_ASCII));
     }
+
+    @Test
+    public void testLZMAOOM() throws Exception {
+        try {
+            XMLResult r = getXML("testLZMA_oom");
+            fail("should have thrown TikaMemoryLimitException");
+        } catch (TikaMemoryLimitException e) {
+        }
+    }
+
+    @Test
+    public void testCompressOOM() throws Exception {
+        try {
+            XMLResult r = getXML("testZ_oom.Z");
+            fail("should have thrown TikaMemoryLimitException");
+        } catch (TikaMemoryLimitException e) {
+        }
+    }
+
+
 }
