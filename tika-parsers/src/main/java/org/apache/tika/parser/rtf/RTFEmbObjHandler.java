@@ -151,9 +151,9 @@ class RTFEmbObjHandler {
         if (len < 0) {
             throw new TikaException("Requesting I read < 0 bytes ?!");
         }
-        if (len > memoryLimitInKb) {
+        if (len > memoryLimitInKb*1024) {
             throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
-                    ") bytes), but maximum allowed is ("+memoryLimitInKb+")."+
+                    ") bytes), but maximum allowed is ("+(memoryLimitInKb*1024)+")."+
                     "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
         }
 
@@ -171,10 +171,9 @@ class RTFEmbObjHandler {
      */
     protected void handleCompletedObject() throws IOException, SAXException, TikaException {
 
-
         byte[] bytes = os.toByteArray();
         if (state == EMB_STATE.OBJDATA) {
-            RTFObjDataParser objParser = new RTFObjDataParser();
+            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb);
             try {
                 byte[] objBytes = objParser.parse(bytes, metadata, unknownFilenameCount);
                 extractObj(objBytes, handler, metadata);

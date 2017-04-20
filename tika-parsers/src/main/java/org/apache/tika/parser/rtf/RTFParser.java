@@ -83,7 +83,7 @@ public class RTFParser extends AbstractParser {
     }
 
     @Field
-    private int memoryLimitInKb = EMB_OBJ_MAX_BYTES;
+    private int memoryLimitInKb = EMB_OBJ_MAX_BYTES/1024;
 
     public void parse(
             InputStream stream, ContentHandler handler,
