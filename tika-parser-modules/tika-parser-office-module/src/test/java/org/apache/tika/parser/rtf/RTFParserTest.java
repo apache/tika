@@ -359,11 +359,11 @@ public class RTFParserTest extends TikaTest {
     // TIKA-999
     @Test
     public void testMetaDataCounts() throws Exception {
-        XMLResult xml = getXML("test_embedded_package.rtf");
+        XMLResult xml = getXML("testRTFWord2010CzechCharacters.rtf");
         assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
-        assertEquals("7", xml.metadata.get(Office.WORD_COUNT));
-        assertEquals("36", xml.metadata.get(Office.CHARACTER_COUNT));
-        assertTrue(xml.metadata.get(Office.CREATION_DATE).startsWith("2012-09-02T"));
+        assertEquals("70", xml.metadata.get(Office.WORD_COUNT));
+        assertEquals("401", xml.metadata.get(Office.CHARACTER_COUNT));
+        assertTrue(xml.metadata.get(Office.CREATION_DATE).startsWith("2010-10-13T"));
     }
 
     // TIKA-1192
