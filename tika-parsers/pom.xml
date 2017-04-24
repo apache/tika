@@ -171,6 +171,14 @@
       <artifactId>jempbox</artifactId>
       <version>${jempbox.version}</version>
     </dependency>
+    <!-- TIKA-2338: PDFBox declares the jai-imageio-core dependency
+         as optional, but we prefer to have it always to support
+         tiff and other image formats -->
+    <dependency>
+      <groupId>com.github.jai-imageio</groupId>
+      <artifactId>jai-imageio-core</artifactId>
+      <version>1.3.1</version>
+    </dependency>
     <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
          as optional, but we prefer to have them always to avoid
          problems with encrypted PDFs. -->
@@ -368,14 +376,8 @@
       <scope>test</scope>
     </dependency>
     <!-- Copied from PDFBox:
-    For legal reasons (incompatible license), jai-imageio-core is to be used
+    For legal reasons (incompatible license), jai-imageio-jpeg2000 is to be used
     only in the tests and may not be distributed. See also LEGAL-195 -->
-    <dependency>
-      <groupId>com.github.jai-imageio</groupId>
-      <artifactId>jai-imageio-core</artifactId>
-      <version>1.3.1</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.github.jai-imageio</groupId>
       <artifactId>jai-imageio-jpeg2000</artifactId>
