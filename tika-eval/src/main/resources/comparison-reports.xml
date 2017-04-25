@@ -69,7 +69,6 @@
             percent_exceptions_b double default 0.0);
         </sql>
         <sql>
-
             insert into exceptions_compared (mime_id_a, mime_id_b)
             select ma.mime_id, mb.mime_id
             from profiles_a a
@@ -135,12 +134,12 @@
             create table token_counts_compared
             (mime_id_a integer,
             mime_id_b integer,
-            num_tokens_a integer default 0,
-            num_tokens_b integer default 0,
-            num_alphabetic_tokens_a integer default 0,
-            num_alphabetic_tokens_b integer default 0,
-            num_common_tokens_a integer default 0,
-            num_common_tokens_b integer default 0,
+            num_tokens_a long default 0,
+            num_tokens_b long default 0,
+            num_alphabetic_tokens_a long default 0,
+            num_alphabetic_tokens_b long default 0,
+            num_common_tokens_a long default 0,
+            num_common_tokens_b long default 0,
             );
         </sql>
         <sql>
