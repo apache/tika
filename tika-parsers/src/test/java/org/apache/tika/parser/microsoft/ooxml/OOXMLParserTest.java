@@ -1467,6 +1467,9 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testXLSBVarious() throws Exception {
+        final Locale currentLocale = Locale.getDefault(); // Store current default locale so we can reset it afterwards
+        Locale.setDefault(Locale.ENGLISH);
+
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
         ParseContext parseContext = new ParseContext();
@@ -1509,7 +1512,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
         assertContains("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
 
-
+        Locale.setDefault(currentLocale);
     }
 
 }
