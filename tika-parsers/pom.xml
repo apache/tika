@@ -285,6 +285,13 @@
       <artifactId>cxf-rt-rs-client</artifactId>
       <version>${cxf.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+
     <!-- TIKA-2021: Tesseract OCR Parser dependencies, 
     used for executing image processing script -->
     <dependency>
@@ -313,6 +320,11 @@
       <artifactId>commons-io</artifactId>
       <version>${commons.io.version}</version>
     </dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.6</version>
+    </dependency>
 
     <dependency>
       <groupId>com.googlecode.json-simple</groupId>
@@ -336,6 +348,12 @@
       <artifactId>gson</artifactId>
       <version>2.2.4</version>
     </dependency>    
+
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>17.0</version>
+    </dependency>
 
     <!-- logging dependencies -->
     <dependency>
@@ -415,17 +433,20 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <!-- Instead of relying on transitive dependencies of edu.ucar:httpservices specify httcomponents directly,
+     it is not used by netCDF parsers exclusively. -->
     <dependency>
-      <groupId>edu.ucar</groupId>
-      <artifactId>httpservices</artifactId>
-      <version>${netcdf-java.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpcore</artifactId>
+      <version>4.2.5</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.2.6</version>
+    </dependency>
+
     <!-- Apache Commons CSV -->
     <dependency>
       <groupId>org.apache.commons</groupId>
