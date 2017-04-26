@@ -16,15 +16,6 @@
  */
 package org.apache.tika.detect;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
@@ -33,6 +24,13 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+
+import static org.junit.Assert.*;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
@@ -363,7 +361,8 @@ public class TestContainerAwareDetector {
 
     @Test
     public void testDetectTar() throws Exception {
-        assertTypeByData("test-documents_text_no-magic-bytes.tar", "application/x-tar");
+        assertTypeByData("test-tika2099_text.tar", "application/x-tar");
+        assertTypeByData("test-tika2099_PDF.tar", "application/x-tar");
     }
 
     @Test
