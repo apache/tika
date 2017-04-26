@@ -29,9 +29,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
@@ -112,20 +109,8 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectArchiveFormat(byte[] prefix, int length) {
         try {
-            ArchiveStreamFactory factory = new ArchiveStreamFactory();
-            ArchiveInputStream ais = factory.createArchiveInputStream(
-                    new ByteArrayInputStream(prefix, 0, length));
-            try {
-                if ((ais instanceof TarArchiveInputStream)
-                        && !TarArchiveInputStream.matches(prefix, length)) {
-                    // ArchiveStreamFactory is too relaxed, see COMPRESS-117
-                    return MediaType.OCTET_STREAM;
-                } else {
-                    return PackageParser.getMediaType(ais);
-                }
-            } finally {
-                IOUtils.closeQuietly(ais);
-            }
+            String name = TikaArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            return PackageParser.getMediaType(name);
         } catch (ArchiveException e) {
             return MediaType.OCTET_STREAM;
         }

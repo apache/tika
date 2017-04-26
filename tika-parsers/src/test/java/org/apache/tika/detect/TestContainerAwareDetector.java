@@ -362,6 +362,11 @@ public class TestContainerAwareDetector {
     }
 
     @Test
+    public void testTarWithNoMagic() throws Exception {
+        assertTypeByData("testTAR_no_magic.tar", "application/x-tar");
+    }
+
+    @Test
     public void testLZMAOOM() throws Exception {
         assertTypeByData("testLZMA_oom", "application/x-lzma");
     }

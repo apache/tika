@@ -79,13 +79,14 @@ public class PackageParser extends AbstractParser {
     private static final MediaType ZIP = MediaType.APPLICATION_ZIP;
     private static final MediaType JAR = MediaType.application("java-archive");
     private static final MediaType AR = MediaType.application("x-archive");
+    private static final MediaType ARJ = MediaType.application("x-arj");
     private static final MediaType CPIO = MediaType.application("x-cpio");
     private static final MediaType DUMP = MediaType.application("x-tika-unix-dump");
     private static final MediaType TAR = MediaType.application("x-tar");
     private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR, SEVENZ);
+            MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
 
     //this can't be static because of the ForkParser
     //lazily load this when parse is called if it is null.
@@ -93,6 +94,7 @@ public class PackageParser extends AbstractParser {
 
     private final Object lock = new Object[0];
 
+    @Deprecated
     static MediaType getMediaType(ArchiveInputStream stream) {
         if (stream instanceof JarArchiveInputStream) {
             return JAR;
@@ -113,6 +115,27 @@ public class PackageParser extends AbstractParser {
         }
     }
 
+    static MediaType getMediaType(String name) {
+        if (TikaArchiveStreamFactory.JAR.equals(name)) {
+            return JAR;
+        } else if (TikaArchiveStreamFactory.ZIP.equals(name)) {
+            return ZIP;
+        } else if (TikaArchiveStreamFactory.AR.equals(name)) {
+            return AR;
+        } else if (TikaArchiveStreamFactory.ARJ.equals(name)) {
+            return ARJ;
+        } else if (TikaArchiveStreamFactory.CPIO.equals(name)) {
+            return CPIO;
+        } else if (TikaArchiveStreamFactory.DUMP.equals(name)) {
+            return DUMP;
+        } else if (TikaArchiveStreamFactory.TAR.equals(name)) {
+            return TAR;
+        } else if (TikaArchiveStreamFactory.SEVEN_Z.equals(name)) {
+            return SEVENZ;
+        } else {
+            return MediaType.OCTET_STREAM;
+        }
+    }
     static boolean isZipArchive(MediaType type) {
         return type.equals(ZIP) || type.equals(JAR);
     }
