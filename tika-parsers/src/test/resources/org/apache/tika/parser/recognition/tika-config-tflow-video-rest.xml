@@ -24,8 +24,8 @@
                 <param name="topN" type="int">4</param>
                 <param name="minConfidence" type="double">0.015</param>
                 <param name="class" type="string">org.apache.tika.parser.recognition.tf.TensorflowRESTVideoRecogniser</param>
-                <param name="healthUri" type="uri">http://localhost:8764/inception/v3/ping</param>
-                <param name="apiUri" type="uri">http://localhost:8764/inception/v3/classify/video?mode=fixed</param>
+                <param name="healthUri" type="uri">http://localhost:8764/inception/v4/ping</param>
+                <param name="apiUri" type="uri">http://localhost:8764/inception/v4/classify/video?mode=fixed</param>
             </params>
         </parser>
     </parsers>
