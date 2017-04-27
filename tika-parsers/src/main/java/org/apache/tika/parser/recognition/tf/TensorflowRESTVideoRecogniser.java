@@ -50,7 +50,7 @@ public class TensorflowRESTVideoRecogniser extends TensorflowRESTRecogniser{
 	private static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.video("mp4"));;
 
     @Field
-    private URI apiUri = URI.create("http://localhost:8764/inception/v3/classify/video?topk=10");
+    private URI apiUri = URI.create("http://localhost:8764/inception/v4/classify/video?topk=10");
 
     @Override
     public Set<MediaType> getSupportedMimes() {
