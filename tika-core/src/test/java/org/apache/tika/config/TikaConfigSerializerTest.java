@@ -41,6 +41,15 @@ public class TikaConfigSerializerTest extends TikaConfigTest {
     }
 
     @Test
+    public void testEncodingDetectors() throws Exception {
+        String xml = loadAndSerialize("TIKA-1762-executors.xml",
+                TikaConfigSerializer.Mode.STATIC);
+        assertContains("<encodingDetectors> " +
+                "<encodingDetector class=\"org.apache.tika.detect.NonDetectingEncodingDetector\"/> " +
+                "</encodingDetectors>", xml);
+    }
+
+    @Test
     @Ignore("TODO: executor-service info needs to be stored in TikaConfig for serialization")
     public void testExecutors() throws Exception {
         String xml = loadAndSerialize("TIKA-1762-executors.xml",
