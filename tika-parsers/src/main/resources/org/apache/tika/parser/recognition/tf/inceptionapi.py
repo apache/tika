@@ -320,7 +320,7 @@ def index():
                 </td></tr>
                 </table>
             </li>
-            <li> <code>/inception/v3/classify/video</code> - <br/>
+            <li> <code>/inception/v4/classify/video</code> - <br/>
                 <table>
                 <tr><th align="left"> Description </th><td> This is a classifier service that can classify videos</td></tr>
                 <tr><td></td> <td>Query Params : <br/>
@@ -337,12 +337,12 @@ def index():
                 <tr><th align="left"> How to supply Video Content </th></tr>
                 <tr><th align="left"> With HTTP GET : </th> <td>
                     Include a query parameter <code>url </code> which is path on file system <br/>
-                    Example: <code> curl "localhost:8764/inception/v3/classify/video?url=filesystem/path/to/video"</code><br/>
+                    Example: <code> curl "localhost:8764/inception/v4/classify/video?url=filesystem/path/to/video"</code><br/>
                 </td></tr><br/>
                 <tr><th align="left"> With HTTP POST :</th><td>
                     POST video content as binary data in request body. If video can be decoded by OpenCV it should be fine. It's tested on mp4 and avi on mac <br/>
                     Include a query parameter <code>ext </code>this extension is needed to tell OpenCV which decoder to use, default is ".mp4" </br>
-                    Example: <code> curl -X POST "localhost:8764/inception/v3/classify?topk=10&human=false" --data-binary @example.mp4 </code>
+                    Example: <code> curl -X POST "localhost:8764/inception/v4/classify/video?topk=10&human=false" --data-binary @example.mp4 </code>
                 </td></tr>
                 </table>
             </li>
