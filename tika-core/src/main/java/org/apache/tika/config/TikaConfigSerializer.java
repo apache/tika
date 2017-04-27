@@ -16,19 +16,20 @@
  */
 package org.apache.tika.config;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
@@ -102,7 +103,11 @@ public class TikaConfigSerializer {
     }
 
     private static void addExecutorService(Mode mode, Element rootElement, Document doc, TikaConfig config) {
+        ExecutorService executor = config.getExecutorService();
+        
         // TODO Implement the reverse of ExecutorServiceXmlLoader
+        // TODO Make it possible to detect if we have the default executor
+        // TODO Make it possible to get the current values from ConfigurableThreadPoolExecutor
     }
 
     private static void addServiceLoader(Mode mode, Element rootElement, Document doc, TikaConfig config) {
