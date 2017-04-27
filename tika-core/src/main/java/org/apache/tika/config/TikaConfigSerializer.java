@@ -22,6 +22,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -30,8 +31,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.mime.MediaType;
@@ -79,6 +83,7 @@ public class TikaConfigSerializer {
         addMimeComment(mode, rootElement, doc);
         addServiceLoader(mode, rootElement, doc, config);
         addExecutorService(mode, rootElement, doc, config);
+        addEncodingDetectors(mode, rootElement, doc, config);
         addTranslator(mode, rootElement, doc, config);
         addDetectors(mode, rootElement, doc, config);
         addParsers(mode, rootElement, doc, config);
@@ -97,7 +102,7 @@ public class TikaConfigSerializer {
     }
 
     private static void addExecutorService(Mode mode, Element rootElement, Document doc, TikaConfig config) {
-        //TODO
+        // TODO Implement the reverse of ExecutorServiceXmlLoader
     }
 
     private static void addServiceLoader(Mode mode, Element rootElement, Document doc, TikaConfig config) {
@@ -144,6 +149,35 @@ public class TikaConfigSerializer {
         Node mimeComment = doc.createComment(
                 "for example: <mimeTypeRepository resource=\"/org/apache/tika/mime/tika-mimetypes.xml\"/>");
         rootElement.appendChild(mimeComment);
+    }
+
+    private static void addEncodingDetectors(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
+        EncodingDetector encDetector = config.getEncodingDetector();
+
+        if (mode == Mode.MINIMAL && encDetector instanceof DefaultEncodingDetector) {
+            // Don't output anything, all using defaults
+            Node detComment = doc.createComment(
+                    "for example: <encodingDetectors><encodingDetector class=\""
+                    + "org.apache.tika.detect.DefaultEncodingDetector\"></encodingDetectors>");
+            rootElement.appendChild(detComment);
+            return;
+        }
+
+        Element encDetectorsElement = doc.createElement("encodingDetectors");
+        if (mode == Mode.CURRENT && encDetector instanceof DefaultEncodingDetector ||
+                ! (encDetector instanceof CompositeEncodingDetector)) {
+            Element encDetectorElement = doc.createElement("encodingDetector");
+            encDetectorElement.setAttribute("class", encDetector.getClass().getCanonicalName());
+            encDetectorsElement.appendChild(encDetectorElement);
+        } else {
+            List<EncodingDetector> children = ((CompositeEncodingDetector)encDetector).getDetectors();
+            for (EncodingDetector d : children) {
+                Element encDetectorElement = doc.createElement("encodingDetector");
+                encDetectorElement.setAttribute("class", d.getClass().getCanonicalName());
+                encDetectorsElement.appendChild(encDetectorElement);
+            }
+        }
+        rootElement.appendChild(encDetectorsElement);
     }
 
     private static void addDetectors(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
