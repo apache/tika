@@ -91,8 +91,8 @@ public class OOXMLExtractorFactory {
 
             // Have the appropriate OOXML text extractor picked
             POIXMLTextExtractor poiExtractor = null;
-            //This has already been set by OOXMLParser's call to configure()
-            //We can rely on this being non-null.
+            // This has already been set by OOXMLParser's call to configure()
+            // We can rely on this being non-null.
             OfficeParserConfig config = context.get(OfficeParserConfig.class);
             if (config.getUseSAXDocxExtractor()) {
                 poiExtractor = trySXWPF(pkg);
@@ -107,7 +107,6 @@ public class OOXMLExtractorFactory {
             POIXMLDocument document = poiExtractor.getDocument();
             if (poiExtractor instanceof XSSFBEventBasedExcelExtractor) {
                 extractor = new XSSFBExcelExtractorDecorator(context, poiExtractor, locale);
-
             } else if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
                 extractor = new XSSFExcelExtractorDecorator(
                         context, poiExtractor, locale);

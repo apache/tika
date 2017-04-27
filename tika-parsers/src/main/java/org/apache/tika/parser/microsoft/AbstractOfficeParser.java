@@ -67,6 +67,11 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     public void setIncludeMoveFromContent(boolean includeMoveFromContent) {
         defaultOfficeParserConfig.setIncludeMoveFromContent(includeMoveFromContent);
     }
+    
+    @Field
+    public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
+        defaultOfficeParserConfig.setIncludeShapeBasedContent(includeShapeBasedContent);
+    }
 
     @Field
     public void setUseSAXDocxExtractor(boolean useSAXDocxExtractor) {

@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -29,6 +30,10 @@ public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
 
     public POIXMLTextExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor) {
         super(context, extractor);
+        
+        if (extractor instanceof XSSFExcelExtractor) {
+            ((XSSFExcelExtractor)extractor).setIncludeTextBoxes(config.getIncludeShapeBasedContent());
+        }
     }
 
     @Override

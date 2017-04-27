@@ -93,6 +93,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
+        ((XSSFEventBasedExcelExtractor)extractor).setIncludeTextBoxes(config.getIncludeShapeBasedContent());
         ((XSSFEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
         ((XSSFEventBasedExcelExtractor)extractor).setLocale(locale);
     }
@@ -163,8 +164,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             for (String footer : sheetExtractor.footers) {
                 extractHeaderFooter(footer, xhtml);
             }
-            List<XSSFShape> shapes = iter.getShapes();
-            processShapes(shapes, xhtml);
+            
+            // Do text held in shapes, if required
+            if (config.getIncludeShapeBasedContent()) {
+                List<XSSFShape> shapes = iter.getShapes();
+                processShapes(shapes, xhtml);
+            }
 
             //for now dump sheet hyperlinks at bottom of page
             //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes

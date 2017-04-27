@@ -93,12 +93,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
     private final ParseContext context;
+    protected OfficeParserConfig config;
     protected POIXMLTextExtractor extractor;
 
     public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor) {
         this.context = context;
         this.extractor = extractor;
         embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        
+        // This has already been set by OOXMLParser's call to configure()
+        // We can rely on this being non-null.
+        this.config = context.get(OfficeParserConfig.class);
     }
 
     /**
