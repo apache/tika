@@ -21,6 +21,15 @@ import sys
 import ntpath
 import numpy as np
 
+print "cv2.__version__", cv2.__version__
+
+CV_FRAME_COUNT = None
+
+if hasattr(cv2,"cv"):
+    CV_FRAME_COUNT = cv2.cv.CV_CAP_PROP_FRAME_COUNT
+else:
+    CV_FRAME_COUNT = cv2.CAP_PROP_FRAME_COUNT
+
 def _get_image_from_array(image_array):
     #JPG to support tensorflow
     byte_arr = cv2.imencode(".jpg", image_array )[1]
@@ -40,7 +49,7 @@ def get_center_frame(video_path):
     """
     cap = cv2.VideoCapture(video_path)
     
-    length = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+    length = int(cap.get(CV_FRAME_COUNT))
     
     success,image = cap.read()
     count = 0
@@ -59,7 +68,7 @@ def get_frames_interval(video_path, frame_interval):
     """
     cap = cv2.VideoCapture(video_path)
     
-    length = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+    length = int(cap.get(CV_FRAME_COUNT))
     
     success,image = cap.read()
     count = 0
@@ -83,7 +92,7 @@ def get_n_frames(video_path, num_frame):
     """
     cap = cv2.VideoCapture(video_path)
     
-    length = int(cap.get(cv2.cv.CV_CAP_PROP_FRAME_COUNT))
+    length = int(cap.get(CV_FRAME_COUNT))
     
     op_frame_idx = set(np.linspace(0, length - 2, num_frame, dtype=int)) 
     
