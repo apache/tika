@@ -257,15 +257,9 @@ class Classifier(flask.Flask):
         sorted_inds = [i[0] for i in sorted(
             enumerate(-eval_probabilities), key=lambda x:x[1])]
 
-    def classify(self, image_data, topk):
-        predictions = self.sess.run(self.softmax_tensor,
-                                    {'DecodeJpeg/contents:0': image_data})
-        predictions = np.squeeze(predictions)
+        if topk == None:
+            topk = len(sorted_inds)
         
-        if topk:
-            top_k = predictions.argsort()[-topk:][::-1]
-        else :
-            top_k = predictions.argsort()
         res = []
         for i in range(topk):
             index = sorted_inds[i]
@@ -468,7 +462,7 @@ def classify_video():
     classes = []
     for image_data in image_data_arr:
         try:
-            _classes = app.classify(image_data=image_data , topk=None)
+            _classes = app.classify(image_data , topk=None)
         except Exception as e:
             app.logger.error(e)
             return Response(status=400, response=str(e))
