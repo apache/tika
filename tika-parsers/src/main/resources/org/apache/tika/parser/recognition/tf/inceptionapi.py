@@ -38,6 +38,12 @@ import re
 import sys
 import tarfile
 
+try:
+    #This import is placed inside here to ensure that video_util and OpenCV is not required for image recognition APIs
+    from video_util import get_center_frame, get_frames_interval, get_n_frames
+except:
+    print("Can't import video libraries, No video functionality is available")
+    
 import numpy as np
 from six.moves import urllib
 import tensorflow as tf
@@ -404,7 +410,7 @@ FIXED = "fixed"
 
 ALLOWED_MODE = set([CENTER ,INTERVAL , FIXED])
 
-@app.route("/inception/v3/classify/video", methods=["GET", "POST"])
+@app.route("/inception/v4/classify/video", methods=["GET", "POST"])
 def classify_video():
     """
     API to classify videos
@@ -421,9 +427,6 @@ def classify_video():
      
      ext - If video is sent in binary format, then ext is needed to tell OpenCV which decoder to use. eg ".mp4"
     """
-    #This import is placed here to ensure that video_util and OpenCV is not required for image recognition APIs
-    #It will be imported only once during first API call and so first call could be slow
-    from video_util import get_center_frame, get_frames_interval, get_n_frames
 
     st = current_time()
     topk = int(request.args.get("topk", "10"))
