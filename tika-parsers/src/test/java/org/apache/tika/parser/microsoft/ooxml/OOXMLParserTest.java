@@ -966,6 +966,20 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("This text is inside of a text box in the footer of the document.", xml);
     }
 
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtraction() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_text_box.docx", pc).xml;
+        assertContains("This text is directly in the body of the document.", xml);
+        assertNotContained("This text is inside of a text box in the body of the document.", xml);
+        assertNotContained("This text is inside of a text box in the header of the document.", xml);
+        assertNotContained("This text is inside of a text box in the footer of the document.", xml);
+    }
+
     // TIKA-1032:
     @Test
     public void testEmbeddedPPTXTwoSlides() throws Exception {
@@ -1001,6 +1015,18 @@ public class OOXMLParserTest extends TikaTest {
     public void testExcelTextBox() throws Exception {
         XMLResult r = getXML("testEXCEL_textbox.xlsx", parser);
         assertContains("some autoshape", r.xml);
+    }
+
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtractionExcel() throws Exception {
+
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testEXCEL_textbox.xlsx", pc).xml;
+        assertNotContained("autoshape", xml);
     }
 
     //TIKA-792; with room for future missing bean tests

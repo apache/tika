@@ -504,6 +504,21 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("This text is inside of a text box in the footer of the document.", xml);
     }
 
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtraction() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        officeParserConfig.setUseSAXDocxExtractor(true);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_text_box.docx", pc).xml;
+        assertContains("This text is directly in the body of the document.", xml);
+        assertNotContained("This text is inside of a text box in the body of the document.", xml);
+        assertNotContained("This text is inside of a text box in the header of the document.", xml);
+        assertNotContained("This text is inside of a text box in the footer of the document.", xml);
+    }
+
     /**
      * Test for missing text described in
      * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.

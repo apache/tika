@@ -183,7 +183,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
-                                            config), linkedRelationships))));
+                                            config), linkedRelationships, config.getIncludeShapeBasedContent()))));
         } catch (TikaException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));

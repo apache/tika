@@ -472,4 +472,20 @@ public class ExcelParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testTextBox() throws Exception {
+        String xml = getXML("testEXCEL_textbox.xls").xml;
+        assertContains("autoshape", xml);
+    }
+
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtractionExcel() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testEXCEL_textbox.xls", pc).xml;
+        assertNotContained("autoshape", xml);
+    }
 }
