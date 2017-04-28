@@ -84,6 +84,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private boolean curStrikeThrough;
     private boolean curBold;
     private boolean curItalic;
+    private boolean curUnderline;
 
     private final Metadata metadata;
 
@@ -372,20 +373,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             }
         }
 
-        // Close any still open style tags
-        if (curStrikeThrough) {
-            xhtml.endElement("s");
-            curStrikeThrough = false;
-        }
-        if (curItalic) {
-            xhtml.endElement("i");
-            curItalic = false;
-        }
-        if (curBold) {
-            xhtml.endElement("b");
-            curBold = false;
-        }
-
+        closeStyleElements(false, xhtml);
+        
         xhtml.endElement(tas.getTag());
 
         return 0;
@@ -399,7 +388,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         if (!skipStyling) {
             if (cr.isBold() != curBold) {
-                // Enforce nesting -- must close s and i tags
+                // Enforce nesting -- must close u, s and i tags
+                if (curUnderline) {
+                    xhtml.endElement("u");
+                    curUnderline = false;
+                }
                 if (curStrikeThrough) {
                     xhtml.endElement("s");
                     curStrikeThrough = false;
@@ -417,7 +410,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             }
 
             if (cr.isItalic() != curItalic) {
-                // Enforce nesting -- must close s tag
+                // Enforce nesting -- must close u and s tag
+            	if (curUnderline) {
+            		xhtml.endElement("u");
+            		curUnderline = false;
+            	}
                 if (curStrikeThrough) {
                     xhtml.endElement("s");
                     curStrikeThrough = false;
@@ -431,12 +428,27 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             }
 
             if (cr.isStrikeThrough() != curStrikeThrough) {
+                // Enforce nesting -- must close u tag
+                if (curUnderline) {
+                    xhtml.endElement("u");
+                    curUnderline = false;
+                }
                 if (cr.isStrikeThrough()) {
                     xhtml.startElement("s");
                 } else {
                     xhtml.endElement("s");
                 }
                 curStrikeThrough = cr.isStrikeThrough();
+            }
+            
+            boolean isUnderline = cr.getUnderlineCode() != 0;
+            if (isUnderline != curUnderline) {
+                if (isUnderline) {
+                    xhtml.startElement("u");
+                } else {
+                    xhtml.endElement("u");
+                }
+                curUnderline = isUnderline;
             }
         }
 
@@ -545,6 +557,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private void closeStyleElements(boolean skipStyling, XHTMLContentHandler xhtml) throws SAXException {
         if (skipStyling) {
             return;
+        }
+        if (curUnderline) {
+        	xhtml.endElement("u");
+        	curUnderline = false;
         }
         if (curStrikeThrough) {
             xhtml.endElement("s");

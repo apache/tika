@@ -33,6 +33,7 @@ import org.apache.poi.xwpf.usermodel.IBodyElement;
 import org.apache.poi.xwpf.usermodel.ICell;
 import org.apache.poi.xwpf.usermodel.IRunElement;
 import org.apache.poi.xwpf.usermodel.ISDTContent;
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
@@ -224,7 +225,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("a");
         }
 
-        TmpFormatting fmtg = new TmpFormatting(false, false);
+        TmpFormatting fmtg = new TmpFormatting(false, false, false);
 
         //hyperlinks may or may not have hyperlink ids
         String lastHyperlinkId = null;
@@ -328,6 +329,10 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("b");
             fmtg.setBold(false);
         }
+        if (fmtg.isUnderline()) {
+        	xhtml.endElement("u");
+        	fmtg.setUnderline(false);
+        }
         return fmtg;
     }
 
@@ -336,6 +341,10 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             throws SAXException, XmlException, IOException {
         // True if we are currently in the named style tag:
         if (run.isBold() != tfmtg.isBold()) {
+            if (tfmtg.isUnderline()) {
+                xhtml.endElement("u");
+                tfmtg.setUnderline(false);
+            }
             if (tfmtg.isItalic()) {
                 xhtml.endElement("i");
                 tfmtg.setItalic(false);
@@ -349,12 +358,26 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         if (run.isItalic() != tfmtg.isItalic()) {
+            if (tfmtg.isUnderline()) {
+                xhtml.endElement("u");
+                tfmtg.setUnderline(false);
+            }
             if (run.isItalic()) {
                 xhtml.startElement("i");
             } else {
                 xhtml.endElement("i");
             }
             tfmtg.setItalic(run.isItalic());
+        }
+        
+        boolean isUnderline = run.getUnderline() != UnderlinePatterns.NONE;
+        if (isUnderline != tfmtg.isUnderline()) {
+            if (isUnderline) {
+                xhtml.startElement("u");
+            } else {
+                xhtml.endElement("u");
+            }
+            tfmtg.setUnderline(isUnderline);
         }
 
         xhtml.characters(run.toString());
@@ -484,10 +507,12 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private class TmpFormatting {
         private boolean bold = false;
         private boolean italic = false;
+        private boolean underline = false;
 
-        private TmpFormatting(boolean bold, boolean italic) {
+        private TmpFormatting(boolean bold, boolean italic, boolean underline) {
             this.bold = bold;
             this.italic = italic;
+            this.underline = underline;
         }
 
         public boolean isBold() {
@@ -504,6 +529,15 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
         public void setItalic(boolean italic) {
             this.italic = italic;
+        }
+        
+
+        public boolean isUnderline() {
+            return underline;
+        }
+
+        public void setUnderline(boolean underline) {
+            this.underline = underline;
         }
 
     }
