@@ -14,19 +14,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM ubuntu
+FROM ubuntu:15.04
 
 MAINTAINER Thamme Gowda <thammegowda@apache.org> and Kranthi Kiran GV <kkranthi@student.nitw.ac.in>
 
-# Install anaconda
-FROM continuumio/miniconda
-
 # Install missing part of ubuntu core + python stuff
 RUN apt-get update && \
-    apt-get install -y python-pip python-dev wget libtcmalloc-minimal4 git unzip software-properties-common
+    apt-get install -y python-pip python-dev wget libtcmalloc-minimal4 git unzip software-properties-common apt-utils
 
-#Install ffmpeg for video support
-RUN conda install -c menpo ffmpeg=3.1.3
+#Install ffmpeg for video support 
+RUN apt-get -y install libavcodec-dev libavformat-dev ffmpeg
+# To let opencv find ffmpeg/avformat.h
+RUN mkdir /usr/include/ffmpeg
+WORKDIR /usr/include/ffmpeg
+RUN ln -sf /usr/include/libavcodec/*.h ./
+RUN ln -sf /usr/include/libavformat/*.h ./
+RUN ln -sf /usr/include/libswscale/*.h ./
+   
+# Install miniconda
+RUN apt-get update && \
+    apt-get install -y wget bzip2 ca-certificates libmysqlclient-dev && \
+        rm -rf /var/lib/apt/lists/*
+ 
+        RUN  wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.11-Linux-x86_64.sh -O miniconda.sh && \
+            /bin/bash miniconda.sh -b -p /opt/conda && \
+                rm miniconda.sh
+ 
+                ENV PATH /opt/conda/bin:$PATH
+                RUN pip install --upgrade pip
+
 
 # build opencv with ffmpeg
 WORKDIR /opt
@@ -36,8 +52,7 @@ RUN git clone https://github.com/menpo/conda-opencv3
 WORKDIR conda-opencv3
 RUN conda config --add channels menpo
 # Enable ffmpeg
-RUN sed s/DWITH_FFMPEG=0/DWITH_FFMPEG=1/ < conda/build.sh > conda/build.sh_
-RUN mv conda/build.sh_ conda/build.sh
+RUN sed -i.bak "s/DWITH_FFMPEG=0/DWITH_FFMPEG=1/" conda/build.sh 
 # Remove cmake dependency as it's downloaded
 RUN sed -i.bak '/cmake/d' conda/meta.yaml
 RUN conda build conda/
