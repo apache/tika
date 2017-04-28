@@ -29,6 +29,7 @@ import java.util.Locale;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -109,7 +110,7 @@ public class WordParserTest extends TikaTest {
         assertTrue(xml.contains("<td>"));
         // TODO - Check for the nested table
         // Links
-        assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
+        assertTrue(xml.contains("<a href=\"http://tika.apache.org/\"><u>Tika</u></a>"));
         // Paragraphs with other styles
         assertTrue(xml.contains("<p class=\"signature\">This one"));
 
@@ -194,6 +195,17 @@ public class WordParserTest extends TikaTest {
             assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
             assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         }
+    }
+    
+    @Test
+    public void testTextDecoration() throws Exception {
+      XMLResult result = getXML("testWORD_various.doc");
+      String xml = result.xml;
+
+      assertTrue(xml.contains("<b>Bold</b>"));
+      assertTrue(xml.contains("<i>italic</i>"));
+      assertTrue(xml.contains("<u>underline</u>"));
+
     }
 
     //TIKA-2346
@@ -383,15 +395,15 @@ public class WordParserTest extends TikaTest {
         assertFalse(xml.contains("HYPERLINK"));
 
         // Check we do have the link
-        assertContains("<a href=\"http://tw-systemhaus.de\">http:", xml);
+        assertContains("<a href=\"http://tw-systemhaus.de\"><u>http:", xml);
 
         // Check we do have the email
-        assertContains("<a href=\"mailto:ab@example.com\">ab@", xml);
+        assertContains("<a href=\"mailto:ab@example.com\"><u>ab@", xml);
     }
 
     @Test
     public void testControlCharacter() throws Exception {
-        assertContains("1. Introduzione<b> </b></a> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
+        assertContains("<u>1.</u> <u>Introduzione</u><b> </b></a><u> </u></p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
     }
 
     @Test
@@ -405,7 +417,7 @@ public class WordParserTest extends TikaTest {
                 "application/msword",
                 metadata.get(Metadata.CONTENT_TYPE));
 
-        assertContains("<p>1. Organisering av vakten:</p>", xml);
+        assertContains("<p><u>1. Organisering av vakten:</u></p>", xml);
 
     }
 
@@ -543,8 +555,8 @@ public class WordParserTest extends TikaTest {
         //TIKA-1255
         String xml = getXML("testWORD_boldHyperlink.doc").xml;
         xml = xml.replaceAll("\\s+", " ");
-        assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
-        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold" , xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><u>hyper </u><b><u>link</u></b></a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b><u>hyper</u></b><u> link</u></a>; bold" , xml);
     }
 
     @Test
