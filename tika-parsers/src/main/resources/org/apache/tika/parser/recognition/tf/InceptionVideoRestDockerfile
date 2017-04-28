@@ -61,7 +61,7 @@ RUN unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip
 
 RUN \
   wget https://raw.githubusercontent.com/smadha/tika/TIKA-2322/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
-  wget https://raw.githubusercontent.com/smadha/smadha.github.io/master/video_util.py?ver=5 -O /usr/bin/video_util.py && \
+  wget https://raw.githubusercontent.com/smadha/tika/TIKA-2322/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py -O /usr/bin/video_util.py && \
   chmod +x /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/video_util.py
   
