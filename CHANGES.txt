@@ -1,5 +1,8 @@
 Release 1.15 - ??
 
+  * Tika now has the ability to automatically detect objects in videos,
+    using OpenCV and Tensorflow (TIKA-2322).
+
   * Change default behavior to parse embedded documents even if the user
     forgets to specify a Parser.class in the ParseContext (TIKA-2096).
     Users who wish to parse only the container document should set
