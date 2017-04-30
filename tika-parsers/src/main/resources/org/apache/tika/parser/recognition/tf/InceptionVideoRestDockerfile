@@ -14,54 +14,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM ubuntu:15.04
 
-MAINTAINER Thamme Gowda <thammegowda@apache.org> and Kranthi Kiran GV <kkranthi@student.nitw.ac.in>
+# Take base as Ubuntu: 16.04, then you can simply apt-get install ffmpeg
+FROM ubuntu:16.04
+MAINTAINER Thamme Gowda <thammegowda@apache.org> and Kranthi Kiran GV <kkranthi@student.nitw.ac.in> and \
+           Madhav Sharan <msharan@usc.edu> and Chris Mattmann <mattmann@apache.org>
 
-# Install missing part of ubuntu core + python stuff
 RUN apt-get update && \
-    apt-get install -y python-pip python-dev wget libtcmalloc-minimal4 git unzip software-properties-common apt-utils
-
-#Install ffmpeg for video support 
-RUN apt-get -y install libavcodec-dev libavformat-dev ffmpeg
-# To let opencv find ffmpeg/avformat.h
-RUN mkdir /usr/include/ffmpeg
-WORKDIR /usr/include/ffmpeg
-RUN ln -sf /usr/include/libavcodec/*.h ./
-RUN ln -sf /usr/include/libavformat/*.h ./
-RUN ln -sf /usr/include/libswscale/*.h ./
-   
-# Install miniconda
-RUN apt-get update && \
-    apt-get install -y wget bzip2 ca-certificates libmysqlclient-dev && \
-        rm -rf /var/lib/apt/lists/*
- 
-        RUN  wget --quiet https://repo.continuum.io/miniconda/Miniconda2-4.3.11-Linux-x86_64.sh -O miniconda.sh && \
-            /bin/bash miniconda.sh -b -p /opt/conda && \
-                rm miniconda.sh
- 
-                ENV PATH /opt/conda/bin:$PATH
-                RUN pip install --upgrade pip
+      apt-get install -y wget && \
+      apt-get install -y unzip && \
+      apt-get install -y curl
 
 
-# build opencv with ffmpeg
-WORKDIR /opt
-RUN conda install conda-build
-RUN conda install cmake
-RUN git clone https://github.com/menpo/conda-opencv3
-WORKDIR conda-opencv3
-RUN conda config --add channels menpo
-# Enable ffmpeg
-RUN sed -i.bak "s/DWITH_FFMPEG=0/DWITH_FFMPEG=1/" conda/build.sh 
-# Remove cmake dependency as it's downloaded
-RUN sed -i.bak '/cmake/d' conda/meta.yaml
-RUN conda build conda/
-RUN conda install /opt/conda/conda-bld/linux-64/opencv3-3.1.0-py27_0.tar.bz2 
+# Install ffmpeg
+RUN apt-get install -y ffmpeg
 
-#changing workdir to what it was before opencv
+# Dependencies
+RUN apt-get install -y build-essential cmake pkg-config \
+      libjpeg8-dev libtiff5-dev libjasper-dev libpng12-dev \
+      libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
+      libxvidcore-dev libx264-dev \
+      libgtk2.0-dev \
+      libatlas-base-dev gfortran \
+      python2.7-dev \
+      python-pip
+RUN \
+      pip install --upgrade pip && \
+      pip install numpy
+
+WORKDIR /usr/local/src
+
+# Download OpenCV 3 + Contrib
+RUN \ 
+      wget -O opencv.zip https://github.com/Itseez/opencv/archive/3.2.0.zip && \
+      unzip opencv.zip && \
+      wget -O opencv_contrib.zip https://github.com/Itseez/opencv_contrib/archive/3.2.0.zip && \
+      unzip opencv_contrib.zip
+
+# Build + Install OpenCV
+RUN mkdir -p opencv-3.2.0/build
+WORKDIR /usr/local/src/opencv-3.2.0/build
+RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
+      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D INSTALL_PYTHON_EXAMPLES=ON \
+      -D INSTALL_C_EXAMPLES=OFF \
+      -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-3.2.0/modules \
+      -D BUILD_EXAMPLES=ON ..
+RUN make -j4 
+RUN make install
+
 WORKDIR /
-
-RUN conda update setuptools
 
 # Install tensorflow and other dependencies
 RUN \
