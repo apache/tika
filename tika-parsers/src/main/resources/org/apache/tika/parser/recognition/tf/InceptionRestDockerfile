@@ -33,7 +33,7 @@ RUN wget https://github.com/tensorflow/models/archive/c15fada28113eca32dc98d6e3b
 	unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip 
 
 RUN \
-  wget https://raw.githubusercontent.com/apache/tika/TIKA-2306/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/inceptionapi.py
 
 # clean up cache, so we can publish smaller image to hub
