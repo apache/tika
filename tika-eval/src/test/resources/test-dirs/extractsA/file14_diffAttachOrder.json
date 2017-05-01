@@ -1,0 +1,18 @@
+[{
+  "Content-Type":"text/plain",
+  "X-TIKA:content":"the quick brown fox fox fox jumped over the lazy lazy dog"
+},
+  {
+    "Content-Type":"text/plain",
+    "X-TIKA:embedded_resource_path":"/0",
+    "X-TIKA:content":"a b c d",
+    "X-TIKA:digest:MD5":"471d98383e9f40444e5ecf821f2c8354"
+  },
+  {
+    "Content-Type":"text/plain",
+    "X-TIKA:embedded_resource_path":"/1",
+    "X-TIKA:content":"e f g",
+    "X-TIKA:digest:MD5":"471d98383e9f40444e5ecf821f2c8353"
+  }
+
+]
