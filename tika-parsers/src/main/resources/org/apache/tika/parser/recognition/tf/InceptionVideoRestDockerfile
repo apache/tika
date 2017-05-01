@@ -29,7 +29,8 @@ RUN apt-get update && \
       libxvidcore-dev libx264-dev \
       libgtk2.0-dev \
       libatlas-base-dev gfortran \
-      python2.7-dev python-pip
+      python2.7-dev \
+      python-pip
 
 # Install ffmpeg
 RUN apt-get install -y ffmpeg
