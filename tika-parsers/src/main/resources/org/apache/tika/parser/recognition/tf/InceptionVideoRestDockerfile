@@ -29,8 +29,7 @@ RUN apt-get update && \
       libxvidcore-dev libx264-dev \
       libgtk2.0-dev \
       libatlas-base-dev gfortran \
-      python2.7-dev \
-      python-pip
+      python2.7-dev python-pip
 
 # Install ffmpeg
 RUN apt-get install -y ffmpeg
@@ -73,12 +72,12 @@ RUN wget https://github.com/tensorflow/models/archive/c15fada28113eca32dc98d6e3b
 RUN unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip
 
 RUN \
-  wget https://raw.githubusercontent.com/smadha/tika/TIKA-2322/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
-  wget https://raw.githubusercontent.com/smadha/tika/TIKA-2322/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py -O /usr/bin/video_util.py && \
+  wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py -O /usr/bin/video_util.py && \
   chmod +x /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/video_util.py
 
-# clean up cache + delete src files, so we can publish smaller image to hub
+# clean up cache + delete OpenCV source files, so we can publish smaller image to hub
 RUN apt-get clean
 RUN rm -rf /usr/local/src
 ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
