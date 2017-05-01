@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
-
 import javax.xml.stream.XMLStreamException;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -94,6 +92,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
 
@@ -456,7 +456,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             xhtml.startDocument();
-            handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(), ActionTrigger.DOCUMENT_OPEN);
+            try
+            {
+                handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(), ActionTrigger.DOCUMENT_OPEN);
+            } catch (IOException e) {
+                //See PDFBOX-3773
+                //swallow -- no need to report this
+            }
         } catch (TikaException|SAXException e) {
             throw new IOExceptionWithCause("Unable to start a document", e);
         }
