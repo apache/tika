@@ -264,6 +264,23 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals(expected, counts);
     }
 
+    @Test
+    public void testDifferentlyOrderedAttachments() throws Exception {
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file14_diffAttachOrder.json"),
+                getResourceAsFile("/test-dirs/extractsA/file14_diffAttachOrder.json").toPath()
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("file6_accessEx.pdf.json"),
+                getResourceAsFile("/test-dirs/extractsB/file14_diffAttachOrder.json").toPath()
+        );
+        comparer.compareFiles(fpsA, fpsB);
+        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENT_COMPARISONS);
+        assertEquals(3, tableInfos.size());
+        for (int i = 0; i < tableInfos.size(); i++) {
+            assertEquals("1.0", tableInfos.get(i).get(Cols.OVERLAP));
+        }
+    }
 
     @Test
     @Ignore
