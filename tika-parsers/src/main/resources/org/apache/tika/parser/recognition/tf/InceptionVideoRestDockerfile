@@ -70,6 +70,7 @@ RUN \
 # Get the TF-slim dependencies
 # Downloading from a specific commit for future compatibility
 RUN wget https://github.com/tensorflow/models/archive/c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip
+
 RUN unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip
 
 RUN \
