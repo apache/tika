@@ -70,7 +70,11 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     private URI healthUri = URI.create("http://localhost:8764/inception/v4/ping");
 
     private boolean available;
-
+    
+    protected URI getApiUri(Metadata metadata){
+    	return apiUri;
+    }
+    
     @Override
     public Set<MediaType> getSupportedMimes() {
         return TensorflowImageRecParser.SUPPORTED_MIMES;
@@ -102,7 +106,7 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
         try {
             DefaultHttpClient client = new DefaultHttpClient();
 
-            HttpPost request = new HttpPost(apiUri);
+            HttpPost request = new HttpPost(getApiUri(metadata));
 
             try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
                 //TODO: convert this to stream, this might cause OOM issue
