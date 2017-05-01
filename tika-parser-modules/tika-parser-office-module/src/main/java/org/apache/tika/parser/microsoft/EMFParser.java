@@ -117,9 +117,9 @@ public class EMFParser extends AbstractParser {
                 xhtml.endElement("p");
             }
         } catch (RecordFormatException e) { //POI's hemfparser can throw these for "parse exceptions"
-            throw new TikaException(e.getMessage());
+            throw new TikaException(e.getMessage(), e);
         } catch (RuntimeException e) { //convert Runtime to RecordFormatExceptions
-            throw new TikaException(e.getMessage());
+            throw new TikaException(e.getMessage(), e);
         }
         xhtml.endDocument();
     }
