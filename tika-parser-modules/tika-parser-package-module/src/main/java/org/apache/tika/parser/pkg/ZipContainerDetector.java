@@ -131,13 +131,20 @@ public class ZipContainerDetector extends AbstractDetector {
     }
 
     private MediaType detectZipFormat(TikaInputStream tis) {
+
+        //try opc first because opening a package
+        //will not necessarily throw an exception for
+        //truncated files.
+        MediaType type = detectOPCBased(tis);
+        if (type != null) {
+            return type;
+        }
+
         try {
             ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
             try {
-                MediaType type = detectOpenDocument(zip);
-                if (type == null) {
-                    type = detectOPCBased(zip, tis);
-                }
+                type = detectOpenDocument(zip);
+
                 if (type == null) {
                     type = detectIWork(zip);
                 }
@@ -191,18 +198,16 @@ public class ZipContainerDetector extends AbstractDetector {
         }
     }
 
-    private MediaType detectOPCBased(ZipFile zip, TikaInputStream stream) {
+    private MediaType detectOPCBased(TikaInputStream stream) {
         try {
-            if (zip.getEntry("_rels/.rels") != null
-                    || zip.getEntry("[Content_Types].xml") != null) {
+//            if (zip.getEntry("_rels/.rels") != null
+  //                  || zip.getEntry("[Content_Types].xml") != null) {
                 MediaType type = this.opcDetector.detect(stream, null);
                 if (type != null) return type;
                 
                 // We don't know what it is, sorry
                 return null;
-            } else {
-                return null;
-            }
+
         } catch (IOException e) {
             return null;
         } catch (RuntimeException e) {

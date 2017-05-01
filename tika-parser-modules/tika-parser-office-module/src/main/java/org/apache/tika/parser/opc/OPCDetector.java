@@ -76,8 +76,7 @@ public class OPCDetector implements Detector {
             
             return type;
         } catch (InvalidFormatException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            //swallow
         }finally {
             tmp.close();
         }
