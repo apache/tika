@@ -127,6 +127,7 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>
+              tika-serialization;inline=true,
               tika-parsers;inline=true,
               commons-compress, xz, commons-codec, commons-csv,
               commons-io, commons-exec, commons-collections4, junrar,
@@ -162,6 +163,8 @@
               !junit.*,
               !org.apache.ctakes.*,
               !org.apache.uima.*,
+	      !org.apache.solr.client.solrj.*,
+	      !org.apache.solr.common.*,
               *,
               org.slf4j, org.slf4j.event, org.slf4j.helpers, org.slf4j.spi,
               org.apache.tika.fork,
@@ -300,6 +303,7 @@
               ucar.unidata.util;resolution:=optional,
               com.jmatio.io;resolution:=optional,
               com.google.gson;resolution:=optional,
+	      com.google.gson.reflect;resolution:=optional,
               visad;resolution:=optional,
               visad.data;resolution:=optional,
               visad.data.vis5d;resolution:=optional,
