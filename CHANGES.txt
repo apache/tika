@@ -1,5 +1,10 @@
 Release 1.15 - ??
 
+  * A new parser for sentiment analysis using a categorical 
+    (multi-class, anry, sad, neutral, like, love) and binary
+    (positive/negative) was added leveraging the USC data 
+    science work (TIKA-2016).
+
   * Tika now has the ability to automatically detect objects in videos,
     using OpenCV and Tensorflow (TIKA-2322).
 
