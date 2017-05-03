@@ -32,6 +32,8 @@ Release 1.15 - ??
 
   * Add mime detection and parser for Word 2006ML format (TIKA-2179).
 
+  * Bug fix for WordPerfect via Pascal Essiembre (TIKA-2352).
+
   * Enabled configuration of the EncodingDetector used by
     parsers that extend AbstractEncodingDetectorParser (TIKA-2273).
 
