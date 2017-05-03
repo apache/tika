@@ -36,6 +36,8 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.util.IOUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -52,7 +54,11 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 class RTFObjDataParser {
 
     private final static String WIN_ASCII = "WINDOWS-1252";
+    private final int memoryLimitInKb;
 
+    RTFObjDataParser(int memoryLimitInKb) {
+        this.memoryLimitInKb = memoryLimitInKb;
+    }
     /**
      * Parses the embedded object/pict string
      *
@@ -71,7 +77,7 @@ class RTFObjDataParser {
      * @throws IOException
      */
     protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
-            throws IOException {
+            throws IOException, TikaException {
         ByteArrayInputStream is = new ByteArrayInputStream(bytes);
         long version = readUInt(is);
         metadata.add(RTFMetadata.EMB_APP_VERSION, Long.toString(version));
@@ -192,7 +198,7 @@ class RTFObjDataParser {
      * can return null if there is a linked object
      * instead of an embedded file
      */
-    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata) throws IOException {
+    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata) throws IOException, TikaException {
         //now parse the package header
         ByteArrayInputStream is = new ByteArrayInputStream(pkgBytes);
         readUShort(is);
@@ -288,7 +294,7 @@ class RTFObjDataParser {
         return sb.toString();
     }
 
-    private String readLengthPrefixedAnsiString(InputStream is) throws IOException {
+    private String readLengthPrefixedAnsiString(InputStream is) throws IOException, TikaException {
         long len = readUInt(is);
         byte[] bytes = readBytes(is, len);
         try {
@@ -300,17 +306,25 @@ class RTFObjDataParser {
     }
 
 
-    private byte[] readBytes(InputStream is, long len) throws IOException {
+    private byte[] readBytes(InputStream is, long len) throws IOException, TikaException {
         //initByteArray tests for "reading of too many bytes"
         byte[] bytes = initByteArray(len);
         IOUtils.readFully(is, bytes);
         return bytes;
     }
 
-    private byte[] initByteArray(long len) throws IOException {
-        if (len < 0 || len > RTFParser.getMaxBytesForEmbeddedObject()) {
-            throw new IOException("Requested length for reading bytes is out of bounds: " + len);
+    private byte[] initByteArray(long len) throws IOException, TikaException {
+        if (len < 0) {
+            throw new IOException("Requested length for reading bytes < 0?!: " + len);
+        } else if (memoryLimitInKb > -1 && len > memoryLimitInKb*1024) {
+            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
+                    ") bytes), but maximum allowed is ("+(memoryLimitInKb*1024)+")."+
+                    "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
+        } else if (len > Integer.MAX_VALUE) {
+            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
+                    ") bytes), but there is a hard limit of Integer.MAX_VALUE+");
         }
+
         return new byte[(int) len];
 
     }

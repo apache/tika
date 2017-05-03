@@ -17,7 +17,10 @@
 package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -28,8 +31,32 @@ import org.xml.sax.SAXException;
  */
 class WP5DocumentAreaExtractor extends WPDocumentAreaExtractor {
     
-    protected void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+    /* 192-207 characters represent fixed-length multi-byte functions.  
+     * Those that are not handled explicitely in the code below should be
+     * skipped according to their size (minus the first char if already read).
+     */
+    private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES = 
+            MapUtils.putAll(new HashMap<Integer, Integer>(), new Integer[] {
+        192, 4,  // Extended character
+        193, 9,  // Center/Align/ Tab/Left Margin Release
+        194, 11, // Indent
+        195, 3,  // Attribute ON
+        196, 3,  // Attribute OFF
+        197, 5,  // Block Protect
+        198, 6,  // End of Indent
+        199, 7,  // Different Display Character when Hyphenated
+        200, 4,  // (Reserved)
+        201, 5,  // (Reserved)
+        202, 6,  // (Reserved)
+        203, 6,  // (Reserved)
+        204, 8,  // (Reserved)
+        205, 10, // (Reserved)
+        206, 10, // (Reserved)
+        207, 12, // (Reserved)
+    });
+    
+    protected void extract(int c, WPInputStream in, StringBuilder out, 
+            XHTMLContentHandler xhtml) throws IOException, SAXException {
 
         // 0-31: control characters
         if (c == 10) {
@@ -65,8 +92,9 @@ class WP5DocumentAreaExtractor extends WPDocumentAreaExtractor {
             in.readWP(); // closing character
             WP5Charsets.append(out, charset, charval);
         } else if (c >= 193 && c <= 207) {
-            skipUntilChar(in, c); // opening/closing chars are same
-
+            // removing 1 from function length since first char already read
+            in.skipWPByte(FIXED_LENGTH_FUNCTION_SIZES.get(c) - 1);
+            
         // 208-255: variable-length multi-byte function
         } else if (c >= 208 && c <= 255) {
             // Variable-Length Multi-Byte Functions

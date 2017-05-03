@@ -28,13 +28,18 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Parser to extract printable Latin1 strings from arbitrary files with pure
- * java. Useful for binary or unknown files, for files without a specific parser
- * and for corrupted ones causing a TikaException as a fallback parser.
- * 
+ * Parser to extract printable Latin1 strings from arbitrary files with pure java
+ * without running any external process. Useful for binary or unknown files, for
+ * files without a specific parser and for corrupted ones causing a TikaException
+ * as a fallback parser. To enable the parsing of unknown or files without a
+ * specific parser with AutoDetectParser:
+ * <p>
+ * AutoDetectParser parser = new AutoDetectParser();
+ * parser.setFallback(new Latin1StringsParser());
+ * </p>
  * Currently the parser does a best effort to extract Latin1 strings, used by
  * Western European languages, encoded with ISO-8859-1, UTF-8 or UTF-16 charsets
- * within the same file.
+ * mixed within the same file.
  * 
  * The implementation is optimized for fast parsing with only one pass.
  */

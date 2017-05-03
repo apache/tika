@@ -65,12 +65,16 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     private static final String LABEL_LANG = "en";
 
     @Field
-    private URI apiUri = URI.create("http://localhost:8764/inception/v3/classify?topk=10");
+    private URI apiUri = URI.create("http://localhost:8764/inception/v4/classify?topk=10");
     @Field
-    private URI healthUri = URI.create("http://localhost:8764/inception/v3/ping");
+    private URI healthUri = URI.create("http://localhost:8764/inception/v4/ping");
 
     private boolean available;
-
+    
+    protected URI getApiUri(Metadata metadata){
+    	return apiUri;
+    }
+    
     @Override
     public Set<MediaType> getSupportedMimes() {
         return TensorflowImageRecParser.SUPPORTED_MIMES;
@@ -102,7 +106,7 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
         try {
             DefaultHttpClient client = new DefaultHttpClient();
 
-            HttpPost request = new HttpPost(apiUri);
+            HttpPost request = new HttpPost(getApiUri(metadata));
 
             try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
                 //TODO: convert this to stream, this might cause OOM issue

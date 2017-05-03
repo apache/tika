@@ -25,6 +25,7 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean includeDeletedContent = false;
     private boolean includeMoveFromContent = false;
+    private boolean includeShapeBasedContent = true;
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
@@ -80,6 +81,24 @@ public class OfficeParserConfig implements Serializable {
 
     public boolean getIncludeMoveFromContent() {
         return includeMoveFromContent;
+    }
+
+    /**
+     * In Excel and Word, there can be text stored within drawing shapes.
+     * (In PowerPoint everything is in a Shape)
+     * <p/>
+     * If you'd like to skip processing these to look for text, set this to
+     *  <code>false</code>
+     * <p/>
+     * Default: <code>true</code>
+     * @param includeShapeBasedContent
+     */
+    public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
+        this.includeShapeBasedContent = includeShapeBasedContent;
+    }
+    
+    public boolean getIncludeShapeBasedContent() {
+        return includeShapeBasedContent;
     }
 
     public boolean getUseSAXDocxExtractor() {

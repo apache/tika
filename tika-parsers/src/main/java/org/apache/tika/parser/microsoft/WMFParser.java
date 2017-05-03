@@ -86,11 +86,11 @@ public class WMFParser extends AbstractParser {
                 }
             }
         } catch (RecordFormatException e) { //POI's hwmfparser can throw these for "parse exceptions"
-            throw new TikaException(e.getMessage());
+            throw new TikaException(e.getMessage(), e);
         } catch (RuntimeException e) { //convert Runtime to RecordFormatExceptions
-            throw new TikaException(e.getMessage());
+            throw new TikaException(e.getMessage(), e);
         } catch (AssertionError e) { //POI's hwmfparser can throw these for parse exceptions
-            throw new TikaException(e.getMessage());
+            throw new TikaException(e.getMessage(), e);
         }
         xhtml.endDocument();
     }

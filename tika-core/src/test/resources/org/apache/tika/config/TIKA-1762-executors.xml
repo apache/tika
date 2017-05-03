@@ -21,6 +21,9 @@
   <parsers>
     <parser class="org.apache.tika.config.DummyParser"/>
   </parsers>
+  <encodingDetectors>
+    <encodingDetector class="org.apache.tika.detect.NonDetectingEncodingDetector"/>
+  </encodingDetectors>
   <executor-service class="org.apache.tika.config.DummyExecutor">
     <core-threads>3</core-threads>
     <max-threads>10</max-threads>

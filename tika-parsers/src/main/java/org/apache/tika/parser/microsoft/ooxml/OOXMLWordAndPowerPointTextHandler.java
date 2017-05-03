@@ -102,6 +102,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String MOVE_FROM = "moveFrom";
     private final static String MOVE_TO = "moveTo";
     private final static String ENDNOTE_REFERENCE = "endnoteReference";
+    private static final String TEXTBOX = "textbox";
+
 
     private final XWPFBodyContentsHandler bodyContentsHandler;
 
@@ -135,20 +137,28 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     private final RunProperties currRunProperties = new RunProperties();
     private final ParagraphProperties currPProperties = new ParagraphProperties();
-
+    private final boolean includeTextBox;
     private final StringBuilder runBuffer = new StringBuilder();
 
 
     private boolean inDelText = false;
     private boolean inHlinkClick = false;
+    private boolean inTextBox = false;
 
     private OOXMLWordAndPowerPointTextHandler.EditType editType = OOXMLWordAndPowerPointTextHandler.EditType.NONE;
 
     private DateUtils dateUtils = new DateUtils();
+
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks) {
+        this(bodyContentsHandler, hyperlinks, true);
+    }
+
+    public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
+                                             Map<String, String> hyperlinks, boolean includeTextBox) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
+        this.includeTextBox = includeTextBox;
     }
 
 
@@ -187,6 +197,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
 
         if (inACChoiceDepth > 0) {
+            return;
+        }
+
+        if (! includeTextBox && localName.equals(TEXTBOX)) {
+            inTextBox = true;
             return;
         }
         //these are sorted descending by frequency within docx files
@@ -344,6 +359,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             return;
         }
 
+        if (! includeTextBox && localName.equals(TEXTBOX)) {
+            inTextBox = false;
+            return;
+        }
         if (PIC.equals(localName)) { //PIC_NS
             handlePict();
             inPic = false;
@@ -417,7 +436,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
         if (inACChoiceDepth > 0) {
             return;
+        } else if (! includeTextBox && inTextBox) {
+            return;
         }
+
         if (editType.equals(EditType.MOVE_FROM) && inT) {
             if (bodyContentsHandler.getIncludeMoveFromText()) {
                 runBuffer.append(ch, start, length);
@@ -432,6 +454,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
         if (inACChoiceDepth > 0) {
+            return;
+        } else if (! includeTextBox && inTextBox) {
             return;
         }
 

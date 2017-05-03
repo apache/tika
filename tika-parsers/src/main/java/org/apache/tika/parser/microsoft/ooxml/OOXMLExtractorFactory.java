@@ -32,6 +32,7 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -90,8 +91,8 @@ public class OOXMLExtractorFactory {
 
             // Have the appropriate OOXML text extractor picked
             POIXMLTextExtractor poiExtractor = null;
-            //This has already been set by OOXMLParser's call to configure()
-            //We can rely on this being non-null.
+            // This has already been set by OOXMLParser's call to configure()
+            // We can rely on this being non-null.
             OfficeParserConfig config = context.get(OfficeParserConfig.class);
             if (config.getUseSAXDocxExtractor()) {
                 poiExtractor = trySXWPF(pkg);
@@ -104,8 +105,9 @@ public class OOXMLExtractorFactory {
             }
 
             POIXMLDocument document = poiExtractor.getDocument();
-
-            if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
+            if (poiExtractor instanceof XSSFBEventBasedExcelExtractor) {
+                extractor = new XSSFBExcelExtractorDecorator(context, poiExtractor, locale);
+            } else if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
                 extractor = new XSSFExcelExtractorDecorator(
                         context, poiExtractor, locale);
             } else if (poiExtractor instanceof XWPFEventBasedWordExtractor) {

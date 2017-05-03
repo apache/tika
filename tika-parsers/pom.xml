@@ -35,11 +35,11 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.16-beta2</poi.version>
+    <poi.version>3.16</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.10</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-    <tukaani.version>1.5</tukaani.version>
+    <tukaani.version>1.6</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.5</pdfbox.version>
@@ -298,7 +298,7 @@
     <dependency>
       <groupId>org.xerial</groupId>
       <artifactId>sqlite-jdbc</artifactId>
-      <version>3.15.1</version>
+      <version>3.16.1</version>
       <scope>provided</scope>
     </dependency>
 

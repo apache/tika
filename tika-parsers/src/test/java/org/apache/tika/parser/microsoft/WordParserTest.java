@@ -196,6 +196,17 @@ public class WordParserTest extends TikaTest {
         }
     }
 
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBox() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.doc", pc).xml;
+        assertNotContained("text box", xml);
+    }
+
     @Test
     public void testVarious() throws Exception {
         ContentHandler handler = new BodyContentHandler();

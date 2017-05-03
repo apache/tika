@@ -48,7 +48,7 @@ public class TensorflowImageRecParserTest {
                 objectLabels.add(object.getLabel());
             }
             System.out.println(objectLabels);
-            String[] expected = {"English foxhound", "Egyptian cat", "collie", "Border collie"};
+            String[] expected = {"Egyptian cat", "tabby, tabby cat"};
             for (String label : expected) {
                 Assert.assertTrue(label + " is expected", objectLabels.contains(label));
             }
