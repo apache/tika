@@ -51,4 +51,23 @@ public class SentimentParserTest {
         assertEquals(sentiment, "positive");
 
     }
+
+   @Test
+   public void testCategorical() throws Exception{
+       Tika tika;
+       try (InputStream confStream = getClass().getResourceAsStream("tika-config-sentiment-opennlp-cat.xml")) {
+	       assert confStream != null;
+	       TikaConfig config = new TikaConfig(confStream);
+	       tika = new Tika(config);
+	   }
+
+        String text = "Whatever, I need some cooling off time!";
+        ByteArrayInputStream stream = new ByteArrayInputStream(text.getBytes(Charset.defaultCharset()));
+        Metadata md = new Metadata();
+        tika.parse(stream, md);
+        String sentiment = md.get("Sentiment");
+        assertNotNull(sentiment);
+        assertEquals(sentiment, "angry");
+    }
+
 }
