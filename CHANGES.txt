@@ -34,6 +34,9 @@ Release 1.15 - ??
 
   * Bug fix for WordPerfect via Pascal Essiembre (TIKA-2352).
 
+  * Added "text-main" equivalent option to tika-server via
+    /tika/main (TIKA-2343).
+
   * Enabled configuration of the EncodingDetector used by
     parsers that extend AbstractEncodingDetectorParser (TIKA-2273).
 
