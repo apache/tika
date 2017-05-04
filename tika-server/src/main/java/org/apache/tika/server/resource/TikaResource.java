@@ -350,7 +350,7 @@ public class TikaResource {
     }
 
     //this is equivalent to text-main (Boilerpipe handler) in tika-app
-    @PUT
+    @POST
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("form/main")
