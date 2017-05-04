@@ -665,7 +665,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      */
     private boolean isRendered(final CharacterRun cr) {
         if (cr == null) {
-            return false;
+            return true;
         }
         return !cr.isMarkedDeleted() ||
                 (cr.isMarkedDeleted() && officeParserConfig.getIncludeDeletedContent());
