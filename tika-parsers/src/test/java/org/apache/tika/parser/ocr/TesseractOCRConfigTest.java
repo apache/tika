@@ -129,7 +129,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         config.setPageSegMode("0");
         config.setPageSegMode("10");
         assertTrue("Couldn't set valid values", true);
-        config.setPageSegMode("11");
+        config.setPageSegMode("14");
     }
 
     @Test(expected=IllegalArgumentException.class)
