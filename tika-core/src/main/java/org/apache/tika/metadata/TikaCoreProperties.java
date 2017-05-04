@@ -39,16 +39,24 @@ public interface TikaCoreProperties {
 
     /**
      * A file might contain different types of embedded documents.
-     * The most common is the ATTACHEMENT.
+     * The most common is the ATTACHMENT.
+     * <p>
      * An INLINE embedded resource should be used for embedded image
      * files that are used to render the page image (as in PDXObjImages in PDF files).
      * <p>
-     * Not all parsers have yet implemented this. 
+     * A MACRO is code that is embedded in the document and is intended
+     * to be executable within the application that opens the document.  This
+     * includes traditional macros within Microsoft Office files and
+     * javascript within PDFActions.  This would not include, e.g., an
+     * .exe file embedded in a .zip file.
+     * <p>
+     * Not all parsers have yet implemented this.
      *
      */
     public enum EmbeddedResourceType {
         INLINE,
-        ATTACHMENT
+        ATTACHMENT,
+        MACRO
     };
 
     /**
@@ -74,6 +82,22 @@ public interface TikaCoreProperties {
      */
     public static final Property TIKA_META_EXCEPTION_WARNING =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"warn");
+
+    /**
+     * Use this to store exceptions caught while trying to read the
+     * stream of an embedded resource.  Do not use this if there is
+     * a parse exception on the embedded resource.
+     */
+    Property TIKA_META_EXCEPTION_EMBEDDED_STREAM =
+            Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"embedded_stream_exception");
+
+
+    /**
+     * Some file formats can store information about their original
+     * file name/location or about their attachment's original file name/location.
+     */
+    public static final Property ORIGINAL_RESOURCE_NAME =
+            Property.internalTextBag(TIKA_META_PREFIX+"origResourceName");
 
     /**
      * This is currently used to identify Content-Type that may be

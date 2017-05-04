@@ -16,22 +16,27 @@
  */
 package org.apache.tika.config;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.mime.MediaType;
@@ -47,7 +52,16 @@ import org.w3c.dom.Node;
 public class TikaConfigSerializer {
 
     public enum Mode {
-        MINIMAL, CURRENT, STATIC;
+        /** Minimal version of the config, defaults where possible */
+        MINIMAL, 
+        /** Current config, roughly as loaded */
+        CURRENT, 
+        /** Static version of the config, with explicit lists of parsers/decorators/etc */
+        STATIC,
+        /** 
+         * Static version of the config, with explicit lists of decorators etc,
+         * and all parsers given with their detected supported mime types */
+        STATIC_FULL;
     }
 
     /**
@@ -70,6 +84,7 @@ public class TikaConfigSerializer {
         addMimeComment(mode, rootElement, doc);
         addServiceLoader(mode, rootElement, doc, config);
         addExecutorService(mode, rootElement, doc, config);
+        addEncodingDetectors(mode, rootElement, doc, config);
         addTranslator(mode, rootElement, doc, config);
         addDetectors(mode, rootElement, doc, config);
         addParsers(mode, rootElement, doc, config);
@@ -88,7 +103,11 @@ public class TikaConfigSerializer {
     }
 
     private static void addExecutorService(Mode mode, Element rootElement, Document doc, TikaConfig config) {
-        //TODO
+        ExecutorService executor = config.getExecutorService();
+        
+        // TODO Implement the reverse of ExecutorServiceXmlLoader
+        // TODO Make it possible to detect if we have the default executor
+        // TODO Make it possible to get the current values from ConfigurableThreadPoolExecutor
     }
 
     private static void addServiceLoader(Mode mode, Element rootElement, Document doc, TikaConfig config) {
@@ -117,7 +136,8 @@ public class TikaConfigSerializer {
                     "for example: <translator class=\"org.apache.tika.language.translate.GoogleTranslator\"/>");
             rootElement.appendChild(mimeComment);
         } else {
-            if (translator instanceof DefaultTranslator && mode == Mode.STATIC) {
+            if (translator instanceof DefaultTranslator && 
+                    (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 translator = ((DefaultTranslator)translator).getTranslator();
             }
             if (translator != null) {
@@ -134,6 +154,35 @@ public class TikaConfigSerializer {
         Node mimeComment = doc.createComment(
                 "for example: <mimeTypeRepository resource=\"/org/apache/tika/mime/tika-mimetypes.xml\"/>");
         rootElement.appendChild(mimeComment);
+    }
+
+    private static void addEncodingDetectors(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
+        EncodingDetector encDetector = config.getEncodingDetector();
+
+        if (mode == Mode.MINIMAL && encDetector instanceof DefaultEncodingDetector) {
+            // Don't output anything, all using defaults
+            Node detComment = doc.createComment(
+                    "for example: <encodingDetectors><encodingDetector class=\""
+                    + "org.apache.tika.detect.DefaultEncodingDetector\"></encodingDetectors>");
+            rootElement.appendChild(detComment);
+            return;
+        }
+
+        Element encDetectorsElement = doc.createElement("encodingDetectors");
+        if (mode == Mode.CURRENT && encDetector instanceof DefaultEncodingDetector ||
+                ! (encDetector instanceof CompositeEncodingDetector)) {
+            Element encDetectorElement = doc.createElement("encodingDetector");
+            encDetectorElement.setAttribute("class", encDetector.getClass().getCanonicalName());
+            encDetectorsElement.appendChild(encDetectorElement);
+        } else {
+            List<EncodingDetector> children = ((CompositeEncodingDetector)encDetector).getDetectors();
+            for (EncodingDetector d : children) {
+                Element encDetectorElement = doc.createElement("encodingDetector");
+                encDetectorElement.setAttribute("class", d.getClass().getCanonicalName());
+                encDetectorsElement.appendChild(encDetectorElement);
+            }
+        }
+        rootElement.appendChild(encDetectorsElement);
     }
 
     private static void addDetectors(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
@@ -200,13 +249,14 @@ public class TikaConfigSerializer {
                 outputParser = false;
             }
             // Special case for making Default to static
-            if (mode == Mode.STATIC && parser instanceof DefaultParser) {
+            if (parser instanceof DefaultParser &&
+                    (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 outputParser = false;
             }
         }
 
         if (outputParser) {
-            rootElement = addParser(rootElement, doc, parser, decoration);
+            rootElement = addParser(mode, rootElement, doc, parser, decoration);
         }
         for (Parser childParser : children) {
             addParser(mode, rootElement, doc, childParser);
@@ -214,7 +264,7 @@ public class TikaConfigSerializer {
         // TODO Parser Exclusions
     }
 
-    private static Element addParser(Element rootElement, Document doc, Parser parser, ParserDecorator decorator) throws Exception {
+    private static Element addParser(Mode mode, Element rootElement, Document doc, Parser parser, ParserDecorator decorator) throws Exception {
         ParseContext context = new ParseContext();
 
         Set<MediaType> addedTypes = new TreeSet<>();
@@ -230,6 +280,8 @@ public class TikaConfigSerializer {
                 }
                 addedTypes.remove(type);
             }
+        } else if (mode == Mode.STATIC_FULL) {
+            addedTypes.addAll(parser.getSupportedTypes(context));
         }
 
         String className = parser.getClass().getCanonicalName();

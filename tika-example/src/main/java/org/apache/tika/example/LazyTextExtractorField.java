@@ -50,7 +50,7 @@ public class LazyTextExtractorField extends AbstractField {
     /**
      * The logger instance for this class.
      */
-    private static final Logger log = LoggerFactory.getLogger(LazyTextExtractorField.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LazyTextExtractorField.class);
 
     /**
      * The exception used to forcibly terminate the extraction process when the
@@ -97,7 +97,7 @@ public class LazyTextExtractorField extends AbstractField {
             }
             return extract;
         } catch (InterruptedException e) {
-            log.error("Text extraction thread was interrupted", e);
+            LOG.error("Text extraction thread was interrupted", e);
             return "";
         }
     }
@@ -180,7 +180,7 @@ public class LazyTextExtractorField extends AbstractField {
                 // Capture and ignore
             } catch (Throwable t) {
                 if (t != STOP) {
-                    log.debug("Failed to extract text.", t);
+                    LOG.debug("Failed to extract text.", t);
                     setExtractedText("TextExtractionError");
                     return;
                 }

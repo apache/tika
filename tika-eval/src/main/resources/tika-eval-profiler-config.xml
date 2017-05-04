@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<tika-batch-config
+        maxAliveTimeSeconds="-1"
+        pauseOnEarlyTerminationMillis="500"
+        timeoutCheckPulseMillis="1000"
+        maxQueueSize="10000"
+        numConsumers="5"
+        timeoutThresholdMillis="300000">
+
+    <commandline>
+        <option opt="bc" longOpt="batch-config" hasArg="true"
+                description="xml batch config file" required="true"/>
+        <option opt="inputDir" hasArg="true"
+                description="dir to start crawling"/>
+        <option opt="numConsumers" hasArg="true"
+                description="number of fileConsumers threads"/>
+        <option opt="extracts" hasArg="true"
+                description="this dir for analysis" required="false"/>
+        <option opt="db" hasArg="true"
+                description="name of db directory or file to which to write results"/>
+        <option opt="alterExtract" hasArg="true"
+                description="for json-formatted extract files
+                process full metadata list ('as_is'=default),
+                take just the first/container document ('first_only'),
+                concatenate all content into the first metadata item ('concatenate_content')"/>
+        <option opt="minExtractLength" hasArg="true"
+                description="minimum extract length to process"/>
+        <option opt="maxExtractLength" hasArg="true"
+                description="maximum extract length to process"/>
+        <option opt="jdbc" hasArg="true"
+                description="full jdbc connection string"/>
+        <option opt="jdbcDriver" hasArg="true"
+                description="canonical class name for jdbc driver"/>
+        <option opt="tablePrefix" hasArg="true"
+                description="EXPERT: prefix for table names"/>
+        <option opt="drop" hasArg="false" description="drop tables if they exist"/>
+        <option opt="maxFilesToAdd" hasArg="true" description="maximum number of files to add to the crawler"/>
+        <option opt="maxTokens" hasArg="true" description="maximum tokens to process, default=200000"/>
+        <option opt="maxContentLength" hasArg="true"
+                description="truncate content beyond this length for calculating 'contents' stats, default=1000000"/>
+        <option opt="maxContentLengthForLangId" hasArg="true"
+                description="truncate content beyond this length for language id, default=50000"/>
+        <option opt="defaultLangCode" hasArg="true"
+                description="which language to use for common words if no 'common words' file exists for the langid result"/>
+
+
+
+
+    </commandline>
+
+
+    <!--
+        Can also add startDir: this tells the crawler to start indexing a
+        child directory of the inputDir directory.
+    -->
+    <crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
+
+             crawlOrder="sorted"
+             maxConsecWaitMillis="5000"
+             maxFilesToAdd="-1"
+             maxFilesToConsider="-1"
+             includeFilePat=""
+             excludeFilePat=""
+             maxFileSizeBytes="-1"
+    />
+
+    <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
+               consumerBuilderClass="org.apache.tika.eval.batch.ExtractProfilerBuilder"
+               minExtractLength="-1"
+               maxExtractLength="2000000"
+               commonTokens="resources/common_tokens"/>
+
+
+    <!-- reporter and interrupter are optional -->
+    <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" sleepMillis="1000"
+              staleThresholdMillis="500000"/>
+    <interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
+</tika-batch-config>

@@ -283,11 +283,16 @@ public class TestMimeTypes {
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/zip", "testWORD.docx");
         
+        // POI-generated files have the rels first not Content Types
+        assertTypeByData("application/x-tika-ooxml", "testEXCEL_poi.xlsx");
+        
         // If we give the filename as well as the data, we can
         //  specialise the ooxml generic one to the correct type
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL.xlsx");
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.presentationml.presentation", "testPPT.pptx");
         assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "testWORD.docx");
+        
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL_poi.xlsx");
         
         // Test a few of the less usual ones
         assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12","testEXCEL.xlsb");
@@ -423,6 +428,14 @@ public class TestMimeTypes {
     }
     
     @Test
+    public void testIcnsDetection() throws Exception {
+        assertType("image/icns", "testICNS.icns");
+        assertTypeByData("image/icns", "testICNS_basic.icns");
+        assertTypeByData("image/icns", "testICNS.icns");
+        assertTypeByName("image/icns", "testICNS.icns");
+    }
+	
+    @Test
     public void testTiffDetection() throws Exception {
         assertType("image/tiff", "testTIFF.tif");
         assertTypeByData("image/tiff", "testTIFF.tif");
@@ -457,12 +470,12 @@ public class TestMimeTypes {
 
     @Test
     public void testBmpDetection() throws Exception {
-        assertType("image/x-ms-bmp", "testBMP.bmp");
-        assertTypeByData("image/x-ms-bmp", "testBMP.bmp");
-        assertTypeByName("image/x-ms-bmp", "x.bmp");
-        assertTypeByName("image/x-ms-bmp", "x.BMP");
-        assertTypeByName("image/x-ms-bmp", "x.dib");
-        assertTypeByName("image/x-ms-bmp", "x.DIB");
+        assertType("image/bmp", "testBMP.bmp");
+        assertTypeByData("image/bmp", "testBMP.bmp");
+        assertTypeByName("image/bmp", "x.bmp");
+        assertTypeByName("image/bmp", "x.BMP");
+        assertTypeByName("image/bmp", "x.dib");
+        assertTypeByName("image/bmp", "x.DIB");
         //false positive check -- contains part of BMP signature
         assertType("text/plain", "testBMPfp.txt");
     }
@@ -617,13 +630,14 @@ public class TestMimeTypes {
 
     @Test
     public void testWmfDetection() throws Exception {
-        assertTypeByName("application/x-msmetafile", "x.wmf");
-        assertTypeByData("application/x-msmetafile", "testWMF.wmf");
-        assertTypeByName("application/x-msmetafile", "x.WMF");
+        assertTypeByName("image/wmf", "x.wmf");
+        assertTypeByData("image/wmf", "testWMF.wmf");
+        assertTypeByName("image/wmf", "x.WMF");
 
-        assertTypeByName("application/x-emf", "x.emf");
-        assertTypeByData("application/x-emf","testEMF.emf");
-        assertTypeByName("application/x-emf", "x.EMF");
+        assertTypeByName("image/emf", "x.emf");
+        assertTypeByData("image/emf", "testEMF.emf");
+        assertTypeByName("image/emf", "x.EMF");
+
         // TODO: Need a test wmz file
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");
@@ -856,6 +870,9 @@ public class TestMimeTypes {
         // Lotus
         assertTypeDetection("testLotusEml.eml", "message/rfc822");
         
+        // MBOX
+        assertTypeDetection("headers.mbox", "application/mbox");
+        
         // Thunderbird - doesn't currently work by name
         assertTypeByNameAndData("message/rfc822", "testThunderbirdEml.eml");
     }
@@ -1001,8 +1018,17 @@ public class TestMimeTypes {
 
     @Test
     public void testWebVTT() throws Exception {
+        // With the most common text header
         assertType("text/vtt", "testWebVTT.vtt");
         assertTypeByData("text/vtt", "testWebVTT.vtt");
+
+        // With no text header, just plain WebVTT one
+        assertType("text/vtt", "testWebVTT_simple.vtt");
+        assertTypeByData("text/vtt", "testWebVTT_simple.vtt");
+
+        // With a custom text header
+        assertType("text/vtt", "testWebVTT_header.vtt");
+        assertTypeByData("text/vtt", "testWebVTT_header.vtt");
     }
     
     @Test
@@ -1023,7 +1049,82 @@ public class TestMimeTypes {
         assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
         assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
     }
+
+    @Test
+    public void testVandICalendars() throws Exception {
+        assertType("text/calendar", "testICalendar.ics");
+        assertType("text/x-vcalendar", "testVCalendar.vcs");
+        assertTypeByData("text/calendar", "testICalendar.ics");
+        assertTypeByData("text/x-vcalendar", "testVCalendar.vcs");
+    }
+
+    @Test
+    public void testASX() throws Exception {
+        assertType("application/x-ms-asx", "testWindowsMediaMeta.asx");
+        assertTypeByData("application/x-ms-asx", "testWindowsMediaMeta.asx");
+    }
+
+    @Test
+    public void testMSOwner() throws Exception {
+        assertType("application/x-ms-owner", "testMSOwnerFile");
+    }
+
+    @Test
+    public void testDJVU() throws Exception {
+        assertType("image/vnd.djvu", "testDJVU.djvu");
+        assertTypeByData("image/vnd.djvu", "testDJVU.djvu");
+    }
+
+    @Test
+    public void testEndNoteImport() throws Exception {
+        assertType("application/x-endnote-refer", "testEndNoteImportFile.enw");
+        assertTypeByData("application/x-endnote-refer", "testEndNoteImportFile.enw");
+    }
+
+    @Test
+    public void testStataDTA() throws Exception {
+        // Filename only gives base type
+        assertTypeByName("application/x-stata-dta", "testStataDTA.dta");
+        // With data too, can get specific version
+        assertTypeByData("application/x-stata-dta; version=13", "testStataDTA.dta");
+        // Name + data gets specific version as well
+        assertType("application/x-stata-dta; version=13", "testStataDTA.dta");
+    }
     
+    @Test
+    public void testOneNote() throws Exception {
+        // With name or data we can get the full details
+        assertTypeByName("application/onenote; format=one", "testOneNote.one");
+        assertTypeByData("application/onenote; format=one", "testOneNote.one");
+        
+        // TODO Get sample .onetoc2 and .onepkg files
+    }
+
+    @Test
+    public void testMSWriteFile() throws Exception {
+        //This file is govdocs1's 746255.doc
+        assertTypeByName("application/x-mswrite", "testMSWriteFile.wri");
+        assertTypeByData("application/x-mswrite", "testMSWriteFile.wri");
+    }
+
+    @Test
+    public void testSASProgramming() throws Exception {
+        // Data files we have magic for
+        assertTypeByName("application/x-sas-data-v6", "testSAS.sd2");
+        assertTypeByData("application/x-sas-data-v6", "testSAS.sd2");
+        
+        assertTypeByName("application/x-sas-data", "testSAS.sas7bdat");
+        assertTypeByData("application/x-sas-data", "testSAS.sas7bdat");
+        
+        assertTypeByName("application/x-sas-xport", "testSAS.xpt");
+        assertTypeByData("application/x-sas-xport", "testSAS.xpt");
+        
+        // Programs we don't, so must have mime type to detect
+        assertTypeByName("application/x-sas", "testSAS.sas");
+        assertTypeByData("text/plain", "testSAS.sas");
+    }
+
+
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.codec.binary.Base64;
@@ -31,9 +32,11 @@ import org.apache.tika.Tika;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -198,4 +201,16 @@ public class ZipParserTest extends AbstractPkgTest {
                 tracker.filenames.get(0));
     }
 
+    @Test
+    public void testZipEncrypted() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testZipEncrypted.zip");
+        assertEquals(2, metadataList.size());
+        String[] values = metadataList.get(0).getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM);
+        assertNotNull(values);
+        assertEquals(1, values.length);
+        assertContains("EncryptedDocumentException: stream (encrypted.txt) is encrypted", values[0]);
+
+
+        assertContains("hello world", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
 }

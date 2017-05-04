@@ -16,21 +16,26 @@
  */
 package org.apache.tika.fork;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Semaphore;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.mock.MockParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
-
-import static org.junit.Assert.assertEquals;
 
 public class ForkParserTest {
 
@@ -174,6 +179,42 @@ public class ForkParserTest {
             assertEquals("Hello, World!", o.toString().trim());
         } finally {
             parser.close();
+        }
+    }
+
+    @Test
+    public void testPulse() throws Exception {
+        //test default 5000 ms
+        ForkParser forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
+        String sleepCommand = "<mock>\n" +
+                "    <write element=\"p\">Hello, World!</write>\n" +
+                "    <hang millis=\"11000\" heavy=\"false\" interruptible=\"false\" />\n" +
+                "</mock>";
+        ContentHandler o = new BodyContentHandler(-1);
+        Metadata m = new Metadata();
+        ParseContext c = new ParseContext();
+        try {
+            forkParser.parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)), o, m, c);
+            fail("should have thrown IOException");
+        } catch (TikaException e) {
+            assertTrue("failed to communicate with forked parser process", true);
+        }
+
+        //test setting very short pulse (10 ms) and a parser that takes at least 1000 ms
+        forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
+        forkParser.setServerPulseMillis(10);
+        sleepCommand = "<mock>\n" +
+                "    <write element=\"p\">Hello, World!</write>\n" +
+                "    <hang millis=\"1000\" heavy=\"false\" interruptible=\"false\" />\n" +
+                "</mock>";
+        o = new BodyContentHandler(-1);
+        m = new Metadata();
+        c = new ParseContext();
+        try {
+            forkParser.parse(new ByteArrayInputStream(sleepCommand.getBytes(StandardCharsets.UTF_8)), o, m, c);
+            fail("Should have thrown exception");
+        } catch (IOException|TikaException e) {
+            assertTrue("should have thrown IOException lost connection", true);
         }
     }
 

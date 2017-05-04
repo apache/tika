@@ -18,13 +18,13 @@ package org.apache.tika.parser.txt;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class TXTParserTest {
+public class TXTParserTest extends TikaTest {
 
     private Parser parser = new TXTParser();
 
@@ -196,7 +196,7 @@ public class TXTParserTest {
         parser.parse(
                 new ByteArrayInputStream(test2.getBytes(ISO_8859_1)),
                 new BodyContentHandler(), metadata, new ParseContext());
-        assertEquals("text/plain; charset=ISO-8859-15", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/html; charset=ISO-8859-15", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
     }
 
@@ -289,7 +289,14 @@ public class TXTParserTest {
         parser.parse(
                 new ByteArrayInputStream(text.getBytes(UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/binary; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    //TIKA-2047
+    @Test
+    public void testSubclassingMimeTypesRemain() throws Exception {
+        XMLResult r = getXML("testVCalendar.vcs");
+        assertEquals("text/x-vcalendar; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
 }

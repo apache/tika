@@ -27,19 +27,24 @@ import java.io.InputStream;
 import java.util.Set;
 
 import com.pff.PSTAttachment;
+import com.pff.PSTException;
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
+import com.pff.PSTRecipient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OutlookExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -69,8 +74,7 @@ public class OutlookPSTParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
 
         // Use the delegate parser to parse the contained document
-        EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class,
-                new ParsingEmbeddedDocumentExtractor(context));
+        EmbeddedDocumentExtractor embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         metadata.set(Metadata.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
 
@@ -152,6 +156,48 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set("importance", valueOf(pstMail.getImportance()));
         mailMetadata.set("priority", valueOf(pstMail.getPriority()));
         mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
+        mailMetadata.set(Office.MAPI_MESSAGE_CLASS,
+                OutlookExtractor.getMessageClass(pstMail.getMessageClass()));
+
+        mailMetadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
+
+        mailMetadata.set(Office.MAPI_FROM_REPRESENTING_EMAIL,
+                pstMail.getSentRepresentingEmailAddress());
+
+        mailMetadata.set(Message.MESSAGE_FROM_NAME, pstMail.getSenderName());
+        mailMetadata.set(Office.MAPI_FROM_REPRESENTING_NAME, pstMail.getSentRepresentingName());
+
+        //add recipient details
+        try {
+            for (int i = 0; i < pstMail.getNumberOfRecipients(); i++) {
+                PSTRecipient recipient = pstMail.getRecipient(i);
+                switch (OutlookExtractor.RECIPIENT_TYPE.getTypeFromVal(recipient.getRecipientType())) {
+                    case TO:
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_DISPLAY_NAME,
+                                recipient.getDisplayName(), mailMetadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_TO_EMAIL,
+                                recipient.getEmailAddress(), mailMetadata);
+                        break;
+                    case CC:
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_DISPLAY_NAME,
+                                recipient.getDisplayName(), mailMetadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_CC_EMAIL,
+                                recipient.getEmailAddress(), mailMetadata);
+                        break;
+                    case BCC:
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_DISPLAY_NAME,
+                                recipient.getDisplayName(), mailMetadata);
+                        OutlookExtractor.addEvenIfNull(Message.MESSAGE_BCC_EMAIL,
+                                recipient.getEmailAddress(), mailMetadata);
+                        break;
+                    default:
+                        //do we want to handle unspecified or unknown?
+                        break;
+                }
+            }
+        } catch (PSTException e) {
+            //swallow
+        }
 
         byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);

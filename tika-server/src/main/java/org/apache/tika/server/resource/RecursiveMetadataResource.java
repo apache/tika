@@ -30,16 +30,16 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.tika.language.ProfilingHandler;
+import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.server.MetadataList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/rmeta")
 public class RecursiveMetadataResource {
@@ -47,7 +47,7 @@ public class RecursiveMetadataResource {
     private static final String HANDLER_TYPE_PARAM = "handler";
     private static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE =
             BasicContentHandlerFactory.HANDLER_TYPE.XML;
-    private static final Log logger = LogFactory.getLog(RecursiveMetadataResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RecursiveMetadataResource.class);
 
     /**
      * Returns an InputStream that can be deserialized as a list of
@@ -76,7 +76,7 @@ public class RecursiveMetadataResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces({"application/json"})
-    @Path("form{"+HANDLER_TYPE_PARAM+" : (\\w+)?}")
+    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info,
                                              @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
@@ -110,14 +110,15 @@ public class RecursiveMetadataResource {
 
     @PUT
     @Produces("application/json")
-    @Path("{"+HANDLER_TYPE_PARAM+" : (\\w+)?}")
+    @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadata(InputStream is,
                                 @Context HttpHeaders httpHeaders,
                                 @Context UriInfo info,
                                 @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName
                                 ) throws Exception {
         return Response.ok(
-                parseMetadata(is, httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
+                parseMetadata(TikaResource.getInputStream(is, httpHeaders),
+						httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
     }
 
 	private MetadataList parseMetadata(InputStream is,
@@ -134,9 +135,9 @@ public class RecursiveMetadataResource {
 		TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
 		// no need to add parser to parse recursively
 		TikaResource.fillParseContext(context, httpHeaders, null);
-		TikaResource.logRequest(logger, info, metadata);
-		TikaResource.parse(wrapper, logger, info.getPath(), is,
-				new ProfilingHandler() {
+		TikaResource.logRequest(LOG, info, metadata);
+		TikaResource.parse(wrapper, LOG, info.getPath(), is,
+				new LanguageHandler() {
 					public void endDocument() {
 						metadata.set("language", getLanguage().getLanguage());
 					}

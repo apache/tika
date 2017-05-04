@@ -28,6 +28,10 @@ import java.util.Locale;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.IOExceptionWithCause;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -77,34 +81,54 @@ public class CommonsDigester implements DigestingParser.Digester {
 
     @Override
     public void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException {
-        InputStream tis = TikaInputStream.get(is);
-        long sz = -1;
-        if (((TikaInputStream)tis).hasFile()) {
-            sz = ((TikaInputStream)tis).getLength();
-        }
-        //if the file is definitely a file,
-        //and its size is greater than its mark limit,
-        //just digest the underlying file.
-        if (sz > markLimit) {
-            digestFile(((TikaInputStream)tis).getFile(), m);
-            return;
-        }
+        //if this is already a TikaInputStream, rely on the caller to close
+        //the stream and free the tmp file.
+        TikaInputStream tis = TikaInputStream.cast(is);
 
-        //try the usual mark/reset stuff.
-        //however, if you actually hit the bound,
-        //then stop and spool to file via TikaInputStream
-        SimpleBoundedInputStream bis = new SimpleBoundedInputStream(markLimit, tis);
-        boolean finishedStream = false;
-        for (DigestAlgorithm algorithm : algorithms) {
-            bis.mark(markLimit + 1);
-            finishedStream = digestEach(algorithm, bis, m);
-            bis.reset();
-            if (!finishedStream) {
-                break;
-            }
+        TemporaryResources tmp = null;
+        if (tis == null) {
+            //if this isn't a TikaInputStream, create a new TempResources
+            //and make sure to release it!!!
+            tmp = new TemporaryResources();
+            tis = TikaInputStream.get(new CloseShieldInputStream(is), tmp);
         }
-        if (!finishedStream) {
-            digestFile(((TikaInputStream)tis).getFile(), m);
+        try {
+            long sz = -1;
+            if (tis.hasFile()) {
+                sz = tis.getLength();
+            }
+            //if the file is definitely a file,
+            //and its size is greater than its mark limit,
+            //just digest the underlying file.
+            if (sz > markLimit) {
+                digestFile(tis.getFile(), m);
+                return;
+            }
+
+            //try the usual mark/reset stuff.
+            //however, if you actually hit the bound,
+            //then stop and spool to file via TikaInputStream
+            SimpleBoundedInputStream bis = new SimpleBoundedInputStream(markLimit, tis);
+            boolean finishedStream = false;
+            for (DigestAlgorithm algorithm : algorithms) {
+                bis.mark(markLimit + 1);
+                finishedStream = digestEach(algorithm, bis, m);
+                bis.reset();
+                if (!finishedStream) {
+                    break;
+                }
+            }
+            if (!finishedStream) {
+                digestFile(tis.getFile(), m);
+            }
+        } finally {
+            try {
+                if (tmp != null) {
+                    tmp.dispose();
+                }
+            } catch (TikaException e) {
+                throw new IOExceptionWithCause(e);
+            }
         }
     }
 
@@ -174,7 +198,7 @@ public class CommonsDigester implements DigestingParser.Digester {
     public static DigestAlgorithm[] parse(String s) {
         assert(s != null);
 
-        List<DigestAlgorithm> ret = new ArrayList<DigestAlgorithm>();
+        List<DigestAlgorithm> ret = new ArrayList<>();
         for (String algoString : s.split(",")) {
             String uc = algoString.toUpperCase(Locale.ROOT);
             if (uc.equals(DigestAlgorithm.MD2.toString())) {
@@ -213,7 +237,6 @@ public class CommonsDigester implements DigestingParser.Digester {
         private final long max;
         private final InputStream in;
         private long pos;
-        boolean hitBound = false;
 
         private SimpleBoundedInputStream(long max, InputStream in) {
             this.max = max;
@@ -223,7 +246,6 @@ public class CommonsDigester implements DigestingParser.Digester {
         @Override
         public int read() throws IOException {
             if (max >= 0 && pos >= max) {
-                hitBound = true;
                 return EOF;
             }
             final int result = in.read();
@@ -293,7 +315,7 @@ public class CommonsDigester implements DigestingParser.Digester {
         }
 
         public boolean hasHitBound() {
-            return hitBound;
+            return pos >= max;
         }
     }
 }

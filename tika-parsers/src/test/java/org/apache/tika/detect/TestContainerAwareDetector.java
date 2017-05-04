@@ -31,6 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.junit.Test;
 
 /**
@@ -103,8 +104,8 @@ public class TestContainerAwareDetector {
 
         // Try some ones that POI doesn't handle, that are still OLE2 based
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
-        assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
-        assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
+        assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro; version=9");
+        assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro; version=7-8");
         
         assertTypeByData("testHWP_5.0.hwp", "application/x-hwp-v5");
         
@@ -316,6 +317,16 @@ public class TestContainerAwareDetector {
     }
 
     @Test
+    public void testDetectIWork2013() throws Exception {
+        assertTypeByData("testKeynote2013.key",
+                IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString());
+        assertTypeByData("testNumbers2013.numbers",
+                IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString());
+        assertTypeByData("testPages2013.pages",
+                IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString());
+    }
+
+    @Test
     public void testDetectKMZ() throws Exception {
        assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
     }
@@ -348,6 +359,21 @@ public class TestContainerAwareDetector {
         // JAR with HTML files in it
         assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
                                 "application/java-archive", "application/java-archive");
+    }
+
+    @Test
+    public void testTarWithNoMagic() throws Exception {
+        assertTypeByData("testTAR_no_magic.tar", "application/x-tar");
+    }
+
+    @Test
+    public void testLZMAOOM() throws Exception {
+        assertTypeByData("testLZMA_oom", "application/x-lzma");
+    }
+
+    @Test
+    public void testCompressOOM() throws Exception {
+        assertTypeByData("testZ_oom.Z", "application/x-compress");
     }
 
     private TikaInputStream getTruncatedFile(String name, int n)

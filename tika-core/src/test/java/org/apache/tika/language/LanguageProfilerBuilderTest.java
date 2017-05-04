@@ -34,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.junit.After;
 import org.junit.Test;
 
+@Deprecated
 public class LanguageProfilerBuilderTest {
     /* Test members */
     private LanguageProfilerBuilder ngramProfile = null;

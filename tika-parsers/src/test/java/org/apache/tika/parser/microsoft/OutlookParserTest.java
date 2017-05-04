@@ -26,11 +26,14 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -54,7 +57,6 @@ public class OutlookParserTest extends TikaTest {
                 "/test-documents/test-outlook.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
-
         assertEquals(
                 "application/vnd.ms-outlook",
                 metadata.get(Metadata.CONTENT_TYPE));
@@ -70,6 +72,20 @@ public class OutlookParserTest extends TikaTest {
         assertEquals(
                 "L'\u00C9quipe Microsoft Outlook Express",
                 metadata.get(Metadata.AUTHOR));
+
+        //ensure that "raw" header is correctly decoded
+        assertEquals(
+                "L'\u00C9quipe Microsoft Outlook Express <msoe@microsoft.com>",
+                metadata.get(Metadata.MESSAGE_RAW_HEADER_PREFIX+"From"));
+
+        assertEquals("Nouvel utilisateur de Outlook Express",
+                metadata.get(Message.MESSAGE_TO_EMAIL));
+
+        assertEquals("",
+                metadata.get(Message.MESSAGE_TO_NAME));
+
+        assertEquals("Nouvel utilisateur de Outlook Express",
+                metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
 
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals(
@@ -108,6 +124,25 @@ public class OutlookParserTest extends TikaTest {
         Matcher matcher = pattern.matcher(content);
         assertTrue(matcher.find());
         assertFalse(matcher.find());
+
+        //test that last header is added
+        assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
+                Arrays.asList(metadata.getValues("Message:Raw-Header:X-OriginalArrivalTime")));
+        //confirm next line is added correctly
+        assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
+                "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 -0800",
+                Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
+        assertEquals("EX", metadata.get(Office.MAPI_SENT_BY_SERVER_TYPE));
+        assertEquals("NOTE", metadata.get(Office.MAPI_MESSAGE_CLASS));
+        assertEquals("Jukka Zitting", metadata.get(Message.MESSAGE_FROM_NAME));
+        assertEquals("jukka.zitting@gmail.com", metadata.get(Message.MESSAGE_FROM_EMAIL));
+        assertEquals("Jukka Zitting", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("jukka.zitting@gmail.com", metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
+
+        //to-name is empty, make sure that we get an empty string.
+        assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_EMAIL));
+        assertEquals("tika-dev@lucene.apache.org", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
+        assertEquals("", metadata.get(Message.MESSAGE_TO_NAME));
     }
 
     /**
@@ -125,7 +160,6 @@ public class OutlookParserTest extends TikaTest {
                 "/test-documents/test-outlook2003.msg")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
-
         assertEquals(
                 "application/vnd.ms-outlook",
                 metadata.get(Metadata.CONTENT_TYPE));
@@ -137,6 +171,12 @@ public class OutlookParserTest extends TikaTest {
         assertContains("Outlook 2003", content);
         assertContains("Streamlined Mail Experience", content);
         assertContains("Navigation Pane", content);
+
+        //make sure these are parallel
+        assertEquals("", metadata.get(Message.MESSAGE_TO_EMAIL));
+        assertEquals("New Outlook User", metadata.get(Message.MESSAGE_TO_NAME));
+        assertEquals("New Outlook User", metadata.get(Message.MESSAGE_TO_DISPLAY_NAME));
+
     }
 
     @Test
@@ -173,6 +213,12 @@ public class OutlookParserTest extends TikaTest {
         // Make sure that the Chinese actually came through
         assertContains("\u5F35\u6BD3\u502B", metadata.get(TikaCoreProperties.CREATOR));
         assertContains("\u9673\u60E0\u73CD", content);
+
+        assertEquals("tests.chang@fengttt.com", metadata.get(Message.MESSAGE_TO_EMAIL));
+
+        assertEquals("Tests Chang@FT (張毓倫)", metadata.get(Office.MAPI_FROM_REPRESENTING_NAME));
+        assertEquals("/O=FT GROUP/OU=FT/CN=RECIPIENTS/CN=LYDIACHANG",
+                metadata.get(Office.MAPI_FROM_REPRESENTING_EMAIL));
     }
 
     @Test
@@ -235,5 +281,24 @@ public class OutlookParserTest extends TikaTest {
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+    }
+
+    @Test
+    public void testMAPIMessageClasses() throws Exception {
+
+        for (String messageClass : new String[]{
+                "Appointment", "Contact", "Post", "StickyNote", "Task"
+        }) {
+            testMsgClass(messageClass,
+                    getXML("testMSG_" + messageClass + ".msg").metadata);
+        }
+
+        testMsgClass("NOTE", getXML("test-outlook2003.msg").metadata);
+
+    }
+
+    private void testMsgClass(String expected, Metadata metadata) {
+        assertTrue(expected + ", but got: " + metadata.get(Office.MAPI_MESSAGE_CLASS),
+                expected.equalsIgnoreCase(metadata.get(Office.MAPI_MESSAGE_CLASS).replaceAll("_", "")));
     }
 }

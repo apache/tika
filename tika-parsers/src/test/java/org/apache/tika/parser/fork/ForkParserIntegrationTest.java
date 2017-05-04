@@ -34,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -151,7 +152,7 @@ public class ForkParserIntegrationTest {
     @Test
     public void testParsingErrorInForkedParserShouldBeReported() throws Exception {
         BrokenParser brokenParser = new BrokenParser();
-        Parser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
+        ForkParser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
         InputStream stream = getClass().getResourceAsStream("/test-documents/testTXT.txt");
         
         // With a serializable error, we'll get that back
@@ -162,6 +163,8 @@ public class ForkParserIntegrationTest {
             fail("Expected TikaException caused by Error");
         } catch (TikaException e) {
             assertEquals(brokenParser.err, e.getCause());
+        } finally {
+            parser.close();
         }
         
         // With a non serializable one, we'll get something else
@@ -254,6 +257,7 @@ public class ForkParserIntegrationTest {
             InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
                     "/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
+            context.set(Parser.class, new EmptyParser());
             parser.parse(stream, output, new Metadata(), context);
 
             String content = output.toString();

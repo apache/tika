@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * <code>ImportContextImpl</code>...
  */
 public class ImportContextImpl implements ImportContext {
-    private static Logger log = LoggerFactory.getLogger(ImportContextImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ImportContextImpl.class);
 
     private final IOListener ioListener;
     private final Item importRoot;
@@ -77,7 +77,7 @@ public class ImportContextImpl implements ImportContext {
         this.systemId = systemId;
         this.inputCtx = ctx;
         this.ioListener = (ioListener != null) ? ioListener
-                : new DefaultIOListener(log);
+                : new DefaultIOListener(LOG);
         this.detector = detector;
 
         Metadata metadata = new Metadata();
@@ -177,8 +177,7 @@ public class ImportContextImpl implements ImportContext {
             length = inputFile.length();
         }
         if (length < 0) {
-            log.debug("Unable to determine content length -> default value = "
-                    + IOUtil.UNDEFINED_LENGTH);
+            LOG.debug("Unable to determine content length -> default value = {}", IOUtil.UNDEFINED_LENGTH);
         }
         return length;
     }

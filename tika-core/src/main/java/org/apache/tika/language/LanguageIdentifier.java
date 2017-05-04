@@ -16,6 +16,8 @@
  */
 package org.apache.tika.language;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,19 +27,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 /**
  * Identifier of the language that best matches a given content profile.
  * The content profile is compared to generic language profiles based on
  * material from various sources.
- *
  * @since Apache Tika 0.5
  * @see <a href="http://www.iccs.inf.ed.ac.uk/~pkoehn/publications/europarl/">
  *      Europarl: A Parallel Corpus for Statistical Machine Translation</a>
  * @see <a href="http://www.loc.gov/standards/iso639-2/php/code_list.php">
  *      ISO 639 Language Codes</a>
+ * @deprecated  use a concrete class of {@link org.apache.tika.language.detect.LanguageDetector}
  */
+@Deprecated
 public class LanguageIdentifier {
     
     /**
@@ -217,7 +218,7 @@ public class LanguageIdentifier {
     }
     
     /**
-     * Returns a string of error messages related to initializing langauge profiles
+     * Returns a string of error messages related to initializing language profiles
      * @return the String containing the error messages
      */
     public static String getErrors() {

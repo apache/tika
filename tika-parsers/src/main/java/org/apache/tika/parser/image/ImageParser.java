@@ -38,30 +38,45 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class ImageParser extends AbstractParser {
-
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = 7852529269245520335L;
 
-    private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
-    private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
+    private static final Logger LOG = LoggerFactory.getLogger(ImageParser.class);
+
+    private static final MediaType MAIN_BMP_TYPE = MediaType.image("bmp");
+    private static final MediaType OLD_BMP_TYPE = MediaType.image("x-ms-bmp");
+
+    private static final Set<MediaType> TMP_SUPPORTED;
+
+    static {
+        TMP_SUPPORTED = new HashSet<>(Arrays.asList(
+                MAIN_BMP_TYPE,
+                OLD_BMP_TYPE,
+                MediaType.image("gif"),
+                MediaType.image("png"),
+                MediaType.image("vnd.wap.wbmp"),
+                MediaType.image("x-icon"),
+                MediaType.image("x-xcf")));
+        try {
+            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+            TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
+        } catch (ClassNotFoundException e) {
+            LOG.warn("JBIG2ImageReader not loaded. jbig2 files will be ignored");
+        }
+    }
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    CANONICAL_BMP_TYPE,
-                    JAVA_BMP_TYPE,
-                    MediaType.image("gif"),
-                    MediaType.image("png"),
-                    MediaType.image("vnd.wap.wbmp"),
-                    MediaType.image("x-icon"),
-                    MediaType.image("x-xcf"))));
+            Collections.unmodifiableSet(TMP_SUPPORTED);
 
     private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
         if (metadata.get(imageIOkey) != null) {
@@ -80,6 +95,9 @@ public class ImageParser extends AbstractParser {
     }
 
     private static void loadMetadata(IIOMetadata imageMetadata, Metadata metadata) {
+        if (imageMetadata == null) {
+            return;
+        }
         String[] names = imageMetadata.getMetadataFormatNames();
         if (names == null) {
             return;
@@ -151,10 +169,10 @@ public class ImageParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type != null) {
-            // Java has a different idea of the BMP mime type to
-            //  what the canonical one is, fix this up.
-            if (CANONICAL_BMP_TYPE.toString().equals(type)) {
-                type = JAVA_BMP_TYPE.toString();
+            // If the old (pre-RFC7903) BMP mime type is given,
+            //  fix it up to the new one, so Java is happy
+            if (OLD_BMP_TYPE.toString().equals(type)) {
+                type = MAIN_BMP_TYPE.toString();
             }
 
             try {
@@ -199,5 +217,4 @@ public class ImageParser extends AbstractParser {
         xhtml.startDocument();
         xhtml.endDocument();
     }
-
 }

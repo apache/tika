@@ -16,9 +16,14 @@
  */
 package org.apache.tika.parser.xml;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
@@ -27,11 +32,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Set;
 
 public class FictionBookParser extends XMLParser {
     private static final long serialVersionUID = 4195954546491524374L;
@@ -43,13 +43,8 @@ public class FictionBookParser extends XMLParser {
 
     @Override
     protected ContentHandler getContentHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
-
-        if (ex == null) {
-            ex = new ParsingEmbeddedDocumentExtractor(context);
-        }
-
-        return new BinaryElementsDataHandler(ex, handler);
+        return new BinaryElementsDataHandler(
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), handler);
     }
 
     private static class BinaryElementsDataHandler extends DefaultHandler {

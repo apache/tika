@@ -26,14 +26,7 @@ import java.io.IOException;
  */
 public interface Translator {
     /**
-     * Translate text between given languages. The following languages are supported:
-     * Arabic("ar"), Bulgarian("bg"), Catalan("ca"), Chinese-Simplified("zh-CHS"), Chinese-Traditional("zh-CHT"),
-     * Czech("cs"), Danish("da"), Dutch("nl"), English("en"), Estonian("et"),  Innish("fi"), French("fr"), German("de"),
-     * Greek("el"), Haitian-Creole("ht"), Hebrew("he"), Hindi("hi"), Hmong-Daw("mww"), Hungarian("hu"),
-     * Indonesian("id"), Italian("it"), Japanese("ja"), Korean("ko"), Latvian("lv"), Lithuanian("lt"), Malay("ms"),
-     * Norwegian("no"), Persian("fa"), Polish("pl"), Portuguese("pt"), Romanian("ro"), Russian("ru"), Slovak("sk"),
-     * Slovenian("sl"), Spanish("es"), Swedish("sv"), Thai("th"), Turkish("tr"), Ukranian("uk"), Urdu("ur"),
-     * Vietnemese("vi").
+     * Translate text between given languages.
      * @param text The text to translate.
      * @param sourceLanguage The input text language (for example, "en").
      * @param targetLanguage The desired language to translate to (for example, "fr").
@@ -45,15 +38,8 @@ public interface Translator {
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException;
 
     /**
-     * Translate text to the given language. This method attempts to auto-detect the source language of the text.
-     * The following languages are supported:
-     * Arabic("ar"), Bulgarian("bg"), Catalan("ca"), Chinese-Simplified("zh-CHS"), Chinese-Traditional("zh-CHT"),
-     * Czech("cs"), Danish("da"), Dutch("nl"), English("en"), Estonian("et"),  Innish("fi"), French("fr"), German("de"),
-     * Greek("el"), Haitian-Creole("ht"), Hebrew("he"), Hindi("hi"), Hmong-Daw("mww"), Hungarian("hu"),
-     * Indonesian("id"), Italian("it"), Japanese("ja"), Korean("ko"), Latvian("lv"), Lithuanian("lt"), Malay("ms"),
-     * Norwegian("no"), Persian("fa"), Polish("pl"), Portuguese("pt"), Romanian("ro"), Russian("ru"), Slovak("sk"),
-     * Slovenian("sl"), Spanish("es"), Swedish("sv"), Thai("th"), Turkish("tr"), Ukranian("uk"), Urdu("ur"),
-     * Vietnemese("vi").
+     * Translate text to the given language
+     * This method attempts to auto-detect the source language of the text.
      * @param text The text to translate.
      * @param targetLanguage The desired language to translate to (for example, "hi").
      * @return The translation result. If translation is unavailable, returns the same text back.

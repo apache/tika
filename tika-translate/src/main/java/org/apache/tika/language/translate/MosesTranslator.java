@@ -17,20 +17,17 @@
 
 package org.apache.tika.language.translate;
 
-import org.apache.tika.exception.TikaException;
-
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Properties;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Translator that uses the Moses decoder for translation.
@@ -79,6 +76,7 @@ public class MosesTranslator extends ExternalTranslator {
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) return text;
         File tmpFile = new File(TMP_FILE_NAME);
+        @SuppressWarnings("resource")
         OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset());
         out.append(text).append('\n').close();
 
@@ -87,6 +85,7 @@ public class MosesTranslator extends ExternalTranslator {
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
+        @SuppressWarnings("resource")
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(tmpTranslatedFile),
                 Charset.defaultCharset()

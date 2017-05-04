@@ -32,6 +32,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -95,8 +96,8 @@ public class ParsingExample {
 
     /**
      * If you don't want content from embedded documents, send in
-     * a {@link org.apache.tika.parser.ParseContext} that does not contain a
-     * {@link Parser}.
+     * a {@link org.apache.tika.parser.ParseContext} that does contains a
+     * {@link EmptyParser}.
      *
      * @return The content of a file.
      */
@@ -104,8 +105,10 @@ public class ParsingExample {
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, new EmptyParser());
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            parser.parse(stream, handler, metadata, parseContext);
             return handler.toString();
         }
     }

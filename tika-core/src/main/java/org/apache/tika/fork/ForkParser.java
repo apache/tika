@@ -54,8 +54,9 @@ public class ForkParser extends AbstractParser {
 
     private int currentlyInUse = 0;
 
-    private final Queue<ForkClient> pool =
-        new LinkedList<ForkClient>();
+    private final Queue<ForkClient> pool = new LinkedList<>();
+
+    private long serverPulseMillis = 5000;
 
     /**
      * @param loader The ClassLoader to use 
@@ -132,7 +133,7 @@ public class ForkParser extends AbstractParser {
      * @param java java command line
      */
     public void setJavaCommand(List<String> java) {
-        this.java = new ArrayList<String>(java);
+        this.java = new ArrayList<>(java);
     }
 
     /**
@@ -213,7 +214,7 @@ public class ForkParser extends AbstractParser {
 
             // Create a new process if there's room in the pool
             if (client == null && currentlyInUse < poolSize) {
-                client = new ForkClient(loader, parser, java);
+                client = new ForkClient(loader, parser, java, serverPulseMillis);
             }
 
             // Ping the process, and get rid of it if it's inactive
@@ -244,6 +245,18 @@ public class ForkParser extends AbstractParser {
         } else {
             client.close();
         }
+    }
+
+    /**
+     * The amount of time in milliseconds that the server
+     * should wait for any input or output.  If it receives no
+     * input or output in this amount of time, it will shutdown.
+     * The default is 5 seconds.
+     *
+     * @param serverPulseMillis milliseconds to sleep before checking if there has been any activity
+     */
+    public void setServerPulseMillis(long serverPulseMillis) {
+        this.serverPulseMillis = serverPulseMillis;
     }
 
 }

@@ -45,15 +45,15 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -67,31 +67,37 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
+import org.apache.tika.server.InputStreamFactory;
 import org.apache.tika.server.TikaServerParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 @Path("/tika")
 public class TikaResource {
-    public static final String GREETING = "This is Tika Server. Please PUT\n";
+    public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
 
-
-    private static final Log logger = LogFactory.getLog(TikaResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
 
     private static TikaConfig tikaConfig;
     private static DigestingParser.Digester digester = null;
+    private static InputStreamFactory inputStreamFactory = null;
 
-    public static void init(TikaConfig config, DigestingParser.Digester digestr) {
+    public static void init(TikaConfig config, DigestingParser.Digester digestr,
+                            InputStreamFactory iSF) {
         tikaConfig = config;
         digester = digestr;
+        inputStreamFactory = iSF;
     }
 
     static {
@@ -141,12 +147,7 @@ public class TikaResource {
                 }
             } catch (ParseException e) {
                 // not a valid content-disposition field
-            	e.printStackTrace();
-            	logger.warn(String.format(
-                        Locale.ROOT,
-                        "Parse exception %s determining content disposition",
-                        e.getMessage()
-                ), e);
+                LOG.warn("Parse exception {} determining content disposition", e.getMessage(), e);
             }
         }
 
@@ -172,6 +173,14 @@ public class TikaResource {
         }
     }
 
+    public static InputStream getInputStream(InputStream is, HttpHeaders headers) {
+        try {
+            return inputStreamFactory.getInputSteam(is, headers);
+        } catch (IOException e) {
+            throw new TikaServerParseException(e);
+        }
+    }
+
     /**
      * Utility method to set a property on a class via reflection.
      *
@@ -185,6 +194,7 @@ public class TikaResource {
         try {
             String property = StringUtils.removeStart(key, prefix);
             Field field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
+
             field.setAccessible(true);
             if (field.getType() == String.class) {
                 field.set(object, httpHeaders.getFirst(key));
@@ -194,6 +204,20 @@ public class TikaResource {
                 field.setDouble(object, Double.parseDouble(httpHeaders.getFirst(key)));
             } else if (field.getType() == boolean.class) {
                 field.setBoolean(object, Boolean.parseBoolean(httpHeaders.getFirst(key)));
+            } else {
+                //couldn't find a directly accessible field
+                //try for setX(String s)
+                String setter = StringUtils.uncapitalize(property);
+                setter = "set"+setter.substring(0,1).toUpperCase(Locale.US)+setter.substring(1);
+                Method m = null;
+                try {
+                    m = object.getClass().getMethod(setter, String.class);
+                } catch (NoSuchMethodException e) {
+                    //swallow
+                }
+                if (m != null) {
+                    m.invoke(object, httpHeaders.getFirst(key));
+                }
             }
         } catch (Throwable ex) {
             throw new WebApplicationException(String.format(Locale.ROOT,
@@ -279,43 +303,26 @@ public class TikaResource {
 
     }
 
-    public static void parse(Parser parser, Log logger, String path, InputStream inputStream,
+    public static void parse(Parser parser, Logger logger, String path, InputStream inputStream,
                              ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
         try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream)) {
             parser.parse(tikaInputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
             throw new TikaServerParseException(e);
         } catch (EncryptedDocumentException e) {
-            logger.warn(String.format(
-                    Locale.ROOT,
-                    "%s: Encrypted document",
-                    path
-            ), e);
+            logger.warn("{}: Encrypted document", path, e);
             throw new TikaServerParseException(e);
         } catch (Exception e) {
-            logger.warn(String.format(
-                    Locale.ROOT,
-                    "%s: Text extraction failed",
-                    path
-            ), e);
+            logger.warn("{}: Text extraction failed", path, e);
             throw new TikaServerParseException(e);
         }
     }
 
-    public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
+    public static void logRequest(Logger logger, UriInfo info, Metadata metadata) {
         if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE) == null) {
-            logger.info(String.format(
-                    Locale.ROOT,
-                    "%s (autodetecting type)",
-                    info.getPath()
-            ));
+            logger.info("{} (autodetecting type)", info.getPath());
         } else {
-            logger.info(String.format(
-                    Locale.ROOT,
-                    "%s (%s)",
-                    info.getPath(),
-                    metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)
-            ));
+            logger.info("{} ({})", info.getPath(), metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
         }
     }
 
@@ -333,11 +340,53 @@ public class TikaResource {
         return produceText(att.getObject(InputStream.class), att.getHeaders(), info);
     }
 
+    //this is equivalent to text-main in tika-app
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain")
+    @Path("main")
+    public StreamingOutput getTextMain(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceTextMain(is, httpHeaders.getRequestHeaders(), info);
+    }
+
+    //this is equivalent to text-main (Boilerpipe handler) in tika-app
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("text/plain")
+    @Path("form/main")
+    public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context final UriInfo info) {
+        return produceTextMain(att.getObject(InputStream.class), att.getHeaders(), info);
+    }
+
+    public StreamingOutput produceTextMain(final InputStream is, @Context MultivaluedMap<String, String> httpHeaders, @Context final UriInfo info) {
+        final Parser parser = createParser();
+        final Metadata metadata = new Metadata();
+        final ParseContext context = new ParseContext();
+
+        fillMetadata(parser, metadata, context, httpHeaders);
+        fillParseContext(context, httpHeaders, parser);
+
+        logRequest(LOG, info, metadata);
+
+        return new StreamingOutput() {
+            public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+
+                ContentHandler handler = new BoilerpipeContentHandler(writer);
+
+                try (InputStream inputStream = is) {
+                    parse(parser, LOG, info.getPath(), inputStream, handler, metadata, context);
+                }
+            }
+        };
+    }
+
+
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
     public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceText(is, httpHeaders.getRequestHeaders(), info);
+        return produceText(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
     }
 
     public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
@@ -348,7 +397,7 @@ public class TikaResource {
         fillMetadata(parser, metadata, context, httpHeaders);
         fillParseContext(context, httpHeaders, parser);
 
-        logRequest(logger, info, metadata);
+        logRequest(LOG, info, metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
@@ -357,7 +406,7 @@ public class TikaResource {
                 BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
                 try (InputStream inputStream = is) {
-                    parse(parser, logger, info.getPath(), inputStream, body, metadata, context);
+                    parse(parser, LOG, info.getPath(), inputStream, body, metadata, context);
                 }
             }
         };
@@ -375,7 +424,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/html")
     public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(is, httpHeaders.getRequestHeaders(), info, "html");
+        return produceOutput(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, "html");
     }
 
     @POST
@@ -390,7 +439,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/xml")
     public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(is, httpHeaders.getRequestHeaders(), info, "xml");
+        return produceOutput(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, "xml");
     }
 
     private StreamingOutput produceOutput(final InputStream is, final MultivaluedMap<String, String> httpHeaders,
@@ -403,7 +452,7 @@ public class TikaResource {
         fillParseContext(context, httpHeaders, parser);
 
 
-        logRequest(logger, info, metadata);
+        logRequest(LOG, info, metadata);
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream)
@@ -423,7 +472,7 @@ public class TikaResource {
                     throw new WebApplicationException(e);
                 }
 
-                parse(parser, logger, info.getPath(), is, content, metadata, context);
+                parse(parser, LOG, info.getPath(), is, content, metadata, context);
             }
         };
     }

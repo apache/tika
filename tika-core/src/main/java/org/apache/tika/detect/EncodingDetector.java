@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 
 import org.apache.tika.metadata.Metadata;
@@ -29,7 +30,7 @@ import org.apache.tika.metadata.Metadata;
  *
  * @since Apache Tika 0.4
  */
-public interface EncodingDetector {
+public interface EncodingDetector extends Serializable {
 
     /**
      * Detects the character encoding of the given text document, or

@@ -1,5 +1,221 @@
-Release 1.13 - ???
+Release 1.15 - ??
 
+  * A new parser for sentiment analysis using a categorical 
+    (multi-class, anry, sad, neutral, like, love) and binary
+    (positive/negative) was added leveraging the USC data 
+    science work (TIKA-2016).
+
+  * Tika now has the ability to automatically detect objects in videos,
+    using OpenCV and Tensorflow (TIKA-2322).
+
+  * Change default behavior to parse embedded documents even if the user
+    forgets to specify a Parser.class in the ParseContext (TIKA-2096).
+    Users who wish to parse only the container document should set
+    an EmptyParser as the Parser.class in the ParseContext.
+
+  * Change default behavior of Office Parsers to _not_ extract
+    Macros.  User needs to setExtractMacros to "true" (TIKA-2302).
+
+  * Added tika-eval module (TIKA-1332).
+
+  * Unified logging across Tika: SLF4J as logging API, Apache Log4j as
+    implementation with JCL and JUL bridges in standalone tools like
+    tika-app, tika-batch and tika-server (TIKA-2245).
+
+  * Add parser for XLSB files (TIKA-1195).
+
+  * Add parsers for EMF/WMF files (TIKA-2246/TIKA-2247).
+
+  * Add parsers for WordPerfect and QuattroPro (.qpw) files.
+    Contributed by Pascal Essiembre (TIKA-1946 and TIKA-2228).
+
+  * Add experimental SAX parser for .pptx files. To select this parser,
+    set useSAXPptxExtractor(true) on OfficeParserConfig (TIKA-2210).
+
+  * Add experimental SAX parser for .docx files. To select this parser,
+    set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321, TIKA-2191).
+
+  * Add mime detection and parser for Word 2006ML format (TIKA-2179).
+
+  * Bug fix for WordPerfect via Pascal Essiembre (TIKA-2352).
+
+  * Added "text-main" equivalent option to tika-server via
+    /tika/main (TIKA-2343).
+
+  * Enabled configuration of the EncodingDetector used by
+    parsers that extend AbstractEncodingDetectorParser (TIKA-2273).
+
+  * Prevent easily preventable OOMs for both detection and parsing
+    of some compression formats (TIKA-2330).
+
+  * Extract images and thumbnails from ODT via Sam Bayer (TIKA-2295).
+
+  * Fix potential NPE in FeedParser via Julien Nioche (TIKA-2269).
+
+  * Official mime types for BMP, EMF and WMF have been registered with
+    IANA, so switch to these (image/bmp image/emf image/wmf) (TIKA-2250)
+
+  * Be more parsimonious with BufferedInputStreams via Josh Hight
+    (TIKA-2244).
+
+  * Enable handling of hyphenated language codes in TesseractOCRParser
+    via Graham Russell (TIKA-2231).
+
+  * Improve style tags in ODT (TIKA-2242).
+
+  * Add container detection for embedded MSEquation files (TIKA-2238).
+
+  * Add parsing of JBIG2 and extraction of JBIG2 from PDFs when
+    required dependencies are added to class path by user.
+    Contributed by Pascal Essiembre (TIKA-2232).
+
+  * Mime magic for the OneNote family (.one / .onetoc / .onepkg), no parser
+    (TIKA-2224).
+
+  * Add configurability of "preserve-interword-spacing" to
+    TesseractOCRParser (TIKA-2190).
+
+  * Upgrade to PDFBox 2.0.5 and JempBox 1.8.13 (TIKA-2209/TIKA-2236).
+
+  * Refactor MockParser to consolidate service loading
+    and mime types into tika-core/src/test (TIKA-2195).
+
+  * Enabled extraction of embedded objects from headers, footers,
+    footnotes, endnotes and comments in legacy .docx parser (TIKA-2192).
+
+  * Allow extraction of PDActions (including Javascript) from
+    PDFs (TIKA-2090).  This is turned off by default.  Users
+    must setExtractActions(true) on the PDFParserConfig.
+
+  * Change default behavior in experimental .docx parser to ignore
+    deleted text to align with .doc (TIKA-2187).
+
+  * Upgrade to POI 3.16 (TIKA-2116, TIKA-2181, TIKA-2329).
+
+  * Allow configuration of timeout for ForkParser (TIKA-2170).
+
+  * Add extraction of .jpx inline images from PDFs when required
+    dependencies are added by user to class path (TIKA-2175).
+
+  * Add .jpx, .jp2, .ppm to formats handled by Tesseract (TIKA-2174).
+
+  * Upgrade SQLite "provided" dependency to 3.16.1 (TIKA-2334).
+
+  * Update Apache CXF version to 3.0.12 (TIKA-2292).
+
+  * Add Lingo24 Language Detector (TIKA-2297).
+
+  * Further mime magic for WebVTT (TIKA-1772)
+
+Release 1.14 - 10/19/2016
+
+  * Extract all headers from MSG/RFC822 (TIKA-2122).
+
+  * Upgrade metadata-extractor to 2.9.1 (TIKA-2113).
+
+  * Extract PDF DocInfo metadata into separate keys to prevent
+    overwriting by XMP metadata (TIKA-2057).
+
+  * Re-enable fileUrl for tika-server (TIKA-2081).  If you choose,
+    to use this feature, beware of the security vulnerabilities!
+    See: https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271
+
+  * Add Tesseract's hOCR output format as an option, via Eric Pugh
+    (TIKA-2093)
+
+  * Extract macros from MSOffice files (TIKA-2069).
+
+  * Maintain passed-in mime in TXTParser (TIKA-2047).
+
+  * Upgrade to POI.3-15 (TIKA-2013).
+
+  * Upgrade to PDFBox 2.0.3 (TIKA-2051).
+
+  * Fix hyperlinks with formatting in DOC and DOCX (TIKA-1255
+    and TIKA-2078)
+
+  * Tika now is integrated with the Tensorflow library from Google 
+    and it can use its Inception v3 image classification model to 
+    identify objects in images (TIKA-1993).
+
+  * Parser configuration is now type-safe and parameters for parsers
+    can have assigned types (TIKA-1508, TIKA-1986).
+
+  * Prevent OOM/permanent hang on some corrupt CHM files (TIKA-2040).
+
+  * Upgrade ICU4J charset detection components to fix multithreading
+    bug (TIKA-2041).
+
+  * Upgrade to Jackcess 2.1.4 (TIKA-2039).
+
+  * Maintain more significant digits in cells of "General" format
+    in XLS and XLSX (TIKA-2025).
+
+  * Avoid mark/reset issues when extracting or detecting embedded resources
+    in RFC822 emails (TIKA-2037).
+
+  * Improving accuracy of Tesseract for better extraction of numeric 
+    and alphanumeric text from images (TIKA-2021, TIKA-2031).
+
+  * Improve extraction of embedded documents from PPT, PPTX and XLSX
+    (TIKA-2026).
+
+  * Add parser for applefile (AppleSingle) (TIKA-2022).
+
+  * Add mime types, mime magic and/or globs for:
+     * Endnote Import File (TIKA-2011)
+     * DJVU files (TIKA-2009)
+     * MS Owner File (TIKA-2008)
+     * Windows Media Metafile (TIKA-2004)
+     * iCal and vCalendar (TIKA-2006)
+     * MBOX (TIKA-2042)
+     * Stata DTA (TIKA-2064)
+
+  * Add configurable maximum threshold for number of events extracted
+    from the XMP Media Management Schema in JempboxExtractor (TIKA-1999).
+
+  * Integrate TesseractOCR with full page image rendering for PDFs (TIKA-1994).
+
+  * Add mime detection via Nick C and parser for DBF files (TIKA-1513).
+  
+  * Add mime detection and parsers for MSOffice 2003 XML Word
+    and Excel formats (TIKA-1958).
+
+  * Extract hyperlinks from PPT, PPTX, XSLX (TIKA-1454).
+
+  * Upgrade to Commons Compress 1.12 (supports progress on TIKA-1358)
+
+Release 1.13 - 05/08/2016
+
+  * Upgrade to PDFBox 2.0.1 (TIKA-1285/TIKA-1959).
+    MAJOR CHANGES in PDFParser:
+    * The classic sequential parser is no longer available.
+    * Tiff files are no longer extracted by default.  See
+      https://pdfbox.apache.org/2.0/dependencies.html#optional-components
+      for optional components to process Tiff files.
+    * Some truncated/corrupted files that had some content extracted
+      with 1.8.x may have no content extracted in 2.0.x (see TIKA-1912).
+
+  * The MIT-NLP Information Extraction (MITIE) Named Entity
+    Recognition (NER) system is now supported in Tika
+    (TIKA-1913, GitHub-108).
+
+  * Tika now supports the use of the Yandex translation 
+    service (TIKA-1943, GitHub-106).
+
+  * Tika now uses NER to extract scientific measurements
+    from text using either GROBID Quantities which uses 
+    conditional random fields and NLTK which uses regular 
+    expressesions (TIKA-1917, GitHub-104).
+
+  * Fixed JournalParser to handle null responses from 
+    GROBID and to log a message (TIKA-1925).
+
+  * Refactored Language Detector into tika-landetect module,
+    added default N-Gram implementation, Optimaize Lang
+    Detector and MIT Text.jl implementation 
+    (TIKA-1872, TIKA-1696, TIKA-1723).
+ 
   * Extract metadata from MP4 videos whether or not the
     PooledTimeSeries parser is available via Aditya Dhulipala
     (TIKA-1844).
@@ -37,14 +253,6 @@ Release 1.13 - ???
 
   * Upgrade commons-cli in tika-batch to 1.3.1 (TIKA-1919).
 
-  * Upgrade to PDFBox 2.0.0 (TIKA-1285). MAJOR CHANGES in PDFParser:
-    * The classic sequential parser is no longer available.
-    * Tiff files are no longer extracted by default.  See
-      https://pdfbox.apache.org/2.0/dependencies.html#optional-components
-      for optional components to process Tiff files.
-    * Some truncated/corrupted files that had some content extracted
-      with 1.8.11 may have no content extracted in 2.0.0 (see TIKA-1912).
-
   * Add XMPMM support to PDFParser and JpegParser via Jempbox (TIKA-1894).
 
   * Move serialization of TikaConfig to tika-core and enable dumping
@@ -66,6 +274,12 @@ Release 1.13 - ???
   * Upgrade to Apache SIS 0.6 (TIKA-1878).
 
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
+
+  * Added ZeroSizeFileDetector to support application/x-zerovalue via
+    Adesh Gupta (TIKA-1885).  
+  
+  * Addition of types information to Grobid quantities parser via 
+    Can Menekse (TIKA-1965).
 
 Release 1.12 - 01/24/2016
 

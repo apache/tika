@@ -218,16 +218,34 @@ class XFAExtractor {
     private void loadData(XMLStreamReader reader, Map<String, String> pdfObjRToValues)
             throws XMLStreamException {
         //reader is at the "xfa:data" element
+        //scrape the contents from the text containing nodes
+        StringBuilder buffer = new StringBuilder();
         while (reader.hasNext()) {
             switch (reader.next()) {
                 case (XMLStreamConstants.START_ELEMENT) :
-                    if ("topmostSubform".equals(reader.getLocalName())) {
-                        continue;
-                    }
-                    String value = scrapeTextUntil(reader, reader.getName());
-                    pdfObjRToValues.put(reader.getLocalName(), value);
                     break;
+                case XMLStreamConstants.CHARACTERS:
+                    int start = reader.getTextStart();
+                    int length = reader.getTextLength();
+                    buffer.append(reader.getTextCharacters(),
+                            start,
+                            length);
+                    break;
+
+                case XMLStreamConstants.CDATA:
+                    start = reader.getTextStart();
+                    length = reader.getTextLength();
+                    buffer.append(reader.getTextCharacters(),
+                            start,
+                            length);
+                    break;
+
                 case (XMLStreamConstants.END_ELEMENT) :
+                    if (buffer.length() > 0) {
+                        String localName = reader.getLocalName();
+                        pdfObjRToValues.put(localName, buffer.toString());
+                        buffer.setLength(0);
+                    }
                     if (XFA_DATA.equals(reader.getName())) {
                         return;
                     }

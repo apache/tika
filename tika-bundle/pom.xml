@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.13-SNAPSHOT</version>
+    <version>1.15-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -41,7 +41,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <pax.exam.version>4.4.0</pax.exam.version>
+    <pax.exam.version>4.10.0</pax.exam.version>
   </properties>
 
   <dependencies>
@@ -61,6 +61,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.ops4j.pax.exam</groupId>
@@ -93,11 +94,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>javax.inject</groupId>
       <artifactId>javax.inject</artifactId>
       <version>1</version>
@@ -107,6 +103,13 @@
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
       <version>5.0.0</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- use non-log4j slf4j backend to prevent main classloader from loading log4j classes -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -124,9 +127,10 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>
+              tika-serialization;inline=true,
               tika-parsers;inline=true,
               commons-compress, xz, commons-codec, commons-csv,
-              commons-io, commons-exec, junrar,
+              commons-io, commons-exec, commons-collections4, junrar,
               pdfbox,pdfbox-tools,pdfbox-debugger,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               curvesapi,
@@ -137,9 +141,9 @@
               asm,
               juniversalchardet,
               vorbis-java-core, vorbis-java-tika,
-              isoparser, aspectjrt,
+              isoparser,
               metadata-extractor, xmpcore, json-simple,
-              boilerpipe, rome, rome-utils, opennlp-tools, opennlp-maxent,
+              boilerpipe, rome, rome-utils, sentiment-analysis-parser;type=jar;inline=false, opennlp-tools, opennlp-maxent,
               geoapi, sis-metadata, sis-netcdf, sis-utility,
               sis-storage, apache-mime4j-core, apache-mime4j-dom,
               jsr-275, jhighlight, java-libpst, jwnl,
@@ -159,7 +163,11 @@
               !junit.*,
               !org.apache.ctakes.*,
               !org.apache.uima.*,
+	      !org.apache.solr.client.solrj.*,
+	      !org.apache.solr.common.*,
               *,
+              org.slf4j, org.slf4j.event, org.slf4j.helpers, org.slf4j.spi,
+	      org.apache.tika.mime,
               org.apache.tika.fork,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
@@ -221,6 +229,7 @@
               org.apache.xml.resolver.tools;resolution:=optional,
               org.apache.xml.security;resolution:=optional,
               org.apache.xml.security.c14n;resolution:=optional,
+              org.apache.xml.security.signature;resolution:=optional,
               org.apache.xml.security.utils;resolution:=optional,
               org.apache.xmlbeans.impl.xpath.saxon;resolution:=optional,
               org.apache.xmlbeans.impl.xquery.saxon;resolution:=optional,
@@ -254,7 +263,6 @@
               org.osgi.framework;resolution:=optional,
               org.quartz;resolution:=optional,
               org.quartz.impl;resolution:=optional,
-              org.slf4j;resolution:=optional,
               org.sqlite;resolution:=optional,
               org.w3c.dom;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
@@ -263,7 +271,8 @@
               org.xml.sax.helpers;resolution:=optional,
               org.xmlpull.v1;resolution:=optional,
               com.microsoft.schemas.office.powerpoint;resolution:=optional,
-              com.microsoft.schemas.office.word;resolution:=optional,              sun.misc;resolution:=optional,
+              com.microsoft.schemas.office.word;resolution:=optional,
+              sun.misc;resolution:=optional,
               ucar.units;resolution:=optional,
               ucar.httpservices;resolution:=optional,
               ucar.nc2.util;resolution:=optional,
@@ -295,6 +304,7 @@
               ucar.unidata.util;resolution:=optional,
               com.jmatio.io;resolution:=optional,
               com.google.gson;resolution:=optional,
+	      com.google.gson.reflect;resolution:=optional,
               visad;resolution:=optional,
               visad.data;resolution:=optional,
               visad.data.vis5d;resolution:=optional,
@@ -351,6 +361,11 @@
               org.apache.http.protocol;resolution:=optional,
               org.apache.http.util;resolution:=optional
             </Import-Package>
+            <DynamicImport-Package>
+              org.slf4j.impl, org.slf4j.bridge,
+              org.apache.log4j, org.apache.log4j.*,
+              org.apache.commons.logging, org.apache.commons.logging.*
+            </DynamicImport-Package>
           </instructions>
         </configuration>
       </plugin>
@@ -417,13 +432,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <systemPropertyVariables>
-            <org.ops4j.pax.logging.DefaultServiceLog.level>
-              WARN
-            </org.ops4j.pax.logging.DefaultServiceLog.level>
-          </systemPropertyVariables>
-        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -37,7 +37,7 @@ import org.xml.sax.ContentHandler;
 
 class ForkClient {
 
-    private final List<ForkResource> resources = new ArrayList<ForkResource>();
+    private final List<ForkResource> resources = new ArrayList<>();
 
     private final ClassLoader loader;
 
@@ -51,7 +51,7 @@ class ForkClient {
 
     private final InputStream error;
 
-    public ForkClient(ClassLoader loader, Object object, List<String> java)
+    public ForkClient(ClassLoader loader, Object object, List<String> java, long serverPulseMillis)
             throws IOException, TikaException {
         boolean ok = false;
         try {
@@ -59,10 +59,11 @@ class ForkClient {
             this.jar = createBootstrapJar();
 
             ProcessBuilder builder = new ProcessBuilder();
-            List<String> command = new ArrayList<String>();
+            List<String> command = new ArrayList<>();
             command.addAll(java);
             command.add("-jar");
             command.add(jar.getPath());
+            command.add(Long.toString(serverPulseMillis));
             builder.command(command);
             this.process = builder.start();
 
@@ -116,7 +117,7 @@ class ForkClient {
 
     public synchronized Throwable call(String method, Object... args)
             throws IOException, TikaException {
-        List<ForkResource> r = new ArrayList<ForkResource>(resources);
+        List<ForkResource> r = new ArrayList<>(resources);
         output.writeByte(ForkServer.CALL);
         output.writeUTF(method);
         for (int i = 0; i < args.length; i++) {
@@ -264,10 +265,8 @@ class ForkClient {
      * @throws IOException if the bootstrap archive could not be created
      */
     private static void fillBootstrapJar(File file) throws IOException {
-        try (JarOutputStream jar =
-                new JarOutputStream(new FileOutputStream(file))) {
-            String manifest =
-                    "Main-Class: " + ForkServer.class.getName() + "\n";
+        try (JarOutputStream jar = new JarOutputStream(new FileOutputStream(file))) {
+            String manifest = "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
             jar.write(manifest.getBytes(UTF_8));
 
@@ -289,5 +288,4 @@ class ForkClient {
             }
         }
     }
-
 }

@@ -83,7 +83,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         OutputStream os = getOutputStream(fsOSFactory, fileResource);
 
         if (os == null) {
-            logger.debug("Skipping: " + fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
+            LOG.debug("Skipping: {}", fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
             return false;
         }
 
@@ -108,7 +108,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
             thrown = t;
             metadataList = parser.getMetadata();
             if (metadataList == null) {
-                metadataList = new LinkedList<Metadata>();
+                metadataList = new LinkedList<>();
             }
             Metadata m = null;
             if (metadataList.size() == 0) {
@@ -131,8 +131,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
             JsonMetadataList.toJson(metadataList, writer);
         } catch (Exception e) {
             //this is a stop the world kind of thing
-            logger.error("{}", getXMLifiedLogMsg(IO_OS+"json",
-                    fileResource.getResourceId(), e));
+            LOG.error("{}", getXMLifiedLogMsg(IO_OS + "json", fileResource.getResourceId(), e));
             throw new RuntimeException(e);
         } finally {
             flushAndClose(writer);

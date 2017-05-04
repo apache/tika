@@ -89,10 +89,11 @@ public class TikaDetectionTest {
         assertEquals("application/oda", tika.detect("x.oda"));
         assertEquals("application/oebps-package+xml", tika.detect("x.opf"));
         assertEquals("application/ogg", tika.detect("x.ogx"));
-        assertEquals("application/onenote", tika.detect("x.onetoc"));
-        assertEquals("application/onenote", tika.detect("x.onetoc2"));
-        assertEquals("application/onenote", tika.detect("x.onetmp"));
-        assertEquals("application/onenote", tika.detect("x.onepkg"));
+        // Differ from httpd - We have subtypes they lack
+        //assertEquals("application/onenote", tika.detect("x.onetoc"));
+        //assertEquals("application/onenote", tika.detect("x.onetoc2"));
+        //assertEquals("application/onenote", tika.detect("x.onetmp"));
+        //assertEquals("application/onenote", tika.detect("x.onepkg"));
         assertEquals("application/patch-ops-error+xml", tika.detect("x.xer"));
         assertEquals("application/pdf", tika.detect("x.pdf"));
         assertEquals("application/pgp-encrypted", tika.detect("x.pgp"));
@@ -589,7 +590,8 @@ public class TikaDetectionTest {
         assertEquals("application/x-msmediaview", tika.detect("x.mvb"));
         assertEquals("application/x-msmediaview", tika.detect("x.m13"));
         assertEquals("application/x-msmediaview", tika.detect("x.m14"));
-        assertEquals("application/x-msmetafile", tika.detect("x.wmf"));
+        // Differ from httpd - wmf was properly registered in RFC 7903
+        //assertEquals("application/x-msmetafile", tika.detect("x.wmf"));
         assertEquals("application/x-msmoney", tika.detect("x.mny"));
         assertEquals("application/x-mspublisher", tika.detect("x.pub"));
         assertEquals("application/x-msschedule", tika.detect("x.scd"));
@@ -681,7 +683,8 @@ public class TikaDetectionTest {
         assertEquals("chemical/x-cml", tika.detect("x.cml"));
         assertEquals("chemical/x-csml", tika.detect("x.csml"));
         assertEquals("chemical/x-xyz", tika.detect("x.xyz"));
-        assertEquals("image/x-ms-bmp", tika.detect("x.bmp"));
+        // Differ from httpd - bmp was properly registered in RFC 7903
+        //assertEquals("image/x-ms-bmp", tika.detect("x.bmp"));
         assertEquals("image/cgm", tika.detect("x.cgm"));
         assertEquals("image/g3fax", tika.detect("x.g3"));
         assertEquals("image/gif", tika.detect("x.gif"));
@@ -833,7 +836,7 @@ public class TikaDetectionTest {
         assertEquals("video/x-flv", tika.detect("x.flv"));
         assertEquals("video/x-m4v", tika.detect("x.m4v"));
         assertEquals("video/x-ms-asf", tika.detect("x.asf"));
-        assertEquals("video/x-ms-asf", tika.detect("x.asx"));
+        assertEquals("application/x-ms-asx", tika.detect("x.asx"));
         assertEquals("video/x-ms-wm", tika.detect("x.wm"));
         assertEquals("video/x-ms-wmv", tika.detect("x.wmv"));
         assertEquals("video/x-ms-wmx", tika.detect("x.wmx"));

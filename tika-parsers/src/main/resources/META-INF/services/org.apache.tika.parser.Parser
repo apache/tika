@@ -13,10 +13,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+org.apache.tika.parser.apple.AppleSingleFileParser
 org.apache.tika.parser.asm.ClassParser
 org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
 org.apache.tika.parser.crypto.Pkcs7Parser
+org.apache.tika.parser.crypto.TSDParser
 org.apache.tika.parser.dwg.DWGParser
 org.apache.tika.parser.epub.EpubParser
 org.apache.tika.parser.executable.ExecutableParser
@@ -35,11 +37,17 @@ org.apache.tika.parser.jpeg.JpegParser
 org.apache.tika.parser.mail.RFC822Parser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.mbox.OutlookPSTParser
+org.apache.tika.parser.microsoft.EMFParser
+org.apache.tika.parser.microsoft.WMFParser
 org.apache.tika.parser.microsoft.JackcessParser
+org.apache.tika.parser.microsoft.MSOwnerFileParser
 org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.OldExcelParser
 org.apache.tika.parser.microsoft.TNEFParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
+org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser
+org.apache.tika.parser.microsoft.xml.WordMLParser
+org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
 org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.mp4.MP4Parser
 org.apache.tika.parser.hdf.HDFParser
@@ -52,6 +60,8 @@ org.apache.tika.parser.pkg.RarParser
 org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser
+org.apache.tika.parser.wordperfect.QuattroProParser
+org.apache.tika.parser.wordperfect.WordPerfectParser
 org.apache.tika.parser.xml.DcXMLParser
 org.apache.tika.parser.dif.DIFParser
 org.apache.tika.parser.xml.FictionBookParser
@@ -68,3 +78,6 @@ org.apache.tika.parser.geoinfo.GeographicInformationParser
 org.apache.tika.parser.geo.topic.GeoParser
 org.apache.tika.parser.external.CompositeExternalParser
 org.apache.tika.parser.journal.JournalParser
+org.apache.tika.parser.image.ICNSParser
+org.apache.tika.parser.dbf.DBFParser
+org.apache.tika.parser.sentiment.analysis.SentimentParser

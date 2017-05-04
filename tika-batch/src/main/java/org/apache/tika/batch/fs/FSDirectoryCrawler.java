@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -79,7 +78,7 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
     private void addFiles(Path directory) throws InterruptedException {
 
         if (directory == null) {
-            logger.warn("FSFileAdder asked to process null directory?!");
+            LOG.warn("FSFileAdder asked to process null directory?!");
             return;
         }
 
@@ -89,11 +88,10 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
                 files.add(p);
             }
         } catch (IOException e) {
-            logger.warn("FSFileAdder couldn't read "+directory.toAbsolutePath() +
-            ": "+e.getMessage());
+            LOG.warn("FSFileAdder couldn't read {}: {}", directory.toAbsolutePath(), e.getMessage(), e);
         }
         if (files.size() == 0) {
-            logger.info("Empty directory: " + directory.toAbsolutePath());
+            LOG.info("Empty directory: {}", directory.toAbsolutePath());
             return;
         }
 
@@ -111,8 +109,7 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
                 throw new InterruptedException("file adder interrupted");
             }
             if (!Files.isReadable(f)) {
-                logger.warn("Skipping -- "+f.toAbsolutePath()+
-                        " -- file/directory is not readable");
+                LOG.warn("Skipping -- {} -- file/directory is not readable", f.toAbsolutePath());
                 continue;
             }
             if (Files.isDirectory(f)) {
@@ -125,10 +122,10 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
             }
             int added = tryToAdd(new FSFileResource(root, f));
             if (added == FileResourceCrawler.STOP_NOW) {
-                logger.debug("crawler has hit a limit: "+f.toAbsolutePath() + " : " + added);
+                LOG.debug("crawler has hit a limit: {} : {}", f.toAbsolutePath(), added);
                 return;
             }
-            logger.debug("trying to add: "+f.toAbsolutePath() + " : " + added);
+            LOG.debug("trying to add: {} : {}", f.toAbsolutePath(), added);
         }
 
         for (Path f : directories) {

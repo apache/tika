@@ -113,8 +113,7 @@ public class TikaInputStream extends TaggedInputStream {
         } else {
             // Make sure that the stream is buffered and that it
             // (properly) supports the mark feature
-            if (!(stream instanceof BufferedInputStream)
-                    && !(stream instanceof ByteArrayInputStream)) {
+            if (!(stream.markSupported())) {
                 stream = new BufferedInputStream(stream);
             }
             return new TikaInputStream(stream, tmp, -1);

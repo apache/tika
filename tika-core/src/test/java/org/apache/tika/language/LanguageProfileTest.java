@@ -16,13 +16,14 @@
  */
 package org.apache.tika.language;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
+@Deprecated
 public class LanguageProfileTest {
 
     @Test

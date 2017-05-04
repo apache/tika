@@ -350,7 +350,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     @Test
     public void testEmbeddedStorageId() throws Exception {
 
-        List<Metadata> list = getRecursiveJson("testWORD_embeded.doc");
+        List<Metadata> list = getRecursiveMetadata("testWORD_embeded.doc");
         //.docx
         assertEquals("{F4754C9B-64F5-4B40-8AF4-679732AC0607}",
                 list.get(10).get(TikaMetadataKeys.EMBEDDED_STORAGE_CLASS_ID));
@@ -368,7 +368,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         //doc converts a chart to a actual xls file
         //so we only need to look in ppt and xls
         for (String suffix : new String[]{"ppt", "xls"}) {
-            List<Metadata> list = getRecursiveJson("testMSChart-govdocs-428996."+suffix);
+            List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996."+suffix);
             boolean found = false;
             for (Metadata m : list) {
                 if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
@@ -378,5 +378,13 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             }
             assertTrue("didn't find chart in "+suffix, found);
         }
+    }
+
+    @Test
+    public void testEmbeddedEquation() throws Exception {
+        //file derives from govdocs1 863534.doc
+        List<Metadata> metadataList = getRecursiveMetadata("testMSEquation-govdocs-863534.doc");
+        assertEquals(3, metadataList.size());
+        assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
 }

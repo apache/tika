@@ -16,6 +16,7 @@
  */
 package org.apache.tika;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -85,9 +86,22 @@ public abstract class TikaTest {
        return stream;
    }
 
-    public static void assertContains(String needle, String haystack) {
-       assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    public static void assertContainsCount(String needle, String haystack, int targetCount) {
+        int i = haystack.indexOf(needle);
+        int count = 0;
+        while (i > -1) {
+            count++;
+            i = haystack.indexOf(needle, i+1);
+        }
+        assertEquals("found "+count +" but should have found: "+targetCount,
+                targetCount, count);
     }
+
+
+    public static void assertContains(String needle, String haystack) {
+        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    }
+
     public static <T> void assertContains(T needle, Collection<? extends T> haystack) {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
@@ -99,6 +113,44 @@ public abstract class TikaTest {
         assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
     }
 
+    /**
+     * Test that in at least one item in metadataList, all keys and values
+     * in minExpected are contained.
+     * <p>
+     * The values in minExpected are tested for whether they are contained
+     * within a value in the target.  If minExpected=&dquot;text/vbasic&dquot;  and
+     * what was actually found in the target within metadatalist is
+     * &dquot;text/vbasic; charset=windows-1252&dquot;,
+     * that is counted as a hit.
+     *
+     * @param minExpected
+     * @param metadataList
+     */
+    public static void assertContainsAtLeast(Metadata minExpected, List<Metadata> metadataList) {
+
+        for (Metadata m : metadataList) {
+            int foundPropertyCount = 0;
+            for (String n : minExpected.names()) {
+                int foundValCount = 0;
+                for (String foundVal : m.getValues(n)) {
+                    for (String expectedVal : minExpected.getValues(n)) {
+                        if (foundVal.contains(expectedVal)) {
+                            foundValCount++;
+                        }
+                    }
+                }
+                if (foundValCount == minExpected.getValues(n).length) {
+                    foundPropertyCount++;
+                }
+            }
+            if (foundPropertyCount == minExpected.names().length) {
+                //found everything!
+                return;
+            }
+        }
+        //TODO: figure out how to have more informative error message
+        fail("Couldn't find everything within a single metadata item");
+    }
     protected static class XMLResult {
         public final String xml;
         public final Metadata metadata;
@@ -121,12 +173,18 @@ public abstract class TikaTest {
         return getXML(filePath, new AutoDetectParser(), parseContext);
     }
 
+    protected XMLResult getXML(String filePath, Metadata metadata, ParseContext parseContext) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/"+filePath), new AutoDetectParser(), metadata, parseContext);
+    }
+
     protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata, null);
     }
 
     protected XMLResult getXML(String filePath, Parser parser) throws Exception {
-        return getXML(filePath, parser, new Metadata());
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, filePath);
+        return getXML(filePath, parser, metadata);
     }
 
     protected XMLResult getXML(String filePath) throws Exception {
@@ -140,7 +198,6 @@ public abstract class TikaTest {
     protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata, ParseContext context) throws Exception {
       if (context == null) {
           context = new ParseContext();
-          context.set(Parser.class, parser);
       }
 
       try {
@@ -152,16 +209,25 @@ public abstract class TikaTest {
       }
     }
 
-    protected List<Metadata> getRecursiveJson(String filePath) throws Exception {
-        return getRecursiveJson(filePath, new ParseContext());
+    protected List<Metadata> getRecursiveMetadata(String filePath) throws Exception {
+        return getRecursiveMetadata(filePath, new ParseContext());
     }
 
-    protected List<Metadata> getRecursiveJson(String filePath, ParseContext context) throws Exception {
+    protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
         Parser p = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             wrapper.parse(is, new DefaultHandler(), new Metadata(), context);
+        }
+        return wrapper.getMetadata();
+    }
+
+    protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap) throws Exception {
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
+            wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
         }
         return wrapper.getMetadata();
     }
@@ -256,6 +322,14 @@ public abstract class TikaTest {
                 }
             }
             i++;
+        }
+    }
+
+    public static void debug(Metadata metadata) {
+        for (String n : metadata.names()) {
+            for (String v : metadata.getValues(n)) {
+                System.out.println(n + " : "+v);
+            }
         }
     }
 }

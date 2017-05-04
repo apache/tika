@@ -327,7 +327,7 @@ public class RecursiveParserWrapper implements Parser {
                         throw e;
                     }
                 }
-            } catch (IOException|TikaException e) {
+            } catch (TikaException e) {
                 if (catchEmbeddedExceptions) {
                     String trace = ExceptionUtils.getStackTrace(e);
                     metadata.set(EMBEDDED_EXCEPTION, trace);

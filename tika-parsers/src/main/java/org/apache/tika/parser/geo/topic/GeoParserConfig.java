@@ -17,6 +17,9 @@
 
 package org.apache.tika.parser.geo.topic;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,14 +27,13 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 public class GeoParserConfig implements Serializable {
     private static final long serialVersionUID = -3167692634278575818L;
     private URL nerModelUrl = null;
     private String gazetteerRestEndpoint = null;
 
-	private static final Logger LOG = Logger.getLogger(GeoParserConfig.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(GeoParserConfig.class);
 
     public GeoParserConfig() {
         this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
@@ -51,13 +53,13 @@ public class GeoParserConfig implements Serializable {
         try {
             props.load(stream);
         } catch (IOException e) {
-        	LOG.warning("GeoTopicConfig.properties not found in class path");
+            LOG.warn("GeoTopicConfig.properties not found in class path");
         } finally {
             if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException ioe) {
-                	LOG.severe("Unable to close stream: " + ioe.getMessage());
+                    LOG.error("Unable to close stream: {}", ioe.getMessage());
                 }
             }
         }

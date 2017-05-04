@@ -23,6 +23,8 @@ import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -91,7 +93,7 @@ public class TesseractOCRParserTest extends TikaTest {
         // Assuming that Tesseract is on the path, we should find 5 Parsers that support PNG.
         assumeTrue(canRun());
 
-        assertEquals(5, parser.getSupportedTypes(parseContext).size());
+        assertEquals(8, parser.getSupportedTypes(parseContext).size());
         assertTrue(parser.getSupportedTypes(parseContext).contains(png));
 
         // DefaultParser will now select the TesseractOCRParser.
@@ -123,12 +125,44 @@ public class TesseractOCRParserTest extends TikaTest {
         };
         testBasicOCR(resource, nonOCRContains, 3);
     }
+    
+    @Test
+    public void testOCROutputsHOCR() throws Exception {
+        assumeTrue(canRun());
 
-    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception {
+        String resource = "/test-documents/testOCR.pdf";
+
+        String[] nonOCRContains = new String[0];
+        String contents = runOCR(resource, nonOCRContains, 2,
+                BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+
+        assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
+        assertContains("Happy</span>", contents);
+
+    }
+
+    private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
+    	String contents = runOCR(resource, nonOCRContains, numMetadatas,
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
+        if (canRun()) {
+        	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
+        		assertTrue(contents.toString().contains("Apache"));
+        	} else {
+        		assertTrue(contents.toString().contains("Happy New Year 2003!"));
+        	}
+        }
+    }
+    
+    private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
+                          BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+                          TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setOutputType(outputType);
+        
         Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),
                 new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+                        handlerType, -1));
 
         PDFParserConfig pdfConfig = new PDFParserConfig();
         pdfConfig.setExtractInlineImages(true);
@@ -148,9 +182,7 @@ public class TesseractOCRParserTest extends TikaTest {
         for (Metadata m : metadataList) {
             contents.append(m.get(RecursiveParserWrapper.TIKA_CONTENT));
         }
-        if (canRun()) {
-            assertTrue(contents.toString().contains("Happy New Year 2003!"));
-        }
+ 
         for (String needle : nonOCRContains) {
             assertContains(needle, contents.toString());
         }
@@ -158,6 +190,8 @@ public class TesseractOCRParserTest extends TikaTest {
         assertTrue(metadataList.get(1).names().length > 10);
         //test at least one value
         assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+        
+        return contents.toString();
     }
 
     @Test
@@ -165,8 +199,27 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue(canRun());
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
+        //test metadata extraction
+        assertContains("<meta name=\"Image Width\" content=\"136 pixels\" />", xml);
+
+        //TIKA-2169
+        assertContainsCount("<html", xml, 1);
+        assertContainsCount("<title", xml, 1);
+        assertContainsCount("</title", xml, 1);
+        assertContainsCount("<body", xml, 1);
+        assertContainsCount("</body", xml, 1);
+        assertContainsCount("</html", xml, 1);
     }
 
+    @Test
+    public void testImageMagick() throws Exception {
+    	InputStream stream = TesseractOCRConfig.class.getResourceAsStream(
+                "/test-properties/TesseractOCR.properties");
+    	TesseractOCRConfig config = new TesseractOCRConfig(stream);
+    	String[] CheckCmd = {config.getImageMagickPath() + TesseractOCRParser.getImageMagickProg()};
+    	assumeTrue(ExternalParser.check(CheckCmd));
+    }
+    
     @Test
     public void getNormalMetadataToo() throws Exception {
         //this should be successful whether or not TesseractOCR is installed/active
@@ -202,5 +255,27 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
         assertEquals("72 dots per inch", m.get("Y Resolution"));
+    }
+
+    //TODO: add unit tests for jp2/jpx/ppm TIKA-2174
+
+    @Test
+    public void testInterwordSpacing() throws Exception {
+        assumeTrue(canRun());
+        //default
+        String xml = getXML("testOCR_spacing.png").xml;
+        assertContains("The quick", xml);
+
+        TesseractOCRConfig tesseractOCRConfigconfig = new TesseractOCRConfig();
+        tesseractOCRConfigconfig.setPreserveInterwordSpacing(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, tesseractOCRConfigconfig);
+
+        //with preserve interwordspacing "on"
+        //allow some flexibility in case Tesseract is computing spaces
+        //somewhat differently in different versions/OS's, etc.
+        xml = getXML("testOCR_spacing.png", parseContext).xml;
+        Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
+        assertTrue(m.find());
     }
 }

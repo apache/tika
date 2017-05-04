@@ -122,4 +122,21 @@ public interface Office {
      */
     Property OBJECT_COUNT = Property.internalInteger(
           PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "object-count");
+
+    /**
+     * MAPI message class.  What type of .msg/MAPI file is it?
+     */
+    Property MAPI_MESSAGE_CLASS = Property.internalClosedChoise(
+        PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "mapi-message-class",
+            "APPOINTMENT", "CONTACT", "NOTE", "STICKY_NOTE", "POST", "TASK", "UNKNOWN", "UNSPECIFIED" );
+
+    Property MAPI_SENT_BY_SERVER_TYPE = Property.internalText(
+            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-sent-by-server-type");
+
+    Property MAPI_FROM_REPRESENTING_NAME = Property.internalText(
+            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-from-representing-name");
+
+    Property MAPI_FROM_REPRESENTING_EMAIL = Property.internalText(
+            PREFIX_DOC_META+Metadata.NAMESPACE_PREFIX_DELIMITER+"mapi-from-representing-email");
+
 }

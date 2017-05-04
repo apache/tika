@@ -19,19 +19,25 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -188,6 +194,17 @@ public class WordParserTest extends TikaTest {
             assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
             assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         }
+    }
+
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBox() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.doc", pc).xml;
+        assertNotContained("text box", xml);
     }
 
     @Test
@@ -363,7 +380,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testControlCharacter() throws Exception {
-        assertContains("1. Introduzione<b> </a></b> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
+        assertContains("1. Introduzione<b> </b></a> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
     }
 
     @Test
@@ -491,6 +508,97 @@ public class WordParserTest extends TikaTest {
         assertEquals(2, managers.length);
         assertEquals("manager1", managers[0]);
         assertEquals("manager2", managers[1]);
+    }
+
+    @Test
+    public void testOrigLocation() throws Exception {
+        Metadata metadata = getXML("testException2.doc").metadata;
+        List<String> values = Arrays.asList(metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+        assertContains("C:\\Lab Documents\\Lab Manuals\\Physics 275-6\\276-s00\\07-Force-on-a-current-S00.doc", values);
+        assertContains("Hard Drive:Course Folders:276:276-s00:07-Force-on-a-current-S00", values);
+    }
+
+    @Test
+    public void testOrigSourcePath() throws Exception {
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.doc").get(11);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
+                Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+    }
+
+    @Test
+    public void testBoldHyperlink() throws Exception {
+        //TIKA-1255
+        String xml = getXML("testWORD_boldHyperlink.doc").xml;
+        xml = xml.replaceAll("\\s+", " ");
+        assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold" , xml);
+    }
+
+    @Test
+    public void testMacros() throws  Exception {
+
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testWORD_macros.doc")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extracted macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
+
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.doc", context);
+        assertContainsAtLeast(minExpected, metadataList);
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+
+        metadataList = getRecursiveMetadata("testWORD_macros.doc", parser);
+        assertContainsAtLeast(minExpected, metadataList);
+    }
+
+    @Test
+    public void testDeleted() throws Exception {
+        //test classic behavior
+        String xml = getXML("testWORD_2006ml.doc").xml;
+        assertNotContained("frog", xml);
+
+        //moveFrom is deleted in .doc files
+        assertContainsCount("Second paragraph", xml, 1);
+        //now test inclusion of deleted text
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeDeletedContent(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+        XMLResult r = getXML("testWORD_2006ml.doc", context);
+        assertContains("frog", r.xml);
+
+        //moveFrom is deleted in .doc files
+        assertContainsCount("Second paragraph", r.xml, 2);
+    }
+
+    @Test
+    public void testProtected() throws Exception {
+        try {
+            getXML("testWORD_protected_passtika.doc");
+            fail("should have thrown encrypted document exception");
+        } catch (org.apache.tika.exception.EncryptedDocumentException e) {
+
+        }
     }
 }
 

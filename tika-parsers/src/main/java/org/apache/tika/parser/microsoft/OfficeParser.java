@@ -16,13 +16,16 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -35,12 +38,17 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.macros.VBAMacroReader;
+import org.apache.poi.util.IOUtils;
+import org.apache.tika.config.Initializable;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
@@ -53,7 +61,7 @@ import org.xml.sax.SAXException;
 /**
  * Defines a Microsoft document content extractor.
  */
-public class OfficeParser extends AbstractParser {
+public class OfficeParser extends AbstractOfficeParser {
 
     /**
      * Serial version UID
@@ -90,31 +98,48 @@ public class OfficeParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+
+        configure(context);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
         final DirectoryNode root;
         TikaInputStream tstream = TikaInputStream.cast(stream);
-        if (tstream == null) {
-            root = new NPOIFSFileSystem(new CloseShieldInputStream(stream)).getRoot();
-        } else {
-            final Object container = tstream.getOpenContainer();
-            if (container instanceof NPOIFSFileSystem) {
-                root = ((NPOIFSFileSystem) container).getRoot();
-            } else if (container instanceof DirectoryNode) {
-                root = (DirectoryNode) container;
+        NPOIFSFileSystem mustCloseFs = null;
+        try {
+            if (tstream == null) {
+                mustCloseFs = new NPOIFSFileSystem(new CloseShieldInputStream(stream));
+                root = mustCloseFs.getRoot();
             } else {
-                NPOIFSFileSystem fs;
-                if (tstream.hasFile()) {
-                    fs = new NPOIFSFileSystem(tstream.getFile(), true);
+                final Object container = tstream.getOpenContainer();
+                if (container instanceof NPOIFSFileSystem) {
+                    root = ((NPOIFSFileSystem) container).getRoot();
+                } else if (container instanceof DirectoryNode) {
+                    root = (DirectoryNode) container;
                 } else {
-                    fs = new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+                    NPOIFSFileSystem fs = null;
+                    if (tstream.hasFile()) {
+                        fs = new NPOIFSFileSystem(tstream.getFile(), true);
+                    } else {
+                        fs = new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+                    }
+                    //tstream will close the fs, no need to close this below
+                    tstream.setOpenContainer(fs);
+                    root = fs.getRoot();
+
                 }
-                tstream.setOpenContainer(fs);
-                root = fs.getRoot();
             }
+            parse(root, context, metadata, xhtml);
+            OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
+
+            if (officeParserConfig.getExtractMacros()) {
+                //now try to get macros
+                extractMacros(root.getNFileSystem(), xhtml,
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+            }
+        } finally {
+            IOUtils.closeQuietly(mustCloseFs);
         }
-        parse(root, context, metadata, xhtml);
         xhtml.endDocument();
     }
 
@@ -143,10 +168,10 @@ public class OfficeParser extends AbstractParser {
                 xhtml.element("p", publisherTextExtractor.getText());
                 break;
             case WORDDOCUMENT:
-                new WordExtractor(context).parse(root, xhtml);
+                new WordExtractor(context, metadata).parse(root, xhtml);
                 break;
             case POWERPOINT:
-                new HSLFExtractor(context).parse(root, xhtml);
+                new HSLFExtractor(context, metadata).parse(root, xhtml);
                 break;
             case WORKBOOK:
             case XLR:
@@ -268,6 +293,41 @@ public class OfficeParser extends AbstractParser {
 
         public MediaType getType() {
             return type;
+        }
+    }
+
+    /**
+     * Helper to extract macros from an NPOIFS/vbaProject.bin
+     *
+     * As of POI-3.15-final, there are still some bugs in VBAMacroReader.
+     * For now, we are swallowing NPE and other runtime exceptions
+     *
+     * @param fs NPOIFS to extract from
+     * @param xhtml SAX writer
+     * @param embeddedDocumentExtractor extractor for embedded documents
+     * @throws IOException on IOException if it occurs during the extraction of the embedded doc
+     * @throws SAXException on SAXException for writing to xhtml
+     */
+    public static void extractMacros(NPOIFSFileSystem fs, ContentHandler xhtml, EmbeddedDocumentExtractor
+            embeddedDocumentExtractor)  throws IOException, SAXException {
+
+        VBAMacroReader reader = null;
+        Map<String, String> macros = null;
+        try {
+            reader = new VBAMacroReader(fs);
+            macros = reader.readMacros();
+        } catch (Exception e) {
+            //swallow
+            return;
+        }
+        for (Map.Entry<String, String> e : macros.entrySet()) {
+            Metadata m = new Metadata();
+            m.set(Metadata.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+            m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+                embeddedDocumentExtractor.parseEmbedded(
+                        new ByteArrayInputStream(e.getValue().getBytes(StandardCharsets.UTF_8)), xhtml, m, true);
+            }
         }
     }
 

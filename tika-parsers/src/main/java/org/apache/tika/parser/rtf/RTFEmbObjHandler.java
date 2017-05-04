@@ -22,18 +22,14 @@ import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
@@ -63,9 +59,7 @@ class RTFEmbObjHandler {
 
     private static final String EMPTY_STRING = "";
     private final ContentHandler handler;
-
-
-    private final ParseContext context;
+    private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private final ByteArrayOutputStream os;
     //high hex cached for writing hexpair chars (data)
     private int hi = -1;
@@ -78,10 +72,13 @@ class RTFEmbObjHandler {
     private StringBuilder sb = new StringBuilder();
     private Metadata metadata;
     private EMB_STATE state = EMB_STATE.NADA;
-    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
+    private final int memoryLimitInKb;
+
+    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context, int memoryLimitInKb) {
         this.handler = handler;
-        this.context = context;
+        this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         os = new ByteArrayOutputStream();
+        this.memoryLimitInKb = memoryLimitInKb;
     }
 
     protected void startPict() {
@@ -152,16 +149,17 @@ class RTFEmbObjHandler {
     }
 
     protected void writeBytes(InputStream is, int len) throws IOException, TikaException {
-        if (len < 0 || len > RTFParser.getMaxBytesForEmbeddedObject()) {
-            throw new IOException("length of bytes to read out of bounds: " + len);
+        if (len < 0) {
+            throw new TikaException("Requesting I read < 0 bytes ?!");
+        }
+        if (len > memoryLimitInKb*1024) {
+            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
+                    ") bytes), but maximum allowed is ("+(memoryLimitInKb*1024)+")."+
+                    "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
         }
 
         byte[] bytes = new byte[len];
-        int bytesRead = is.read(bytes);
-        if (bytesRead < len) {
-            throw new TikaException("unexpected end of file: need " + len +
-                    " bytes of binary data, found " + (len - bytesRead));
-        }
+        IOUtils.readFully(is, bytes);
         os.write(bytes);
     }
 
@@ -173,29 +171,25 @@ class RTFEmbObjHandler {
      * @throws TikaException
      */
     protected void handleCompletedObject() throws IOException, SAXException, TikaException {
-        EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class);
-
-        if (embeddedExtractor == null) {
-            embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
-        }
 
         byte[] bytes = os.toByteArray();
         if (state == EMB_STATE.OBJDATA) {
-            RTFObjDataParser objParser = new RTFObjDataParser();
+            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb);
             try {
                 byte[] objBytes = objParser.parse(bytes, metadata, unknownFilenameCount);
-                extractObj(objBytes, handler, embeddedExtractor, metadata);
+                extractObj(objBytes, handler, metadata);
             } catch (IOException e) {
-                //swallow.  If anything goes wrong, ignore.
+                EmbeddedDocumentUtil.recordException(e, metadata);
             }
         } else if (state == EMB_STATE.PICT) {
             String filePath = metadata.get(RTFMetadata.RTF_PICT_META_PREFIX + "wzDescription");
             if (filePath != null && filePath.length() > 0) {
                 metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, filePath);
                 metadata.set(Metadata.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
+                metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, filePath);
             }
             metadata.set(RTFMetadata.THUMBNAIL, Boolean.toString(inObject));
-            extractObj(bytes, handler, embeddedExtractor, metadata);
+            extractObj(bytes, handler, metadata);
 
         } else if (state == EMB_STATE.NADA) {
             //swallow...no start for pict or embed?!
@@ -203,8 +197,7 @@ class RTFEmbObjHandler {
         reset();
     }
 
-    private void extractObj(byte[] bytes, ContentHandler handler,
-                            EmbeddedDocumentExtractor embeddedExtractor, Metadata metadata)
+    private void extractObj(byte[] bytes, ContentHandler handler, Metadata metadata)
             throws SAXException, IOException, TikaException {
 
         if (bytes == null) {
@@ -213,11 +206,10 @@ class RTFEmbObjHandler {
 
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(bytes.length));
 
-        if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+        if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             TikaInputStream stream = TikaInputStream.get(bytes);
             if (metadata.get(Metadata.RESOURCE_NAME_KEY) == null) {
-                String extension = getExtension(stream, metadata);
-                stream.reset();
+                String extension = embeddedDocumentUtil.getExtension(stream, metadata);
                 if (inObject && state == EMB_STATE.PICT) {
                     metadata.set(Metadata.RESOURCE_NAME_KEY, "thumbnail_" + thumbCount++ + extension);
                     metadata.set(RTFMetadata.THUMBNAIL, "true");
@@ -227,42 +219,16 @@ class RTFEmbObjHandler {
                 }
             }
             try {
-                embeddedExtractor.parseEmbedded(
+                embeddedDocumentUtil.parseEmbedded(
                         stream,
                         new EmbeddedContentHandler(handler),
                         metadata, false);
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
             } finally {
                 stream.close();
             }
         }
-    }
-
-    private String getExtension(TikaInputStream is, Metadata metadata) {
-        String cType = metadata.get(Metadata.CONTENT_TYPE);
-        TikaConfig config = getConfig();
-        if (cType == null) {
-            Detector detector = config.getDetector();
-            try {
-                MediaType mediaType = detector.detect(is, metadata);
-                MimeTypes types = config.getMimeRepository();
-                MimeType mime = types.forName(mediaType.toString());
-                metadata.set(Metadata.CONTENT_TYPE, mime.toString());
-                return mime.getExtension();
-            } catch (IOException e) {
-                //swallow
-            } catch (MimeTypeException e) {
-
-            }
-        }
-        return ".bin";
-    }
-
-    private TikaConfig getConfig() {
-        TikaConfig config = context.get(TikaConfig.class);
-        if (config == null) {
-            config = TikaConfig.getDefaultConfig();
-        }
-        return config;
     }
 
     /**

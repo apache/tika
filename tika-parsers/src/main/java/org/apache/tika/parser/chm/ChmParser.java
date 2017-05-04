@@ -25,10 +25,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
 import org.apache.tika.parser.html.HtmlParser;
@@ -67,6 +69,12 @@ public class ChmParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
+        Parser htmlParser =
+                EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, context);
+        if (htmlParser == null) {
+            htmlParser = new HtmlParser();
+        }
+
         for (DirectoryListingEntry entry : chmExtractor.getChmDirList().getDirectoryListingEntryList()) {
             final String entryName = entry.getName();
             if (entryName.endsWith(".html") 
@@ -78,7 +86,7 @@ public class ChmParser extends AbstractParser {
                 
                 byte[] data = chmExtractor.extractChmEntry(entry);
 
-                parsePage(data, xhtml);
+                parsePage(data, htmlParser, xhtml, context);
                 
 //                xhtml.endElement("", "", "document");
             }
@@ -88,15 +96,14 @@ public class ChmParser extends AbstractParser {
     }
 
 
-    private void parsePage(byte[] byteObject, ContentHandler xhtml) throws TikaException {// throws IOException
+    private void parsePage(byte[] byteObject, Parser htmlParser,
+                           ContentHandler xhtml, ParseContext context) throws TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
-        HtmlParser htmlParser = new HtmlParser();
         ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
-        ParseContext parser = new ParseContext();
         try {
             stream = new ByteArrayInputStream(byteObject);
-            htmlParser.parse(stream, handler, metadata, parser);
+            htmlParser.parse(stream, handler, metadata, context);
         } catch (SAXException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {

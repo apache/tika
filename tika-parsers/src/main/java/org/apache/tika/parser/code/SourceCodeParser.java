@@ -30,23 +30,23 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.uwyn.jhighlight.renderer.Renderer;
+import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.uwyn.jhighlight.renderer.Renderer;
-import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 /**
  * Generic Source code parser for Java, Groovy, C++.
  * Aware: This parser uses JHightlight library (https://github.com/codelibs/jhighlight) under CDDL/LGPL dual license
@@ -54,89 +54,94 @@ import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
  * @author Hong-Thai.Nguyen
  * @since 1.6
  */
-public class SourceCodeParser implements Parser {
+public class SourceCodeParser extends AbstractEncodingDetectorParser {
 
-  private static final long serialVersionUID = -4543476498190054160L;
+    private static final long serialVersionUID = -4543476498190054160L;
 
-  private static final Pattern authorPattern = Pattern.compile("(?im)@author (.*) *$");
+    private static final Pattern authorPattern = Pattern.compile("(?im)@author (.*) *$");
 
-  private static final Map<MediaType, String> TYPES_TO_RENDERER = new HashMap<MediaType, String>() {
-    private static final long serialVersionUID = -741976157563751152L;
-    {
-      put(MediaType.text("x-c++src"), CPP);
-      put(MediaType.text("x-java-source"), JAVA);
-      put(MediaType.text("x-groovy"), GROOVY);
-    }
-  };
+    private static final Map<MediaType, String> TYPES_TO_RENDERER = new HashMap<MediaType, String>() {
+        private static final long serialVersionUID = -741976157563751152L;
 
-  private static final ServiceLoader LOADER = new ServiceLoader(SourceCodeParser.class.getClassLoader());
-  
-  //Parse the HTML document
-  private static final Schema HTML_SCHEMA = new HTMLSchema();
-  
-  @Override
-  public Set<MediaType> getSupportedTypes(ParseContext context) {
-    return TYPES_TO_RENDERER.keySet();
-  }
-
-  @Override
-  public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-      throws IOException, SAXException, TikaException {
-
-    try (AutoDetectReader reader = new AutoDetectReader(
-            new CloseShieldInputStream(stream), metadata,
-            context.get(ServiceLoader.class, LOADER))) {
-      Charset charset = reader.getCharset();
-      String mediaType = metadata.get(Metadata.CONTENT_TYPE);
-      String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
-      if (mediaType != null && name != null) {
-        MediaType type = MediaType.parse(mediaType);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
-        metadata.set(Metadata.CONTENT_ENCODING, charset.name());
-
-        StringBuilder out = new StringBuilder();
-        String line;
-        int nbLines =  0;
-        while ((line = reader.readLine()) != null) {
-            out.append(line + System.getProperty("line.separator"));
-            String author = parserAuthor(line);
-            if (author != null) {
-              metadata.add(TikaCoreProperties.CREATOR, author);
-            }
-            nbLines ++;
+        {
+            put(MediaType.text("x-c++src"), CPP);
+            put(MediaType.text("x-java-source"), JAVA);
+            put(MediaType.text("x-groovy"), GROOVY);
         }
-        metadata.set("LoC", String.valueOf(nbLines));
-        Renderer renderer = getRenderer(type.toString());
+    };
 
-        String codeAsHtml = renderer.highlight(name, out.toString(), charset.name(), false);
+    //Parse the HTML document
+    private static final Schema HTML_SCHEMA = new HTMLSchema();
 
-        Schema schema = context.get(Schema.class, HTML_SCHEMA);
-
-        org.ccil.cowan.tagsoup.Parser parser = new org.ccil.cowan.tagsoup.Parser();
-        parser.setProperty(org.ccil.cowan.tagsoup.Parser.schemaProperty, schema);
-        parser.setContentHandler(handler);
-        parser.parse(new InputSource(new StringReader(codeAsHtml)));
-      }
+    public SourceCodeParser() {
+        super();
     }
 
-  }
-
-  private Renderer getRenderer(String mimeType) {
-    MediaType mt = MediaType.parse(mimeType);
-    String type = TYPES_TO_RENDERER.get(mt);
-    if (type == null) {
-      throw new RuntimeException("unparseable content type " + mimeType);
-    }
-    return XhtmlRendererFactory.getRenderer(type);
-  }
-
-
-  private String parserAuthor(String line) {
-    Matcher m = authorPattern.matcher(line);
-    if (m.find()) {
-      return m.group(1).trim();
+    public SourceCodeParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
     }
 
-    return null;
-  }
+    @Override
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return TYPES_TO_RENDERER.keySet();
+    }
+
+    @Override
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        try (AutoDetectReader reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+            Charset charset = reader.getCharset();
+            String mediaType = metadata.get(Metadata.CONTENT_TYPE);
+            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            if (mediaType != null && name != null) {
+                MediaType type = MediaType.parse(mediaType);
+                metadata.set(Metadata.CONTENT_TYPE, type.toString());
+                metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+
+                StringBuilder out = new StringBuilder();
+                String line;
+                int nbLines = 0;
+                while ((line = reader.readLine()) != null) {
+                    out.append(line + System.getProperty("line.separator"));
+                    String author = parserAuthor(line);
+                    if (author != null) {
+                        metadata.add(TikaCoreProperties.CREATOR, author);
+                    }
+                    nbLines++;
+                }
+                metadata.set("LoC", String.valueOf(nbLines));
+                Renderer renderer = getRenderer(type.toString());
+
+                String codeAsHtml = renderer.highlight(name, out.toString(), charset.name(), false);
+
+                Schema schema = context.get(Schema.class, HTML_SCHEMA);
+
+                org.ccil.cowan.tagsoup.Parser parser = new org.ccil.cowan.tagsoup.Parser();
+                parser.setProperty(org.ccil.cowan.tagsoup.Parser.schemaProperty, schema);
+                parser.setContentHandler(handler);
+                parser.parse(new InputSource(new StringReader(codeAsHtml)));
+            }
+        }
+
+    }
+
+    private Renderer getRenderer(String mimeType) {
+        MediaType mt = MediaType.parse(mimeType);
+        String type = TYPES_TO_RENDERER.get(mt);
+        if (type == null) {
+            throw new RuntimeException("unparseable content type " + mimeType);
+        }
+        return XhtmlRendererFactory.getRenderer(type);
+    }
+
+
+    private String parserAuthor(String line) {
+        Matcher m = authorPattern.matcher(line);
+        if (m.find()) {
+            return m.group(1).trim();
+        }
+
+        return null;
+    }
 }

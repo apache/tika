@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
+import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -28,6 +29,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
@@ -191,7 +193,7 @@ public class ODFParserTest extends TikaTest {
             assertEquals(null, metadata.get("nbCharacter"));
 
             // Note - contents of maths files not currently supported
-            String content = handler.toString();
+            String content = handler.toString().trim();
             assertEquals("", content);
         }
    }
@@ -363,7 +365,7 @@ public class ODFParserTest extends TikaTest {
         try (InputStream input = ODFParserTest.class.getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            parser.parse(input, handler, metadata, new ParseContext());
+            parser.parse(input, handler, metadata, getNonRecursingParseContext());
 
             assertEquals("application/vnd.oasis.opendocument.text", metadata.get(Metadata.CONTENT_TYPE));
 
@@ -380,5 +382,33 @@ public class ODFParserTest extends TikaTest {
     public void testMissingMeta() throws Exception {
         String xml = getXML("testODTNoMeta.odt").xml;
         assertContains("Test text", xml);
+    }
+
+    @Test //TIKA-2242
+    public void testParagraphLevelFontStyles() throws Exception {
+        String xml = getXML("testODTStyles2.odt", getNonRecursingParseContext()).xml;
+        //test text span font-style properties
+        assertContains("<p><b>name</b>, advocaat", xml);
+        //test paragraph's font-style properties
+        assertContains("<p><b>Publicatie Onbekwaamverklaring", xml);
+    }
+
+    @Test //TIKA-2242
+    public void testAnnotationsAndPDepthGt1() throws Exception {
+        //not allowed in html: <p> <annotation> <p> this is an annotation </p> </annotation> </p>
+        String xml = getXML("testODTStyles3.odt").xml;
+        assertContains("<p><b>WOUTERS Rolf</b><span class=\"annotation\"> Beschermde persoon is overleden </annotation>", xml);
+    }
+
+    @Test
+    public void testEmbedded() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
+        assertEquals(3, metadataList.size());
+    }
+
+    private ParseContext getNonRecursingParseContext() {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, new EmptyParser());
+        return parseContext;
     }
 }

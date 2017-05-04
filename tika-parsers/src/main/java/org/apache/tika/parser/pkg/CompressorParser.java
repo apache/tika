@@ -25,20 +25,22 @@ import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
+import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
 import org.apache.commons.compress.compressors.snappy.FramedSnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -64,13 +66,16 @@ public class CompressorParser extends AbstractParser {
     private static final MediaType PACK = MediaType.application("x-java-pack200");
     private static final MediaType SNAPPY = MediaType.application("x-snappy-framed");
     private static final MediaType ZLIB = MediaType.application("zlib");
+    private static final MediaType LZMA = MediaType.application("x-lzma");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, COMPRESS, XZ, PACK, ZLIB);
+            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, COMPRESS, XZ, PACK, ZLIB, LZMA);
+
+    private int memoryLimitInKb = 100000;//100MB
 
     static MediaType getMediaType(CompressorInputStream stream) {
         // TODO Add support for the remaining CompressorInputStream formats:
-        //   LZMACompressorInputStream
+        //   LZ4
         //   LZWInputStream -> UnshrinkingInputStream
         if (stream instanceof BZip2CompressorInputStream) {
             return BZIP2;
@@ -88,6 +93,31 @@ public class CompressorParser extends AbstractParser {
                    stream instanceof SnappyCompressorInputStream) {
             // TODO Add unit tests for this format
             return SNAPPY;
+        } else if (stream instanceof LZMACompressorInputStream) {
+            return LZMA;
+        } else {
+            return MediaType.OCTET_STREAM;
+        }
+    }
+
+    static MediaType getMediaType(String name) {
+        if (TikaCompressorStreamFactory.BZIP2.equals(name)) {
+            return BZIP2;
+        } else if (TikaCompressorStreamFactory.GZIP.equals(name)) {
+            return GZIP;
+        } else if (TikaCompressorStreamFactory.XZ.equals(name)) {
+            return XZ;
+        } else if (TikaCompressorStreamFactory.DEFLATE.equals(name)) {
+            return ZLIB;
+        } else if (TikaCompressorStreamFactory.Z.equals(name)) {
+            return COMPRESS;
+        } else if (TikaCompressorStreamFactory.PACK200.equals(name)) {
+            return PACK;
+        } else if (TikaCompressorStreamFactory.SNAPPY_FRAMED.equals(name) ||
+                TikaCompressorStreamFactory.SNAPPY_RAW.equals(name)) {
+            return SNAPPY;
+        } else if (TikaCompressorStreamFactory.LZMA.equals(name)) {
+            return LZMA;
         } else {
             return MediaType.OCTET_STREAM;
         }
@@ -104,10 +134,12 @@ public class CompressorParser extends AbstractParser {
         // At the end we want to close the compression stream to release
         // any associated resources, but the underlying document stream
         // should not be closed
-        stream = new CloseShieldInputStream(stream);
-
-        // Ensure that the stream supports the mark feature
-        stream = new BufferedInputStream(stream);
+        if (stream.markSupported()) {
+            stream = new CloseShieldInputStream(stream);
+        } else {
+            // Ensure that the stream supports the mark feature
+            stream = new BufferedInputStream(new CloseShieldInputStream(stream));
+        }
 
         CompressorInputStream cis;
         try {
@@ -117,10 +149,13 @@ public class CompressorParser extends AbstractParser {
                          return false;
                      }
                  });
-            CompressorStreamFactory factory = 
-                    new CompressorStreamFactory(options.decompressConcatenated(metadata));
+            TikaCompressorStreamFactory factory =
+                    new TikaCompressorStreamFactory(options.decompressConcatenated(metadata), memoryLimitInKb);
             cis = factory.createCompressorInputStream(stream);
         } catch (CompressorException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("MemoryLimitException:")) {
+                throw new TikaMemoryLimitException(e.getMessage());
+            }
             throw new TikaException("Unable to uncompress document stream", e);
         }
 
@@ -157,9 +192,8 @@ public class CompressorParser extends AbstractParser {
             }
 
             // Use the delegate parser to parse the compressed document
-            EmbeddedDocumentExtractor extractor = context.get(
-                    EmbeddedDocumentExtractor.class,
-                    new ParsingEmbeddedDocumentExtractor(context));
+            EmbeddedDocumentExtractor extractor =
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             if (extractor.shouldParseEmbedded(entrydata)) {
                 extractor.parseEmbedded(cis, xhtml, entrydata, true);
             }
@@ -168,6 +202,11 @@ public class CompressorParser extends AbstractParser {
         }
 
         xhtml.endDocument();
+    }
+
+    @Field
+    public void setMemoryLimitInKb(int memoryLimitInKb) {
+        this.memoryLimitInKb = memoryLimitInKb;
     }
 
 }

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<tika-batch-config
+        maxAliveTimeSeconds="-1"
+        pauseOnEarlyTerminationMillis="500"
+        timeoutCheckPulseMillis="1000"
+        maxQueueSize="10000"
+        numConsumers="5"
+        timeoutThresholdMillis="300000">
+
+    <commandline>
+        <option opt="c" longOpt="tika-config" hasArg="true"
+                description="TikaConfig file"/>
+
+        <option opt="bc" longOpt="batch-config" hasArg="true"
+                description="xml batch config file" required="true"/>
+        <option opt="inputDir" hasArg="true"
+                description="dir to start crawling"/>
+        <option opt="numConsumers" hasArg="true"
+                description="number of fileConsumers threads"/>
+        <option opt="extracts" hasArg="true"
+                description="this dir contains the files containing extracted metadata/content" required="false"/>
+        <option opt="db" hasArg="true"
+                description="name of db directory or file to which to write results"/>
+        <option opt="minExtractLength" hasArg="true"
+                description="minimum extract length to process"/>
+        <option opt="maxExtractLength" hasArg="true"
+                description="maximum extract length to process"/>
+    </commandline>
+
+
+    <!--
+        Can also add startDir: this tells the crawler to start indexing a
+        child directory of the inputDir directory.
+    -->
+    <crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
+             inputDir="src/test/resources/test-dirs/extractsA"
+             crawlOrder="sorted"
+             maxConsecWaitMillis="5000"
+             maxFilesToAdd="-1"
+             maxFilesToConsider="-1"
+             includeFilePat=""
+             excludeFilePat=""
+             maxFileSizeBytes="-1"
+    />
+
+    <consumers builderClass="org.apache.tika.eval.batch.EvalConsumersBuilder"
+               consumerBuilderClass="org.apache.tika.eval.batch.ExtractProfilerBuilder"
+               errorLogFile="src/test/resources/test-dirs/batch-logs/batch-process-fatal.xml"
+               extracts="src/test/resources/test-dirs/extractsA"
+               commonTokens="src/test/resources/common_tokens"/>
+
+
+    <!-- reporter and interrupter are optional -->
+    <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" sleepMillis="1000"
+              staleThresholdMillis="500000"/>
+    <interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
+</tika-batch-config>

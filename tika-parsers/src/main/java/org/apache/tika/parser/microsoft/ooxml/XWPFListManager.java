@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.math.BigInteger;
+
 import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFNum;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -30,6 +31,12 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
 
 
 public class XWPFListManager extends AbstractListManager {
+
+    /**
+     * Empty singleton to be used when there is no list manager.
+     * Always returns empty string.
+     */
+    public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
     private final static boolean OVERRIDE_AVAILABLE;
     private final static String SKIP_FORMAT = Character.toString((char) 61623);//if this shows up as the lvlText, don't show a number
 
@@ -47,8 +54,8 @@ public class XWPFListManager extends AbstractListManager {
     private final XWPFNumbering numbering;
 
     //map of numId (which paragraph series is this a member of?), levelcounts
-    public XWPFListManager(XWPFDocument document) {
-        numbering = document.getNumbering();
+    public XWPFListManager(XWPFNumbering numbering) {
+        this.numbering = numbering;
     }
 
     /**
@@ -57,12 +64,19 @@ public class XWPFListManager extends AbstractListManager {
      * @return the formatted number or an empty string if something went wrong
      */
     public String getFormattedNumber(final XWPFParagraph paragraph) {
-        if (numbering == null) {
+        return getFormattedNumber(paragraph.getNumID(),
+                paragraph.getNumIlvl() == null ? -1 : paragraph.getNumIlvl().intValue());
+    }
+
+    public String getFormattedNumber(BigInteger numId, int iLvl) {
+        if (numbering == null || iLvl < 0 || numId == null) {
             return "";
         }
 
-        int currNumId = paragraph.getNumID().intValue();
-        XWPFNum xwpfNum = numbering.getNum(paragraph.getNumID());
+        int currNumId = numId.intValue();
+
+        XWPFNum xwpfNum = numbering.getNum(numId);
+
         if (xwpfNum == null) {
             return "";
         }
@@ -79,14 +93,15 @@ public class XWPFListManager extends AbstractListManager {
             overrideTuples = loadOverrideTuples(ctNum, lc.getNumberOfLevels());
         }
 
-        String formattedString = lc.incrementLevel(paragraph.getNumIlvl().intValue(), overrideTuples);
+        String formattedString = lc.incrementLevel(iLvl, overrideTuples);
 
         listLevelMap.put(currAbNumId, lc);
         overrideTupleMap.put(currNumId, overrideTuples);
 
         return formattedString;
+
     }
-    
+
     private LevelTuple[] loadOverrideTuples(CTNum ctNum, int length) {
         LevelTuple[] levelTuples = new LevelTuple[length];
         int overrideLength = ctNum.sizeOfLvlOverrideArray();
@@ -166,4 +181,21 @@ public class XWPFListManager extends AbstractListManager {
         return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
     }
 
+
+    private static class EmptyListManager extends XWPFListManager {
+        EmptyListManager() {
+            super(null);
+        }
+
+        @Override
+        public String getFormattedNumber(XWPFParagraph paragraph) {
+            return "";
+        }
+
+        @Override
+        public String getFormattedNumber(BigInteger numId, int iLvl) {
+            return "";
+        }
+
+    }
 }

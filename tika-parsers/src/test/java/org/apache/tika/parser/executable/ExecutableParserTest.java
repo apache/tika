@@ -31,10 +31,7 @@ public class ExecutableParserTest extends TikaTest {
         XMLResult r = getXML("testWindows-x86-32.exe");
         Metadata metadata = r.metadata;
 
-        //not clear why ExecutableParser is adding instead of
-        //setting CONTENT_TYPE
-        assertContains("application/x-msdownload",
-                Arrays.asList(metadata.getValues(Metadata.CONTENT_TYPE)));
+        assertEquals("application/x-msdownload", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2012-05-13T13:40:11Z",
                 metadata.get(Metadata.CREATION_DATE));
 

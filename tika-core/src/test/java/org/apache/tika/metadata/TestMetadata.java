@@ -17,20 +17,31 @@
 package org.apache.tika.metadata;
 
 //JDK imports
-import java.util.Date;
-import java.util.Properties;
 
-import org.apache.tika.utils.DateUtils;
-import org.junit.Test;
-
-
-//Junit imports
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.Random;
+import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import org.apache.tika.utils.DateUtils;
+import org.junit.Test;
+
+//Junit imports
 
 /**
  * JUnit based tests of class {@link org.apache.tika.metadata.Metadata}.
@@ -372,5 +383,43 @@ public class TestMetadata {
        // Fetch as the aliases
        assertEquals(message, meta.get(Metadata.DESCRIPTION));
        assertEquals(message, meta.get("testDescriptionAlt"));
-    }    
+    }
+
+    @Test
+    public void testMultithreadedDates() throws Exception {
+        int numThreads = 10;
+        ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+        ExecutorCompletionService<Integer> executorCompletionService = new ExecutorCompletionService<Integer>(executorService);
+        for (int i = 0; i < numThreads; i++) {
+            executorCompletionService.submit(new MetadataDateAdder());
+        }
+        int finished = 0;
+        while (finished < numThreads) {
+            Future<Integer> future = executorCompletionService.take();
+            if (future != null && future.isDone()) {
+                Integer retVal = future.get();
+                finished++;
+            }
+        }
+
+    }
+
+    private class MetadataDateAdder implements Callable<Integer> {
+        private final Random random = new Random();
+        @Override
+        public Integer call() throws Exception {
+            for (int i = 0; i < 1000; i++) {
+                Metadata m = new Metadata();
+                long start = new Date().getTime();
+                start += random.nextInt(1000000);
+                Date now = new Date(start);
+                DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+                m.set(TikaCoreProperties.CREATED, df.format(now));
+                df.setTimeZone(TimeZone.getTimeZone("UTC"));
+                assertTrue(Math.abs(now.getTime() - m.getDate(TikaCoreProperties.CREATED).getTime()) < 2000);
+
+            }
+            return 1;
+        }
+    }
 }

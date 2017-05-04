@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class FileResourceCrawler implements Callable<IFileProcessorFutureResult> {
+    protected static final Logger LOG = LoggerFactory.getLogger(FileResourceCrawler.class.toString());
 
     protected final static int SKIPPED = 0;
     protected final static int ADDED = 1;
@@ -40,8 +41,6 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
 
     //how long to pause if can't add to queue
     private static final long PAUSE_INCREMENT_MILLIS = 1000;
-
-    protected static Logger logger = LoggerFactory.getLogger(FileResourceCrawler.class.toString());
 
     private int maxFilesToAdd = -1;
     private int maxFilesToConsider = -1;
@@ -80,9 +79,9 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
             start();
         } catch (InterruptedException e) {
             //this can be triggered by shutdownNow in BatchProcess
-            logger.info("InterruptedException in FileCrawler: " + e.getMessage());
+            LOG.info("InterruptedException in FileCrawler", e);
         } catch (Exception e) {
-            logger.error("Exception in FileResourceCrawler: " + e.getMessage());
+            LOG.error("Exception in FileResourceCrawler: {}", e.getMessage(), e);
         } finally {
             isActive = false;
         }
@@ -117,23 +116,23 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
             long totalConsecutiveWait = 0;
             while (queue.offer(fileResource, 1L, TimeUnit.SECONDS) == false) {
 
-                logger.info("FileResourceCrawler is pausing.  Queue is full: " + queue.size());
+                LOG.info("FileResourceCrawler is pausing. Queue is full: {}", queue.size());
                 Thread.sleep(PAUSE_INCREMENT_MILLIS);
                 totalConsecutiveWait += PAUSE_INCREMENT_MILLIS;
                 if (maxConsecWaitInMillis > -1 && totalConsecutiveWait > maxConsecWaitInMillis) {
                     timedOut = true;
-                    logger.error("Crawler had to wait longer than max consecutive wait time.");
+                    LOG.error("Crawler had to wait longer than max consecutive wait time.");
                     throw new InterruptedException("FileResourceCrawler had to wait longer than max consecutive wait time.");
                 }
                 if (Thread.currentThread().isInterrupted()) {
-                    logger.info("FileResourceCrawler shutting down because of interrupted thread.");
+                    LOG.info("FileResourceCrawler shutting down because of interrupted thread.");
                     throw new InterruptedException("FileResourceCrawler interrupted.");
                 }
             }
             isAdded = true;
             added++;
         } else {
-            logger.debug("crawler did not select: "+fileResource.getResourceId());
+            LOG.debug("crawler did not select: {}", fileResource.getResourceId());
         }
         considered++;
         return (isAdded)?ADDED:SKIPPED;
@@ -142,7 +141,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
     //Warning! Depending on the value of maxConsecWaitInMillis
     //this could try forever in vain to add poison to the queue.
     private void shutdown() throws InterruptedException{
-        logger.debug("FileResourceCrawler entering shutdown");
+        LOG.debug("FileResourceCrawler entering shutdown");
         if (hasCompletedCrawling || shutDownNoPoison) {
             return;
         }
@@ -150,19 +149,19 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
         long start = new Date().getTime();
         while (queue.offer(new PoisonFileResource(), 1L, TimeUnit.SECONDS)) {
             if (shutDownNoPoison) {
-                logger.debug("quitting the poison loop because shutDownNoPoison is now true");
+                LOG.debug("quitting the poison loop because shutDownNoPoison is now true");
                 return;
             }
             if (Thread.currentThread().isInterrupted()) {
-                logger.debug("thread interrupted while trying to add poison");
+                LOG.debug("thread interrupted while trying to add poison");
                 return;
             }
             long elapsed = new Date().getTime() - start;
             if (maxConsecWaitInMillis > -1 && elapsed > maxConsecWaitInMillis) {
-                logger.error("Crawler timed out while trying to add poison");
+                LOG.error("Crawler timed out while trying to add poison");
                 return;
             }
-            logger.debug("added "+i+" number of PoisonFileResource(s)");
+            LOG.debug("added {} number of PoisonFileResource(s)", i);
             if (i++ >= numConsumers) {
                 break;
             }

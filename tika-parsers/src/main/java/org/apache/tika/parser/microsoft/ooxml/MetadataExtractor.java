@@ -36,6 +36,9 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
@@ -56,7 +59,9 @@ public class MetadataExtractor {
 
     public void extract(Metadata metadata) throws TikaException {
         if (extractor.getDocument() != null ||
-                (extractor instanceof XSSFEventBasedExcelExtractor &&
+                ((extractor instanceof XSSFEventBasedExcelExtractor ||
+                        extractor instanceof XWPFEventBasedWordExtractor ||
+                        extractor instanceof XSLFEventBasedPowerPointExtractor) &&
                         extractor.getPackage() != null)) {
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);
@@ -113,6 +118,16 @@ public class MetadataExtractor {
                                  Metadata metadata) {
         CTProperties propsHolder = properties.getUnderlyingProperties();
 
+        //TIKA-2055, some ooxml files can include unsigned int/long values
+        //which cause this exception.
+        //For now, catch it and record as '0' because
+        //Word converts to '0' on save.
+        int totalTime = 0;
+        try {
+            totalTime = propsHolder.getTotalTime();
+        } catch (XmlValueOutOfRangeException e) {
+            //swallow for now
+        }
         addProperty(metadata, OfficeOpenXMLExtended.APPLICATION, propsHolder.getApplication());
         addProperty(metadata, OfficeOpenXMLExtended.APP_VERSION, propsHolder.getAppVersion());
         addProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
@@ -121,7 +136,7 @@ public class MetadataExtractor {
         addProperty(metadata, OfficeOpenXMLExtended.NOTES, propsHolder.getNotes());
         addProperty(metadata, OfficeOpenXMLExtended.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
         addProperty(metadata, OfficeOpenXMLExtended.TEMPLATE, propsHolder.getTemplate());
-        addProperty(metadata, OfficeOpenXMLExtended.TOTAL_TIME, propsHolder.getTotalTime());
+        addProperty(metadata, OfficeOpenXMLExtended.TOTAL_TIME, totalTime);
 
         if (propsHolder.getPages() > 0) {
             metadata.set(PagedText.N_PAGES, propsHolder.getPages());
@@ -146,7 +161,7 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
         addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
         addProperty(metadata, Metadata.TEMPLATE, propsHolder.getTemplate());
-        addProperty(metadata, Metadata.TOTAL_TIME, propsHolder.getTotalTime());
+        addProperty(metadata, Metadata.TOTAL_TIME, totalTime);
         addProperty(metadata, MSOffice.PAGE_COUNT, propsHolder.getPages());
         addProperty(metadata, MSOffice.SLIDE_COUNT, propsHolder.getSlides());
         addProperty(metadata, MSOffice.PARAGRAPH_COUNT, propsHolder.getParagraphs());

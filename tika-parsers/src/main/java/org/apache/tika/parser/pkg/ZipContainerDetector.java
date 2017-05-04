@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,14 +29,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
-import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -50,8 +47,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -104,14 +100,8 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
-            CompressorStreamFactory factory = new CompressorStreamFactory();
-            CompressorInputStream cis = factory.createCompressorInputStream(
-                    new ByteArrayInputStream(prefix, 0, length));
-            try {
-                return CompressorParser.getMediaType(cis);
-            } finally {
-                IOUtils.closeQuietly(cis);
-            }
+            String type = TikaCompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            return CompressorParser.getMediaType(type);
         } catch (CompressorException e) {
             return MediaType.OCTET_STREAM;
         }
@@ -119,20 +109,8 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectArchiveFormat(byte[] prefix, int length) {
         try {
-            ArchiveStreamFactory factory = new ArchiveStreamFactory();
-            ArchiveInputStream ais = factory.createArchiveInputStream(
-                    new ByteArrayInputStream(prefix, 0, length));
-            try {
-                if ((ais instanceof TarArchiveInputStream)
-                        && !TarArchiveInputStream.matches(prefix, length)) {
-                    // ArchiveStreamFactory is too relaxed, see COMPRESS-117
-                    return MediaType.OCTET_STREAM;
-                } else {
-                    return PackageParser.getMediaType(ais);
-                }
-            } finally {
-                IOUtils.closeQuietly(ais);
-            }
+            String name = TikaArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            return PackageParser.getMediaType(name);
         } catch (ArchiveException e) {
             return MediaType.OCTET_STREAM;
         }
@@ -140,11 +118,21 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectZipFormat(TikaInputStream tis) {
         try {
+
+            //try opc first because opening a package
+            //will not necessarily throw an exception for
+            //truncated files.
+            MediaType type = detectOPCBased(tis);
+            if (type != null) {
+                return type;
+            }
+
             ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
             try {
-                MediaType type = detectOpenDocument(zip);
+                type = detectOpenDocument(zip);
+
                 if (type == null) {
-                    type = detectOPCBased(zip, tis);
+                    type = detectIWork13(zip);
                 }
                 if (type == null) {
                     type = detectIWork(zip);
@@ -199,10 +187,10 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectOPCBased(ZipFile zip, TikaInputStream stream) {
+    private static MediaType detectOPCBased(TikaInputStream stream) {
         try {
-            if (zip.getEntry("_rels/.rels") != null
-                    || zip.getEntry("[Content_Types].xml") != null) {
+//            if (zip.getEntry("_rels/.rels") != null
+  //                  || zip.getEntry("[Content_Types].xml") != null) {
                 // Use POI to open and investigate it for us
                 OPCPackage pkg = OPCPackage.open(stream.getFile().getPath(), PackageAccess.READ);
                 stream.setOpenContainer(pkg);
@@ -221,9 +209,6 @@ public class ZipContainerDetector implements Detector {
                 
                 // We don't know what it is, sorry
                 return null;
-            } else {
-                return null;
-            }
         } catch (IOException e) {
             return null;
         } catch (RuntimeException e) {
@@ -298,6 +283,14 @@ public class ZipContainerDetector implements Detector {
             // Non-AutoCAD Package received
             return null;
         }
+    }
+
+    private static MediaType detectIWork13(ZipFile zip) {
+        if (zip.getEntry(IWork13PackageParser.IWORK13_COMMON_ENTRY) != null) {
+            return IWork13PackageParser.IWork13DocumentType.detect(zip);
+        }
+        return null;
+
     }
 
     private static MediaType detectIWork(ZipFile zip) {

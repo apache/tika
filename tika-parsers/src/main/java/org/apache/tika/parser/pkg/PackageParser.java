@@ -38,17 +38,20 @@ import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
@@ -76,14 +79,22 @@ public class PackageParser extends AbstractParser {
     private static final MediaType ZIP = MediaType.APPLICATION_ZIP;
     private static final MediaType JAR = MediaType.application("java-archive");
     private static final MediaType AR = MediaType.application("x-archive");
+    private static final MediaType ARJ = MediaType.application("x-arj");
     private static final MediaType CPIO = MediaType.application("x-cpio");
     private static final MediaType DUMP = MediaType.application("x-tika-unix-dump");
     private static final MediaType TAR = MediaType.application("x-tar");
     private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR, SEVENZ);
+            MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
 
+    //this can't be static because of the ForkParser
+    //lazily load this when parse is called if it is null.
+    private MediaTypeRegistry bufferedMediaTypeRegistry;
+
+    private final Object lock = new Object[0];
+
+    @Deprecated
     static MediaType getMediaType(ArchiveInputStream stream) {
         if (stream instanceof JarArchiveInputStream) {
             return JAR;
@@ -104,6 +115,27 @@ public class PackageParser extends AbstractParser {
         }
     }
 
+    static MediaType getMediaType(String name) {
+        if (TikaArchiveStreamFactory.JAR.equals(name)) {
+            return JAR;
+        } else if (TikaArchiveStreamFactory.ZIP.equals(name)) {
+            return ZIP;
+        } else if (TikaArchiveStreamFactory.AR.equals(name)) {
+            return AR;
+        } else if (TikaArchiveStreamFactory.ARJ.equals(name)) {
+            return ARJ;
+        } else if (TikaArchiveStreamFactory.CPIO.equals(name)) {
+            return CPIO;
+        } else if (TikaArchiveStreamFactory.DUMP.equals(name)) {
+            return DUMP;
+        } else if (TikaArchiveStreamFactory.TAR.equals(name)) {
+            return TAR;
+        } else if (TikaArchiveStreamFactory.SEVEN_Z.equals(name)) {
+            return SEVENZ;
+        } else {
+            return MediaType.OCTET_STREAM;
+        }
+    }
     static boolean isZipArchive(MediaType type) {
         return type.equals(ZIP) || type.equals(JAR);
     }
@@ -116,11 +148,31 @@ public class PackageParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-       
+
+        //lazily load the MediaTypeRegistry at parse time
+        //only want to call getDefaultConfig() once, and can't
+        //load statically because of the ForkParser
+        TikaConfig config = context.get(TikaConfig.class);
+        MediaTypeRegistry mediaTypeRegistry = null;
+        if (config != null) {
+            mediaTypeRegistry = config.getMediaTypeRegistry();
+        } else {
+            if (bufferedMediaTypeRegistry == null) {
+                //buffer this for next time.
+                synchronized (lock) {
+                    //now that we're locked, check again
+                    if (bufferedMediaTypeRegistry == null) {
+                        bufferedMediaTypeRegistry = TikaConfig.getDefaultConfig().getMediaTypeRegistry();
+                    }
+                }
+            }
+            mediaTypeRegistry = bufferedMediaTypeRegistry;
+        }
+
         // Ensure that the stream supports the mark feature
-        if (! TikaInputStream.isTikaInputStream(stream))
+        if (! stream.markSupported()) {
             stream = new BufferedInputStream(stream);
-        
+        }
         
         TemporaryResources tmp = new TemporaryResources();
         ArchiveInputStream ais = null;
@@ -129,6 +181,7 @@ public class PackageParser extends AbstractParser {
             // At the end we want to close the archive stream to release
             // any associated resources, but the underlying document stream
             // should not be closed
+
             ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
             
         } catch (StreamingNotSupportedException sne) {
@@ -163,14 +216,9 @@ public class PackageParser extends AbstractParser {
             throw new TikaException("Unable to unpack document stream", e);
         }
 
-        MediaType type = getMediaType(ais);
-        if (!type.equals(MediaType.OCTET_STREAM)) {
-            metadata.set(CONTENT_TYPE, type.toString());
-        }
+        updateMediaType(ais, mediaTypeRegistry, metadata);
         // Use the delegate parser to parse the contained document
-        EmbeddedDocumentExtractor extractor = context.get(
-                EmbeddedDocumentExtractor.class,
-                new ParsingEmbeddedDocumentExtractor(context));
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -179,7 +227,7 @@ public class PackageParser extends AbstractParser {
             ArchiveEntry entry = ais.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    parseEntry(ais, entry, extractor, xhtml);
+                    parseEntry(ais, entry, extractor, metadata, xhtml);
                 }
                 entry = ais.getNextEntry();
             }
@@ -188,7 +236,8 @@ public class PackageParser extends AbstractParser {
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
             }
-            // Otherwise fall through to raise the exception as normal
+            // Otherwise throw the exception
+            throw new TikaException("UnsupportedZipFeature", zfe);
         } catch (PasswordRequiredException pre) {
             throw new EncryptedDocumentException(pre);
         } finally {
@@ -199,9 +248,37 @@ public class PackageParser extends AbstractParser {
         xhtml.endDocument();
     }
 
+    private void updateMediaType(ArchiveInputStream ais, MediaTypeRegistry mediaTypeRegistry, Metadata metadata) {
+        MediaType type = getMediaType(ais);
+        if (type.equals(MediaType.OCTET_STREAM)) {
+            return;
+        }
+
+        //now see if the user or an earlier step has passed in a content type
+        String incomingContentTypeString = metadata.get(CONTENT_TYPE);
+        if (incomingContentTypeString == null) {
+            metadata.set(CONTENT_TYPE, type.toString());
+            return;
+        }
+
+
+        MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
+        if (incomingMediaType == null) {
+            metadata.set(CONTENT_TYPE, type.toString());
+            return;
+        }
+        //if the existing type is a specialization of the detected type,
+        //leave in the specialization; otherwise set the detected
+        if (! mediaTypeRegistry.isSpecializationOf(incomingMediaType, type)) {
+            metadata.set(CONTENT_TYPE, type.toString());
+            return;
+        }
+
+    }
+
     private void parseEntry(
             ArchiveInputStream archive, ArchiveEntry entry,
-            EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml)
+            EmbeddedDocumentExtractor extractor, Metadata parentMetadata, XHTMLContentHandler xhtml)
             throws SAXException, IOException, TikaException {
         String name = entry.getName();
         if (archive.canReadEntryData(entry)) {
@@ -221,8 +298,21 @@ public class PackageParser extends AbstractParser {
                     tmp.dispose();
                 }
             }
-        } else if (name != null && name.length() > 0) {
-            xhtml.element("p", name);
+        } else {
+            name = (name == null) ? "" : name;
+            if (entry instanceof ZipArchiveEntry) {
+                boolean usesEncryption = ((ZipArchiveEntry) entry).getGeneralPurposeBit().usesEncryption();
+                if (usesEncryption) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                            new EncryptedDocumentException("stream ("+name+") is encrypted"), parentMetadata);
+                }
+            } else {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                        new TikaException("Can't read archive stream ("+name+")"), parentMetadata);
+            }
+            if (name.length() > 0) {
+                xhtml.element("p", name);
+            }
         }
     }
     

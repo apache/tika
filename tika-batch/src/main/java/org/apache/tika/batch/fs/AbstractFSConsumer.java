@@ -50,10 +50,9 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
         } catch (IOException e) {
             //This can happen if the disk has run out of space,
             //or if there was a failure with mkdirs in fsOSFactory
-            logger.error("{}", getXMLifiedLogMsg(IO_OS,
-                    fileResource.getResourceId(), e));
+            LOG.error("{}", getXMLifiedLogMsg(IO_OS, fileResource.getResourceId(), e));
             throw new BatchNoRestartError("IOException trying to open output stream for " +
-                    fileResource.getResourceId() + " :: " + e.getMessage());
+                    fileResource.getResourceId(), e);
         }
         return os;
     }
@@ -68,8 +67,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
         try {
             is = fileResource.openInputStream();
         } catch (IOException e) {
-            logger.warn("{}", getXMLifiedLogMsg(IO_IS,
-                    fileResource.getResourceId(), e));
+            LOG.warn("{}", getXMLifiedLogMsg(IO_IS, fileResource.getResourceId(), e));
             flushAndClose(is);
         }
         return is;

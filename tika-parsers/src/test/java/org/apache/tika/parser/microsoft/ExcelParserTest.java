@@ -16,15 +16,18 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.text.DecimalFormatSymbols;
+import java.util.List;
 import java.util.Locale;
 
+import org.apache.poi.util.LocaleUtil;
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -36,12 +39,13 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class ExcelParserTest {
+public class ExcelParserTest extends TikaTest {
     @Test
     @SuppressWarnings("deprecation") // Checks legacy Tika-1.0 style metadata keys
     public void testExcelParser() throws Exception {
@@ -263,44 +267,6 @@ public class ExcelParserTest {
         }
     }
 
-    /**
-     * We don't currently support the .xlsb file format 
-     *  (an OOXML container with binary blobs), but we 
-     *  shouldn't break on these files either (TIKA-826)  
-     */
-    @Test
-    public void testExcelXLSB() throws Exception {
-        Detector detector = new DefaultDetector();
-        AutoDetectParser parser = new AutoDetectParser();
-
-        Metadata m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "excel.xlsb");
-
-        // Should be detected correctly
-        MediaType type;
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xlsb")) {
-            type = detector.detect(input, m);
-            assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
-        }
-
-        // OfficeParser won't handle it
-        assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
-
-        // OOXMLParser won't handle it
-        assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
-
-        // AutoDetectParser doesn't break on it
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            parser.parse(input, handler, m, context);
-
-            String content = handler.toString();
-            assertEquals("", content);
-        }
-    }
 
     /**
      * Excel 5 and 95 are older formats, and only get basic support
@@ -439,5 +405,87 @@ public class ExcelParserTest {
             assertContains("Footer - For Internal Use Only", content);
             assertContains("Footer - Author: John Smith", content);
         }
+    }
+
+    @Test
+    public void testHyperlinksInXLS() throws Exception {
+        String xml = getXML("testEXCEL_hyperlinks.xls").xml;
+        //external url
+        assertContains("<a href=\"http://tika.apache.org/\">", xml);
+        //mail url
+        assertContains("<a href=\"mailto:user@tika.apache.org?subject=help\">", xml);
+        //external linked file
+        assertContains("<a href=\"linked_file.txt.htm\">", xml);
+
+        //TODO: not extracting these yet
+        //link on textbox
+//        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xls");
+        assertContains("Hello World!", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testBigIntegersWGeneralFormat() throws Exception {
+        //TIKA-2025
+        String xml = getXML("testEXCEL_big_numbers.xls").xml;
+        assertContains("123456789012345", xml);//15 digit number
+        assertContains("123456789012346", xml);//15 digit formula
+        Locale locale = LocaleUtil.getUserLocale();
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
+        //16 digit number is treated as scientific notation as is the 16 digit formula
+        assertContains("1"+symbols.getDecimalSeparator()+"23456789012345E15</td>\t"+
+                "<td>1"+symbols.getDecimalSeparator()+"23456789012345E15", xml);
+    }
+
+    @Test
+    public void testMacros() throws  Exception {
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xls")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extracted macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
+        Metadata minExpected = new Metadata();
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
+        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
+        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", context));
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", parser));
+
+    }
+
+    @Test
+    public void testTextBox() throws Exception {
+        String xml = getXML("testEXCEL_textbox.xls").xml;
+        assertContains("autoshape", xml);
+    }
+
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtractionExcel() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testEXCEL_textbox.xls", pc).xml;
+        assertNotContained("autoshape", xml);
     }
 }

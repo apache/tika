@@ -48,6 +48,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * <p/>
  */
 public abstract class FileResourceConsumer implements Callable<IFileProcessorFutureResult> {
+    protected static final Logger LOG = LoggerFactory.getLogger(FileResourceConsumer.class);
 
     private enum STATE {
         NOT_YET_STARTED,
@@ -72,7 +73,6 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     public static String ELAPSED_MILLIS = "elapsedMS";
 
     private static AtomicInteger numConsumers = new AtomicInteger(-1);
-    protected static Logger logger = LoggerFactory.getLogger(FileResourceConsumer.class);
 
     private long maxConsecWaitInMillis = 10*60*1000;// 10 minutes
 
@@ -111,9 +111,9 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         try {
             FileResource fileResource = getNextFileResource();
             while (fileResource != null) {
-                logger.debug("file consumer is about to process: " + fileResource.getResourceId());
+                LOG.trace("file consumer is about to process: {}", fileResource.getResourceId());
                 boolean consumed = _processFileResource(fileResource);
-                logger.debug("file consumer has finished processing: " + fileResource.getResourceId());
+                LOG.trace("file consumer has finished processing: {}", fileResource.getResourceId());
 
                 if (consumed) {
                     numResourcesConsumed++;
@@ -127,7 +127,6 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         setEndedState(STATE.COMPLETED);
         return new FileConsumerFutureResult(currentFile, numResourcesConsumed);
     }
-
 
     /**
      * Main piece of code that needs to be implemented.  Clients
@@ -260,7 +259,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             }
             if (tmp.getElapsedMillis() > staleThresholdMillis) {
                 setEndedState(STATE.TIMED_OUT);
-                logger.error("{}", getXMLifiedLogMsg(
+                LOG.error("{}", getXMLifiedLogMsg(
                         TIMED_OUT,
                         tmp.getResourceId(),
                         ELAPSED_MILLIS, Long.toString(tmp.getElapsedMillis())));
@@ -306,7 +305,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             handler.endElement("", type, type);
             handler.endDocument();
         } catch (SAXException e) {
-            logger.warn("error writing xml stream for: " + resourceId, t);
+            LOG.warn("error writing xml stream for: {}", resourceId, t);
         }
         return handler.toString();
     }
@@ -318,14 +317,14 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             //check to see if thread is interrupted before polling
             if (Thread.currentThread().isInterrupted()) {
                 setEndedState(STATE.THREAD_INTERRUPTED);
-                logger.debug("Consumer thread was interrupted.");
+                LOG.debug("Consumer thread was interrupted.");
                 break;
             }
 
             synchronized(lock) {
                 //need to lock here to prevent race condition with other threads setting state
                 if (currentState != STATE.ACTIVELY_CONSUMING) {
-                    logger.debug("Consumer already closed because of: "+ currentState.toString());
+                    LOG.debug("Consumer already closed because of: {}", currentState);
                     break;
                 }
             }
@@ -337,7 +336,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                 }
                 break;
             }
-            logger.debug(consumerId + " is waiting for file and the queue size is: " + fileQueue.size());
+            LOG.debug("{} is waiting for file and the queue size is: {}", consumerId, fileQueue.size());
 
             long elapsed = new Date().getTime() - start;
             if (maxConsecWaitInMillis > 0 && elapsed > maxConsecWaitInMillis) {
@@ -353,7 +352,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             try {
                 closeable.close();
             } catch (IOException e){
-                logger.warn(e.getMessage());
+                LOG.warn(e.getMessage(), e);
             }
         }
         closeable = null;
@@ -367,7 +366,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             try {
                 ((Flushable)closeable).flush();
             } catch (IOException e) {
-                logger.warn(e.getMessage());
+                LOG.warn(e.getMessage(), e);
             }
         }
         close(closeable);
@@ -407,14 +406,11 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             parser.parse(is, handler, m, parseContext);
         } catch (Throwable t) {
             if (t instanceof OutOfMemoryError) {
-                logger.error(getXMLifiedLogMsg(OOM,
-                        resourceId, t));
+                LOG.error(getXMLifiedLogMsg(OOM, resourceId, t));
             } else if (t instanceof Error) {
-                logger.error(getXMLifiedLogMsg(PARSE_ERR,
-                        resourceId, t));
+                LOG.error(getXMLifiedLogMsg(PARSE_ERR, resourceId, t));
             } else {
-                logger.warn(getXMLifiedLogMsg(PARSE_EX,
-                        resourceId, t));
+                LOG.warn(getXMLifiedLogMsg(PARSE_EX, resourceId, t));
                 incrementHandledExceptions();
             }
             throw t;
@@ -422,5 +418,4 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             close(is);
         }
     }
-
 }

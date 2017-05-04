@@ -18,10 +18,10 @@ package org.apache.tika.parser.xml;
 
 import java.util.Arrays;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 
 /**
@@ -31,11 +31,7 @@ import org.xml.sax.Attributes;
  * @since Apache Tika 0.10
  */
 public class ElementMetadataHandler extends AbstractMetadataHandler {
-    /**
-     * Logger for this class
-     */
-    private static final Log logger = LogFactory
-            .getLog(ElementMetadataHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ElementMetadataHandler.class);
 
     private static final String LOCAL_NAME_RDF_BAG = "Bag";
     private static final String LOCAL_NAME_RDF_LI = "li";
@@ -88,9 +84,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         this.name = name;
         this.allowDuplicateValues = false;
         this.allowEmptyValues = false;
-        if (logger.isTraceEnabled()) {
-            logger.trace("created simple handler for " + this.name);
-        }
+        LOG.trace("created simple handler for {}", this.name);
     }
 
     /**
@@ -113,9 +107,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         this.name = name;
         this.allowDuplicateValues = allowDuplicateValues;
         this.allowEmptyValues = allowEmptyValues;
-        if (logger.isTraceEnabled()) {
-                logger.trace("created simple handler for " + this.name);
-        }
+        LOG.trace("created simple handler for {}", this.name);
     }
 
     /**
@@ -136,9 +128,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         this.name = targetProperty.getName();
         this.allowDuplicateValues = false;
         this.allowEmptyValues = false;
-        if (logger.isTraceEnabled()) {
-            logger.trace("created property handler for " + this.name);
-        }
+        LOG.trace("created property handler for {}", this.name);
     }
 
     /**
@@ -162,9 +152,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         this.name = targetProperty.getName();
         this.allowDuplicateValues = allowDuplicateValues;
         this.allowEmptyValues = allowEmptyValues;
-        if (logger.isTraceEnabled()) {
-                logger.trace("created property handler for " + this.name);
-        }
+        LOG.trace("created property handler for {}", this.name);
     }
 
     protected boolean isMatchingParentElement(String uri, String localName) {
@@ -235,9 +223,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
 
     @Override
     protected void addMetadata(String value) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("adding " + name + "=" + value);
-        }
+        LOG.trace("adding {}={}", name, value);
         if (targetProperty != null && targetProperty.isMultiValuePermitted()) {
             if ((value != null && value.length() > 0) || allowEmptyValues) {
                 if (value == null || value.length() == 0 && allowEmptyValues) {

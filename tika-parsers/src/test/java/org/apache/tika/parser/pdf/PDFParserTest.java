@@ -19,8 +19,10 @@ package org.apache.tika.parser.pdf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -32,7 +34,10 @@ import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -42,14 +47,18 @@ import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -64,11 +73,21 @@ import org.xml.sax.ContentHandler;
 public class PDFParserTest extends TikaTest {
 
     public static final MediaType TYPE_TEXT = MediaType.TEXT_PLAIN;
-    public static final MediaType TYPE_EMF = MediaType.application("x-emf");
+    public static final MediaType TYPE_EMF = MediaType.image("emf");
     public static final MediaType TYPE_PDF = MediaType.application("pdf");
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     public static final MediaType TYPE_DOC = MediaType.application("msword");
     public static Level PDFBOX_LOG_LEVEL = Level.INFO;
+
+    private static Boolean hasTesseract = null;
+
+    public static boolean canRunOCR() {
+        if (hasTesseract != null) {
+            return hasTesseract;
+        }
+        hasTesseract = new TesseractOCRParser().hasTesseract(new TesseractOCRConfig());
+        return hasTesseract;
+    }
 
     @BeforeClass
     public static void setup() {
@@ -375,7 +394,8 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testLinks() throws Exception {
         final XMLResult result = getXML("testPDFVarious.pdf");
-        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\" /></div>", result.xml);
+        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\">"+
+                "http://tika.apache.org/</a></div>", result.xml);
     }
 
     @Test
@@ -454,7 +474,7 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("\\s+", " ");
         assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
 
-        parser.getPDFParserConfig().setSortByPosition(true);
+        parser.setSortByPosition(true);
         stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
@@ -492,6 +512,18 @@ public class PDFParserTest extends TikaTest {
         assertTrue(j != -1);
         assertTrue(i < j);
     }
+
+    // TIKA-2303
+    @Test
+    public void testTurningOffBookmarks() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractBookmarksText(false);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, config);
+        String xml = getXML("testPDF_bookmarks.pdf", parseContext).xml;
+        assertNotContained("Denmark bookmark is here", xml);
+    }
+
 
     //TIKA-1124
     @Test
@@ -621,6 +653,34 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
     }
 
+    @Test // TIKA-2232
+    public void testEmbeddedJBIG2Image() throws Exception {
+
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(PDFParserConfig.class, config);
+
+
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
+        assertEquals(2, metadatas.size());
+        assertContains("test images compressed using JBIG2", metadatas.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+
+        for (String key : metadatas.get(1).names()) {
+            if (key.startsWith("X-TIKA:EXCEPTION")) {
+                fail("Exception: " + metadatas.get(1).get(key));
+            }
+        }
+        assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
+        assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
+        
+        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("image0.jb2", 
+                metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("x-jbig2").toString(), 
+                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+    }
 
     @Test
     public void testEmbeddedFilesInAnnotations() throws Exception {
@@ -753,7 +813,7 @@ public class PDFParserTest extends TikaTest {
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, new AutoDetectParser());
 
-        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -775,7 +835,7 @@ public class PDFParserTest extends TikaTest {
         inline = 0;
         attach = 0;
 
-        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -795,7 +855,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testInlineConfig() throws Exception {
 
-        List<Metadata> metadatas = getRecursiveJson("testPDF_childAttachments.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf");
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -822,7 +882,7 @@ public class PDFParserTest extends TikaTest {
         inline = 0;
         attach = 0;
 
-        metadatas = getRecursiveJson("testPDF_childAttachments.pdf", context);
+        metadatas = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -839,7 +899,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1376
     public void testEmbeddedFileNameExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveJson("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
         Metadata firstAttachment = metadatas.get(1);
         assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
@@ -847,7 +907,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1374
     public void testOSSpecificEmbeddedFileExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveJson("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
 
         assertEquals("file name", "Test.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
@@ -874,13 +934,13 @@ public class PDFParserTest extends TikaTest {
 
         XMLResult r = getXML("testPDF_childAttachments.pdf", context);
         //regular attachment
-        assertContains("<div class=\"embedded\" id=\"Unit10.doc\" />", r.xml);
+        assertContains("<div source=\"attachment\" class=\"embedded\" id=\"Unit10.doc\" />", r.xml);
         //inline image
         assertContains("<img src=\"embedded:image1.tif\" alt=\"image1.tif\" />", r.xml);
 
         //doc embedded inside an annotation
         r = getXML("testPDFFileEmbInAnnotation.pdf");
-        assertContains("<div class=\"embedded\" id=\"Excel.xlsx\" />", r.xml);
+        assertContains("<div source=\"annotation\" class=\"embedded\" id=\"Excel.xlsx\" />", r.xml);
     }
 
     //Access checker tests
@@ -1157,6 +1217,142 @@ public class PDFParserTest extends TikaTest {
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertNotContained("1309.61", content);
     }
+    @Test
+    public void testEmbeddedJPEG() throws Exception {
+        //TIKA-1990, test that an embedded jpeg is correctly decoded
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
+        //sanity check
+        assertEquals(5, metadataList.size());
+        //inlined jpeg metadata
+        Metadata jpegMetadata = metadataList.get(1);
+        assertEquals("image/jpeg", jpegMetadata.get(Metadata.CONTENT_TYPE));
+        //the metadata parse will fail if the stream is not correctly decoded
+        assertEquals("1425", jpegMetadata.get(Metadata.IMAGE_LENGTH));
+    }
+
+    @Test
+    public void testEmbeddedDocsWithOCROnly() throws Exception {
+        if (! canRunOCR()) { return; }
+
+        for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
+            PDFParserConfig config = new PDFParserConfig();
+            config.setOcrStrategy(strategy);
+            ParseContext context = new ParseContext();
+            context.set(PDFParserConfig.class, config);
+            context.set(Parser.class, new AutoDetectParser());
+            //make sure everything works with regular xml _and_ with recursive
+            XMLResult xmlResult = getXML("testPDFEmbeddingAndEmbedded.docx", context);
+            assertContains("pdf_haystack", xmlResult.xml);
+            assertContains("Haystack", xmlResult.xml);
+            assertContains("Needle", xmlResult.xml);
+            if (! strategy.equals(PDFParserConfig.OCR_STRATEGY.NO_OCR)) {
+                // Tesseract may see the t in haystack as a ! some times...
+                String div = "<div class=\"ocr\">pdf_hays";
+                if (xmlResult.xml.contains(div+"!ack")) {
+                   assertContains(div+"!ack", xmlResult.xml);
+                } else {
+                   assertContains(div+"tack", xmlResult.xml);
+                }
+            } else {
+                assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
+            }
+            assertEquals(4, getRecursiveMetadata("testPDFEmbeddingAndEmbedded.docx", context).size());
+        }
+
+    }
+
+    @Test
+    public void testJBIG2OCROnly() throws Exception {
+        if (!canRunOCR()) {
+            return;
+        }
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser());
+        //make sure everything works with regular xml _and_ with recursive
+        XMLResult xmlResult = getXML("testPDF_JBIG2.pdf", context);
+        assertContains("Norconex", xmlResult.xml);
+    }
+
+
+    @Test
+    public void testInitializationViaConfig() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+        text = text.replaceAll("\\s+", " ");
+
+        // Column text is now interleaved:
+        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+
+    }
+
+    @Test
+    public void testInitializationOfNonPrimitivesViaConfig() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        Map<MediaType, Parser> parsers = p.getParsers();
+        Parser composite = parsers.get(MediaType.application("pdf"));
+        Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+        assertEquals("org.apache.tika.parser.pdf.PDFParser", pdfParser.getClass().getName());
+        assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY, ((PDFParser)pdfParser).getPDFParserConfig().getOcrStrategy());
+        assertEquals(ImageType.RGB, ((PDFParser)pdfParser).getPDFParserConfig().getOcrImageType());
+
+    }
+
+    @Test
+    public void testDiffTitles() throws Exception {
+        //different titles in xmp vs docinfo
+        Metadata m = getXML("testPDF_diffTitles.pdf").metadata;
+        assertEquals("this is a new title", m.get(PDF.DOC_INFO_TITLE));
+        assertEquals("Sample Title", m.get(TikaCoreProperties.TITLE));
+    }
+
+    @Test
+    public void testMaxLength() throws Exception {
+        InputStream is = getResourceAsStream("/test-documents/testPDF.pdf");
+        String content = new Tika().parseToString(is, new Metadata(), 100);
+        assertTrue(content.length() == 100);
+        assertContains("Tika - Content", content);
+    }
+
+    @Test
+    public void testConfiguringMoreParams() throws Exception {
+        try (InputStream configIs = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
+            assertNotNull(configIs);
+            TikaConfig tikaConfig = new TikaConfig(configIs);
+            AutoDetectParser p = new AutoDetectParser(tikaConfig);
+            //make absolutely certain the functionality works!
+            List<Metadata> metadata = getRecursiveMetadata("testOCR.pdf", p);
+            assertEquals(2, metadata.size());
+            Map<MediaType, Parser> parsers = p.getParsers();
+            Parser composite = parsers.get(MediaType.application("pdf"));
+            Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+            assertTrue(pdfParser instanceof PDFParser);
+            PDFParserConfig pdfParserConfig = ((PDFParser)pdfParser).getPDFParserConfig();
+            assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
+            assertEquals(true, pdfParserConfig.getExtractInlineImages());
+            assertEquals(false, pdfParserConfig.getExtractUniqueInlineImagesOnly());
+            assertEquals(314, pdfParserConfig.getOcrDPI());
+            assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
+            assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
+            assertEquals(false, pdfParserConfig.getCatchIntermediateIOExceptions());
+        }
+    }
+
+    //TODO: figure out how to test jp2 embedded with OCR
+
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);

@@ -25,15 +25,17 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -42,26 +44,25 @@ import org.xml.sax.SAXException;
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
-public class HtmlParser extends AbstractParser {
+public class HtmlParser extends AbstractEncodingDetectorParser {
 
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = 7895315240498733128L;
 
+    private static final Logger LOG = LoggerFactory.getLogger(HtmlParser.class);
+
     private static final MediaType XHTML = MediaType.application("xhtml+xml");
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
     private static final MediaType X_ASP = MediaType.application("x-asp");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.text("html"),
                     XHTML,
                     WAP_XHTML,
                     X_ASP)));
-
-    private static final ServiceLoader LOADER =
-            new ServiceLoader(HtmlParser.class.getClassLoader());
 
     /**
      * HTML schema singleton used to amortise the heavy instantiation time.
@@ -73,13 +74,22 @@ public class HtmlParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
+    public HtmlParser() {
+        super();
+    }
+
+    public HtmlParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
+    }
+
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+
         // Automatically detect the character encoding
         try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
-                metadata,context.get(ServiceLoader.class, LOADER))) {
+                metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String previous = metadata.get(Metadata.CONTENT_TYPE);
             MediaType contentType = null;

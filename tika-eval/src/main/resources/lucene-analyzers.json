@@ -1,0 +1,77 @@
+{
+  "analyzers": {
+    "general": {
+      "charfilters": [
+        {
+          "factory": "oala.charfilter.MappingCharFilterFactory",
+          "params": {
+            "mapping": "/lucene-char-mapping.txt"
+          }
+        }
+      ],
+      "tokenizer": {
+        "factory": "oala.standard.UAX29URLEmailTokenizerFactory",
+        "params": {}
+      },
+      "tokenfilters": [
+        {
+          "factory": "oala.icu.ICUFoldingFilterFactory",
+          "params": {}
+        },
+        {
+          "factory": "oala.cjk.CJKBigramFilterFactory",
+          "params": {
+            "outputUnigrams": "false"
+          }
+        }
+      ]
+    },
+    "common_tokens": {
+      "_comment" : "Use this analyzer for counting common tokens in a corpus.",
+      "_comment" : "This isn't used by tika-eval during profiling or comparing",
+      "tokenizer": {
+        "factory": "oala.standard.UAX29URLEmailTokenizerFactory",
+        "params": {}
+      },
+      "tokenfilters": [
+        {
+          "factory": "oala.icu.ICUFoldingFilterFactory",
+          "params": {}
+        },
+        {
+          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
+          "params": {}
+        },
+        {
+          "factory": "oala.pattern.PatternReplaceFilterFactory",
+          "params": {
+            "pattern": "^[\\w+\\.]{1,30}@(?:\\w+\\.){1,10}\\w+$",
+            "replacement": "___email___",
+            "replace": "all"
+          }
+        },
+        {
+          "factory": "oala.pattern.PatternReplaceFilterFactory",
+          "params": {
+            "pattern": "^(?:(?:ftp|https?):\\/\\/)?(?:\\w+\\.){1,10}\\w+$",
+            "replacement": "___url___",
+            "replace": "all"
+          }
+        },
+        {
+          "factory": "oala.cjk.CJKBigramFilterFactory",
+          "params": {
+            "outputUnigrams": "false"
+          }
+        },
+        {
+          "factory": "org.apache.tika.eval.tokens.CJKBigramAwareLengthFilterFactory",
+          "params": {
+            "min": 4,
+            "max": 20
+          }
+        }
+      ]
+    }
+  }
+}

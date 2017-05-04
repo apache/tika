@@ -378,3 +378,11 @@ Sample DXF file testDXF.dxf (in tika-parsers/src/test/resources/test-documents)
      documentation for any purpose is hereby granted without fee, provided 
      that the above copyright notice, author statement appear in all copies 
      of this software and related documentation.
+
+H2 Database in tika-eval
+    This software contains unmodified binary redistributions for
+    H2 database engine (http://www.h2database.com/),
+    which is dual licensed and available under the MPL 2.0
+    (Mozilla Public License) or under the EPL 1.0 (Eclipse Public License).
+    An original copy of the license agreement can be found at:
+    http://www.h2database.com/html/license.html

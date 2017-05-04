@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.13-SNAPSHOT</version>
+  <version>1.15-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -55,8 +55,9 @@
       <subscribe>dev-subscribe@tika.apache.org</subscribe>
       <unsubscribe>dev-unsubscribe@tika.apache.org</unsubscribe>
       <post>dev@tika.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/tika-dev/</archive>
+      <archive>https://lists.apache.org/list.html?dev@tika.apache.org</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/tika-dev/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/lucene-tika-dev</otherArchive>
         <otherArchive>http://www.mail-archive.com/dev@tika.apache.org</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-dev@lucene.apache.org/</otherArchive>
@@ -71,8 +72,9 @@
       <subscribe>commits-subscribe@tika.apache.org</subscribe>
       <unsubscribe>commits-unsubscribe@tika.apache.org</unsubscribe>
       <post>commits@tika.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/tika-commits/</archive>
+      <archive>https://lists.apache.org/list.html?commits@tika.apache.org</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/tika-commits/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/lucene-tika-commits/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-commits@lucene.apache.org/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-commits@incubator.apache.org/</otherArchive>
@@ -83,8 +85,9 @@
       <subscribe>user-subscribe@tika.apache.org</subscribe>
       <unsubscribe>user-unsubscribe@tika.apache.org</unsubscribe>
       <post>user@tika.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/tika-user/</archive>
+      <archive>https://lists.apache.org/list.html?user@tika.apache.org</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/tika-user/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/lucene-tika-user/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-user@lucene.apache.org/</otherArchive>
       </otherArchives>
@@ -119,8 +122,8 @@
       <id>kkrugler</id>
       <email>kkrugler@apache.org</email>
       <url>http://ken-blog.krugler.org</url>
-      <organization>Bixo Labs</organization>
-      <organizationUrl>http://bixolabs.com</organizationUrl>
+      <organization>Scale Unlimited</organization>
+      <organizationUrl>http://www.scaleunlimited.com</organizationUrl>
       <roles>
         <role>committer</role>
       </roles>
@@ -266,7 +269,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.11</version>
+        <version>4.12</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -286,12 +289,12 @@
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>jul-to-slf4j</artifactId>
+        <artifactId>jcl-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
-        <artifactId>jcl-over-slf4j</artifactId>
+        <artifactId>jul-to-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
     </dependencies>
@@ -300,11 +303,12 @@
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <commons.compress.version>1.11</commons.compress.version>
-    <commons.io.version>2.4</commons.io.version>
-    <slf4j.version>1.7.12</slf4j.version>
+    <commons.compress.version>1.13</commons.compress.version>
+    <commons.io.version>2.5</commons.io.version>
+    <slf4j.version>1.7.24</slf4j.version>
   </properties>
 
   <build>
@@ -320,7 +324,7 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <version>2.0</version>
+        <version>2.2</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
           <internalRuntimeForbidden>true</internalRuntimeForbidden>
@@ -349,7 +353,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.18.1</version>
+        <version>2.18.1</version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
           <argLine>-Xmx2048m -Duser.timezone=UTC</argLine>
         </configuration>
@@ -357,17 +361,17 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.3</version>
+        <version>2.4.3</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.4.2</version>
+        <version>2.5.3</version>
         <dependencies>
          <dependency>
            <groupId>org.apache.maven.scm</groupId>
            <artifactId>maven-scm-provider-gitexe</artifactId>
-           <version>1.8.1</version>
+           <version>1.9.5</version>
          </dependency>
        </dependencies>
       </plugin>
@@ -435,5 +439,4 @@
     <url>https://github.com/apache/tika</url>
     <tag>HEAD</tag>
   </scm>
-
 </project>

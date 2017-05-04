@@ -46,7 +46,7 @@ public class TarParserTest extends AbstractPkgTest {
             parser.parse(stream, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/x-tar", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-gtar", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("test-documents/testEXCEL.xls", content);
         assertContains("Sample Excel Worksheet", content);

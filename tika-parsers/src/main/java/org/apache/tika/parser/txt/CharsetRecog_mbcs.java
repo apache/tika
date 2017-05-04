@@ -1,6 +1,8 @@
+// © 2016 and later: Unicode, Inc. and others.
+// License & terms of use: http://www.unicode.org/copyright.html#License
 /*
  ****************************************************************************
- * Copyright (C) 2005-2008, International Business Machines Corporation and *
+ * Copyright (C) 2005-2012, International Business Machines Corporation and *
  * others. All Rights Reserved.                                             *
  ****************************************************************************
  *
@@ -20,8 +22,6 @@ import java.util.Arrays;
  * CharsetDetector class and kept in the global list of available
  * encodings to be checked.  The specific encoding being recognized
  * is determined by subclass.
- *
- * @internal
  */
 abstract class CharsetRecog_mbcs extends CharsetRecognizer {
 
@@ -46,7 +46,8 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
      * bits 8-15: The match reason, an enum-like value.
      */
     int match(CharsetDetector det, int[] commonChars) {
-        int singleByteCharCount = 0;
+        @SuppressWarnings("unused")
+        int singleByteCharCount = 0;  //TODO Do we really need this?
         int doubleByteCharCount = 0;
         int commonCharCount = 0;
         int badCharCount = 0;
@@ -132,7 +133,7 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
      * Get the next character (however many bytes it is) from the input data
      * Subclasses for specific charset encodings must implement this function
      * to get characters according to the rules of their encoding scheme.
-     * <p/>
+     * <p>
      * This function is not a method of class iteratedChar only because
      * that would require a lot of extra derived classes, which is awkward.
      *
@@ -156,14 +157,12 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
     //
     static class iteratedChar {
         int charValue = 0;             // 1-4 bytes from the raw input data
-        int index = 0;
         int nextIndex = 0;
         boolean error = false;
         boolean done = false;
 
         void reset() {
             charValue = 0;
-            index = -1;
             nextIndex = 0;
             error = false;
             done = false;
@@ -195,7 +194,6 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
                         0x838a, 0x838b, 0x838d, 0x8393, 0x8e96, 0x93fa, 0x95aa};
 
         boolean nextChar(iteratedChar it, CharsetDetector det) {
-            it.index = it.nextIndex;
             it.error = false;
             int firstByte;
             firstByte = it.charValue = it.nextByte(det);
@@ -219,8 +217,9 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
             return true;
         }
 
-        int match(CharsetDetector det) {
-            return match(det, commonChars);
+        CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det, commonChars);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
         }
 
         String getName() {
@@ -255,7 +254,6 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
                         0xbba1, 0xbdd1, 0xc2c4, 0xc3b9, 0xc440, 0xc45f};
 
         boolean nextChar(iteratedChar it, CharsetDetector det) {
-            it.index = it.nextIndex;
             it.error = false;
             int firstByte;
             firstByte = it.charValue = it.nextByte(det);
@@ -282,8 +280,9 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
             return true;
         }
 
-        int match(CharsetDetector det) {
-            return match(det, commonChars);
+        CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det, commonChars);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
         }
 
         String getName() {
@@ -311,7 +310,6 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
          *     packed into an int.
          */
         boolean nextChar(iteratedChar it, CharsetDetector det) {
-            it.index = it.nextIndex;
             it.error = false;
             int firstByte = 0;
             int secondByte = 0;
@@ -392,8 +390,9 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
                 return "EUC-JP";
             }
 
-            int match(CharsetDetector det) {
-                return match(det, commonChars);
+            CharsetMatch match(CharsetDetector det) {
+                int confidence = match(det, commonChars);
+                return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
             }
 
             public String getLanguage() {
@@ -425,8 +424,9 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
                 return "EUC-KR";
             }
 
-            int match(CharsetDetector det) {
-                return match(det, commonChars);
+            CharsetMatch match(CharsetDetector det) {
+                int confidence = match(det, commonChars);
+                return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
             }
 
             public String getLanguage() {
@@ -462,7 +462,6 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
          *     packed into an int.
          */
         boolean nextChar(iteratedChar it, CharsetDetector det) {
-            it.index = it.nextIndex;
             it.error = false;
             int firstByte = 0;
             int secondByte = 0;
@@ -519,8 +518,9 @@ abstract class CharsetRecog_mbcs extends CharsetRecognizer {
             return "GB18030";
         }
 
-        int match(CharsetDetector det) {
-            return match(det, commonChars);
+        CharsetMatch match(CharsetDetector det) {
+            int confidence = match(det, commonChars);
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence);
         }
 
         public String getLanguage() {

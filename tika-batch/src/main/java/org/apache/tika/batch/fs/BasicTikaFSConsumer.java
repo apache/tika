@@ -17,6 +17,8 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -31,8 +33,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.xml.sax.ContentHandler;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Basic FileResourceConsumer that reads files from an input
@@ -77,7 +77,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         //os can be null if fsOSFactory is set to skip processing a file if the output
         //file already exists
         if (os == null) {
-            logger.debug("Skipping: " + fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
+            LOG.debug("Skipping: {}", fileResource.getMetadata().get(FSProperties.FS_REL_PATH));
             return false;
         }
 
@@ -91,10 +91,9 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
             handler = contentHandlerFactory.getNewContentHandler(os, getOutputEncoding());
         } catch (UnsupportedEncodingException e) {
             incrementHandledExceptions();
-            logger.error(getXMLifiedLogMsg("output_encoding_ex",
-                    fileResource.getResourceId(), e));
+            LOG.error(getXMLifiedLogMsg("output_encoding_ex", fileResource.getResourceId(), e));
             flushAndClose(os);
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e);
         }
 
         //now actually call parse!

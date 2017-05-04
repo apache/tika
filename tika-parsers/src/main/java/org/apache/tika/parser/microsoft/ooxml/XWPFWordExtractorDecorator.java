@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
@@ -38,6 +40,7 @@ import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFPicture;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
+import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFSDT;
 import org.apache.poi.xwpf.usermodel.XWPFSDTCell;
@@ -66,6 +69,16 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private static final String LIST_DELIMITER = " ";
 
 
+    //include all parts that might have embedded objects
+    private final static String[] MAIN_PART_RELATIONS = new String[]{
+            XWPFRelation.HEADER.getRelation(),
+            XWPFRelation.FOOTER.getRelation(),
+            XWPFRelation.FOOTNOTE.getRelation(),
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
+    };
+
+
     private XWPFDocument document;
     private XWPFStyles styles;
 
@@ -83,7 +96,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
-        XWPFListManager listManager = new XWPFListManager(document);
+        XWPFListManager listManager = new XWPFListManager(document.getNumbering());
         // headers
         if (hfPolicy != null) {
             extractHeaders(xhtml, hfPolicy, listManager);
@@ -145,7 +158,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // Is this a paragraph, or a heading?
         String tag = "p";
         String styleClass = null;
-        if (paragraph.getStyleID() != null) {
+        //TIKA-2144 check that styles is not null
+        if (paragraph.getStyleID() != null && styles != null) {
             XWPFStyle style = styles.getStyle(
                     paragraph.getStyleID()
             );
@@ -212,8 +226,40 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
         TmpFormatting fmtg = new TmpFormatting(false, false);
 
+        //hyperlinks may or may not have hyperlink ids
+        String lastHyperlinkId = null;
+        boolean inHyperlink = false;
         // Do the iruns
         for (IRunElement run : paragraph.getIRuns()) {
+
+            if (run instanceof XWPFHyperlinkRun) {
+                XWPFHyperlinkRun hyperlinkRun = (XWPFHyperlinkRun) run;
+                if (hyperlinkRun.getHyperlinkId() == null ||
+                        !hyperlinkRun.getHyperlinkId().equals(lastHyperlinkId)) {
+                    if (inHyperlink) {
+                        //close out the old one
+                        xhtml.endElement("a");
+                        inHyperlink = false;
+                    }
+                    lastHyperlinkId = hyperlinkRun.getHyperlinkId();
+                    fmtg = closeStyleTags(xhtml, fmtg);
+                    XWPFHyperlink link = hyperlinkRun.getHyperlink(document);
+                    if (link != null && link.getURL() != null) {
+                        xhtml.startElement("a", "href", link.getURL());
+                        inHyperlink = true;
+                    } else if (hyperlinkRun.getAnchor() != null && hyperlinkRun.getAnchor().length() > 0) {
+                        xhtml.startElement("a", "href", "#" + hyperlinkRun.getAnchor());
+                        inHyperlink = true;
+                    }
+                }
+            } else if (inHyperlink) {
+                //if this isn't a hyperlink, but the last one was
+                closeStyleTags(xhtml, fmtg);
+                xhtml.endElement("a");
+                lastHyperlinkId = null;
+                inHyperlink = false;
+            }
+
             if (run instanceof XWPFSDT) {
                 fmtg = closeStyleTags(xhtml, fmtg);
                 processSDTRun((XWPFSDT) run, xhtml);
@@ -226,6 +272,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         closeStyleTags(xhtml, fmtg);
+        if (inHyperlink) {
+            xhtml.endElement("a");
+        }
 
 
         // Now do any comments for the paragraph
@@ -241,8 +290,10 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         // Also extract any paragraphs embedded in text boxes:
-        for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
-            extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
+        if (config.getIncludeShapeBasedContent()) {
+            for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
+                extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
+            }
         }
 
         // Finish this paragraph
@@ -306,19 +357,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             tfmtg.setItalic(run.isItalic());
         }
 
-        boolean addedHREF = false;
-        if (run instanceof XWPFHyperlinkRun) {
-            XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun) run;
-            XWPFHyperlink link = linkRun.getHyperlink(document);
-            if (link != null && link.getURL() != null) {
-                xhtml.startElement("a", "href", link.getURL());
-                addedHREF = true;
-            } else if (linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
-                xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
-                addedHREF = true;
-            }
-        }
-
         xhtml.characters(run.toString());
 
         // If we have any pictures, output them
@@ -335,10 +373,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.endElement("img");
                 }
             }
-        }
-
-        if (addedHREF) {
-            xhtml.endElement("a");
         }
 
         return tfmtg;
@@ -419,14 +453,32 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * Word documents are simple, they only have the one
-     * main part
+     * Include main body and anything else that can
+     * have an attachment/embedded object
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
         List<PackagePart> parts = new ArrayList<PackagePart>();
         parts.add(document.getPackagePart());
+        addRelatedParts(document.getPackagePart(), parts);
         return parts;
+    }
+
+    private void addRelatedParts(PackagePart documentPart, List<PackagePart> relatedParts) {
+        for (String relation : MAIN_PART_RELATIONS) {
+            PackageRelationshipCollection prc = null;
+            try {
+                prc = documentPart.getRelationshipsByType(relation);
+                if (prc != null) {
+                    for (int i = 0; i < prc.size(); i++) {
+                        PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));
+                        relatedParts.add(packagePart);
+                    }
+                }
+            } catch (InvalidFormatException e) {
+            }
+        }
+
     }
 
     private class TmpFormatting {

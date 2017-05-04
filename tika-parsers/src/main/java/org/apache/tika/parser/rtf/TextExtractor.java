@@ -33,7 +33,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -945,22 +947,12 @@ final class TextExtractor {
                 if (groupState.pictDepth == 1) {
                     try {
                         embObjHandler.writeBytes(in, param);
-                    } catch (IOException e) {
-                        //param was out of bounds or something went wrong during writing.
-                        //skip this obj and move on
-                        //TODO: log.warn
+                    } catch (IOException|TikaException e) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                         embObjHandler.reset();
                     }
                 } else {
-                    int bytesToRead = param;
-                    byte[] tmpArray = new byte[Math.min(1024, bytesToRead)];
-                    while (bytesToRead > 0) {
-                        int r = in.read(tmpArray, 0, Math.min(bytesToRead, tmpArray.length));
-                        if (r < 0) {
-                            throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param - bytesToRead));
-                        }
-                        bytesToRead -= r;
-                    }
+                    IOUtils.skipFully(in, param);
                 }
             } else {
                 // log some warning?
@@ -1344,7 +1336,11 @@ final class TextExtractor {
         ansiSkip = 0;
 
         if (groupState.objdata == true) {
-            embObjHandler.handleCompletedObject();
+            try {
+                embObjHandler.handleCompletedObject();
+            } catch (TikaException|IOException e) {
+                EmbeddedDocumentUtil.recordException(e, metadata);
+            }
             groupState.objdata = false;
         } else if (groupState.pictDepth > 0) {
             if (groupState.sn == true) {

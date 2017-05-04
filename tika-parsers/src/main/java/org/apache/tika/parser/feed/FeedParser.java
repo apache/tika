@@ -115,9 +115,11 @@ public class FeedParser extends AbstractParser {
             return "";
 
         String value = c.getValue();
+        if (value == null)
+            return "";
 
         String[] parts = value.split("<[^>]*>");
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         for (String part : parts)
             buf.append(part);

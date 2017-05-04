@@ -23,12 +23,12 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -47,7 +47,7 @@ import org.xml.sax.SAXException;
  * <dd><code>text/plain; charset=...</code></dd>
  * </dl>
  */
-public class TXTParser extends AbstractParser {
+public class TXTParser extends AbstractEncodingDetectorParser {
 
     /**
      * Serial version UID
@@ -57,23 +57,38 @@ public class TXTParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.TEXT_PLAIN);
 
-    private static final ServiceLoader LOADER =
-            new ServiceLoader(TXTParser.class.getClassLoader());
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
+    }
+
+    public TXTParser() {
+        super();
+    }
+
+    public TXTParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
     }
 
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+
         // Automatically detect the character encoding
         try (AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata,
-                context.get(ServiceLoader.class, LOADER))) {
+                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+            //try to get detected content type; could be a subclass of text/plain
+            //such as vcal, etc.
+            String incomingMime = metadata.get(Metadata.CONTENT_TYPE);
+            MediaType mediaType = MediaType.TEXT_PLAIN;
+            if (incomingMime != null) {
+                MediaType tmpMediaType = MediaType.parse(incomingMime);
+                if (tmpMediaType != null) {
+                    mediaType = tmpMediaType;
+                }
+            }
             Charset charset = reader.getCharset();
-            MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
+            MediaType type = new MediaType(mediaType, charset);
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());

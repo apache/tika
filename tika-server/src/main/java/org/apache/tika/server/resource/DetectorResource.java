@@ -27,17 +27,15 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/detect")
 public class DetectorResource {
-
-    private static final Log logger = LogFactory.getLog(DetectorResource.class
-            .getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DetectorResource.class);
 
     @PUT
     @Path("stream")
@@ -46,19 +44,16 @@ public class DetectorResource {
     public String detect(final InputStream is,
                          @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         Metadata met = new Metadata();
-        TikaInputStream tis = TikaInputStream.get(is);
+        TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, httpHeaders));
         String filename = TikaResource.detectFilename(httpHeaders
                 .getRequestHeaders());
-        logger.info("Detecting media type for Filename: " + filename);
+        LOG.info("Detecting media type for Filename: {}", filename);
         met.add(Metadata.RESOURCE_NAME_KEY, filename);
         try {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
-            logger.warn("Unable to detect MIME type for file. Reason: "
-                    + e.getMessage());
-            e.printStackTrace();
+            LOG.warn("Unable to detect MIME type for file. Reason: {}", e.getMessage(), e);
             return MediaType.OCTET_STREAM.toString();
         }
     }
-
 }
