@@ -90,7 +90,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     private static final Set<MediaType> MEDIA_TYPES
             = Collections.singleton(MediaType.image("jpeg"));
     private static final Logger LOG = LoggerFactory.getLogger(DL4JInceptionV3Net.class);
-    private static final String DEF_WEIGHTS_URL = "https://media.githubusercontent.com/media/USCDataScience/dl4j-kerasimport-examples/master/dl4j-import-example/data/inception-model-weights.h5";
+    private static final String DEF_WEIGHTS_URL = "https://raw.githubusercontent.com/USCDataScience/dl4j-kerasimport-examples/98ec48b56a5b8fb7d54a2994ce9cb23bfefac821/dl4j-import-example/data/inception-model-weights.h5";
     public static final String DEF_MODEL_JSON = "org/apache/tika/dl/imagerec/inceptionv3-model.json";
     public static final String DEF_LABEL_MAPPING = "org/apache/tika/dl/imagerec/imagenet_incpetionv3_class_index.json";
 
@@ -109,7 +109,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
      * downloaded from {@value #DEF_WEIGHTS_URL}
      */
     @Field
-    private String modelWeightsPath = "<download>";
+    private String modelWeightsPath = DEF_WEIGHTS_URL;
 
     /**
      * Path to a JSON file that contains network (graph) structure exported from Keras.
@@ -225,10 +225,10 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     public void initialize(Map<String, Param> params)
             throws TikaConfigException {
         //STEP 1: resolve weights file, download if necessary
-        if ("<download>".equals(modelWeightsPath)) {
+        if (modelWeightsPath.startsWith("http://") || modelWeightsPath.startsWith("https://")) {
             LOG.debug("Config instructed to download the weights file, doing so.");
             try {
-                modelWeightsPath = cachedDownload(cacheDir, URI.create(DEF_WEIGHTS_URL)).getAbsolutePath();
+                modelWeightsPath = cachedDownload(cacheDir, URI.create(modelWeightsPath)).getAbsolutePath();
             } catch (IOException e) {
                 throw new TikaConfigException(e.getMessage(), e);
             }
