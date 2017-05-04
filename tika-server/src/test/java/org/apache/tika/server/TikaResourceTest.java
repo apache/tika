@@ -99,7 +99,7 @@ public class TikaResourceTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + TIKA_PATH+"/form/main")
                 .type("multipart/form-data")
                 .accept("text/plain")
-                .put(attachmentPart);
+                .post(attachmentPart);
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("Title : Test Indexation Html"));
