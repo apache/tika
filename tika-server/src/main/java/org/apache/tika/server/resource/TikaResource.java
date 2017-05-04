@@ -17,8 +17,6 @@
 
 package org.apache.tika.server.resource;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import javax.ws.rs.Consumes;
@@ -69,16 +67,19 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.apache.tika.server.RichTextContentHandler;
 import org.apache.tika.server.InputStreamFactory;
+import org.apache.tika.server.RichTextContentHandler;
 import org.apache.tika.server.TikaServerParseException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Path("/tika")
 public class TikaResource {
@@ -361,6 +362,48 @@ public class TikaResource {
     public StreamingOutput getTextFromMultipart(Attachment att, @Context final UriInfo info) {
         return produceText(att.getObject(InputStream.class), att.getHeaders(), info);
     }
+
+    //this is equivalent to text-main in tika-app
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain")
+    @Path("main")
+    public StreamingOutput getTextMain(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceTextMain(is, httpHeaders.getRequestHeaders(), info);
+    }
+
+    //this is equivalent to text-main (Boilerpipe handler) in tika-app
+    @PUT
+    @Consumes("multipart/form-data")
+    @Produces("text/plain")
+    @Path("form/main")
+    public StreamingOutput getTextMainFromMultipart(final Attachment att, @Context final UriInfo info) {
+        return produceTextMain(att.getObject(InputStream.class), att.getHeaders(), info);
+    }
+
+    public StreamingOutput produceTextMain(final InputStream is, @Context MultivaluedMap<String, String> httpHeaders, @Context final UriInfo info) {
+        final Parser parser = createParser();
+        final Metadata metadata = new Metadata();
+        final ParseContext context = new ParseContext();
+
+        fillMetadata(parser, metadata, context, httpHeaders);
+        fillParseContext(context, httpHeaders, parser);
+
+        logRequest(logger, info, metadata);
+
+        return new StreamingOutput() {
+            public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+
+                ContentHandler handler = new BoilerpipeContentHandler(writer);
+
+                try (InputStream inputStream = is) {
+                    parse(parser, logger, info.getPath(), inputStream, handler, metadata, context);
+                }
+            }
+        };
+    }
+
 
     @PUT
     @Consumes("*/*")
