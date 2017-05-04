@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,6 +57,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
@@ -665,7 +665,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      */
     private boolean isRendered(final CharacterRun cr) {
         if (cr == null) {
-            return false;
+            return true;
         }
         return !cr.isMarkedDeleted() ||
                 (cr.isMarkedDeleted() && extractDeletedContent);
