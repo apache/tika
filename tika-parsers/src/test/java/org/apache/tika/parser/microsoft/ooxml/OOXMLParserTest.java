@@ -35,9 +35,13 @@ import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
@@ -1535,6 +1539,22 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
         assertContains("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
 
+
+    }
+
+    @Test
+    public void testPOI61034() throws Exception {
+        //tests temporary work around until POI 3.17-beta1 is released
+        XMLResult r = getXML("testEXCEL_poi-61034.xlsx");
+        Matcher m = Pattern.compile("<h1>(Sheet\\d+)</h1>").matcher(r.xml);
+        Set<String> seen = new HashSet<>();
+        while (m.find()) {
+            String sheetName = m.group(1);
+            if (seen.contains(sheetName)) {
+                fail("Should only see each sheet once: "+sheetName);
+            }
+            seen.add(sheetName);
+        }
 
     }
 

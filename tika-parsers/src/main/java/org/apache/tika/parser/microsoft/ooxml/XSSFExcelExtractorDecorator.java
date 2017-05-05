@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
@@ -125,6 +127,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             xssfReader = new XSSFReader(container);
             styles = xssfReader.getStylesTable();
+
             iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
             strings = new ReadOnlySharedStringsTable(container);
         } catch (InvalidFormatException e) {
@@ -133,25 +136,37 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             throw new XmlException(oe);
         }
 
+        //temporary workaround for POI-61034
+        //remove once POI 3.17-beta1 is released
+        Set<String> seen = new HashSet<>();
+
         while (iter.hasNext()) {
-            InputStream stream = iter.next();
-            PackagePart sheetPart = iter.getSheetPart();
-            addDrawingHyperLinks(sheetPart);
-            sheetParts.add(sheetPart);
 
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
-            CommentsTable comments = iter.getSheetComments();
+            PackagePart sheetPart = null;
+            try (InputStream stream = iter.next()) {
+                sheetPart = iter.getSheetPart();
+                final String partName = sheetPart.getPartName().toString();
+                if (seen.contains(partName)) {
+                    continue;
+                }
+                seen.add(partName);
 
-            // Start, and output the sheet name
-            xhtml.startElement("div");
-            xhtml.element("h1", iter.getSheetName());
+                addDrawingHyperLinks(sheetPart);
+                sheetParts.add(sheetPart);
 
-            // Extract the main sheet contents
-            xhtml.startElement("table");
-            xhtml.startElement("tbody");
+                CommentsTable comments = iter.getSheetComments();
 
-            processSheet(sheetExtractor, comments, styles, strings, stream);
+                // Start, and output the sheet name
+                xhtml.startElement("div");
+                xhtml.element("h1", iter.getSheetName());
 
+                // Extract the main sheet contents
+                xhtml.startElement("table");
+                xhtml.startElement("tbody");
+
+                processSheet(sheetExtractor, comments, styles, strings, stream);
+            }
             xhtml.endElement("tbody");
             xhtml.endElement("table");
 
