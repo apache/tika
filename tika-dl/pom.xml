@@ -37,7 +37,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>0.8.1-SNAPSHOT</dl4j.version> <!-- Fixme: update this to release version when release is made-->
+    <dl4j.version>0.8.0-1</dl4j.version> 
   </properties>
 
   <dependencies>
