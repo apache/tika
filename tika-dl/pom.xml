@@ -37,7 +37,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>0.8.0-1</dl4j.version> 
+    <dl4j.version>0.8.0</dl4j.version> 
+    <dl4j.model.version>0.8.0-1</dl4j.model.version>
   </properties>
 
   <dependencies>
@@ -54,8 +55,19 @@
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
+      <artifactId>deeplearning4j-keras</artifactId>
+      <version>${dl4j.model.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-modelimport</artifactId>
-      <version>${dl4j.version}</version>
+      <version>${dl4j.model.version}</version>
+      <exclusions>
+         <exclusion>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-keras</artifactId>
+         </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.datavec</groupId>
