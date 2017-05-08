@@ -107,6 +107,9 @@ Release 1.15 - ??
 
   * Further mime magic for WebVTT (TIKA-1772)
 
+  * Extend support for increased PSM options up to 13 for modern 
+    versions of Tesseract (TIKA-2357).
+
 Release 1.14 - 10/19/2016
 
   * Extract all headers from MSG/RFC822 (TIKA-2122).
