@@ -1,5 +1,11 @@
 Release 1.15 - ??
 
+  * Tika now has a module for Deep Learning powered by the 
+    DL4J toolkit. The initial included model is for InceptionV3
+    and so using this module, natively in Java, Tika can use 
+    Deep learning for metadata/text extraction from Images using
+    the power of the Inception model (Github-165).
+
   * A new parser for sentiment analysis using a categorical 
     (multi-class, anry, sad, neutral, like, love) and binary
     (positive/negative) was added leveraging the USC data 
