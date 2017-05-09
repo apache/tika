@@ -32,7 +32,7 @@
   <artifactId>tika-dl</artifactId>
   <packaging>jar</packaging>
 
-  <name>tika-dl</name>
+  <name>Apache Tika Deep Learning (powered by DL4J)</name>
   <url>http://maven.apache.org</url>
 
   <properties>
