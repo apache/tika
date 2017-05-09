@@ -332,7 +332,10 @@
 
         <sql>
             select concat(ma.mime_string, ' -&gt; ', mb.mime_string) as
-            MIME_A_TO_MIME_B, file_path, a.file_name
+            MIME_A_TO_MIME_B,
+            file_path,
+            c.length as CONTAINER_LENGTH,
+            a.file_name
             from profiles_a a
             join profiles_b b on a.id=b.id
             join mimes ma on ma.mime_id=a.mime_id
@@ -451,7 +454,9 @@
             includeSql="true">
 
         <sql>
-            select file_path as FILE_PATH, ca.NUM_TOKENS as NUM_TOKENS_A,
+            select file_path as FILE_PATH,
+            c.length as CONTAINER_LENGTH,
+            ca.NUM_TOKENS as NUM_TOKENS_A,
             cb.NUM_TOKENS as NUM_TOKENS_B,
             ca.NUM_UNIQUE_TOKENS as NUM_UNIQUE_TOKENS_A, cb.NUM_UNIQUE_TOKENS
             as NUM_UNIQUE_TOKENS_B,
@@ -497,8 +502,11 @@
             format="xlsx"
             includeSql="true">
         <sql>
-            select mime_string as MIME_TYPE,
-            file_path, pa.file_name, pa.is_embedded
+            select
+            file_path,
+            c.length as CONTAINER_LENGTH,
+            mime_string as MIME_TYPE,
+            pa.file_name, pa.is_embedded
             from exceptions_a ea
             left join exceptions_b eb on ea.id = eb.id
             join profiles_a pa on pa.id=ea.id
@@ -516,7 +524,9 @@
             includeSql="true">
 
         <sql>
-            select file_path, mime_string as MIME_TYPE,
+            select file_path,
+            c.length as CONTAINER_LENGTH,
+            mime_string as MIME_TYPE,
             CONTENT_LENGTH,
             NUM_TOKENS, NUM_UNIQUE_TOKENS,
             TOP_N_TOKENS, LANG_ID_1,TOKEN_LENGTH_MEAN, TOKEN_LENGTH_STD_DEV
@@ -576,7 +586,9 @@
             includeSql="true">
 
         <sql>
-            select file_path, MIME_STRING as MIME_TYPE, p.length,
+            select file_path,
+            c.length as CONTAINER_LENGTH,
+            mime_string as MIME_TYPE,
             eb.orig_stack_trace, eb.sort_stack_trace
             from exceptions_b eb
             left join exceptions_a ea on ea.id = eb.id
@@ -612,7 +624,9 @@
             includeSql="true">
 
         <sql>
-            select file_path, c.length as FILE_LENGTH, MIME_STRING as MIME_TYPE,
+            select file_path,
+            c.length as CONTAINER_LENGTH,
+            mime_string as MIME_TYPE,
             orig_stack_trace, sort_stack_trace
             from exceptions_a e
             join profiles_a p on p.id=e.id
@@ -620,7 +634,7 @@
             join mimes m on m.mime_id=p.mime_id
             and e.parse_exception_id=0
             order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
-            FILE_LENGTH asc
+            CONTAINER_LENGTH asc
         </sql>
     </report>
     <report reportName="AllStackTracesInB"
@@ -629,7 +643,9 @@
             includeSql="true">
 
         <sql>
-            select file_path, c.length as FILE_LENGTH, MIME_STRING as MIME_TYPE,
+            select file_path,
+            c.length as CONTAINER_LENGTH,
+            mime_string as MIME_TYPE,
             orig_stack_trace, sort_stack_trace
             from exceptions_b e
             join profiles_b p on p.id=e.id
@@ -637,7 +653,7 @@
             join mimes m on m.mime_id=p.mime_id
             and e.parse_exception_id=0
             order by MIME_TYPE asc, sort_stack_trace, orig_stack_trace,
-            FILE_LENGTH asc
+            CONTAINER_LENGTH asc
         </sql>
     </report>
 
@@ -711,8 +727,9 @@
 
         <sql>
             select file_path,
-            ma.mime_string as mime_string_a,
-            mb.mime_string as mime_string_b,
+            c.length as CONTAINER_LENGTH,
+            ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
             ca.num_unique_tokens as NUM_UNIQUE_TOKENS_A,
             cb.num_unique_tokens as NUM_UNIQUE_TOKENS_B,
             ca.num_tokens as NUM_TOKENS_A,
@@ -756,8 +773,9 @@
 
         <sql>
             select file_path,
-            ma.mime_string as mime_string_a,
-            mb.mime_string as mime_string_b,
+            c.length as CONTAINER_LENGTH,
+            ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
             ca.NUM_UNIQUE_TOKENS as NUM_UNIQUE_TOKENS_A,
             cb.NUM_UNIQUE_TOKENS as NUM_UNIQUE_TOKENS_B,
             ca.NUM_TOKENS as NUM_TOKENS_A,
@@ -808,6 +826,30 @@
             join mimes ma on tcc.mime_id_a = ma.mime_id
             join mimes mb on tcc.mime_id_b = mb.mime_id
             order by change_in_common_tokens_b desc
+        </sql>
+    </report>
+    <report reportName="PageCountDiffs"
+            reportFilename="content/page_count_diffs.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path,
+            c.length as CONTAINER_LENGTH,
+            ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
+            pa.num_pages as NUM_PAGES_A,
+            pb.num_pages as NUM_PAGES_B,
+            (pb.num_pages-pa.num_pages) as DIFF_NUM_PAGES_IN_B
+            from profiles_a pa
+            join profiles_b pb on pa.id = pb.id
+            join containers c on pa.container_id=c.container_id
+            join mimes ma on ma.mime_id=pa.mime_id
+            join mimes mb on mb.mime_id=pb.mime_id
+            where pa.num_pages is not null
+            and pb.num_pages is not null
+            and pa.num_pages &lt;&gt; pb.num_pages
+            order by DIFF_NUM_PAGES_IN_B asc;
         </sql>
     </report>
 
@@ -892,12 +934,13 @@
 
         <sql>
             select file_path,
-            ma.mime_string as mime_string_a,
-            mb.mime_string as mime_string_b,
-            pa.num_attachments as num_attachments_a,
-            pb.num_attachments as num_attachments_b,
-            ea.parse_exception_id as exception_id_a,
-            eb.parse_exception_id as exception_id_b
+            c.length as CONTAINER_LENGTH,
+            ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
+            pa.num_attachments as NUM_ATTACHMENTS_A,
+            pb.num_attachments as NUM_ATTACHMENTS_B,
+            ea.parse_exception_id as EXCEPTION_ID_A,
+            eb.parse_exception_id as EXCEPTION_ID_B
             from profiles_a pa
             join profiles_b pb on pa.id= pb.id
             join containers c on pa.container_id=c.container_id
