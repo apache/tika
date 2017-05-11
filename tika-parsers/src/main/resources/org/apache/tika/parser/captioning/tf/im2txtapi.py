@@ -46,7 +46,7 @@ import model_wrapper
 import vocabulary
 import caption_generator
 
-info = ET.parse('model_info.xml').getroot()
+info = ET.parse('/usr/local/models/model_info.xml').getroot()
 model_main = info.find('model_main')
 
 checkpoint_path = model_main.find('checkpoint_path').text
@@ -128,7 +128,7 @@ def index():
             <li> <code>/ping </code> - <br/>
                 <b> Description : </b> checks availability of the service. returns "pong" with status 200 when it is available
             </li>
-            <li> <code>//getcaptions</code> - <br/>
+            <li> <code>/getcaptions</code> - <br/>
                 <table>
                 <tr><th align="left"> Description </th><td> This is a service that can caption images</td></tr>
                 <tr><th align="left"> How to supply Image Content </th></tr>
