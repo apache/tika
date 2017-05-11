@@ -134,11 +134,11 @@ def index():
                 <tr><th align="left"> How to supply Image Content </th></tr>
                 <tr><th align="left"> With HTTP GET : </th> <td>
                     Include a query parameter <code>url </code> which is an http url of JPEG image <br/>
-                    Example: <code> curl "localhost:8764//getcaptions?url=http://xyz.com/example.jpg"</code>
+                    Example: <code> curl "localhost:8764/getcaptions?url=http://xyz.com/example.jpg"</code>
                 </td></tr>
                 <tr><th align="left"> With HTTP POST :</th><td>
                     POST JPEG image content as binary data in request body. <br/>
-                    Example: <code> curl -X POST "localhost:8764//getcaptions" --data-binary @example.jpg </code>
+                    Example: <code> curl -X POST "localhost:8764/getcaptions" --data-binary @example.jpg </code>
                 </td></tr>
                 </table>
             </li>
