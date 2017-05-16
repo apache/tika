@@ -155,7 +155,7 @@ def ping_pong():
 
 
 @app.route("/captions", methods=["GET", "POST"])
-def get_captions():
+def gen_captions():
     """API to caption images"""
 
     st = current_time()
