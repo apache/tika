@@ -21,32 +21,38 @@ MAINTAINER Apache Tika Team
 # Download the pretrained im2txt checkpoint
 WORKDIR /usr/share/apache-tika/models/dl/image/caption/
 
-RUN wget https://www.dropbox.com/s/l9ignjpjk774n2z/model_main_untuned.zip?dl=0 -O model_main_untuned.zip && \
-    unzip model_main_untuned.zip && rm -rf model_main_untuned.zip
+RUN \
+    wget https://www.dropbox.com/s/l9ignjpjk774n2z/model_main_untuned.zip?dl=0 \
+        -O model_main_untuned.zip && \
+        unzip model_main_untuned.zip && \
+        rm -rf model_main_untuned.zip && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml \
+        -O model_info.xml
+
+# Download server related source files
+WORKDIR /usr/share/apache-tika/src/dl/image/caption/
+
+RUN \
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py \
+        -O caption_generator.py && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
+        -O im2txtapi.py && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py \
+        -O model_wrapper.py && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py \
+        -O vocabulary.py && \
+
+    chmod +x im2txtapi.py && \ touch __init__.py
 
 WORKDIR /
 
-# Download server related source files
-RUN \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml \
-    -O /usr/share/apache-tika/models/dl/image/caption/model_info.xml && \
-
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py \
-    -O /usr/share/apache-tika/src/dl/image/caption/caption_generator.py && \
-
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
-    -O /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py && \
-
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py \
-    -O /usr/share/apache-tika/src/dl/image/caption/model_wrapper.py && \
-
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py \
-    -O /usr/share/apache-tika/src/dl/image/caption/vocabulary.py && \
-  chmod +x /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py
-
 # clean up cache, so we can publish smaller image to hub
 RUN apt-get clean
-ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
+ENV PYTHONPATH="$PYTHONPATH:/usr/share/apache-tika/src/dl/image/caption"
 ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
 
 # expose API port, this is the default port
