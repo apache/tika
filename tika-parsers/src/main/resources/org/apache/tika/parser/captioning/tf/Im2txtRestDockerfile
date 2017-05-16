@@ -46,16 +46,14 @@ RUN \
     wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py \
         -O vocabulary.py && \
 
-    chmod +x im2txtapi.py && \ touch __init__.py
+    chmod +x im2txtapi.py
 
 WORKDIR /
 
-# clean up cache, so we can publish smaller image to hub
-RUN apt-get clean
-ENV PYTHONPATH="$PYTHONPATH:/usr/share/apache-tika/src/dl/image/caption"
-ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
+# Add symbolic link to im2txtapi.py
+RUN ln -s /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py /usr/bin/im2txtapi
 
 # expose API port, this is the default port
 EXPOSE 8764
 
-CMD im2txtapi.py
+CMD im2txtapi
