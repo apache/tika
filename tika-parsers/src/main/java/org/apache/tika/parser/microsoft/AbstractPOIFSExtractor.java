@@ -49,6 +49,7 @@ abstract class AbstractPOIFSExtractor {
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     private PasswordProvider passwordProvider;
     protected final Metadata parentMetadata;//metadata of the parent/container document
+    protected final OfficeParserConfig officeParserConfig;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         this(context, null);
@@ -58,6 +59,7 @@ abstract class AbstractPOIFSExtractor {
         embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
 
         this.passwordProvider = context.get(PasswordProvider.class);
+        this.officeParserConfig = context.get(OfficeParserConfig.class, new OfficeParserConfig());
         this.parentMetadata = parentMetadata;
     }
 

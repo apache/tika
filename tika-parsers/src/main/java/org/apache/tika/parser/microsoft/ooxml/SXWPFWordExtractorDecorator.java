@@ -36,7 +36,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
@@ -184,7 +183,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
-                                            context.get(OfficeParserConfig.class)), linkedRelationships))));
+                                            config), linkedRelationships, config.getIncludeShapeBasedContent()))));
         } catch (TikaException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));

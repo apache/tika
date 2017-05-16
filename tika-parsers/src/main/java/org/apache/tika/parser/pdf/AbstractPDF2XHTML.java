@@ -457,7 +457,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             xhtml.startDocument();
-            handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(), ActionTrigger.DOCUMENT_OPEN);
+            try {
+                handleDestinationOrAction(pdf.getDocumentCatalog().getOpenAction(), ActionTrigger.DOCUMENT_OPEN);
+            } catch (IOException e) {
+                //See PDFBOX-3773
+                //swallow -- no need to report this
+            }
         } catch (TikaException|SAXException e) {
             throw new IOExceptionWithCause("Unable to start a document", e);
         }

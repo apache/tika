@@ -50,6 +50,13 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         return defaultOfficeParserConfig.getUseSAXDocxExtractor();
     }
 
+    /**
+     * @see OfficeParserConfig#getExtractMacros()
+     * @return whether or not to extract macros
+     */
+    public boolean getExtractMacros() {
+        return defaultOfficeParserConfig.getExtractMacros();
+    }
 
     @Field
     public void setIncludeDeletedContent(boolean includeDeletedConent) {
@@ -60,6 +67,11 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     public void setIncludeMoveFromContent(boolean includeMoveFromContent) {
         defaultOfficeParserConfig.setIncludeMoveFromContent(includeMoveFromContent);
     }
+    
+    @Field
+    public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
+        defaultOfficeParserConfig.setIncludeShapeBasedContent(includeShapeBasedContent);
+    }
 
     @Field
     public void setUseSAXDocxExtractor(boolean useSAXDocxExtractor) {
@@ -69,5 +81,10 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     @Field
     public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
         defaultOfficeParserConfig.setUseSAXPptxExtractor(useSAXPptxExtractor);
+    }
+
+    @Field
+    public void setExtractMacros(boolean extractMacros) {
+        defaultOfficeParserConfig.setExtractMacros(extractMacros);
     }
 }

@@ -361,6 +361,21 @@ public class TestContainerAwareDetector {
                                 "application/java-archive", "application/java-archive");
     }
 
+    @Test
+    public void testTarWithNoMagic() throws Exception {
+        assertTypeByData("testTAR_no_magic.tar", "application/x-tar");
+    }
+
+    @Test
+    public void testLZMAOOM() throws Exception {
+        assertTypeByData("testLZMA_oom", "application/x-lzma");
+    }
+
+    @Test
+    public void testCompressOOM() throws Exception {
+        assertTypeByData("testZ_oom.Z", "application/x-compress");
+    }
+
     private TikaInputStream getTruncatedFile(String name, int n)
             throws IOException {
         try (InputStream input = TestContainerAwareDetector.class.getResourceAsStream(

@@ -244,8 +244,8 @@ public class TesseractOCRConfig implements Serializable {
      * Default is 1 = Automatic page segmentation with OSD (Orientation and Script Detection)
      */
     public void setPageSegMode(String pageSegMode) {
-        if (!pageSegMode.matches("[1-9]|10")) {
-            throw new IllegalArgumentException("Invalid language code");
+        if (!pageSegMode.matches("[0-9]|10|11|12|13")) {
+            throw new IllegalArgumentException("Invalid page segmentation mode");
         }
         this.pageSegMode = pageSegMode;
     }

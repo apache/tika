@@ -17,7 +17,10 @@
 package org.apache.tika.parser.wordperfect;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -27,6 +30,29 @@ import org.xml.sax.SAXException;
  * @author Pascal Essiembre
  */
 class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
+
+    /* 240-254 characters represent fixed-length multi-byte functions.  
+     * Those that are not handled explicitely in the code below should be
+     * skipped according to their size (minus the first char if already read).
+     */
+    private static final Map<Integer, Integer> FIXED_LENGTH_FUNCTION_SIZES = 
+            MapUtils.putAll(new HashMap<Integer, Integer>(), new Integer[] {
+        240, 4,  // Extended Character
+        241, 5,  // Undo
+        242, 3,  // Attribute On
+        243, 3,  // Attribute Off
+        244, 3,  // (Reserved)
+        245, 3,  // (Reserved)
+        246, 4,  // (Reserved)
+        247, 4,  // (Reserved)
+        248, 4,  // (Reserved)
+        249, 5,  // (Reserved)
+        250, 5,  // (Reserved)
+        251, 6,  // (Reserved)
+        252, 6,  // (Reserved)
+        253, 8,  // (Reserved)
+        254, 8,  // (Reserved)
+    });    
     
     protected void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
@@ -50,8 +76,9 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
             out.append('\t');
         } else if (c >= 180 && c <= 207) {
             endParagraph(out, xhtml);
+            
+        // 208-239: variable-length multi-byte function
         } else if (c >= 208 && c <= 239) {
-            // Variable-Length Multi-Byte Functions
             int subgroup = in.readWP();
             int functionSize = in.readWPShort();
             for (int i = 0; i < functionSize - 4; i++) {
@@ -85,9 +112,14 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
             int charset = in.readWP();
             in.readWP(); // closing character
             WP6Charsets.append(out, charset, charval);
+            
+        // 241-254: fixed-length multi-byte function
         } else if (c >= 241 && c <= 254) {
-            skipUntilChar(in, c);
+            // removing 1 from function length since first char already read
+            in.skipWPByte(FIXED_LENGTH_FUNCTION_SIZES.get(c) - 1);            
         } else if (c == 255) {
+            // Should not be used so this line should not be called.
+            // We still have this code in case a future version uses it.
             skipUntilChar(in, c);
         }
         

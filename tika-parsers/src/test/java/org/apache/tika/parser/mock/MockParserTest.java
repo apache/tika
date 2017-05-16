@@ -192,7 +192,7 @@ public class MockParserTest extends TikaTest {
             //swallow
         }
         long elapsed = new Date().getTime()-start;
-        boolean longEnough = elapsed > 3000;//the xml file specifies 3000, this sleeps 1000
+        boolean longEnough = elapsed >= 3000;//the xml file specifies 3000, this sleeps 1000
         assertTrue("elapsed ("+elapsed+" millis) was not long enough", longEnough);
     }
 

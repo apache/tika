@@ -1,19 +1,62 @@
 Release 1.15 - ??
 
+  * Tika now has a module for Deep Learning powered by the 
+    DL4J toolkit. The initial included model is for InceptionV3
+    and so using this module, natively in Java, Tika can use 
+    Deep learning for metadata/text extraction from Images using
+    the power of the Inception model (Github-165).
+
+  * A new parser for sentiment analysis using a categorical 
+    (multi-class, anry, sad, neutral, like, love) and binary
+    (positive/negative) was added leveraging the USC data 
+    science work (TIKA-2016).
+
+  * Tika now has the ability to automatically detect objects in videos,
+    using OpenCV and Tensorflow (TIKA-2322).
+
+  * Change default behavior to parse embedded documents even if the user
+    forgets to specify a Parser.class in the ParseContext (TIKA-2096).
+    Users who wish to parse only the container document should set
+    an EmptyParser as the Parser.class in the ParseContext.
+
+  * Change default behavior of Office Parsers to _not_ extract
+    Macros.  User needs to setExtractMacros to "true" (TIKA-2302).
+
+  * Added tika-eval module (TIKA-1332).
+
   * Unified logging across Tika: SLF4J as logging API, Apache Log4j as
     implementation with JCL and JUL bridges in standalone tools like
     tika-app, tika-batch and tika-server (TIKA-2245).
 
-  * Extract images and thumbnails from ODT via Sam Bayer (TIKA-2295).
+  * Add parser for XLSB files (TIKA-1195).
+
+  * Add parsers for EMF/WMF files (TIKA-2246/TIKA-2247).
+
+  * Add parsers for WordPerfect and QuattroPro (.qpw) files.
+    Contributed by Pascal Essiembre (TIKA-1946 and TIKA-2228).
+
+  * Add experimental SAX parser for .pptx files. To select this parser,
+    set useSAXPptxExtractor(true) on OfficeParserConfig (TIKA-2210).
+
+  * Add experimental SAX parser for .docx files. To select this parser,
+    set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321, TIKA-2191).
+
+  * Add mime detection and parser for Word 2006ML format (TIKA-2179).
+
+  * Bug fix for WordPerfect via Pascal Essiembre (TIKA-2352).
+
+  * Added "text-main" equivalent option to tika-server via
+    /tika/main (TIKA-2343).
 
   * Enabled configuration of the EncodingDetector used by
     parsers that extend AbstractEncodingDetectorParser (TIKA-2273).
 
-  * Added tika-eval module (TIKA-1332).
+  * Prevent easily preventable OOMs for both detection and parsing
+    of some compression formats (TIKA-2330).
+
+  * Extract images and thumbnails from ODT via Sam Bayer (TIKA-2295).
 
   * Fix potential NPE in FeedParser via Julien Nioche (TIKA-2269).
-
-  * Add parsers for EMF/WMF files (TIKA-2246/TIKA-2247).
 
   * Official mime types for BMP, EMF and WMF have been registered with
     IANA, so switch to these (image/bmp image/emf image/wmf) (TIKA-2250)
@@ -35,14 +78,8 @@ Release 1.15 - ??
   * Mime magic for the OneNote family (.one / .onetoc / .onepkg), no parser
     (TIKA-2224).
 
-  * Add parsers for WordPerfect and QuattroPro (.qpw) files.
-    Contributed by Pascal Essiembre (TIKA-1946 and TIKA-2228).
-
   * Add configurability of "preserve-interword-spacing" to
     TesseractOCRParser (TIKA-2190).
-
-  * Added experimental SAX parser for .pptx files. To select this parser,
-    set useSAXPptxExtractor(true) on OfficeParserConfig (TIKA-2210).
 
   * Upgrade to PDFBox 2.0.5 and JempBox 1.8.13 (TIKA-2209/TIKA-2236).
 
@@ -53,22 +90,13 @@ Release 1.15 - ??
     footnotes, endnotes and comments in legacy .docx parser (TIKA-2192).
 
   * Allow extraction of PDActions (including Javascript) from
-    PDFs (TIKA-2090).
+    PDFs (TIKA-2090).  This is turned off by default.  Users
+    must setExtractActions(true) on the PDFParserConfig.
 
   * Change default behavior in experimental .docx parser to ignore
     deleted text to align with .doc (TIKA-2187).
 
-  * Added experimental SAX parser for .docx files. To select this parser,
-    set useSAXDocxExtractor(true) on OfficeParserConfig (TIKA-1321, TIKA-2191).
-
-  * Change default behavior to parse embedded documents even if the user
-    forgets to specify a Parser.class in the ParseContext (TIKA-2096).
-    Users who wish to parse only the container document should set
-    an EmptyParser as the Parser.class in the ParseContext.
-
-  * Add mime detection and parser for Word 2006ML format (TIKA-2179).
-
-  * Upgrade to POI 3.16-beta2 (TIKA-2116, TIKA-2181).
+  * Upgrade to POI 3.16 (TIKA-2116, TIKA-2181, TIKA-2329).
 
   * Allow configuration of timeout for ForkParser (TIKA-2170).
 
@@ -77,13 +105,16 @@ Release 1.15 - ??
 
   * Add .jpx, .jp2, .ppm to formats handled by Tesseract (TIKA-2174).
 
-  * Upgrade SQLite "provided" dependency to 3.15.1.
+  * Upgrade SQLite "provided" dependency to 3.16.1 (TIKA-2334).
 
   * Update Apache CXF version to 3.0.12 (TIKA-2292).
 
   * Add Lingo24 Language Detector (TIKA-2297).
 
   * Further mime magic for WebVTT (TIKA-1772)
+
+  * Extend support for increased PSM options up to 13 for modern 
+    versions of Tesseract (TIKA-2357).
 
 Release 1.14 - 10/19/2016
 

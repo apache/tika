@@ -36,7 +36,7 @@ public class AnalyzerManagerTest {
 
     @Test
     public void testGeneral() throws Exception {
-        AnalyzerManager analyzerManager = AnalyzerManager.newInstance();
+        AnalyzerManager analyzerManager = AnalyzerManager.newInstance(100000);
         Analyzer general = analyzerManager.getGeneralAnalyzer();
         TokenStream ts = general.tokenStream("f", "tHe quick aaaa aaa anD dirty dog");
         ts.reset();
@@ -57,7 +57,7 @@ public class AnalyzerManagerTest {
 
     @Test
     public void testCommon() throws Exception {
-        AnalyzerManager analyzerManager = AnalyzerManager.newInstance();
+        AnalyzerManager analyzerManager = AnalyzerManager.newInstance(100000);
         Analyzer common = analyzerManager.getCommonTokensAnalyzer();
         TokenStream ts = common.tokenStream("f", "the 5,000.12 and dirty dog");
         ts.reset();
@@ -80,21 +80,20 @@ public class AnalyzerManagerTest {
 
     @Test
     public void testTokenCountFilter() throws Exception {
-        AnalyzerManager analyzerManager = AnalyzerManager.newInstance();
+        AnalyzerManager analyzerManager = AnalyzerManager.newInstance(1000000);
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 101000; i++) {
+        for (int i = 0; i < 1001000; i++) {
             sb.append("the ");
         }
         TokenStream ts = analyzerManager.getGeneralAnalyzer().tokenStream("f", sb.toString());
         ts.reset();
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
-        Set<String> seen = new HashSet<>();
         int tokens = 0;
         while (ts.incrementToken()) {
             tokens++;
         }
 
-        assertEquals(100000, tokens);
+        assertEquals(1000000, tokens);
 
     }
 

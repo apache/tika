@@ -20,6 +20,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -31,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -502,6 +504,21 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("This text is inside of a text box in the footer of the document.", xml);
     }
 
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtraction() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        officeParserConfig.setUseSAXDocxExtractor(true);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_text_box.docx", pc).xml;
+        assertContains("This text is directly in the body of the document.", xml);
+        assertNotContained("This text is inside of a text box in the body of the document.", xml);
+        assertNotContained("This text is inside of a text box in the header of the document.", xml);
+        assertNotContained("This text is inside of a text box in the footer of the document.", xml);
+    }
+
     /**
      * Test for missing text described in
      * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
@@ -701,9 +718,32 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testMacrosInDocm() throws Exception {
+
+        Metadata parsedBy = new Metadata();
+        parsedBy.add("X-Parsed-By",
+                "org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor");
+
+        //test default is "don't extract macros"
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.docm", parseContext);
+        for (Metadata metadata : metadataList) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extracted macros as default");
+            }
+        }
+        assertContainsAtLeast(parsedBy, metadataList);
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        officeParserConfig.setUseSAXDocxExtractor(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
+        metadataList = getRecursiveMetadata("testWORD_macros.docm", context);
         //check that content came out of the .docm file
         assertContains("quick", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContainsAtLeast(parsedBy, metadataList);
+
 
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
@@ -712,7 +752,16 @@ public class SXWPFExtractorTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, metadataList);//, parseContext));
+        assertContainsAtLeast(minExpected, metadataList);
+        assertContainsAtLeast(parsedBy, metadataList);
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-sax-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        metadataList = getRecursiveMetadata("testWORD_macros.docm", parser);
+        assertContainsAtLeast(minExpected, metadataList);
+        assertContainsAtLeast(parsedBy, metadataList);
+
     }
 
     @Test

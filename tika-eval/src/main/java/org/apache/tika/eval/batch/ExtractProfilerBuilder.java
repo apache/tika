@@ -78,10 +78,11 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
         if (extracts == null && inputDir != null) {
             extracts = inputDir;
         }
-        return new ExtractProfiler(queue, inputDir, extracts,
+        return parameterizeProfiler(new ExtractProfiler(queue, inputDir, extracts,
                 buildExtractReader(localAttrs),
-                getDBWriter(tableInfos));
+                getDBWriter(tableInfos)));
     }
+
 
     @Override
     protected void updateTableInfosWithPrefixes(Map<String, String> attrs) {

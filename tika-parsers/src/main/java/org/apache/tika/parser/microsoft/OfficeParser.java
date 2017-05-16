@@ -40,6 +40,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.poifs.macros.VBAMacroReader;
 import org.apache.poi.util.IOUtils;
+import org.apache.tika.config.Initializable;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -129,10 +130,13 @@ public class OfficeParser extends AbstractOfficeParser {
                 }
             }
             parse(root, context, metadata, xhtml);
+            OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
-            //now try to get macros
-            extractMacros(root.getNFileSystem(), xhtml,
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+            if (officeParserConfig.getExtractMacros()) {
+                //now try to get macros
+                extractMacros(root.getNFileSystem(), xhtml,
+                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+            }
         } finally {
             IOUtils.closeQuietly(mustCloseFs);
         }

@@ -55,7 +55,7 @@ public class ObjectRecognitionParserTest {
                 Reader reader = tika.parse(imageStream, metadata);
                 List<String> lines = IOUtils.readLines(reader);
                 String text = StringUtils.join(lines, " ");
-                String[] expectedObjects = {"Egyptian cat", "Border collie"};
+                String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
                 String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
@@ -76,7 +76,7 @@ public class ObjectRecognitionParserTest {
             try (InputStream imageStream = loader.getResourceAsStream(CAT_IMAGE)){
                 Reader reader = tika.parse(imageStream, metadata);
                 String text = IOUtils.toString(reader);
-                String[] expectedObjects = {"Egyptian cat", "tabby cat"};
+                String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
                 String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";

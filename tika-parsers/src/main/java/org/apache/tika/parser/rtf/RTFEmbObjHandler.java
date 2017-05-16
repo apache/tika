@@ -24,10 +24,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
@@ -70,11 +72,13 @@ class RTFEmbObjHandler {
     private StringBuilder sb = new StringBuilder();
     private Metadata metadata;
     private EMB_STATE state = EMB_STATE.NADA;
+    private final int memoryLimitInKb;
 
-    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context) {
+    protected RTFEmbObjHandler(ContentHandler handler, Metadata metadata, ParseContext context, int memoryLimitInKb) {
         this.handler = handler;
         this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         os = new ByteArrayOutputStream();
+        this.memoryLimitInKb = memoryLimitInKb;
     }
 
     protected void startPict() {
@@ -145,8 +149,13 @@ class RTFEmbObjHandler {
     }
 
     protected void writeBytes(InputStream is, int len) throws IOException, TikaException {
-        if (len < 0 || len > RTFParser.getMaxBytesForEmbeddedObject()) {
-            throw new IOException("length of bytes to read out of bounds: " + len);
+        if (len < 0) {
+            throw new TikaException("Requesting I read < 0 bytes ?!");
+        }
+        if (len > memoryLimitInKb*1024) {
+            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
+                    ") bytes), but maximum allowed is ("+(memoryLimitInKb*1024)+")."+
+                    "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
         }
 
         byte[] bytes = new byte[len];
@@ -163,10 +172,9 @@ class RTFEmbObjHandler {
      */
     protected void handleCompletedObject() throws IOException, SAXException, TikaException {
 
-
         byte[] bytes = os.toByteArray();
         if (state == EMB_STATE.OBJDATA) {
-            RTFObjDataParser objParser = new RTFObjDataParser();
+            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb);
             try {
                 byte[] objBytes = objParser.parse(bytes, metadata, unknownFilenameCount);
                 extractObj(objBytes, handler, metadata);
@@ -178,6 +186,7 @@ class RTFEmbObjHandler {
             if (filePath != null && filePath.length() > 0) {
                 metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, filePath);
                 metadata.set(Metadata.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
+                metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, filePath);
             }
             metadata.set(RTFMetadata.THUMBNAIL, Boolean.toString(inObject));
             extractObj(bytes, handler, metadata);

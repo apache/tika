@@ -218,7 +218,7 @@ public class LanguageIdentifier {
     }
     
     /**
-     * Returns a string of error messages related to initializing langauge profiles
+     * Returns a string of error messages related to initializing language profiles
      * @return the String containing the error messages
      */
     public static String getErrors() {

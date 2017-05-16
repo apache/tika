@@ -947,10 +947,8 @@ final class TextExtractor {
                 if (groupState.pictDepth == 1) {
                     try {
                         embObjHandler.writeBytes(in, param);
-                    } catch (IOException e) {
-                        //param was out of bounds or something went wrong during writing.
-                        //skip this obj and move on
-                        //TODO: log.warn
+                    } catch (IOException|TikaException e) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                         embObjHandler.reset();
                     }
                 } else {

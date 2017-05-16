@@ -21,12 +21,32 @@ import java.io.Serializable;
 
 public class OfficeParserConfig implements Serializable {
 
+    private boolean extractMacros = false;
+
     private boolean includeDeletedContent = false;
     private boolean includeMoveFromContent = false;
+    private boolean includeShapeBasedContent = true;
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
 
+    /**
+     * Sets whether or not MSOffice parsers should extract macros.
+     * As of Tika 1.15, the default is <code>false</code>.
+     *
+     * @param extractMacros
+     */
+    public void setExtractMacros(boolean extractMacros) {
+        this.extractMacros = extractMacros;
+    }
+
+    /**
+     *
+     * @return whether or not to extract macros
+     */
+    public boolean getExtractMacros() {
+        return extractMacros;
+    }
     /**
      * Sets whether or not the parser should include deleted content.
      * <p/>
@@ -61,6 +81,24 @@ public class OfficeParserConfig implements Serializable {
 
     public boolean getIncludeMoveFromContent() {
         return includeMoveFromContent;
+    }
+
+    /**
+     * In Excel and Word, there can be text stored within drawing shapes.
+     * (In PowerPoint everything is in a Shape)
+     * <p/>
+     * If you'd like to skip processing these to look for text, set this to
+     *  <code>false</code>
+     * <p/>
+     * Default: <code>true</code>
+     * @param includeShapeBasedContent
+     */
+    public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
+        this.includeShapeBasedContent = includeShapeBasedContent;
+    }
+    
+    public boolean getIncludeShapeBasedContent() {
+        return includeShapeBasedContent;
     }
 
     public boolean getUseSAXDocxExtractor() {

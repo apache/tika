@@ -18,6 +18,7 @@
 package org.apache.tika.server;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.core.Response;
@@ -36,7 +37,6 @@ import org.junit.Test;
 
 public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test.doc";
-    public static final String TEST_XLSX = "16637.xlsx";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
 
@@ -74,6 +74,35 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
+    }
+
+    @Test
+    public void testTextMain() throws Exception {
+        //boilerpipe
+        Response response = WebClient.create(endPoint + TIKA_PATH + "/main")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream("testHTML.html"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Title : Test Indexation Html"));
+        assertFalse(responseMsg.contains("Indexation du fichier"));
+    }
+
+    @Test
+    public void testTextMainMultipart() throws Exception {
+        //boilerpipe
+        Attachment attachmentPart =
+                new Attachment("myhtml", "text/html", ClassLoader.getSystemResourceAsStream("testHTML.html"));
+
+
+        Response response = WebClient.create(endPoint + TIKA_PATH+"/form/main")
+                .type("multipart/form-data")
+                .accept("text/plain")
+                .post(attachmentPart);
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Title : Test Indexation Html"));
+        assertFalse(responseMsg.contains("Indexation du fichier"));
     }
 
     @Test

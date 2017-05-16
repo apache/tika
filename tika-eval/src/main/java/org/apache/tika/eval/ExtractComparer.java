@@ -43,6 +43,7 @@ import org.apache.tika.eval.tokens.ContrastStatistics;
 import org.apache.tika.eval.tokens.TokenContraster;
 import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.RecursiveParserWrapper;
 
 public class ExtractComparer extends AbstractProfiler {
@@ -80,8 +81,15 @@ public class ExtractComparer extends AbstractProfiler {
                 .addOption("tablePrefixB", true, "EXPERT: optional prefix for table names for B")
                 .addOption("drop", true, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
+                .addOption("maxTokens", true, "maximum tokens to process, default=200000")
+                .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
+                .addOption("maxContentLengthForLangId", true, "truncate content beyond this length for language id, default=50000")
+                .addOption("defaultLangCode", true, "which language to use for common words if no 'common words' file exists for the langid result")
         ;
     }
+
+    private static final String DIGEST_KEY_PREFIX = TikaCoreProperties.TIKA_META_PREFIX+
+            "digest"+Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     public static void USAGE() {
         HelpFormatter helpFormatter = new HelpFormatter();
@@ -398,27 +406,50 @@ public class ExtractComparer extends AbstractProfiler {
         if (metadataListB == null || metadataListB.size() == 0) {
             return -1;
         }
+        //assume first is always the container file
         if (i == 0) {
             return 0;
         }
+
+        //first try to find matching digests
+        //this does not elegantly handle multiple matching digests
+        int match = findMatchingDigests(metadataListA.get(i), metadataListB);
+        if (match > -1) {
+            return match;
+        }
+
+        //assume same embedded resource path.  Not always true!
+        Metadata thisMetadata = metadataListA.get(i);
+        String embeddedPath = thisMetadata.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+        if (embeddedPath != null) {
+            for (int j = 0; j < metadataListB.size(); j++) {
+                String thatEmbeddedPath = metadataListB.get(j).get(
+                        RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+                if (embeddedPath.equals(thatEmbeddedPath)) {
+                    return j;
+                }
+            }
+        }
+
+        //last resort, if lists are same size, guess the same index
         if (metadataListA.size() == metadataListB.size()) {
             //assume no rearrangments if lists are the same size
             return i;
         }
+        return -1;
+    }
 
-        Metadata thisMetadata = metadataListA.get(i);
-        String embeddedPath = thisMetadata.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
-        if (embeddedPath == null) {
-            return -1;
-        }
-        if (i < metadataListB.size()) {
-        }
-
-        for (int j = 0; j < metadataListB.size(); j++) {
-            String thatEmbeddedPath = metadataListB.get(j).get(
-                    RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
-            if (embeddedPath.equals(thatEmbeddedPath)) {
-                return j;
+    private int findMatchingDigests(Metadata metadata, List<Metadata> metadataListB) {
+        Set<String> digestKeys = new HashSet<>();
+        for (String n : metadata.names()) {
+            if (n.startsWith(DIGEST_KEY_PREFIX)) {
+                String digestA = metadata.get(n);
+                for (int i = 0; i < metadataListB.size(); i++) {
+                    String digestB = metadataListB.get(i).get(n);
+                    if (digestA != null && digestA.equals(digestB)) {
+                        return i;
+                    }
+                }
             }
         }
         return -1;

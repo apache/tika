@@ -455,8 +455,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     break;
 
                 case TextObjectRecord.sid:
-                    TextObjectRecord tor = (TextObjectRecord) record;
-                    addTextCell(record, tor.getStr().getString());
+                    if (extractor.officeParserConfig.getIncludeShapeBasedContent()) {
+                        TextObjectRecord tor = (TextObjectRecord) record;
+                        addTextCell(record, tor.getStr().getString());
+                    }
                     break;
 
                 case SeriesTextRecord.sid: // Chart label or title

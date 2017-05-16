@@ -27,6 +27,7 @@ import java.util.Locale;
 
 import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -266,44 +267,6 @@ public class ExcelParserTest extends TikaTest {
         }
     }
 
-    /**
-     * We don't currently support the .xlsb file format 
-     *  (an OOXML container with binary blobs), but we 
-     *  shouldn't break on these files either (TIKA-826)  
-     */
-    @Test
-    public void testExcelXLSB() throws Exception {
-        Detector detector = new DefaultDetector();
-        AutoDetectParser parser = new AutoDetectParser();
-
-        Metadata m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "excel.xlsb");
-
-        // Should be detected correctly
-        MediaType type;
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xlsb")) {
-            type = detector.detect(input, m);
-            assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
-        }
-
-        // OfficeParser won't handle it
-        assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
-
-        // OOXMLParser will (soon) handle it
-        assertTrue((new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
-
-        // AutoDetectParser doesn't break on it
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            parser.parse(input, handler, m, context);
-
-            String content = handler.toString();
-            assertEquals("", content);
-        }
-    }
 
     /**
      * Excel 5 and 95 are older formats, and only get basic support
@@ -480,6 +443,19 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testMacros() throws  Exception {
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testEXCEL_macro.xls")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extracted macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
@@ -487,7 +463,29 @@ public class ExcelParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls"));
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", context));
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", parser));
+
     }
 
+    @Test
+    public void testTextBox() throws Exception {
+        String xml = getXML("testEXCEL_textbox.xls").xml;
+        assertContains("autoshape", xml);
+    }
+
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBoxExtractionExcel() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testEXCEL_textbox.xls", pc).xml;
+        assertNotContained("autoshape", xml);
+    }
 }

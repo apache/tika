@@ -29,11 +29,13 @@ import java.util.Locale;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
@@ -192,6 +194,17 @@ public class WordParserTest extends TikaTest {
             assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
             assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         }
+    }
+
+    //TIKA-2346
+    @Test
+    public void testTurningOffTextBox() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.doc", pc).xml;
+        assertNotContained("text box", xml);
     }
 
     @Test
@@ -525,6 +538,21 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testMacros() throws  Exception {
+
+        //test default is "don't extract macros"
+        for (Metadata metadata : getRecursiveMetadata("testWORD_macros.doc")) {
+            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+                fail("Shouldn't have extracted macros as default");
+            }
+        }
+
+        //now test that they were extracted
+        ParseContext context = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractMacros(true);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
+
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
@@ -532,7 +560,14 @@ public class WordParserTest extends TikaTest {
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.doc");
+        List<Metadata> metadataList = getRecursiveMetadata("testWORD_macros.doc", context);
+        assertContainsAtLeast(minExpected, metadataList);
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-macros.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+
+        metadataList = getRecursiveMetadata("testWORD_macros.doc", parser);
         assertContainsAtLeast(minExpected, metadataList);
     }
 
