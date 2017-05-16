@@ -72,7 +72,7 @@ class ModelWrapper(object):
                 "input_feed:0": input_feed,
                 "lstm/state_feed:0": state_feed,
             })
-        return softmax_output, state_output, None
+        return softmax_output, state_output
 
 
 class ShowAndTellModel(object):
