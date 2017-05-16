@@ -52,7 +52,7 @@ public class SentimentParserTest {
         tika.parse(stream, md);
         String sentiment = md.get("Sentiment");
         assertNotNull(sentiment);
-        assertEquals(sentiment, "positive");
+        assertEquals("positive", sentiment);
 
     }
 
@@ -68,12 +68,12 @@ public class SentimentParserTest {
         tika.parse(stream, md);
         String sentiment = md.get("Sentiment");
         assertNotNull(sentiment);
-        assertEquals(sentiment, "angry");
+        assertEquals("angry", sentiment);
    }
 
    private Tika getTika(String configXml) throws TikaException, SAXException, IOException {
 
-       try (InputStream confStream = getClass().getResourceAsStream("tika-config-sentiment-opennlp.xml")) {
+       try (InputStream confStream = getClass().getResourceAsStream(configXml)) {
            assert confStream != null;
            TikaConfig config = new TikaConfig(confStream);
            return new Tika(config);
