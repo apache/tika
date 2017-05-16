@@ -81,7 +81,7 @@ Release 1.15 - ??
   * Add configurability of "preserve-interword-spacing" to
     TesseractOCRParser (TIKA-2190).
 
-  * Upgrade to PDFBox 2.0.5 and JempBox 1.8.13 (TIKA-2209/TIKA-2236).
+  * Upgrade to PDFBox 2.0.6 and JempBox 1.8.13 (TIKA-2209/TIKA-2236/TIKA-2361).
 
   * Refactor MockParser to consolidate service loading
     and mime types into tika-core/src/test (TIKA-2195).
