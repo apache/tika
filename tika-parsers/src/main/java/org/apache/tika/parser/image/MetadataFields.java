@@ -23,6 +23,8 @@ import java.util.HashSet;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Knowns about all declared {@link Metadata} fields.
@@ -30,6 +32,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * ImageMetadataExtractor, but it can be generalized.
  */
 public abstract class MetadataFields {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataFields.class);
 
     private static HashSet<String> known;
 
@@ -52,9 +56,9 @@ public abstract class MetadataFields {
                             known.add(p);
                         }
                     } catch (IllegalArgumentException e) {
-                        e.printStackTrace();
+                        LOG.warn("Illegal argument in field", e);
                     } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                        LOG.warn("Illegal access in field", e);
                     }
                 }
                 if (Property.class.isAssignableFrom(c)) {
@@ -64,9 +68,9 @@ public abstract class MetadataFields {
                             known.add(p.getName());
                         }
                     } catch (IllegalArgumentException e) {
-                        e.printStackTrace();
+                        LOG.warn("Illegal argument in field", e);
                     } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                        LOG.warn("Illegal access in field", e);
                     }
                 }
             }

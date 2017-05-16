@@ -32,9 +32,15 @@ import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 
 public class GrobidRESTParser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
+
 
     private static final String GROBID_REST_HOST = "http://localhost:8080";
 
@@ -51,7 +57,7 @@ public class GrobidRESTParser {
         try {
             restHostUrlStr = readRestUrl();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.warn("can't read rest url", e);
         }
 
         if (restHostUrlStr == null
@@ -83,7 +89,7 @@ public class GrobidRESTParser {
                 metadata.add("grobid:header_" + key, teiMet.get(key));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("Couldn't read response", e);
         }
     }
 
@@ -104,7 +110,7 @@ public class GrobidRESTParser {
             String resp = response.readEntity(String.class);
             return resp != null && !resp.equals("") && resp.startsWith("<h4>");
         } catch (Exception e) {
-            e.printStackTrace();
+            //swallow...can't run
             return false;
         }
     }

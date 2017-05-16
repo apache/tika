@@ -37,6 +37,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link org.apache.tika.parser.DigestingParser.Digester}
@@ -52,6 +54,9 @@ import org.apache.tika.parser.ParseContext;
  *
  */
 public class CommonsDigester implements DigestingParser.Digester {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CommonsDigester.class);
+
 
     public enum DigestAlgorithm {
         //those currently available in commons.digest
@@ -178,7 +183,7 @@ public class CommonsDigester implements DigestingParser.Digester {
                     throw new IllegalArgumentException("Sorry, not aware of algorithm: " + algorithm.toString());
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.warn("Problem digesting", e);
             //swallow, or should we throw this?
         }
         if (is instanceof SimpleBoundedInputStream) {

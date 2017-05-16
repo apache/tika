@@ -55,7 +55,8 @@ public class GrobidNERecogniser implements NERecogniser{
 	            try {
 	                restHostUrlStr = readRestUrl();
 	            } catch (IOException e) {
-	                e.printStackTrace();
+	            	LOG.warn("couldn't read rest url", e);
+
 	            }
 
 	            if (restHostUrlStr == null || restHostUrlStr.equals("")) {

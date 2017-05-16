@@ -36,11 +36,18 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
 import org.apache.tika.parser.chm.lzx.ChmLzxBlock;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Extracts text from chm file. Enumerates chm entries.
  */
 public class ChmExtractor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ChmExtractor.class);
+
+
     private List<ChmLzxBlock> lzxBlocksCache = null;
     private ChmDirectoryListingSet chmDirList = null;
     private ChmItsfHeader chmItsfHeader = null;
@@ -216,7 +223,7 @@ public class ChmExtractor {
             setLzxBlocksCache(new ArrayList<ChmLzxBlock>());
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.warn("IOException parsing chm file", e);
         }
     }
 
