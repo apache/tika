@@ -46,7 +46,7 @@ import model_wrapper
 import vocabulary
 import caption_generator
 
-info = ET.parse('/usr/local/models/model_info.xml').getroot()
+info = ET.parse('/usr/share/apache-tika/models/dl/image/caption/model_info.xml').getroot()
 model_main = info.find('model_main')
 
 checkpoint_path = model_main.find('checkpoint_path').text

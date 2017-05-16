@@ -19,7 +19,7 @@ FROM inception-rest-tika
 MAINTAINER Apache Tika Team
 
 # Download the pretrained im2txt checkpoint
-WORKDIR /usr/local/models
+WORKDIR /usr/share/apache-tika/models/dl/image/caption/
 
 RUN wget https://www.dropbox.com/s/l9ignjpjk774n2z/model_main_untuned.zip?dl=0 -O model_main_untuned.zip && \
     unzip model_main_untuned.zip && rm -rf model_main_untuned.zip
@@ -28,12 +28,21 @@ WORKDIR /
 
 # Download server related source files
 RUN \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml -O /usr/local/models/model_info.xml && \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py -O /usr/bin/caption_generator.py && \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py -O /usr/bin/im2txtapi.py && \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py -O /usr/bin/model_wrapper.py && \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py -O /usr/bin/vocabulary.py && \
-  chmod +x /usr/bin/im2txtapi.py
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml \
+    -O /usr/share/apache-tika/models/dl/image/caption/model_info.xml && \
+
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py \
+    -O /usr/share/apache-tika/src/dl/image/caption/caption_generator.py && \
+
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
+    -O /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py && \
+
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py \
+    -O /usr/share/apache-tika/src/dl/image/caption/model_wrapper.py && \
+
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py \
+    -O /usr/share/apache-tika/src/dl/image/caption/vocabulary.py && \
+  chmod +x /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py
 
 # clean up cache, so we can publish smaller image to hub
 RUN apt-get clean
