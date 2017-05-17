@@ -37,6 +37,8 @@ from __future__ import print_function
 import math
 import requests
 import xml.etree.ElementTree as ET
+import logging
+import sys
 from time import time
 
 import flask
@@ -46,12 +48,42 @@ import model_wrapper
 import vocabulary
 import caption_generator
 
-info = ET.parse('/usr/share/apache-tika/models/dl/image/caption/model_info.xml').getroot()
-model_main = info.find('model_main')
+# turning off the traceback by limiting its depth
+sys.tracebacklimit = 0
 
-checkpoint_path = model_main.find('checkpoint_path').text
-vocab_file = model_main.find('vocab_file').text
+# informative log messages for advanced users to troubleshoot errors when modifying model_info.xml
+try:
+    info = ET.parse('/usr/share/apache-tika/models/dl/image/caption/model_info.xml').getroot()
+except IOError:
+    logging.exception('model_info.xml is not found')
+    sys.exit(1)
+
+model_main = info.find('model_main')
+if model_main is None:
+    logging.exception('<checkpoint_path> tag under <model_main> tag in model_info.xml is not found')
+    sys.exit(1)
+
+checkpoint_path = model_main.find('checkpoint_path')
+if checkpoint_path is None:
+    logging.exception('<checkpoint_path> tag under <model_main> tag in model_info.xml is not found')
+    sys.exit(1)
+else:
+    checkpoint_path = checkpoint_path.text
+
+vocab_file = model_main.find('vocab_file')
+if vocab_file is None:
+    logging.exception('<vocab_file> tag under <model_main> tag in model_info.xml is not found')
+    sys.exit(1)
+else:
+    vocab_file = vocab_file.text
+
 port = info.get('port')
+if port is None:
+    logging.exception('port attribute in <service> tag in model_info.xml is not found')
+    sys.exit(1)
+
+# turning on the traceback by setting it to default
+sys.tracebacklimit = 1000
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string("checkpoint_path", checkpoint_path, """Directory containing the model checkpoint file.""")
