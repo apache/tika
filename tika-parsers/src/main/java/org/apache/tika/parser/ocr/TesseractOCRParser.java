@@ -101,16 +101,24 @@ public class TesseractOCRParser extends AbstractParser {
                     MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
     private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<>();
-
+    private static volatile boolean HAS_ALERTED = false;
 
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         // If Tesseract is installed, offer our supported image types
         TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-        if (hasTesseract(config))
+        if (hasTesseract(config)) {
+            if (! HAS_ALERTED) {
+                LOG.info("Tesseract OCR is installed and will be automatically applied to image files.\n"+
+                        "This may dramatically slow down content extraction (TIKA-2359).\n"+
+                        "As of Tika 1.15 (and prior versions), Tesseract is automatically called.\n"+
+                        "In future versions of Tika, users may need to turn the TesseractOCRParser on via TikaConfig."
+                );
+                HAS_ALERTED = true;
+            }
             return SUPPORTED_TYPES;
-
+        }
         // Otherwise don't advertise anything, so the other image parsers
         //  can be selected instead
         return Collections.emptySet();
