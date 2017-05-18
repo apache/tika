@@ -113,40 +113,4 @@ public class FontParsersTest {
         String content = handler.toString();
         assertEquals("", content);
     }
-
-    @Test
-    public void testTTFParsingNoLeaks() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-
-        // Attempt to detect file leaks on unix systems.
-        OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
-        if (MethodUtils.getMatchingAccessibleMethod(os.getClass(), "getOpenFileDescriptorCount", null) == null) {
-            return;
-        }
-
-        // Clone the font to a temporary file on disk, was having trouble reliably reproducing the leak with resources.
-        InputStream input = FontParsersTest.class.getResourceAsStream("/test-documents/testTrueType3.ttf");
-        Path tempDir = Files.createTempDirectory("fonts");
-        Path tempFont = tempDir.resolve("testTrueType3.ttf");
-        Files.copy(input, tempFont);
-        input.close();
-
-        // Record the expected file handle count.
-        long initialFileCount = (long)MethodUtils.invokeMethod(os, "getOpenFileDescriptorCount", null);
-        try (TikaInputStream stream = TikaInputStream.get(tempFont)) {
-            parser.parse(stream, handler, metadata, context);
-        }
-
-        // Check is any file handles leaked.
-        long finalFileCount = (long)MethodUtils.invokeMethod(os, "getOpenFileDescriptorCount", null);
-        if (initialFileCount != finalFileCount) {
-            fail("File leak detected. " + initialFileCount + " " + finalFileCount);
-        }
-
-        // Clean up temporary files.
-        FileUtils.deleteQuietly(tempDir.toFile());
-    }
 }
