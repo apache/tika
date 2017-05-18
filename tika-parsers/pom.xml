@@ -468,6 +468,10 @@
           <artifactId>tika-batch</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-translate</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.opennlp</groupId>
           <artifactId>opennlp-tools</artifactId>
           <!--  because it is already added above -->
