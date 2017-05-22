@@ -125,7 +125,7 @@ A candidate for the Tika ${project.version} release is available at:
   https://dist.apache.org/repos/dist/dev/tika/
 
 The release candidate is a zip archive of the sources in:
-  http://svn.apache.org/repos/asf/tika/tags/${project.version}-rcN/
+  https://github.com/apache/tika/tree/{project.version}-rcN/
 
 The SHA1 checksum of the archive is
   ${checksum}.
