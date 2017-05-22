@@ -23,7 +23,7 @@
   <parent>
     <artifactId>tika</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>1.16-SNAPSHOT</version>
+    <version>1.15-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
