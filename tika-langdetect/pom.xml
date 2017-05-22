@@ -155,18 +155,4 @@
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org</url>
   </organization>
-  <scm>
-    <url>http://svn.apache.org/viewvc/tika/trunk/tika-langdetect</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-langdetect</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-langdetect</developerConnection>
-    <tag>HEAD</tag>
-  </scm>
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
 </project>
