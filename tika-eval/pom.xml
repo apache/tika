@@ -219,7 +219,10 @@
                     <artifactId>apache-rat-plugin</artifactId>
                     <configuration>
                         <excludes>
-                            <exclude>src/test/resources/org/apache/tika/**</exclude>
+                            <exclude>src/main/resources/common_tokens/*</exclude>
+                            <exclude>src/main/resources/*.json</exclude>
+                            <exclude>src/test/resources/common_tokens/*</exclude>
+                            <exclude>src/test/resources/test-dirs/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>

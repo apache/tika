@@ -98,8 +98,9 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
-            <exclude>src/test/resources/test-documents/**</exclude>
+            <exclude>src/test/resources/org/apache/tika/langdetect/*</exclude>
+            <exclude>src/test/resources/org/apache/tika/langdetect/language-tests/*</exclude>
+
           </excludes>
         </configuration>
       </plugin>
