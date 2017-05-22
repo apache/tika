@@ -20,12 +20,13 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>tika</artifactId>
-    <groupId>org.apache.tika</groupId>
-    <version>1.15-SNAPSHOT</version>
-  </parent>
   <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>1.15-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
 
   <artifactId>tika-dl</artifactId>
   <packaging>jar</packaging>
