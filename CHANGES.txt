@@ -1,3 +1,5 @@
+Release 1.16 - ???
+
 Release 1.15 - 05/22/2017
 
   * Tika now has a module for Deep Learning powered by the 
