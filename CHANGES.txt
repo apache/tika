@@ -1,6 +1,4 @@
-Release 1.16 - ???
-
-Release 1.15 - 05/22/2017
+Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
     DL4J toolkit. The initial included model is for InceptionV3
