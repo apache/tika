@@ -79,13 +79,11 @@
       <artifactId>nd4j-native-platform</artifactId>
       <version>${dl4j.version}</version>
     </dependency>
-	<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
-<dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-compress</artifactId>
-    <version>1.14</version>
-</dependency>
-
+    <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.14</version>
+    </dependency>
   </dependencies>
 
   <build>
