@@ -17,5 +17,127 @@
 
 package org.apache.tika.parser.captioning.tf;
 
-public class TensorflowRESTCaptioner {
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.recognition.ObjectRecogniser;
+import org.apache.tika.parser.recognition.RecognisedObject;
+import org.apache.tika.parser.captioning.CaptionObject;
+import org.apache.uima.tools.util.gui.Caption;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.*;
+
+/**
+ * Tensorflow image captioner.
+ * This implementation uses Tensorflow via REST API.
+ * <p>
+ * NOTE : //TODO: link to wiki page here
+ *
+ * @since Apache Tika 1.16
+ */
+public class TensorflowRESTCaptioner implements ObjectRecogniser {
+    private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTCaptioner.class);
+
+    static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
+
+    /**
+     * Maximum buffer size for image
+     */
+    private static final String LABEL_LANG = "en";
+
+    @Field
+    private URI apiUri = URI.create("http://localhost:8764/caption?beam_size=3&max_caption_length=15");
+    @Field
+    private URI healthUri = URI.create("http://localhost:8764/ping");
+
+    private boolean available;
+
+    protected URI getApiUri(Metadata metadata) {
+        return apiUri;
+    }
+
+    @Override
+    public Set<MediaType> getSupportedMimes() {
+        return SUPPORTED_MIMES;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return available;
+    }
+
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        try {
+            DefaultHttpClient client = new DefaultHttpClient();
+            HttpResponse response = client.execute(new HttpGet(healthUri));
+            available = response.getStatusLine().getStatusCode() == 200;
+            LOG.info("Available = {}, API Status = {}", available, response.getStatusLine());
+        } catch (Exception e) {
+            available = false;
+            throw new TikaConfigException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<? extends RecognisedObject> recognise(InputStream stream,
+                                                      ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        List<CaptionObject> capObjs = new ArrayList<>();
+        try {
+            DefaultHttpClient client = new DefaultHttpClient();
+
+            HttpPost request = new HttpPost(getApiUri(metadata));
+
+            try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream()) {
+                //TODO: convert this to stream, this might cause OOM issue
+                // InputStreamEntity is not working
+                // request.setEntity(new InputStreamEntity(stream, -1));
+                IOUtils.copy(stream, byteStream);
+                request.setEntity(new ByteArrayEntity(byteStream.toByteArray()));
+            }
+
+            HttpResponse response = client.execute(request);
+            try (InputStream reply = response.getEntity().getContent()) {
+                String replyMessage = IOUtils.toString(reply);
+                if (response.getStatusLine().getStatusCode() == 200) {
+                    JSONObject jReply = new JSONObject(replyMessage);
+                    JSONArray jCaptions = jReply.getJSONArray("captions");
+                    for (int i = 0; i < jCaptions.length(); i++) {
+                        JSONObject jCaption = jCaptions.getJSONObject(i);
+                        String sentence = jCaption.optString("sentence");
+                        Double confidence = jCaption.optDouble("confidence");
+                        CaptionObject capObj = new CaptionObject(sentence, LABEL_LANG, confidence);
+                        capObjs.add(capObj);
+                    }
+                } else {
+                    LOG.warn("Status = {}", response.getStatusLine());
+                    LOG.warn("Response = {}", replyMessage);
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn(e.getMessage(), e);
+        }
+        return capObjs;
+    }
 }

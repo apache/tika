@@ -14,11 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.captioning;
 
-import org.apache.tika.config.Initializable;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.recognition.RecognisedObject;
 
-public class ImageCaptioningParser {
+/**
+ * A model for caption objects from graphics and texts typically includes
+ * human readable sentence, language of the sentence and confidence score.
+ *
+ * @since Apache Tika 1.16
+ */
+public class CaptionObject extends RecognisedObject {
+
+    public CaptionObject(String sentence, String sentenceLang, double confidence) {
+        super(sentence, sentenceLang, null, confidence);
+    }
+
 }

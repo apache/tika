@@ -69,7 +69,7 @@ public interface ObjectRecogniser  extends Initializable {
      * @throws SAXException when an issue with XML occurs
      * @throws TikaException any generic error
      */
-    List<RecognisedObject> recognise(InputStream stream, ContentHandler handler,
+    List<? extends RecognisedObject> recognise(InputStream stream, ContentHandler handler,
                                      Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
 }

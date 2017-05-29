@@ -27,19 +27,19 @@ public class RecognisedObject {
     /**
      * Label of this object. Usually the name given to this object by humans
      */
-    private String label;
+    protected String label;
     /**
      * Language of label, Example : english
      */
-    private String labelLang;
+    protected String labelLang;
     /**
      * Identifier for this object
      */
-    private String id;
+    protected String id;
     /**
      * Confidence score
      */
-    private double confidence;
+    protected double confidence;
 
     public RecognisedObject(String label, String labelLang, String id, double confidence) {
         this.label = label;
