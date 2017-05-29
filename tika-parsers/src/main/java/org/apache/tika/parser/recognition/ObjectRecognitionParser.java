@@ -117,7 +117,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         }
         metadata.set(MD_REC_IMPL_KEY, recogniser.getClass().getName());
         long start = System.currentTimeMillis();
-        List<RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
+        List<? extends RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
         LOG.debug("Found {} objects", objects != null ? objects.size() : 0);
         LOG.debug("Time taken {}ms", System.currentTimeMillis() - start);
         if (objects != null && !objects.isEmpty()) {

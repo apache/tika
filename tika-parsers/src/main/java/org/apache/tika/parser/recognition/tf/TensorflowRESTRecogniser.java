@@ -99,7 +99,7 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     }
 
     @Override
-    public List<RecognisedObject> recognise(InputStream stream,
+    public List<? extends RecognisedObject> recognise(InputStream stream,
                                             ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         List<RecognisedObject> recObjs = new ArrayList<>();
