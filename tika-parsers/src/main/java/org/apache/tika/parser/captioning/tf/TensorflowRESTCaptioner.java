@@ -100,7 +100,7 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     }
 
     @Override
-    public List<? extends RecognisedObject> recognise(InputStream stream,
+    public List<CaptionObject> recognise(InputStream stream,
                                                       ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         List<CaptionObject> capObjs = new ArrayList<>();
