@@ -25,6 +25,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.captioning.CaptionObject;
+import org.apache.tika.parser.captioning.tf.TensorflowRESTCaptioner;
+import org.apache.tika.parser.recognition.tf.TensorflowImageRecParser;
 import org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.AnnotationUtils;
@@ -43,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-
 
 /**
  * This parser recognises objects from Images.
@@ -88,6 +90,12 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     @Field
     private int topN = 2;
 
+    @Field
+    private int captions;
+
+    @Field
+    private int maxCaptionLength;
+
     private ObjectRecogniser recogniser = new TensorflowRESTRecogniser();
 
     @Field(name = "class")
@@ -99,9 +107,13 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         AnnotationUtils.assignFieldParams(recogniser, params);
         recogniser.initialize(params);
-        LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
-        LOG.info("Recogniser = {}", recogniser.getClass().getName());
-        LOG.info("Recogniser Available = {}", recogniser.isAvailable());
+        if (recogniser instanceof TensorflowRESTRecogniser || recogniser instanceof TensorflowImageRecParser) {
+            LOG.info("Recogniser = {}", recogniser.getClass().getName());
+            LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
+            LOG.info("Recogniser Available = {}", recogniser.isAvailable());
+        } else if (recogniser instanceof TensorflowRESTCaptioner) {
+            LOG.info("Recogniser = {}", recogniser.getClass().getName());
+        }
     }
 
     @Override
@@ -119,50 +131,65 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         metadata.set(MD_REC_IMPL_KEY, recogniser.getClass().getName());
         long start = System.currentTimeMillis();
         List<? extends RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
+
         LOG.debug("Found {} objects", objects != null ? objects.size() : 0);
         LOG.debug("Time taken {}ms", System.currentTimeMillis() - start);
+
         if (objects != null && !objects.isEmpty()) {
+            int count;
+            List<RecognisedObject> acceptedObjects = new ArrayList<RecognisedObject>();
+            List<String> xhtmlIds = new ArrayList<String>();
+            String xhtmlStartVal = null;
 
-            Collections.sort(objects, DESC_CONFIDENCE_SORTER);
-	    int count = 0;
-	    List<RecognisedObject> acceptedObjects = new ArrayList<RecognisedObject>(topN);
+            if (recogniser instanceof TensorflowRESTRecogniser || recogniser instanceof TensorflowImageRecParser) {
+                xhtmlStartVal = "objects";
+                count = 0;
+                Collections.sort(objects, DESC_CONFIDENCE_SORTER);
+                // first process all the MD objects
+                for (RecognisedObject object : objects) {
+                    if (object.getConfidence() >= minConfidence) {
+                        count++;
+                        LOG.info("Add {}", object);
+                        String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
+                                object.getLabel(), object.getConfidence());
+                        metadata.add(MD_KEY_OBJ_REC, mdValue);
+                        acceptedObjects.add(object);
+                        xhtmlIds.add(object.getId());
+                        if (count >= topN) {
+                            break;
+                        } else {
+                            LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
+                        }
+                    }
+                }
 
-	    // first process all the MD objects
-	    for (RecognisedObject object: objects){
-                if (object.getConfidence() >= minConfidence) {
-		    if (object.getConfidence() >= minConfidence) {
-			count++;
-			LOG.debug("Add {}", object);
-			String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-						   object.getLabel(), object.getConfidence());
-			metadata.add(MD_KEY_OBJ_REC, mdValue);
-			acceptedObjects.add(object);
-			if (count >= topN) {
-			    break;
-			}
-		    }
-		    else{
-			LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
-		    }
-		}
-	    }
-
-	    // now the handler
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-	    xhtml.startDocument();
-            xhtml.startElement("ol", "id", "objects");
-            count = 0;
-            for (RecognisedObject object : acceptedObjects) {
-                    //writing to handler
-                    xhtml.startElement("li", "id", object.getId());
-                    String text = String.format(Locale.ENGLISH, " %s [%s](confidence = %f )",
-                            object.getLabel(), object.getLabelLang(), object.getConfidence());
-		    xhtml.characters(text);
-                    xhtml.endElement("li");
+            } else if (recogniser instanceof TensorflowRESTCaptioner) {
+                xhtmlStartVal = "captions";
+                count = 0;
+                for (RecognisedObject object : objects) {
+                    LOG.debug("Add {}", object);
+                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
+                            object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY_IMG_CAP, mdValue);
+                    acceptedObjects.add(object);
+                    xhtmlIds.add(String.valueOf(count++));
+                }
             }
 
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            xhtml.startElement("ol", "id", xhtmlStartVal);
+            count = 0;
+            for (RecognisedObject object : acceptedObjects) {
+                //writing to handler
+                xhtml.startElement("li", "id", xhtmlIds.get(count++));
+                String text = String.format(Locale.ENGLISH, " %s [%s](confidence = %f)",
+                        object.getLabel(), object.getLabelLang(), object.getConfidence());
+                xhtml.characters(text);
+                xhtml.endElement("li");
+            }
             xhtml.endElement("ol");
-	    xhtml.endDocument();
+            xhtml.endDocument();
         } else {
             LOG.warn("NO objects");
             metadata.add("no.objects", Boolean.TRUE.toString());
