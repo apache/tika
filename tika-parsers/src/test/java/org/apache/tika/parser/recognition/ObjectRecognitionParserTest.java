@@ -21,7 +21,6 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -29,8 +28,6 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.*;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -56,7 +53,7 @@ public class ObjectRecognitionParserTest {
                 List<String> lines = IOUtils.readLines(reader);
                 String text = StringUtils.join(lines, " ");
                 String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
-                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
+                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY_OBJ_REC), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
                     Assert.assertTrue(message, text.contains(expectedObject));
@@ -77,7 +74,7 @@ public class ObjectRecognitionParserTest {
                 Reader reader = tika.parse(imageStream, metadata);
                 String text = IOUtils.toString(reader);
                 String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
-                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY), " ");
+                String metaValues = StringUtils.join(metadata.getValues(ObjectRecognitionParser.MD_KEY_OBJ_REC), " ");
                 for (String expectedObject : expectedObjects) {
                     String message = "'" + expectedObject + "' must have been detected";
                     Assert.assertTrue(message, text.contains(expectedObject));

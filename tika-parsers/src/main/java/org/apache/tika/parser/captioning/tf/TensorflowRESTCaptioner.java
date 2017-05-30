@@ -58,8 +58,10 @@ import java.util.*;
 public class TensorflowRESTCaptioner implements ObjectRecogniser {
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTCaptioner.class);
 
-    static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
-
+    private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(new MediaType[]{
+                    MediaType.image("png"), MediaType.image("jpeg")
+            })));
     /**
      * Maximum buffer size for image
      */

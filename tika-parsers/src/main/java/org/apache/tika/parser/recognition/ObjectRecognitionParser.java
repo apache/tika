@@ -70,7 +70,8 @@ import java.util.Set;
 public class ObjectRecognitionParser extends AbstractParser implements Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParser.class);
 
-    public static final String MD_KEY = "OBJECT";
+    public static final String MD_KEY_OBJ_REC = "OBJECT";
+    public static final String MD_KEY_IMG_CAP = "CAPTION";
     public static final String MD_REC_IMPL_KEY =
             ObjectRecognitionParser.class.getPackage().getName() + ".object.rec.impl";
     private static final Comparator<RecognisedObject> DESC_CONFIDENCE_SORTER =
@@ -134,7 +135,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
 			LOG.debug("Add {}", object);
 			String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
 						   object.getLabel(), object.getConfidence());
-			metadata.add(MD_KEY, mdValue);
+			metadata.add(MD_KEY_OBJ_REC, mdValue);
 			acceptedObjects.add(object);
 			if (count >= topN) {
 			    break;
