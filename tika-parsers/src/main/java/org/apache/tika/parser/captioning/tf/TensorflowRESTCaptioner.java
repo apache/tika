@@ -68,9 +68,9 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     private static final String LABEL_LANG = "en";
 
     @Field
-    private URI apiUri = URI.create("http://localhost:8764/captions?beam_size=3&max_caption_length=15");
+    private URI apiUri = URI.create("http://localhost:8764/inception/v3/captions?beam_size=3&max_caption_length=15");
     @Field
-    private URI healthUri = URI.create("http://localhost:8764/ping");
+    private URI healthUri = URI.create("http://localhost:8764/inception/v3/ping");
 
     private boolean available;
 
