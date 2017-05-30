@@ -96,7 +96,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     @Field
     private int maxCaptionLength;
 
-    private ObjectRecogniser recogniser = new TensorflowRESTRecogniser();
+    private ObjectRecogniser recogniser;
 
     @Field(name = "class")
     public void setRecogniser(String recogniserClass) {
