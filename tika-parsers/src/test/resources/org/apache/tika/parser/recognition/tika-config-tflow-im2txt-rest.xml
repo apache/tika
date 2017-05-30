@@ -21,8 +21,8 @@
         <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
             <mime>image/jpeg</mime>
             <params>
-                <param name="beam_size" type="int">3</param>
-                <param name="max_caption_length" type="int">15</param>
+                <param name="captions" type="int">5</param>
+                <param name="maxCaptionLength" type="int">15</param>
                 <param name="class" type="string">org.apache.tika.parser.captioning.tf.TensorflowRESTCaptioner</param>
             </params>
         </parser>
