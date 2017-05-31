@@ -107,12 +107,12 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         AnnotationUtils.assignFieldParams(recogniser, params);
         recogniser.initialize(params);
+        LOG.info("Recogniser = {}", recogniser.getClass().getName());
+        LOG.info("Recogniser Available = {}", recogniser.isAvailable());
         if (recogniser instanceof TensorflowRESTRecogniser || recogniser instanceof TensorflowImageRecParser) {
-            LOG.info("Recogniser = {}", recogniser.getClass().getName());
             LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
-            LOG.info("Recogniser Available = {}", recogniser.isAvailable());
         } else if (recogniser instanceof TensorflowRESTCaptioner) {
-            LOG.info("Recogniser = {}", recogniser.getClass().getName());
+            LOG.info("captions = {}, maxCaptionLength={}", captions, maxCaptionLength);
         }
     }
 
@@ -157,12 +157,11 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
                         xhtmlIds.add(object.getId());
                         if (count >= topN) {
                             break;
-                        } else {
-                            LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
                         }
+                    } else {
+                        LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
                     }
                 }
-
             } else if (recogniser instanceof TensorflowRESTCaptioner) {
                 xhtmlStartVal = "captions";
                 count = 0;
@@ -194,6 +193,5 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
             LOG.warn("NO objects");
             metadata.add("no.objects", Boolean.TRUE.toString());
         }
-
     }
 }
