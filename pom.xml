@@ -100,6 +100,7 @@
                         <include name="target/*-src.zip*" />
                         <include name="tika-app/target/tika-app-${project.version}.jar*" />
                         <include name="tika-server/target/tika-server-${project.version}.jar*" />
+                        <include name="tika-eval/target/tika-eval-${project.version}.jar*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="MD5" fileext=".md5">
