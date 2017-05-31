@@ -16,6 +16,14 @@
  */
 package org.apache.tika.parser.sentiment.analysis;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.Charset;
+
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaConfigException;
@@ -23,14 +31,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 import org.xml.sax.SAXException;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOError;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.Charset;
-
-import static org.junit.Assert.*;
 
 /**
  * Test case for {@link SentimentParser}
@@ -79,7 +79,8 @@ public class SentimentParserTest {
            return new Tika(config);
        } catch (TikaConfigException e) {
            //if can't connect to pull sentiment model...ignore test
-           if (e.getCause() != null && e.getCause() instanceof java.net.ConnectException) {
+           if (e.getCause() != null
+                   && e.getCause() instanceof IOException) {
                return null;
            }
            throw e;
