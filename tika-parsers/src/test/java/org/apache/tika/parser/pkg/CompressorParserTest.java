@@ -18,22 +18,46 @@
 package org.apache.tika.parser.pkg;
 
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class CompressorParserTest {
+public class CompressorParserTest extends TikaTest {
+    //These compressed stream types can't currently
+    //be detected.
     private static Set<MediaType> NOT_COVERED = new HashSet();
 
     @BeforeClass
     public static void setUp() {
-        NOT_COVERED.add(MediaType.application("x-snappy-framed"));
+        NOT_COVERED.add(MediaType.application("x-brotli"));
+        NOT_COVERED.add(MediaType.application("x-lz4-block"));
+        NOT_COVERED.add(MediaType.application("x-snappy-raw"));
+    }
+
+    @Test
+    public void testSnappyFramed() throws Exception {
+        XMLResult r = getXML("testSnappy-framed.sz");
+        assertEquals("application/x-snappy", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("Lorem ipsum dolor sit amet", r.xml);
+    }
+
+    @Test
+    public void testLZ4Framed() throws Exception {
+        XMLResult r = getXML("testLZ4-framed.lz4");
+        assertEquals("application/x-lz4", r.metadata.get(Metadata.CONTENT_TYPE));
+        //xml parser throws an exception for test1.xml
+        //for now, be content that the container file is correctly identified
+        assertContains("test1.xml", r.xml);
     }
 
     @Test
@@ -41,7 +65,7 @@ public class CompressorParserTest {
         //test that the package parser covers all inputstreams handled
         //by CompressorStreamFactory.  When we update commons-compress, and they add
         //a new stream type, we want to make sure that we're handling it.
-        TikaCompressorStreamFactory archiveStreamFactory = new TikaCompressorStreamFactory(true, 1000);
+        CompressorStreamFactory archiveStreamFactory = new CompressorStreamFactory(true, 1000);
         CompressorParser compressorParser = new CompressorParser();
         ParseContext parseContext = new ParseContext();
         for (String name : archiveStreamFactory.getInputStreamCompressorNames()) {

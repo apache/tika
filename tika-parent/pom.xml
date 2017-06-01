@@ -306,7 +306,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <commons.compress.version>1.13</commons.compress.version>
+    <commons.compress.version>1.14</commons.compress.version>
     <commons.io.version>2.5</commons.io.version>
     <slf4j.version>1.7.24</slf4j.version>
   </properties>
