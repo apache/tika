@@ -24,9 +24,7 @@ import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
-import static org.ops4j.pax.exam.CoreOptions.systemProperty;
 
-import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,12 +33,13 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarInputStream;
 import java.util.jar.Manifest;
+
+import javax.inject.Inject;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
@@ -62,7 +61,6 @@ import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
-import org.ops4j.pax.exam.util.PathUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -71,6 +69,9 @@ import org.xml.sax.ContentHandler;
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
 public class BundleIT {
+	
+	private final File TARGET = new File("target");
+	
     @Inject
     private Parser defaultParser;
 
@@ -80,22 +81,15 @@ public class BundleIT {
     @Inject
     private BundleContext bc;
 
-    private String log4jConfigPath = "file:" + PathUtils.getBaseDir() + "/src/test/resources/log4j.properties";
-    private String testBundlesPath = "file:" + PathUtils.getBaseDir() + "/target/test-bundles/";
-
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException, ClassNotFoundException {
+    	File base = new File(TARGET, "test-bundles");
         return options(
-                bundle(testBundlesPath + "tika-core.jar"),
-                bundle(testBundlesPath + "tika-bundle.jar"),
-                junitBundles(),
-                mavenBundle("org.slf4j", "slf4j-api", "1.7.24"),
-                mavenBundle("org.slf4j", "slf4j-log4j12", "1.7.24").noStart(),
-                mavenBundle("org.slf4j", "jcl-over-slf4j", "1.7.24"),
-                mavenBundle("org.slf4j", "jul-to-slf4j", "1.7.24"),
-                mavenBundle("log4j", "log4j", "1.2.17"),
-                systemProperty("log4j.configuration").value(log4jConfigPath)
-        );
+        		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
+        		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
+        		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+        		junitBundles(),
+        		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
     }
 
     @Test
@@ -149,7 +143,6 @@ public class BundleIT {
     @Test
     public void testForkParser() throws Exception {
         ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
-        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Dlog4j.configuration=" + log4jConfigPath));
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
         InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
         Writer writer = new StringWriter();
