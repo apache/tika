@@ -278,4 +278,20 @@ public class TesseractOCRParserTest extends TikaTest {
         Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
         assertTrue(m.find());
     }
+
+    @Test
+    public void testRotatedOCR() throws Exception {
+    	if (TesseractOCRParser.hasPython()) {
+    	
+    		TesseractOCRConfig config = new TesseractOCRConfig();
+    		config.setApplyRotation(true);
+    		config.setEnableImageProcessing(1);
+    		ParseContext parseContext = new ParseContext();
+    		parseContext.set(TesseractOCRConfig.class, config);
+    		assumeTrue(canRun(config));
+    		
+    		String ocr = getText(getResourceAsStream("/test-documents/testRotated.png"), new AutoDetectParser(), parseContext);
+    		assertContains("Its had resolving otherwise she contented therefore", ocr);
+    	}
+    }
 }

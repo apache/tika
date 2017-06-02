@@ -170,7 +170,7 @@ public class TesseractOCRParser extends AbstractParser {
      
     }
     
-    private static boolean hasPython() {
+    static boolean hasPython() {
     	// check if python is installed and if the rotation program path has been specified correctly
         
     	boolean hasPython = false;
@@ -321,7 +321,7 @@ public class TesseractOCRParser extends AbstractParser {
         
         // determine the angle of rotation required to make the text horizontal
         CommandLine cmdLine = CommandLine.parse(cmd);
-        if(hasPython()) {
+        if(config.getApplyRotation() && hasPython()) {
             try {
                 executor.execute(cmdLine);
                 angle = outputStream.toString("UTF-8").trim();
