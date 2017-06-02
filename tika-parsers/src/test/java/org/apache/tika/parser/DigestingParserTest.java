@@ -210,7 +210,8 @@ public class DigestingParserTest extends TikaTest {
             String truthValue = truth.get(P+algo.name());
             String resultValue = result.get(P+algo.name());
             assertNotNull("truth", truthValue);
-            assertNotNull("result", resultValue);
+            assertNotNull("result (fileLength="+fileLength+", markLimit="+markLimit+")",
+                    resultValue);
 
             assertEquals("fileLength("+fileLength+") markLimit("+
                     markLimit+") useTikaInputStream("+useTikaInputStream+")"+

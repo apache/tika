@@ -40,6 +40,8 @@ public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
 
+    private static final String STREAM_CLOSED_FAULT = "java.io.IOException: Stream Closed";
+
     private static final String TIKA_PATH = "/tika";
     private static final int UNPROCESSEABLE = 422;
 
@@ -252,5 +254,27 @@ public class TikaResourceTest extends CXFTestBase {
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX + "OcrStrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         assertEquals(500, response.getStatus());
+    }
+
+    @Test
+    public void testExtractTextAcceptPlainText() throws Exception {
+        //TIKA-2384
+        Attachment attachmentPart = new Attachment(
+                "my-docx-file",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ClassLoader.getSystemResourceAsStream("2pic.docx")
+        );
+
+        Response response = WebClient.create(endPoint + TIKA_PATH + "/form")
+                .type("multipart/form-data")
+                .accept("text/plain")
+                .post(attachmentPart);
+
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(responseMsg.contains("P1040893.JPG"));
+        assertNotFound(
+                STREAM_CLOSED_FAULT,
+                responseMsg
+        );
     }
 }

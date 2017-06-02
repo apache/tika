@@ -57,7 +57,6 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
@@ -303,10 +302,24 @@ public class TikaResource {
 
     }
 
+    /**
+     * Use this to call a parser and unify exception handling.
+     * NOTE: This call to parse closes the InputStream. DO NOT surround
+     * the call in an auto-close block.
+     *
+     * @param parser parser to use
+     * @param logger logger to use
+     * @param path file path
+     * @param inputStream inputStream (which is closed by this call!)
+     * @param handler handler to use
+     * @param metadata metadata
+     * @param parseContext parse context
+     * @throws IOException wrapper for all exceptions
+     */
     public static void parse(Parser parser, Logger logger, String path, InputStream inputStream,
                              ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
-        try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream)) {
-            parser.parse(tikaInputStream, handler, metadata, parseContext);
+        try {
+            parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
             throw new TikaServerParseException(e);
         } catch (EncryptedDocumentException e) {
@@ -374,9 +387,7 @@ public class TikaResource {
 
                 ContentHandler handler = new BoilerpipeContentHandler(writer);
 
-                try (InputStream inputStream = is) {
-                    parse(parser, LOG, info.getPath(), inputStream, handler, metadata, context);
-                }
+                parse(parser, LOG, info.getPath(), is, handler, metadata, context);
             }
         };
     }
@@ -405,9 +416,7 @@ public class TikaResource {
 
                 BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
-                try (InputStream inputStream = is) {
-                    parse(parser, LOG, info.getPath(), inputStream, body, metadata, context);
-                }
+                parse(parser, LOG, info.getPath(), is, body, metadata, context);
             }
         };
     }

@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -68,9 +70,15 @@ public class DigestingParser extends ParserDecorator {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-        if (digester != null) {
-            digester.digest(stream, metadata, context);
+        TemporaryResources tmp = new TemporaryResources();
+        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        try {
+            if (digester != null) {
+                digester.digest(tis, metadata, context);
+            }
+            super.parse(tis, handler, metadata, context);
+        } finally {
+            tmp.dispose();
         }
-        super.parse(stream, handler, metadata, context);
     }
 }

@@ -29,7 +29,6 @@ import java.util.Locale;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -51,7 +50,6 @@ import org.slf4j.LoggerFactory;
  * <p>
  * If a TikaInputStream is passed in and it has an underlying file that is longer
  * than the {@link #markLimit}, then this digester digests the file directly.
- *
  */
 public class CommonsDigester implements DigestingParser.Digester {
 
@@ -68,8 +66,8 @@ public class CommonsDigester implements DigestingParser.Digester {
         SHA512;
 
         String getMetadataKey() {
-            return TikaCoreProperties.TIKA_META_PREFIX+
-                    "digest"+Metadata.NAMESPACE_PREFIX_DELIMITER+this.toString();
+            return TikaCoreProperties.TIKA_META_PREFIX +
+                    "digest" + Metadata.NAMESPACE_PREFIX_DELIMITER + this.toString();
         }
     }
 
@@ -86,55 +84,55 @@ public class CommonsDigester implements DigestingParser.Digester {
 
     @Override
     public void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException {
-        //if this is already a TikaInputStream, rely on the caller to close
-        //the stream and free the tmp file.
-        TikaInputStream tis = TikaInputStream.cast(is);
 
-        TemporaryResources tmp = null;
-        if (tis == null) {
-            //if this isn't a TikaInputStream, create a new TempResources
-            //and make sure to release it!!!
-            tmp = new TemporaryResources();
-            tis = TikaInputStream.get(new CloseShieldInputStream(is), tmp);
-        }
-        try {
+        TikaInputStream tis = TikaInputStream.cast(is);
+        if (tis != null && tis.hasFile()) {
             long sz = -1;
             if (tis.hasFile()) {
                 sz = tis.getLength();
             }
-            //if the file is definitely a file,
+            //if the inputstream has a file,
             //and its size is greater than its mark limit,
             //just digest the underlying file.
             if (sz > markLimit) {
                 digestFile(tis.getFile(), m);
                 return;
             }
+        }
 
-            //try the usual mark/reset stuff.
-            //however, if you actually hit the bound,
-            //then stop and spool to file via TikaInputStream
-            SimpleBoundedInputStream bis = new SimpleBoundedInputStream(markLimit, tis);
-            boolean finishedStream = false;
-            for (DigestAlgorithm algorithm : algorithms) {
-                bis.mark(markLimit + 1);
-                finishedStream = digestEach(algorithm, bis, m);
-                bis.reset();
-                if (!finishedStream) {
-                    break;
-                }
-            }
+        //try the usual mark/reset stuff.
+        //however, if you actually hit the bound,
+        //then stop and spool to file via TikaInputStream
+        SimpleBoundedInputStream bis = new SimpleBoundedInputStream(markLimit, is);
+        boolean finishedStream = false;
+        for (DigestAlgorithm algorithm : algorithms) {
+            bis.mark(markLimit + 1);
+            finishedStream = digestEach(algorithm, bis, m);
+            bis.reset();
             if (!finishedStream) {
-                digestFile(tis.getFile(), m);
-            }
-        } finally {
-            try {
-                if (tmp != null) {
-                    tmp.dispose();
-                }
-            } catch (TikaException e) {
-                throw new IOExceptionWithCause(e);
+                break;
             }
         }
+        //if the stream wasn't finished -- if the stream was longer than the mark limit --
+        //spool to File and digest that.
+        if (!finishedStream) {
+            if (tis != null) {
+                digestFile(tis.getFile(), m);
+            } else {
+                TemporaryResources tmp = new TemporaryResources();
+                try {
+                    TikaInputStream tmpTikaInputStream = TikaInputStream.get(is, tmp);
+                    digestFile(tmpTikaInputStream.getFile(), m);
+                } finally {
+                    try {
+                        tmp.dispose();
+                    } catch (TikaException e) {
+                        throw new IOExceptionWithCause(e);
+                    }
+                }
+            }
+        }
+
     }
 
     private void digestFile(File f, Metadata m) throws IOException {
@@ -149,15 +147,14 @@ public class CommonsDigester implements DigestingParser.Digester {
     }
 
     /**
-     *
      * @param algorithm algo to use
-     * @param is input stream to read from
-     * @param metadata metadata for reporting the digest
+     * @param is        input stream to read from
+     * @param metadata  metadata for reporting the digest
      * @return whether or not this finished the input stream
      * @throws IOException
      */
     private boolean digestEach(DigestAlgorithm algorithm,
-                            InputStream is, Metadata metadata) throws IOException {
+                               InputStream is, Metadata metadata) throws IOException {
         String digest = null;
         try {
             switch (algorithm) {
@@ -187,7 +184,7 @@ public class CommonsDigester implements DigestingParser.Digester {
             //swallow, or should we throw this?
         }
         if (is instanceof SimpleBoundedInputStream) {
-            if (((SimpleBoundedInputStream)is).hasHitBound()) {
+            if (((SimpleBoundedInputStream) is).hasHitBound()) {
                 return false;
             }
         }
@@ -196,12 +193,11 @@ public class CommonsDigester implements DigestingParser.Digester {
     }
 
     /**
-     *
      * @param s comma-delimited (no space) list of algorithms to use: md5,sha256
      * @return
      */
     public static DigestAlgorithm[] parse(String s) {
-        assert(s != null);
+        assert (s != null);
 
         List<DigestAlgorithm> ret = new ArrayList<>();
         for (String algoString : s.split(",")) {
@@ -260,6 +256,7 @@ public class CommonsDigester implements DigestingParser.Digester {
 
         /**
          * Invokes the delegate's <code>read(byte[])</code> method.
+         *
          * @param b the buffer to read the bytes into
          * @return the number of bytes read or -1 if the end of stream or
          * the limit has been reached.
@@ -272,7 +269,8 @@ public class CommonsDigester implements DigestingParser.Digester {
 
         /**
          * Invokes the delegate's <code>read(byte[], int, int)</code> method.
-         * @param b the buffer to read the bytes into
+         *
+         * @param b   the buffer to read the bytes into
          * @param off The start offset
          * @param len The number of bytes to read
          * @return the number of bytes read or -1 if the end of stream or
@@ -281,37 +279,39 @@ public class CommonsDigester implements DigestingParser.Digester {
          */
         @Override
         public int read(final byte[] b, final int off, final int len) throws IOException {
-            if (max>=0 && pos>=max) {
+            if (max >= 0 && pos >= max) {
                 return EOF;
             }
-            final long maxRead = max>=0 ? Math.min(len, max-pos) : len;
-            final int bytesRead = in.read(b, off, (int)maxRead);
+            final long maxRead = max >= 0 ? Math.min(len, max - pos) : len;
+            final int bytesRead = in.read(b, off, (int) maxRead);
 
-            if (bytesRead==EOF) {
+            if (bytesRead == EOF) {
                 return EOF;
             }
 
-            pos+=bytesRead;
+            pos += bytesRead;
             return bytesRead;
         }
 
         /**
          * Invokes the delegate's <code>skip(long)</code> method.
+         *
          * @param n the number of bytes to skip
          * @return the actual number of bytes skipped
          * @throws IOException if an I/O error occurs
          */
         @Override
         public long skip(final long n) throws IOException {
-            final long toSkip = max>=0 ? Math.min(n, max-pos) : n;
+            final long toSkip = max >= 0 ? Math.min(n, max - pos) : n;
             final long skippedBytes = in.skip(toSkip);
-            pos+=skippedBytes;
+            pos += skippedBytes;
             return skippedBytes;
         }
 
         @Override
         public void reset() throws IOException {
             in.reset();
+            pos = 0;
         }
 
         @Override
