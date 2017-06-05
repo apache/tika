@@ -1,5 +1,8 @@
 Release 1.15.1 - ??/??/????
 
+  * Fix bug in tika-server that led to an attempt to close the
+    input stream twice (TIKA-2384).
+
   * Enable base32 encoding of digests and enable BouncyCastle implementations
     of digest algorithms (TIKA-2386).
 
