@@ -31,8 +31,8 @@ import org.xml.sax.SAXException;
 public class DigestingParser extends ParserDecorator {
 
     /**
-     * Interface for optional digester, if specified during construction.
-     * See org.apache.parser.utils.CommonsDigester in tika-parsers for an
+     * Interface for digester. See
+     * org.apache.parser.utils.CommonsDigester in tika-parsers for an
      * implementation.
      */
     public interface Digester {
@@ -53,9 +53,14 @@ public class DigestingParser extends ParserDecorator {
          * @throws IOException
          */
         void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException;
-
-
     };
+
+    /**
+     * Encodes byte array from a MessageDigest to String
+     */
+    public interface Encoder {
+        String encode(byte[] bytes);
+    }
 
     private final Digester digester;
     /**
