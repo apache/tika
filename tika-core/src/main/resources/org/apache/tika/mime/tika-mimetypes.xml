@@ -1956,7 +1956,8 @@
     <glob pattern="*.otc"/>
   </mime-type>
 
-  <mime-type type="application/vnd.oasis.opendocument.database">
+  <mime-type type="application/vnd.oasis.opendocument.base">
+    <alias type="application/vnd.oasis.opendocument.database"/>
     <glob pattern="*.odb"/>
   </mime-type>
 
