@@ -327,12 +327,13 @@
         <version>2.3</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
-          <nonPortableRuntimeForbidden>true</nonPortableRuntimeForbidden>
           <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
           <bundledSignatures>
             <bundledSignature>jdk-unsafe</bundledSignature>
             <bundledSignature>jdk-deprecated</bundledSignature>
+            <bundledSignature>jdk-non-portable</bundledSignature>
+            <bundledSignature>jdk-internal</bundledSignature>
             <bundledSignature>commons-io-unsafe-${commons.io.version}</bundledSignature>
           </bundledSignatures>
         </configuration>
