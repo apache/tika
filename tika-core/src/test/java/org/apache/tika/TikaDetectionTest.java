@@ -383,7 +383,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.novadigm.ext", tika.detect("x.ext"));
         assertEquals("application/vnd.oasis.opendocument.chart", tika.detect("x.odc"));
         assertEquals("application/vnd.oasis.opendocument.chart-template", tika.detect("x.otc"));
-        assertEquals("application/vnd.oasis.opendocument.database", tika.detect("x.odb"));
+        // Differ from httpd - Mimetype embedded in file is .base not .database
+        //assertEquals("application/vnd.oasis.opendocument.database", tika.detect("x.odb"));
         assertEquals("application/vnd.oasis.opendocument.formula", tika.detect("x.odf"));
         assertEquals("application/vnd.oasis.opendocument.formula-template", tika.detect("x.odft"));
         assertEquals("application/vnd.oasis.opendocument.graphics", tika.detect("x.odg"));
