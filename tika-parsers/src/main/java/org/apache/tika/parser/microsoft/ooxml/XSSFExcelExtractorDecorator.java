@@ -143,7 +143,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         while (iter.hasNext()) {
 
-            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
+            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config.getIncludeHeadersAndFooters(), xhtml);
             PackagePart sheetPart = null;
             try (InputStream stream = iter.next()) {
                 sheetPart = iter.getSheetPart();
@@ -390,10 +390,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     protected static class SheetTextAsHTML implements SheetContentsHandler {
         private XHTMLContentHandler xhtml;
+        private final boolean includeHeadersFooters;
         protected List<String> headers;
         protected List<String> footers;
 
-        protected SheetTextAsHTML(XHTMLContentHandler xhtml) {
+        protected SheetTextAsHTML(boolean includeHeaderFooters, XHTMLContentHandler xhtml) {
+            this.includeHeadersFooters = includeHeaderFooters;
             this.xhtml = xhtml;
             headers = new ArrayList<String>();
             footers = new ArrayList<String>();
@@ -437,6 +439,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         public void headerFooter(String text, boolean isHeader, String tagName) {
+            if (! includeHeadersFooters) {
+                return;
+            }
             if (isHeader) {
                 headers.add(text);
             } else {

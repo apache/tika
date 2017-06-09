@@ -810,4 +810,16 @@ public class SXWPFExtractorTest extends TikaTest {
         assertNotContained("chartSpace", xml);
     }
 
+    @Test
+    public void testHeaderFooterNotExtraction() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        officeParserConfig.setUseSAXDocxExtractor(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.docx", parseContext).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
+    }
+
 }

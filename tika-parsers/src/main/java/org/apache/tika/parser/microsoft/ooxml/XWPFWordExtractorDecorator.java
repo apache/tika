@@ -112,7 +112,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
         XWPFListManager listManager = new XWPFListManager(document.getNumbering());
         // headers
-        if (hfPolicy != null) {
+        if (hfPolicy != null && config.getIncludeHeadersAndFooters()) {
             extractHeaders(xhtml, hfPolicy, listManager);
         }
 
@@ -143,7 +143,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         );
 
         // then all document footers
-        if (hfPolicy != null) {
+        if (hfPolicy != null && config.getIncludeHeadersAndFooters()) {
             extractFooters(xhtml, hfPolicy, listManager);
         }
     }
@@ -185,7 +185,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFHeaderFooterPolicy headerFooterPolicy = null;
         if (paragraph.getCTP().getPPr() != null) {
             CTSectPr ctSectPr = paragraph.getCTP().getPPr().getSectPr();
-            if (ctSectPr != null) {
+            if (ctSectPr != null && config.getIncludeHeadersAndFooters()) {
                 headerFooterPolicy =
                         new XWPFHeaderFooterPolicy(document, ctSectPr);
                 extractHeaders(xhtml, headerFooterPolicy, listManager);
@@ -336,7 +336,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // Finish this paragraph
         xhtml.endElement(tag);
 
-        if (headerFooterPolicy != null) {
+        if (headerFooterPolicy != null && config.getIncludeHeadersAndFooters()) {
             extractFooters(xhtml, headerFooterPolicy, listManager);
         }
     }

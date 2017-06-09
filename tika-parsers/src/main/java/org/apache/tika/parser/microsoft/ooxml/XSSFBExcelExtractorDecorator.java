@@ -112,7 +112,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             addDrawingHyperLinks(sheetPart);
             sheetParts.add(sheetPart);
 
-            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
+            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config.getIncludeHeadersAndFooters(), xhtml);
             XSSFBCommentsTable comments = iter.getXSSFBSheetComments();
 
             // Start, and output the sheet name
