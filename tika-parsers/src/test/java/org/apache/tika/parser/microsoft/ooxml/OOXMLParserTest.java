@@ -1580,6 +1580,38 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("President", getXML("testPPT_diagramData.pptx").xml);
     }
 
+    @Test
+    public void testXLSXChartData() throws Exception {
+        String xml = getXML("testEXCEL_charts.xlsx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testXLSBChartData() throws Exception {
+        String xml = getXML("testEXCEL_charts.xlsb").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testDOCXChartData() throws Exception {
+        String xml = getXML("testWORD_charts.docx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testPPTXChartData() throws Exception {
+        String xml = getXML("testPPT_charts.pptx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
 }
 
 

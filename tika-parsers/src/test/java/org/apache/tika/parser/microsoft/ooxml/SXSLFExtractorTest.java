@@ -571,4 +571,13 @@ public class SXSLFExtractorTest extends TikaTest {
     public void testDiagramData() throws Exception {
         assertContains("President", getXML("testPPT_diagramData.pptx", parseContext).xml);
     }
+
+    @Test
+    public void testPPTXChartData() throws Exception {
+        String xml = getXML("testPPT_charts.pptx", parseContext).xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
 }

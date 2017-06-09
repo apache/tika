@@ -801,4 +801,13 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testDiagramData() throws Exception {
         assertContains("From here", getXML("testWORD_diagramData.docx", parseContext).xml);
     }
+
+    @Test
+    public void testDOCXChartData() throws Exception {
+        String xml = getXML("testWORD_charts.docx", parseContext).xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
 }

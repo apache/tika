@@ -178,7 +178,17 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                             new HashMap<String, String>()//empty
                     )
             );
-
+            //now dump chart data
+            handleGeneralTextContainingPart(
+                    XSLFRelation.CHART.getRelation(),
+                    "chart",
+                    slide.getPackagePart(),
+                    metadata,
+                    new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml),
+                            new HashMap<String, String>()//empty
+                    )
+            );
         }
     }
 

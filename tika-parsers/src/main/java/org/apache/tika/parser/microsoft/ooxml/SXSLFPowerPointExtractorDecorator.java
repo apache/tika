@@ -221,6 +221,11 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 new OOXMLWordAndPowerPointTextHandler(
                         new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
+        handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(),
+                "chart", slidePart,
+                metadata,
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
     }
 
     /**

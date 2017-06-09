@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -191,7 +192,21 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
                         "diagram-data",
                         drawing.getPackagePart(),
                         metadata,
-                        xhtml
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
+                );
+                //dump chart data
+                handleGeneralTextContainingPart(
+                        XSSFRelation.CHART.getRelation(),
+                        "chart",
+                        drawing.getPackagePart(),
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
                 );
             }
         }

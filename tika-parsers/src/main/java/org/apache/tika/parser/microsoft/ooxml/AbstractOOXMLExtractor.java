@@ -83,6 +83,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     static final String RELATION_MACRO = "http://schemas.microsoft.com/office/2006/relationships/vbaProject";
     static final String RELATION_OFFICE_DOCUMENT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
     static final String RELATION_DIAGRAM_DATA = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
+    //once we add this to XWPFRelation, we should swap that out and remove this
+    static final String RELATION_CHART = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
 
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";

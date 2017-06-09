@@ -263,7 +263,21 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         "diagram-data",
                         drawing.getPackagePart(),
                         metadata,
-                        xhtml
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
+                );
+                //dump chart data
+                handleGeneralTextContainingPart(
+                        XSSFRelation.CHART.getRelation(),
+                        "chart",
+                        drawing.getPackagePart(),
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
                 );
             }
         }

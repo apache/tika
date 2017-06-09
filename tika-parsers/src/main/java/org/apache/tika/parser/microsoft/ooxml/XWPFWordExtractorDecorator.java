@@ -130,6 +130,17 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                         new HashMap<String, String>()//empty
                 )
         );
+        //handle chart data
+        handleGeneralTextContainingPart(
+                AbstractOOXMLExtractor.RELATION_CHART,
+                "chart",
+                document.getPackagePart(),
+                metadata,
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml),
+                        new HashMap<String, String>()//empty
+                )
+        );
 
         // then all document footers
         if (hfPolicy != null) {

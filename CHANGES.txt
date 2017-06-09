@@ -1,5 +1,8 @@
 Release 1.15.1 - ??/??/????
 
+  * Extract text from charts in .docx, .pptx, .xlsx and .xlsb
+    (TIKA-2254).
+
   * Extract text from diagrams in .docx, .pptx, .xlsx and .xlsb
     (TIKA-1945).
 

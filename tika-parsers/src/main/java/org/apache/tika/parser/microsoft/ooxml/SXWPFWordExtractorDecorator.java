@@ -157,7 +157,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 XWPFRelation.COMMENT.getRelation(),
                 XWPFRelation.FOOTER.getRelation(),
                 XWPFRelation.ENDNOTE.getRelation(),
-                AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA
+                AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                AbstractOOXMLExtractor.RELATION_CHART
         }) {
             try {
                 PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel);
