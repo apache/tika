@@ -46,6 +46,7 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xssf.model.CommentsTable;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
@@ -253,6 +254,17 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.element("p", sText);
                 }
                 extractHyperLinksFromShape(((XSSFSimpleShape)shape).getCTShape(), xhtml);
+            }
+            XSSFDrawing drawing = shape.getDrawing();
+            if (drawing != null) {
+                //dump diagram data
+                handleGeneralTextContainingPart(
+                        AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                        "diagram-data",
+                        drawing.getPackagePart(),
+                        metadata,
+                        xhtml
+                );
             }
         }
     }

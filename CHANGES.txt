@@ -1,5 +1,8 @@
 Release 1.15.1 - ??/??/????
 
+  * Extract text from diagrams in .docx, .pptx, .xlsx and .xlsb
+    (TIKA-1945).
+
   * Fix bug in tika-server that led to an attempt to close the
     input stream twice (TIKA-2384).
 

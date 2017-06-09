@@ -1558,6 +1558,28 @@ public class OOXMLParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testXLSBDiagramData() throws Exception {
+        assertContains("SmartArt",
+                getXML("testEXCEL_diagramData.xlsb").xml);
+    }
+
+    @Test
+    public void testXLSXDiagramData() throws Exception {
+        assertContains("SmartArt",
+                getXML("testEXCEL_diagramData.xlsx").xml);
+    }
+
+    @Test
+    public void testDOCXDiagramData() throws Exception {
+        assertContains("From here", getXML("testWORD_diagramData.docx").xml);
+    }
+
+    @Test
+    public void testPPTXDiagramData() throws Exception {
+        assertContains("President", getXML("testPPT_diagramData.pptx").xml);
+    }
+
 }
 
 

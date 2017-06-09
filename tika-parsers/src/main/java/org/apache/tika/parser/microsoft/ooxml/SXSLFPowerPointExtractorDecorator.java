@@ -47,7 +47,6 @@ import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -120,15 +119,17 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-        handleBasicRelatedParts(XSLFRelation.SLIDE_MASTER.getRelation(),
+        handleGeneralTextContainingPart(XSLFRelation.SLIDE_MASTER.getRelation(),
                 "slide-master",
                 mainDocument,
+                metadata,
                 new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
                         new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())));
 
-        handleBasicRelatedParts(HANDOUT_MASTER,
+        handleGeneralTextContainingPart(HANDOUT_MASTER,
                 "slide-handout-master",
                 mainDocument,
+                metadata,
                 new OOXMLWordAndPowerPointTextHandler(
                         new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())
         );
@@ -149,7 +150,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         for (int i = 0; i < prc.size(); i++) {
             PackagePart commentAuthorsPart = null;
             try {
-                commentAuthorsPart = commentAuthorsPart = mainDocument.getRelatedPart(prc.getRelationship(i));
+                commentAuthorsPart = mainDocument.getRelatedPart(prc.getRelationship(i));
             } catch (InvalidFormatException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         ExceptionUtils.getStackTrace(e));
@@ -190,72 +191,35 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         xhtml.endElement("div");
 
 
-        handleBasicRelatedParts(XSLFRelation.SLIDE_LAYOUT.getRelation(),
+        handleGeneralTextContainingPart(XSLFRelation.SLIDE_LAYOUT.getRelation(),
                 "slide-master-content", slidePart,
+                metadata,
                 new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
                         new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))
                 );
 
-        handleBasicRelatedParts(XSLFRelation.NOTES.getRelation(),
+        handleGeneralTextContainingPart(XSLFRelation.NOTES.getRelation(),
                 "slide-notes", slidePart,
+                metadata,
                 new OOXMLWordAndPowerPointTextHandler(
                         new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
-        handleBasicRelatedParts(XSLFRelation.NOTES_MASTER.getRelation(),
+        handleGeneralTextContainingPart(XSLFRelation.NOTES_MASTER.getRelation(),
                 "slide-notes-master", slidePart,
+                metadata,
                 new OOXMLWordAndPowerPointTextHandler(
                         new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
-        handleBasicRelatedParts(XSLFRelation.COMMENTS.getRelation(),
+        handleGeneralTextContainingPart(XSLFRelation.COMMENTS.getRelation(),
                 null, slidePart,
+                metadata,
                 new XSLFCommentsHandler(xhtml));
 
-    }
-
-    /**
-     * This should handle the comments, master, notes, etc
-     *
-     * @param contentType
-     * @param xhtmlClassLabel
-     * @param parentPart
-     * @param contentHandler
-     */
-    private void handleBasicRelatedParts(String contentType, String xhtmlClassLabel,
-                                         PackagePart parentPart, ContentHandler contentHandler) throws SAXException {
-
-        PackageRelationshipCollection relatedPartPRC = null;
-
-        try {
-            relatedPartPRC = parentPart.getRelationshipsByType(contentType);
-        } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
-        }
-        if (relatedPartPRC != null && relatedPartPRC.size() > 0) {
-            AttributesImpl attributes = new AttributesImpl();
-
-            attributes.addAttribute("", "class", "class", "CDATA", xhtmlClassLabel);
-            contentHandler.startElement("", "div", "div", attributes);
-            for (int i = 0; i < relatedPartPRC.size(); i++) {
-                PackageRelationship relatedPartPackageRelationship = relatedPartPRC.getRelationship(i);
-                try {
-                    PackagePart relatedPartPart = parentPart.getRelatedPart(relatedPartPackageRelationship);
-                    try (InputStream stream = relatedPartPart.getInputStream()) {
-                        context.getSAXParser().parse(stream,
-                                new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)));
-
-                    } catch (IOException|TikaException e) {
-                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                ExceptionUtils.getStackTrace(e));
-                    }
-
-                } catch (InvalidFormatException e) {
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
-                }
-            }
-            contentHandler.endElement("", "div", "div");
-        }
+        handleGeneralTextContainingPart(AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                "diagram-data", slidePart,
+                metadata,
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
     }
 

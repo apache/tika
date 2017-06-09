@@ -152,14 +152,15 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
         }
         //for now, just dump other components at end
-        for (XWPFRelation rel : new XWPFRelation[]{
-                XWPFRelation.FOOTNOTE,
-                XWPFRelation.COMMENT,
-                XWPFRelation.FOOTER,
-                XWPFRelation.ENDNOTE
+        for (String rel : new String[]{
+                XWPFRelation.FOOTNOTE.getRelation(),
+                XWPFRelation.COMMENT.getRelation(),
+                XWPFRelation.FOOTER.getRelation(),
+                XWPFRelation.ENDNOTE.getRelation(),
+                AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA
         }) {
             try {
-                PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel.getRelation());
+                PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel);
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));

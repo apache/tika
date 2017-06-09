@@ -566,4 +566,9 @@ public class SXSLFExtractorTest extends TikaTest {
         assertContainsAtLeast(parsedBy, metadataList);
 
     }
+
+    @Test
+    public void testDiagramData() throws Exception {
+        assertContains("President", getXML("testPPT_diagramData.pptx", parseContext).xml);
+    }
 }

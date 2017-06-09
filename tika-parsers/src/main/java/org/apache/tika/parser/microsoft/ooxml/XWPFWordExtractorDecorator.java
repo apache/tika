@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -49,6 +50,7 @@ import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
@@ -75,18 +77,30 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             XWPFRelation.FOOTER.getRelation(),
             XWPFRelation.FOOTNOTE.getRelation(),
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+            AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA
     };
 
 
     private XWPFDocument document;
     private XWPFStyles styles;
+    private Metadata metadata;
 
-    public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
+    public XWPFWordExtractorDecorator(Metadata metadata, ParseContext context, XWPFWordExtractor extractor) {
         super(context, extractor);
-
+        this.metadata = metadata;
         document = (XWPFDocument) extractor.getDocument();
         styles = document.getStyles();
+    }
+
+    /**
+     * @deprecated use {@link XWPFWordExtractorDecorator#XWPFWordExtractorDecorator(Metadata, ParseContext, XWPFWordExtractor)}
+     * @param context
+     * @param extractor
+     */
+    @Deprecated
+    public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
+        this(new Metadata(), context, extractor);
     }
 
     /**
@@ -105,7 +119,19 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // process text in the order that it occurs in
         extractIBodyText(document, listManager, xhtml);
 
-        // then all document tables
+        //handle the diagram data
+        handleGeneralTextContainingPart(
+                RELATION_DIAGRAM_DATA,
+                "diagram-data",
+                document.getPackagePart(),
+                metadata,
+                new OOXMLWordAndPowerPointTextHandler(
+                        new OOXMLTikaBodyPartHandler(xhtml),
+                        new HashMap<String, String>()//empty
+                )
+        );
+
+        // then all document footers
         if (hfPolicy != null) {
             extractFooters(xhtml, hfPolicy, listManager);
         }

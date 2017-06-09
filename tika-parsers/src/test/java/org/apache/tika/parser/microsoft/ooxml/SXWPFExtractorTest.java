@@ -60,6 +60,7 @@ public class SXWPFExtractorTest extends TikaTest {
         parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setUseSAXDocxExtractor(true);
+        officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
     }
@@ -796,4 +797,8 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsCount("ready to write", content, 2);
     }
 
+    @Test
+    public void testDiagramData() throws Exception {
+        assertContains("From here", getXML("testWORD_diagramData.docx", parseContext).xml);
+    }
 }
