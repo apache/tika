@@ -1,5 +1,7 @@
 Release 1.15.1 - ??/??/????
 
+  * Upgrade Jackcess to 2.1.7 (TIKA-2380)
+
   * Allow users to turn off extraction of headers and footers
     from .doc, .docx, .xls, .xlsx, .xlsb (TIKA-2362)
 
