@@ -37,6 +37,13 @@
      you can here, then provide a Custom Detector for the rest
 -->
 <mime-info>
+<!--TIKAFIX by jerni-zu393 : Magicbits for keystore file is copied from MimeUtil- magic.mime to detect .keystore/.jks files -->
+  <mime-type type="application/x-java-keystore" >
+  <acronym>keystore</acronym>
+  <magic priority="50">
+  <match value="0xfeedfeed" type="string" offset="0"/>	
+  </magic>
+  </mime-type>	
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
@@ -271,6 +278,25 @@
 
   <mime-type type="application/vnd.android.package-archive">
     <sub-class-of type="application/java-archive"/>
+<!-- TIKAFIX by jerni-zu393: magic bits for apk is added here-->
+    <magic priority="50">	
+     <match value="PK\003\004" type="string" offset="0">
+        <match value="AndroidManifest.xml" type="string" offset="30"/>
+	<match value="assets/" type="string" offset="30"/>
+	<match value="res/" type="string" offset="30"/>
+      </match>
+      <match value="PK\005\006" type="string" offset="0">
+	<match value="AndroidManifest.xml" type="string" offset="30"/>
+	<match value="assets/" type="string" offset="30"/>
+	<match value="res/" type="string" offset="30"/>
+      </match>
+      <match value="PK\x07\x08" type="string" offset="0">
+        <match value="AndroidManifest.xml" type="string" offset="30"/>
+	<match value="assets/" type="string" offset="30"/>
+	<match value="res/" type="string" offset="30"/>
+      </match>
+    </magic>
+
     <glob pattern="*.apk"/>
   </mime-type>
   <mime-type type="application/x-tika-java-enterprise-archive">
@@ -4694,6 +4720,18 @@
   <mime-type type="audio/vnd.vmx.cvsd"/>
   <mime-type type="audio/vorbis-config"/>
   <mime-type type="audio/x-aac">
+<!--TIKAFIX by jerni-zu393: magic bits for "aac" file is added here-->
+  <magic priority="50">
+  <match value="P" type="string" offset="2">
+  <match value="libfaac" type="string" offset="11"/>
+  </match>
+  </magic>
+  <magic priority="50">
+  <match value="ID3" type="string" offset="0">
+  <match value="TPE" type="string" offset="10"/>
+  </match>
+  </magic>
+
     <glob pattern="*.aac"/>
   </mime-type>
 
