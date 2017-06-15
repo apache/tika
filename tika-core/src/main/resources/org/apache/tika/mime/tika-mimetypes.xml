@@ -37,7 +37,7 @@
      you can here, then provide a Custom Detector for the rest
 -->
 <mime-info>
-<!--TIKAFIX by jerni-zu393 : Magicbits for keystore file is copied from MimeUtil- magic.mime to detect .keystore/.jks files -->
+<!--TIKAFIX  (this magic bits coppied from mimeutil) : Magicbits for keystore file is copied from MimeUtil- magic.mime to detect .keystore/.jks files -->
   <mime-type type="application/x-java-keystore" >
   <acronym>keystore</acronym>
   <magic priority="50">
