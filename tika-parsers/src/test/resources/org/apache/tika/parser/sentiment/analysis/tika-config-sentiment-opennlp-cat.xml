@@ -20,7 +20,7 @@
             <mime>text/plain</mime>
             <mime>application/sentiment</mime>
             <params>
-                <param name="modelPath" type="string">https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/ht-sentiment-categ.bin</param>
+                <param name="modelPath" type="string">https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/3859302f4c07c9c7a7cdee7c9da23117f333c2f8/sentiment-models/src/main/resources/edu/usc/irds/sentiment/ht-sentiment-categ.bin</param>
                 <!--This can also be relative path sentiment-models/en-stanford-sentiment.bin-->
             </params>
         </parser>
