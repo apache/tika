@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -69,6 +70,8 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
      */
     private static final Schema HTML_SCHEMA = new HTMLSchema();
 
+    @Field
+    private boolean extractScripts = false;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -127,7 +130,7 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
                     org.ccil.cowan.tagsoup.Parser.ignoreBogonsFeature, true);
 
             parser.setContentHandler(new XHTMLDowngradeHandler(
-                    new HtmlHandler(mapper, handler, metadata)));
+                    new HtmlHandler(mapper, handler, metadata, context, extractScripts)));
 
             parser.parse(reader.asInputSource());
         }
@@ -199,6 +202,21 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
         public String mapSafeAttribute(String elementName, String attributeName) {
             return HtmlParser.this.mapSafeAttribute(elementName, attributeName);
         }
+    }
+
+    /**
+     * Whether or not to extract contents in script entities.
+     * Default is <code>false</code>
+     *
+     * @param extractScripts
+     */
+    @Field
+    public void setExtractScripts(boolean extractScripts) {
+        this.extractScripts = extractScripts;
+    }
+
+    public boolean getExtractScripts() {
+        return extractScripts;
     }
 
 }

@@ -1,5 +1,8 @@
 Release 1.15.1 - ??/??/????
 
+  * Allow extraction of scripts as embedded "MACRO". Users
+    must turn this on via TikaConfig (TIKA-2391).
+
   * Upgrade Jackcess to 2.1.7 (TIKA-2380)
 
   * Allow users to turn off extraction of headers and footers

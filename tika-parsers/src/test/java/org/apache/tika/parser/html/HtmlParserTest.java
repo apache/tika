@@ -55,6 +55,7 @@ import java.util.regex.Pattern;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -64,6 +65,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -1231,6 +1234,34 @@ public class HtmlParserTest extends TikaTest {
         String xml = getXML("testHTMLGoodScript.html").xml;
         assertContains("This is a test", xml);
         assertNotContained("cool", xml);
+    }
+
+    @Test
+    public void testExtractScript() throws Exception {
+        HtmlParser p = new HtmlParser();
+        p.setExtractScripts(true);
+        List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html",
+                p);
+        assertEquals(2, metadataList.size());
+        assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertContains("cool",
+                metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertNotContained("cool", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testConfigExtractScript() throws Exception {
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html", p);
+        assertEquals(2, metadataList.size());
+        assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertContains("cool",
+                metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertNotContained("cool", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+
     }
 
     @Test
