@@ -472,6 +472,14 @@
           <artifactId>tika-translate</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-langdetect</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-core</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.apache.opennlp</groupId>
           <artifactId>opennlp-tools</artifactId>
           <!--  because it is already added above -->
