@@ -547,6 +547,12 @@
       <version>1.6.5</version>
       <scope>test</scope>
     </dependency>
+    <!-- AgePredictor client for Tika -->
+  	<dependency>  
+      <groupId>edu.usc.irds</groupId>
+      <artifactId>age-predictor-api</artifactId>
+      <version>1.0-SNAPSHOT</version>
+	</dependency>
   </dependencies>
 
   <build>
