@@ -34,8 +34,9 @@ import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.recognition.RecognisedObject;
 import org.apache.tika.parser.captioning.CaptionObject;
 import org.apache.uima.tools.util.gui.Caption;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -141,14 +142,13 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
             try (InputStream reply = response.getEntity().getContent()) {
                 String replyMessage = IOUtils.toString(reply);
                 if (response.getStatusLine().getStatusCode() == 200) {
-                    JSONObject jReply = new JSONObject(replyMessage);
-                    JSONArray jCaptions = jReply.getJSONArray("captions");
-                    for (int i = 0; i < jCaptions.length(); i++) {
-                        JSONObject jCaption = jCaptions.getJSONObject(i);
-                        String sentence = jCaption.optString("sentence");
-                        Double confidence = jCaption.optDouble("confidence");
-                        CaptionObject capObj = new CaptionObject(sentence, LABEL_LANG, confidence);
-                        capObjs.add(capObj);
+                    JSONObject jReply = (JSONObject) new JSONParser().parse(replyMessage);
+                    JSONArray jCaptions = (JSONArray) jReply.get("captions");
+                    for (int i = 0; i < jCaptions.size(); i++) {
+                        JSONObject jCaption = (JSONObject) jCaptions.get(i);
+                        String sentence = (String) jCaption.get("sentence");
+                        Double confidence = (Double) jCaption.get("confidence");
+                        capObjs.add(new CaptionObject(sentence, LABEL_LANG, confidence));
                     }
                 } else {
                     LOG.warn("Status = {}", response.getStatusLine());
