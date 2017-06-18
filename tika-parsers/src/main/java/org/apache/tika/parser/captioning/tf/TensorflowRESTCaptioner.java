@@ -72,16 +72,17 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     private static final String LABEL_LANG = "en";
 
     @Field
+    private URI apiBaseUri;
+
+    @Field
     private int captions;
 
     @Field
     private int maxCaptionLength;
 
-    @Field
     private URI apiUri;
 
-    @Field
-    private URI healthUri = URI.create("http://localhost:8764/inception/v3/ping");
+    private URI healthUri;
 
     private boolean available;
 
@@ -102,13 +103,15 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
+            healthUri = URI.create(apiBaseUri + "/ping");
+            apiUri = URI.create(apiBaseUri + String.format("/captions?beam_size=%1$d&max_caption_length=%2$d",
+                    captions, maxCaptionLength));
+
             DefaultHttpClient client = new DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet(healthUri));
             available = response.getStatusLine().getStatusCode() == 200;
+
             LOG.info("Available = {}, API Status = {}", available, response.getStatusLine());
-            apiUri = URI.create(String.format(
-                    "http://localhost:8764/inception/v3/captions?beam_size=%1$d&max_caption_length=%2$d",
-                    captions, maxCaptionLength));
             LOG.info("Captions = {}, MaxCaptionLength = {}", captions, maxCaptionLength);
         } catch (Exception e) {
             available = false;

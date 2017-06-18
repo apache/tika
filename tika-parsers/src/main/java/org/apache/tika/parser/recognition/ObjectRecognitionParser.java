@@ -90,12 +90,6 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     @Field
     private int topN = 2;
 
-    @Field
-    private int captions;
-
-    @Field
-    private int maxCaptionLength;
-
     private ObjectRecogniser recogniser;
 
     @Field(name = "class")
@@ -109,11 +103,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         recogniser.initialize(params);
         LOG.info("Recogniser = {}", recogniser.getClass().getName());
         LOG.info("Recogniser Available = {}", recogniser.isAvailable());
-        if (recogniser instanceof TensorflowRESTRecogniser || recogniser instanceof TensorflowImageRecParser) {
-            LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
-        } else if (recogniser instanceof TensorflowRESTCaptioner) {
-            LOG.info("captions = {}, maxCaptionLength={}", captions, maxCaptionLength);
-        }
+        LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
     }
 
     @Override
@@ -140,13 +130,20 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
             List<RecognisedObject> acceptedObjects = new ArrayList<RecognisedObject>();
             List<String> xhtmlIds = new ArrayList<String>();
             String xhtmlStartVal = null;
-
-            if (recogniser instanceof TensorflowRESTRecogniser || recogniser instanceof TensorflowImageRecParser) {
-                xhtmlStartVal = "objects";
-                count = 0;
-                Collections.sort(objects, DESC_CONFIDENCE_SORTER);
-                // first process all the MD objects
-                for (RecognisedObject object : objects) {
+            count = 0;
+            Collections.sort(objects, DESC_CONFIDENCE_SORTER);
+            // first process all the MD objects
+            for (RecognisedObject object : objects) {
+                if (object instanceof CaptionObject) {
+                    if (xhtmlStartVal == null) xhtmlStartVal = "captions";
+                    LOG.debug("Add {}", object);
+                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
+                            object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY_IMG_CAP, mdValue);
+                    acceptedObjects.add(object);
+                    xhtmlIds.add(String.valueOf(count++));
+                } else {
+                    if (xhtmlStartVal == null) xhtmlStartVal = "objects";
                     if (object.getConfidence() >= minConfidence) {
                         count++;
                         LOG.info("Add {}", object);
@@ -162,19 +159,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
                         LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
                     }
                 }
-            } else if (recogniser instanceof TensorflowRESTCaptioner) {
-                xhtmlStartVal = "captions";
-                count = 0;
-                for (RecognisedObject object : objects) {
-                    LOG.debug("Add {}", object);
-                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-                            object.getLabel(), object.getConfidence());
-                    metadata.add(MD_KEY_IMG_CAP, mdValue);
-                    acceptedObjects.add(object);
-                    xhtmlIds.add(String.valueOf(count++));
-                }
             }
-
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
             xhtml.startElement("ol", "id", xhtmlStartVal);
