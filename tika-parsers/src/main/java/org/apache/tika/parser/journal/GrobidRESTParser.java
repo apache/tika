@@ -17,14 +17,13 @@
 
 package org.apache.tika.parser.journal;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -32,7 +31,6 @@ import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -84,7 +82,7 @@ public class GrobidRESTParser {
 
         try {
             String resp = response.readEntity(String.class);
-            Metadata teiMet = new TEIParser().parse(resp);
+            Metadata teiMet = new TEIDOMParser().parse(resp, context);
             for (String key : teiMet.names()) {
                 metadata.add("grobid:header_" + key, teiMet.get(key));
             }

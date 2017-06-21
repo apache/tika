@@ -56,6 +56,15 @@
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-keras</artifactId>
       <version>${dl4j.model.version}</version>
+      <!-- exclude this because of non-ASF friendly "do no evil" license.
+        Because this relies on tika-parsers, that should have ted-dunning's drop-in
+      -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
