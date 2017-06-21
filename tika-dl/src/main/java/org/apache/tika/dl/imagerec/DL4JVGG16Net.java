@@ -24,7 +24,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.recognition.RecognisedObject;
 import org.datavec.image.loader.NativeImageLoader;
@@ -43,35 +42,36 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public class DL4JVGG16Net extends ExternalParser implements ObjectRecogniser {
+public class DL4JVGG16Net implements ObjectRecogniser {
 
     private static final Logger LOG = LoggerFactory.getLogger(DL4JVGG16Net.class);
     public static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
-    private static final LineConsumer IGNORED_LINE_LOGGER = new LineConsumer() {
-        @Override
-        public void consume(String line) {
-            LOG.debug(line);
-        }
-    };
     private static final String HOME_DIR = System.getProperty("user.home");
-    private static final String BASE_DIR = ".dl4j/trainedmodels";
+    private static final String BASE_DIR = ".dl4j" + File.separator + "trainedmodels";
     private static String MODEL_DIR = HOME_DIR + File.separator + BASE_DIR;
     private static String MODEL_DIR_PREPROCESSED = MODEL_DIR + File.separator + "tikaPreprocessed" + File.separator;
+    private static TrainedModelHelper MODEL_HELPER = new TrainedModelHelper(TrainedModels.VGG16);
+
     @Field
-    private String modelType = "VGG16";
+    private File modelFile = new File(MODEL_DIR_PREPROCESSED + File.separator + "vgg16.zip");
+
     @Field
-    private File modelFile;
+    private File locationToSave = new File(MODEL_DIR + File.separator
+            + "tikaPreprocessed" + File.separator + "vgg16.zip");
+
     @Field
-    private String outPattern = "(.*) \\(score = ([0-9]+\\.[0-9]+)\\)$";
-    @Field
-    private String serialize = "yes";
-    private File locationToSave;
+    private boolean serialize = true;
+
+    private NativeImageLoader imageLoader = new NativeImageLoader(224, 224, 3);
+    private DataNormalization preProcessor = new VGG16ImagePreProcessor();
     private boolean available = false;
     private ComputationGraph model;
-
     public Set<MediaType> getSupportedMimes() {
         return SUPPORTED_MIMES;
     }
@@ -84,54 +84,25 @@ public class DL4JVGG16Net extends ExternalParser implements ObjectRecogniser {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
-            TrainedModelHelper helper;
-            switch (modelType) {
-                case "VGG16NOTOP":
-                    throw new TikaConfigException("VGG16NOTOP is not supported right now");
-                /*# TODO hookup VGGNOTOP by uncommenting following code once the issue is resolved by dl4j team
-                modelFile = new File(MODEL_DIR_PREPROCESSED+File.separator+"vgg16_notop.zip");
-				locationToSave= new File(MODEL_DIR+File.separator+"tikaPreprocessed"+File.separator+"vgg16.zip");
-                    helper = new TrainedModelHelper(TrainedModels.VGG16NOTOP);
-                    break;*/
-                case "VGG16":
-                    helper = new TrainedModelHelper(TrainedModels.VGG16);
-                    modelFile = new File(MODEL_DIR_PREPROCESSED + File.separator + "vgg16.zip");
-                    locationToSave = new File(MODEL_DIR + File.separator + "tikaPreprocessed" + File.separator + "vgg16.zip");
-                    break;
-                default:
-                    throw new TikaConfigException("Unknown or unsupported model");
-            }
-            if (serialize.trim().toLowerCase(Locale.ROOT).equals("yes")) {
-                if (!modelFile.exists()) {
-                    LOG.warn("Preprocessed Model doesn't exist at {}", modelFile);
-                    modelFile.getParentFile().mkdirs();
-                    model = helper.loadModel();
-                    LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resources.");
-                    ModelSerializer.writeModel(model, locationToSave, true);
-                    available = true;
-                } else {
+            if (serialize) {
+                if (locationToSave.exists()) {
                     model = ModelSerializer.restoreComputationGraph(locationToSave);
                     LOG.info("Preprocessed Model Loaded from {}", locationToSave);
-                    available = true;
+                } else {
+                    LOG.warn("Preprocessed Model doesn't exist at {}", locationToSave);
+                    locationToSave.getParentFile().mkdirs();
+                    model = MODEL_HELPER.loadModel();
+                    LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resources.");
+                    ModelSerializer.writeModel(model, locationToSave, true);
                 }
-
-            } else if (serialize.trim().toLowerCase(Locale.ROOT).equals("no")) {
-                LOG.info("Weight graph model loaded via dl4j Helper functions");
-                model = helper.loadModel();
-                available = true;
             } else {
-                throw new TikaConfigException("Configuration Error. serialization can be either yes or no.");
+                LOG.info("Weight graph model loaded via dl4j Helper functions");
+                model = MODEL_HELPER.loadModel();
             }
-
-            if (!available) {
-                return;
-            }
-            HashMap<Pattern, String> patterns = new HashMap<>();
-            patterns.put(Pattern.compile(outPattern), null);
-            setMetadataExtractionPatterns(patterns);
-            setIgnoredLineConsumer(IGNORED_LINE_LOGGER);
+            available = true;
         } catch (Exception e) {
-            LOG.warn("exception occured");
+            available = false;
+            LOG.warn(e.getMessage(), e);
             throw new TikaConfigException(e.getMessage(), e);
         }
     }
@@ -140,19 +111,16 @@ public class DL4JVGG16Net extends ExternalParser implements ObjectRecogniser {
     public List<RecognisedObject> recognise(InputStream stream, ContentHandler handler,
                                             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        NativeImageLoader loader = new NativeImageLoader(224, 224, 3);
-        INDArray image = loader.asMatrix(stream);
-        DataNormalization scaler = new VGG16ImagePreProcessor();
-        scaler.transform(image);
+        INDArray image = imageLoader.asMatrix(stream);
+        preProcessor.transform(image);
         INDArray[] output = model.output(false, image);
         String modelOutput = TrainedModels.VGG16.decodePredictions(output[0]);
         modelOutput = modelOutput.replace("Predictions for batch  :\n", "");
         modelOutput = modelOutput.replace("%", "");
         String objs[] = modelOutput.split("\n");
         List<RecognisedObject> objects = new ArrayList<>();
-        for (String obj : objs) {
-            String data[];
-            data = obj.split(",");
+        for (String obj: objs) {
+            String data[] = obj.split(",");
             double confidence = Double.parseDouble(data[0]);
             objects.add(new RecognisedObject(data[1].trim(), "eng", data[1].trim(), confidence));
         }
