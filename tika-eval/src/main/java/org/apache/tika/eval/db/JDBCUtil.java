@@ -161,7 +161,6 @@ public class JDBCUtil {
             return insertStatement.executeUpdate();
         } catch (SQLException e) {
             LOG.warn("couldn't insert data for this row: {}", e.getMessage());
-            e.printStackTrace();
             return -1;
         }
     }

@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -38,6 +39,7 @@ import org.apache.poi.xssf.binary.XSSFBStylesTable;
 import org.apache.poi.xssf.eventusermodel.XSSFBReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
@@ -110,7 +112,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             addDrawingHyperLinks(sheetPart);
             sheetParts.add(sheetPart);
 
-            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
+            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config.getIncludeHeadersAndFooters(), xhtml);
             XSSFBCommentsTable comments = iter.getXSSFBSheetComments();
 
             // Start, and output the sheet name
@@ -136,6 +138,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
                 extractHeaderFooter(footer, xhtml);
             }
             List<XSSFShape> shapes = iter.getShapes();
+
             processShapes(shapes, xhtml);
 
             //for now dump sheet hyperlinks at bottom of page
@@ -147,6 +150,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             xhtml.endElement("div");
         }
     }
+
 
     @Override
     protected void extractHeaderFooter(String hf, XHTMLContentHandler xhtml)
@@ -179,6 +183,31 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
                     xhtml.element("p", sText);
                 }
                 extractHyperLinksFromShape(((XSSFSimpleShape)shape).getCTShape(), xhtml);
+            }
+            XSSFDrawing drawing = shape.getDrawing();
+            if (drawing != null) {
+                //dump diagram data
+                handleGeneralTextContainingPart(
+                        AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                        "diagram-data",
+                        drawing.getPackagePart(),
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
+                );
+                //dump chart data
+                handleGeneralTextContainingPart(
+                        XSSFRelation.CHART.getRelation(),
+                        "chart",
+                        drawing.getPackagePart(),
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
+                );
             }
         }
     }

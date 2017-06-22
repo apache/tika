@@ -39,11 +39,6 @@ public class XMLLogReader {
 
     public void read(InputStream xmlLogFileIs, XMLLogMsgHandler handler) throws XMLStreamException {
         InputStream is = new LogXMLWrappingInputStream(xmlLogFileIs);
-       /* try {
-            System.out.println("WRAPPED: " + IOUtils.toString(is)+ "<<WRAPPED");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }*/
         XMLInputFactory factory = new ParseContext().getXMLInputFactory();
         XMLStreamReader reader = factory.createXMLStreamReader(is);
 
@@ -58,10 +53,8 @@ public class XMLLogReader {
                         try {
                             handler.handleMsg(level, reader.getElementText());
                         } catch (IOException e) {
-                            e.printStackTrace();
                             LOG.warn("Error parsing: {}", reader.getElementText());
                         } catch (SQLException e) {
-                            e.printStackTrace();
                             LOG.warn("SQLException: {}", e.getMessage());
                         }
                     }
@@ -70,7 +63,7 @@ public class XMLLogReader {
                     if ("event".equals(reader.getLocalName())) {
                         level = null;
                     } else if ("message".equals(reader.getLocalName())) {
-                        //sdo we care any more?
+                        //do we care any more?
                     }
                     break;
             };

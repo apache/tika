@@ -127,7 +127,7 @@ public class OOXMLExtractorFactory {
                 extractor = new XSLFPowerPointExtractorDecorator(
                         context, (org.apache.poi.xslf.extractor.XSLFPowerPointExtractor) poiExtractor);
             } else if (document instanceof XWPFDocument) {
-                extractor = new XWPFWordExtractorDecorator(
+                extractor = new XWPFWordExtractorDecorator( metadata,
                         context, (XWPFWordExtractor) poiExtractor);
             } else {
                 extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);

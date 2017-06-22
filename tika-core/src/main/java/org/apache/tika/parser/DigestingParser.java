@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -29,8 +31,8 @@ import org.xml.sax.SAXException;
 public class DigestingParser extends ParserDecorator {
 
     /**
-     * Interface for optional digester, if specified during construction.
-     * See org.apache.parser.utils.CommonsDigester in tika-parsers for an
+     * Interface for digester. See
+     * org.apache.parser.utils.CommonsDigester in tika-parsers for an
      * implementation.
      */
     public interface Digester {
@@ -51,9 +53,14 @@ public class DigestingParser extends ParserDecorator {
          * @throws IOException
          */
         void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException;
-
-
     };
+
+    /**
+     * Encodes byte array from a MessageDigest to String
+     */
+    public interface Encoder {
+        String encode(byte[] bytes);
+    }
 
     private final Digester digester;
     /**
@@ -68,9 +75,15 @@ public class DigestingParser extends ParserDecorator {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-        if (digester != null) {
-            digester.digest(stream, metadata, context);
+        TemporaryResources tmp = new TemporaryResources();
+        TikaInputStream tis = TikaInputStream.get(stream, tmp);
+        try {
+            if (digester != null) {
+                digester.digest(tis, metadata, context);
+            }
+            super.parse(tis, handler, metadata, context);
+        } finally {
+            tmp.dispose();
         }
-        super.parse(stream, handler, metadata, context);
     }
 }

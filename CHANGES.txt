@@ -1,4 +1,28 @@
-Release 1.15 - ??
+Release 1.15.1 - ??/??/????
+
+  * Remove non-ASL 2.0 compatible org.json (TIKA-1804).
+
+  * Allow extraction of scripts as embedded "MACRO". Users
+    must turn this on via TikaConfig (TIKA-2391).
+
+  * Upgrade Jackcess to 2.1.7 (TIKA-2380)
+
+  * Allow users to turn off extraction of headers and footers
+    from .doc, .docx, .xls, .xlsx, .xlsb (TIKA-2362)
+
+  * Extract text from charts in .docx, .pptx, .xlsx and .xlsb
+    (TIKA-2254).
+
+  * Extract text from diagrams in .docx, .pptx, .xlsx and .xlsb
+    (TIKA-1945).
+
+  * Fix bug in tika-server that led to an attempt to close the
+    input stream twice (TIKA-2384).
+
+  * Enable base32 encoding of digests and enable BouncyCastle implementations
+    of digest algorithms (TIKA-2386).
+
+Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
     DL4J toolkit. The initial included model is for InceptionV3
@@ -81,7 +105,7 @@ Release 1.15 - ??
   * Add configurability of "preserve-interword-spacing" to
     TesseractOCRParser (TIKA-2190).
 
-  * Upgrade to PDFBox 2.0.5 and JempBox 1.8.13 (TIKA-2209/TIKA-2236).
+  * Upgrade to PDFBox 2.0.6 and JempBox 1.8.13 (TIKA-2209/TIKA-2236/TIKA-2361).
 
   * Refactor MockParser to consolidate service loading
     and mime types into tika-core/src/test (TIKA-2195).
@@ -115,6 +139,9 @@ Release 1.15 - ??
 
   * Extend support for increased PSM options up to 13 for modern 
     versions of Tesseract (TIKA-2357).
+
+  * Prevent potential resource leak by closing TrueTypeFont
+    via Cameron Rollheiser (TIKA-2370).
 
 Release 1.14 - 10/19/2016
 

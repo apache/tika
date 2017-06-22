@@ -26,8 +26,14 @@ import org.apache.tika.parser.chm.accessor.ChmLzxcResetTable;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ChmCommons {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ChmCommons.class);
+
     /* Prevents initialization */
     private ChmCommons() {
     }
@@ -216,14 +222,14 @@ public class ChmCommons {
             } catch (FileNotFoundException e) {
                 throw new TikaException(e.getMessage());
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.warn("problem writing tmp file", e);
             } finally {
                 if (output != null)
                     try {
                         output.flush();
                         output.close();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        LOG.warn("problem writing tmp file", e);
                     }
             }
         }

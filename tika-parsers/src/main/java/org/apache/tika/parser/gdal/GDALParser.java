@@ -39,6 +39,8 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -67,6 +69,7 @@ import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 public class GDALParser extends AbstractParser {
 
     private static final long serialVersionUID = -3869130527323941401L;
+    private static final Logger LOG = LoggerFactory.getLogger(GDALParser.class);
 
     private String command;
 
@@ -91,7 +94,7 @@ public class GDALParser extends AbstractParser {
                         .getPath());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("exception processing command", e);
         }
 
         return pCommand;
@@ -367,7 +370,7 @@ public class GDALParser extends AbstractParser {
             try {
                 output = extractOutput(out);
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.warn("Exception extracting output", e);
                 output = "";
             }
 

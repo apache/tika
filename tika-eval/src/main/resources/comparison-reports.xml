@@ -817,8 +817,8 @@
             includeSql="true">
 
         <sql>
-            select ma.mime_string, mb.mime_string,
-            num_tokens_a, num_tokens_b
+            select ma.mime_string as MIME_STRING_A, mb.mime_string as MIME_STRING_B,
+            num_tokens_a, num_tokens_b,
             num_alphabetic_tokens_a, num_alphabetic_tokens_b,
             num_common_tokens_a, num_common_tokens_b,
             ifnull(num_common_tokens_b, 0)-ifnull(num_common_tokens_a, 0) as change_in_common_tokens_b

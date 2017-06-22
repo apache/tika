@@ -32,6 +32,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.Translator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -41,7 +43,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * and set your Application's User Key in the <code>translator.yandex.properties</code> file.
  */
 public class YandexTranslator implements Translator {
-    
+
+    private static final Logger LOG = LoggerFactory.getLogger(YandexTranslator.class);
+
     /**
      * Yandex Translate API service end-point URL
      */
@@ -72,7 +76,7 @@ public class YandexTranslator implements Translator {
             this.apiKey = config.getProperty("translator.api-key");
             this.format = config.getProperty("translator.text.format");
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("Exception loading Yandex config", e);
         }
     }
 

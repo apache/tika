@@ -59,18 +59,18 @@ public class DigestingParserTest extends TikaTest {
         Map<CommonsDigester.DigestAlgorithm, String> expected =
                 new HashMap<>();
 
-        expected.put(CommonsDigester.DigestAlgorithm.MD2,"d768c8e27b0b52c6eaabfaa7122d1d4f");
-        expected.put(CommonsDigester.DigestAlgorithm.MD5,"59f626e09a8c16ab6dbc2800c685f772");
-        expected.put(CommonsDigester.DigestAlgorithm.SHA1,"7a1f001d163ac90d8ea54c050faf5a38079788a6");
-        expected.put(CommonsDigester.DigestAlgorithm.SHA256,"c4b7fab030a8b6a9d6691f6699ac8e6f" +
-                                                            "82bc53764a0f1430d134ae3b70c32654");
-        expected.put(CommonsDigester.DigestAlgorithm.SHA384,"ebe368b9326fef44408290724d187553"+
-                                                            "8b8a6923fdf251ddab72c6e4b5d54160" +
-                                                            "9db917ba4260d1767995a844d8d654df");
-        expected.put(CommonsDigester.DigestAlgorithm.SHA512,"ee46d973ee1852c018580c242955974d"+
-                                                            "da4c21f36b54d7acd06fcf68e974663b"+
-                                                            "fed1d256875be58d22beacf178154cc3"+
-                                                            "a1178cb73443deaa53aa0840324708bb");
+        expected.put(CommonsDigester.DigestAlgorithm.MD2, "d768c8e27b0b52c6eaabfaa7122d1d4f");
+        expected.put(CommonsDigester.DigestAlgorithm.MD5, "59f626e09a8c16ab6dbc2800c685f772");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA1, "7a1f001d163ac90d8ea54c050faf5a38079788a6");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA256, "c4b7fab030a8b6a9d6691f6699ac8e6f" +
+                "82bc53764a0f1430d134ae3b70c32654");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA384, "ebe368b9326fef44408290724d187553" +
+                "8b8a6923fdf251ddab72c6e4b5d54160" +
+                "9db917ba4260d1767995a844d8d654df");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA512, "ee46d973ee1852c018580c242955974d" +
+                "da4c21f36b54d7acd06fcf68e974663b" +
+                "fed1d256875be58d22beacf178154cc3" +
+                "a1178cb73443deaa53aa0840324708bb");
 
         //test each one
         for (CommonsDigester.DigestAlgorithm algo : CommonsDigester.DigestAlgorithm.values()) {
@@ -80,14 +80,35 @@ public class DigestingParserTest extends TikaTest {
             assertEquals(algo.toString(), expected.get(algo), m.get(P + algo.toString()));
         }
 
+    }
+
+    @Test
+    public void testCommaSeparated() throws Exception {
+        Map<CommonsDigester.DigestAlgorithm, String> expected =
+                new HashMap<>();
+
+
+        expected.put(CommonsDigester.DigestAlgorithm.MD2, "d768c8e27b0b52c6eaabfaa7122d1d4f");
+        expected.put(CommonsDigester.DigestAlgorithm.MD5, "59f626e09a8c16ab6dbc2800c685f772");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA1, "PIPQAHIWHLEQ3DVFJQCQ7L22HADZPCFG");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA256, "c4b7fab030a8b6a9d6691f6699ac8e6f" +
+                "82bc53764a0f1430d134ae3b70c32654");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA384, "ebe368b9326fef44408290724d187553" +
+                "8b8a6923fdf251ddab72c6e4b5d54160" +
+                "9db917ba4260d1767995a844d8d654df");
+        expected.put(CommonsDigester.DigestAlgorithm.SHA512, "ee46d973ee1852c018580c242955974d" +
+                "da4c21f36b54d7acd06fcf68e974663b" +
+                "fed1d256875be58d22beacf178154cc3" +
+                "a1178cb73443deaa53aa0840324708bb");
 
         //test comma separated
-        CommonsDigester.DigestAlgorithm[] algos = CommonsDigester.parse("md5,sha256,sha384,sha512");
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(p, new CommonsDigester(UNLIMITED, algos)), m);
+                new DigestingParser(p, new CommonsDigester(UNLIMITED,
+                        "md5,sha256,sha384,sha512,sha1:32")), m);
         for (CommonsDigester.DigestAlgorithm algo : new CommonsDigester.DigestAlgorithm[]{
                 CommonsDigester.DigestAlgorithm.MD5,
+                CommonsDigester.DigestAlgorithm.SHA1,
                 CommonsDigester.DigestAlgorithm.SHA256,
                 CommonsDigester.DigestAlgorithm.SHA384,
                 CommonsDigester.DigestAlgorithm.SHA512}) {
@@ -95,8 +116,6 @@ public class DigestingParserTest extends TikaTest {
         }
 
         assertNull(m.get(P+CommonsDigester.DigestAlgorithm.MD2.toString()));
-        assertNull(m.get(P+CommonsDigester.DigestAlgorithm.SHA1.toString()));
-
     }
 
     @Test
@@ -210,10 +229,10 @@ public class DigestingParserTest extends TikaTest {
             String truthValue = truth.get(P+algo.name());
             String resultValue = result.get(P+algo.name());
             assertNotNull("truth", truthValue);
-            assertNotNull("result", resultValue);
-
+            assertNotNull("result (fileLength="+fileLength+", markLimit="+markLimit+")",
+                    resultValue);
             assertEquals("fileLength("+fileLength+") markLimit("+
-                    markLimit+") useTikaInputStream("+useTikaInputStream+")"+
+                    markLimit+") useTikaInputStream("+useTikaInputStream+") "+
                     "algorithm("+algo.name()+") seed("+SEED+")",
                     truthValue, resultValue);
         }

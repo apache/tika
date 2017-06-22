@@ -56,7 +56,9 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -80,6 +82,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     static final String RELATION_PACKAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
     static final String RELATION_MACRO = "http://schemas.microsoft.com/office/2006/relationships/vbaProject";
     static final String RELATION_OFFICE_DOCUMENT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
+    static final String RELATION_DIAGRAM_DATA = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
+    //once we add this to XWPFRelation, we should swap that out and remove this
+    static final String RELATION_CHART = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
+
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
 
@@ -87,7 +93,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             RELATION_AUDIO,
             RELATION_IMAGE,
             RELATION_PACKAGE,
-            RELATION_OFFICE_DOCUMENT
+            RELATION_OFFICE_DOCUMENT,
+            RELATION_DIAGRAM_DATA
     };
 
 
@@ -100,7 +107,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         this.context = context;
         this.extractor = extractor;
         embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        
+
         // This has already been set by OOXMLParser's call to configure()
         // We can rely on this being non-null.
         this.config = context.get(OfficeParserConfig.class);
@@ -460,4 +467,53 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         }
         return linkedRelationships;
     }
+
+    /**
+     * This should handle the comments, master, notes, with the streaming "general docx/pptx handler"
+     *
+     * @param contentType
+     * @param xhtmlClassLabel
+     * @param parentPart
+     * @param contentHandler
+     */
+    void handleGeneralTextContainingPart(String contentType, String xhtmlClassLabel,
+                                         PackagePart parentPart, Metadata parentMetadata,
+                                         ContentHandler contentHandler) throws SAXException {
+
+        PackageRelationshipCollection relatedPartPRC = null;
+
+        try {
+            relatedPartPRC = parentPart.getRelationshipsByType(contentType);
+        } catch (InvalidFormatException e) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+        }
+        if (relatedPartPRC != null && relatedPartPRC.size() > 0) {
+            AttributesImpl attributes = new AttributesImpl();
+
+            attributes.addAttribute("", "class", "class", "CDATA", xhtmlClassLabel);
+            contentHandler.startElement("", "div", "div", attributes);
+            for (int i = 0; i < relatedPartPRC.size(); i++) {
+                PackageRelationship relatedPartPackageRelationship = relatedPartPRC.getRelationship(i);
+                try {
+                    PackagePart relatedPartPart = parentPart.getRelatedPart(relatedPartPackageRelationship);
+                    try (InputStream stream = relatedPartPart.getInputStream()) {
+                        context.getSAXParser().parse(stream,
+                                new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)));
+
+                    } catch (IOException|TikaException e) {
+                        parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                ExceptionUtils.getStackTrace(e));
+                    }
+
+                } catch (InvalidFormatException e) {
+                    parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            ExceptionUtils.getStackTrace(e));
+                }
+            }
+            contentHandler.endElement("", "div", "div");
+        }
+
+    }
+
 }

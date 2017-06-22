@@ -645,6 +645,11 @@ public class PDFParser extends AbstractParser {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
+    @Field
+    void setOcrImageScale(float imageScale) {
+        defaultConfig.setOcrImageScale(imageScale);
+    }
+
 	@Field
 	void setExtractBookmarksText(boolean extractBookmarksText) {
 		defaultConfig.setExtractBookmarksText(extractBookmarksText);

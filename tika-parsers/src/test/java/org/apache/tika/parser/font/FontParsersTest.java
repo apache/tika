@@ -16,16 +16,8 @@
  */
 package org.apache.tika.parser.font;
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_FAMILY_NAME;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_FULL_NAME;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_NAME;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_SUB_FAMILY_NAME;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_VERSION;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_WEIGHT;
-import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
-import static org.junit.Assert.assertEquals;
-
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.reflect.MethodUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -35,6 +27,17 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Test case for parsing various different font files.
@@ -55,11 +58,11 @@ public class FontParsersTest {
         assertEquals("application/x-font-adobe-metric", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("TestFullName", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Fri Jul 15 17:50:51 2011", metadata.get(Metadata.CREATION_DATE));
-        
+
         assertEquals("TestFontName", metadata.get(MET_FONT_NAME));
         assertEquals("TestFullName", metadata.get(MET_FONT_FULL_NAME));
         assertEquals("TestSymbol",   metadata.get(MET_FONT_FAMILY_NAME));
-        
+
         assertEquals("Medium",  metadata.get(MET_FONT_WEIGHT));
         assertEquals("001.008", metadata.get(MET_FONT_VERSION));
 
@@ -70,14 +73,14 @@ public class FontParsersTest {
         assertContains("This is a comment in a sample file", content);
         assertContains("UniqueID 12345", content);
     }
-    
+
     @Test
     public void testTTFParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        //Open Sans font is ASL 2.0 according to 
+        //Open Sans font is ASL 2.0 according to
         //http://www.google.com/fonts/specimen/Open+Sans
         //...despite the copyright in the file's metadata.
 
@@ -92,15 +95,15 @@ public class FontParsersTest {
         assertEquals("2010-12-30T11:04:00Z", metadata.get(Metadata.CREATION_DATE));
         assertEquals("2010-12-30T11:04:00Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2011-05-05T12:37:53Z", metadata.get(TikaCoreProperties.MODIFIED));
-        
+
         assertEquals("Open Sans Bold", metadata.get(MET_FONT_NAME));
         assertEquals("Open Sans", metadata.get(MET_FONT_FAMILY_NAME));
         assertEquals("Bold", metadata.get(MET_FONT_SUB_FAMILY_NAME));
         assertEquals("OpenSans-Bold", metadata.get(MET_PS_NAME));
-        
+
         assertEquals("Digitized", metadata.get("Copyright").substring(0, 9));
         assertEquals("Open Sans", metadata.get("Trademark").substring(0, 9));
-        
+
         // Not extracted
         assertEquals(null, metadata.get(MET_FONT_FULL_NAME));
         assertEquals(null, metadata.get(MET_FONT_WEIGHT));

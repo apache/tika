@@ -24,8 +24,8 @@
                 <param name="topN" type="int">2</param>
                 <param name="minConfidence" type="double">0.015</param>
                 <param name="class" type="string">org.apache.tika.dl.imagerec.DL4JVGG16Net</param>
-				<param name="modelType" type="string">VGG16</param>
-				<param name="serialize" type="string">yes</param>
+                <param name="modelType" type="string">VGG16</param>
+                <param name="serialize" type="bool">true</param>
             </params>
         </parser>
     </parsers>

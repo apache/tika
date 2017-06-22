@@ -301,8 +301,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
                 hssfRequest.addListener(formatListener, DrawingGroupRecord.sid);
-                hssfRequest.addListener(formatListener, HeaderRecord.sid);
-                hssfRequest.addListener(formatListener, FooterRecord.sid);
+                if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                    hssfRequest.addListener(formatListener, HeaderRecord.sid);
+                    hssfRequest.addListener(formatListener, FooterRecord.sid);
+                }
             }
 
             // Create event factory and process Workbook (fire events)
@@ -473,13 +475,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     break;
                     
                 case HeaderRecord.sid:
-                	HeaderRecord headerRecord = (HeaderRecord) record;
-                	addTextCell(record, headerRecord.getText());
+                	if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                        HeaderRecord headerRecord = (HeaderRecord) record;
+                        addTextCell(record, headerRecord.getText());
+                    }
                 	break;
                 	
                 case FooterRecord.sid:
-                	FooterRecord footerRecord = (FooterRecord) record;
-                	addTextCell(record, footerRecord.getText());
+                    if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                        FooterRecord footerRecord = (FooterRecord) record;
+                        addTextCell(record, footerRecord.getText());
+                    }
                 	break;
 
             }

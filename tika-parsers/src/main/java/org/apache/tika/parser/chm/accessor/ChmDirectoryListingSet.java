@@ -26,11 +26,16 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Holds chm listing entries
  */
 public class ChmDirectoryListingSet {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ChmDirectoryListingSet.class);
+
     private List<DirectoryListingEntry> dlel;
     private byte[] data;
     private int placeHolder = -1;
@@ -147,7 +152,7 @@ public class ChmDirectoryListingSet {
                 dir_chunk = null;
             }
         } catch (ChmParsingException e) {
-            e.printStackTrace();
+            LOG.warn("Chm parse exception", e);
         } finally {
             setData(null);
         }
@@ -312,7 +317,7 @@ public class ChmDirectoryListingSet {
             }
 
 //        } catch (Exception e) {
-//            e.printStackTrace();
+//                LOG.warn("problem parsing", e);
 //        }
     }
 

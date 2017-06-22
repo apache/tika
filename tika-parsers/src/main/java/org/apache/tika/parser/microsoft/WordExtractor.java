@@ -166,19 +166,20 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
                 new org.apache.poi.hwpf.extractor.WordExtractor(document);
-        HeaderStories headerFooter = new HeaderStories(document);
 
         // Grab the list of pictures. As far as we can tell,
         //  the pictures should be in order, and may be directly
         //  placed or referenced from an anchor
         PicturesTable pictureTable = document.getPicturesTable();
         PicturesSource pictures = new PicturesSource(document);
-
+        HeaderStories headerFooter = null;
         // Do any headers, if present
-        Range[] headers = new Range[]{headerFooter.getFirstHeaderSubrange(),
-                headerFooter.getEvenHeaderSubrange(), headerFooter.getOddHeaderSubrange()};
-        handleHeaderFooter(headers, "header", document, pictures, pictureTable, xhtml);
-
+        if (officeParserConfig.getIncludeHeadersAndFooters()) {
+            headerFooter = new HeaderStories(document);
+            Range[] headers = new Range[]{headerFooter.getFirstHeaderSubrange(),
+                    headerFooter.getEvenHeaderSubrange(), headerFooter.getOddHeaderSubrange()};
+            handleHeaderFooter(headers, "header", document, pictures, pictureTable, xhtml);
+        }
         // Do the main paragraph text
         Range r = document.getRange();
         ListManager listManager = new ListManager(document);
@@ -206,11 +207,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.element("p", paragraph);
         }
 
-        // Do any footers, if present
-        Range[] footers = new Range[]{headerFooter.getFirstFooterSubrange(),
-                headerFooter.getEvenFooterSubrange(), headerFooter.getOddFooterSubrange()};
-        handleHeaderFooter(footers, "footer", document, pictures, pictureTable, xhtml);
-
+        if (officeParserConfig.getIncludeHeadersAndFooters()) {
+            // Do any footers, if present
+            Range[] footers = new Range[]{headerFooter.getFirstFooterSubrange(),
+                    headerFooter.getEvenFooterSubrange(), headerFooter.getOddFooterSubrange()};
+            handleHeaderFooter(footers, "footer", document, pictures, pictureTable, xhtml);
+        }
         // Handle any pictures that we haven't output yet
         for (Picture p = pictures.nextUnclaimed(); p != null; ) {
             handlePictureCharacterRun(

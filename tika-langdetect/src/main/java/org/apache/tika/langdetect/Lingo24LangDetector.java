@@ -24,6 +24,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
@@ -45,6 +47,9 @@ import java.util.Set;
  * and set your Application's User Key in the <code>langdetect.lingo24.properties</code> file.
  */
 public class Lingo24LangDetector extends LanguageDetector {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Lingo24LangDetector.class);
+
 
     private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/";
     private static final String LINGO24_LANGID_ACTION = "langid";
@@ -80,7 +85,7 @@ public class Lingo24LangDetector extends LanguageDetector {
                 this.isAvailable = false;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("Couldn't load config", e);
             isAvailable = false;
         }
         writer = new CharArrayWriter();
@@ -181,7 +186,7 @@ public class Lingo24LangDetector extends LanguageDetector {
                 languages.add(jsonElement.getAsJsonArray().get(0).getAsString());
             }
         } catch (Throwable e) {
-            e.printStackTrace();
+            LOG.warn("problem detecting", e);
         } finally {
             if (_client != null) {
                 _client.close();

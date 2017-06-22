@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * DBWriter creates its own PreparedStatements at initialization.
  */
 public class DBWriter implements IDBWriter {
+
     private static final Logger LOG = LoggerFactory.getLogger(DBWriter.class);
 
     private static final AtomicInteger WRITER_ID = new AtomicInteger();
@@ -129,7 +130,6 @@ public class DBWriter implements IDBWriter {
         try {
             conn.commit();
         } catch (SQLException e){
-            e.printStackTrace();
             throw new IOExceptionWithCause(e);
         }
         try {

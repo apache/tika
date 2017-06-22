@@ -23,6 +23,8 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import java.io.CharArrayWriter;
@@ -40,6 +42,9 @@ import java.util.*;
  * Please run the TextREST.jl server before using this.
  */
 public class TextLangDetector extends LanguageDetector {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TextLangDetector.class);
+
 
     private static final String TEXT_REST_HOST = "http://localhost:8000";
     private static final String TEXT_LID_PATH = "/lid";
@@ -111,7 +116,7 @@ public class TextLangDetector extends LanguageDetector {
                 languages.add(jsonElement.toString());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("problem getting and parsing json", e);
         }
         return languages;
     }
@@ -125,7 +130,7 @@ public class TextLangDetector extends LanguageDetector {
             String json = response.readEntity(String.class);
             language = new JsonParser().parse(json).getAsJsonObject().get("language").getAsString();
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("problem detecting", e);
         }
         return language;
     }
@@ -139,7 +144,7 @@ public class TextLangDetector extends LanguageDetector {
             JsonArray jsonArray = new JsonParser().parse(json).getAsJsonObject().get("all_languages").getAsJsonArray();
             return jsonArray.size() != 0;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("Can't run", e);
             return false;
         }
     }

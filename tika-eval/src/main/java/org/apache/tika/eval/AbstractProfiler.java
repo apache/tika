@@ -62,8 +62,13 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.utils.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractProfiler extends FileResourceConsumer {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractProfiler.class);
+
 
     private static final String[] EXTRACT_EXTENSIONS = {
             ".json",
@@ -505,8 +510,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
                 c = r.read();
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            //swallow
+            LOG.warn("IOException", e);
         }
 
         List<Pair<String, Integer>> pairs = new ArrayList<>();

@@ -32,6 +32,8 @@ import org.apache.tika.exception.TikaException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An implementation of a REST client to the <a
@@ -44,6 +46,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * 
  */
 public class GoogleTranslator extends AbstractTranslator {
+
+	private static final Logger LOG = LoggerFactory.getLogger(GoogleTranslator.class);
 
 	private static final String GOOGLE_TRANSLATE_URL_BASE = "https://www.googleapis.com/language/translate/v2";
 
@@ -67,7 +71,7 @@ public class GoogleTranslator extends AbstractTranslator {
 			if (this.apiKey.equals(DEFAULT_KEY))
 				this.isAvailable = false;
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.warn("Exception reading config file", e);
 			isAvailable = false;
 		}
 	}

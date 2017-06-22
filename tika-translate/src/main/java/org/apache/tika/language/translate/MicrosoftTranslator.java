@@ -20,6 +20,8 @@ package org.apache.tika.language.translate;
 import com.memetix.mst.language.Language;
 import com.memetix.mst.translate.Translate;
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +33,8 @@ import java.util.Properties;
  * @since Tika 1.6
  */
 public class MicrosoftTranslator implements Translator {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MicrosoftTranslator.class);
 
     boolean available;              // Flag for whether or not translation is available.
     String clientId, clientSecret;  // Keys used for the API calls.
@@ -60,7 +64,7 @@ public class MicrosoftTranslator implements Translator {
                 this.available = checkAvailable();   
             }
         } catch (IOException e) {
-        	e.printStackTrace();
+            LOG.warn("Error loading props file", e);
             // Error with properties file. Translation will not work.
             available = false;
         }

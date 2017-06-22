@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.poi.common.usermodel.Hyperlink;
@@ -31,8 +32,29 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
-import org.apache.poi.xslf.usermodel.*;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
+import org.apache.poi.xslf.usermodel.XSLFComments;
+import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
+import org.apache.poi.xslf.usermodel.XSLFGroupShape;
+import org.apache.poi.xslf.usermodel.XSLFHyperlink;
+import org.apache.poi.xslf.usermodel.XSLFNotes;
+import org.apache.poi.xslf.usermodel.XSLFNotesMaster;
+import org.apache.poi.xslf.usermodel.XSLFPictureShape;
+import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xslf.usermodel.XSLFShape;
+import org.apache.poi.xslf.usermodel.XSLFSheet;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
+import org.apache.poi.xslf.usermodel.XSLFSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFTable;
+import org.apache.poi.xslf.usermodel.XSLFTableCell;
+import org.apache.poi.xslf.usermodel.XSLFTableRow;
+import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
+import org.apache.poi.xslf.usermodel.XSLFTextRun;
+import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
@@ -49,9 +71,21 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     private final static String HANDOUT_MASTER = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/handoutMaster";
 
+    private Metadata metadata;
 
-    public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
+    public XSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context, XSLFPowerPointExtractor extractor) {
         super(context, extractor);
+        this.metadata = metadata;
+    }
+
+    /**
+     * use {@link XSLFPowerPointExtractorDecorator#XSLFPowerPointExtractorDecorator(Metadata, ParseContext, XSLFPowerPointExtractor)}
+     * @param context
+     * @param extractor
+     */
+    @Deprecated
+    public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
+        this(new Metadata(),context, extractor);
     }
 
     /**
@@ -133,6 +167,28 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.endElement("p");
                 }
             }
+            //now dump diagram data
+            handleGeneralTextContainingPart(
+                    RELATION_DIAGRAM_DATA,
+                    "diagram-data",
+                    slide.getPackagePart(),
+                    metadata,
+                    new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml),
+                            new HashMap<String, String>()//empty
+                    )
+            );
+            //now dump chart data
+            handleGeneralTextContainingPart(
+                    XSLFRelation.CHART.getRelation(),
+                    "chart",
+                    slide.getPackagePart(),
+                    metadata,
+                    new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml),
+                            new HashMap<String, String>()//empty
+                    )
+            );
         }
     }
 

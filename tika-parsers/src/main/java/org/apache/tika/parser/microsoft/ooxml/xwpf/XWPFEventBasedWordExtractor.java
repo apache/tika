@@ -43,6 +43,8 @@ import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -53,6 +55,8 @@ import org.xml.sax.XMLReader;
  *
  */
 public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
+
+    private static final Logger LOG = LoggerFactory.getLogger(XWPFEventBasedWordExtractor.class);
 
     private OPCPackage container;
     private POIXMLProperties properties;
@@ -108,9 +112,10 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 try {
                     handleDocumentPart(pp, sb);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOG.warn("IOException handling document part", e);
                 } catch (SAXException e) {
-                    e.printStackTrace();
+                    //swallow this because we don't actually call it
+                    LOG.warn("SAXException handling document part", e);
                 }
             }
         }
@@ -123,9 +128,10 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 try {
                     handleDocumentPart(pp, sb);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOG.warn("IOException handling glossary document part", e);
                 } catch (SAXException e) {
-                    e.printStackTrace();
+                    //swallow this because we don't actually call it
+                    LOG.warn("SAXException handling glossary document part", e);
                 }
             }
         }
@@ -150,7 +156,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 }
             }
         } catch (InvalidFormatException e) {
-            //swallow
+            LOG.warn("Invalid format", e);
         }
 
         //main document
@@ -172,7 +178,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                     }
                 }
             } catch (InvalidFormatException e) {
-                //swallow
+                LOG.warn("Invalid format", e);
             }
         }
     }
@@ -188,7 +194,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
             reader.parse(new InputSource(new CloseShieldInputStream(stream)));
 
         } catch (ParserConfigurationException e) {
-            e.printStackTrace();
+            LOG.warn("Can't configure XMLReader", e);
         }
 
     }
@@ -209,6 +215,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 }
             }
         } catch (InvalidFormatException e) {
+            LOG.warn("Invalid format", e);
         }
         return hyperlinks;
     }
@@ -228,7 +235,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 return new XWPFNumbering(numberingPart);
             }
         } catch (IOException | OpenXML4JException e) {
-            //swallow
+            LOG.warn("Couldn't load numbering", e);
         }
         return null;
     }
