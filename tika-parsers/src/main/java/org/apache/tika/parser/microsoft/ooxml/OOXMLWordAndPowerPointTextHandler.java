@@ -32,8 +32,12 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * <p/>
  *
- * This class does not check for namespaces, and it can be applied
+ * This class does not generally check for namespaces, and it can be applied
  * to PPTX and DOCX for text extraction.
+ *
+ * <p/>
+ * This can be used to scrape content from charts.  It currently ignores
+ * formula (&lt;c:f/&gt;) elements
  *
  * <p/>
  * This does not work with .xlsx or .vsdx.
@@ -80,6 +84,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String FALLBACK = "Fallback";
     private final static String OLE_OBJECT = "OLEObject";
     private final static String CR = "cr";
+    private final static String V = "v";
 
     public final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
@@ -87,6 +92,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String PIC_NS = "http://schemas.openxmlformats.org/drawingml/2006/picture";
     private final static String DRAWING_MAIN_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
     private final static String V_NS = "urn:schemas-microsoft-com:vml";
+    private final static String C_NS = "http://schemas.openxmlformats.org/drawingml/2006/chart";
 
     private final static String OFFICE_DOC_RELATIONSHIP_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
@@ -144,6 +150,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inDelText = false;
     private boolean inHlinkClick = false;
     private boolean inTextBox = false;
+    private boolean inV = false; //in c:v in chart file
 
     private OOXMLWordAndPowerPointTextHandler.EditType editType = OOXMLWordAndPowerPointTextHandler.EditType.NONE;
 
@@ -319,6 +326,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (ENDNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.endnoteReference(id);
+        } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
+            inV = true;
         }
 
     }
@@ -405,6 +414,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             bodyContentsHandler.hyperlinkEnd();
         } else if (PICT.equals(localName)) {
             handlePict();
+        } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
+            inV = false;
+            handleEndOfRun();
         }
     }
 
@@ -448,6 +460,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             runBuffer.append(ch, start, length);
         } else if (bodyContentsHandler.getIncludeDeletedText() && editType.equals(EditType.DELETE)) {
             runBuffer.append(ch, start, length);
+        } else if (inV) {
+            runBuffer.append(ch, start, length);
+            runBuffer.append(TAB_CHAR, 0, 1);
         }
     }
 

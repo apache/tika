@@ -27,28 +27,30 @@ import java.nio.charset.StandardCharsets;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.junit.Test;
 
 public class TEITest extends TikaTest {
 
+
     @Test
-    public void testCurrent() throws Exception {
-        TEIParser teiParser = new TEIParser();
+    public void testBasic() throws Exception {
+        TEIDOMParser teiParser = new TEIDOMParser();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (InputStream is = getResourceAsStream("/test-documents/testTEI.xml")) {
             IOUtils.copy(is, bos);
         }
         String xml = new String (bos.toByteArray(), StandardCharsets.UTF_8);
-        Metadata metadata = teiParser.parse(xml);
+        Metadata metadata = teiParser.parse(xml, new ParseContext());
         assertEquals("Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
-                "Montbonnot Saint-Martin, null \"38330, 38330, 38330, 38330\" " +
+                "Montbonnot Saint-Martin, null 38330, 38330, 38330, 38330 " +
                 "France, France, France, France ", metadata.get("Address"));
         String[] keywords = new String[]{
-                "\"F22 [Analysis of Algorithms and Problem Complexity]: Nonnumerical Algorithms and Problems\\u2014Sequencing\"",
-                "\"and scheduling; D41 [Operating Systems]: Process management\\u2014Scheduling, Concurrency\"",
-                "\"Keywords\"",
-                "\"Parallel Computing, Algorithms, Scheduling, Parallel Tasks,\"",
-                "\"Moldable Tasks, Bi-criteria\""
+                "F22 [Analysis of Algorithms and Problem Complexity]: Nonnumerical Algorithms and Problems\u2014Sequencing",
+                "and scheduling; D41 [Operating Systems]: Process management\u2014Scheduling, Concurrency",
+                "Keywords",
+                "Parallel Computing, Algorithms, Scheduling, Parallel Tasks,",
+                "Moldable Tasks, Bi-criteria"
         };
         assertArrayEquals(keywords, metadata.getValues("Keyword"));
         assertEquals("Pierre-François  Dutot 1 Lionel  Eyraud 1 Grégory  Gr´ 1 Grégory  Mouní 1 Denis  Trystram 1 ",
@@ -58,10 +60,10 @@ public class TEITest extends TikaTest {
         assertEquals("1 ID-IMAG ID-IMAG ID-IMAG ID-IMAG", metadata.get("Affiliation"));
         assertEquals("[Affiliation {orgName=ID-IMAG ID-IMAG ID-IMAG ID-IMAG , " +
                         "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
-                        "null \"38330, 38330, 38330, 38330\" France, France, France, France}" +
+                        "null 38330, 38330, 38330, 38330 France, France, France, France}" +
                         "[Affiliation {orgName=ID-IMAG ID-IMAG ID-IMAG ID-IMAG , " +
                         "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
-                        "null \"38330, 38330, 38330, 38330\" France, France, France, France}]",
+                        "null 38330, 38330, 38330, 38330 France, France, France, France}]",
                 metadata.get("FullAffiliations"));
     }
 }

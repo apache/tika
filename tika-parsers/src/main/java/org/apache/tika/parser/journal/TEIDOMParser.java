@@ -17,116 +17,122 @@
 
 package org.apache.tika.parser.journal;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.XML;
+import org.apache.tika.parser.ParseContext;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
-public class TEIParser {
+public class TEIDOMParser {
 
-    public TEIParser() {
+    public TEIDOMParser() {
     }
 
-    public Metadata parse(String source) {
-        JSONObject obj = XML.toJSONObject(source);
+    public Metadata parse(String source, ParseContext parseContext) throws TikaException, SAXException, IOException {
+
+        Document root = parseContext.getDocumentBuilder().parse(
+                new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8))
+        );
         Metadata metadata = new Metadata();
-        createGrobidMetadata(source, obj, metadata);
+        createGrobidMetadata(source, root.getDocumentElement(), metadata);
         return metadata;
     }
 
-    private void createGrobidMetadata(String source, JSONObject obj,
+    private void createGrobidMetadata(String source, Element root,
                                       Metadata metadata) {
-        if (obj != null) {
-            try {
-                JSONObject teiHeader = obj.getJSONObject("TEI")
-                        .getJSONObject("teiHeader");
-                if (teiHeader.has("text")) {
-                    parseText(teiHeader.getJSONObject("text"), metadata);
-                }
+        if (root != null) {
 
-                if (teiHeader.has("fileDesc")) {
-                    parseFileDesc(teiHeader.getJSONObject("fileDesc"), metadata);
-
-                }
-                if (teiHeader.has("profileDesc")) {
-                    parseProfileDesc(teiHeader.getJSONObject("profileDesc"), metadata);
-                }
-            } catch (JSONException e) {
-                System.out.println("No TEI Object found.");
+            Node text = getFirstChild(root.getChildNodes(), "text");
+            if (text != null) {
+                parseText(text, metadata);
             }
+            Node teiHeader = getFirstChild(root.getChildNodes(), "teiHeader");
+            Node fileDesc = getFirstChild(teiHeader.getChildNodes(), "fileDesc");
+            if (fileDesc != null) {
+                parseFileDesc(fileDesc, metadata);
+
+            }
+            Node profileDesc = getFirstChild(teiHeader.getChildNodes(), "profileDesc");
+            if (profileDesc != null) {
+                parseProfileDesc(profileDesc, metadata);
+            }
+
         }
 
-        addStaticMet(source, obj, metadata);
+        addStaticMet(source, root, metadata);
     }
 
-    private void addStaticMet(String source, JSONObject obj, Metadata metadata) {
+    private void addStaticMet(String source, Element obj, Metadata metadata) {
         metadata.add("Class", Metadata.class.getName());
-        metadata.add("TEIJSONSource", obj.toString());
+        //no longer available after we got rid of json.org's and its .toJSONObject()
+//        metadata.add("TEIJSONSource", obj.toString());
         metadata.add("TEIXMLSource", source);
     }
 
-    private void parseText(JSONObject text, Metadata metadata) {
-        if (text.has("xml:lang")) {
-            metadata.add("Language", text.getString("xml:lang"));
+    private void parseText(Node text, Metadata metadata) {
+        String lang = getFirstAttribute(text, "xml", "lang");
+        if (lang != null) {
+            metadata.add("Language", lang);
         }
     }
 
-    private void parseFileDesc(JSONObject fileDesc, Metadata metadata) {
-        if (fileDesc.has("titleStmt")) {
-            parseTitleStmt(fileDesc.getJSONObject("titleStmt"), metadata);
+    private void parseFileDesc(Node fileDesc, Metadata metadata) {
+        Node titleStmt = getFirstChild(fileDesc.getChildNodes(), "titleStmt");
+
+        if (titleStmt != null) {
+            parseTitleStmt(titleStmt, metadata);
         }
 
-        if (fileDesc.has("sourceDesc")) {
-            parseSourceDesc(fileDesc.getJSONObject("sourceDesc"), metadata);
+        Node sourceDesc = getFirstChild(fileDesc.getChildNodes(), "sourceDesc");
+        if (sourceDesc != null) {
+            parseSourceDesc(sourceDesc, metadata);
         }
     }
 
-    private void parseTitleStmt(JSONObject titleStmt, Metadata metadata) {
-        if (titleStmt.has("title")) {
-            JSONObject title = titleStmt.getJSONObject("title");
-            if (title.has("content")) {
-                metadata.add("Title", title.getString("content"));
+    private void parseTitleStmt(Node titleStmt, Metadata metadata) {
+        Node title = getFirstChild(titleStmt.getChildNodes(), "title");
+        if (title != null) {
+            String titleText = title.getTextContent();
+            if (titleText != null) {
+                metadata.add("Title", titleText);
             }
         }
     }
 
-    private void parseSourceDesc(JSONObject sourceDesc, Metadata metadata) {
-        if (sourceDesc.has("biblStruct")) {
-            parseBiblStruct(sourceDesc.getJSONObject("biblStruct"), metadata);
+    private void parseSourceDesc(Node sourceDesc, Metadata metadata) {
+        Node biblStruct = getFirstChild(sourceDesc.getChildNodes(), "biblStruct");
+        if (biblStruct != null) {
+            parseBiblStruct(biblStruct, metadata);
         }
     }
 
-    private void parseBiblStruct(JSONObject biblStruct, Metadata metadata) {
-        if (biblStruct.has("analytic")
-                && biblStruct.get("analytic") instanceof JSONObject) {
-            JSONObject analytic = biblStruct.getJSONObject("analytic");
-            if (analytic.has("author")) {
-                Object authorObj = analytic.get("author");
+    private void parseBiblStruct(Node biblStruct, Metadata metadata) {
 
-                List<Author> authorList = new ArrayList<Author>();
-                if (authorObj instanceof JSONObject) {
-                    parseAuthor((JSONObject) authorObj, authorList);
-                } else if (authorObj instanceof JSONArray) {
-                    JSONArray authors = (JSONArray) authorObj;
-                    if (authors.length() > 0) {
-                        for (int i = 0; i < authors.length(); i++) {
-                            JSONObject author = authors.getJSONObject(i);
-                            parseAuthor(author, authorList);
-                        }
-                    }
-
-                    metadata.add("Address", getMetadataAddresses(authorList));
-                    metadata.add("Affiliation", getMetadataAffiliations(authorList));
-                    metadata.add("Authors", getMetadataAuthors(authorList));
-                    metadata.add("FullAffiliations",
-                            getMetadataFullAffiliations(authorList));
-                }
-
+        Node analytic = getFirstChild(biblStruct.getChildNodes(), "analytic");
+        if (analytic != null) {
+            List<Node> authorNodes = getChildNodes(analytic.getChildNodes(), "author");
+            List<Author> authorList = new ArrayList<>();
+            for (Node authorNode : authorNodes) {
+                parseAuthor(authorNode, authorList);
             }
+
+            metadata.add("Address", getMetadataAddresses(authorList));
+            metadata.add("Affiliation", getMetadataAffiliations(authorList));
+            metadata.add("Authors", getMetadataAuthors(authorList));
+            metadata.add("FullAffiliations",
+                    getMetadataFullAffiliations(authorList));
+
+
         } else {
             metadata.add("Error", "Unable to parse: no analytic section in JSON");
         }
@@ -245,47 +251,35 @@ public class TEIParser {
         return metAddress.toString();
     }
 
-    private void parseAuthor(JSONObject authorObj, List<Author> authorList) {
+    private void parseAuthor(Node authorNode, List<Author> authorList) {
         Author author = new Author();
-
-        if (authorObj.has("persName")) {
-            JSONObject persName = authorObj.getJSONObject("persName");
-
-            if (persName.has("forename")) {
-
-                Object foreNameObj = persName.get("forename");
-
-                if (foreNameObj instanceof JSONObject) {
-                    parseNamePart((JSONObject) foreNameObj, author);
-                } else if (foreNameObj instanceof JSONArray) {
-                    JSONArray foreName = persName.getJSONArray("forename");
-
-                    if (foreName.length() > 0) {
-                        for (int i = 0; i < foreName.length(); i++) {
-                            JSONObject namePart = foreName.getJSONObject(i);
-                            parseNamePart(namePart, author);
-                        }
-                    }
+        Node persName = getFirstChild(authorNode.getChildNodes(), "persName");
+        if (persName != null) {
+            List<Node> forenames = getChildNodes(persName.getChildNodes(), "forename");
+            for (Node forenameNode : forenames) {
+                parseNamePart(forenameNode, author);
+            }
+            Node surnameNode = getFirstChild(persName.getChildNodes(), "surname");
+            if (surnameNode != null) {
+                String surnameContent = surnameNode.getTextContent();
+                if (surnameContent != null) {
+                    author.setSurName(surnameContent);
                 }
             }
-
-            if (persName.has("surname")) {
-                author.setSurName(persName.getString("surname"));
-            }
-
-            if (authorObj.has("affiliation")) {
-                parseAffiliation(authorObj.get("affiliation"), author);
-            }
-
         }
+        List<Node> affiliationNodes = getChildNodes(authorNode.getChildNodes(), "affiliation");
+        for (Node affiliationNode : affiliationNodes) {
+            parseOneAffiliation(affiliationNode, author);
+        }
+
 
         authorList.add(author);
     }
 
-    private void parseNamePart(JSONObject namePart, Author author) {
-        if (namePart.has("type") && namePart.has("content")) {
-            String type = namePart.getString("type");
-            String content = namePart.getString("content");
+    private void parseNamePart(Node namePart, Author author) {
+        String type = getFirstAttribute(namePart, null, "type");
+        String content = namePart.getTextContent();
+        if (type != null && content != null) {
 
             if (type.equals("first")) {
                 author.setFirstName(content);
@@ -297,79 +291,49 @@ public class TEIParser {
         }
     }
 
-    private void parseAffiliation(Object affiliationJSON, Author author) {
-        if (affiliationJSON instanceof JSONObject) {
-            parseOneAffiliation((JSONObject) affiliationJSON, author);
-        } else if (affiliationJSON instanceof JSONArray) {
-            JSONArray affiliationArray = (JSONArray) affiliationJSON;
-            if (affiliationArray != null && affiliationArray.length() > 0) {
-                for (int i = 0; i < affiliationArray.length(); i++) {
-                    JSONObject affiliationObj = affiliationArray.getJSONObject(i);
-                    parseOneAffiliation(affiliationObj, author);
-                }
-            }
-        }
-    }
-
-    private void parseOneAffiliation(JSONObject affiliationObj, Author author) {
+    private void parseOneAffiliation(Node affiliationNode, Author author) {
 
         Affiliation affiliation = new Affiliation();
-        if (affiliationObj.has("address")) {
-            parseAddress(affiliationObj.getJSONObject("address"), affiliation);
+        Node address = getFirstChild(affiliationNode.getChildNodes(), "address");
+        if (address != null) {
+            parseAddress(address, affiliation);
         }
 
-        if (affiliationObj.has("orgName")) {
-            OrgName orgName = new OrgName();
-            Object orgObject = affiliationObj.get("orgName");
-            if (orgObject instanceof JSONObject) {
-                parseOrgName((JSONObject) orgObject, orgName);
-            } else if (orgObject instanceof JSONArray) {
-                JSONArray orgNames = (JSONArray) orgObject;
-                if (orgNames != null && orgNames.length() > 0) {
-                    for (int i = 0; i < orgNames.length(); i++) {
-                        parseOrgName(orgNames.getJSONObject(i), orgName);
-                    }
-                }
-
-                affiliation.setOrgName(orgName);
-            }
-
+        List<Node> orgNameNodes = getChildNodes(affiliationNode.getChildNodes(), "orgName");
+        OrgName orgName = new OrgName();
+        for (Node orgNameNode : orgNameNodes) {
+            parseOrgName(orgNameNode, orgName);
         }
+        affiliation.setOrgName(orgName);
 
         author.getAffiliations().add(affiliation);
     }
 
-    private void parseAddress(JSONObject addressObj, Affiliation affiliation) {
+    private void parseAddress(Node addressNode, Affiliation affiliation) {
         Address address = new Address();
-
-        if (addressObj.has("region")) {
-            address.setRegion(addressObj.getString("region"));
+        Node region = getFirstChild(addressNode.getChildNodes(), "region");
+        if (region != null && region.getTextContent() != null) {
+            address.setRegion(region.getTextContent());
+        }
+        Node postCode = getFirstChild(addressNode.getChildNodes(), "postCode");
+        if (postCode != null && postCode.getTextContent() != null) {
+            address.setPostCode(postCode.getTextContent());
+        }
+        Node settlementNode = getFirstChild(addressNode.getChildNodes(), "settlement");
+        if (settlementNode != null && settlementNode.getTextContent() != null) {
+            address.setSettlment(settlementNode.getTextContent());
         }
 
-        if (addressObj.has("postCode")) {
-            address.setPostCode(JSONObject.valueToString(addressObj.get("postCode")));
-        }
-
-        if (addressObj.has("settlement")) {
-            address.setSettlment(addressObj.getString("settlement"));
-        }
-
-        if (addressObj.has("country")) {
+        Node countryNode = getFirstChild(addressNode.getChildNodes(), "country");
+        if (countryNode != null) {
             Country country = new Country();
-            Object countryObj = addressObj.get("country");
-
-            if (countryObj instanceof JSONObject) {
-                JSONObject countryJson = addressObj.getJSONObject("country");
-
-                if (countryJson.has("content")) {
-                    country.setContent(countryJson.getString("content"));
-                }
-
-                if (countryJson.has("key")) {
-                    country.setKey(countryJson.getString("key"));
-                }
-            } else if (countryObj instanceof String) {
-                country.setContent((String) countryObj);
+            String key = getFirstAttribute(countryNode, null, "key");
+            if (key != null) {
+                country.setKey(key);
+            }
+            String content = countryNode.getTextContent();
+            if (content != null) {
+                country.setContent(content);
             }
             address.setCountry(country);
         }
@@ -377,41 +341,40 @@ public class TEIParser {
         affiliation.setAddress(address);
     }
 
-    private void parseOrgName(JSONObject orgObj, OrgName orgName) {
+    private void parseOrgName(Node orgNode, OrgName orgName) {
         OrgTypeName typeName = new OrgTypeName();
-        if (orgObj.has("content")) {
-            typeName.setName(orgObj.getString("content"));
+        String orgContent = orgNode.getTextContent();
+        if (orgContent != null) {
+            typeName.setName(orgContent);
         }
-
-        if (orgObj.has("type")) {
-            typeName.setType(orgObj.getString("type"));
+        String orgType = getFirstAttribute(orgNode, null, "type");
+        if (orgType != null) {
+            typeName.setType(orgType);
         }
 
         orgName.getTypeNames().add(typeName);
     }
 
-    private void parseProfileDesc(JSONObject profileDesc, Metadata metadata) {
-        if (profileDesc.has("abstract")) {
-            if (profileDesc.has("p")) {
-                metadata.add("Abstract", profileDesc.getString("p"));
+    private void parseProfileDesc(Node profileDesc, Metadata metadata) {
+        Node abstractNode = getFirstChild(profileDesc.getChildNodes(), "abstract");
+        if (abstractNode != null) {
+            Node pNode = getFirstChild(abstractNode.getChildNodes(), "p");
+            if (pNode != null) {
+                metadata.add("Abstract", pNode.getTextContent());
             }
         }
 
-        if (profileDesc.has("textClass")) {
-            JSONObject textClass = profileDesc.getJSONObject("textClass");
-
-            if (textClass.has("keywords")) {
-                Object keywordsObj = textClass.get("keywords");
-                // test AJ15.pdf
-                if (keywordsObj instanceof String) {
-                    metadata.add("Keyword", (String) keywordsObj);
-                } else if (keywordsObj instanceof JSONObject) {
-                    JSONObject keywords = textClass.getJSONObject("keywords");
-                    if (keywords.has("term")) {
-                        JSONArray termArr = keywords.getJSONArray("term");
-                        for (int i = 0; i < termArr.length(); i++) {
-                            metadata.add("Keyword", JSONObject.valueToString(termArr.get(i)));
-                        }
+        Node textClassNode = getFirstChild(profileDesc.getChildNodes(), "textClass");
+        if (textClassNode != null) {
+            Node keywordsNode = getFirstChild(textClassNode.getChildNodes(), "keywords");
+            if (keywordsNode != null) {
+                List<Node> terms = getChildNodes(keywordsNode.getChildNodes(), "term");
+                if (terms.size() == 0) {
+                    // test AJ15.pdf
+                    metadata.add("Keyword", keywordsNode.getTextContent());
+                } else {
+                    for (Node term : terms) {
+                        metadata.add("Keyword", term.getTextContent());
                     }
                 }
 
@@ -452,8 +415,7 @@ public class TEIParser {
         }
 
         /**
-         * @param surName
-         *          the surName to set
+         * @param surName the surName to set
          */
         public void setSurName(String surName) {
             this.surName = surName;
@@ -467,8 +429,7 @@ public class TEIParser {
         }
 
         /**
-         * @param middleName
-         *          the middleName to set
+         * @param middleName the middleName to set
          */
         public void setMiddleName(String middleName) {
             this.middleName = middleName;
@@ -482,8 +443,7 @@ public class TEIParser {
         }
 
         /**
-         * @param firstName
-         *          the firstName to set
+         * @param firstName the firstName to set
          */
         public void setFirstName(String firstName) {
             this.firstName = firstName;
@@ -497,8 +457,7 @@ public class TEIParser {
         }
 
         /**
-         * @param affiliations
-         *          the affiliations to set
+         * @param affiliations the affiliations to set
          */
         public void setAffiliations(List<Affiliation> affiliations) {
             this.affiliations = affiliations;
@@ -537,8 +496,7 @@ public class TEIParser {
         }
 
         /**
-         * @param orgName
-         *          the orgName to set
+         * @param orgName the orgName to set
          */
         public void setOrgName(OrgName orgName) {
             this.orgName = orgName;
@@ -552,8 +510,7 @@ public class TEIParser {
         }
 
         /**
-         * @param address
-         *          the address to set
+         * @param address the address to set
          */
         public void setAddress(Address address) {
             this.address = address;
@@ -599,8 +556,7 @@ public class TEIParser {
         }
 
         /**
-         * @param typeNames
-         *          the typeNames to set
+         * @param typeNames the typeNames to set
          */
         public void setTypeNames(List<OrgTypeName> typeNames) {
             this.typeNames = typeNames;
@@ -665,8 +621,7 @@ public class TEIParser {
         }
 
         /**
-         * @param name
-         *          the name to set
+         * @param name the name to set
          */
         public void setName(String name) {
             this.name = name;
@@ -680,8 +635,7 @@ public class TEIParser {
         }
 
         /**
-         * @param type
-         *          the type to set
+         * @param type the type to set
          */
         public void setType(String type) {
             this.type = type;
@@ -723,8 +677,7 @@ public class TEIParser {
         }
 
         /**
-         * @param region
-         *          the region to set
+         * @param region the region to set
          */
         public void setRegion(String region) {
             this.region = region;
@@ -738,8 +691,7 @@ public class TEIParser {
         }
 
         /**
-         * @param postCode
-         *          the postCode to set
+         * @param postCode the postCode to set
          */
         public void setPostCode(String postCode) {
             this.postCode = postCode;
@@ -753,8 +705,7 @@ public class TEIParser {
         }
 
         /**
-         * @param settlment
-         *          the settlment to set
+         * @param settlment the settlment to set
          */
         public void setSettlment(String settlment) {
             this.settlment = settlment;
@@ -768,8 +719,7 @@ public class TEIParser {
         }
 
         /**
-         * @param country
-         *          the country to set
+         * @param country the country to set
          */
         public void setCountry(Country country) {
             this.country = country;
@@ -835,8 +785,7 @@ public class TEIParser {
         }
 
         /**
-         * @param key
-         *          the key to set
+         * @param key the key to set
          */
         public void setKey(String key) {
             this.key = key;
@@ -850,8 +799,7 @@ public class TEIParser {
         }
 
         /**
-         * @param content
-         *          the content to set
+         * @param content the content to set
          */
         public void setContent(String content) {
             this.content = content;
@@ -893,6 +841,41 @@ public class TEIParser {
                 }
             }
         }
-
     }
+
+    //returns first child with this name, null otherwise
+    private static Node getFirstChild(NodeList childNodes, String name) {
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node n = childNodes.item(i);
+            if (n.getNodeName().equals(name)) {
+                return n;
+            }
+        }
+        return null;
+    }
+
+    private static String getFirstAttribute(Node node, String ns, String name) {
+        if (node.hasAttributes()) {
+            NamedNodeMap attrs = node.getAttributes();
+            for (int i = 0; i < attrs.getLength(); i++) {
+                Node attr = attrs.item(i);
+                if (attr.getLocalName().equals(name)) {
+                    return attr.getNodeValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private static List<Node> getChildNodes(NodeList childNodes, String localName) {
+        List<Node> ret = new ArrayList<>();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node child = childNodes.item(i);
+            if (child.getLocalName() != null && child.getLocalName().equals(localName)) {
+                ret.add(child);
+            }
+        }
+        return ret;
+    }
+
 }

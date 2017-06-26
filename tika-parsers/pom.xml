@@ -85,7 +85,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>2.1.4</version>
+      <version>2.1.7</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -96,7 +96,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
-      <version>2.1.1</version>
+      <version>2.1.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.bouncycastle</groupId>
@@ -327,9 +327,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.json</groupId>
+      <groupId>com.tdunning</groupId>
       <artifactId>json</artifactId>
-      <version>20140107</version>
+      <version>1.8</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -470,6 +470,14 @@
         <exclusion>
           <groupId>org.apache.tika</groupId>
           <artifactId>tika-translate</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-langdetect</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-core</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.apache.opennlp</groupId>

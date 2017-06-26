@@ -46,6 +46,7 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xssf.model.CommentsTable;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
@@ -142,7 +143,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         while (iter.hasNext()) {
 
-            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
+            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config.getIncludeHeadersAndFooters(), xhtml);
             PackagePart sheetPart = null;
             try (InputStream stream = iter.next()) {
                 sheetPart = iter.getSheetPart();
@@ -254,6 +255,31 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 }
                 extractHyperLinksFromShape(((XSSFSimpleShape)shape).getCTShape(), xhtml);
             }
+            XSSFDrawing drawing = shape.getDrawing();
+            if (drawing != null) {
+                //dump diagram data
+                handleGeneralTextContainingPart(
+                        AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                        "diagram-data",
+                        drawing.getPackagePart(),
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
+                );
+                //dump chart data
+                handleGeneralTextContainingPart(
+                        XSSFRelation.CHART.getRelation(),
+                        "chart",
+                        drawing.getPackagePart(),
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml),
+                                new HashMap<String, String>()//empty
+                        )
+                );
+            }
         }
     }
 
@@ -364,10 +390,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     protected static class SheetTextAsHTML implements SheetContentsHandler {
         private XHTMLContentHandler xhtml;
+        private final boolean includeHeadersFooters;
         protected List<String> headers;
         protected List<String> footers;
 
-        protected SheetTextAsHTML(XHTMLContentHandler xhtml) {
+        protected SheetTextAsHTML(boolean includeHeaderFooters, XHTMLContentHandler xhtml) {
+            this.includeHeadersFooters = includeHeaderFooters;
             this.xhtml = xhtml;
             headers = new ArrayList<String>();
             footers = new ArrayList<String>();
@@ -411,6 +439,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         public void headerFooter(String text, boolean isHeader, String tagName) {
+            if (! includeHeadersFooters) {
+                return;
+            }
             if (isHeader) {
                 headers.add(text);
             } else {

@@ -60,6 +60,7 @@ public class SXWPFExtractorTest extends TikaTest {
         parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setUseSAXDocxExtractor(true);
+        officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
 
     }
@@ -794,6 +795,31 @@ public class SXWPFExtractorTest extends TikaTest {
         content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
         //from glossary document
         assertContainsCount("ready to write", content, 2);
+    }
+
+    @Test
+    public void testDiagramData() throws Exception {
+        assertContains("From here", getXML("testWORD_diagramData.docx", parseContext).xml);
+    }
+
+    @Test
+    public void testDOCXChartData() throws Exception {
+        String xml = getXML("testWORD_charts.docx", parseContext).xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testHeaderFooterNotExtraction() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        officeParserConfig.setUseSAXDocxExtractor(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.docx", parseContext).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
     }
 
 }

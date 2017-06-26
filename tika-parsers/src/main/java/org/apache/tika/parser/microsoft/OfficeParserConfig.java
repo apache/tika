@@ -26,6 +26,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeDeletedContent = false;
     private boolean includeMoveFromContent = false;
     private boolean includeShapeBasedContent = true;
+    private boolean includeHeadersAndFooters = true;
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
@@ -101,6 +102,22 @@ public class OfficeParserConfig implements Serializable {
         return includeShapeBasedContent;
     }
 
+    /**
+     * Whether or not to include headers and footers.
+     * <p/>
+     * This only operates on headers and footers in Word and Excel,
+     * not master slide content in Powerpoint.
+     * <p/>
+     * Default: <code>true</code>
+     * @param includeHeadersAndFooters
+     */
+    public void setIncludeHeadersAndFooters(boolean includeHeadersAndFooters) {
+        this.includeHeadersAndFooters = includeHeadersAndFooters;
+    }
+
+    public boolean getIncludeHeadersAndFooters() {
+        return includeHeadersAndFooters;
+    }
     public boolean getUseSAXDocxExtractor() {
         return useSAXDocxExtractor;
     }

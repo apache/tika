@@ -276,6 +276,17 @@ public class WordParserTest extends TikaTest {
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
+    @Test
+    public void testHeaderFooterNotExtraction() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.doc", parseContext).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
+    }
+
     /**
      * TIKA-1044 - Handle documents where parts of the
      *  text have no formatting or styles applied to them

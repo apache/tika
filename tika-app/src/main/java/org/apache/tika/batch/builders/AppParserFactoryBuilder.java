@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.tika.batch.DigestingAutoDetectParserFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.parser.DigestingParser;
+import org.apache.tika.parser.utils.BouncyCastleDigester;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.XMLDOMUtil;
@@ -55,8 +56,6 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
     }
 
     private DigestingParser.Digester buildDigester(Map<String, String> localAttrs) {
-        String digestString = localAttrs.get("digest");
-        CommonsDigester.DigestAlgorithm[] algos = CommonsDigester.parse(digestString);
 
         String readLimitString = localAttrs.get("digestMarkLimit");
         if (readLimitString == null) {
@@ -71,6 +70,16 @@ public class AppParserFactoryBuilder implements IParserFactoryBuilder {
             throw new IllegalArgumentException("Parameter \"digestMarkLimit\" must be a parseable int: "+
             readLimitString);
         }
-        return new CommonsDigester(readLimit, algos);
+        String digestString = localAttrs.get("digest");
+        try {
+            return new CommonsDigester(readLimit, digestString);
+        } catch (IllegalArgumentException commonsException) {
+            try {
+                return new BouncyCastleDigester(readLimit, digestString);
+            } catch (IllegalArgumentException bcException) {
+                throw new IllegalArgumentException("Tried both CommonsDigester ("+commonsException.getMessage()+
+                        ") and BouncyCastleDigester ("+bcException.getMessage()+")", bcException);
+            }
+        }
     }
 }

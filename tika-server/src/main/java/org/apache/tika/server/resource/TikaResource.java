@@ -328,6 +328,8 @@ public class TikaResource {
         } catch (Exception e) {
             logger.warn("{}: Text extraction failed", path, e);
             throw new TikaServerParseException(e);
+        } finally {
+            inputStream.close();
         }
     }
 
@@ -371,7 +373,7 @@ public class TikaResource {
         return produceTextMain(att.getObject(InputStream.class), att.getHeaders(), info);
     }
 
-    public StreamingOutput produceTextMain(final InputStream is, @Context MultivaluedMap<String, String> httpHeaders, @Context final UriInfo info) {
+    public StreamingOutput produceTextMain(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
         final Parser parser = createParser();
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();

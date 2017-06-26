@@ -1,3 +1,27 @@
+Release 1.15.1 - ??/??/????
+
+  * Remove non-ASL 2.0 compatible org.json (TIKA-1804).
+
+  * Allow extraction of scripts as embedded "MACRO". Users
+    must turn this on via TikaConfig (TIKA-2391).
+
+  * Upgrade Jackcess to 2.1.7 (TIKA-2380)
+
+  * Allow users to turn off extraction of headers and footers
+    from .doc, .docx, .xls, .xlsx, .xlsb (TIKA-2362)
+
+  * Extract text from charts in .docx, .pptx, .xlsx and .xlsb
+    (TIKA-2254).
+
+  * Extract text from diagrams in .docx, .pptx, .xlsx and .xlsb
+    (TIKA-1945).
+
+  * Fix bug in tika-server that led to an attempt to close the
+    input stream twice (TIKA-2384).
+
+  * Enable base32 encoding of digests and enable BouncyCastle implementations
+    of digest algorithms (TIKA-2386).
+
 Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
