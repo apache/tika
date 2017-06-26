@@ -18,6 +18,9 @@
 FROM inception-rest-tika
 MAINTAINER Apache Tika Team
 
+#Install python pillow. TODO: Remove this with the fix for TIKA 2398
+RUN pip install pillow
+
 # Download the pretrained im2txt checkpoint
 WORKDIR /usr/share/apache-tika/models/dl/image/caption/
 

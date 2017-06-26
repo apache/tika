@@ -41,7 +41,7 @@ import logging
 import sys
 from time import time
 from PIL import Image
-import io
+# import io
 from io import BytesIO
 
 import flask
@@ -217,13 +217,14 @@ def gen_captions():
     # if not jpeg
     else:
         # open the image from raw bytes
-        image = Image.open(io.BytesIO(image_data))
+        image = Image.open(BytesIO(image_data))
         # convert the image to RGB format, otherwise will give errors when converting to jpeg, if the image isn't RGB
         rgb_image = image.convert("RGB")
         # convert the RGB image to jpeg
-        with BytesIO() as image_bytes:
-            rgb_image.save(image_bytes, format="jpeg")
-            jpg_image = image_bytes.getvalue()
+        image_bytes = BytesIO()
+        rgb_image.save(image_bytes, format="jpeg")
+        jpg_image = image_bytes.getvalue()
+        image_bytes.close()
 
     read_time = current_time() - st
 

@@ -51,6 +51,7 @@ public class ObjectRecognitionParserTest {
     private static final String CAT_IMAGE_JPEG = "test-documents/testJPEG.jpg";
     private static final String BASEBALL_IMAGE_JPEG = "test-documents/baseball.jpg";
     private static final String BASEBALL_IMAGE_PNG = "test-documents/baseball.png";
+    private static final String BASEBALL_IMAGE_GIF = "test-documents/baseball.gif";
 
     private static final ClassLoader loader = ObjectRecognitionParserTest.class.getClassLoader();
 
@@ -91,7 +92,7 @@ public class ObjectRecognitionParserTest {
     @Ignore("Configure Rest API service")
     @Test
     public void jpegRESTim2txtTest() throws Exception {
-        String[] expectedCaption = {"a baseball player holding a bat on a field "};
+        String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
 
@@ -100,8 +101,16 @@ public class ObjectRecognitionParserTest {
     @Ignore("Configure Rest API service")
     @Test
     public void pngRESTim2txtTest() throws Exception {
-        String[] expectedCaption = {"a baseball player holding a bat on a field "};
+        String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
+                ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
+    }
+
+    @Ignore("Configure Rest API service")
+    @Test
+    public void gifRESTim2txtTest() throws Exception {
+        String[] expectedCaption = {"a baseball player pitching a ball on top of a field"};
+        doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_GIF,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
     }
 
