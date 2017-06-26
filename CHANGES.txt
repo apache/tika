@@ -22,6 +22,8 @@ Release 1.15.1 - ??/??/????
   * Enable base32 encoding of digests and enable BouncyCastle implementations
     of digest algorithms (TIKA-2386).
 
+  * Add snap builds to codebase (TIKA-2401)
+
 Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
