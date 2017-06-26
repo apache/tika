@@ -91,18 +91,18 @@ public class ObjectRecognitionParserTest {
     @Ignore("Configure Rest API service")
     @Test
     public void jpegRESTim2txtTest() throws Exception {
-        String[] expectedObjects = {"baseball", "bat", "field"};
+        String[] expectedCaption = {"a baseball player holding a bat on a field "};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
-                ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedObjects);
+                ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
 
     }
 
     @Ignore("Configure Rest API service")
     @Test
     public void pngRESTim2txtTest() throws Exception {
-        String[] expectedObjects = {"baseball", "bat", "field"};
+        String[] expectedCaption = {"a baseball player holding a bat on a field "};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
-                ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedObjects);
+                ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
     }
 
     private void doRecognize(String configFile, String testImg, String mdKey, String[] expectedObjects) throws Exception {

@@ -65,7 +65,9 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
 
     private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(new MediaType[]{
-                    MediaType.image("png"), MediaType.image("jpeg")
+                    MediaType.image("jpeg"),
+                    MediaType.image("png"),
+                    MediaType.image("gif")
             })));
 
     private static final String LABEL_LANG = "en";
