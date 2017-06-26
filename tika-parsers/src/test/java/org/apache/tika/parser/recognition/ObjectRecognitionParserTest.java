@@ -85,8 +85,6 @@ public class ObjectRecognitionParserTest {
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
-
-
     }
 
     @Ignore("Configure Rest API service")
@@ -95,7 +93,6 @@ public class ObjectRecognitionParserTest {
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
-
     }
 
     @Ignore("Configure Rest API service")
@@ -129,9 +126,7 @@ public class ObjectRecognitionParserTest {
                     Assert.assertTrue(message, text.contains(expectedObject));
                     Assert.assertTrue(message, metaValues.contains(expectedObject));
                 }
-
             }
         }
-
     }
 }

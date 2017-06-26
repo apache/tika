@@ -120,7 +120,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         List<? extends RecognisedObject> objects = recogniser.recognise(stream, handler, metadata, context);
 
         LOG.debug("Found {} objects", objects != null ? objects.size() : 0);
-        LOG.debug("Time taken {}ms", System.currentTimeMillis() - start);
+        LOG.info("Time taken {}ms", System.currentTimeMillis() - start);
 
         if (objects != null && !objects.isEmpty()) {
             int count;
