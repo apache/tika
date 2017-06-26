@@ -40,6 +40,9 @@ import xml.etree.ElementTree as ET
 import logging
 import sys
 from time import time
+from PIL import Image
+import io
+from io import BytesIO
 
 import flask
 import tensorflow as tf
@@ -189,6 +192,7 @@ def ping_pong():
 @app.route("/inception/v3/captions", methods=["GET", "POST"])
 def gen_captions():
     """API to caption images"""
+    image_format = "not jpeg"
 
     st = current_time()
     # get beam_size
@@ -203,8 +207,24 @@ def gen_captions():
         c_type, image_data = get_remote_file(url)
         if not image_data:
             return flask.Response(status=400, response=jsonify(error="Could not HTTP GET %s" % url))
-        if 'image/jpeg' not in c_type:
-            return flask.Response(status=400, response=jsonify(error="Content of %s is not JPEG" % url))
+        if 'image/jpeg' in c_type:
+            image_format = "jpeg"
+
+    # use c_type to find whether image_format is jpeg or not
+    # if jpeg, don't convert
+    if image_format == "jpeg":
+        jpg_image = image_data
+    # if not jpeg
+    else:
+        # open the image from raw bytes
+        image = Image.open(io.BytesIO(image_data))
+        # convert the image to RGB format, otherwise will give errors when converting to jpeg, if the image isn't RGB
+        rgb_image = image.convert("RGB")
+        # convert the RGB image to jpeg
+        with BytesIO() as image_bytes:
+            rgb_image.save(image_bytes, format="jpeg")
+            jpg_image = image_bytes.getvalue()
+
     read_time = current_time() - st
 
     # restart counter
@@ -214,7 +234,7 @@ def gen_captions():
                                                    app.vocab,
                                                    beam_size=beam_size,
                                                    max_caption_length=max_caption_length)
-    captions = generator.beam_search(app.sess, image_data)
+    captions = generator.beam_search(app.sess, jpg_image)
 
     captioning_time = current_time() - st
     app.logger.info("Captioning time : %d" % captioning_time)
@@ -238,7 +258,6 @@ def gen_captions():
             'units': 'ms'
         }
     }
-
     return Response(response=json.dumps(response), status=200, mimetype="application/json")
 
 

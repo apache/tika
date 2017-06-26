@@ -94,9 +94,6 @@ class ShowAndTellModel(object):
         self.image_height = 299
         self.image_width = 299
 
-        # image format ("jpeg" or "png")
-        self.image_format = "jpeg"
-
         # LSTM input and output dimensionality, respectively
         self.embedding_size = 512
         self.num_lstm_units = 512
@@ -152,12 +149,8 @@ class ShowAndTellModel(object):
 
         # decode image into a float32 Tensor of shape [?, ?, 3] with values in [0, 1)
         with tf.name_scope("decode", values=[encoded_image]):
-            if self.image_format == "jpeg":
-                image = tf.image.decode_jpeg(encoded_image, channels=3)
-            elif self.image_format == "png":
-                image = tf.image.decode_png(encoded_image, channels=3)
-            else:
-                raise ValueError("Invalid image format: %s" % self.image_format)
+            image = tf.image.decode_jpeg(encoded_image, channels=3)
+
         image = tf.image.convert_image_dtype(image, dtype=tf.float32)
         image_summary("original_image", image)
 
