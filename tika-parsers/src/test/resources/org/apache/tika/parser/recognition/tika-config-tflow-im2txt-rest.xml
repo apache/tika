@@ -20,6 +20,8 @@
     <parsers>
         <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
             <mime>image/jpeg</mime>
+            <mime>image/png</mime>
+            <mime>image/gif</mime>
             <params>
                 <param name="apiBaseUri" type="uri">http://localhost:8764/inception/v3</param>
                 <param name="captions" type="int">5</param>

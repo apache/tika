@@ -31,7 +31,9 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import sun.rmi.runtime.Log;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.List;
 
@@ -98,7 +100,7 @@ public class ObjectRecognitionParserTest {
     @Ignore("Configure Rest API service")
     @Test
     public void pngRESTim2txtTest() throws Exception {
-        String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
+        String[] expectedObjects = {"baseball", "bat", "field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedObjects);
     }
