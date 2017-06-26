@@ -34,11 +34,12 @@ import org.deeplearning4j.util.ModelSerializer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.VGG16ImagePreProcessor;
+import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
+import org.deeplearning4j.nn.modelimport.keras.trainedmodels.Utils.ImageNetLabels;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +68,8 @@ public class DL4JVGG16Net implements ObjectRecogniser {
 
     @Field
     private boolean serialize = true;
-
+    @Field
+    private int topN;
     private NativeImageLoader imageLoader = new NativeImageLoader(224, 224, 3);
     private DataNormalization preProcessor = new VGG16ImagePreProcessor();
     private boolean available = false;
@@ -114,15 +116,28 @@ public class DL4JVGG16Net implements ObjectRecogniser {
         INDArray image = imageLoader.asMatrix(stream);
         preProcessor.transform(image);
         INDArray[] output = model.output(false, image);
-        String modelOutput = TrainedModels.VGG16.decodePredictions(output[0]);
-        modelOutput = modelOutput.replace("Predictions for batch  :\n", "");
-        modelOutput = modelOutput.replace("%", "");
-        String objs[] = modelOutput.split("\n");
+        return predict(output[0]);
+    }
+    private List<RecognisedObject> predict(INDArray predictions)
+    {
+        ArrayList<String> labels;
+        labels=ImageNetLabels.getLabels();
         List<RecognisedObject> objects = new ArrayList<>();
-        for (String obj: objs) {
-            String data[] = obj.split(",");
-            double confidence = Double.parseDouble(data[0]);
-            objects.add(new RecognisedObject(data[1].trim(), "eng", data[1].trim(), confidence));
+        int[] topNPredictions = new int[topN];
+        float[] topNProb = new float[topN];
+		String outLabels[]=new String[topN];
+        //brute force collect top N
+        int i = 0;
+        for (int batch = 0; batch < predictions.size(0); batch++) {
+            INDArray currentBatch = predictions.getRow(batch).dup();
+            while (i < topN) {
+                topNPredictions[i] = Nd4j.argMax(currentBatch, 1).getInt(0, 0);
+                topNProb[i] = currentBatch.getFloat(batch, topNPredictions[i]);
+                currentBatch.putScalar(0, topNPredictions[i], 0);
+                outLabels[i]= labels.get(topNPredictions[i]);
+                objects.add(new RecognisedObject(outLabels[i], "eng", outLabels[i], topNProb[i]));
+                i++;
+            }
         }
         return objects;
     }
