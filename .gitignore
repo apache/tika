@@ -12,3 +12,4 @@ nbactions.xml
 nb-configuration.xml
 *.DS_Store
 *.tmp-inception
+*.snap
