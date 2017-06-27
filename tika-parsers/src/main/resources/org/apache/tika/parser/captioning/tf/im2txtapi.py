@@ -41,9 +41,7 @@ import logging
 import sys
 from time import time
 from PIL import Image
-# import io
 from io import BytesIO
-
 import flask
 import tensorflow as tf
 
@@ -110,13 +108,10 @@ class Initializer(flask.Flask):
             model = model_wrapper.ModelWrapper()
             restore_fn = model.build_graph(FLAGS.checkpoint_path)
         g.finalize()
-
         # make the model globally available
         self.model = model
-
         # create the vocabulary
         self.vocab = vocabulary.Vocabulary(FLAGS.vocab_file)
-
         self.sess = tf.Session(graph=g)
         # load the model from checkpoint
         restore_fn(self.sess)
@@ -227,7 +222,6 @@ def gen_captions():
         image_bytes.close()
 
     read_time = current_time() - st
-
     # restart counter
     st = current_time()
 
