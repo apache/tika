@@ -1,5 +1,7 @@
 Release 1.15.1 - ??/??/????
 
+  * Upgrade to POI 3.17-beta1 (TIKA-2336).
+
   * Remove non-ASL 2.0 compatible org.json (TIKA-1804).
 
   * Allow extraction of scripts as embedded "MACRO". Users
