@@ -804,7 +804,7 @@ public class TestMimeTypes {
         assertType("application/xml", "testXML.xml");
         assertType("audio/basic", "testAU.au");
         assertType("audio/x-aiff", "testAIFF.aif");
-        assertType("audio/x-wav", "testWAV.wav");
+        assertType("audio/vnd.wave", "testWAV.wav");
         assertType("audio/midi", "testMID.mid");
         assertType("application/x-msaccess", "testACCESS.mdb");
         assertType("application/x-font-ttf", "testTrueType3.ttf");

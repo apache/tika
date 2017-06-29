@@ -4811,7 +4811,10 @@
     <!-- <glob pattern="*.rpm"/> - conflicts with application/x-rpm -->
   </mime-type>
 
-  <mime-type type="audio/x-wav">
+  <mime-type type="audio/vnd.wave">
+    <alias type="audio/x-wav"/>
+    <alias type="audio/wave"/>
+    <alias type="audio/wav"/>
     <acronym>WAV</acronym>
     <magic priority="20">
       <match value="RIFF....WAVE" type="string" offset="0"
