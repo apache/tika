@@ -127,7 +127,6 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>
-              tika-serialization;inline=true,
               tika-parsers;inline=true,
               commons-compress, xz, commons-codec, commons-csv,
               commons-io, commons-exec, commons-collections4, junrar,
