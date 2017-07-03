@@ -677,7 +677,8 @@ public class TikaDetectionTest {
         assertEquals("audio/x-pn-realaudio", tika.detect("x.ram"));
         assertEquals("audio/x-pn-realaudio", tika.detect("x.ra"));
         assertEquals("audio/x-pn-realaudio-plugin", tika.detect("x.rmp"));
-        assertEquals("audio/x-wav", tika.detect("x.wav"));
+        // Differ from httpd - wav was properly registered in RFC 2361
+        //assertEquals("audio/x-wav", tika.detect("x.wav"));
         assertEquals("chemical/x-cdx", tika.detect("x.cdx"));
         assertEquals("chemical/x-cif", tika.detect("x.cif"));
         assertEquals("chemical/x-cmdf", tika.detect("x.cmdf"));

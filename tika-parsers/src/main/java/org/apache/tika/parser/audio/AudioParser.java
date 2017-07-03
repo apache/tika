@@ -50,7 +50,8 @@ public class AudioParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
                 MediaType.audio("basic"),
-                MediaType.audio("x-wav"),
+                MediaType.audio("vnd.wave"), // Official, fixed in Tika 1.16
+                MediaType.audio("x-wav"),    // Older, used until Tika 1.16
                 MediaType.audio("x-aiff"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -73,7 +74,7 @@ public class AudioParser extends AbstractParser {
             } else if (type == Type.AU || type == Type.SND) {
                 metadata.set(Metadata.CONTENT_TYPE, "audio/basic");
             } else if (type == Type.WAVE) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/x-wav");
+                metadata.set(Metadata.CONTENT_TYPE, "audio/vnd.wave");
             }
 
             AudioFormat audioFormat = fileFormat.getFormat();

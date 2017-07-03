@@ -24,6 +24,9 @@ Release 1.15.1 - ??/??/????
   * Enable base32 encoding of digests and enable BouncyCastle implementations
     of digest algorithms (TIKA-2386).
 
+  * Canonical Mimetype of WAVE audio changed to match RFC 2361 defined
+    version, audio/vnd.wave, older audio/x-wav remains as an alias
+
 Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
