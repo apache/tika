@@ -142,10 +142,10 @@
               vorbis-java-core, vorbis-java-tika,
               isoparser,
               metadata-extractor, xmpcore, json-simple,
-              boilerpipe, rome, rome-utils, sentiment-analysis-parser;type=jar;inline=false, opennlp-tools, opennlp-maxent,
+              boilerpipe, rome, rome-utils, sentiment-analysis-parser;type=jar;inline=false, opennlp-tools,
               geoapi, sis-metadata, sis-netcdf, sis-utility,
               sis-storage, apache-mime4j-core, apache-mime4j-dom,
-              jsr-275, jhighlight, java-libpst, jwnl,
+              jsr-275, jhighlight, java-libpst,
               netcdf4, grib, cdm, httpservices, jcip-annotations,
               jmatio, guava
             </Embed-Dependency>
