@@ -263,7 +263,7 @@
     <dependency>
       <groupId>com.pff</groupId>
       <artifactId>java-libpst</artifactId>
-      <version>0.8.1</version>
+      <version>0.9.3</version>
     </dependency>
     <dependency>
       <groupId>com.github.junrar</groupId>

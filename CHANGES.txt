@@ -42,7 +42,13 @@ Release 1.16 - ??/??/????
   * Canonical Mimetype of WAVE audio changed to match RFC 2361 defined
     version, audio/vnd.wave, older audio/x-wav remains as an alias
 
-  * Upgrade "provided" xerial to 3.19.3
+  * Upgrade "provided" xerial to 3.19.3 (TIKA-2412).
+
+  * Upgrade Gson to 2.8.1 (TIKA-2414).
+
+  * Upgrade mime4j to 0.8.1 (TIKA-2413).
+
+  * Upgrade libpst to 0.9.3 (TIKA-2415).
 
 Release 1.15 - 05/23/2017
 
