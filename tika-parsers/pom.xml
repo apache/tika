@@ -260,10 +260,12 @@
       <artifactId>jhighlight</artifactId>
       <version>1.0.2</version>
     </dependency>
+    <!-- can't upgrade to java-libpst 0.9.3 because it requires Java 8
+         and is buggy with OST TIKA-2415 -->
     <dependency>
       <groupId>com.pff</groupId>
       <artifactId>java-libpst</artifactId>
-      <version>0.9.3</version>
+      <version>0.8.1</version>
     </dependency>
     <dependency>
       <groupId>com.github.junrar</groupId>
