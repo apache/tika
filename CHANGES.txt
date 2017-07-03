@@ -1,5 +1,9 @@
 Release 1.16 - ??/??/????
 
+  * tika-app now extracts inline images in PDFs by
+    default, and it includes a warning to users that this is not the
+    default behavior elsewhere in Tika (TIKA-2374).
+
   * Allow configurability of warnings for problems during
     parser initialization (TIKA-2389).
 

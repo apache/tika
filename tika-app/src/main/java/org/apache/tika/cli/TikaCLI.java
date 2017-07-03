@@ -98,6 +98,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
@@ -185,6 +186,16 @@ public class TikaCLI {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
             ContentHandler handler = getContentHandler(output, metadata);
+            if (config == null && context.get(PDFParserConfig.class) == null) {
+                PDFParserConfig pdfParserConfig = new PDFParserConfig();
+                pdfParserConfig.setExtractInlineImages(true);
+                String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
+                        "inline images for the PDFParser (TIKA-2374).\n" +
+                        "This is not the default option in Tika generally or in tika-server.";
+                LOG.info(warn);
+                System.err.println(warn);
+                context.set(PDFParserConfig.class, pdfParserConfig);
+            }
             p.parse(input, handler, metadata, context);
             // fix for TIKA-596: if a parser doesn't generate
             // XHTML output, the lack of an output document prevents
