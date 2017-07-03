@@ -48,8 +48,6 @@ Release 1.16 - ??/??/????
 
   * Upgrade mime4j to 0.8.1 (TIKA-2413).
 
-  * Upgrade libpst to 0.9.3 (TIKA-2415).
-
 Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
