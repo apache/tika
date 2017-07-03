@@ -1,15 +1,16 @@
-Release 1.15.1 - ??/??/????
+Release 1.16 - ??/??/????
 
-  * Upgrade to Jackcess 2.1.8 (TIKA-
+  * Allow configurability of warnings for problems during
+    parser initialization (TIKA-2389).
+
+  * Upgrade to Jackcess 2.1.8 (TIKA-2380).
 
   * Upgrade to POI 3.17-beta1 (TIKA-2336).
 
-  * Remove non-ASL 2.0 compatible org.json (TIKA-1804).
+  * Remove non-ASL-2.0-compatible org.json (TIKA-1804).
 
-  * Allow extraction of scripts as embedded "MACRO". Users
-    must turn this on via TikaConfig (TIKA-2391).
-
-  * Upgrade Jackcess to 2.1.7 (TIKA-2380)
+  * Allow extraction of <script> elements in HTML as embedded "MACRO".
+    Users must turn this on via TikaConfig (TIKA-2391).
 
   * Allow users to turn off extraction of headers and footers
     from .doc, .docx, .xls, .xlsx, .xlsb (TIKA-2362)
