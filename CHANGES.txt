@@ -42,6 +42,8 @@ Release 1.16 - ??/??/????
   * Canonical Mimetype of WAVE audio changed to match RFC 2361 defined
     version, audio/vnd.wave, older audio/x-wav remains as an alias
 
+  * Upgrade "provided" xerial to 3.19.3
+
 Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
