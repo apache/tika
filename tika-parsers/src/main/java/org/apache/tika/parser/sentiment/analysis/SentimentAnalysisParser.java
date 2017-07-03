@@ -47,12 +47,12 @@ import org.xml.sax.SAXException;
  * This parser classifies documents based on the sentiment of document.
  * The classifier is powered by Apache OpenNLP's Maximum Entropy Classifier
  */
-public class SentimentParser extends AbstractParser implements Initializable {
+public class SentimentAnalysisParser extends AbstractParser implements Initializable {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.application("sentiment"));
     private static final Logger LOG = LoggerFactory
-            .getLogger(SentimentParser.class);
+            .getLogger(SentimentAnalysisParser.class);
     public static final String DEF_MODEL = "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/en-netflix-sentiment.bin";
 
     private SentimentME classifier;

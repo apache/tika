@@ -17,7 +17,7 @@
 -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.sentiment.analysis.SentimentParser">
+        <parser class="org.apache.tika.parser.sentiment.analysis.SentimentAnalysisParser">
             <mime>text/plain</mime>
             <mime>application/sentiment</mime>
             <params>
