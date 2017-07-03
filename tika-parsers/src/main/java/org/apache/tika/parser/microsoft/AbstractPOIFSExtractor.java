@@ -50,6 +50,7 @@ abstract class AbstractPOIFSExtractor {
     private PasswordProvider passwordProvider;
     protected final Metadata parentMetadata;//metadata of the parent/container document
     protected final OfficeParserConfig officeParserConfig;
+    protected final ParseContext context;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         this(context, null);
@@ -61,6 +62,7 @@ abstract class AbstractPOIFSExtractor {
         this.passwordProvider = context.get(PasswordProvider.class);
         this.officeParserConfig = context.get(OfficeParserConfig.class, new OfficeParserConfig());
         this.parentMetadata = parentMetadata;
+        this.context = context;
     }
 
     // Note - these cache, but avoid creating the default TikaConfig if not needed

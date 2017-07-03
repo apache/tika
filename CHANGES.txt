@@ -1,5 +1,7 @@
 Release 1.16 - ??/??/????
 
+  * Extract macros from PPT (TIKA-2089).
+
   * Extract absolute path for last saved location when available
     in .xlsx and .xlsb (TIKA-2335).
 
