@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.sentiment.analysis;
+package org.apache.tika.parser.sentiment;
 
 import java.io.File;
 import java.io.IOException;
