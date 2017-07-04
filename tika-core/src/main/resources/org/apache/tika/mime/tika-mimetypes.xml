@@ -1956,7 +1956,8 @@
     <glob pattern="*.otc"/>
   </mime-type>
 
-  <mime-type type="application/vnd.oasis.opendocument.database">
+  <mime-type type="application/vnd.oasis.opendocument.base">
+    <alias type="application/vnd.oasis.opendocument.database"/>
     <glob pattern="*.odb"/>
   </mime-type>
 
@@ -4810,7 +4811,10 @@
     <!-- <glob pattern="*.rpm"/> - conflicts with application/x-rpm -->
   </mime-type>
 
-  <mime-type type="audio/x-wav">
+  <mime-type type="audio/vnd.wave">
+    <alias type="audio/x-wav"/>
+    <alias type="audio/wave"/>
+    <alias type="audio/wav"/>
     <acronym>WAV</acronym>
     <magic priority="20">
       <match value="RIFF....WAVE" type="string" offset="0"

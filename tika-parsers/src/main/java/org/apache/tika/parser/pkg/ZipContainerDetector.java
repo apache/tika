@@ -29,9 +29,11 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
+import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -100,7 +102,7 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
-            String type = TikaCompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            String type = CompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
             return CompressorParser.getMediaType(type);
         } catch (CompressorException e) {
             return MediaType.OCTET_STREAM;
@@ -109,7 +111,7 @@ public class ZipContainerDetector implements Detector {
 
     private static MediaType detectArchiveFormat(byte[] prefix, int length) {
         try {
-            String name = TikaArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
+            String name = ArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
             return PackageParser.getMediaType(name);
         } catch (ArchiveException e) {
             return MediaType.OCTET_STREAM;

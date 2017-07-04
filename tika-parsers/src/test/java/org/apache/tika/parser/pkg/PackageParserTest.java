@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 
 import java.nio.charset.StandardCharsets;
 
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class PackageParserTest {
         //test that the package parser covers all inputstreams handled
         //by ArchiveStreamFactory.  When we update commons-compress, and they add
         //a new stream type, we want to make sure that we're handling it.
-        TikaArchiveStreamFactory archiveStreamFactory = new TikaArchiveStreamFactory(StandardCharsets.UTF_8.name());
+        ArchiveStreamFactory archiveStreamFactory = new ArchiveStreamFactory(StandardCharsets.UTF_8.name());
         PackageParser packageParser = new PackageParser();
         ParseContext parseContext = new ParseContext();
         for (String name : archiveStreamFactory.getInputStreamArchiveNames()) {

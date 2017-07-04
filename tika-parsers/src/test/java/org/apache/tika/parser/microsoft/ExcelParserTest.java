@@ -408,6 +408,38 @@ public class ExcelParserTest extends TikaTest {
     }
 
     @Test
+    public void testHeaderAndFooterNotExtraction() throws Exception {
+        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL_headers_footers.xls")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.UK);
+
+            OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+            officeParserConfig.setIncludeHeadersAndFooters(false);
+            context.set(OfficeParserConfig.class, officeParserConfig);
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.ms-excel",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            String content = handler.toString();
+            assertContains("John Smith1", content);
+            assertContains("John Smith50", content);
+            assertContains("1 Corporate HQ", content);
+            assertNotContained("Header - Corporate Spreadsheet", content);
+            assertNotContained("Header - For Internal Use Only", content);
+            assertNotContained("Header - Author: John Smith", content);
+            assertNotContained("Footer - Corporate Spreadsheet", content);
+            assertNotContained("Footer - For Internal Use Only", content);
+            assertNotContained("Footer - Author: John Smith", content);
+        }
+    }
+
+
+    @Test
     public void testHyperlinksInXLS() throws Exception {
         String xml = getXML("testEXCEL_hyperlinks.xls").xml;
         //external url

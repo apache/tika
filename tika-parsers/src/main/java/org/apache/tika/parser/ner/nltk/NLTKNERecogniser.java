@@ -64,7 +64,7 @@ public class NLTKNERecogniser implements NERecogniser {
             try {
                 restHostUrlStr = readRestUrl();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.warn("Can't read rest url", e);
             }
 
             if (restHostUrlStr == null || restHostUrlStr.equals("")) {
@@ -83,7 +83,7 @@ public class NLTKNERecogniser implements NERecogniser {
             }
 
         } catch (Exception e) {
-            LOG.debug(e.getMessage(), e);
+            LOG.warn(e.getMessage(), e);
         }
     }
 

@@ -16,12 +16,6 @@
  */
 package org.apache.tika.parser.ner.corenlp;
 
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.parser.ner.NERecogniser;
-import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -32,6 +26,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.parser.ner.NERecogniser;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *  This class offers an implementation of {@link NERecogniser} based on
@@ -150,7 +151,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
         return names;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, JSONException {
         if (args.length != 1) {
             System.err.println("Error: Invalid Args");
             System.err.println("This tool finds names inside text");

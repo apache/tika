@@ -37,6 +37,7 @@ import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
+import org.apache.tika.parser.utils.BouncyCastleDigester;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
@@ -80,7 +81,7 @@ public class TikaServerCli {
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ", use * for all)");
         options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
         options.addOption("c", "config", true, "Tika Configuration file to override default config with.");
-        options.addOption("d", "digest", true, "include digest in metadata, e.g. md5,sha256");
+        options.addOption("d", "digest", true, "include digest in metadata, e.g. md5,sha1:32,sha256");
         options.addOption("dml", "digestMarkLimit", true, "max number of bytes to mark on stream for digest");
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
@@ -168,8 +169,16 @@ public class TikaServerCli {
                         throw new RuntimeException("Must have parseable int after digestMarkLimit(dml): "+dmlS);
                     }
                 }
-                digester = new CommonsDigester(digestMarkLimit,
-                        CommonsDigester.parse(line.getOptionValue("digest")));
+                try {
+                    digester = new CommonsDigester(digestMarkLimit, line.getOptionValue("digest"));
+                } catch (IllegalArgumentException commonsException) {
+                    try {
+                        digester = new BouncyCastleDigester(digestMarkLimit, line.getOptionValue("digest"));
+                    } catch (IllegalArgumentException bcException) {
+                        throw new IllegalArgumentException("Tried both CommonsDigester ("+commonsException.getMessage()+
+                                ") and BouncyCastleDigester ("+bcException.getMessage()+")", bcException);
+                    }
+                }
             }
 
             if (line.hasOption("enableFileUrl") &&

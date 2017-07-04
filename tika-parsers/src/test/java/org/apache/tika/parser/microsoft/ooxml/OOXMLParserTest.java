@@ -654,6 +654,17 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    public void testDOCXHeaderFooterNotExtraction() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_various.docx", parseContext).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
+    }
+
+    @Test
     public void testVariousPPTX() throws Exception {
         Metadata metadata = new Metadata();
         String xml = getXML("testPPT_various.pptx", metadata).xml;
@@ -1245,6 +1256,23 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    public void testExcelHeaderAndFooterNotExtraction() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+
+        String content = getXML("testEXCEL_headers_footers.xlsx", parseContext).xml;
+        assertNotContained("Header - Corporate Spreadsheet", content);
+        assertNotContained("Header - For Internal Use Only", content);
+        assertNotContained("Header - Author: John Smith", content);
+        assertNotContained("Footer - Corporate Spreadsheet", content);
+        assertNotContained("Footer - For Internal Use Only", content);
+        assertNotContained("Footer - Author: John Smith", content);
+    }
+
+
+    @Test
     public void testMultiAuthorsManagers() throws Exception {
         XMLResult r = getXML("testWORD_multi_authors.docx");
         String[] authors = r.metadata.getValues(TikaCoreProperties.CREATOR);
@@ -1538,7 +1566,22 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("OddLeftFooter OddCenterFooter OddRightFooter", xml);
         assertContains("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
         assertContains("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
+    }
 
+    @Test
+    public void testXLSBNoHeaderFooters() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeHeadersAndFooters(false);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testEXCEL_various.xlsb", parseContext).xml;
+        assertNotContained("OddLeftHeader OddCenterHeader OddRightHeader", xml);
+        assertNotContained("EvenLeftHeader EvenCenterHeader EvenRightHeader", xml);
+
+        assertNotContained("FirstPageLeftHeader FirstPageCenterHeader FirstPageRightHeader", xml);
+        assertNotContained("OddLeftFooter OddCenterFooter OddRightFooter", xml);
+        assertNotContained("EvenLeftFooter EvenCenterFooter EvenRightFooter", xml);
+        assertNotContained("FirstPageLeftFooter FirstPageCenterFooter FirstPageRightFooter", xml);
 
     }
 
@@ -1556,6 +1599,72 @@ public class OOXMLParserTest extends TikaTest {
             seen.add(sheetName);
         }
 
+    }
+
+    @Test
+    public void testXLSBOriginalPath() throws Exception {
+        assertEquals("C:\\Users\\tallison\\Desktop\\working\\TIKA-1945\\",
+                getXML("testEXCEL_diagramData.xlsb").metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+    }
+
+    @Test
+    public void testXLSXOriginalPath() throws Exception {
+        assertEquals("C:\\Users\\tallison\\Desktop\\working\\TIKA-1945\\",
+                getXML("testEXCEL_diagramData.xlsx").metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+    }
+
+    @Test
+    public void testXLSBDiagramData() throws Exception {
+        assertContains("SmartArt",
+                getXML("testEXCEL_diagramData.xlsb").xml);
+    }
+
+    @Test
+    public void testXLSXDiagramData() throws Exception {
+        assertContains("SmartArt",
+                getXML("testEXCEL_diagramData.xlsx").xml);
+    }
+
+    @Test
+    public void testDOCXDiagramData() throws Exception {
+        assertContains("From here", getXML("testWORD_diagramData.docx").xml);
+    }
+
+    @Test
+    public void testPPTXDiagramData() throws Exception {
+        assertContains("President", getXML("testPPT_diagramData.pptx").xml);
+    }
+
+    @Test
+    public void testXLSXChartData() throws Exception {
+        String xml = getXML("testEXCEL_charts.xlsx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testXLSBChartData() throws Exception {
+        String xml = getXML("testEXCEL_charts.xlsb").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testDOCXChartData() throws Exception {
+        String xml = getXML("testWORD_charts.docx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testPPTXChartData() throws Exception {
+        String xml = getXML("testPPT_charts.pptx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
     }
 
 }

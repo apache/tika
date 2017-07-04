@@ -52,6 +52,10 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -89,7 +93,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  *
  */
-public class TesseractOCRParser extends AbstractParser {
+public class TesseractOCRParser extends AbstractParser implements Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
 
     private static final long serialVersionUID = -8167538283213097265L;
@@ -103,14 +107,13 @@ public class TesseractOCRParser extends AbstractParser {
     private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<>();
 
 
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         // If Tesseract is installed, offer our supported image types
         TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
-        if (hasTesseract(config))
+        if (hasTesseract(config)) {
             return SUPPORTED_TYPES;
-
+        }
         // Otherwise don't advertise anything, so the other image parsers
         //  can be selected instead
         return Collections.emptySet();
@@ -387,9 +390,35 @@ public class TesseractOCRParser extends AbstractParser {
         }
     }
 
+    /**
+     * no-op
+     * @param params params to use for initialization
+     * @throws TikaConfigException
+     */
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
 
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler)
+            throws TikaConfigException {
+        //this will incorrectly trigger for people who turn off Tesseract
+        //by sending in a bogus tesseract path via a custom TesseractOCRConfig.
+        //TODO: figure out how to solve that.
+        if (hasTesseract(DEFAULT_CONFIG)) {
+            problemHandler.handleInitializableProblem(this.getClass().getName(),
+                    "Tesseract OCR is installed and will be automatically applied to image files.\n" +
+                            "This may dramatically slow down content extraction (TIKA-2359).\n" +
+                            "As of Tika 1.15 (and prior versions), Tesseract is automatically called.\n" +
+                            "In future versions of Tika, users may need to turn the TesseractOCRParser on via TikaConfig.");
+        }
+    }
     // TIKA-1445 workaround parser
     private static Parser _TMP_IMAGE_METADATA_PARSER = new CompositeImageParser();
+
+
+
     private static class CompositeImageParser extends CompositeParser {
         private static final long serialVersionUID = -2398203346206381382L;
         private static List<Parser> imageParsers = Arrays.asList(new Parser[]{

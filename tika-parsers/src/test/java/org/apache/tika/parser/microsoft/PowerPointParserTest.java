@@ -30,7 +30,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -252,7 +251,6 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("POI 3.15-final not finding any macros in this ppt")
     public void testMacros() throws  Exception {
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");

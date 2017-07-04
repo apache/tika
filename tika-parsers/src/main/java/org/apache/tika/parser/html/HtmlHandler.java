@@ -16,8 +16,12 @@
  */
 package org.apache.tika.parser.html;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -25,9 +29,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.HTML;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
@@ -42,22 +50,31 @@ class HtmlHandler extends TextContentHandler {
             new HashSet<String>(Arrays.asList("src", "href", "longdesc", "cite"));
     private static final Pattern ICBM =
             Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
+    private static final Attributes EMPTY_ATTS = new AttributesImpl();
     private final HtmlMapper mapper;
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
+    private final ParseContext context;
+    private final boolean extractScripts;
     private final StringBuilder title = new StringBuilder();
     private int bodyLevel = 0;
     private int discardLevel = 0;
     private int titleLevel = 0;
+    private int scriptLevel= 0;
+    private Attributes scriptAtts = EMPTY_ATTS;//attributes from outermost script element
+    private final StringBuilder script = new StringBuilder();
+
     private boolean isTitleSetToMetadata = false;
 
     private HtmlHandler(
-            HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata) {
+            HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata,
+            ParseContext context, boolean extractScripts) {
         super(xhtml);
         this.mapper = mapper;
         this.xhtml = xhtml;
         this.metadata = metadata;
-
+        this.context = context;
+        this.extractScripts = extractScripts;
         // Try to determine the default base URL, if one has not been given
         if (metadata.get(Metadata.CONTENT_LOCATION) == null) {
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
@@ -74,14 +91,32 @@ class HtmlHandler extends TextContentHandler {
     }
 
     public HtmlHandler(
-            HtmlMapper mapper, ContentHandler handler, Metadata metadata) {
-        this(mapper, new XHTMLContentHandler(handler, metadata), metadata);
+            HtmlMapper mapper, ContentHandler handler, Metadata metadata, ParseContext context,
+            boolean extractScripts) {
+        this(mapper, new XHTMLContentHandler(handler, metadata), metadata, context, extractScripts);
     }
+
+    /**
+     * @deprecated use {@link HtmlHandler#HtmlHandler(HtmlMapper, ContentHandler, Metadata, ParseContext, boolean)}
+     * @param mapper
+     * @param handler
+     * @param metadata
+     */
+    @Deprecated
+    public HtmlHandler(
+            HtmlMapper mapper, ContentHandler handler, Metadata metadata) {
+        this(mapper, new XHTMLContentHandler(handler, metadata), metadata, new ParseContext(), false);
+    }
+
 
     @Override
     public void startElement(
             String uri, String local, String name, Attributes atts)
             throws SAXException {
+
+        if ("SCRIPT".equals(name)) {
+            scriptLevel++;
+        }
         if ("TITLE".equals(name) || titleLevel > 0) {
             titleLevel++;
         }
@@ -121,9 +156,8 @@ class HtmlHandler extends TextContentHandler {
             } else if ("LINK".equals(name)) {
                 startElementWithSafeAttributes("link", atts);
                 xhtml.endElement("link");
-            } else if ("SCRIPT".equals(name) && atts.getValue("src") != null) {
-                startElementWithSafeAttributes("script", atts);
-                xhtml.endElement("script");
+            } else if ("SCRIPT".equals(name)) {
+                scriptAtts = atts;
             }
         }
 
@@ -220,6 +254,20 @@ class HtmlHandler extends TextContentHandler {
     @Override
     public void endElement(
             String uri, String local, String name) throws SAXException {
+        if ("SCRIPT".equals(name)) {
+            scriptLevel--;
+            if (scriptLevel == 0) {
+                if (scriptAtts.getLength() > 0) {
+                    startElementWithSafeAttributes("script", scriptAtts);
+                    xhtml.endElement("script");
+                }
+                scriptAtts = EMPTY_ATTS;
+                if (extractScripts) {
+                    writeScript();
+                }
+            }
+        }
+
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
@@ -248,15 +296,48 @@ class HtmlHandler extends TextContentHandler {
         }
     }
 
+    private void writeScript() throws SAXException {
+        //don't write an attached macro if there is no content
+        //we may want to revisit this behavior
+        if (script.toString().trim().length() == 0) {
+            return;
+        }
+        //do anything with attrs?
+        Metadata m = new Metadata();
+        m.set(Metadata.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+        String src = scriptAtts.getValue("src");
+        if (src != null) {
+            m.set(HTML.SCRIPT_SOURCE, src);
+        }
+
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        try (InputStream stream = new ByteArrayInputStream(
+                script.toString().getBytes(StandardCharsets.UTF_8))) {
+            embeddedDocumentExtractor.parseEmbedded(
+                    stream, xhtml, m, false
+            );
+        } catch (IOException e) {
+            //shouldn't ever happen
+        } finally {
+            script.setLength(0);
+        }
+    }
+
     @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
+        if (scriptLevel > 0 && extractScripts) {
+            script.append(ch, start, length);
+        }
         if (titleLevel > 0 && bodyLevel == 0) {
             title.append(ch, start, length);
         }
         if (bodyLevel > 0 && discardLevel == 0) {
             super.characters(ch, start, length);
         }
+
     }
 
     @Override

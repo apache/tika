@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.15-SNAPSHOT</version>
+    <version>1.16-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -100,6 +100,7 @@
                         <include name="target/*-src.zip*" />
                         <include name="tika-app/target/tika-app-${project.version}.jar*" />
                         <include name="tika-server/target/tika-server-${project.version}.jar*" />
+                        <include name="tika-eval/target/tika-eval-${project.version}.jar*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="MD5" fileext=".md5">
@@ -125,7 +126,7 @@ A candidate for the Tika ${project.version} release is available at:
   https://dist.apache.org/repos/dist/dev/tika/
 
 The release candidate is a zip archive of the sources in:
-  http://svn.apache.org/repos/asf/tika/tags/${project.version}-rcN/
+  https://github.com/apache/tika/tree/{project.version}-rcN/
 
 The SHA1 checksum of the archive is
   ${checksum}.
@@ -172,6 +173,19 @@ least three +1 Tika PMC votes are cast.
     </profile>
   </profiles>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>CHANGES.txt</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
   <description>The Apache Tika™ toolkit detects and extracts metadata and structured text content from various documents
     using existing parser libraries.
   </description>

@@ -130,18 +130,20 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
         }
 
-        //headers
-        try {
-            PackageRelationshipCollection headersPRC = documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
-            if (headersPRC != null) {
-                for (int i = 0; i < headersPRC.size(); i++) {
-                    PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
-                    handlePart(header, styles, listManager, xhtml);
+        if (config.getIncludeHeadersAndFooters()) {
+            //headers
+            try {
+                PackageRelationshipCollection headersPRC = documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
+                if (headersPRC != null) {
+                    for (int i = 0; i < headersPRC.size(); i++) {
+                        PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
+                        handlePart(header, styles, listManager, xhtml);
+                    }
                 }
+            } catch (InvalidFormatException | ZipException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
             }
-        } catch (InvalidFormatException|ZipException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
         }
 
         //main document
@@ -152,14 +154,21 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
         }
         //for now, just dump other components at end
-        for (XWPFRelation rel : new XWPFRelation[]{
-                XWPFRelation.FOOTNOTE,
-                XWPFRelation.COMMENT,
-                XWPFRelation.FOOTER,
-                XWPFRelation.ENDNOTE
+        for (String rel : new String[]{
+                AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                AbstractOOXMLExtractor.RELATION_CHART,
+                XWPFRelation.FOOTNOTE.getRelation(),
+                XWPFRelation.COMMENT.getRelation(),
+                XWPFRelation.FOOTER.getRelation(),
+                XWPFRelation.ENDNOTE.getRelation(),
         }) {
+            //skip footers if we shouldn't extract them
+            if (! config.getIncludeHeadersAndFooters() &&
+                    rel.equals(XWPFRelation.FOOTER.getRelation())) {
+                continue;
+            }
             try {
-                PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel.getRelation());
+                PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel);
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart = documentPart.getRelatedPart(prc.getRelationship(i));

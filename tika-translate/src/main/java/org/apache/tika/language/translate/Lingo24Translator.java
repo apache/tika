@@ -33,6 +33,8 @@ import org.apache.tika.exception.TikaException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An implementation of a REST client for the
@@ -41,6 +43,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * and set your Application's User Key in the <code>translator.lingo24.properties</code> file.
  */
 public class Lingo24Translator extends AbstractTranslator {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Lingo24Translator.class);
 
     private static final String LINGO24_TRANSLATE_URL_BASE = "https://api.lingo24.com/mt/v1/translate";
 
@@ -64,7 +68,7 @@ public class Lingo24Translator extends AbstractTranslator {
             if (this.userKey.equals(DEFAULT_KEY))
                 this.isAvailable = false;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.warn("Couldn't read config file", e);
             isAvailable = false;
         }
     }

@@ -1,5 +1,3 @@
-package org.apache.tika.parser.utils;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,27 +14,19 @@ package org.apache.tika.parser.utils;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.utils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
-import org.apache.tika.io.IOExceptionWithCause;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
+import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.digest.CompositeDigester;
+import org.apache.tika.parser.digest.InputStreamDigester;
 
 /**
  * Implementation of {@link org.apache.tika.parser.DigestingParser.Digester}
@@ -46,276 +36,151 @@ import org.apache.tika.parser.ParseContext;
  * However, this wraps an internal BoundedInputStream, and if the InputStream
  * is not fully read, then this will reset the stream and
  * spool the InputStream to disk (via TikaInputStream) and then digest the file.
- * <p>
- * If a TikaInputStream is passed in and it has an underlying file that is longer
- * than the {@link #markLimit}, then this digester digests the file directly.
- *
  */
-public class CommonsDigester implements DigestingParser.Digester {
+public class CommonsDigester extends CompositeDigester {
 
     public enum DigestAlgorithm {
         //those currently available in commons.digest
-        MD2,
-        MD5,
-        SHA1,
-        SHA256,
-        SHA384,
-        SHA512;
+        MD2("MD2"),
+        MD5("MD5"),
+        SHA1("SHA-1"),
+        SHA256("SHA-256"),
+        SHA384("SHA-384"),
+        SHA512("SHA-512");
 
+        private final String javaName;
+
+        DigestAlgorithm(String javaName) {
+            this.javaName = javaName;
+        }
+
+        String getJavaName() {
+            return javaName;
+        }
         String getMetadataKey() {
-            return TikaCoreProperties.TIKA_META_PREFIX+
-                    "digest"+Metadata.NAMESPACE_PREFIX_DELIMITER+this.toString();
+            return TikaCoreProperties.TIKA_META_PREFIX +
+                    "digest" + Metadata.NAMESPACE_PREFIX_DELIMITER + this.toString();
         }
     }
 
-    private final List<DigestAlgorithm> algorithms = new ArrayList<DigestAlgorithm>();
-    private final int markLimit;
+    /**
+     * Include a string representing the comma-separated algorithms to run: e.g. "md5,sha1".
+     * If you want base 32 encoding instead of hexadecimal, add ":32" to the algorithm, e.g. "md5,sha1:32"
+     * <p/>
+     * Will throw an IllegalArgumentException if an algorithm isn't supported
+     * @param markLimit
+     * @param algorithmString
+     */
+    public CommonsDigester(int markLimit, String algorithmString) {
+        super(buildDigesters(markLimit, algorithmString));
+    }
 
+    /**
+     *
+     * @param markLimit limit for mark/reset; after this limit is hit, the
+     *                  stream is reset and spooled to disk
+     * @param algorithms algorithms to run
+     * @deprecated use {@link #CommonsDigester(int, String)}
+     */
     public CommonsDigester(int markLimit, DigestAlgorithm... algorithms) {
-        Collections.addAll(this.algorithms, algorithms);
-        if (markLimit < 0) {
-            throw new IllegalArgumentException("markLimit must be >= 0");
-        }
-        this.markLimit = markLimit;
+        super(buildDigesters(markLimit, algorithms));
     }
 
-    @Override
-    public void digest(InputStream is, Metadata m, ParseContext parseContext) throws IOException {
-        //if this is already a TikaInputStream, rely on the caller to close
-        //the stream and free the tmp file.
-        TikaInputStream tis = TikaInputStream.cast(is);
-
-        TemporaryResources tmp = null;
-        if (tis == null) {
-            //if this isn't a TikaInputStream, create a new TempResources
-            //and make sure to release it!!!
-            tmp = new TemporaryResources();
-            tis = TikaInputStream.get(new CloseShieldInputStream(is), tmp);
-        }
-        try {
-            long sz = -1;
-            if (tis.hasFile()) {
-                sz = tis.getLength();
-            }
-            //if the file is definitely a file,
-            //and its size is greater than its mark limit,
-            //just digest the underlying file.
-            if (sz > markLimit) {
-                digestFile(tis.getFile(), m);
-                return;
-            }
-
-            //try the usual mark/reset stuff.
-            //however, if you actually hit the bound,
-            //then stop and spool to file via TikaInputStream
-            SimpleBoundedInputStream bis = new SimpleBoundedInputStream(markLimit, tis);
-            boolean finishedStream = false;
-            for (DigestAlgorithm algorithm : algorithms) {
-                bis.mark(markLimit + 1);
-                finishedStream = digestEach(algorithm, bis, m);
-                bis.reset();
-                if (!finishedStream) {
-                    break;
-                }
-            }
-            if (!finishedStream) {
-                digestFile(tis.getFile(), m);
-            }
-        } finally {
-            try {
-                if (tmp != null) {
-                    tmp.dispose();
-                }
-            } catch (TikaException e) {
-                throw new IOExceptionWithCause(e);
-            }
-        }
-    }
-
-    private void digestFile(File f, Metadata m) throws IOException {
+    private static DigestingParser.Digester[] buildDigesters(int markLimit, DigestAlgorithm[] algorithms) {
+        DigestingParser.Digester[] digesters = new DigestingParser.Digester[algorithms.length];
+        int i = 0;
         for (DigestAlgorithm algorithm : algorithms) {
-            InputStream is = new FileInputStream(f);
-            try {
-                digestEach(algorithm, is, m);
-            } finally {
-                IOUtils.closeQuietly(is);
-            }
+            digesters[i++] = new InputStreamDigester(markLimit, algorithm.getJavaName(), algorithm.name(),
+                    new HexEncoder());
         }
+        return digesters;
     }
 
     /**
+     * This returns digest algorithms only.  It does not understand the encoding
+     * syntax, e.g. "MD5:32" (base 32 encoding of MD5).  To parse
+     * those, see {@link #CommonsDigester(int, String)}.
      *
-     * @param algorithm algo to use
-     * @param is input stream to read from
-     * @param metadata metadata for reporting the digest
-     * @return whether or not this finished the input stream
-     * @throws IOException
-     */
-    private boolean digestEach(DigestAlgorithm algorithm,
-                            InputStream is, Metadata metadata) throws IOException {
-        String digest = null;
-        try {
-            switch (algorithm) {
-                case MD2:
-                    digest = DigestUtils.md2Hex(is);
-                    break;
-                case MD5:
-                    digest = DigestUtils.md5Hex(is);
-                    break;
-                case SHA1:
-                    digest = DigestUtils.sha1Hex(is);
-                    break;
-                case SHA256:
-                    digest = DigestUtils.sha256Hex(is);
-                    break;
-                case SHA384:
-                    digest = DigestUtils.sha384Hex(is);
-                    break;
-                case SHA512:
-                    digest = DigestUtils.sha512Hex(is);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Sorry, not aware of algorithm: " + algorithm.toString());
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            //swallow, or should we throw this?
-        }
-        if (is instanceof SimpleBoundedInputStream) {
-            if (((SimpleBoundedInputStream)is).hasHitBound()) {
-                return false;
-            }
-        }
-        metadata.set(algorithm.getMetadataKey(), digest);
-        return true;
-    }
-
-    /**
-     *
-     * @param s comma-delimited (no space) list of algorithms to use: md5,sha256
+     * @deprecated use the {@link #CommonsDigester(int, String)} instead
+     * @param s comma-delimited (no space) list of algorithms to use: md5,sha256.
      * @return
+     *
      */
+    @Deprecated
     public static DigestAlgorithm[] parse(String s) {
-        assert(s != null);
+        assert (s != null);
 
         List<DigestAlgorithm> ret = new ArrayList<>();
         for (String algoString : s.split(",")) {
-            String uc = algoString.toUpperCase(Locale.ROOT);
-            if (uc.equals(DigestAlgorithm.MD2.toString())) {
-                ret.add(DigestAlgorithm.MD2);
-            } else if (uc.equals(DigestAlgorithm.MD5.toString())) {
-                ret.add(DigestAlgorithm.MD5);
-            } else if (uc.equals(DigestAlgorithm.SHA1.toString())) {
-                ret.add(DigestAlgorithm.SHA1);
-            } else if (uc.equals(DigestAlgorithm.SHA256.toString())) {
-                ret.add(DigestAlgorithm.SHA256);
-            } else if (uc.equals(DigestAlgorithm.SHA384.toString())) {
-                ret.add(DigestAlgorithm.SHA384);
-            } else if (uc.equals(DigestAlgorithm.SHA512.toString())) {
-                ret.add(DigestAlgorithm.SHA512);
-            } else {
-                StringBuilder sb = new StringBuilder();
-                int i = 0;
-                for (DigestAlgorithm algo : DigestAlgorithm.values()) {
-                    if (i++ > 0) {
-                        sb.append(", ");
-                    }
-                    sb.append(algo.toString());
-                }
-                throw new IllegalArgumentException("Couldn't match " + s + " with any of: " + sb.toString());
-            }
+            ret.add(getDigestAlgorithm(algoString));
         }
         return ret.toArray(new DigestAlgorithm[ret.size()]);
     }
 
-    /**
-     * Very slight modification of Commons' BoundedInputStream
-     * so that we can figure out if this hit the bound or not.
-     */
-    private class SimpleBoundedInputStream extends InputStream {
-        private final static int EOF = -1;
-        private final long max;
-        private final InputStream in;
-        private long pos;
-
-        private SimpleBoundedInputStream(long max, InputStream in) {
-            this.max = max;
-            this.in = in;
-        }
-
-        @Override
-        public int read() throws IOException {
-            if (max >= 0 && pos >= max) {
-                return EOF;
+    private static DigestAlgorithm getDigestAlgorithm(String algoString) {
+        String uc = algoString.toUpperCase(Locale.ROOT);
+        if (uc.equals(DigestAlgorithm.MD2.toString())) {
+            return DigestAlgorithm.MD2;
+        } else if (uc.equals(DigestAlgorithm.MD5.toString())) {
+            return DigestAlgorithm.MD5;
+        } else if (uc.equals(DigestAlgorithm.SHA1.toString())) {
+            return DigestAlgorithm.SHA1;
+        } else if (uc.equals(DigestAlgorithm.SHA256.toString())) {
+            return DigestAlgorithm.SHA256;
+        } else if (uc.equals(DigestAlgorithm.SHA384.toString())) {
+            return DigestAlgorithm.SHA384;
+        } else if (uc.equals(DigestAlgorithm.SHA512.toString())) {
+            return DigestAlgorithm.SHA512;
+        } else {
+            StringBuilder sb = new StringBuilder();
+            int i = 0;
+            for (DigestAlgorithm algo : DigestAlgorithm.values()) {
+                if (i++ > 0) {
+                    sb.append(", ");
+                }
+                sb.append(algo.toString());
             }
-            final int result = in.read();
-            pos++;
-            return result;
+            throw new IllegalArgumentException("Couldn't match " + algoString + " with any of: " + sb.toString());
         }
+    }
 
-        /**
-         * Invokes the delegate's <code>read(byte[])</code> method.
-         * @param b the buffer to read the bytes into
-         * @return the number of bytes read or -1 if the end of stream or
-         * the limit has been reached.
-         * @throws IOException if an I/O error occurs
-         */
-        @Override
-        public int read(final byte[] b) throws IOException {
-            return this.read(b, 0, b.length);
-        }
-
-        /**
-         * Invokes the delegate's <code>read(byte[], int, int)</code> method.
-         * @param b the buffer to read the bytes into
-         * @param off The start offset
-         * @param len The number of bytes to read
-         * @return the number of bytes read or -1 if the end of stream or
-         * the limit has been reached.
-         * @throws IOException if an I/O error occurs
-         */
-        @Override
-        public int read(final byte[] b, final int off, final int len) throws IOException {
-            if (max>=0 && pos>=max) {
-                return EOF;
+    private static DigestingParser.Digester[] buildDigesters(int markLimit, String digesterDef) {
+        String[] digests = digesterDef.split(",");
+        DigestingParser.Digester[] digesters = new DigestingParser.Digester[digests.length];
+        int i = 0;
+        for (String digest : digests) {
+            String[] parts = digest.split(":");
+            DigestingParser.Encoder encoder = null;
+            if (parts.length > 1) {
+                if (parts[1].equals("16")) {
+                    encoder = new HexEncoder();
+                } else if (parts[1].equals("32")) {
+                    encoder = new Base32Encoder();
+                } else {
+                    throw new IllegalArgumentException("Value must be '16' or '32'");
+                }
+            } else {
+                encoder = new HexEncoder();
             }
-            final long maxRead = max>=0 ? Math.min(len, max-pos) : len;
-            final int bytesRead = in.read(b, off, (int)maxRead);
-
-            if (bytesRead==EOF) {
-                return EOF;
-            }
-
-            pos+=bytesRead;
-            return bytesRead;
+            DigestAlgorithm digestAlgorithm = getDigestAlgorithm(parts[0]);
+            digesters[i++] = new InputStreamDigester(markLimit, digestAlgorithm.getJavaName(),
+                    digestAlgorithm.name(), encoder);
         }
+        return digesters;
+    }
 
-        /**
-         * Invokes the delegate's <code>skip(long)</code> method.
-         * @param n the number of bytes to skip
-         * @return the actual number of bytes skipped
-         * @throws IOException if an I/O error occurs
-         */
+
+    private static class HexEncoder implements DigestingParser.Encoder {
         @Override
-        public long skip(final long n) throws IOException {
-            final long toSkip = max>=0 ? Math.min(n, max-pos) : n;
-            final long skippedBytes = in.skip(toSkip);
-            pos+=skippedBytes;
-            return skippedBytes;
+        public String encode(byte[] bytes) {
+            return Hex.encodeHexString(bytes);
         }
+    }
 
+    private static class Base32Encoder implements DigestingParser.Encoder {
         @Override
-        public void reset() throws IOException {
-            in.reset();
-        }
-
-        @Override
-        public void mark(int readLimit) {
-            in.mark(readLimit);
-        }
-
-        public boolean hasHitBound() {
-            return pos >= max;
+        public String encode(byte[] bytes) {
+            return new Base32().encodeToString(bytes);
         }
     }
 }

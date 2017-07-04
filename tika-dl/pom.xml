@@ -19,15 +19,14 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <parent>
-    <artifactId>tika</artifactId>
-    <groupId>org.apache.tika</groupId>
-    <version>1.15-SNAPSHOT</version>
-  </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>1.16-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
 
   <artifactId>tika-dl</artifactId>
   <packaging>jar</packaging>
@@ -57,6 +56,15 @@
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-keras</artifactId>
       <version>${dl4j.model.version}</version>
+      <!-- exclude this because of non-ASF friendly "do no evil" license.
+        Because this relies on tika-parsers, that should have ted-dunning's drop-in
+      -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.json</groupId>
+          <artifactId>json</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
@@ -108,6 +116,16 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>src/main/resources/org/apache/tika/dl/imagerec/*.json</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
   <repositories>

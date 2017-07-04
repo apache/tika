@@ -27,9 +27,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -45,7 +50,7 @@ import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class ImageParser extends AbstractParser {
+public class ImageParser extends AbstractParser implements Initializable {
     /**
      * Serial version UID
      */
@@ -71,7 +76,6 @@ public class ImageParser extends AbstractParser {
             Class.forName("com.levigo.jbig2.JBIG2ImageReader");
             TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
         } catch (ClassNotFoundException e) {
-            LOG.warn("JBIG2ImageReader not loaded. jbig2 files will be ignored");
         }
     }
 
@@ -216,5 +220,21 @@ public class ImageParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();
+    }
+
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+        try {
+            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+        } catch (ClassNotFoundException e) {
+            problemHandler.handleInitializableProblem("org.apache.tika.parser.ImageParser",
+                    "com.levigo.jbig2.JBIG2ImageReader not on class path. The ImageParser will skip jbig2 images");
+        }
+
     }
 }

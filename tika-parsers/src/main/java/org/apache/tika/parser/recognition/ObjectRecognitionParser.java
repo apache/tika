@@ -16,8 +16,19 @@
  */
 package org.apache.tika.parser.recognition;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -34,15 +45,6 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This parser recognises objects from Images.
@@ -101,6 +103,11 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         LOG.info("Recogniser = {}", recogniser.getClass().getName());
         LOG.info("Recogniser Available = {}", recogniser.isAvailable());
         LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+        //TODO -- what do we want to check?
     }
 
     @Override

@@ -46,6 +46,7 @@ import org.apache.tika.config.Field;
  */
 public class PDFParserConfig implements Serializable {
 
+
     public enum OCR_STRATEGY {
         NO_OCR,
         OCR_ONLY,
@@ -122,6 +123,7 @@ public class PDFParserConfig implements Serializable {
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
+    private float ocrImageScale = 2.0f;
 
     private AccessChecker accessChecker;
 
@@ -206,6 +208,8 @@ public class PDFParserConfig implements Serializable {
         setOcrImageFormatName(props.getProperty("ocrImageFormatName"));
 
         setOcrImageType(parseImageType(props.getProperty("ocrImageType")));
+
+        setOcrImageScale(getFloatProp(props.getProperty("ocrImageScale"), getOcrImageScale()));
 
         setExtractActions(getBooleanProp(props.getProperty("extractActions"), false));
 
@@ -535,6 +539,15 @@ public class PDFParserConfig implements Serializable {
         return Integer.parseInt(p);
     }
 
+    //throws NumberFormatException if there's a non-null unparseable
+    //string passed in
+    private static float getFloatProp(String p, float defaultMissing) {
+        if (p == null) {
+            return defaultMissing;
+        }
+
+        return Float.parseFloat(p);
+    }
     /**
      * String representation of the image format used to render
      * the page image for OCR (examples: png, tiff, jpeg)
@@ -613,6 +626,19 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcrImageQuality(float ocrImageQuality) {
         this.ocrImageQuality = ocrImageQuality;
+    }
+
+    /**
+     * Scale to use if rendering a page and then running OCR on that rendered image.
+     * Default is 2.0f.
+     * @return
+     */
+    public float getOcrImageScale() {
+        return ocrImageScale;
+    }
+
+    public void setOcrImageScale(float ocrImageScale) {
+        this.ocrImageScale = ocrImageScale;
     }
 
     /**

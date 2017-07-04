@@ -199,7 +199,6 @@ public class ExtractComparer extends AbstractProfiler {
         try {
             compareFiles(fpsA, fpsB);
         } catch (Throwable e) {
-            e.printStackTrace();
             //this should be cataclysmic...
             throw new RuntimeException("Exception while working on: " +
                     metadata.get(FSProperties.FS_REL_PATH), e);

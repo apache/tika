@@ -116,21 +116,21 @@ public class PackageParser extends AbstractParser {
     }
 
     static MediaType getMediaType(String name) {
-        if (TikaArchiveStreamFactory.JAR.equals(name)) {
+        if (ArchiveStreamFactory.JAR.equals(name)) {
             return JAR;
-        } else if (TikaArchiveStreamFactory.ZIP.equals(name)) {
+        } else if (ArchiveStreamFactory.ZIP.equals(name)) {
             return ZIP;
-        } else if (TikaArchiveStreamFactory.AR.equals(name)) {
+        } else if (ArchiveStreamFactory.AR.equals(name)) {
             return AR;
-        } else if (TikaArchiveStreamFactory.ARJ.equals(name)) {
+        } else if (ArchiveStreamFactory.ARJ.equals(name)) {
             return ARJ;
-        } else if (TikaArchiveStreamFactory.CPIO.equals(name)) {
+        } else if (ArchiveStreamFactory.CPIO.equals(name)) {
             return CPIO;
-        } else if (TikaArchiveStreamFactory.DUMP.equals(name)) {
+        } else if (ArchiveStreamFactory.DUMP.equals(name)) {
             return DUMP;
-        } else if (TikaArchiveStreamFactory.TAR.equals(name)) {
+        } else if (ArchiveStreamFactory.TAR.equals(name)) {
             return TAR;
-        } else if (TikaArchiveStreamFactory.SEVEN_Z.equals(name)) {
+        } else if (ArchiveStreamFactory.SEVEN_Z.equals(name)) {
             return SEVENZ;
         } else {
             return MediaType.OCTET_STREAM;

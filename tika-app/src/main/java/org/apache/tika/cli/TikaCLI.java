@@ -18,6 +18,11 @@ package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,12 +56,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -99,6 +98,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
@@ -186,6 +186,16 @@ public class TikaCLI {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
             ContentHandler handler = getContentHandler(output, metadata);
+            if (config == null && context.get(PDFParserConfig.class) == null) {
+                PDFParserConfig pdfParserConfig = new PDFParserConfig();
+                pdfParserConfig.setExtractInlineImages(true);
+                String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
+                        "inline images for the PDFParser (TIKA-2374).\n" +
+                        "This is not the default option in Tika generally or in tika-server.";
+                LOG.info(warn);
+                System.err.println(warn);
+                context.set(PDFParserConfig.class, pdfParserConfig);
+            }
             p.parse(input, handler, metadata, context);
             // fix for TIKA-596: if a parser doesn't generate
             // XHTML output, the lack of an output document prevents
@@ -406,9 +416,8 @@ public class TikaCLI {
         } else if (arg.startsWith("--config=")) {
             configure(arg.substring("--config=".length()));
         } else if (arg.startsWith("--digest=")) {
-            CommonsDigester.DigestAlgorithm[] algos = CommonsDigester.parse(
+            digester = new CommonsDigester(MAX_MARK,
                     arg.substring("--digest=".length()));
-            digester = new CommonsDigester(MAX_MARK,algos);
             parser = new DigestingParser(parser, digester);
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());

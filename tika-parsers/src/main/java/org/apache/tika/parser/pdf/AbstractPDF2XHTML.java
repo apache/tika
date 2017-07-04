@@ -325,7 +325,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         PDFRenderer renderer = new PDFRenderer(pdDocument);
         TemporaryResources tmp = new TemporaryResources();
         try {
-            BufferedImage image = renderer.renderImage(pageIndex, 2.0f, config.getOcrImageType());
+
+            BufferedImage image = renderer.renderImage(pageIndex, config.getOcrImageScale(), config.getOcrImageType());
             Path tmpFile = tmp.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
