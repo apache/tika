@@ -1,0 +1,62 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+FROM inception-rest-tika
+MAINTAINER Apache Tika Team
+
+#Install python pillow. TODO: Remove this with the fix for TIKA 2398
+RUN pip install pillow
+
+# Download the pretrained im2txt checkpoint
+WORKDIR /usr/share/apache-tika/models/dl/image/caption/
+
+RUN \
+    wget https://www.dropbox.com/s/l9ignjpjk774n2z/model_main_untuned.zip?dl=0 \
+        -O model_main_untuned.zip && \
+        unzip model_main_untuned.zip && \
+        rm -rf model_main_untuned.zip && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml \
+        -O model_info.xml
+
+# Download server related source files
+WORKDIR /usr/share/apache-tika/src/dl/image/caption/
+
+RUN \
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py \
+        -O caption_generator.py && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
+        -O im2txtapi.py && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py \
+        -O model_wrapper.py && \
+
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py \
+        -O vocabulary.py && \
+
+    chmod +x im2txtapi.py
+
+WORKDIR /
+
+# Add symbolic link to im2txtapi.py
+RUN ln -s /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py /usr/bin/im2txtapi
+
+# expose API port, this is the default port
+EXPOSE 8764
+
+CMD im2txtapi
