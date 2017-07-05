@@ -155,6 +155,7 @@
               !org.apache.tika.parser,
               !org.apache.tika.parser.external,
               org.apache.tika.parser.*,
+	      org.apache.tika.metadata.serialization.*,
             </Export-Package>
             <Import-Package>
               !org.junit,
