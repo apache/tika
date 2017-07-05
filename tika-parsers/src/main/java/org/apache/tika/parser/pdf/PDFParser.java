@@ -26,6 +26,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -45,7 +46,11 @@ import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -94,7 +99,7 @@ import org.xml.sax.SAXException;
  * <a href="http://tabula.technology/">tabula</a> for one project that
  * tries to maintain the structure of tables represented in PDFs.
  */
-public class PDFParser extends AbstractParser {
+public class PDFParser extends AbstractParser implements Initializable {
 
 
     /**
@@ -112,6 +117,7 @@ public class PDFParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MEDIA_TYPE);
     private PDFParserConfig defaultConfig = new PDFParserConfig();
+    private InitializableProblemHandler initializableProblemHandler = null;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -690,6 +696,22 @@ public class PDFParser extends AbstractParser {
         defaultConfig.setExtractActions(extractActions);
     }
 
+    @Field
+    void setInitializableProblemHander(String name) {
+        if ("ignore".equals(name)) {
+            setInitializableProblemHandler(InitializableProblemHandler.IGNORE);
+        } else if ("info".equalsIgnoreCase(name)) {
+            setInitializableProblemHandler(InitializableProblemHandler.INFO);
+        }   else if ("warn".equalsIgnoreCase(name)) {
+            setInitializableProblemHandler(InitializableProblemHandler.WARN);
+        }   else if ("throw".equalsIgnoreCase(name)) {
+            setInitializableProblemHandler(InitializableProblemHandler.THROW);
+        }
+    }
+
+    public void setInitializableProblemHandler(InitializableProblemHandler initializableProblemHandler) {
+        this.initializableProblemHandler = initializableProblemHandler;
+    }
     //can return null!
     private Document loadDOM(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
@@ -712,6 +734,55 @@ public class PDFParser extends AbstractParser {
             IOUtils.closeQuietly(is);
         }
         return null;
+
+    }
+
+    /**
+     * This is a no-op.  There is no need to initialize multiple fields.
+     * The regular field loading should happen without this.
+     *
+     * @param params params to use for initialization
+     * @throws TikaConfigException
+     */
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+        //no-op
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+        StringBuilder sb = new StringBuilder();
+        try {
+            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+        } catch (ClassNotFoundException e) {
+            sb.append("JBIG2ImageReader not loaded. jbig2 files will be ignored\n");
+            sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
+            sb.append("for optional dependencies.\n");
+        }
+        try {
+            Class.forName("com.github.jaiimageio.impl.plugins.tiff.TIFFImageWriter");
+        } catch (ClassNotFoundException e) {
+            sb.append("TIFFImageWriter not loaded. tiff files will not be processed\n");
+            sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
+            sb.append("for optional dependencies.\n");
+
+        }
+
+        try {
+            Class.forName("com.github.jaiimageio.jpeg2000.impl.J2KImageReader");
+        } catch (ClassNotFoundException e) {
+            sb.append("J2KImageReader not loaded. JPEG2000 files will not be processed.\n");
+            sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
+            sb.append("for optional dependencies.\n");
+        }
+
+        if (sb.length() > 0) {
+            InitializableProblemHandler localInitializableProblemHandler =
+                    (initializableProblemHandler == null) ?
+                            handler : initializableProblemHandler;
+            localInitializableProblemHandler.handleInitializableProblem("org.apache.tika.parsers.PDFParser",
+                    sb.toString());
+        }
 
     }
 

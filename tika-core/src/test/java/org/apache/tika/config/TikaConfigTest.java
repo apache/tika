@@ -28,6 +28,7 @@ import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.config.DummyExecutor;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigTest;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
@@ -261,4 +262,34 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         assertEquals("Should have configured Core Threads", 3, executorService.getCorePoolSize());
         assertEquals("Should have configured Max Threads", 10, executorService.getMaximumPoolSize());
     }
+
+    @Test(expected = TikaConfigException.class)
+    public void testInitializerBadValue() throws Exception {
+        TikaConfig config = getConfig("TIKA-2389-illegal.xml");
+    }
+
+
+    @Test(expected = TikaConfigException.class)
+    public void testInitializerPerParserThrow() throws Exception {
+        TikaConfig config = getConfig("TIKA-2389-throw-per-parser.xml");
+    }
+
+    @Test(expected = TikaConfigException.class)
+    public void testInitializerServiceLoaderThrow() throws Exception {
+        TikaConfig config = getConfig("TIKA-2389-throw-default.xml");
+    }
+
+    @Test
+    public void testInitializerServiceLoaderThrowButOverridden() throws Exception {
+        //TODO: test that this was logged at INFO level
+        TikaConfig config = getConfig("TIKA-2389-throw-default-overridden.xml");
+    }
+
+
+    @Test
+    public void testInitializerPerParserWarn() throws Exception {
+        //TODO: test that this was logged at WARN level
+        TikaConfig config = getConfig("TIKA-2389-warn-per-parser.xml");
+    }
+
 }

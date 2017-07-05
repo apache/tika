@@ -19,8 +19,13 @@ package org.apache.tika.parser.jdbc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -45,7 +50,7 @@ import org.xml.sax.SAXException;
  * If using a TikaInputStream, make sure to close it to delete the temp file
  * that has to be created.
  */
-public class SQLite3Parser extends AbstractParser {
+public class SQLite3Parser extends AbstractParser implements Initializable {
     /**
      * Serial version UID
      */
@@ -53,14 +58,8 @@ public class SQLite3Parser extends AbstractParser {
 
     private static final MediaType MEDIA_TYPE = MediaType.application("x-sqlite3");
 
-    private final Set<MediaType> SUPPORTED_TYPES;
-
-    /**
-     * Checks to see if class is available for org.sqlite.JDBC.
-     * <p/>
-     * If not, this class will return an EMPTY_SET for  getSupportedTypes()
-     */
-    public SQLite3Parser() {
+    private static final Set<MediaType> SUPPORTED_TYPES;
+    static {
         Set<MediaType> tmp;
         try {
             Class.forName(SQLite3DBParser.SQLITE_CLASS_NAME);
@@ -68,7 +67,15 @@ public class SQLite3Parser extends AbstractParser {
         } catch (ClassNotFoundException e) {
             tmp = Collections.EMPTY_SET;
         }
-        SUPPORTED_TYPES = tmp;
+        SUPPORTED_TYPES = Collections.unmodifiableSet(tmp);
+    }
+    /**
+     * Checks to see if class is available for org.sqlite.JDBC.
+     * <p/>
+     * If not, this class will return an EMPTY_SET for  getSupportedTypes()
+     */
+    public SQLite3Parser() {
+
     }
 
     @Override
@@ -80,5 +87,25 @@ public class SQLite3Parser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         SQLite3DBParser p = new SQLite3DBParser();
         p.parse(stream, handler, metadata, context);
+    }
+
+    /**
+     * No-op
+     * @param params params to use for initialization
+     * @throws TikaConfigException
+     */
+    @Override
+    public void initialize(Map<String, Param> params) throws TikaConfigException {
+
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+        if (SUPPORTED_TYPES.size() == 0) {
+            problemHandler.handleInitializableProblem("org.apache.tika.parser.SQLite3Parser",
+                    "org.xerial's sqlite-jdbc is not loaded.\n" +
+                            "Please provide the jar on your classpath to parse sqlite files.\n" +
+                            "See tika-parsers/pom.xml for the correct version.");
+        }
     }
 }

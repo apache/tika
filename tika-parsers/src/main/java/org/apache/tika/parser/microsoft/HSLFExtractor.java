@@ -25,6 +25,10 @@ import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.model.OLEShape;
+import org.apache.poi.hslf.record.DocInfoListContainer;
+import org.apache.poi.hslf.record.RecordTypes;
+import org.apache.poi.hslf.record.VBAInfoAtom;
+import org.apache.poi.hslf.record.VBAInfoContainer;
 import org.apache.poi.hslf.usermodel.HSLFMasterSheet;
 import org.apache.poi.hslf.usermodel.HSLFNotes;
 import org.apache.poi.hslf.usermodel.HSLFObjectData;
@@ -198,8 +202,36 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
 
         handleSlideEmbeddedPictures(ss, xhtml);
-
+        if (officeParserConfig.getExtractMacros()) {
+            extractMacros(ss, xhtml);
+        }
         xhtml.endElement("div");
+    }
+
+    private void extractMacros(HSLFSlideShow ppt, XHTMLContentHandler xhtml) {
+
+        //get macro persist id
+        DocInfoListContainer list = (DocInfoListContainer)ppt.getDocumentRecord().findFirstOfType(RecordTypes.List.typeID);
+        VBAInfoContainer vbaInfo = (VBAInfoContainer)list.findFirstOfType(RecordTypes.VBAInfo.typeID);
+        VBAInfoAtom vbaAtom = (VBAInfoAtom)vbaInfo.findFirstOfType(RecordTypes.VBAInfoAtom.typeID);
+        long persistId = vbaAtom.getPersistIdRef();
+        for (HSLFObjectData objData : ppt.getEmbeddedObjects()) {
+            if (objData.getExOleObjStg().getPersistId() == persistId) {
+                NPOIFSFileSystem npoifsFileSystem = null;
+                try {
+                    npoifsFileSystem = new NPOIFSFileSystem(objData.getData());
+                } catch (IOException e) {
+                    //swallow
+                }
+                try {
+                    OfficeParser.extractMacros(npoifsFileSystem, xhtml,
+                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                } catch (IOException|SAXException e) {
+                    //swallow
+                }
+            }
+        }
+
     }
 
     private void extractMaster(XHTMLContentHandler xhtml, HSLFMasterSheet master) throws SAXException {

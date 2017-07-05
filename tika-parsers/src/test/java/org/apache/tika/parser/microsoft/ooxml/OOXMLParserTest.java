@@ -1602,6 +1602,18 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    public void testXLSBOriginalPath() throws Exception {
+        assertEquals("C:\\Users\\tallison\\Desktop\\working\\TIKA-1945\\",
+                getXML("testEXCEL_diagramData.xlsb").metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+    }
+
+    @Test
+    public void testXLSXOriginalPath() throws Exception {
+        assertEquals("C:\\Users\\tallison\\Desktop\\working\\TIKA-1945\\",
+                getXML("testEXCEL_diagramData.xlsx").metadata.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
+    }
+
+    @Test
     public void testXLSBDiagramData() throws Exception {
         assertContains("SmartArt",
                 getXML("testEXCEL_diagramData.xlsb").xml);

@@ -539,6 +539,14 @@ public class RTFParserTest extends TikaTest {
         assertContains("TikaMemoryLimitException", metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
+    @Test
+    public void testBoldPlain() throws Exception {
+        //TIKA-2410 -- bold should be turned off by "plain"
+        XMLResult r = getXML("testRTFBoldPlain.rtf");
+        assertContains("<b>Hank</b>", r.xml);
+        assertNotContained("<b>Anna Smith", r.xml);
+    }
+
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
 

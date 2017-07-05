@@ -34,10 +34,10 @@
     <url>http://tika.apache.org/</url>
 
     <properties>
-        <cli.version>1.3.1</cli.version> <!--sync version with tika-server or move to parent? -->
+        <cli.version>1.4</cli.version> <!--sync version with tika-server or move to parent? -->
         <!-- upgrade to 6.x or something more modern once Tika requires Java 1.8 -->
-        <lucene.version>5.5.3</lucene.version>
-        <poi.version>3.16-beta2</poi.version>
+        <lucene.version>5.5.4</lucene.version>
+        <poi.version>3.17-beta1</poi.version>
     </properties>
 
     <dependencies>
@@ -60,22 +60,18 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.4.1</version>
+            <version>3.6.1</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-csv</artifactId>
-            <version>1.1</version>
-        </dependency>
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.193</version>
+            <version>1.4.196</version>
         </dependency>
         <dependency>
             <groupId>com.optimaize.languagedetector</groupId>
             <artifactId>language-detector</artifactId>
-            <version>0.5</version>
+            <version>0.6</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -111,7 +107,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>3.6</version>
         </dependency>
 
         <dependency>
