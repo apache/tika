@@ -86,7 +86,12 @@ public final class MimeTypes implements Detector, Serializable {
      */
     private final MimeType textMimeType;
 
-    /*
+    /**
+     * html type, text/html
+     */
+    private final MimeType htmlMimeType;
+
+    /**
      * xml type, application/xml
      */
     private final MimeType xmlMimeType;
@@ -112,6 +117,7 @@ public final class MimeTypes implements Detector, Serializable {
     public MimeTypes() {
         rootMimeType = new MimeType(MediaType.OCTET_STREAM);
         textMimeType = new MimeType(MediaType.TEXT_PLAIN);
+        htmlMimeType = new MimeType(MediaType.TEXT_HTML);
         xmlMimeType = new MimeType(MediaType.APPLICATION_XML);
         
         rootMimeTypeL = Collections.singletonList(rootMimeType);
@@ -214,9 +220,25 @@ public final class MimeTypes implements Detector, Serializable {
                             }
                         }
                     } else if ("application/xml".equals(matched.getName())) {
-                        // Downgrade from application/xml to text/plain since
-                        // the document seems not to be well-formed.
-                        result.set(i, textMimeType);
+                        // Our XML magic is higher than our HTML magic
+                        // So, if we got here, we might have a HTML file that's
+                        //  invalid XML. So, try our HTML magics explicitly (TIKA-2419)
+                        boolean isHTML = false;
+                        for (Magic magic : magics) {
+                            if (! magic.getType().equals(htmlMimeType)) continue;
+                            if (magic.eval(data)) {
+                                isHTML = true;
+                                break;
+                            }
+                        }
+                        
+                        // Otherwise, downgrade from application/xml to text/plain
+                        //  since the document seems not to be well-formed.
+                        if (isHTML) {
+                            result.set(i, htmlMimeType);
+                        } else {
+                            result.set(i, textMimeType);
+                        }
                     }
                 }
             }
