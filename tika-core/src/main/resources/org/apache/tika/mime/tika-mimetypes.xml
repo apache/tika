@@ -6740,12 +6740,18 @@
   <mime-type type="video/quicktime">
     <_comment>QuickTime Video</_comment>
     <magic priority="50">
-      <match value="moov" type="string" offset="4"/>
-      <match value="mdat" type="string" offset="4"/>
-      <match value="free" type="string" offset="4"/>
-      <!-- General match, specific ftypXXX ones present for subtypes -->
+      <!-- Check for common starting Atoms. These will have a 4 byte -->
+      <!--  size before them. They almost always have 0x00 after, either -->
+      <!--  the length of a child atom, or start of data -->
+      <match value="moov\000" type="string" offset="4"/>
+      <match value="mdat\000" type="string" offset="4"/>
+      <match value="free\000" type="string" offset="4"/>
+      <match value="skip\000" type="string" offset="4"/>
+      <match value="pnot\000" type="string" offset="4"/>
+      <!-- General Atom match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
-      <match value="wide" type="string" offset="4"/>
+      <!-- Common starting Atoms of fixed size -->
+      <match value="\x00\x00\x00\x08wide" type="string" offset="0"/>
     </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
