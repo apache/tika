@@ -19,6 +19,7 @@ package org.apache.tika.dl.imagerec;
 
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Param;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -81,6 +82,11 @@ public class DL4JVGG16Net implements ObjectRecogniser {
     @Override
     public boolean isAvailable() {
         return available;
+    }
+
+    @Override
+	public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+	//TODO: what do we want to check here?                                                                                                                                                                                                               
     }
 
     @Override
