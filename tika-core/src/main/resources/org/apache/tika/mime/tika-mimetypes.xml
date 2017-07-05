@@ -5772,6 +5772,8 @@
     <!--  files which contain HTML within them, eg mime emails -->
     <magic priority="40">
       <match value="&lt;!DOCTYPE HTML" type="string" offset="0:64"/>
+      <match value="&lt;!DOCTYPE html" type="string" offset="0:64"/>
+      <match value="&lt;!doctype HTML" type="string" offset="0:64"/>
       <match value="&lt;!doctype html" type="string" offset="0:64"/>
       <match value="&lt;HEAD" type="string" offset="0:64"/>
       <match value="&lt;head" type="string" offset="0:64"/>
@@ -5786,8 +5788,6 @@
       <match value="&lt;title" type="string" offset="0"/>
       <match value="&lt;h1" type="string" offset="0"/>
       <match value="&lt;H1" type="string" offset="0"/>
-      <match value="&lt;!doctype HTML" type="string" offset="0"/>
-      <match value="&lt;!DOCTYPE html" type="string" offset="0"/>
       <match value="&lt;html" type="string" offset="0:128"/>
     </magic>
     <magic priority="20">
