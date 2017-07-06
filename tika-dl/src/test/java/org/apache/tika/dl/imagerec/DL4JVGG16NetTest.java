@@ -16,19 +16,27 @@
  */
 package org.apache.tika.dl.imagerec;
 
+import static org.junit.Assert.assertTrue;
+
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
-
-
-import static org.junit.Assert.*;
 
 public class DL4JVGG16NetTest {
 
     @Test
     public void recognise() throws Exception {
-        TikaConfig config = new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
+        TikaConfig config = null;
+        try {
+            new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
+        } catch (TikaConfigException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Connection refused")) {
+                //skip test
+                return;
+            }
+        }
         Tika tika = new Tika(config);
         Metadata md = new Metadata();
         tika.parse(getClass().getResourceAsStream("lion.jpg"), md);
