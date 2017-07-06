@@ -1,3 +1,5 @@
+// C++-style comments allowed,
+// see http://www.graphviz.org/content/dot-language
 graph {
    apache -- tika;
    apache -- poi;

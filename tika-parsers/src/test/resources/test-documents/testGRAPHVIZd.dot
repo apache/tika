@@ -1,4 +1,4 @@
-digraph {
+digraph "Tika-Relations" {
    apache -> tika;
    apache -> poi;
    apache -> commons;
