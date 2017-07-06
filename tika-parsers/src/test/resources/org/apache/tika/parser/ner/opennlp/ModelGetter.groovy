@@ -104,7 +104,7 @@ if (new File("tika-parsers").exists() && new File("tika-app").exists()  ) {
 }
 
 def modelFiles = //filePath : url
-        [ (prefixPath + "ner-person.bin"): (urlPrefix + "/en-ner-person.bin"),
+        [(prefixPath + "ner-person.bin"): (urlPrefix + "/en-ner-person.bin"),
           (prefixPath + "ner-location.bin"): (urlPrefix + "/en-ner-location.bin"),
           (prefixPath + "ner-organization.bin"): (urlPrefix + "/en-ner-organization.bin"),
           (prefixPath + "en-pos-maxent.bin"): (urlPrefix + "/en-post-maxent.bin"),
