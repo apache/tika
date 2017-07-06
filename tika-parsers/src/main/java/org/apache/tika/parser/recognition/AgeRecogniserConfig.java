@@ -18,7 +18,6 @@
 package org.apache.tika.parser.recognition;
 
 import java.util.Map;
-
 import org.apache.tika.config.Param;
 
 
@@ -31,9 +30,9 @@ public class AgeRecogniserConfig {
 	private String pathClassifyRegression = null;
 
 	public AgeRecogniserConfig(Map<String, Param> params) {
-		setPathClassifyModel(params.get("age.path.classify").getValue().toString());
-        setPathClassifyRegression(params.get("age.path.regression").getValue().toString());
-    }
+	    setPathClassifyModel(getClass().getClassLoader().getResource(params.get("age.path.classify").getValue().toString()).getFile());
+	    setPathClassifyRegression(getClass().getClassLoader().getResource(params.get("age.path.regression").getValue().toString()).getFile());
+	}
 
 	public String getPathClassifyModel() {
 		return pathClassifyModel;

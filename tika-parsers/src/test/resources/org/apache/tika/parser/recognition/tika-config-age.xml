@@ -22,8 +22,8 @@
             <mime>text/html</mime>
             <mime>application/xhtml+xml</mime>
             <params>
-                <param name="age.path.classify" type="string">./model/classify-bigram.bin</param>
-                <param name="age.path.regression" type="string">./model/regression-global.bin</param>
+                <param name="age.path.classify" type="string">classify-bigram.bin</param>
+                <param name="age.path.regression" type="string">regression-global.bin</param>
             </params>
         </parser>
     </parsers>

@@ -52,7 +52,6 @@ public class AgeRecogniserTest extends TikaTest {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-//    	AgeRecogniser.setAgePredictorClient(mockAgeClassifier);
     }
     @Test
     public void testAgeRecogniser() throws Exception {
