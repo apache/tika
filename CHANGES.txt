@@ -1,5 +1,10 @@
 Release 1.16 - ??/??/????
 
+  * Add Tika Deep Learning support for the VGG16 model for
+    Very Deep Convolutional Networks for Large-Scale Image Recognition.
+    Now Tika supports both Inception v3/v4 and VGG16 based image 
+    recognition (TIKA-2298).
+
   * Extract macros from PPT (TIKA-2089).
 
   * Extract absolute path for last saved location when available
