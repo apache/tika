@@ -5960,7 +5960,13 @@
     <glob pattern="*.flx"/>
   </mime-type>
   <mime-type type="text/vnd.graphviz">
+    <_comment>Graphviz Graph Visualization Software</_comment>
     <glob pattern="*.gv"/>
+    <!-- glob pattern="*.dot" - conflicts with application/msword -->
+    <magic priority="50">
+      <match value="(?s)^\\s*(?:strict\\s+)?(?:di)?graph\\b" type="regex" offset="0"/>
+    </magic>
+    <sub-class-of type="text/plain"/>
   </mime-type>
   <mime-type type="text/vnd.in3d.3dml">
     <glob pattern="*.3dml"/>
