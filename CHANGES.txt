@@ -53,6 +53,10 @@ Release 1.16 - ??/??/????
 
   * Upgrade mime4j to 0.8.1 (TIKA-2413).
 
+  * Mime magic improvements for GraphViz (TIKA-2422), HTML files which
+    claim to be XML but aren't quite valid XML (TIKA-2419) and QuickTime
+    / MP4 (TIKA-2418)
+
 Release 1.15 - 05/23/2017
 
   * Tika now has a module for Deep Learning powered by the 
