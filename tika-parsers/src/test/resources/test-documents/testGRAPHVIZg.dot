@@ -1,0 +1,6 @@
+graph {
+   apache -- tika;
+   apache -- poi;
+   apache -- commons;
+   tika -- poi;
+}
