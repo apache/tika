@@ -601,6 +601,10 @@ public class TestMimeTypes {
        
        assertTypeByName("application/javascript", "testJS.js");
        assertType(      "application/javascript", "testJS.js");
+
+       assertType(      "text/vnd.graphviz", "testGRAPHVIZd.dot");
+       assertType(      "text/vnd.graphviz", "testGRAPHVIZg.dot");
+       assertType(      "text/vnd.graphviz", "testGRAPHVIZdc.dot");
     }
     
     @Test
