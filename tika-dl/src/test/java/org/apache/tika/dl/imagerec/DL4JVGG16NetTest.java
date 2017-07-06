@@ -30,7 +30,7 @@ public class DL4JVGG16NetTest {
     public void recognise() throws Exception {
         TikaConfig config = null;
         try {
-            new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
+            config = new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
         } catch (TikaConfigException e) {
             if (e.getMessage() != null && e.getMessage().contains("Connection refused")) {
                 //skip test
