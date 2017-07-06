@@ -169,7 +169,14 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
         for (Query q : db.getQueries()) {
             xhtml.startElement("div", "type", "sqlQuery");
-            xhtml.characters(q.toSQLString());
+            String sqlString = "unsupported query type";
+            //unknownqueryimpl can throw an UnsupportedOperationException
+            try {
+                sqlString = q.toSQLString();
+            } catch (UnsupportedOperationException e) {
+                //swallow
+            }
+            xhtml.characters(sqlString);
             xhtml.endElement("div");
         }
     }
