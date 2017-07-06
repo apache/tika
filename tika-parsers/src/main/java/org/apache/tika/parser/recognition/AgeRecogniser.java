@@ -58,7 +58,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable{
 	public static final String MD_KEY_ESTIMATED_AGE = "Estimated-Author-Age";
 
 	private static AgePredicterLocal agePredictor;
-    private AgeRecogniserConfig config;
+        private AgeRecogniserConfig config;
 
 	private static final MediaType MEDIA_TYPE = MediaType.TEXT_PLAIN;
 	private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
@@ -74,6 +74,11 @@ public class AgeRecogniser extends AbstractParser implements Initializable{
 			LOG.log(Level.SEVERE, "Unable to initialize secondary parser");
 		}
 	}
+
+        @Override
+        public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+		//TODO: what do we want to check here?
+        }
 
 	@Override
 	public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
