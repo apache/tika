@@ -30,8 +30,8 @@ public class AgeRecogniserConfig {
 	private String pathClassifyRegression = null;
 
 	public AgeRecogniserConfig(Map<String, Param> params) {
-	    setPathClassifyModel(getClass().getClassLoader().getResource(params.get("age.path.classify").getValue().toString()).getFile());
-	    setPathClassifyRegression(getClass().getClassLoader().getResource(params.get("age.path.regression").getValue().toString()).getFile());
+	    setPathClassifyModel(AgeRecogniserConfig.class.getResource(params.get("age.path.classify").getValue().toString()).getFile());
+	    setPathClassifyRegression(AgeRecogniserConfig.class.getResource(params.get("age.path.regression").getValue().toString()).getFile());
 	}
 
 	public String getPathClassifyModel() {
