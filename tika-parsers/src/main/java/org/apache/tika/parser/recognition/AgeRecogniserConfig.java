@@ -17,7 +17,9 @@
 
 package org.apache.tika.parser.recognition;
 
+import java.net.URL;
 import java.util.Map;
+
 import org.apache.tika.config.Param;
 
 
@@ -30,8 +32,20 @@ public class AgeRecogniserConfig {
 	private String pathClassifyRegression = null;
 
 	public AgeRecogniserConfig(Map<String, Param> params) {
-	    setPathClassifyModel(AgeRecogniserConfig.class.getResource(params.get("age.path.classify").getValue().toString()).getFile());
-	    setPathClassifyRegression(AgeRecogniserConfig.class.getResource(params.get("age.path.regression").getValue().toString()).getFile());
+
+		URL classifyUrl = AgeRecogniserConfig.class.getResource(
+				params.get("age.path.classify").getValue().toString());
+
+		if (classifyUrl != null) {
+			setPathClassifyModel(classifyUrl.getFile());
+		}
+
+		URL regressionUrl = AgeRecogniserConfig.class.getResource(
+				params.get("age.path.regression").getValue().toString());
+
+		if (regressionUrl != null) {
+			setPathClassifyRegression(regressionUrl.getFile());
+		}
 	}
 
 	public String getPathClassifyModel() {
