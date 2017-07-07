@@ -387,6 +387,12 @@
       <groupId>edu.ucar</groupId>
       <artifactId>grib</artifactId>
       <version>${netcdf-java.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>edu.ucar</groupId>
+          <artifactId>jj2000</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>

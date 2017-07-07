@@ -1,5 +1,8 @@
 Release 1.16 - ??/??/????
 
+  * Exclude jj2000 from edu.ucar grip to avoid potential
+    license conflicts with ASL 2.0
+
   * Add Age recognition using Ensemble model for Linear regression
     and Apache OpenNLP Maximum Entropy. Tika can now detect age from
     text (TIKA-1988).
