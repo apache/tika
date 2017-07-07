@@ -621,11 +621,11 @@
                     </goals>
                     <configuration>
                         <target>
-                            <copy file="${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/en-pos-maxent.bin" todir="${basedir}/model/opennlp/"/>
-                            <copy file="${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/en-sent.bin" todir="${basedir}/model/opennlp/"/>
-			    <copy file="${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/en-token.bin" todir="${basedir}/model/opennlp/"/>
-			    <copy file="${basedir}/src/test/resources/org/apache/tika/parser/recognition/classify-bigram.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/"/>
-			    <copy file="${basedir}/src/test/resources/org/apache/tika/parser/recognition/regression-global.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/"/>
+                            <copy failonerror="false" file="${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/en-pos-maxent.bin" todir="${basedir}/model/opennlp/"/>
+                            <copy failonerror="false" file="${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/en-sent.bin" todir="${basedir}/model/opennlp/"/>
+			    <copy failonerror="false" file="${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/en-token.bin" todir="${basedir}/model/opennlp/"/>
+			    <copy failonerror="false" file="${basedir}/src/test/resources/org/apache/tika/parser/recognition/classify-bigram.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/"/>
+			    <copy failonerror="false" file="${basedir}/src/test/resources/org/apache/tika/parser/recognition/regression-global.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/"/>
                         </target>
                     </configuration>
                 </execution>
