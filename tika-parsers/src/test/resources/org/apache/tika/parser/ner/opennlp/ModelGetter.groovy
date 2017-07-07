@@ -93,7 +93,7 @@ def downloadFile(String urlStr, File file) {
 
 def urlPrefix = "http://opennlp.sourceforge.net/models-1.5"
 def prefixPath = "src/test/resources/org/apache/tika/parser/ner/opennlp/"
-def ageUrlPrefix = "https://github.com/USCDataScience/AgePredictor/raw/master/model"
+def ageUrlPrefix = "https://raw.githubusercontent.com/USCDataScience/AgePredictor/master/model"
 def agePrefixPath = "src/test/resources/org/apache/tika/parser/recognition/"
 
 // detecting proper path for test resources
@@ -107,9 +107,9 @@ def modelFiles = //filePath : url
         [(prefixPath + "ner-person.bin"): (urlPrefix + "/en-ner-person.bin"),
           (prefixPath + "ner-location.bin"): (urlPrefix + "/en-ner-location.bin"),
           (prefixPath + "ner-organization.bin"): (urlPrefix + "/en-ner-organization.bin"),
-          (prefixPath + "en-pos-maxent.bin"): (urlPrefix + "/en-post-maxent.bin"),
-          (prefixPath +    "en-sent.bin"): (urlPrefix + "/en-sent.bin"),
-          (prefixPath +    "en-token.bin"): (urlPrefix + "/en-token.bin"),
+          (prefixPath + "en-pos-maxent.bin"): (urlPrefix + "/en-pos-maxent.bin"),
+          (prefixPath + "en-sent.bin"): (urlPrefix + "/en-sent.bin"),
+          (prefixPath + "en-token.bin"): (urlPrefix + "/en-token.bin"),
           (prefixPath + "ner-date.bin"): (urlPrefix + "/en-ner-date.bin"),
           (agePrefixPath + "classify-bigram.bin"): (ageUrlPrefix + "/classify-bigram.bin"),
           (agePrefixPath + "regression-global.bin"): (ageUrlPrefix + "/regression-global.bin")]
