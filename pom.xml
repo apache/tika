@@ -50,6 +50,7 @@
     <module>tika-java7</module>
     <module>tika-eval</module>
     <module>tika-dl</module>
+    <module>tika-nlp</module>
   </modules>
 
   <profiles>
