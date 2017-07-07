@@ -357,7 +357,7 @@ public class ServiceLoader {
                     if (iface.isAssignableFrom(klass)) {
                         T instance = (T) klass.newInstance();
                         if (instance instanceof Initializable) {
-                            ((Initializable)instance).checkInitialization(InitializableProblemHandler.WARN);
+                            ((Initializable)instance).checkInitialization(initializableProblemHandler);
                         }
                         providers.add(instance);
                     }
