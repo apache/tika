@@ -46,6 +46,7 @@ public class AgeRecogniserTest extends TikaTest {
     	 * Injecting mock AgeClassifer into AgeParser to generate test response
     	 */
     	AgePredicterLocal mockAgeClassifier = mock(AgePredicterLocal.class);
+	AgeRecogniser.setAgePredictorClient(mockAgeClassifier);
     	
 		try {
 			when(mockAgeClassifier.predictAge(TEST_TEXT)).thenReturn(TEST_AGE);
