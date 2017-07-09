@@ -17,24 +17,23 @@
 package org.apache.tika.parser.recognition;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.captioning.tf.TensorflowRESTCaptioner;
+import org.apache.tika.parser.recognition.tf.TensorflowImageRecParser;
 import org.junit.Assert;
-import org.junit.Ignore;
+import org.junit.Assume;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
-import sun.rmi.runtime.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -56,10 +55,11 @@ public class ObjectRecognitionParserTest {
     private static final ClassLoader loader = ObjectRecognitionParserTest.class.getClassLoader();
 
     private static final Logger LOG = LoggerFactory.getLogger(ObjectRecognitionParserTest.class);
-
-    @Ignore("If tensorflow not available Ignore")
+    
     @Test
     public void jpegTFObjRecTest() throws IOException, TikaException, SAXException {
+      TensorflowImageRecParser p = new TensorflowImageRecParser();
+      Assume.assumeTrue(p.isAvailable());      
         try (InputStream stream = loader.getResourceAsStream(CONFIG_FILE_OBJ_REC)) {
             assert stream != null;
             Tika tika = new Tika(new TikaConfig(stream));
@@ -79,33 +79,41 @@ public class ObjectRecognitionParserTest {
         }
     }
 
-    @Ignore("Configure Rest API service")
     @Test
     public void jpegRESTObjRecTest() throws Exception {
+        String apiUrl = "http://localhost:8764/inception/v4/ping";
+        int status = WebClient.create(apiUrl).get().getStatus();
+        Assume.assumeTrue(status == 200);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
     }
 
-    @Ignore("Configure Rest API service")
     @Test
     public void jpegRESTim2txtTest() throws Exception {
+        String apiUrl = "http://localhost:8764/inception/v3/ping";
+        int status = WebClient.create(apiUrl).get().getStatus();
+        Assume.assumeTrue(status == 200);   
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
     }
 
-    @Ignore("Configure Rest API service")
     @Test
     public void pngRESTim2txtTest() throws Exception {
+        String apiUrl = "http://localhost:8764/inception/v3/ping";
+        int status = WebClient.create(apiUrl).get().getStatus();
+        Assume.assumeTrue(status == 200);   
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
     }
 
-    @Ignore("Configure Rest API service")
     @Test
     public void gifRESTim2txtTest() throws Exception {
+        String apiUrl = "http://localhost:8764/inception/v3/ping";
+        int status = WebClient.create(apiUrl).get().getStatus();
+        Assume.assumeTrue(status == 200);    
         String[] expectedCaption = {"a baseball player pitching a ball on top of a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_GIF,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
