@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
@@ -106,7 +107,7 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format("/captions?beam_size=%1$d&max_caption_length=%2$d",
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/captions?beam_size=%1$d&max_caption_length=%2$d",
                     captions, maxCaptionLength));
 
             DefaultHttpClient client = new DefaultHttpClient();
