@@ -1,4 +1,16 @@
-Release 1.16 - ??/??/????
+Release 1.16 - 7/7/2017
+
+  * Exclude jj2000 from edu.ucar grip to avoid potential
+    license conflicts with ASL 2.0
+
+  * Add Age recognition using Ensemble model for Linear regression
+    and Apache OpenNLP Maximum Entropy. Tika can now detect age from
+    text (TIKA-1988).
+
+  * Add Tika Deep Learning support for the VGG16 model for
+    Very Deep Convolutional Networks for Large-Scale Image Recognition.
+    Now Tika supports both Inception v3/v4 and VGG16 based image 
+    recognition (TIKA-2298).
 
   * Extract macros from PPT (TIKA-2089).
 
@@ -47,6 +59,10 @@ Release 1.16 - ??/??/????
   * Upgrade Gson to 2.8.1 (TIKA-2414).
 
   * Upgrade mime4j to 0.8.1 (TIKA-2413).
+
+  * Mime magic improvements for GraphViz (TIKA-2422), HTML files which
+    claim to be XML but aren't quite valid XML (TIKA-2419) and QuickTime
+    / MP4 (TIKA-2418)
 
 Release 1.15 - 05/23/2017
 

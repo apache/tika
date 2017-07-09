@@ -96,6 +96,10 @@ import org.xml.sax.helpers.DefaultHandler;
 public class TesseractOCRParser extends AbstractParser implements Initializable {
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
 
+    private static volatile boolean HAS_WARNED = false;
+    private static final Object[] LOCK = new Object[0];
+
+
     private static final long serialVersionUID = -8167538283213097265L;
     private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
@@ -406,12 +410,16 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         //this will incorrectly trigger for people who turn off Tesseract
         //by sending in a bogus tesseract path via a custom TesseractOCRConfig.
         //TODO: figure out how to solve that.
-        if (hasTesseract(DEFAULT_CONFIG)) {
-            problemHandler.handleInitializableProblem(this.getClass().getName(),
-                    "Tesseract OCR is installed and will be automatically applied to image files.\n" +
-                            "This may dramatically slow down content extraction (TIKA-2359).\n" +
-                            "As of Tika 1.15 (and prior versions), Tesseract is automatically called.\n" +
-                            "In future versions of Tika, users may need to turn the TesseractOCRParser on via TikaConfig.");
+        if (! hasWarned()) {
+            if (hasTesseract(DEFAULT_CONFIG)) {
+                problemHandler.handleInitializableProblem(this.getClass().getName(),
+                        "Tesseract OCR is installed and will be automatically applied to image files unless\n" +
+                                "you've excluded the TesseractOCRParser from the default parser.\n"+
+                                "Tesseract may dramatically slow down content extraction (TIKA-2359).\n" +
+                                "As of Tika 1.15 (and prior versions), Tesseract is automatically called.\n" +
+                                "In future versions of Tika, users may need to turn the TesseractOCRParser on via TikaConfig.");
+                warn();
+            }
         }
     }
     // TIKA-1445 workaround parser
@@ -601,6 +609,22 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             return Collections.unmodifiableSet(
                     new HashSet<>(Arrays.asList(elements)));
         }
+    }
+
+    protected boolean hasWarned() {
+        if (HAS_WARNED) {
+            return true;
+        }
+        synchronized (LOCK) {
+            if (HAS_WARNED) {
+                return true;
+            }
+            return false;
+        }
+    }
+
+    protected void warn() {
+        HAS_WARNED = true;
     }
 }
 

@@ -212,22 +212,29 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
         //get macro persist id
         DocInfoListContainer list = (DocInfoListContainer)ppt.getDocumentRecord().findFirstOfType(RecordTypes.List.typeID);
+        if (list == null) {
+            return;
+        }
         VBAInfoContainer vbaInfo = (VBAInfoContainer)list.findFirstOfType(RecordTypes.VBAInfo.typeID);
+        if (vbaInfo == null) {
+            return;
+        }
         VBAInfoAtom vbaAtom = (VBAInfoAtom)vbaInfo.findFirstOfType(RecordTypes.VBAInfoAtom.typeID);
+        if (vbaAtom == null) {
+            return;
+        }
         long persistId = vbaAtom.getPersistIdRef();
         for (HSLFObjectData objData : ppt.getEmbeddedObjects()) {
             if (objData.getExOleObjStg().getPersistId() == persistId) {
-                NPOIFSFileSystem npoifsFileSystem = null;
-                try {
-                    npoifsFileSystem = new NPOIFSFileSystem(objData.getData());
+                try (NPOIFSFileSystem npoifsFileSystem = new NPOIFSFileSystem(objData.getData())) {
+                    try {
+                        OfficeParser.extractMacros(npoifsFileSystem, xhtml,
+                                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                    } catch (IOException|SAXException inner) {
+                        EmbeddedDocumentUtil.recordException(inner, parentMetadata);
+                    }
                 } catch (IOException e) {
-                    //swallow
-                }
-                try {
-                    OfficeParser.extractMacros(npoifsFileSystem, xhtml,
-                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
-                } catch (IOException|SAXException e) {
-                    //swallow
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);//swallow
                 }
             }
         }

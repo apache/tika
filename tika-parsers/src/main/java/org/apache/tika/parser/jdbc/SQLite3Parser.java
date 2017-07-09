@@ -51,6 +51,9 @@ import org.xml.sax.SAXException;
  * that has to be created.
  */
 public class SQLite3Parser extends AbstractParser implements Initializable {
+    private static volatile boolean HAS_WARNED = false;
+    private static final Object[] LOCK = new Object[0];
+
     /**
      * Serial version UID
      */
@@ -102,10 +105,20 @@ public class SQLite3Parser extends AbstractParser implements Initializable {
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
         if (SUPPORTED_TYPES.size() == 0) {
-            problemHandler.handleInitializableProblem("org.apache.tika.parser.SQLite3Parser",
-                    "org.xerial's sqlite-jdbc is not loaded.\n" +
-                            "Please provide the jar on your classpath to parse sqlite files.\n" +
-                            "See tika-parsers/pom.xml for the correct version.");
+            if (HAS_WARNED) {
+                return;
+            }
+            synchronized (LOCK) {
+                //check again while under the lock
+                if (HAS_WARNED) {
+                    return;
+                }
+                problemHandler.handleInitializableProblem("org.apache.tika.parser.SQLite3Parser",
+                        "org.xerial's sqlite-jdbc is not loaded.\n" +
+                                "Please provide the jar on your classpath to parse sqlite files.\n" +
+                                "See tika-parsers/pom.xml for the correct version.");
+                HAS_WARNED = true;
+            }
         }
     }
 }

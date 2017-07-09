@@ -26,6 +26,9 @@
       <excludes>
         <exclude>**/target/**</exclude>
         <exclude>**/.*/**</exclude>
+        <exclude>**/opennlp/*.bin</exclude>
+        <exclude>**/recognition/*.bin</exclude>
+        <exclude>**/*.releaseBackup</exclude>
       </excludes>
     </fileSet>
   </fileSets>

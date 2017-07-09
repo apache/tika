@@ -101,6 +101,8 @@ import org.xml.sax.SAXException;
  */
 public class PDFParser extends AbstractParser implements Initializable {
 
+    private static volatile boolean HAS_WARNED = false;
+    private static final Object[] LOCK = new Object[0];
 
     /**
      * Metadata key for giving the document password to the parser.
@@ -751,39 +753,47 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     @Override
     public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
-        StringBuilder sb = new StringBuilder();
-        try {
-            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-        } catch (ClassNotFoundException e) {
-            sb.append("JBIG2ImageReader not loaded. jbig2 files will be ignored\n");
-            sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
-            sb.append("for optional dependencies.\n");
+        //only check for these libraries once!
+        if (HAS_WARNED) {
+            return;
         }
-        try {
-            Class.forName("com.github.jaiimageio.impl.plugins.tiff.TIFFImageWriter");
-        } catch (ClassNotFoundException e) {
-            sb.append("TIFFImageWriter not loaded. tiff files will not be processed\n");
-            sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
-            sb.append("for optional dependencies.\n");
+        synchronized (LOCK) {
+            if (HAS_WARNED) {
+                return;
+            }
+            StringBuilder sb = new StringBuilder();
+            try {
+                Class.forName("com.levigo.jbig2.JBIG2ImageReader");
+            } catch (ClassNotFoundException e) {
+                sb.append("JBIG2ImageReader not loaded. jbig2 files will be ignored\n");
+                sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
+                sb.append("for optional dependencies.\n");
+            }
+            try {
+                Class.forName("com.github.jaiimageio.impl.plugins.tiff.TIFFImageWriter");
+            } catch (ClassNotFoundException e) {
+                sb.append("TIFFImageWriter not loaded. tiff files will not be processed\n");
+                sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
+                sb.append("for optional dependencies.\n");
 
+            }
+
+            try {
+                Class.forName("com.github.jaiimageio.jpeg2000.impl.J2KImageReader");
+            } catch (ClassNotFoundException e) {
+                sb.append("J2KImageReader not loaded. JPEG2000 files will not be processed.\n");
+                sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
+                sb.append("for optional dependencies.\n");
+            }
+
+            if (sb.length() > 0) {
+                InitializableProblemHandler localInitializableProblemHandler =
+                        (initializableProblemHandler == null) ?
+                                handler : initializableProblemHandler;
+                localInitializableProblemHandler.handleInitializableProblem("org.apache.tika.parsers.PDFParser",
+                        sb.toString());
+            }
+            HAS_WARNED = true;
         }
-
-        try {
-            Class.forName("com.github.jaiimageio.jpeg2000.impl.J2KImageReader");
-        } catch (ClassNotFoundException e) {
-            sb.append("J2KImageReader not loaded. JPEG2000 files will not be processed.\n");
-            sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
-            sb.append("for optional dependencies.\n");
-        }
-
-        if (sb.length() > 0) {
-            InitializableProblemHandler localInitializableProblemHandler =
-                    (initializableProblemHandler == null) ?
-                            handler : initializableProblemHandler;
-            localInitializableProblemHandler.handleInitializableProblem("org.apache.tika.parsers.PDFParser",
-                    sb.toString());
-        }
-
     }
-
 }

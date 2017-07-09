@@ -72,7 +72,6 @@ import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
-import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -121,6 +120,9 @@ public class TikaCLI {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
 
+    public TikaCLI() {
+        context = new ParseContext();
+    }
     public static void main(String[] args) throws Exception {
         TikaCLI cli = new TikaCLI();
 
@@ -181,12 +183,7 @@ public class TikaCLI {
         public void process(
                 InputStream input, OutputStream output, Metadata metadata)
                 throws Exception {
-            Parser p = parser;
-            if (fork) {
-                p = new ForkParser(TikaCLI.class.getClassLoader(), p);
-            }
-            ContentHandler handler = getContentHandler(output, metadata);
-            if (config == null && context.get(PDFParserConfig.class) == null) {
+            if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
                 PDFParserConfig pdfParserConfig = new PDFParserConfig();
                 pdfParserConfig.setExtractInlineImages(true);
                 String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
@@ -196,6 +193,12 @@ public class TikaCLI {
                 System.err.println(warn);
                 context.set(PDFParserConfig.class, pdfParserConfig);
             }
+            Parser p = parser;
+            if (fork) {
+                p = new ForkParser(TikaCLI.class.getClassLoader(), p);
+            }
+            ContentHandler handler = getContentHandler(output, metadata);
+
             p.parse(input, handler, metadata, context);
             // fix for TIKA-596: if a parser doesn't generate
             // XHTML output, the lack of an output document prevents
@@ -326,6 +329,8 @@ public class TikaCLI {
     private OutputType type = XML;
 
     private boolean recursiveJSON = false;
+
+    private URI networkURI = null;
     
     /**
      * Output character encoding, or <code>null</code> for platform default
@@ -346,18 +351,6 @@ public class TikaCLI {
     private boolean fork = false;
 
     private boolean prettyPrint;
-    
-    public TikaCLI() throws Exception {
-        context = new ParseContext();
-        detector = new DefaultDetector();
-        parser = new AutoDetectParser(detector);
-        context.set(Parser.class, parser);
-        context.set(PasswordProvider.class, new PasswordProvider() {
-            public String getPassword(Metadata metadata) {
-                return password;
-            }
-        });
-    }
 
     public void process(String arg) throws Exception {
         if (arg.equals("-?") || arg.equals("--help")) {
@@ -414,11 +407,10 @@ public class TikaCLI {
         } else if (arg.equals("-f") || arg.equals("--fork")) {
             fork = true;
         } else if (arg.startsWith("--config=")) {
-            configure(arg.substring("--config=".length()));
+            configFilePath = arg.substring("--config=".length());
         } else if (arg.startsWith("--digest=")) {
             digester = new CommonsDigester(MAX_MARK,
                     arg.substring("--digest=".length()));
-            parser = new DigestingParser(parser, digester);
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -459,11 +451,9 @@ public class TikaCLI {
             serverMode = true;
             pipeMode = false;
         } else if (arg.startsWith("-c")) {
-            URI uri = new URI(arg.substring("-c".length()));
-            parser = new NetworkParser(uri);
+            networkURI = new URI(arg.substring("-c".length()));
         } else if (arg.startsWith("--client=")) {
-            URI uri = new URI(arg.substring("--client=".length()));
-            parser = new NetworkParser(uri);
+            networkURI = new URI(arg.substring("-c".length()));
         } else {
             pipeMode = false;
             if (serverMode) {
@@ -474,6 +464,7 @@ public class TikaCLI {
                     type.process(stream, System.out, new Metadata());
                 }
             } else {
+                configure();
                 URL url;
                 File file = new File(arg);
                 if (file.isFile()) {
@@ -497,6 +488,7 @@ public class TikaCLI {
     }
 
     private void dumpConfig(TikaConfigSerializer.Mode mode) throws Exception {
+        configure();
         TikaConfig localConfig = (config == null) ? TikaConfig.getDefaultConfig() : config;
 
         TikaConfigSerializer.serialize(localConfig, mode,
@@ -678,16 +670,30 @@ public class TikaCLI {
     }
 
 
+    private void configure() throws TikaException, IOException, SAXException {
 
-    private void configure(String configFilePath) throws Exception {
-        this.configFilePath = configFilePath;
-        config = new TikaConfig(new File(configFilePath));
-        parser = new AutoDetectParser(config);
-        if (digester != null) {
-            parser = new DigestingParser(parser, digester);
+        if (networkURI != null) {
+            parser = new NetworkParser(networkURI);
+            config = TikaConfig.getDefaultConfig();
+        } else {
+            if (configFilePath != null) {
+                config = new TikaConfig(new File(configFilePath));
+            } else {
+                config = TikaConfig.getDefaultConfig();
+            }
+
+            parser = new AutoDetectParser(config);
+            if (digester != null) {
+                parser = new DigestingParser(parser, digester);
+            }
         }
         detector = config.getDetector();
         context.set(Parser.class, parser);
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            public String getPassword(Metadata metadata) {
+                return password;
+            }
+        });
     }
 
     private void displayMetModels(){
@@ -721,7 +727,8 @@ public class TikaCLI {
      * If a parser is a composite parser, it will list the
      * sub parsers and their mime-types.
      */
-    private void displayParsers(boolean includeMimeTypes, boolean aptListFormat) {
+    private void displayParsers(boolean includeMimeTypes, boolean aptListFormat) throws TikaException, IOException, SAXException {
+        configure();
         displayParser(parser, includeMimeTypes, aptListFormat, 3);
     }
      
@@ -765,7 +772,8 @@ public class TikaCLI {
      * If a detector is a composite detector, it will list the
      *  sub detectors.
      */
-    private void displayDetectors() {
+    private void displayDetectors() throws TikaException, IOException, SAXException {
+        configure();
         displayDetector(detector, 0);
     }
      
@@ -1252,4 +1260,6 @@ public class TikaCLI {
             }
         }        
     }
+
+
 }
