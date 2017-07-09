@@ -82,8 +82,14 @@ public class ObjectRecognitionParserTest {
     @Test
     public void jpegRESTObjRecTest() throws Exception {
         String apiUrl = "http://localhost:8764/inception/v4/ping";
-        int status = WebClient.create(apiUrl).get().getStatus();
-        Assume.assumeTrue(status == 200);
+        boolean available = false;
+        int status = 500;
+        try{
+          status = WebClient.create(apiUrl).get().getStatus();
+          available = status == 200;
+        }
+        catch(Exception ignore){}
+        Assume.assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
@@ -92,8 +98,14 @@ public class ObjectRecognitionParserTest {
     @Test
     public void jpegRESTim2txtTest() throws Exception {
         String apiUrl = "http://localhost:8764/inception/v3/ping";
-        int status = WebClient.create(apiUrl).get().getStatus();
-        Assume.assumeTrue(status == 200);   
+        boolean available = false;
+        int status = 500;
+        try{
+          status = WebClient.create(apiUrl).get().getStatus();
+          available = status == 200;
+        }
+        catch(Exception ignore){}
+        Assume.assumeTrue(available);   
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_JPEG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -102,8 +114,14 @@ public class ObjectRecognitionParserTest {
     @Test
     public void pngRESTim2txtTest() throws Exception {
         String apiUrl = "http://localhost:8764/inception/v3/ping";
-        int status = WebClient.create(apiUrl).get().getStatus();
-        Assume.assumeTrue(status == 200);   
+        boolean available = false;
+        int status = 500;
+        try{
+          status = WebClient.create(apiUrl).get().getStatus();
+          available = status == 200;
+        }
+        catch(Exception ignore){}
+        Assume.assumeTrue(available);  
         String[] expectedCaption = {"a baseball player holding a bat on a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_PNG,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
@@ -112,8 +130,14 @@ public class ObjectRecognitionParserTest {
     @Test
     public void gifRESTim2txtTest() throws Exception {
         String apiUrl = "http://localhost:8764/inception/v3/ping";
-        int status = WebClient.create(apiUrl).get().getStatus();
-        Assume.assumeTrue(status == 200);    
+        boolean available = false;
+        int status = 500;
+        try{
+          status = WebClient.create(apiUrl).get().getStatus();
+          available = status == 200;
+        }
+        catch(Exception ignore){}
+        Assume.assumeTrue(available);  
         String[] expectedCaption = {"a baseball player pitching a ball on top of a field"};
         doRecognize(CONFIG_REST_FILE_IM2TXT, BASEBALL_IMAGE_GIF,
                 ObjectRecognitionParser.MD_KEY_IMG_CAP, expectedCaption);
