@@ -1,3 +1,10 @@
+Release 1.17 - ???
+
+  * Tika now has support for automatic image captioning, that
+    combines Computer Vision and Natural Language Processing to
+    automatically generate a readable caption for an image (TIKA-2262).
+    
+    
 Release 1.16 - 7/7/2017
 
   * Exclude jj2000 from edu.ucar grip to avoid potential
