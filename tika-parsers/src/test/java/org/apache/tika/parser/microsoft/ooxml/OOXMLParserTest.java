@@ -68,13 +68,27 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class OOXMLParserTest extends TikaTest {
 
+    private static Locale USER_LOCALE = null;
     private Parser parser = new AutoDetectParser();
+
+    @BeforeClass
+    public static void setUp() {
+        USER_LOCALE = LocaleUtil.getUserLocale();
+        LocaleUtil.setUserLocale(Locale.US);
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        LocaleUtil.setUserLocale(USER_LOCALE);
+    }
 
     private InputStream getTestDocument(String name) {
         return TikaInputStream.get(OOXMLParserTest.class.getResourceAsStream(
@@ -1330,6 +1344,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("123456789012345", xml);//15 digit number
         assertContains("123456789012346", xml);//15 digit formula
         Locale locale = LocaleUtil.getUserLocale();
+
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
         //16 digit number is treated as scientific notation as is the 16 digit formula
         assertContains("1"+symbols.getDecimalSeparator()+"23456789012345E+15</td>\t"+
