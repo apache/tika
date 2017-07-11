@@ -2735,6 +2735,16 @@
   <mime-type type="application/voicexml+xml">
     <glob pattern="*.vxml"/>
   </mime-type>
+
+  <mime-type type="application/warc">
+    <acronym>WARC</acronym>
+    <_comment>WARC</_comment>
+    <magic priority="50">
+       <match value="WARC/" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.warc"/>
+  </mime-type>
+
   <mime-type type="application/watcherinfo+xml"/>
   <mime-type type="application/whoispp-query"/>
   <mime-type type="application/whoispp-response"/>
@@ -3468,6 +3478,15 @@
       </match>
     </magic>
     <glob pattern="*.ibooks"/>
+  </mime-type>
+
+  <mime-type type="application/x-internet-archive">
+    <acronym>ARC</acronym>
+    <_comment>ARC</_comment>
+    <magic priority="60">
+       <match value="filedesc://" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.arc"/>
   </mime-type>
 
   <mime-type type="application/x-isatab-investigation">
