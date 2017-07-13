@@ -373,10 +373,12 @@
       <match value="From " type="string" offset="0">
          <match value="\nFrom: " type="string" offset="32:256"/>
          <match value="\nDate: " type="string" offset="32:256"/>
+         <match value="\nSubject: " type="string" offset="32:256"/>
          <match value="\nDelivered-To: " type="string" offset="32:256"/>
          <match value="\nReceived: by " type="string" offset="32:256"/>
          <match value="\nReceived: via " type="string" offset="32:256"/>
          <match value="\nReceived: from " type="string" offset="32:256"/>
+         <match value="\nMime-Version: " type="string" offset="32:256"/>
       </match>
     </magic>
     <glob pattern="*.mbox"/>
