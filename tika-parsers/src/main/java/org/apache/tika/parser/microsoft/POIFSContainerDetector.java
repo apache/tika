@@ -150,30 +150,24 @@ public class POIFSContainerDetector implements Detector {
     /**
      * An ASCII String "StarImpress"
      */
-    private static final byte[] STAR_IMPRESS = new byte[]{
-            0x53, 0x74, 0x61, 0x72, 0x49, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73
-    };
+    private static final byte[] STAR_IMPRESS = "StarImpress".getBytes();
+    
     /**
      * An ASCII String "StarDraw"
      */
-    private static final byte[] STAR_DRAW = new byte[]{
-            0x53, 0x74, 0x61, 0x72, 0x44, 0x72, 0x61, 0x77
-    };
+    private static final byte[] STAR_DRAW = "StarDraw".getBytes();
+    
     /**
      * An ASCII String "Quill96" for Works Files
      */
-    private static final byte[] WORKS_QUILL96 = new byte[]{
-            0x51, 0x75, 0x69, 0x6c, 0x6c, 0x39, 0x36
-    };
+    private static final byte[] WORKS_QUILL96 = "Quill96".getBytes();
 
     /**
      * An ASCII String "MSGraph.Chart" for embedded MSGraph files
      * The full designator includes a version, e.g. MSGraph.Chart.8
      */
-    private static final byte[] MS_GRAPH_CHART_BYTES = new byte[]{
-            0x4D, 0x53, 0x47, 0x72, 0x61, 0x70, 0x68,
-            0x2E, 0x43, 0x68, 0x61, 0x72, 0x74,
-    };
+    private static final byte[] MS_GRAPH_CHART_BYTES = "MSGraph.Chart".getBytes();
+    
     /**
      * Regexp for matching the MPP Project Data stream
      */
