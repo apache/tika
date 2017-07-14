@@ -259,10 +259,6 @@ public class TestCorruptedFiles extends TikaTest {
         }
 
         public boolean shouldParseEmbedded(Metadata metadata) {
-            System.out.println("CONTENT TYPE: " + metadata.get(Metadata.CONTENT_TYPE));
-            if ("image/x-emf".equals(metadata.get(Metadata.CONTENT_TYPE))) {
-                return false;
-            }
             return true;
         }
 
