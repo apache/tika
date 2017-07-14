@@ -18,9 +18,7 @@ package org.apache.tika.parser.microsoft.xml;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -61,8 +59,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MEDIA_TYPE)));
+            Collections.singleton(MEDIA_TYPE);
 
     static {
         WORDML_TO_XHTML.put(P, P);
