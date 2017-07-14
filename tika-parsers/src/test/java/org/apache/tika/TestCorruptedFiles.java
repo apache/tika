@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
@@ -38,7 +40,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -47,11 +51,12 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * This can be used to test parsers against corrupted files.
+ * This can be used to test parsers against corrupted/fuzzed files.
  * This aims to ignore SAXExceptions, TikaException and IOException.
  * However, if there is another exception, or parsing takes longer than
  * {@link #MAX_ALLOWABLE_TIME_MILLIS}, then the tmp file that triggered
@@ -88,6 +93,8 @@ public class TestCorruptedFiles extends TikaTest {
      */
     private static final int NUM_ITERATIONS = 1000;
 
+    private static boolean HANDLE_EMBEDDED_DOCS_INDIVIDUALLY = true;
+
     private static Random randomSeedGenerator = new Random();
     private static Path CORRUPTED;
     private static boolean FAILED;
@@ -109,13 +116,14 @@ public class TestCorruptedFiles extends TikaTest {
     @Test
     public void testSingle() throws Exception {
         String fileName = "testEXCEL_embeddedPDF_windows.xls";
+        debug(getRecursiveMetadata("testEXCEL_embeddedPDF_windows.xls"));
         long seed = 0;
         try {
             for (int i = 0; i < 1000; i++) {
                 seed = randomSeedGenerator.nextLong();
                 FAILED = true;
                 long start = new Date().getTime();
-                testSingleFile(fileName, new Random(seed));
+                testSingleFile(getBytes(fileName), new Random(seed));
                 FAILED = false;
             }
         } catch (Throwable t) {
@@ -125,22 +133,43 @@ public class TestCorruptedFiles extends TikaTest {
     }
 
     @Test
+    public void testEmbeddedOnly() throws Exception {
+        String fileName = "testEXCEL_embeddedPDF_windows.xls";
+        Map<String, byte[]> embedded = extract(getBytes(fileName));
+        long seed = 0;
+        for (int i = 0; i < 1000; i++) {
+            for (Map.Entry<String, byte[]> e : embedded.entrySet()) {
+                seed = randomSeedGenerator.nextLong();
+                try{
+                    FAILED = true;
+                    testSingleFile(e.getValue(), new Random(seed));
+                    FAILED = false;
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                    fail("error fileName "+fileName + " "+e.getKey() + " seed: " + seed);
+                }
+            }
+        }
+    }
+
+
+    @Test
     public void reproduce() throws Throwable {
         long seed = -3351614222367486714L;
         String fileName = "testEXCEL_embeddedPDF_windows.xls";
         try {
             FAILED = true;
-            testSingleFile(fileName, new Random(seed));
+            testSingleFile(getBytes(fileName), new Random(seed));
             FAILED = false;
         } finally {
 
         }
     }
 
-    public void testSingleFile(String fileName, Random random) throws Throwable {
+    public void testSingleFile(byte[] bytes, Random random) throws Throwable {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         ExecutorCompletionService executorCompletionService = new ExecutorCompletionService(executorService);
-        executorCompletionService.submit(new ParseTask(fileName, random));
+        executorCompletionService.submit(new ParseTask(bytes, random));
         Future<Boolean> future = executorCompletionService.poll(MAX_ALLOWABLE_TIME_MILLIS, TimeUnit.MILLISECONDS);
         if (future == null) {
             throw new TimeoutException("timed out");
@@ -155,16 +184,13 @@ public class TestCorruptedFiles extends TikaTest {
 
     private class ParseTask implements Callable<Boolean> {
         private byte[] corrupted = null;
-        ParseTask(String testFileName, Random random) throws IOException {
-            try(InputStream is = getResourceAsStream("/test-documents/"+testFileName)) {
-                corrupted = corrupt(is, random);
-                Files.delete(CORRUPTED);
-                OutputStream os = Files.newOutputStream(CORRUPTED, StandardOpenOption.CREATE);
-                IOUtils.copy(new ByteArrayInputStream(corrupted), os);
-                os.flush();
-                os.close();
-            }
-
+        ParseTask(byte[] original, Random random) throws IOException {
+            corrupted = corrupt(new ByteArrayInputStream(original), random);
+            Files.delete(CORRUPTED);
+            OutputStream os = Files.newOutputStream(CORRUPTED, StandardOpenOption.CREATE);
+            IOUtils.copy(new ByteArrayInputStream(corrupted), os);
+            os.flush();
+            os.close();
         }
 
 
@@ -202,6 +228,49 @@ public class TestCorruptedFiles extends TikaTest {
                 corrupted[i] = c;
             }
             return corrupted;
+        }
+    }
+
+
+    private byte[] getBytes(String testFile) throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        IOUtils.copy(getResourceAsStream("/test-documents/"+testFile), bos);
+        return bos.toByteArray();
+    }
+
+    private Map<String, byte[]> extract(byte[] bytes) throws Exception {
+        Parser p = new AutoDetectParser();
+        ParseContext parseContext = new ParseContext();
+        Map<String, byte[]> map = new HashMap<>();
+        parseContext.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(map));
+        try (InputStream is = TikaInputStream.get(bytes)){
+            p.parse(is, new DefaultHandler(), new Metadata(), parseContext);
+        }
+        return map;
+    }
+
+
+    private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+        private final Map<String, byte[]> zout;
+        private int cnt = 0;
+
+        MyEmbeddedDocumentExtractor(Map<String, byte[]> zout) {
+            this.zout = zout;
+        }
+
+        public boolean shouldParseEmbedded(Metadata metadata) {
+            System.out.println("CONTENT TYPE: " + metadata.get(Metadata.CONTENT_TYPE));
+            if ("image/x-emf".equals(metadata.get(Metadata.CONTENT_TYPE))) {
+                return false;
+            }
+            return true;
+        }
+
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(inputStream, bos);
+            byte[] data = bos.toByteArray();
+            zout.put("embedded-" + Integer.toString(cnt++), data);
         }
     }
 }
