@@ -73,7 +73,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE);
+            Collections.singleton(MEDIA_TYPE); //immutable
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
