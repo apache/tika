@@ -20,7 +20,6 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -69,12 +68,11 @@ public class WordMLParser extends AbstractXML2003Parser {
                 new QName(WORD_ML_URL, PICT),
                 new QName(WORD_ML_URL, BIN_DATA),
                 new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
-            
+
 
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MEDIA_TYPE)));
+            Collections.singleton(MEDIA_TYPE);
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
