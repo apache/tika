@@ -58,9 +58,9 @@ import org.xml.sax.SAXException;
  * Tensorflow image captioner.
  * This implementation uses Tensorflow via REST API.
  * <p>
- * NOTE : //TODO: link to wiki page here
+ * NOTE : https://wiki.apache.org/tika/ImageCaption#preview
  *
- * @since Apache Tika 1.16
+ * @since Apache Tika 1.17
  */
 public class TensorflowRESTCaptioner implements ObjectRecogniser {
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTCaptioner.class);
