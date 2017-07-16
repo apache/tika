@@ -46,10 +46,13 @@ import opennlp.tools.util.InvalidFormatException;
 
 
 /**
- * Parser for extracting features from text. Below features are extracted <br/>
+ * Parser for extracting features from text. Below features are extracted
+ *
+ * <ul>
  * <li>Author Age</li>
+ * </ul>
  */
-public class AgeRecogniser extends AbstractParser implements Initializable{
+public class AgeRecogniser extends AbstractParser implements Initializable {
 
 	private static final long serialVersionUID = 1108439049093046832L;
 
@@ -59,7 +62,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable{
 	public static final String MD_KEY_ESTIMATED_AGE = "Estimated-Author-Age";
 
 	private static AgePredicterLocal agePredictor;
-        private AgeRecogniserConfig config;
+	private AgeRecogniserConfig config;
 
 	private static final MediaType MEDIA_TYPE = MediaType.TEXT_PLAIN;
 	private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
@@ -76,10 +79,10 @@ public class AgeRecogniser extends AbstractParser implements Initializable{
 		}
 	}
 
-        @Override
-        public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+	@Override
+	public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
 		//TODO: what do we want to check here?
-        }
+	}
 
 	@Override
 	public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
@@ -136,7 +139,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable{
 			metadata.add(MD_KEY_ESTIMATED_AGE, Double.toString(predictAuthorAge) );
 			
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, "Age Predcitor is not avaialble. Please check wiki for detailed instructions", e);
+			LOG.log(Level.SEVERE, "Age Predictor is not available. Please check wiki for detailed instructions", e);
 			return;
 		}
 		
