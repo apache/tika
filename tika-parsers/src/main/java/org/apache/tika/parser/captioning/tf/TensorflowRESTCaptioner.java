@@ -58,7 +58,7 @@ import org.xml.sax.SAXException;
  * Tensorflow image captioner.
  * This implementation uses Tensorflow via REST API.
  * <p>
- * NOTE : https://wiki.apache.org/tika/ImageCaption#preview
+ * NOTE : https://wiki.apache.org/tika/ImageCaption
  *
  * @since Apache Tika 1.17
  */
