@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Upgrade to PDFBox 2.0.7 (TIKA-2431).
+
   * Tika now has support for automatic image captioning, that
     combines Computer Vision and Natural Language Processing to
     automatically generate a readable caption for an image (TIKA-2262).
