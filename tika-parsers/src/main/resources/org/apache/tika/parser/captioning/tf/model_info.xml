@@ -15,7 +15,7 @@
 -->
 <service name="im2txt" port="8764">
     <model_main>
-        <checkpoint_path>/usr/share/apache-tika/models/dl/image/caption/model_main/model.ckpt-1000000</checkpoint_path>
-        <vocab_file>/usr/share/apache-tika/models/dl/image/caption/model_main/word_counts.txt</vocab_file>
+        <checkpoint_path>/usr/share/apache-tika/models/dl/image/caption/1M_iters_ckpt/model.ckpt-1000000</checkpoint_path>
+        <vocab_file>/usr/share/apache-tika/models/dl/image/caption/1M_iters_ckpt/word_counts.txt</vocab_file>
     </model_main>
 </service>
