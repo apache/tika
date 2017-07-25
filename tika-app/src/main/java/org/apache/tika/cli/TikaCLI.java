@@ -456,6 +456,8 @@ public class TikaCLI {
             networkURI = new URI(arg.substring("-c".length()));
         } else {
             pipeMode = false;
+            configure();
+            
             if (serverMode) {
                 new TikaServer(Integer.parseInt(arg)).start();
             } else if (arg.equals("-")) {
@@ -464,7 +466,6 @@ public class TikaCLI {
                     type.process(stream, System.out, new Metadata());
                 }
             } else {
-                configure();
                 URL url;
                 File file = new File(arg);
                 if (file.isFile()) {
