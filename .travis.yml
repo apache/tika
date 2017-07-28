@@ -1,0 +1,14 @@
+language: java
+
+# specifying other dists doesn't make sense because `trusty` doesn't have `oraclejdk8` (fails due to `Sorry, but JDK '[oraclejdk8]' is not known.`) which is the only supported JDK currently. Testing on Mac OSX doesn't make too much sense since it will run the same `maven` based build routine.
+
+jdk:
+- oraclejdk8
+# `openjdk8` not available
+- oraclejdk7
+- openjdk7
+
+install: /bin/true
+
+script:
+- mvn install --update-snapshots -DskipTests=true -Dmaven.javadoc.skip=true --batch-mode --show-version && mvn test verify --batch-mode
