@@ -3438,7 +3438,6 @@
     <glob pattern="*.gz" />
     <glob pattern="*.tgz" />
     <glob pattern="*-gz" />
-    <glob pattern="*.emz" />
   </mime-type>
 
   <mime-type type="application/x-hdf">
@@ -3603,7 +3602,7 @@
     <glob pattern="*.wmd"/>
   </mime-type>
   <mime-type type="application/x-ms-wmz">
-    <sub-class-of type="application/x-gzip"/>
+    <sub-class-of type="application/gzip"/>
     <glob pattern="*.wmz"/>
   </mime-type>
   <mime-type type="application/x-ms-xbap">
@@ -4933,6 +4932,14 @@
         <match value="0x464D4520" type="little32" offset="40"/>
       </match>
     </magic>
+  </mime-type>
+
+  <mime-type type="image/x-emf-compressed">
+    <sub-class-of type="application/gzip"/>
+    <alias type="application/x-ms-emz"/>
+    <acronym>EMZ</acronym>
+    <_comment>Compressed Enhanced Metafile</_comment>
+    <glob pattern="*.emz" />
   </mime-type>
 
   <mime-type type="image/example"/>

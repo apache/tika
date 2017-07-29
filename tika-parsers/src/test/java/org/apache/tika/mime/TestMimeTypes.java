@@ -642,12 +642,15 @@ public class TestMimeTypes {
         assertTypeByData("image/emf", "testEMF.emf");
         assertTypeByName("image/emf", "x.EMF");
 
+        // GZip Compressed WMF, get subtype by name only
         // TODO: Need a test wmz file
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");
+
+        // GZip Compressed EMF, get subtype by name only
         // TODO: Need a test emz file
-        assertTypeByName("application/gzip", "x.emz");
-        assertTypeByName("application/gzip", "x.EMZ");
+        assertTypeByName("image/x-emf-compressed", "x.emz");
+        assertTypeByName("image/x-emf-compressed", "x.EMZ");
     }
 
     @Test
