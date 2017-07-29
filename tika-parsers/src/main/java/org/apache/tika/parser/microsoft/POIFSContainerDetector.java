@@ -21,6 +21,7 @@ import static org.apache.tika.mime.MediaType.application;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -150,24 +151,24 @@ public class POIFSContainerDetector implements Detector {
     /**
      * An ASCII String "StarImpress"
      */
-    private static final byte[] STAR_IMPRESS = "StarImpress".getBytes();
+    private static final byte[] STAR_IMPRESS = "StarImpress".getBytes(StandardCharsets.US_ASCII);
     
     /**
      * An ASCII String "StarDraw"
      */
-    private static final byte[] STAR_DRAW = "StarDraw".getBytes();
+    private static final byte[] STAR_DRAW = "StarDraw".getBytes(StandardCharsets.US_ASCII);
     
     /**
      * An ASCII String "Quill96" for Works Files
      */
-    private static final byte[] WORKS_QUILL96 = "Quill96".getBytes();
+    private static final byte[] WORKS_QUILL96 = "Quill96".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * An ASCII String "MSGraph.Chart" for embedded MSGraph files
      * The full designator includes a version, e.g. MSGraph.Chart.8
      */
-    private static final byte[] MS_GRAPH_CHART_BYTES = "MSGraph.Chart".getBytes();
-    
+    private static final byte[] MS_GRAPH_CHART_BYTES = "MSGraph.Chart".getBytes(StandardCharsets.US_ASCII);
+
     /**
      * Regexp for matching the MPP Project Data stream
      */
