@@ -390,7 +390,7 @@ def classify_image():
         rgb_image = image.convert("RGB")
         # convert the RGB image to jpeg
         image_bytes = BytesIO()
-        rgb_image.save(image_bytes, format="jpeg")
+        rgb_image.save(image_bytes, format="jpeg", quality=95)
         jpg_image = image_bytes.getvalue()
         image_bytes.close()
 

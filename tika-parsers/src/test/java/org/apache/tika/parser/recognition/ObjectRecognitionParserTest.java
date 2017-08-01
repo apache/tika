@@ -48,6 +48,9 @@ public class ObjectRecognitionParserTest {
 
     // Test images
     private static final String CAT_IMAGE_JPEG = "test-documents/testJPEG.jpg";
+    private static final String CAT_IMAGE_PNG = "test-documents/testPNG.png";
+    private static final String CAT_IMAGE_GIF = "test-documents/testGIF.gif";
+
     private static final String BASEBALL_IMAGE_JPEG = "test-documents/baseball.jpg";
     private static final String BASEBALL_IMAGE_PNG = "test-documents/baseball.png";
     private static final String BASEBALL_IMAGE_GIF = "test-documents/baseball.gif";
@@ -92,6 +95,38 @@ public class ObjectRecognitionParserTest {
         Assume.assumeTrue(available);
         String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
         doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_JPEG,
+                ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
+    }
+
+    @Test
+    public void pngRESTObjRecTest() throws Exception {
+        String apiUrl = "http://localhost:8764/inception/v4/ping";
+        boolean available = false;
+        int status = 500;
+        try{
+            status = WebClient.create(apiUrl).get().getStatus();
+            available = status == 200;
+        }
+        catch(Exception ignore){}
+        Assume.assumeTrue(available);
+        String[] expectedObjects = {"Egyptian cat", "tabby, tabby cat"};
+        doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_PNG,
+                ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
+    }
+
+    @Test
+    public void gifRESTObjRecTest() throws Exception {
+        String apiUrl = "http://localhost:8764/inception/v4/ping";
+        boolean available = false;
+        int status = 500;
+        try{
+            status = WebClient.create(apiUrl).get().getStatus();
+            available = status == 200;
+        }
+        catch(Exception ignore){}
+        Assume.assumeTrue(available);
+        String[] expectedObjects = {"Egyptian cat"};
+        doRecognize(CONFIG_REST_FILE_OBJ_REC, CAT_IMAGE_GIF,
                 ObjectRecognitionParser.MD_KEY_OBJ_REC, expectedObjects);
     }
 
