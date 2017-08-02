@@ -157,9 +157,18 @@ public class OptimaizeLangDetector extends LanguageDetector {
 		writer.write(' ');
 	}
 
+        /**
+         * {@inheritDoc}
+         *
+         * @throws IllegalStateException if no models have been loaded with
+         * {@link #loadModels() } or {@link #loadModels(java.util.Set) }
+         * @return the detected list of languages
+         */
 	@Override
 	public List<LanguageResult> detectAll() {
-		// TODO throw exception if models haven't been loaded, or auto-load all?
+		if(detector == null) {
+                    throw new IllegalStateException("models haven't been loaded yet (forgot to call loadModels?)");
+                }
 		
 		List<LanguageResult> result = new ArrayList<>();
 		
