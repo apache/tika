@@ -30,6 +30,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
@@ -61,7 +62,7 @@ public class OOXMLExtractorFactory {
             InputStream stream, ContentHandler baseHandler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        Locale locale = context.get(Locale.class, Locale.getDefault());
+        Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
         ExtractorFactory.setThreadPrefersEventExtractors(true);
 
         try {
