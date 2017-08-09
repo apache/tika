@@ -1,5 +1,9 @@
 Release 1.17 - ???
 
+  * OOXML locale should be set by POI's LocaleUtil not Locale.getDefault().
+    Fix unit tests to be robust against different locales in OOXML
+    and ExcelParser (TIKA-2438).
+
   * Upgrade to PDFBox 2.0.7 (TIKA-2431).
 
   * Tika now has support for automatic image captioning, that
