@@ -85,6 +85,9 @@ RUN rm -rf /usr/local/src
 ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
 ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
 
+ENV PYTHONPATH="$PYTHONPATH:$PATH"
+RUN python -c "import inceptionapi"
+
 # expose API port, this is the default port
 EXPOSE 8764
 
