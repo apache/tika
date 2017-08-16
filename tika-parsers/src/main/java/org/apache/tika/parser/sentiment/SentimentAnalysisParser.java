@@ -15,13 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.sentiment.analysis;
+package org.apache.tika.parser.sentiment;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 import opennlp.tools.sentiment.SentimentME;
 import opennlp.tools.sentiment.SentimentModel;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -34,24 +43,16 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * This parser classifies documents based on the sentiment of document.
  * The classifier is powered by Apache OpenNLP's Maximum Entropy Classifier
  */
-public class SentimentParser extends AbstractParser implements Initializable {
+public class SentimentAnalysisParser extends AbstractParser implements Initializable {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.application("sentiment"));
     private static final Logger LOG = LoggerFactory
-            .getLogger(SentimentParser.class);
+            .getLogger(SentimentAnalysisParser.class);
     public static final String DEF_MODEL = "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/en-netflix-sentiment.bin";
 
     private SentimentME classifier;
@@ -105,6 +106,10 @@ public class SentimentParser extends AbstractParser implements Initializable {
         }
     }
 
+    @Override
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+        //TODO -- what do we want to check?
+    }
     /**
      * Returns the types supported
      *

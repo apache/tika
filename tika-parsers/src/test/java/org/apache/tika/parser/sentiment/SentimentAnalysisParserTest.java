@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.sentiment.analysis;
+package org.apache.tika.parser.sentiment;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -33,9 +33,9 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 /**
- * Test case for {@link SentimentParser}
+ * Test case for {@link SentimentAnalysisParser}
  */
-public class SentimentParserTest {
+public class SentimentAnalysisParserTest {
 
     @Test
     public void endToEndTest() throws Exception {

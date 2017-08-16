@@ -16,7 +16,21 @@
  */
 package org.apache.tika.parser.recognition.tf;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
 import org.apache.tika.config.Field;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -31,19 +45,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * This is an implementation of {@link ObjectRecogniser} powered by <a href="http://www.tensorflow.org"> Tensorflow <a/>
@@ -133,6 +134,11 @@ public class TensorflowImageRecParser extends ExternalParser implements ObjectRe
         } catch (Exception e) {
             throw new TikaConfigException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler handler) throws TikaConfigException {
+        //TODO -- what do we want to check?
     }
 
     @Override

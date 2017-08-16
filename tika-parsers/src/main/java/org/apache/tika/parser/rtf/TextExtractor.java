@@ -1139,6 +1139,19 @@ final class TextExtractor {
             if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
                 pendingListEnd();
             }
+        } else if (equals("plain")) {
+            if (groupState.italic || groupState.bold) {
+                // Reset styles
+                pushText();
+                if (groupState.italic) {
+                    end("i");
+                    groupState.italic = false;
+                }
+                if (groupState.bold) {
+                    end("b");
+                    groupState.bold = false;
+                }
+            }
         } else if (equals("par")) {
             if (!ignored) {
                 endParagraph(true);

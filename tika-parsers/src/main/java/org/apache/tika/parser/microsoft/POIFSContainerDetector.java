@@ -21,6 +21,7 @@ import static org.apache.tika.mime.MediaType.application;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -150,30 +151,24 @@ public class POIFSContainerDetector implements Detector {
     /**
      * An ASCII String "StarImpress"
      */
-    private static final byte[] STAR_IMPRESS = new byte[]{
-            0x53, 0x74, 0x61, 0x72, 0x49, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73
-    };
+    private static final byte[] STAR_IMPRESS = "StarImpress".getBytes(StandardCharsets.US_ASCII);
+    
     /**
      * An ASCII String "StarDraw"
      */
-    private static final byte[] STAR_DRAW = new byte[]{
-            0x53, 0x74, 0x61, 0x72, 0x44, 0x72, 0x61, 0x77
-    };
+    private static final byte[] STAR_DRAW = "StarDraw".getBytes(StandardCharsets.US_ASCII);
+    
     /**
      * An ASCII String "Quill96" for Works Files
      */
-    private static final byte[] WORKS_QUILL96 = new byte[]{
-            0x51, 0x75, 0x69, 0x6c, 0x6c, 0x39, 0x36
-    };
+    private static final byte[] WORKS_QUILL96 = "Quill96".getBytes(StandardCharsets.US_ASCII);
 
     /**
      * An ASCII String "MSGraph.Chart" for embedded MSGraph files
      * The full designator includes a version, e.g. MSGraph.Chart.8
      */
-    private static final byte[] MS_GRAPH_CHART_BYTES = new byte[]{
-            0x4D, 0x53, 0x47, 0x72, 0x61, 0x70, 0x68,
-            0x2E, 0x43, 0x68, 0x61, 0x72, 0x74,
-    };
+    private static final byte[] MS_GRAPH_CHART_BYTES = "MSGraph.Chart".getBytes(StandardCharsets.US_ASCII);
+
     /**
      * Regexp for matching the MPP Project Data stream
      */

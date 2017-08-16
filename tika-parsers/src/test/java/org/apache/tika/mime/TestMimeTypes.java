@@ -601,6 +601,10 @@ public class TestMimeTypes {
        
        assertTypeByName("application/javascript", "testJS.js");
        assertType(      "application/javascript", "testJS.js");
+
+       assertType(      "text/vnd.graphviz", "testGRAPHVIZd.dot");
+       assertType(      "text/vnd.graphviz", "testGRAPHVIZg.dot");
+       assertType(      "text/vnd.graphviz", "testGRAPHVIZdc.dot");
     }
     
     @Test
@@ -638,12 +642,15 @@ public class TestMimeTypes {
         assertTypeByData("image/emf", "testEMF.emf");
         assertTypeByName("image/emf", "x.EMF");
 
+        // GZip Compressed WMF, get subtype by name only
         // TODO: Need a test wmz file
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");
+
+        // GZip Compressed EMF, get subtype by name only
         // TODO: Need a test emz file
-        assertTypeByName("application/gzip", "x.emz");
-        assertTypeByName("application/gzip", "x.EMZ");
+        assertTypeByName("image/x-emf-compressed", "x.emz");
+        assertTypeByName("image/x-emf-compressed", "x.EMZ");
     }
 
     @Test
@@ -804,7 +811,7 @@ public class TestMimeTypes {
         assertType("application/xml", "testXML.xml");
         assertType("audio/basic", "testAU.au");
         assertType("audio/x-aiff", "testAIFF.aif");
-        assertType("audio/x-wav", "testWAV.wav");
+        assertType("audio/vnd.wave", "testWAV.wav");
         assertType("audio/midi", "testMID.mid");
         assertType("application/x-msaccess", "testACCESS.mdb");
         assertType("application/x-font-ttf", "testTrueType3.ttf");

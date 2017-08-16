@@ -97,8 +97,8 @@
         <sql>
             update exceptions_compared ec set exceptions_a=
             ( select count(1) as cnt from exceptions_a ea
-            join profiles_a pa on ea.id=pa.id
-            join profiles_b pb on pa.id=pb.id
+            join profiles_a pa on pa.id=ea.id
+            join profiles_b pb on pb.id=pa.id
             where pa.mime_id= ec.mime_id_a
             and pb.mime_id=ec.mime_id_b
             and parse_exception_id=0
@@ -107,7 +107,7 @@
         <sql>
             update exceptions_compared ec set exceptions_b=
             ( select count(1) as cnt from exceptions_b eb
-            join profiles_b pb on eb.id=pa.id
+            join profiles_b pb on pb.id=eb.id
             join profiles_a pa on pa.id=pb.id
             where pa.mime_id= ec.mime_id_a
             and pb.mime_id=ec.mime_id_b
@@ -139,7 +139,7 @@
             num_alphabetic_tokens_a long default 0,
             num_alphabetic_tokens_b long default 0,
             num_common_tokens_a long default 0,
-            num_common_tokens_b long default 0,
+            num_common_tokens_b long default 0
             );
         </sql>
         <sql>

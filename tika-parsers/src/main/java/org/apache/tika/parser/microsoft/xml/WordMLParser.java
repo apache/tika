@@ -20,11 +20,11 @@ import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -52,30 +52,28 @@ public class WordMLParser extends AbstractXML2003Parser {
 
 
     //map between wordml and xhtml entities
-    private final static Map<String, String> WORDML_TO_XHTML =
-            new ConcurrentHashMap<>();
+    private static final Map<String, String> WORDML_TO_XHTML;
+    static {
+        Map<String, String> m = new HashMap<>();
+        m.put(P, P);
+        m.put("tbl", TABLE);
+        m.put(TR, TR);
+        m.put("tc", TD);//not a typo -- table cell -> tc
+        WORDML_TO_XHTML = Collections.unmodifiableMap(m);
+    }
 
     //ignore all characters within these elements
-    private final static Set<QName> IGNORE_CHARACTERS =
-            Collections.newSetFromMap(new ConcurrentHashMap<QName, Boolean>());
+    private static final Set<QName> IGNORE_CHARACTERS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                new QName(WORD_ML_URL, HLINK),
+                new QName(WORD_ML_URL, PICT),
+                new QName(WORD_ML_URL, BIN_DATA),
+                new QName(MS_OFFICE_PROPERTIES_URN, DOCUMENT_PROPERTIES))));
+
 
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MEDIA_TYPE)));
-
-    static {
-        WORDML_TO_XHTML.put(P, P);
-        WORDML_TO_XHTML.put("tbl", TABLE);
-        WORDML_TO_XHTML.put(TR, TR);
-        WORDML_TO_XHTML.put("tc", TD);//not a typo -- table cell -> tc
-
-        IGNORE_CHARACTERS.add(new QName(WORD_ML_URL, HLINK));
-        IGNORE_CHARACTERS.add(new QName(WORD_ML_URL, PICT));
-        IGNORE_CHARACTERS.add(new QName(WORD_ML_URL, BIN_DATA));
-        IGNORE_CHARACTERS.add(new QName(MS_OFFICE_PROPERTIES_URN,
-                DOCUMENT_PROPERTIES));
-    }
+            Collections.singleton(MEDIA_TYPE); //immutable
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

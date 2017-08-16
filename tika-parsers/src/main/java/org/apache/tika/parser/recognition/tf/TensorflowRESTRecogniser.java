@@ -17,12 +17,22 @@
 
 package org.apache.tika.parser.recognition.tf;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -38,15 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Tensor Flow image recogniser which has high performance.
@@ -96,6 +97,12 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
             available = false;
             throw new TikaConfigException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler handler)
+            throws TikaConfigException {
+        //TODO -- what do we want to check?
     }
 
     @Override

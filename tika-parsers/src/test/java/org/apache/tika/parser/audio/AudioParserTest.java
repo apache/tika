@@ -31,7 +31,7 @@ public class AudioParserTest {
         String content = new Tika().parseToString(
                 AudioParserTest.class.getResourceAsStream(path), metadata);
 
-        assertEquals("audio/x-wav", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/vnd.wave", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));

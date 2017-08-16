@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +48,7 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
@@ -231,7 +233,6 @@ public class TikaConfig {
      * @throws TikaException if problem with MimeTypes or parsing XML config
      */
     public TikaConfig() throws TikaException, IOException {
-        this.serviceLoader = new ServiceLoader();
 
         String config = System.getProperty("tika.config");
         if (config == null) {
@@ -239,6 +240,7 @@ public class TikaConfig {
         }
 
         if (config == null) {
+            this.serviceLoader = new ServiceLoader();
             this.mimeTypes = getDefaultMimeTypes(ServiceLoader.getContextClassLoader());
             this.encodingDetector = getDefaultEncodingDetector(serviceLoader);
             this.parser = getDefaultParser(mimeTypes, serviceLoader, encodingDetector);
@@ -246,8 +248,10 @@ public class TikaConfig {
             this.translator = getDefaultTranslator(serviceLoader);
             this.executorService = getDefaultExecutorService();
         } else {
-            try (InputStream stream = getConfigInputStream(config, serviceLoader)) {
+            ServiceLoader tmpServiceLoader = new ServiceLoader();
+            try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
                 Element element = getBuilder().parse(stream).getDocumentElement();
+                serviceLoader = serviceLoaderFromDomElement(element, tmpServiceLoader.getLoader());
                 DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
                 EncodingDetectorXmlLoader encodingDetectorLoader = new EncodingDetectorXmlLoader();
                 TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
@@ -474,7 +478,7 @@ public class TikaConfig {
         return Collections.emptySet();
     }
     
-    private static ServiceLoader serviceLoaderFromDomElement(Element element, ClassLoader loader) {
+    private static ServiceLoader serviceLoaderFromDomElement(Element element, ClassLoader loader) throws TikaConfigException {
         Element serviceLoaderElement = getChild(element, "service-loader");
         ServiceLoader serviceLoader;
         if (serviceLoaderElement != null) {
@@ -486,8 +490,9 @@ public class TikaConfig {
             } else if(LoadErrorHandler.THROW.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.THROW;
             }
-            
-            serviceLoader = new ServiceLoader(loader, loadErrorHandler, dynamic);
+
+            InitializableProblemHandler initializableProblemHandler = getInitializableProblemHandler(serviceLoaderElement.getAttribute("initializableProblemHandler"));
+            serviceLoader = new ServiceLoader(loader, loadErrorHandler, initializableProblemHandler, dynamic);
         } else if(loader != null) {
             serviceLoader = new ServiceLoader(loader);
         } else {
@@ -495,6 +500,26 @@ public class TikaConfig {
         }
         return serviceLoader;
     }
+
+    private static InitializableProblemHandler getInitializableProblemHandler(String initializableProblemHandler)
+        throws TikaConfigException {
+        if (initializableProblemHandler == null || initializableProblemHandler.length() == 0) {
+            return InitializableProblemHandler.DEFAULT;
+        }
+        if (InitializableProblemHandler.IGNORE.toString().equalsIgnoreCase(initializableProblemHandler)) {
+            return InitializableProblemHandler.IGNORE;
+        } else if (InitializableProblemHandler.INFO.toString().equalsIgnoreCase(initializableProblemHandler)) {
+            return InitializableProblemHandler.INFO;
+        } else if (InitializableProblemHandler.WARN.toString().equalsIgnoreCase(initializableProblemHandler)) {
+            return InitializableProblemHandler.WARN;
+        } else if (InitializableProblemHandler.THROW.toString().equalsIgnoreCase(initializableProblemHandler)) {
+            return InitializableProblemHandler.THROW;
+        }
+        throw new TikaConfigException(
+                String.format(Locale.US, "Couldn't parse non-null '%s'. Must be one of 'ignore', 'info', 'warn' or 'throw'",
+                        initializableProblemHandler));
+    }
+
 
     private static abstract class XmlLoader<CT,T> {
         protected static final String PARAMS_TAG_NAME = "params";
@@ -547,6 +572,16 @@ public class TikaConfig {
         T loadOne(Element element, MimeTypes mimeTypes, ServiceLoader loader) 
                 throws TikaException, IOException {
             String name = element.getAttribute("class");
+
+            String initProbHandler = element.getAttribute("initializableProblemHandler");
+            InitializableProblemHandler initializableProblemHandler;
+            if (initProbHandler == null || initProbHandler.length() == 0) {
+                initializableProblemHandler = loader.getInitializableProblemHandler();
+            } else {
+                 initializableProblemHandler =
+                        getInitializableProblemHandler(initProbHandler);
+            }
+
             T loaded = null;
 
             try {
@@ -601,6 +636,7 @@ public class TikaConfig {
                 AnnotationUtils.assignFieldParams(loaded, params);
                 if (loaded instanceof Initializable) {
                     ((Initializable) loaded).initialize(params);
+                    ((Initializable) loaded).checkInitialization(initializableProblemHandler);
                 }
                 // Have any decoration performed, eg explicit mimetypes
                 loaded = decorate(loaded, element);
@@ -629,6 +665,7 @@ public class TikaConfig {
                         "Unable to find the right constructor for "+getLoaderTagName()+" class: " + name, e);
             }
         }
+
 
         T newInstance(Class<? extends T> loadedClass) throws
                 IllegalAccessException, InstantiationException,
@@ -1086,5 +1123,6 @@ public class TikaConfig {
             return created; // No decoration of EncodingDetectors
         }
     }
+
 
 }

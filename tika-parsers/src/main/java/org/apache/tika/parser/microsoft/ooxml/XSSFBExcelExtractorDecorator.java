@@ -45,6 +45,7 @@ import org.apache.poi.xssf.usermodel.XSSFShape;
 import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -97,6 +98,10 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
         XSSFBStylesTable styles;
         try {
             xssfReader = new XSSFBReader(container);
+            String originalPath = xssfReader.getAbsPathMetadata();
+            if (originalPath != null) {
+                metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, originalPath);
+            }
             styles = xssfReader.getXSSFBStylesTable();
             iter = (XSSFBReader.SheetIterator) xssfReader.getSheetsData();
             strings = new XSSFBSharedStringsTable(container);

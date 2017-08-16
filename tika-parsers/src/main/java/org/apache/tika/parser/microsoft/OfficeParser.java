@@ -40,7 +40,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.poifs.macros.VBAMacroReader;
 import org.apache.poi.util.IOUtils;
-import org.apache.tika.config.Initializable;
+import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -133,9 +133,14 @@ public class OfficeParser extends AbstractOfficeParser {
             OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
             if (officeParserConfig.getExtractMacros()) {
-                //now try to get macros
+                //now try to get macros.
+                //Note that macros are handled separately for ppt in HSLFExtractor.
+
+                //We might consider not bothering to check for macros in root,
+                //if we know we're processing ppt based on content-type identified in metadata
                 extractMacros(root.getNFileSystem(), xhtml,
-                        EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+                            EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
+
             }
         } finally {
             IOUtils.closeQuietly(mustCloseFs);
@@ -175,7 +180,7 @@ public class OfficeParser extends AbstractOfficeParser {
                 break;
             case WORKBOOK:
             case XLR:
-                Locale locale = context.get(Locale.class, Locale.getDefault());
+                Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
                 new ExcelExtractor(context, metadata).parse(root, xhtml, locale);
                 break;
             case PROJECT:

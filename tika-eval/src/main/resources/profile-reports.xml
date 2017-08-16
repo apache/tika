@@ -110,6 +110,24 @@
             order by cnt desc;
         </sql>
     </report>
+
+    <report reportName="Common Tokens Divided by Alphabetic Tokens"
+            reportFilename="content/common_tokens_div_alphabetic.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <!-- 0.50 is a complete heuristic -->
+        <sql>
+            select file_path, lang_id_1, common_tokens_lang,
+            num_tokens, num_alphabetic_tokens, num_common_tokens,
+            cast(num_common_tokens as decimal)/cast(num_alphabetic_tokens as decimal) common_div_alphabetic
+            from contents c
+            join profiles p on p.id=c.id
+            join containers ct on ct.container_id=p.container_id
+            where cast(num_common_tokens as decimal)/cast(num_alphabetic_tokens as decimal) &lt; 0.50
+            order by common_div_alphabetic asc
+        </sql>
+    </report>
+
     <report reportName="Exceptions by Type"
             reportFilename="exceptions/exceptions_by_type.xlsx"
             format="xlsx"

@@ -16,8 +16,25 @@
  */
 package org.apache.tika.dl.imagerec;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.config.Field;
+import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -41,22 +58,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * {@link DL4JInceptionV3Net} is an implementation of {@link ObjectRecogniser}.
@@ -270,6 +271,11 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
                 | UnsupportedKerasConfigurationException e) {
             throw new TikaConfigException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+        //TODO: what do we want to check here?
     }
 
     @Override

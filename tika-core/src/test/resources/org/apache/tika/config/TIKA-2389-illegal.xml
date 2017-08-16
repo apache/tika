@@ -17,13 +17,13 @@
 -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.sentiment.analysis.SentimentParser">
-            <mime>text/plain</mime>
-            <mime>application/sentiment</mime>
+        <parser-exclude class="org.apache.tika.parser.DefaultParser"/>
+        <parser class="org.apache.tika.parser.DummyInitializableParser" initializableProblemHandler="impossible.method">
             <params>
-                <param name="modelPath" type="string">https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/en-netflix-sentiment.bin</param>
-                <!--This can also be relative path sentiment-models/en-stanford-sentiment.bin-->
+                <param name="shortA" type="short">500</param>
+                <param name="shortB" type="short">501</param>
             </params>
         </parser>
+
     </parsers>
 </properties>

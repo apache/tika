@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.16-SNAPSHOT</version>
+    <version>1.17-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -127,7 +127,6 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>
-              tika-serialization;inline=true,
               tika-parsers;inline=true,
               commons-compress, xz, commons-codec, commons-csv,
               commons-io, commons-exec, commons-collections4, junrar,
@@ -143,12 +142,12 @@
               vorbis-java-core, vorbis-java-tika,
               isoparser,
               metadata-extractor, xmpcore, json-simple,
-              boilerpipe, rome, rome-utils, sentiment-analysis-parser;type=jar;inline=false, opennlp-tools, opennlp-maxent,
+              boilerpipe, rome, rome-utils, sentiment-analysis-parser;type=jar;inline=false, opennlp-tools,
               geoapi, sis-metadata, sis-netcdf, sis-utility,
               sis-storage, apache-mime4j-core, apache-mime4j-dom,
-              jsr-275, jhighlight, java-libpst, jwnl,
+              jsr-275, jhighlight, java-libpst,
               netcdf4, grib, cdm, httpservices, jcip-annotations,
-              jmatio, guava
+              jmatio, guava, age-predictor-api;type=jar;inline=false
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
@@ -156,6 +155,7 @@
               !org.apache.tika.parser,
               !org.apache.tika.parser.external,
               org.apache.tika.parser.*,
+	      org.apache.tika.metadata.serialization.*,
             </Export-Package>
             <Import-Package>
               !org.junit,
@@ -165,6 +165,10 @@
               !org.apache.uima.*,
 	      !org.apache.solr.client.solrj.*,
 	      !org.apache.solr.common.*,
+	      !org.apache.spark.api.java.*,
+	      !org.apache.spark.ml.*,
+	      !org.apache.spark.mllib.*,
+	      !org.apache.spark.sql.*,
               *,
 	          org.apache.tika.mime,
               org.apache.tika.fork,
@@ -182,6 +186,7 @@
               com.sun.tools.javadoc;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
               edu.wisc.ssec.mcidas.adde;resolution:=optional,
+	      edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
               javax.activation;resolution:=optional,
               javax.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
@@ -198,6 +203,7 @@
               opendap.dap.parser;resolution:=optional,
               opennlp.maxent;resolution:=optional,
               opennlp.tools.namefind;resolution:=optional,
+	      opennlp.tools.authorage;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,

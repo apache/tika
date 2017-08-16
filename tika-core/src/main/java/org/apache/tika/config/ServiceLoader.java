@@ -120,14 +120,22 @@ public class ServiceLoader {
     private final ClassLoader loader;
 
     private final LoadErrorHandler handler;
+    private final InitializableProblemHandler initializableProblemHandler;
 
     private final boolean dynamic;
-    
+
     public ServiceLoader(
-            ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
+            ClassLoader loader, LoadErrorHandler handler,
+            InitializableProblemHandler initializableProblemHandler, boolean dynamic) {
         this.loader = loader;
         this.handler = handler;
+        this.initializableProblemHandler = initializableProblemHandler;
         this.dynamic = dynamic;
+
+    }
+    public ServiceLoader(
+            ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
+        this(loader, handler, InitializableProblemHandler.WARN, dynamic);
     }
 
     public ServiceLoader(ClassLoader loader, LoadErrorHandler handler) {
@@ -165,6 +173,16 @@ public class ServiceLoader {
     }
 
     /**
+     * Returns the handler for problems with initializables
+     *
+     * @return handler for problems with initializables
+     * @since Apache Tika 1.15.1
+     */
+    public InitializableProblemHandler getInitializableProblemHandler() {
+        return initializableProblemHandler;
+    }
+
+    /**
      * Returns an input stream for reading the specified resource from the
      * configured class loader.
      *
@@ -179,6 +197,16 @@ public class ServiceLoader {
         } else {
             return null;
         }
+    }
+
+    /**
+     *
+     * @return ClassLoader used by this ServiceLoader
+     * @see #getContextClassLoader() for the context's ClassLoader
+     * @since Apache Tika 1.15.1
+     */
+    public ClassLoader getLoader() {
+        return loader;
     }
 
     /**
@@ -327,7 +355,11 @@ public class ServiceLoader {
                 try {
                     Class<?> klass = loader.loadClass(name);
                     if (iface.isAssignableFrom(klass)) {
-                        providers.add((T) klass.newInstance());
+                        T instance = (T) klass.newInstance();
+                        if (instance instanceof Initializable) {
+                            ((Initializable)instance).checkInitialization(initializableProblemHandler);
+                        }
+                        providers.add(instance);
                     }
                 } catch (Throwable t) {
                     handler.handleLoadError(name, t);

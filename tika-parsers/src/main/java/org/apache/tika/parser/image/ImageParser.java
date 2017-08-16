@@ -71,7 +71,6 @@ public class ImageParser extends AbstractParser {
             Class.forName("com.levigo.jbig2.JBIG2ImageReader");
             TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
         } catch (ClassNotFoundException e) {
-            LOG.warn("JBIG2ImageReader not loaded. jbig2 files will be ignored");
         }
     }
 
@@ -217,4 +216,5 @@ public class ImageParser extends AbstractParser {
         xhtml.startDocument();
         xhtml.endDocument();
     }
+
 }

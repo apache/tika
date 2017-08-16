@@ -1,11 +1,56 @@
-Release 1.15.1 - ??/??/????
+Release 1.17 - ???
 
-  * Remove non-ASL 2.0 compatible org.json (TIKA-1804).
+  * OOXML locale should be set by POI's LocaleUtil not Locale.getDefault().
+    Fix unit tests to be robust against different locales in OOXML
+    and ExcelParser (TIKA-2438).
 
-  * Allow extraction of scripts as embedded "MACRO". Users
-    must turn this on via TikaConfig (TIKA-2391).
+  * Upgrade to PDFBox 2.0.7 (TIKA-2431).
 
-  * Upgrade Jackcess to 2.1.7 (TIKA-2380)
+  * Tika now has support for automatic image captioning, that
+    combines Computer Vision and Natural Language Processing to
+    automatically generate a readable caption for an image 
+    (TIKA-2262, TIKA-2355).
+
+  * Add TestCorruptedFiles to allow devs to test parsers against
+    corrupted input files (TIKA-2430).
+    
+Release 1.16 - 7/7/2017
+
+  * Exclude jj2000 from edu.ucar grip to avoid potential
+    license conflicts with ASL 2.0
+
+  * Add Age recognition using Ensemble model for Linear regression
+    and Apache OpenNLP Maximum Entropy. Tika can now detect age from
+    text (TIKA-1988).
+
+  * Add Tika Deep Learning support for the VGG16 model for
+    Very Deep Convolutional Networks for Large-Scale Image Recognition.
+    Now Tika supports both Inception v3/v4 and VGG16 based image 
+    recognition (TIKA-2298).
+
+  * Extract macros from PPT (TIKA-2089).
+
+  * Extract absolute path for last saved location when available
+    in .xlsx and .xlsb (TIKA-2335).
+
+  * Rename SentimentParser to SentimentAnalysisParser to
+    prevent conflict with dependency (TIKA-2368).
+
+  * tika-app now extracts inline images in PDFs by
+    default, and it includes a warning to users that this is not the
+    default behavior elsewhere in Tika (TIKA-2374).
+
+  * Allow configurability of warnings for problems during
+    parser initialization (TIKA-2389).
+
+  * Upgrade to Jackcess 2.1.8 (TIKA-2380).
+
+  * Upgrade to POI 3.17-beta1 (TIKA-2336).
+
+  * Remove non-ASL-2.0-compatible org.json (TIKA-1804).
+
+  * Allow extraction of <script> elements in HTML as embedded "MACRO".
+    Users must turn this on via TikaConfig (TIKA-2391).
 
   * Allow users to turn off extraction of headers and footers
     from .doc, .docx, .xls, .xlsx, .xlsb (TIKA-2362)
@@ -23,6 +68,19 @@ Release 1.15.1 - ??/??/????
     of digest algorithms (TIKA-2386).
 
   * Add snap builds to codebase (TIKA-2401)
+
+  * Canonical Mimetype of WAVE audio changed to match RFC 2361 defined
+    version, audio/vnd.wave, older audio/x-wav remains as an alias
+
+  * Upgrade "provided" xerial to 3.19.3 (TIKA-2412).
+
+  * Upgrade Gson to 2.8.1 (TIKA-2414).
+
+  * Upgrade mime4j to 0.8.1 (TIKA-2413).
+
+  * Mime magic improvements for GraphViz (TIKA-2422), HTML files which
+    claim to be XML but aren't quite valid XML (TIKA-2419) and QuickTime
+    / MP4 (TIKA-2418)
 
 Release 1.15 - 05/23/2017
 

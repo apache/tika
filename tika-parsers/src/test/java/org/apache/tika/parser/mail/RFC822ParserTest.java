@@ -283,9 +283,7 @@ public class RFC822ParserTest extends TikaTest {
         } catch (TikaException expected) {
         }
 
-        MimeConfig config = new MimeConfig();
-        config.setMaxHeaderLen(-1);
-        config.setMaxLineLen(-1);
+        MimeConfig config = new MimeConfig.Builder().setMaxHeaderLen(-1).setMaxLineLen(-1).build();
         context.set(MimeConfig.class, config);
         parser.parse(
                 new ByteArrayInputStream(data), handler, metadata, context);
