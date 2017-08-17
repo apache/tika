@@ -75,11 +75,19 @@ class BatchCommandLineBuilder {
         //now build the full command line
         List<String> fullCommand = new ArrayList<String>();
         fullCommand.add("java");
+        boolean foundHeadlessOption = false;
         for (Map.Entry<String, String> e : jvmOpts.entrySet()) {
             fullCommand.add(e.getKey());
             if (e.getValue().length() > 0) {
                 fullCommand.add(e.getValue());
             }
+            if (e.getKey().contains("java.awt.headless")) {
+                foundHeadlessOption = true;
+            }
+        }
+        //run in headless mode unless the user asks for something else TIKA-2434
+        if (! foundHeadlessOption) {
+            fullCommand.add("-Djava.awt.headless=true");
         }
         fullCommand.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
         //now add the process commands
