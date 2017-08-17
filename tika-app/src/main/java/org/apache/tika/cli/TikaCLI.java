@@ -179,20 +179,24 @@ public class TikaCLI {
         return false;
     }
 
+    private void extractInlineImagesFromPDFs() {
+        if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
+            PDFParserConfig pdfParserConfig = new PDFParserConfig();
+            pdfParserConfig.setExtractInlineImages(true);
+            String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
+                    "inline images for the PDFParser (TIKA-2374).\n" +
+                    "Aside from the -z option, this is not the default behavior\n"+
+                    "in Tika generally or in tika-server.";
+            LOG.info(warn);
+            System.err.println(warn);
+            context.set(PDFParserConfig.class, pdfParserConfig);
+        }
+    }
+
     private class OutputType {
         public void process(
                 InputStream input, OutputStream output, Metadata metadata)
                 throws Exception {
-            if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
-                PDFParserConfig pdfParserConfig = new PDFParserConfig();
-                pdfParserConfig.setExtractInlineImages(true);
-                String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
-                        "inline images for the PDFParser (TIKA-2374).\n" +
-                        "This is not the default option in Tika generally or in tika-server.";
-                LOG.info(warn);
-                System.err.println(warn);
-                context.set(PDFParserConfig.class, pdfParserConfig);
-            }
             Parser p = parser;
             if (fork) {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
@@ -442,6 +446,7 @@ public class TikaCLI {
         } else if (arg.startsWith("--extract-dir=")) {
             extractDir = new File(arg.substring("--extract-dir=".length()));
         } else if (arg.equals("-z") || arg.equals("--extract")) {
+            extractInlineImagesFromPDFs();
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
