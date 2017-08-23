@@ -605,6 +605,10 @@ public class TestMimeTypes {
        assertType(      "text/vnd.graphviz", "testGRAPHVIZd.dot");
        assertType(      "text/vnd.graphviz", "testGRAPHVIZg.dot");
        assertType(      "text/vnd.graphviz", "testGRAPHVIZdc.dot");
+       
+       assertTypeByName("application/x-bat", "testBAT.bat");
+       assertTypeByName("application/x-bat", "testCMD.cmd");
+       assertType(      "application/x-bat", "testBAT.bat");
     }
     
     @Test

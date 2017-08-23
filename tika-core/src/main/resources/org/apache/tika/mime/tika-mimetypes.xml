@@ -76,6 +76,20 @@
     <glob pattern="*.atomsvc"/>
   </mime-type>
   <mime-type type="application/auth-policy+xml"/>
+
+  <mime-type type="application/x-bat">
+    <_comment>Windows Batch / Command File</_comment>
+    <alias type="application/bat"/>
+    <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <match value="@echo off" type="string" offset="0" />
+      <match value="rem " type="string" offset="0" />
+      <match value="REM " type="string" offset="0" />
+    </magic>
+    <glob pattern="*.bat"/>
+    <glob pattern="*.cmd"/>
+  </mime-type>
+
   <mime-type type="application/batch-smtp"/>
   <mime-type type="application/beep+xml"/>
 
@@ -3627,7 +3641,6 @@
   <mime-type type="application/x-msdownload">
     <glob pattern="*.dll"/>
     <glob pattern="*.com"/>
-    <glob pattern="*.bat"/>
     <magic priority="50">
       <match value="MZ" type="string" offset="0"/>
     </magic>
@@ -5870,7 +5883,6 @@
     <glob pattern="*.ac"/>
     <glob pattern="*.am"/>
     <glob pattern="*.classpath"/>
-    <glob pattern="*.cmd"/>
     <glob pattern="*.config"/>
     <glob pattern="*.cwiki"/>
     <glob pattern="*.data"/>
