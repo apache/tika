@@ -188,8 +188,29 @@ public class PSDParser extends AbstractParser {
             }
             totalLength = 4 + 2 + nameLen + 4 + dataLen;
 
-            data = new byte[dataLen];
-            IOUtils.readFully(stream, data);
+            // Do we have use for the data segment?
+            if (captureData(id)) {
+               data = new byte[dataLen];
+               IOUtils.readFully(stream, data);
+            } else {
+                data = new byte[0];
+                IOUtils.skipFully(stream, dataLen);
+            }
+        }
+
+        /**
+         * To save memory, only capture the data
+         * section of resource blocks we process
+         */
+        private static boolean captureData(int id) {
+            switch (id) {
+                case ID_CAPTION:
+                case ID_EXIF_1:
+                case ID_EXIF_3:
+                case ID_XMP:
+                    return true;
+            }
+            return false;
         }
 
         private String getDataAsString() {
