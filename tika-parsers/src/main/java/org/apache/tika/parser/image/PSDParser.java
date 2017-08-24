@@ -188,8 +188,25 @@ public class PSDParser extends AbstractParser {
             }
             totalLength = 4 + 2 + nameLen + 4 + dataLen;
 
-            data = new byte[dataLen];
-            IOUtils.readFully(stream, data);
+            if (isRelevant()) {
+                data = new byte[dataLen];
+                IOUtils.readFully(stream, data);
+            } else {
+                data = new byte[0];
+                stream.skip(dataLen);
+            }
+        }
+
+        private boolean isRelevant() {
+            switch (id) {
+                case ID_CAPTION:
+                    return true;
+                case ID_EXIF_1: //TODO change if parsing needs to be implemented
+                case ID_EXIF_3:
+                case ID_XMP:
+                    return false;
+            }
+            return false;
         }
 
         private String getDataAsString() {
