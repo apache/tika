@@ -16,6 +16,8 @@ Release 1.17 - ???
 
   * Correct Mimetype definition for Windows batch files (CMD and BAT)
     which are the same (TIKA-2445)
+
+  * PSDParser memory use improvements (TIKA-2447)
     
 Release 1.16 - 7/7/2017
 
