@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.apache.poi.common.usermodel.Hyperlink;
+import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
 import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
 import org.apache.poi.hslf.model.OLEShape;
@@ -44,6 +45,7 @@ import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
@@ -69,8 +71,16 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             DirectoryNode root, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-        HSLFSlideShow ss = new HSLFSlideShow(root);
-        List<HSLFSlide> _slides = ss.getSlides();
+        HSLFSlideShow ss;
+        List<HSLFSlide> _slides;
+        
+        try {
+            ss = new HSLFSlideShow(root);
+        } catch (EncryptedPowerPointFileException e) {
+            throw new EncryptedDocumentException(e);
+        }
+        
+        _slides = ss.getSlides();
 
         xhtml.startElement("div", "class", "slideShow");
 
