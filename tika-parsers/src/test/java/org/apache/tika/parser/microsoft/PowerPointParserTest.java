@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -288,4 +289,8 @@ public class PowerPointParserTest extends TikaTest {
                 metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
+    @Test(expected = EncryptedDocumentException.class)
+    public void testEncrypted() throws Exception {
+        getXML("testPPT_protected_passtika.ppt");
+    }
 }
