@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * Extract phonetic runs from xls and allow users to turn off extraction
+    of phonetic runs in both xls and xlsx (TIKA-2440).
+
   * OOXML locale should be set by POI's LocaleUtil not Locale.getDefault().
     Fix unit tests to be robust against different locales in OOXML
     and ExcelParser (TIKA-2438).

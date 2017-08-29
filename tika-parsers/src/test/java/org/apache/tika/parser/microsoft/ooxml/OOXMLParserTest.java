@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -44,6 +45,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.poi.util.LocaleUtil;
+import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
@@ -1707,6 +1709,31 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("peach", xml);
         assertContains("March\tApril", xml);
         assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testXLSXPhoneticStrings() throws Exception {
+        //This unit test and test file come from Apache POI 51519.xlsx
+
+        //test default concatenates = true
+		assertContains("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
+                getXML("testEXCEL_phonetic.xlsx").xml);
+
+        //test turning it off
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setConcatenatePhoneticRuns(false);
+        ParseContext pc = new ParseContext();
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
+                getXML("testEXCEL_phonetic.xlsx", pc).xml);
+
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(OfficeParser.class.getResourceAsStream("tika-config-exclude-phonetic.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
+                getXML("testEXCEL_phonetic.xlsx", parser).xml);
+
     }
 
 }

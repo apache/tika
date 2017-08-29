@@ -103,4 +103,14 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     public void setExtractMacros(boolean extractMacros) {
         defaultOfficeParserConfig.setExtractMacros(extractMacros);
     }
+
+    @Field
+    public void setConcatenatePhoneticRuns(boolean concatenatePhoneticRuns) {
+        defaultOfficeParserConfig.setConcatenatePhoneticRuns(concatenatePhoneticRuns);
+    }
+
+    void getConcatenatePhoneticRuns() {
+        defaultOfficeParserConfig.getConcatenatePhoneticRuns();
+    }
+
 }

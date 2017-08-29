@@ -42,6 +42,7 @@ import org.apache.poi.hssf.record.CountryRecord;
 import org.apache.poi.hssf.record.DateWindow1904Record;
 import org.apache.poi.hssf.record.DrawingGroupRecord;
 import org.apache.poi.hssf.record.EOFRecord;
+import org.apache.poi.hssf.record.ExtSSTRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FooterRecord;
 import org.apache.poi.hssf.record.FormatRecord;
@@ -165,7 +166,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         Biff8EncryptionKey.setCurrentUserPassword(getPassword());
 
         // Have the file processed in event mode
-        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
+        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this, officeParserConfig);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
 
@@ -204,6 +205,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
          */
         private final NumberFormat format;
+
+        private final OfficeParserConfig officeParserConfig;
         /**
          * Potential exception thrown by the content handler. When set to
          * non-<code>null</code>, causes all subsequent HSSF records to be
@@ -253,12 +256,13 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          *
          * @param handler Destination to write the parsed output to
          */
-        private TikaHSSFListener(XHTMLContentHandler handler, Locale locale, AbstractPOIFSExtractor extractor) {
+        private TikaHSSFListener(XHTMLContentHandler handler, Locale locale, AbstractPOIFSExtractor extractor, OfficeParserConfig officeParserConfig) {
             this.handler = handler;
             this.extractor = extractor;
             this.format = NumberFormat.getInstance(locale);
             this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
             this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
+            this.officeParserConfig = officeParserConfig;
         }
 
         /**
@@ -280,6 +284,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
             // Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
+            listenForAllRecords = true;
             if (listenForAllRecords) {
                 hssfRequest.addListenerForAllRecords(formatListener);
             } else {
@@ -426,7 +431,18 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 case LabelSSTRecord.sid: // Ref. a string in the shared string table
                     LabelSSTRecord sst = (LabelSSTRecord) record;
                     UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
-                    addTextCell(record, unicode.getString());
+                    String cellString = null;
+                    if (officeParserConfig.getConcatenatePhoneticRuns()) {
+                        String phonetic = (unicode != null
+                                && unicode.getExtendedRst() != null
+                                && unicode.getExtendedRst().getPhoneticText() != null
+                                && unicode.getExtendedRst().getPhoneticText().trim().length() > 0) ?
+                                unicode.getExtendedRst().getPhoneticText() : "";
+                        cellString = unicode.getString()+" "+phonetic;
+                    } else {
+                        cellString = unicode.getString();
+                    }
+                    addTextCell(record, cellString);
                     break;
 
                 case NumberRecord.sid: // Contains a numeric cell value

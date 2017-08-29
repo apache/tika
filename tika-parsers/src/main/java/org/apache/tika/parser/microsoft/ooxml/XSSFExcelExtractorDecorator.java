@@ -101,6 +101,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         ((XSSFEventBasedExcelExtractor)extractor).setIncludeTextBoxes(config.getIncludeShapeBasedContent());
         ((XSSFEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
         ((XSSFEventBasedExcelExtractor)extractor).setLocale(locale);
+        //given that we load our own shared strings table, setting:
+        //((XSSFEventBasedExcelExtractor)extractor).setConcatenatePhoneticRuns();
+        //does no good here.
     }
 
     @Override
@@ -132,7 +135,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             styles = xssfReader.getStylesTable();
 
             iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-            strings = new ReadOnlySharedStringsTable(container);
+            strings = new ReadOnlySharedStringsTable(container, config.getConcatenatePhoneticRuns());
         } catch (InvalidFormatException e) {
             throw new XmlException(e);
         } catch (OpenXML4JException oe) {

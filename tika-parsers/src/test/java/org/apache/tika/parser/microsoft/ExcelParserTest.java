@@ -520,4 +520,28 @@ public class ExcelParserTest extends TikaTest {
         String xml = getXML("testEXCEL_textbox.xls", pc).xml;
         assertNotContained("autoshape", xml);
     }
+
+    @Test
+    public void testPhoneticStrings() throws Exception {
+        //This unit test and test file come from Apache POI 51519.xlsx
+
+        //test default concatenates = true
+        assertContains("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
+                getXML("testEXCEL_phonetic.xls").xml);
+
+        //test turning it off
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setConcatenatePhoneticRuns(false);
+        ParseContext pc = new ParseContext();
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
+                getXML("testEXCEL_phonetic.xls", pc).xml);
+
+        //test configuring via config file
+        TikaConfig tikaConfig = new TikaConfig(OfficeParser.class.getResourceAsStream("tika-config-exclude-phonetic.xml"));
+        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
+                getXML("testEXCEL_phonetic.xls", parser).xml);
+
+    }
 }

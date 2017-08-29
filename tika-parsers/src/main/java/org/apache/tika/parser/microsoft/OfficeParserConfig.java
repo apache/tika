@@ -27,6 +27,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeMoveFromContent = false;
     private boolean includeShapeBasedContent = true;
     private boolean includeHeadersAndFooters = true;
+    private boolean concatenatePhoneticRuns = true;
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
@@ -97,7 +98,7 @@ public class OfficeParserConfig implements Serializable {
     public void setIncludeShapeBasedContent(boolean includeShapeBasedContent) {
         this.includeShapeBasedContent = includeShapeBasedContent;
     }
-    
+
     public boolean getIncludeShapeBasedContent() {
         return includeShapeBasedContent;
     }
@@ -148,6 +149,26 @@ public class OfficeParserConfig implements Serializable {
 
     public boolean getUseSAXPptxExtractor() {
         return useSAXPptxExtractor;
+    }
+
+
+    public boolean getConcatenatePhoneticRuns() {
+        return concatenatePhoneticRuns;
+    }
+
+    /**
+     * Microsoft Excel files can sometimes contain phonetic (furigana) strings.
+     * See <a href="https://support.office.com/en-us/article/PHONETIC-function-9a329dac-0c0f-42f8-9a55-639086988554">PHONETIC</a>.
+     * This sets whether or not the parser will concatenate the phonetic runs to the original text.
+     * <p>
+     * This is currently only supported by the xls and xlsx parsers (not the xlsb parser),
+     * and the default is <code>true</code>.
+     * </p>
+     *
+     * @param concatenatePhoneticRuns
+     */
+    public void setConcatenatePhoneticRuns(boolean concatenatePhoneticRuns) {
+        this.concatenatePhoneticRuns = concatenatePhoneticRuns;
     }
 }
 
