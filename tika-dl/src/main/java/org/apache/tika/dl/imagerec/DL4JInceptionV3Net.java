@@ -213,7 +213,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
             }
             LOG.info("Cache doesn't exist. Going to make a copy");
             LOG.info("This might take a while! GET {}", uri);
-            FileUtils.copyURLToFile(uri.toURL(), cacheFile, 5000, 5000);
+            FileUtils.copyURLToFile(uri.toURL(), cacheFile, 5000, 60000);
             //restore the success flag again
             FileUtils.write(successFlag,
                     "CopiedAt:" + System.currentTimeMillis(),
