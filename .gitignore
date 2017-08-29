@@ -12,3 +12,14 @@ nbactions.xml
 nb-configuration.xml
 *.DS_Store
 *.tmp-inception
+*.snap
+tika-deployment/tika-snap-app/parts/
+tika-deployment/tika-snap-app/prime/
+tika-deployment/tika-snap-app/snap/
+tika-deployment/tika-snap-app/stage/
+tika-deployment/tika-snap-app/test/
+tika-deployment/tika-snap-server/parts/
+tika-deployment/tika-snap-server/prime/
+tika-deployment/tika-snap-server/snap/
+tika-deployment/tika-snap-server/stage/
+
