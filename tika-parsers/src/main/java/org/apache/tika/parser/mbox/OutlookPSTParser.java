@@ -32,9 +32,11 @@ import com.pff.PSTFile;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
 import com.pff.PSTRecipient;
+import org.apache.poi.ss.formula.functions.T;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
@@ -44,7 +46,12 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OutlookExtractor;
+import org.apache.tika.parser.rtf.RTFParser;
+import org.apache.tika.parser.txt.TXTParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -59,12 +66,13 @@ public class OutlookPSTParser extends AbstractParser {
 
     public static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");
     private static final Set<MediaType> SUPPORTED_TYPES = singleton(MS_OUTLOOK_PST_MIMETYPE);
-
+    private static final Parser TEXT_PARSER = new TXTParser();
     private static AttributesImpl createAttribute(String attName, String attValue) {
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", attName, attName, "CDATA", attValue);
         return attributes;
     }
+
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -198,8 +206,21 @@ public class OutlookPSTParser extends AbstractParser {
         } catch (PSTException e) {
             //swallow
         }
-
-        byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
+        String html = pstMail.getBodyHTML();
+        String bodyType = MediaType.TEXT_PLAIN.toString();
+        byte[] mailContent = null;
+        //try to get the html first
+        if (html != null) {
+            String txt = pstMail.getBody();
+            if (txt != null && html.length() > txt.length()) {
+                mailContent = html.getBytes(UTF_8);
+                bodyType = MediaType.TEXT_HTML.toString();
+            }
+        }
+        if (mailContent == null) {
+            mailContent = pstMail.getBody().getBytes(UTF_8);
+        }
+        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, bodyType);
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
     }
 

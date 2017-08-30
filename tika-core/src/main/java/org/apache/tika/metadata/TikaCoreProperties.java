@@ -109,6 +109,9 @@ public interface TikaCoreProperties {
     public static final Property CONTENT_TYPE_HINT =
             Property.internalText(HttpHeaders.CONTENT_TYPE+"-Hint");
 
+    Property CONTENT_TYPE_OVERRIDE =
+            Property.internalText(HttpHeaders.CONTENT_TYPE+"-Override");
+
     /**
      * @see DublinCore#FORMAT
      */

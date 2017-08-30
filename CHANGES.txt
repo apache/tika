@@ -1,5 +1,9 @@
 Release 1.17 - ???
 
+  * Add OverrideDetector and allow PSTParser to specify body content type
+    as text or html -- to avoid incorrect auto-detection of
+    rfc/mbox, etc. (TIKA-2454)
+
   * AutoDetectParser throws ZeroByteFileException for zero-byte files after
     detection on the file extension (TIKA-2450).
 
