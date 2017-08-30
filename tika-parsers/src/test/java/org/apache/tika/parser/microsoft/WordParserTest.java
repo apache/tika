@@ -611,5 +611,15 @@ public class WordParserTest extends TikaTest {
 
         }
     }
+
+    @Test
+    public void testPhonetic() throws Exception {
+        //TODO: fix this
+        //current behavior:
+        //EQ \\* jc2 \\* "Font:MS Mincho" \\* hps11 \\o\\ad(\\s\\up 10(とうきょう),東京)
+        //We need to parse that string and separate content + phonetic
+        assertContains("\\s\\up 10(\u3068\u3046\u304D\u3087\u3046),\u6771\u4EAC",
+                getXML("testWORD_phonetic.doc").xml);
+    }
 }
 

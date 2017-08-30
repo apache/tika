@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Extract phonetic runs in docx with experimental SAX parser (TIKA-2448).
+
   * Extract phonetic runs from xls and allow users to turn off extraction
     of phonetic runs in both xls and xlsx (TIKA-2440).
 
