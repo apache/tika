@@ -206,21 +206,14 @@ public class OutlookPSTParser extends AbstractParser {
         } catch (PSTException e) {
             //swallow
         }
-        String html = pstMail.getBodyHTML();
-        String bodyType = MediaType.TEXT_PLAIN.toString();
-        byte[] mailContent = null;
-        //try to get the html first
-        if (html != null) {
-            String txt = pstMail.getBody();
-            if (txt != null && html.length() > txt.length()) {
-                mailContent = html.getBytes(UTF_8);
-                bodyType = MediaType.TEXT_HTML.toString();
-            }
-        }
-        if (mailContent == null) {
-            mailContent = pstMail.getBody().getBytes(UTF_8);
-        }
-        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, bodyType);
+        //we may want to experiment with working with the bodyHTML.
+        //However, because we can't get the raw bytes, we _could_ wind up sending
+        //a UTF-8 byte representation of the html that has a conflicting metaheader
+        //that causes the HTMLParser to get the encoding wrong.  Better if we could get
+        //the underlying bytes from the pstMail object...
+
+        byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
+        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, MediaType.TEXT_PLAIN.toString());
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
     }
 

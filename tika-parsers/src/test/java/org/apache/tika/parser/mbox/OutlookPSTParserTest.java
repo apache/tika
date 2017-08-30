@@ -149,6 +149,6 @@ public class OutlookPSTParserTest extends TikaTest {
                 }
             }
         }
-        //TODO: figure out why the bold markup isn't coming through now that we're processing the html
+        //TODO: figure out why the bold markup isn't coming through if we do extract then parse the bodyhtml
     }
 }
