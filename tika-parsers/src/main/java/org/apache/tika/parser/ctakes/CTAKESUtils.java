@@ -208,7 +208,9 @@ public class CTAKESUtils {
 				for (int i = 0; i < mentions.size(); i++) {
 					if (mentions.get(i) instanceof UmlsConcept) {
 						UmlsConcept concept = (UmlsConcept) mentions.get(i);
-						sb.append(concept.getCui());
+						sb.append("cui=").append(concept.getCui()).append(",").
+							append(concept.getCodingScheme()).append("=").
+							append(concept.getCode());
 						if (i < mentions.size() - 1) {
 							sb.append(",");
 						}
@@ -217,7 +219,9 @@ public class CTAKESUtils {
 			}
 			value = sb.toString();
 		} else if (property == CTAKESAnnotationProperty.POLARITY) {
-			value = Integer.toString(annotation.getPolarity());
+			String polarity_pref = "POLARITY";
+			value = new StringBuilder(polarity_pref).append("=").
+					append(Integer.toString(annotation.getPolarity())).toString();
 		}
 		return value;
 	}
