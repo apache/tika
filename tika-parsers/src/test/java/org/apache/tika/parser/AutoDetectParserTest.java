@@ -16,24 +16,12 @@
  */
 package org.apache.tika.parser;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -45,7 +33,22 @@ import org.gagravarr.tika.VorbisParser;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class AutoDetectParserTest {
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class AutoDetectParserTest extends TikaTest {
     private TikaConfig tika = TikaConfig.getDefaultConfig();
 
     // Easy to read constants for the MIME types:
@@ -378,6 +381,35 @@ public class AutoDetectParserTest {
         parser.parse(is, new BodyContentHandler(), metadata, new ParseContext());
         
         assertEquals("value", metadata.get("MyParser"));
+    }
+
+    @Test
+    public void testZeroByteFileException() throws Exception {
+        String[] exts = new String[]{
+                "xls",
+                "doc",
+                "pdf",
+                "rtf"
+        };
+
+        String[] mimes = new String[]{
+                EXCEL,
+                WORD,
+                PDF,
+                RTF
+        };
+
+        for (int i = 0; i < exts.length; i++) {
+            Metadata m = new Metadata();
+            m.set(Metadata.RESOURCE_NAME_KEY, "file." + exts[i]);
+            try {
+                getXML(TikaInputStream.get(new byte[0]), new AutoDetectParser(), m);
+                fail("should have thrown zero byte exception");
+            } catch (ZeroByteFileException e) {
+
+            }
+            assertEquals(mimes[i], m.get(Metadata.CONTENT_TYPE));
+        }
     }
 
     private static final MediaType MY_MEDIA_TYPE = new MediaType("application", "x-myparser");

@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * AutoDetectParser throws ZeroByteFileException for zero-byte files after
+    detection on the file extension (TIKA-2450).
+
   * Extract phonetic runs in docx with experimental SAX parser (TIKA-2448).
 
   * Extract phonetic runs from xls and allow users to turn off extraction
