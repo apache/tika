@@ -152,4 +152,19 @@ public class MboxParserTest {
 
         assertContains("When a Mapper completes", handler.toString());
     }
+    
+    @Test
+    public void testOverrideDetector() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
+
+        try (InputStream stream = getStream("/test-documents/single_mail.mbox")) {
+            mboxParser.parse(stream, handler, metadata, context);
+        }
+        
+        Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
+        assertEquals("message/rfc822", firstMail.get(Metadata.CONTENT_TYPE));
+    }
 }

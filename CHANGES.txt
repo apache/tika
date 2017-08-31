@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Fix detection of emails extracted from mbox (TIKA-2456)
+  
   * Add OverrideDetector and allow PSTParser to specify body content type
     as text or html -- to avoid incorrect auto-detection of
     rfc/mbox, etc. (TIKA-2454)
