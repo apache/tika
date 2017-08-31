@@ -66,7 +66,7 @@ public class OutlookPSTParser extends AbstractParser {
 
     public static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");
     private static final Set<MediaType> SUPPORTED_TYPES = singleton(MS_OUTLOOK_PST_MIMETYPE);
-    private static final Parser TEXT_PARSER = new TXTParser();
+
     private static AttributesImpl createAttribute(String attName, String attValue) {
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", attName, attName, "CDATA", attValue);
