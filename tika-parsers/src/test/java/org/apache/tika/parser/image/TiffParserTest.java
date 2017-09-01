@@ -23,14 +23,17 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class TiffParserTest {
+public class TiffParserTest extends TikaTest {
+
     private final Parser parser = new TiffParser();
 
     @Test
@@ -62,5 +65,13 @@ public class TiffParserTest {
         List<String> subject = Arrays.asList(metadata.getValues(Metadata.SUBJECT));
         assertTrue("got " + subject, subject.contains("cat"));
         assertTrue("got " + subject, subject.contains("garden"));
+    }
+
+    @Test
+    public void testPageCount() throws Exception {
+        assertEquals(2L,
+                (long)getXML("testTIFF_multipage.tif")
+                .metadata
+                .getInt(TIFF.EXIF_PAGE_COUNT));
     }
 }

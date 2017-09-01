@@ -55,6 +55,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
@@ -80,6 +81,7 @@ public class ImageMetadataExtractor {
     public ImageMetadataExtractor(Metadata metadata) {
         this(metadata,
                 new CopyUnknownFieldsHandler(),
+                new TiffPageNumberHandler(),
                 new JpegCommentHandler(),
                 new ExifHandler(),
                 new DimensionsHandler(),
@@ -284,6 +286,28 @@ public class ImageMetadataExtractor {
                             value = Boolean.FALSE.toString();
                         }
                         metadata.set(name, value);
+                    }
+                }
+            }
+        }
+    }
+
+    static class TiffPageNumberHandler implements DirectoryHandler {
+        public boolean supports(Class<? extends Directory> directoryType) {
+            return true;
+        }
+
+        public void handle(Directory directory, Metadata metadata)
+                throws MetadataException {
+            //TODO: after upgrading metadataextractor, swap out
+            //magic number with ExifDirectoryBase.TAG_PAGE_NUMBER
+            if (directory.containsTag(297)) {
+                int[] pageNums = directory.getIntArray(297);
+                //pages can be in any order, take the max
+                if (pageNums != null && pageNums.length > 1) {
+                    Integer curr = metadata.getInt(TIFF.EXIF_PAGE_COUNT);
+                    if (curr == null || curr < pageNums[1]) {
+                        metadata.set(TIFF.EXIF_PAGE_COUNT, pageNums[1]);
                     }
                 }
             }

@@ -1,6 +1,8 @@
 Release 1.17 - ???
 
-  * Fix detection of emails extracted from mbox (TIKA-2456)
+  * Extract number of tiffs in a multi-page tiff (TIKA-2451).
+
+  * Fix detection of emails extracted from mbox (TIKA-2456).
   
   * Add OverrideDetector and allow PSTParser to specify body content type
     as text or html -- to avoid incorrect auto-detection of
