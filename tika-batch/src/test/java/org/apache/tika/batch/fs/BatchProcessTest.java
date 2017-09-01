@@ -232,7 +232,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertEquals(1, countChildren(outputDir));
         assertContains("System.out", streamStrings.getOutString());
         assertContains("System.err", streamStrings.getOutString());
-        assertEquals(0, streamStrings.getErrString().length());
+        assertEquals("", streamStrings.getErrString());
 
     }
 
