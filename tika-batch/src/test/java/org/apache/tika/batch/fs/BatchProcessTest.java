@@ -232,12 +232,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertEquals(1, countChildren(outputDir));
         assertContains("System.out", streamStrings.getOutString());
         assertContains("System.err", streamStrings.getOutString());
-        if (! streamStrings.getErrString().equals("") &&
-                ! streamStrings.getErrString().startsWith("Picked up")) {// see https://github.com/apache/tika/pull/201
-            fail("nothing should have been written to stderr, but I saw >"+
-                    streamStrings.getErrString().replaceAll("\\r", "<r>"+"<"));
-        }
-
+        assertNotContained("writing something to System.err", streamStrings.getErrString());
     }
 
     @Test(timeout = 10000)
