@@ -128,6 +128,7 @@ class MailContentHandler implements ContentHandler {
     private EmbeddedDocumentExtractor extractor;
 
     private boolean inPart = false;
+    private BodyDescriptor part = null;
 
     MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context, boolean strictParsing) {
         this.handler = xhtml;
@@ -150,6 +151,12 @@ class MailContentHandler implements ContentHandler {
         Metadata submd = new Metadata();
         submd.set(Metadata.CONTENT_TYPE, body.getMimeType());
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
+
+        // TIKA-2455: flag the containing type.
+        if (null != part) {
+            submd.set("Multipart-Subtype", part.getSubType());
+            submd.set("Multipart-Content-Type", part.getMimeType());
+        }
 
         try {
             if (extractor.shouldParseEmbedded(submd)) {
@@ -193,6 +200,7 @@ class MailContentHandler implements ContentHandler {
 
     public void endMultipart() throws MimeException {
         inPart = false;
+        part = null;
     }
 
     public void epilogue(InputStream is) throws MimeException, IOException {
@@ -350,6 +358,7 @@ class MailContentHandler implements ContentHandler {
 
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         inPart = true;
+        part = descr;
     }
 
     private String stripOutFieldPrefix(Field field, String fieldname) {
