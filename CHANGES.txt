@@ -25,7 +25,7 @@ Release 1.17 - ???
   * Tika now has support for automatic image captioning, that
     combines Computer Vision and Natural Language Processing to
     automatically generate a readable caption for an image 
-    (TIKA-2262, TIKA-2355).
+    (TIKA-2262, TIKA-2355, TIKA-2402, Gh-198, Gh-196, Gh-189).
 
   * Add TestCorruptedFiles to allow devs to test parsers against
     corrupted input files (TIKA-2430).
