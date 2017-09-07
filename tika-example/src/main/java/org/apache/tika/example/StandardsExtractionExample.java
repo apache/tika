@@ -99,7 +99,7 @@ public class StandardsExtractionExample {
 		// to the underlying Handler.
 		StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1),
 				metadata);
-		handler.setThreshold(1.0);
+		handler.setThreshold(0.75);
 		try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
 			parser.parse(stream, handler, metadata, new ParseContext());
 		}

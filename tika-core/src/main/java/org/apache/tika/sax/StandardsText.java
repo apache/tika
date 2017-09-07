@@ -40,8 +40,10 @@ import org.apache.tika.sax.StandardReference.StandardReferenceBuilder;
  * (basically, every string mostly composed of uppercase letters followed by an
  * alphanumeric characters);</li>
  * <li>each potential standard reference starts with score equal to 0.25;</li>
- * <li>increases by 0.50 the score of references which include the name of a
+ * <li>increases by 0.25 the score of references which include the name of a
  * known standard organization ({@link StandardOrganizations});</li>
+ * <li>increases by 0.25 the score of references which include the word 
+ * Publication or Standard;</li>
  * <li>increases by 0.25 the score of references which have been found within
  * "Applicable Documents" and equivalent sections;</li>
  * <li>returns the standard references along with scores.</li>
@@ -65,13 +67,13 @@ public class StandardsText {
 
 	// Regular expression to match the type of publication, often reported
 	// between the name of the standard organization and the standard identifier
-	private static final String REGEX_STANDARD_TYPE = "(\\s(Publication|Standard))?";
+	private static final String REGEX_STANDARD_TYPE = "(\\s(?i:Publication|Standard))";
 
 	// Regular expression to match a string that is supposed to be a standard
 	// reference
 	private static final String REGEX_FALLBACK = "\\(?" + "(?<mainOrganization>[A-Z]\\w+)"
 			+ "\\)?((\\s?(?<separator>\\/)\\s?)(\\w+\\s)*\\(?" + "(?<secondOrganization>[A-Z]\\w+)" + "\\)?)?"
-			+ REGEX_STANDARD_TYPE + "(-|\\s)?" + REGEX_IDENTIFIER;
+			+ REGEX_STANDARD_TYPE + "?" + "(-|\\s)?" + REGEX_IDENTIFIER;
 
 	// Regular expression to match the standard organization within a string
 	// that is supposed to be a standard reference
@@ -145,8 +147,14 @@ public class StandardsText {
 							.setSecondOrganization(matcher.group("separator"), matcher.group("secondOrganization"));
 			score = 0.25;
 
+			// increases by 0.25 the score of references which include the name of a known standard organization
 			if (matcher.group().matches(REGEX_STANDARD)) {
-				score += 0.50;
+				score += 0.25;
+			}
+			
+			// increases by 0.25 the score of references which include the word "Publication" or "Standard"
+			if (matcher.group().matches(".*" + REGEX_STANDARD_TYPE + ".*")) {
+				score += 0.25;
 			}
 
 			int startHeader = 0;
@@ -162,12 +170,14 @@ public class StandardsText {
 			}
 
 			String header = headers.get(startHeader);
+			
+			// increases by 0.25 the score of references which have been found within "Applicable Documents" and equivalent sections
 			if (header != null && headers.get(startHeader).matches(REGEX_APPLICABLE_DOCUMENTS)) {
 				score += 0.25;
 			}
 
 			builder.setScore(score);
-
+			
 			if (score >= threshold) {
 				standards.add(builder.build());
 			}

@@ -19,8 +19,10 @@ package org.apache.tika.sax;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.InputStream;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -44,7 +46,10 @@ public class StandardsExtractingContentHandlerTest {
 		parser.parse(inputStream, handler, metadata, new ParseContext());
 		
 		String[] standardReferences = metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
+		
 		assertTrue(standardReferences[0].equals("ANSI/TIA 222-G"));
 		assertTrue(standardReferences[1].equals("TIA/ANSI 222-G-1"));
+		assertTrue(standardReferences[2].equals("FIPS 140-2"));
+		assertTrue(standardReferences[3].equals("FIPS 197"));
 	}
 }
