@@ -17,8 +17,8 @@
 
 package org.apache.tika.sax;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * This class provides a collection of the most important technical standard organizations.
@@ -30,7 +30,7 @@ public class StandardOrganizations {
 
 	private static Map<String, String> organizations;
 	static {
-		organizations = new HashMap<String, String>();
+		organizations = new TreeMap<String, String>();
 		//International standard organizations
 	    organizations.put("3GPP", "3rd Generation Partnership Project");
 	    organizations.put("3GPP2", "3rd Generation Partnership Project 2");
