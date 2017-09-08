@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -29,6 +30,12 @@ import org.w3c.dom.Document;
  * Creates instances of MimeTypes.
  */
 public class MimeTypesFactory {
+    
+    /**
+     * System property to set a path to an additional external custom mimetypes 
+     * XML file to be loaded.
+     */
+    public static final String CUSTOM_MIMES_SYS_PROP = "tika.custom-mimetypes";
 
     /**
      * Creates an empty instance; same as calling new MimeTypes().
@@ -139,6 +146,8 @@ public class MimeTypesFactory {
      *  override mimetypes found will loaded afterwards.
      * The file paths will be interpreted by the specified class  
      *  loader in getResource().
+     *  It will also load custom mimetypes from the system property
+     *  {@link #CUSTOM_MIMES_SYS_PROP}, if specified.
      * 
      * @param coreFilePath The main MimeTypes file to load
      * @param extensionFilePath The name of extension MimeType files to load afterwards
@@ -166,6 +175,16 @@ public class MimeTypesFactory {
         List<URL> urls = new ArrayList<URL>();
         urls.add(coreURL);
         urls.addAll(extensionURLs);
+        
+        String customMimesPath = System.getProperty(CUSTOM_MIMES_SYS_PROP);
+        if(customMimesPath != null){
+            File externalFile = new File(customMimesPath);
+            if(!externalFile.exists())
+                throw new IOException(
+                        "Specified custom mimetypes file not found: " + customMimesPath);
+            URL externalURL = externalFile.toURI().toURL();
+            urls.add(externalURL);
+        }
         
         return create( urls.toArray(new URL[urls.size()]) );
     }
