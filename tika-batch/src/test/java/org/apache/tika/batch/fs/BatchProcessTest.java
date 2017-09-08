@@ -226,13 +226,13 @@ public class BatchProcessTest extends FSBatchTestBase {
         Map<String, String> args = getDefaultArgs("noisy_parsers", outputDir);
         args.put("numConsumers", "1");
         args.put("maxAliveTimeSeconds", "20");//main process loop should stop after 5 seconds
-
+        String stderr = "writing something to System.err";
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args);
         StreamStrings streamStrings = ex.execute();
         assertEquals(1, countChildren(outputDir));
         assertContains("System.out", streamStrings.getOutString());
-        assertContains("System.err", streamStrings.getOutString());
-        assertNotContained("writing something to System.err", streamStrings.getErrString());
+        assertContains(stderr, streamStrings.getOutString());
+        assertNotContained(stderr, streamStrings.getErrString());
     }
 
     @Test(timeout = 10000)
