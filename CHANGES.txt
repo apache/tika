@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * Load external custom mimetypes XML from system property 
+    tika.custom-mimetypes (TIKA-2460). 
+
   * Extract number of tiffs in a multi-page tiff (TIKA-2451).
 
   * Fix detection of emails extracted from mbox (TIKA-2456).
