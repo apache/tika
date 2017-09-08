@@ -489,6 +489,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                     controls = new ArrayList<CharacterRun>();
                 }
                 break;
+            } else if (cr.text().equals("\u0014\u0015")) {
+                has14 = true;
             } else {
                 if (has14) {
                     texts.add(cr);
