@@ -21,6 +21,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.util.Date;
 import java.util.Map;
 
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -85,6 +86,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String OLE_OBJECT = "OLEObject";
     private final static String CR = "cr";
     private final static String V = "v";
+    private final static String RUBY = "ruby"; //phonetic section
+    private final static String RT = "rt"; //phonetic run
+
 
     public final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
     private final static String MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
@@ -115,10 +119,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     private final Map<String, String> linkedRelationships;
 
-    private boolean inR = false;//in run or in field
+    private boolean inR = false;//in run or in field. TODO: convert this to an integer because you can have a run within a run
     private boolean inT = false;
     private boolean inRPr = false;
     private boolean inNumPr = false;
+    private boolean inRt = false;
 
     private boolean inPic = false;
     private boolean inPict = false;
@@ -144,7 +149,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final RunProperties currRunProperties = new RunProperties();
     private final ParagraphProperties currPProperties = new ParagraphProperties();
     private final boolean includeTextBox;
+    private final boolean concatenatePhoneticRuns;
     private final StringBuilder runBuffer = new StringBuilder();
+    private final StringBuilder rubyBuffer = new StringBuilder();//buffers rt in ruby sections (see 17.3.3.25)
 
 
     private boolean inDelText = false;
@@ -158,14 +165,16 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks) {
-        this(bodyContentsHandler, hyperlinks, true);
+        this(bodyContentsHandler, hyperlinks, true, true);
     }
 
+
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
-                                             Map<String, String> hyperlinks, boolean includeTextBox) {
+                                             Map<String, String> hyperlinks, boolean includeTextBox, boolean concatenatePhoneticRuns) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
         this.includeTextBox = includeTextBox;
+        this.concatenatePhoneticRuns = concatenatePhoneticRuns;
     }
 
 
@@ -328,6 +337,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             bodyContentsHandler.endnoteReference(id);
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
             inV = true;
+        } else if (RT.equals(localName)) {
+            inRt = true;
         }
 
     }
@@ -417,6 +428,19 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
             inV = false;
             handleEndOfRun();
+        } else if (RT.equals(localName)) {
+            inRt = false;
+        } else if (RUBY.equals(localName)) {
+            handleEndOfRuby();
+        }
+    }
+
+    private void handleEndOfRuby() {
+        if (rubyBuffer.length() > 0) {
+            if (concatenatePhoneticRuns) {
+                bodyContentsHandler.run(currRunProperties, " (" + rubyBuffer.toString() + ")");
+            }
+            rubyBuffer.setLength(0);
         }
     }
 
@@ -454,15 +478,15 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
         if (editType.equals(EditType.MOVE_FROM) && inT) {
             if (bodyContentsHandler.getIncludeMoveFromText()) {
-                runBuffer.append(ch, start, length);
+                appendToBuffer(ch, start, length);
             }
         } else if (inT) {
-            runBuffer.append(ch, start, length);
+            appendToBuffer(ch, start, length);
         } else if (bodyContentsHandler.getIncludeDeletedText() && editType.equals(EditType.DELETE)) {
-            runBuffer.append(ch, start, length);
+            appendToBuffer(ch, start, length);
         } else if (inV) {
-            runBuffer.append(ch, start, length);
-            runBuffer.append(TAB_CHAR, 0, 1);
+            appendToBuffer(ch, start, length);
+            appendToBuffer(TAB_CHAR, 0, 1);
         }
     }
 
@@ -475,12 +499,19 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
 
         if (inT) {
-            runBuffer.append(ch, start, length);
+            appendToBuffer(ch, start, length);
         } else if (bodyContentsHandler.getIncludeDeletedText() && inDelText) {
-            runBuffer.append(ch, start, length);
+            appendToBuffer(ch, start, length);
         }
     }
 
+    private void appendToBuffer(char[] ch, int start, int length) throws SAXException {
+        if (inRt) {
+            rubyBuffer.append(ch, start, length);
+        } else {
+            runBuffer.append(ch, start, length);
+        }
+    }
 
     public interface XWPFBodyContentsHandler {
 

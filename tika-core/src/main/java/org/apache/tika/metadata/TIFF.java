@@ -139,4 +139,7 @@ public interface TIFF {
      */
     Property ORIGINAL_DATE =
        Property.internalDate("exif:DateTimeOriginal");
+
+    Property EXIF_PAGE_COUNT =
+            Property.externalInteger("exif:PageCount");
 }

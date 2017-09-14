@@ -58,8 +58,8 @@ import json
 json.encoder.FLOAT_REPR = lambda o: format(
     o, '.2f')  # JSON serialization of floats
 from time import time
-
-
+from PIL import Image
+from io import BytesIO
 import tempfile
 import flask
 
@@ -363,6 +363,8 @@ def classify_image():
     """
     API to classify images
     """
+    image_format = "not jpeg"
+
     st = current_time()
     topk = int(request.args.get("topk", "10"))
     human = request.args.get("human", "true").lower() in ("true", "1", "yes")
@@ -373,12 +375,29 @@ def classify_image():
         c_type, image_data = get_remotefile(url)
         if not image_data:
             return flask.Response(status=400, response=jsonify(error="Couldnot HTTP GET %s" % url))
-        if 'image/jpeg' not in c_type:
-            return flask.Response(status=400, response=jsonify(error="Content of %s is not JPEG" % url))
+        if 'image/jpeg' in c_type:
+            image_format = "jpeg"
+
+    # use c_type to find whether image_format is jpeg or not
+    # if jpeg, don't convert
+    if image_format == "jpeg":
+        jpg_image = image_data
+    # if not jpeg
+    else:
+        # open the image from raw bytes
+        image = Image.open(BytesIO(image_data))
+        # convert the image to RGB format, otherwise will give errors when converting to jpeg, if the image isn't RGB
+        rgb_image = image.convert("RGB")
+        # convert the RGB image to jpeg
+        image_bytes = BytesIO()
+        rgb_image.save(image_bytes, format="jpeg", quality=95)
+        jpg_image = image_bytes.getvalue()
+        image_bytes.close()
+
     read_time = current_time() - st
     st = current_time()  # reset start time
     try:
-        classes = app.classify(image_string=image_data, topk=topk)
+        classes = app.classify(image_string=jpg_image, topk=topk)
     except Exception as e:
         app.logger.error(e)
         return Response(status=400, response=str(e))

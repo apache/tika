@@ -25,7 +25,7 @@ RUN apt-get update && \
 # Install tensorflow and other dependencies
 RUN \
   pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl && \
-  pip install flask requests
+  pip install flask requests pillow
 
 # Get the TF-slim dependencies 
 # Downloading from a specific commit for future compatibility
@@ -33,7 +33,7 @@ RUN wget https://github.com/tensorflow/models/archive/c15fada28113eca32dc98d6e3b
 	unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip 
 
 RUN \
-  wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/inceptionapi.py
 
 # clean up cache, so we can publish smaller image to hub

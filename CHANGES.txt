@@ -1,5 +1,21 @@
 Release 1.17 - ???
 
+  * Load external custom mimetypes XML from system property 
+    tika.custom-mimetypes (TIKA-2460). 
+
+  * Extract number of tiffs in a multi-page tiff (TIKA-2451).
+
+  * Fix detection of emails extracted from mbox (TIKA-2456).
+  
+  * Add OverrideDetector and allow PSTParser to specify body content type
+    as text or html -- to avoid incorrect auto-detection of
+    rfc/mbox, etc. (TIKA-2454)
+
+  * AutoDetectParser throws ZeroByteFileException for zero-byte files after
+    detection on the file extension (TIKA-2450).
+
+  * Extract phonetic runs in docx with experimental SAX parser (TIKA-2448).
+
   * Extract phonetic runs from xls and allow users to turn off extraction
     of phonetic runs in both xls and xlsx (TIKA-2440).
 
@@ -12,7 +28,7 @@ Release 1.17 - ???
   * Tika now has support for automatic image captioning, that
     combines Computer Vision and Natural Language Processing to
     automatically generate a readable caption for an image 
-    (TIKA-2262, TIKA-2355).
+    (TIKA-2262, TIKA-2355, TIKA-2402, Gh-198, Gh-196, Gh-189).
 
   * Add TestCorruptedFiles to allow devs to test parsers against
     corrupted input files (TIKA-2430).

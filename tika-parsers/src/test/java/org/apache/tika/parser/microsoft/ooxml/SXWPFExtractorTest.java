@@ -822,4 +822,20 @@ public class SXWPFExtractorTest extends TikaTest {
         assertNotContained("This is the footer text.", xml);
     }
 
+    @Test
+    public void testDOCXPhoneticStrings() throws Exception {
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setUseSAXDocxExtractor(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, config);
+        assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
+                getXML("testWORD_phonetic.docx", parseContext).xml);
+
+
+        config.setConcatenatePhoneticRuns(false);
+        String xml = getXML("testWORD_phonetic.docx", parseContext).xml;
+        assertContains("\u6771\u4EAC", xml);
+        assertNotContained("\u3068", xml);
+    }
+
 }

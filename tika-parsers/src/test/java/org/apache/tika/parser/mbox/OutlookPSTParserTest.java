@@ -19,6 +19,7 @@ package org.apache.tika.parser.mbox;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -135,5 +136,19 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("Couchbase",m6.get(Message.MESSAGE_FROM_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
 
+    }
+
+    @Test
+    public void testOverrideDetector() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPST_variousBodyTypes.pst");
+        assertEquals(5, metadataList.size());//before the fix that prevents the RFC parser, this was 6
+        for (Metadata metadata : metadataList) {
+            for (String v : metadata.getValues("X-Parsed-By")) {
+                if (v.contains("RFC822Parser")) {
+                    fail("RFCParser should never be called");
+                }
+            }
+        }
+        //TODO: figure out why the bold markup isn't coming through if we do extract then parse the bodyhtml
     }
 }

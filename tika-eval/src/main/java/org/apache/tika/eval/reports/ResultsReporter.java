@@ -224,10 +224,14 @@ public class ResultsReporter {
         }
         JDBCUtil dbUtil = null;
         if (commandLine.hasOption("db")) {
-            Path db = Paths.get(commandLine.getOptionValue("db"));
+            String dbString = commandLine.getOptionValue("db");
+            if (dbString.endsWith(".mv.db")) {
+                dbString = dbString.substring(0, dbString.length()-6);
+                LOG.debug("trimming .mv.db from db name");
+            }
+            Path db = Paths.get(dbString);
             if (!H2Util.databaseExists(db)) {
-                throw new RuntimeException("I'm sorry, but I couldn't find this h2 database: "
-                        + db+ "\nMake sure not to include the .mv.db at the end.");
+                throw new RuntimeException("I'm sorry, but I couldn't find this h2 database: " + db);
             }
             dbUtil = new H2Util(db);
         } else if (commandLine.hasOption("jdbc")) {

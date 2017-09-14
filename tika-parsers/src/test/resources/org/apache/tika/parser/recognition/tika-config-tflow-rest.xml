@@ -20,6 +20,8 @@
     <parsers>
         <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
             <mime>image/jpeg</mime>
+            <mime>image/png</mime>
+            <mime>image/gif</mime>
             <params>
                 <param name="topN" type="int">2</param>
                 <param name="minConfidence" type="double">0.015</param>

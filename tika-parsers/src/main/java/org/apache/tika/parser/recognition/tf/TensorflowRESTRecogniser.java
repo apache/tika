@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Arrays;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -60,6 +63,13 @@ import org.xml.sax.SAXException;
 public class TensorflowRESTRecogniser implements ObjectRecogniser {
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTRecogniser.class);
 
+    private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(new MediaType[]{
+                    MediaType.image("jpeg"),
+                    MediaType.image("png"),
+                    MediaType.image("gif")
+            })));
+
     /**
      * Maximum buffer size for image
      */
@@ -78,7 +88,7 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     
     @Override
     public Set<MediaType> getSupportedMimes() {
-        return TensorflowImageRecParser.SUPPORTED_MIMES;
+        return SUPPORTED_MIMES;
     }
 
     @Override

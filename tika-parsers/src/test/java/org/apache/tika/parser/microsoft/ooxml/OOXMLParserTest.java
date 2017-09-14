@@ -75,6 +75,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+import ucar.nc2.util.xml.Parse;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -1734,6 +1735,22 @@ public class OOXMLParserTest extends TikaTest {
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xlsx", parser).xml);
 
+    }
+
+    @Test
+    @Ignore("to be fixed in > POI 3.17")
+    public void testDOCXPhoneticStrings() throws Exception {
+
+        assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
+                getXML("testWORD_phonetic.docx").xml);
+
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setConcatenatePhoneticRuns(false);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, config);
+        String xml = getXML("testWORD_phonetic.docx", parseContext).xml;
+        assertContains("\u6771\u4EAC", xml);
+        assertNotContained("\u3068", xml);
     }
 
 }
