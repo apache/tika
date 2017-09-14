@@ -104,12 +104,7 @@ public class TestXXEInXML extends TikaTest {
                 "testPPT_embeddedPDF.pptx",
                 "testPPT_macros.pptm"
         }) {
-            try {
-                _testOOXML(fileName);
-            } catch (Exception e) {
-                e.printStackTrace();
-                fail("problem with: "+fileName + ": "+ e.getMessage());
-            }
+            _testOOXML(fileName);
         }
     }
 
@@ -132,6 +127,9 @@ public class TestXXEInXML extends TikaTest {
 
             p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
 
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            fail("problem with: "+fileName + ": "+ e.getMessage());
         } finally {
             Files.delete(injected);
         }
