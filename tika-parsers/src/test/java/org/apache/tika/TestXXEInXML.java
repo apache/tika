@@ -101,7 +101,7 @@ public class TestXXEInXML extends TikaTest {
                 "testEXCEL_embeddedPDF_windows.xlsx",
                 "testPPT_2imgs.pptx",
                 "testPPT_comment.pptx",
-                "testPPT_embeddedPDF.pptx",
+                "testPPT_EmbeddedPDF.pptx",
                 "testPPT_macros.pptm"
         }) {
             _testOOXML(fileName);
