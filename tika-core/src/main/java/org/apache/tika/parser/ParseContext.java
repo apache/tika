@@ -23,19 +23,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLResolver;
-import javax.xml.stream.XMLStreamException;
-import java.io.IOException;
 import java.io.Serializable;
-import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
-import org.xml.sax.EntityResolver;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
@@ -53,21 +46,6 @@ public class ParseContext implements Serializable {
 
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
-
-    private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
-        public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
-            return new InputSource(new StringReader(""));
-        }
-    };
-
-    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
-            new XMLResolver() {
-                @Override
-                public Object resolveEntity(String publicID, String systemID, String baseURI, String namespace) throws
-                        XMLStreamException {
-                    return "";
-                }
-            };
 
     /**
      * Adds the given value to the context as an implementation of the given
@@ -129,13 +107,7 @@ public class ParseContext implements Serializable {
         if (reader != null) {
             return reader;
         }
-        try {
-            reader = getSAXParser().getXMLReader();
-        } catch (SAXException e) {
-            throw new TikaException("Unable to create an XMLReader", e);
-        }
-        reader.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
-        return reader;
+        return XMLReaderUtils.getXMLReader();
     }
 
     /**
@@ -153,13 +125,7 @@ public class ParseContext implements Serializable {
         if (parser != null) {
             return parser;
         } else {
-            try {
-                return getSAXParserFactory().newSAXParser();
-            } catch (ParserConfigurationException e) {
-                throw new TikaException("Unable to configure a SAX parser", e);
-            } catch (SAXException e) {
-                throw new TikaException("Unable to create a SAX parser", e);
-            }
+            return XMLReaderUtils.getSAXParser();
         }
     }
 
@@ -210,21 +176,16 @@ public class ParseContext implements Serializable {
         DocumentBuilderFactory documentBuilderFactory = get(DocumentBuilderFactory.class);
         if (documentBuilderFactory != null) {
             return documentBuilderFactory;
+        } else {
+            return XMLReaderUtils.getDocumentBuilderFactory();
         }
-        documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        documentBuilderFactory.setNamespaceAware(true);
-        documentBuilderFactory.setValidating(false);
-        tryToSetSAXFeatureOnDOMFactory(documentBuilderFactory,
-            XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        tryToSetXercesManager(documentBuilderFactory);
-        return documentBuilderFactory;
     }
 
     /**
      * Returns the DOM builder specified in this parsing context.
      * If a builder is not explicitly specified, then a builder
      * instance is created and returned. The builder instance is
-     * configured to apply an {@link #IGNORING_SAX_ENTITY_RESOLVER},
+     * configured to apply an {@link XMLReaderUtils#IGNORING_SAX_ENTITY_RESOLVER},
      * and it sets the ErrorHandler to <code>null</code>.
      *
      * @since Apache Tika 1.13
@@ -234,15 +195,8 @@ public class ParseContext implements Serializable {
         DocumentBuilder documentBuilder = get(DocumentBuilder.class);
         if (documentBuilder != null) {
             return documentBuilder;
-        }
-        try {
-            DocumentBuilderFactory documentBuilderFactory = getDocumentBuilderFactory();
-            documentBuilder = documentBuilderFactory.newDocumentBuilder();
-            documentBuilder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
-            documentBuilder.setErrorHandler(null);
-            return documentBuilder;
-        } catch (ParserConfigurationException e) {
-            throw new TikaException("XML parser not available", e);
+        } else {
+            return XMLReaderUtils.getDocumentBuilder();
         }
     }
 
@@ -251,7 +205,7 @@ public class ParseContext implements Serializable {
      * If a factory is not explicitly specified, then a default factory
      * instance is created and returned. The default factory instance is
      * configured to be namespace-aware and to apply reasonable security
-     * using the {@link #IGNORING_STAX_ENTITY_RESOLVER}.
+     * using the {@link XMLReaderUtils#IGNORING_STAX_ENTITY_RESOLVER}.
      *
      * @since Apache Tika 1.13
      * @return StAX input factory
@@ -261,46 +215,7 @@ public class ParseContext implements Serializable {
         if (factory != null) {
             return factory;
         }
-        factory = XMLInputFactory.newFactory();
-
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
-
-        factory.setXMLResolver(IGNORING_STAX_ENTITY_RESOLVER);
-        return factory;
-    }
-
-    private static void tryToSetSAXFeatureOnDOMFactory(DocumentBuilderFactory dbf, String feature, boolean value) {
-        try {
-            dbf.setFeature(feature, value);
-        } catch (Exception|AbstractMethodError e) {
-        }
-    }
-
-    private static void tryToSetXercesManager(DocumentBuilderFactory dbf) {
-        // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[] {
-                "com.sun.org.apache.xerces.internal.util.SecurityManager",
-                "org.apache.xerces.util.SecurityManager"
-        }) {
-            try {
-                Object mgr = Class.forName(securityManagerClassName).newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-                setLimit.invoke(mgr, 4096);
-                dbf.setAttribute("http://apache.org/xml/properties/security-manager", mgr);
-                // Stop once one can be setup without error
-                return;
-            } catch (Throwable t) {
-            }
-        }
-    }
-
-    private void tryToSetStaxProperty(XMLInputFactory factory, String key, boolean value) {
-        try {
-            factory.setProperty(key, value);
-        } catch (IllegalArgumentException e) {
-            //swallow
-        }
+        return XMLReaderUtils.getXMLInputFactory();
     }
 
 }

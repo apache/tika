@@ -45,6 +45,7 @@ import org.apache.tika.eval.ExtractProfiler;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -104,7 +105,7 @@ public class ResultsReporter {
 
         ResultsReporter r = new ResultsReporter();
 
-        DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
+        DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
         Document doc;
         try (InputStream is = Files.newInputStream(p)) {
             doc = docBuilder.parse(is);

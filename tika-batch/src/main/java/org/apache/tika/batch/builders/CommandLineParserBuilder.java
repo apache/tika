@@ -27,6 +27,7 @@ import org.apache.commons.cli.Options;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -43,7 +44,7 @@ public class CommandLineParserBuilder {
     public Options build(InputStream is) throws IOException {
         Document doc = null;
         try {
-            DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
+            DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
             doc = docBuilder.parse(is);
         } catch (TikaException|SAXException e) {
             throw new IOExceptionWithCause(e);

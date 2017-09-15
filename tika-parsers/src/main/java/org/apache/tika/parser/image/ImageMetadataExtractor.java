@@ -59,6 +59,7 @@ import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -183,7 +184,7 @@ public class ImageMetadataExtractor {
         try (InputStream decoded =
                      new ByteArrayInputStream(xmpData)
         ) {
-            Document dom = new ParseContext().getDocumentBuilder().parse(decoded);
+            Document dom = XMLReaderUtils.getDocumentBuilder().parse(decoded);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);
             }

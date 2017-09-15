@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import org.apache.log4j.Level;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class XMLLogReader {
 
     public void read(InputStream xmlLogFileIs, XMLLogMsgHandler handler) throws XMLStreamException {
         InputStream is = new LogXMLWrappingInputStream(xmlLogFileIs);
-        XMLInputFactory factory = new ParseContext().getXMLInputFactory();
+        XMLInputFactory factory = XMLReaderUtils.getXMLInputFactory();
         XMLStreamReader reader = factory.createXMLStreamReader(is);
 
         Level level = null;
