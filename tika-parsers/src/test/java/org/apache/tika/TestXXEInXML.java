@@ -39,6 +39,11 @@ import java.util.zip.ZipOutputStream;
 
 import static org.junit.Assert.fail;
 
+/**
+ * This tests for XXE in basically xml type files, straight xml and ooxml.
+ * It does not test for XXE prevention in files that may contain xml
+ * files, such as PDFs and other XMP-containing files.
+ */
 public class TestXXEInXML extends TikaTest {
     //TODO: figure out how to test XFA and xmp in PDFs
 
