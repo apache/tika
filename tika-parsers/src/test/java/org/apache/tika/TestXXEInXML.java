@@ -114,22 +114,16 @@ public class TestXXEInXML extends TikaTest {
     }
 
     private void _testOOXML(String fileName) throws Exception {
+
         Path originalOOXML = getResourceAsFile("/test-documents/"+fileName).toPath();
-        Path injected = injectOOXML(originalOOXML);
+        Path injected = injectOOXML(originalOOXML, false);
+
         Parser p = new AutoDetectParser();
         ContentHandler xhtml = new ToHTMLContentHandler();
         ParseContext parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
         //if the SafeContentHandler is turned off, this will throw an FNFE
         Metadata metadata = new Metadata();
         try {
-            p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
-
-            metadata = new Metadata();
-            officeParserConfig.setUseSAXDocxExtractor(true);
-            officeParserConfig.setUseSAXPptxExtractor(true);
-
             p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
 
         } catch (FileNotFoundException e) {
@@ -139,6 +133,23 @@ public class TestXXEInXML extends TikaTest {
             Files.delete(injected);
         }
 
+        try {
+            metadata = new Metadata();
+            xhtml = new ToHTMLContentHandler();
+
+            OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+            parseContext.set(OfficeParserConfig.class, officeParserConfig);
+            officeParserConfig.setUseSAXDocxExtractor(true);
+            officeParserConfig.setUseSAXPptxExtractor(true);
+            injected = injectOOXML(originalOOXML, true);
+
+            p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            fail("problem with SAX-based: "+fileName + ": "+ e.getMessage());
+        } finally {
+            Files.delete(injected);
+        }
     }
 
     //use this to confirm that this works
@@ -146,7 +157,7 @@ public class TestXXEInXML extends TikaTest {
     //handlePart
     public void testDocxWithIncorrectSAXConfiguration() throws Exception {
         Path originalDocx = getResourceAsFile("/test-documents/testWORD_macros.docm").toPath();
-        Path injected = injectOOXML(originalDocx);
+        Path injected = injectOOXML(originalDocx, true);
         Parser p = new AutoDetectParser();
         ContentHandler xhtml = new ToHTMLContentHandler();
         ParseContext parseContext = new ParseContext();
@@ -162,7 +173,7 @@ public class TestXXEInXML extends TikaTest {
         }
     }
 
-    private Path injectOOXML(Path original) throws IOException {
+    private Path injectOOXML(Path original, boolean includeSlides) throws IOException {
         ZipFile input = new ZipFile(original.toFile());
         File output = Files.createTempFile("tika-xxe-", ".zip").toFile();
         ZipOutputStream outZip = new ZipOutputStream(new FileOutputStream(output));
@@ -175,7 +186,7 @@ public class TestXXEInXML extends TikaTest {
             if (entry.getName().endsWith(".xml") &&
                     //don't inject the slides because you'll get a bean exception
                     //Unexpected node
-                    ! entry.getName().contains("slides/slide")) {
+                    (! includeSlides && ! entry.getName().contains("slides/slide"))) {
                 bytes = injectXML(bytes);
             }
             ZipEntry outEntry = new ZipEntry(entry.getName());
