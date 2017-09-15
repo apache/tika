@@ -40,7 +40,7 @@ import java.util.zip.ZipOutputStream;
 import static org.junit.Assert.fail;
 
 /**
- * This tests for XXE in basically xml type files, straight xml and ooxml.
+ * This tests for XXE in basically xml type files, straight xml and zipped xmls, e.g. ebook and ooxml.
  * It does not test for XXE prevention in files that may contain xml
  * files, such as PDFs and other XMP-containing files.
  */
@@ -93,7 +93,7 @@ public class TestXXEInXML extends TikaTest {
     }
 
     @Test
-    public void testOOXML() throws Exception {
+    public void testXMLInZips() throws Exception {
         for (String fileName : new String[]{
                 "testWORD.docx",
                 "testWORD_1img.docx",
@@ -107,7 +107,8 @@ public class TestXXEInXML extends TikaTest {
                 "testPPT_2imgs.pptx",
                 "testPPT_comment.pptx",
                 "testPPT_EmbeddedPDF.pptx",
-                "testPPT_macros.pptm"
+                "testPPT_macros.pptm",
+                "testEPUB.epub"
         }) {
             _testOOXML(fileName);
         }
@@ -116,7 +117,7 @@ public class TestXXEInXML extends TikaTest {
     private void _testOOXML(String fileName) throws Exception {
 
         Path originalOOXML = getResourceAsFile("/test-documents/"+fileName).toPath();
-        Path injected = injectOOXML(originalOOXML, false);
+        Path injected = injectZippedXMLs(originalOOXML, false);
 
         Parser p = new AutoDetectParser();
         ContentHandler xhtml = new ToHTMLContentHandler();
@@ -141,7 +142,7 @@ public class TestXXEInXML extends TikaTest {
             parseContext.set(OfficeParserConfig.class, officeParserConfig);
             officeParserConfig.setUseSAXDocxExtractor(true);
             officeParserConfig.setUseSAXPptxExtractor(true);
-            injected = injectOOXML(originalOOXML, true);
+            injected = injectZippedXMLs(originalOOXML, true);
 
             p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
         } catch (FileNotFoundException e) {
@@ -157,7 +158,7 @@ public class TestXXEInXML extends TikaTest {
     //handlePart
     public void testDocxWithIncorrectSAXConfiguration() throws Exception {
         Path originalDocx = getResourceAsFile("/test-documents/testWORD_macros.docm").toPath();
-        Path injected = injectOOXML(originalDocx, true);
+        Path injected = injectZippedXMLs(originalDocx, true);
         Parser p = new AutoDetectParser();
         ContentHandler xhtml = new ToHTMLContentHandler();
         ParseContext parseContext = new ParseContext();
@@ -173,7 +174,7 @@ public class TestXXEInXML extends TikaTest {
         }
     }
 
-    private Path injectOOXML(Path original, boolean includeSlides) throws IOException {
+    private Path injectZippedXMLs(Path original, boolean includeSlides) throws IOException {
         ZipFile input = new ZipFile(original.toFile());
         File output = Files.createTempFile("tika-xxe-", ".zip").toFile();
         ZipOutputStream outZip = new ZipOutputStream(new FileOutputStream(output));
