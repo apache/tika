@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
@@ -56,7 +57,7 @@ import org.xml.sax.SAXException;
  * Tensor Flow image recogniser which has high performance.
  * This implementation uses Tensorflow via REST API.
  * <p>
- * NOTE : //TODO: link to wiki page here
+ * NOTE : https://wiki.apache.org/tika/TikaAndVision
  *
  * @since Apache Tika 1.14
  */
@@ -76,9 +77,11 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     private static final String LABEL_LANG = "en";
 
     @Field
-    private URI apiUri = URI.create("http://localhost:8764/inception/v4/classify?topk=10");
-    @Field
-    private URI healthUri = URI.create("http://localhost:8764/inception/v4/ping");
+    private URI apiBaseUri;
+
+    private URI apiUri;
+
+    private URI healthUri;
 
     private boolean available;
     
@@ -99,9 +102,13 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
+            healthUri = URI.create(apiBaseUri + "/ping");
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/classify?topk=%1$d", 10));
+
             DefaultHttpClient client = new DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet(healthUri));
             available = response.getStatusLine().getStatusCode() == 200;
+
             LOG.info("Available = {}, API Status = {}", available, response.getStatusLine());
         } catch (Exception e) {
             available = false;

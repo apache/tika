@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * Tensor Flow video recogniser which has high performance.
  * This implementation uses Tensorflow via REST API.
  * <p>
- * NOTE : //TODO: link to wiki page here
+ * NOTE : https://wiki.apache.org/tika/TikaAndVisionVideo
  *
  * @since Apache Tika 1.15
  */
