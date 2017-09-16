@@ -3835,6 +3835,54 @@
     <glob pattern="*.wb3"/>
   </mime-type>
 
+  <mime-type type="application/x-quattro-pro;version=1-dos">
+  <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for DOS, version 1-4</_comment>
+    <magic priority="50">
+      <match value="0x000002002051" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wq1"/>
+    <glob pattern="*.wkq"/>
+  </mime-type>
+
+  <mime-type type="application/x-quattro-pro;version=5-dos">
+  <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for DOS, version 5</_comment>
+    <magic priority="50">
+      <match value="0x000002002151" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wq2"/>
+    <glob pattern="*.wkq"/>
+  </mime-type>
+
+  <mime-type type="application/x-quattro-pro;version=1-win">
+  <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for Windows, version 1-5</_comment>
+    <magic priority="50">
+      <match value="0x000002000110" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wb1"/>
+  </mime-type>
+
+  <mime-type type="application/x-quattro-pro;version=6-win">
+  <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for Windows, version 6</_comment>
+    <magic priority="50">
+      <match value="0x000002000210" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wb2"/>
+  </mime-type>
+  
+  <!-- Quattro Pro for Windows 7-8 (qp2) and and 9 (wb3) files are
+       currently detected by POIFSContainerDetector
+       TODO: add version strings (version=7-win / version=9-win)
+        to make reporting consistent across all versions
+  -->
+
   <mime-type type="application/xquery">
     <_comment>XQuery source code</_comment>
     <glob pattern="*.xq"/>
