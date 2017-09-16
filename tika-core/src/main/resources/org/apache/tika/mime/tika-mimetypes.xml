@@ -3829,6 +3829,9 @@
     </_comment>
     <!-- qp2 and wb3 are currently detected by POIFSContainerDetector
         TODO: add detection for wb2 and wb1 -->
+    <glob pattern="*.wq1"/>
+    <glob pattern="*.wq2"/>
+    <glob pattern="*.wkq"/>
     <glob pattern="*.qpw"/>
     <glob pattern="*.wb1"/>
     <glob pattern="*.wb2"/>
