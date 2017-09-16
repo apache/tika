@@ -1508,9 +1508,9 @@
     <_comment>Lotus 1-2-3, version 1</_comment>
     <magic priority="50">
       <match value="0x000002000404" type="string" offset="0">
+      <!-- <glob pattern="*.wks"/> - conflicts with application/vnd.ms-works -->
       </match>
     </magic>
-    <glob pattern="*.wks"/>
   </mime-type>
 
   <mime-type type="application/vnd.lotus-1-2-3;version=2">
