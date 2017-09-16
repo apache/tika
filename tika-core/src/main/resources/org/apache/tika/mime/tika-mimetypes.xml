@@ -2776,13 +2776,6 @@
     <glob pattern="*.wspolicy"/>
   </mime-type>
 
-  <mime-type type="application/x-123">
-    <magic priority="50">
-      <match value="0x00001a00" type="big32" offset="0" />
-      <match value="0x00000200" type="big32" offset="0" />
-    </magic>
-  </mime-type>
-
   <mime-type type="application/x-abiword">
     <glob pattern="*.abw"/>
   </mime-type>
