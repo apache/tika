@@ -158,17 +158,17 @@ def index():
             <li> <code>/inception/v3/ping </code> - <br/>
                 <b> Description : </b> checks availability of the service. returns "pong" with status 200 when it is available
             </li>
-            <li> <code>/inception/v3/captions</code> - <br/>
+            <li> <code>/inception/v3/caption/image</code> - <br/>
                 <table>
                 <tr><th align="left"> Description </th><td> This is a service that can caption images</td></tr>
                 <tr><th align="left"> How to supply Image Content </th></tr>
                 <tr><th align="left"> With HTTP GET : </th> <td>
                     Include a query parameter <code>url </code> which is an http url of JPEG image <br/>
-                    Example: <code> curl "localhost:8764/inception/v3/captions?url=http://xyz.com/example.jpg"</code>
+                    Example: <code> curl "localhost:8764/inception/v3/caption/image?url=http://xyz.com/example.jpg"</code>
                 </td></tr>
                 <tr><th align="left"> With HTTP POST :</th><td>
                     POST JPEG image content as binary data in request body. <br/>
-                    Example: <code> curl -X POST "localhost:8764/inception/v3/captions" --data-binary @example.jpg </code>
+                    Example: <code> curl -X POST "localhost:8764/inception/v3/caption/image" --data-binary @example.jpg </code>
                 </td></tr>
                 </table>
             </li>
@@ -184,8 +184,8 @@ def ping_pong():
     return "pong"
 
 
-@app.route("/inception/v3/captions", methods=["GET", "POST"])
-def gen_captions():
+@app.route("/inception/v3/caption/image", methods=["GET", "POST"])
+def caption_image():
     """API to caption images"""
     image_format = "not jpeg"
 
