@@ -3877,7 +3877,7 @@
     <glob pattern="*.wb3"/>
   </mime-type>
 
-  <mime-type type="application/x-quattro-pro;version=1-dos">
+  <mime-type type="application/x-quattro-pro;version=1-4">
   <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for DOS, version 1-4</_comment>
     <magic priority="50">
@@ -3888,7 +3888,7 @@
     <glob pattern="*.wkq"/>
   </mime-type>
 
-  <mime-type type="application/x-quattro-pro;version=5-dos">
+  <mime-type type="application/x-quattro-pro;version=5">
   <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for DOS, version 5</_comment>
     <magic priority="50">
@@ -3898,10 +3898,14 @@
     <glob pattern="*.wq2"/>
     <glob pattern="*.wkq"/>
   </mime-type>
-
-  <mime-type type="application/x-quattro-pro;version=1-win">
+  
+  <!-- First Quattro Pro for Windows had major version number 1, which
+  was followed by 5. This is confusing, perhaps adding "win" qualifier to version
+  field could clear this up (but it's quite ugly as well)   -->
+  
+  <mime-type type="application/x-quattro-pro;version=1/5">
   <sub-class-of type="application/x-quattro-pro"/>
-    <_comment>Quattro Pro for Windows, version 1-5</_comment>
+    <_comment>Quattro Pro for Windows, version 1/5</_comment>
     <magic priority="50">
       <match value="0x000002000110" type="string" offset="0">
       </match>
@@ -3909,7 +3913,7 @@
     <glob pattern="*.wb1"/>
   </mime-type>
 
-  <mime-type type="application/x-quattro-pro;version=6-win">
+  <mime-type type="application/x-quattro-pro;version=6">
   <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for Windows, version 6</_comment>
     <magic priority="50">
@@ -3919,10 +3923,8 @@
     <glob pattern="*.wb2"/>
   </mime-type>
   
-  <!-- Quattro Pro for Windows 7-8 (qp2) and and 9 (wb3) files are
+  <!-- Quattro Pro for Windows 7-8 (wb3) and and 9 (qpw) files are
        currently detected by POIFSContainerDetector
-       TODO: add version strings (version=7-win / version=9-win)
-        to make reporting consistent across all versions
   -->
 
   <mime-type type="application/xquery">
