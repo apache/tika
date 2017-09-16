@@ -83,12 +83,6 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
                 }
             };
 
-    @Field
-    private double minConfidence = 0.05;
-
-    @Field
-    private int topN = 2;
-
     private ObjectRecogniser recogniser;
 
     @Field(name = "class")
@@ -102,7 +96,6 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         recogniser.initialize(params);
         LOG.info("Recogniser = {}", recogniser.getClass().getName());
         LOG.info("Recogniser Available = {}", recogniser.isAvailable());
-        LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
     }
 
     @Override
@@ -140,29 +133,17 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
             for (RecognisedObject object : objects) {
                 if (object instanceof CaptionObject) {
                     if (xhtmlStartVal == null) xhtmlStartVal = "captions";
-                    LOG.debug("Add {}", object);
-                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-                            object.getLabel(), object.getConfidence());
-                    metadata.add(MD_KEY_IMG_CAP, mdValue);
-                    acceptedObjects.add(object);
+                    String mdVal = String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY_IMG_CAP, mdVal);
                     xhtmlIds.add(String.valueOf(count++));
                 } else {
                     if (xhtmlStartVal == null) xhtmlStartVal = "objects";
-                    if (object.getConfidence() >= minConfidence) {
-                        count++;
-                        LOG.info("Add {}", object);
-                        String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-                                object.getLabel(), object.getConfidence());
-                        metadata.add(MD_KEY_OBJ_REC, mdValue);
-                        acceptedObjects.add(object);
-                        xhtmlIds.add(object.getId());
-                        if (count >= topN) {
-                            break;
-                        }
-                    } else {
-                        LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
-                    }
+                    String mdVal = String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY_OBJ_REC, mdVal);
+                    xhtmlIds.add(object.getId());
                 }
+                LOG.info("Add {}", object);
+                acceptedObjects.add(object);
             }
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();

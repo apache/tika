@@ -107,7 +107,7 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/captions?beam_size=%1$d&max_caption_length=%2$d",
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/caption/image?beam_size=%1$d&max_caption_length=%2$d",
                     captions, maxCaptionLength));
 
             DefaultHttpClient client = new DefaultHttpClient();

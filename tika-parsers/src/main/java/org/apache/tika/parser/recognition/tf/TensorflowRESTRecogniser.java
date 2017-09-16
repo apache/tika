@@ -79,16 +79,22 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     @Field
     private URI apiBaseUri;
 
+    @Field
+    private int topN;
+
+    @Field
+    private double minConfidence;
+
     private URI apiUri;
 
     private URI healthUri;
 
     private boolean available;
-    
-    protected URI getApiUri(Metadata metadata){
-    	return apiUri;
+
+    protected URI getApiUri(Metadata metadata) {
+        return apiUri;
     }
-    
+
     @Override
     public Set<MediaType> getSupportedMimes() {
         return SUPPORTED_MIMES;
@@ -103,13 +109,15 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/classify?topk=%1$d", 10));
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/classify/image?topn=%1$d&min_confidence=%2$f",
+                    topN, minConfidence));
 
             DefaultHttpClient client = new DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet(healthUri));
             available = response.getStatusLine().getStatusCode() == 200;
 
             LOG.info("Available = {}, API Status = {}", available, response.getStatusLine());
+            LOG.info("topN = {}, minConfidence = {}", topN, minConfidence);
         } catch (Exception e) {
             available = false;
             throw new TikaConfigException(e.getMessage(), e);
@@ -147,9 +155,9 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
                     JSONObject jReply = new JSONObject(replyMessage);
                     JSONArray jClasses = jReply.getJSONArray("classnames");
                     JSONArray jConfidence = jReply.getJSONArray("confidence");
-            if (jClasses.length() != jConfidence.length()) {
-                LOG.warn("Classes of size {} is not equal to confidence of size {}", jClasses.length(), jConfidence.length());
-            }
+                    if (jClasses.length() != jConfidence.length()) {
+                        LOG.warn("Classes of size {} is not equal to confidence of size {}", jClasses.length(), jConfidence.length());
+                    }
                     assert jClasses.length() == jConfidence.length();
                     for (int i = 0; i < jClasses.length(); i++) {
                         RecognisedObject recObj = new RecognisedObject(jClasses.getString(i),
