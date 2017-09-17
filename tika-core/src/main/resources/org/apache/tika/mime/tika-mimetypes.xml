@@ -1547,6 +1547,17 @@
     <glob pattern="*.wk4"/>
   </mime-type>
 
+  <mime-type type="application/vnd.lotus-1-2-3;version=97+9.x">
+  <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <alias type="application/x-123"/>
+    <_comment>Lotus 1-2-3, version 97/9.x</_comment>
+    <magic priority="50">
+      <match value="0x00001A0003100400" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.123"/>
+  </mime-type>
+
   <mime-type type="application/vnd.lotus-approach">
     <glob pattern="*.apr"/>
   </mime-type>
@@ -3903,9 +3914,9 @@
   was followed by 5. This is confusing, perhaps adding "win" qualifier to version
   field could clear this up (but it's quite ugly as well)   -->
   
-  <mime-type type="application/x-quattro-pro;version=1/5">
+  <mime-type type="application/x-quattro-pro;version=1+5">
   <sub-class-of type="application/x-quattro-pro"/>
-    <_comment>Quattro Pro for Windows, version 1/5</_comment>
+    <_comment>Quattro Pro for Windows, version 1, 5</_comment>
     <magic priority="50">
       <match value="0x000002000110" type="string" offset="0">
       </match>
