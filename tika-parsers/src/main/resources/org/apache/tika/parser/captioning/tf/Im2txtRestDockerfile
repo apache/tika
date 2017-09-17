@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM inception-rest-tika
+FROM thejanw/inception-rest-tika
 MAINTAINER Apache Tika Team
 
 # Download the pretrained im2txt checkpoint
