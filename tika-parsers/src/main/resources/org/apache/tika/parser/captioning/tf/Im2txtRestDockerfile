@@ -18,9 +18,6 @@
 FROM inception-rest-tika
 MAINTAINER Apache Tika Team
 
-# Install python pillow. TODO: Remove this with the fix for TIKA 2398
-RUN pip install pillow
-
 # Download the pretrained im2txt checkpoint
 WORKDIR /usr/share/apache-tika/models/dl/image/caption/
 
@@ -46,7 +43,7 @@ RUN \
     wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py \
         -O caption_generator.py && \
 
-    wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
+    wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
         -O im2txtapi.py && \
 
     wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py \

@@ -15,33 +15,20 @@
 # limitations under the License.
 #
 
-FROM ubuntu:16.04
-MAINTAINER Thamme Gowda <thammegowda@apache.org> and Kranthi Kiran GV <kkranthi@student.nitw.ac.in> and \
-           Madhav Sharan <msharan@usc.edu> and Chris Mattmann <mattmann@apache.org>
+FROM inception-rest-tika
+MAINTAINER Apache Tika Team
 
 # Install missing part of ubuntu core + python + building dependencies
 RUN apt-get update && \
-      apt-get install -y wget git unzip curl \
-      libtcmalloc-minimal4 software-properties-common apt-utils \
+      apt-get install -y software-properties-common apt-utils \
       build-essential cmake pkg-config \
       libjpeg8-dev libtiff5-dev libjasper-dev libpng12-dev \
       libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
-      libxvidcore-dev libx264-dev \
-      libgtk2.0-dev \
-      libatlas-base-dev gfortran \
-      python2.7-dev \
-      python-pip
-
-# Install ffmpeg
-RUN apt-get install -y ffmpeg
-
-RUN \
-      pip install --upgrade pip && \
-      pip install numpy
+      libxvidcore-dev libx264-dev libgtk2.0-dev libatlas-base-dev gfortran \
+      ffmpeg
 
 # Download OpenCV + OpenCV_Contrib
 WORKDIR /usr/local/src
-
 RUN \
       wget -O opencv.zip https://github.com/Itseez/opencv/archive/3.2.0.zip && \
       unzip opencv.zip && \
@@ -61,31 +48,22 @@ RUN make -j4
 RUN make install
 
 WORKDIR /
-
-# Install tensorflow and other dependencies
 RUN \
-  pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl --ignore-installed  && \
-  pip install flask requests pillow
-
-# Get the TF-slim dependencies
-# Downloading from a specific commit for future compatibility
-RUN wget https://github.com/tensorflow/models/archive/c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip
-
-RUN unzip c15fada28113eca32dc98d6e3bec4755d0d5b4c2.zip
-
-RUN \
-  wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
-  wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py -O /usr/bin/video_util.py && \
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
+  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py -O /usr/bin/video_util.py && \
   chmod +x /usr/bin/inceptionapi.py && \
   chmod +x /usr/bin/video_util.py
 
-# clean up cache + delete OpenCV source files, so we can publish smaller image to hub
+# Clean up cache + delete OpenCV source files, so we can publish smaller image to hub
 RUN apt-get clean
 RUN rm -rf /usr/local/src
+
+# Set environment variables
 ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
 ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
-
 ENV PYTHONPATH="$PYTHONPATH:$PATH"
+
+# To cache the trained model
 RUN python -c "import inceptionapi"
 
 # expose API port, this is the default port
