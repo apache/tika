@@ -74,22 +74,22 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     /**
      * Maximum buffer size for image
      */
-    private static final String LABEL_LANG = "en";
+    protected static final String LABEL_LANG = "en";
 
     @Field
-    private URI apiBaseUri;
+    protected URI apiBaseUri = URI.create("http://localhost:8764/inception/v4");
 
     @Field
-    private int topN;
+    protected int topN = 2;
 
     @Field
-    private double minConfidence;
+    protected double minConfidence = 0.015;
 
-    private URI apiUri;
+    protected URI apiUri;
 
-    private URI healthUri;
+    protected URI healthUri;
 
-    private boolean available;
+    protected boolean available;
 
     protected URI getApiUri(Metadata metadata) {
         return apiUri;

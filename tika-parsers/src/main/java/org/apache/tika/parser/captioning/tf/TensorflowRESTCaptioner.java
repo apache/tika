@@ -75,13 +75,13 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     private static final String LABEL_LANG = "en";
 
     @Field
-    private URI apiBaseUri;
+    private URI apiBaseUri = URI.create("http://localhost:8764/inception/v3");
 
     @Field
-    private int captions;
+    private int captions = 5;
 
     @Field
-    private int maxCaptionLength;
+    private int maxCaptionLength = 15;
 
     private URI apiUri;
 
