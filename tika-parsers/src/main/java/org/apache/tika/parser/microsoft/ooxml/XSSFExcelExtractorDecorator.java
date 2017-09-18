@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -33,6 +34,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -383,7 +385,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         //add main document so that macros can be extracted
         //by AbstractOOXMLExtractor
         for (PackagePart part : extractor.getPackage().
-                getPartsByRelationshipType(RELATION_OFFICE_DOCUMENT)) {
+                getPartsByRelationshipType(PackageRelationshipTypes.CORE_DOCUMENT)) {
             parts.add(part);
         }
 

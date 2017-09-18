@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Upgrade to POI 3.17 (TIKA-2429).
+
   * Enabling extraction of standard references from text (TIKA-2449).
 
   * Load external custom mimetypes XML from system property 

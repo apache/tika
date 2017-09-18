@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
@@ -132,7 +133,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         );
         //handle chart data
         handleGeneralTextContainingPart(
-                AbstractOOXMLExtractor.RELATION_CHART,
+                XSSFRelation.CHART.getRelation(),
                 "chart",
                 document.getPackagePart(),
                 metadata,
@@ -394,7 +395,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             tfmtg.setItalic(run.isItalic());
         }
 
-        xhtml.characters(run.toString());
+        if (config.getConcatenatePhoneticRuns()) {
+            xhtml.characters(run.toString());
+        } else {
+            xhtml.characters(run.text());
+        }
 
         // If we have any pictures, output them
         for (XWPFPicture picture : run.getEmbeddedPictures()) {

@@ -1738,7 +1738,6 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("to be fixed in > POI 3.17")
     public void testDOCXPhoneticStrings() throws Exception {
 
         assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",

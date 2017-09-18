@@ -71,9 +71,9 @@ public class WMFParser extends AbstractParser {
                 //This fix should be done within POI
                 if (record.getRecordType().equals(HwmfRecordType.createFontIndirect)) {
                     HwmfFont font = ((HwmfText.WmfCreateFontIndirect) record).getFont();
-                    charset = (font.getCharSet() == null || font.getCharSet().getCharset() == null)
+                    charset = (font.getCharset() == null || font.getCharset().getCharset() == null)
                             ? LocaleUtil.CHARSET_1252 :
-                            font.getCharSet().getCharset();
+                            font.getCharset().getCharset();
                 }
                 if (record.getRecordType().equals(HwmfRecordType.extTextOut)) {
                     HwmfText.WmfExtTextOut textOut = (HwmfText.WmfExtTextOut) record;
