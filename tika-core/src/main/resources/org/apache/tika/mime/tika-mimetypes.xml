@@ -1498,9 +1498,6 @@
   <mime-type type="application/vnd.llamagraphics.life-balance.exchange+xml">
     <glob pattern="*.lbe"/>
   </mime-type>
-  <mime-type type="application/vnd.lotus-1-2-3">
-    <glob pattern="*.123"/>
-  </mime-type>
   
   <mime-type type="application/vnd.lotus-1-2-3;version=1">
   <sub-class-of type="application/vnd.lotus-1-2-3"/>
