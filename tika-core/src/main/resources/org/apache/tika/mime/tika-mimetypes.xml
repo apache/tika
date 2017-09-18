@@ -1500,7 +1500,7 @@
   </mime-type>
   
   <mime-type type="application/vnd.lotus-1-2-3;version=1">
-  <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
     <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 1</_comment>
     <magic priority="50">
@@ -1511,7 +1511,7 @@
   </mime-type>
 
   <mime-type type="application/vnd.lotus-1-2-3;version=2">
-  <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
     <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 2</_comment>
     <magic priority="50">
@@ -1523,7 +1523,7 @@
   </mime-type>
    
   <mime-type type="application/vnd.lotus-1-2-3;version=3">
-  <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
     <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 3</_comment>
     <magic priority="50">
@@ -1534,7 +1534,7 @@
   </mime-type>
 
   <mime-type type="application/vnd.lotus-1-2-3;version=4">
-  <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
     <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 4-5</_comment>
     <magic priority="50">
@@ -1545,7 +1545,7 @@
   </mime-type>
 
   <mime-type type="application/vnd.lotus-1-2-3;version=97+9.x">
-  <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
     <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 97/9.x</_comment>
     <magic priority="50">
@@ -3886,7 +3886,7 @@
   </mime-type>
 
   <mime-type type="application/x-quattro-pro;version=1-4">
-  <sub-class-of type="application/x-quattro-pro"/>
+    <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for DOS, version 1-4</_comment>
     <magic priority="50">
       <match value="0x000002002051" type="string" offset="0">
@@ -3897,7 +3897,7 @@
   </mime-type>
 
   <mime-type type="application/x-quattro-pro;version=5">
-  <sub-class-of type="application/x-quattro-pro"/>
+    <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for DOS, version 5</_comment>
     <magic priority="50">
       <match value="0x000002002151" type="string" offset="0">
@@ -3912,7 +3912,7 @@
   field could clear this up (but it's quite ugly as well)   -->
   
   <mime-type type="application/x-quattro-pro;version=1+5">
-  <sub-class-of type="application/x-quattro-pro"/>
+    <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for Windows, version 1, 5</_comment>
     <magic priority="50">
       <match value="0x000002000110" type="string" offset="0">
@@ -3922,7 +3922,7 @@
   </mime-type>
 
   <mime-type type="application/x-quattro-pro;version=6">
-  <sub-class-of type="application/x-quattro-pro"/>
+    <sub-class-of type="application/x-quattro-pro"/>
     <_comment>Quattro Pro for Windows, version 6</_comment>
     <magic priority="50">
       <match value="0x000002000210" type="string" offset="0">
