@@ -1502,7 +1502,7 @@
   <mime-type type="application/vnd.lotus-1-2-3">
     <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3</_comment>
-    <glob pattern="*.wks"/>
+    <!-- <glob pattern="*.wks"/> - conflicts with application/vnd.ms-works -->
     <glob pattern="*.wk1"/>
     <glob pattern="*.wk2"/>
     <glob pattern="*.wk3"/>
