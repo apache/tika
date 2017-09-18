@@ -1499,9 +1499,19 @@
     <glob pattern="*.lbe"/>
   </mime-type>
   
+  <mime-type type="application/vnd.lotus-1-2-3">
+    <alias type="application/x-123"/>
+    <_comment>Lotus 1-2-3</_comment>
+    <glob pattern="*.wks"/>
+    <glob pattern="*.wk1"/>
+    <glob pattern="*.wk2"/>
+    <glob pattern="*.wk3"/>
+    <glob pattern="*.wk4"/>
+    <glob pattern="*.123"/>
+  </mime-type>
+  
   <mime-type type="application/vnd.lotus-1-2-3;version=1">
     <sub-class-of type="application/vnd.lotus-1-2-3"/>
-    <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 1</_comment>
     <magic priority="50">
       <match value="0x000002000404" type="string" offset="0">
@@ -1512,7 +1522,6 @@
 
   <mime-type type="application/vnd.lotus-1-2-3;version=2">
     <sub-class-of type="application/vnd.lotus-1-2-3"/>
-    <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 2</_comment>
     <magic priority="50">
       <match value="0x00000200060406000800" type="string" offset="0">
@@ -1524,7 +1533,6 @@
    
   <mime-type type="application/vnd.lotus-1-2-3;version=3">
     <sub-class-of type="application/vnd.lotus-1-2-3"/>
-    <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 3</_comment>
     <magic priority="50">
       <match value="0x00001A0000100400" type="string" offset="0">
@@ -1535,7 +1543,6 @@
 
   <mime-type type="application/vnd.lotus-1-2-3;version=4">
     <sub-class-of type="application/vnd.lotus-1-2-3"/>
-    <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 4-5</_comment>
     <magic priority="50">
       <match value="0x00001A0002100400" type="string" offset="0">
@@ -1546,7 +1553,6 @@
 
   <mime-type type="application/vnd.lotus-1-2-3;version=97+9.x">
     <sub-class-of type="application/vnd.lotus-1-2-3"/>
-    <alias type="application/x-123"/>
     <_comment>Lotus 1-2-3, version 97/9.x</_comment>
     <magic priority="50">
       <match value="0x00001A0003100400" type="string" offset="0">
