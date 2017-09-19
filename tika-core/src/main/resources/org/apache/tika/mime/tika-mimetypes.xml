@@ -2725,6 +2725,14 @@
 
   </mime-type>
   <!-- TODO: figure out how to identify earlier versions -->
+  <mime-type type="application/vnd.wordperfect;version=4.2">
+    <sub-class-of type="application/vnd.wordperfect"/>
+    <magic priority="50">
+      <match value="0xCB0A01" type="string" offset="0">
+        <match value="0xCB" type="string" offset="5"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/vnd.wordperfect;version=5.0">
     <sub-class-of type="application/vnd.wordperfect"/>
     <magic priority="50">
