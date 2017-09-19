@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM thejanw/inception-rest-tika
+FROM uscdatascience/inception-rest-tika
 MAINTAINER Apache Tika Team
 
 # Install missing part of ubuntu core + python + building dependencies
