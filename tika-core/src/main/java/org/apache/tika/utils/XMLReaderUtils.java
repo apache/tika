@@ -34,6 +34,11 @@ import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLResolver;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Method;
@@ -234,6 +239,26 @@ public class XMLReaderUtils {
         } catch (IllegalArgumentException e) {
             //swallow
         }
+    }
+
+    /**
+     * Returns a new transformer
+     * 
+     * The transformer instance is configured to to use
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     *
+     * @since Apache Tika 1.17
+     * @return Transformer
+     * @throws TikaException when the transformer can not be created
+     */
+    public static Transformer getTransformer() throws TikaException {
+        try {
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            return transformerFactory.newTransformer();
+        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            throw new TikaException("Transformer not available", e);
+        }        
     }
 
 }

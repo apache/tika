@@ -17,7 +17,6 @@
 package org.apache.tika.config;
 
 import javax.imageio.spi.ServiceRegistry;
-import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -685,12 +684,8 @@ public class TikaConfig {
                         for (int i = 0; i < childNodes.getLength(); i++) {
                             Node item = childNodes.item(i);
                             if (item.getNodeType() == Node.ELEMENT_NODE){
-                                try {
-                                    Param<?> param = Param.load(item);
-                                    params.put(param.getName(), param);
-                                } catch (JAXBException e) {
-                                    throw new RuntimeException(e);
-                                }
+                                Param<?> param = Param.load(item);
+                                params.put(param.getName(), param);
                             }
                         }
                     }

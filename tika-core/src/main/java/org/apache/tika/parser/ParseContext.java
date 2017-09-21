@@ -23,6 +23,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLResolver;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -216,6 +224,29 @@ public class ParseContext implements Serializable {
             return factory;
         }
         return XMLReaderUtils.getXMLInputFactory();
+    }
+  
+    
+    /**
+     * Returns the transformer specified in this parsing context.
+     * 
+     * If a transformer is not explicitly specified, then a default transformer
+     * instance is created and returned. The default transformer instance is
+     * configured to to use
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     *
+     * @since Apache Tika 1.17
+     * @return Transformer
+     * @throws TikaException when the transformer can not be created
+     */
+    public Transformer getTransformer() throws TikaException {
+        
+        Transformer transformer = get(Transformer.class);
+        if ( transformer != null ) {
+            return transformer;
+        }
+        
+        return XMLReaderUtils.getTransformer();
     }
 
 }
