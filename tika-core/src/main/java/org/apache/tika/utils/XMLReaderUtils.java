@@ -161,6 +161,9 @@ public class XMLReaderUtils {
         //borrowed from Apache POI
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setExpandEntityReferences(false);
+        factory.setNamespaceAware(true);
+        factory.setValidating(false);
+
         trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
         trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
         trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
