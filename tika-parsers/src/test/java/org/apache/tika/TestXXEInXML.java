@@ -1,5 +1,6 @@
 package org.apache.tika;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
@@ -171,6 +172,19 @@ public class TestXXEInXML extends TikaTest {
             p.parse(Files.newInputStream(injected), xhtml, new Metadata(), parseContext);
         } finally {
             //Files.delete(injected);
+        }
+    }
+
+    @Test
+    public void testDOMTikaConfig() throws Exception {
+        //tests the DOM reader in TikaConfig
+        //if the safeguards aren't in place, this throws a FNFE
+        try (InputStream is =
+                getResourceAsStream("/org/apache/tika/config/TIKA-1558-blacklist.xml") ) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(is, bos);
+            byte[] injected = injectXML(bos.toByteArray());
+            TikaConfig tikaConfig = new TikaConfig(new ByteArrayInputStream(injected));
         }
     }
 

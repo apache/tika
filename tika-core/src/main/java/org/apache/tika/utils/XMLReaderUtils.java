@@ -41,7 +41,8 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility functions for reading XML.  If you are doing SAX parsing, make sure
@@ -49,6 +50,7 @@ import java.lang.reflect.Method;
  * XML External Entity attacks.
  */
 public class XMLReaderUtils {
+    private static final Logger LOG = Logger.getLogger(XMLReaderUtils.class.getName());
 
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
@@ -157,13 +159,14 @@ public class XMLReaderUtils {
      */
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        documentBuilderFactory.setNamespaceAware(true);
-        documentBuilderFactory.setValidating(false);
-        tryToSetSAXFeatureOnDOMFactory(documentBuilderFactory,
-                XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        tryToSetXercesManager(documentBuilderFactory);
-        return documentBuilderFactory;
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setExpandEntityReferences(false);
+        trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
+        trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
+        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+        return factory;
     }
 
     /**
@@ -208,28 +211,13 @@ public class XMLReaderUtils {
         return factory;
     }
 
-    private static void tryToSetSAXFeatureOnDOMFactory(DocumentBuilderFactory dbf, String feature, boolean value) {
+    private static void trySetSAXFeature(DocumentBuilderFactory documentBuilderFactory, String feature, boolean enabled) {
         try {
-            dbf.setFeature(feature, value);
-        } catch (Exception | AbstractMethodError e) {
-        }
-    }
-
-    private static void tryToSetXercesManager(DocumentBuilderFactory dbf) {
-        // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                "com.sun.org.apache.xerces.internal.util.SecurityManager",
-                "org.apache.xerces.util.SecurityManager"
-        }) {
-            try {
-                Object mgr = Class.forName(securityManagerClassName).newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-                setLimit.invoke(mgr, 4096);
-                dbf.setAttribute("http://apache.org/xml/properties/security-manager", mgr);
-                // Stop once one can be setup without error
-                return;
-            } catch (Throwable t) {
-            }
+            documentBuilderFactory.setFeature(feature, enabled);
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "SAX Feature unsupported: "+feature, e);
+        } catch (AbstractMethodError ame) {
+            LOG.log(Level.WARNING, "Cannot set SAX feature because outdated XML parser in classpath: "+ feature, ame);
         }
     }
 
