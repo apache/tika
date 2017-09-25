@@ -123,7 +123,8 @@
             from contents c
             join profiles p on p.id=c.id
             join containers ct on ct.container_id=p.container_id
-            where cast(num_common_tokens as decimal)/cast(num_alphabetic_tokens as decimal) &lt; 0.50
+            where cast(num_alphabetic_tokens as decimal) > 0.0
+                and cast(num_common_tokens as decimal)/cast(num_alphabetic_tokens as decimal) &lt; 0.50
             order by common_div_alphabetic asc
         </sql>
     </report>
