@@ -36,6 +36,10 @@ public interface Message {
     
     String MESSAGE_BCC = "Message-Bcc";
 
+    String MULTIPART_SUBTYPE = "Multipart-Subtype";
+
+    String MULTIPART_BOUNDARY = "Multipart-Boundary";
+
     /**
      * Where possible, this records the value from the name field.
      * Even in MAPI messages, though, this can be an email address.
