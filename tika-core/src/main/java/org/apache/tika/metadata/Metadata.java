@@ -482,6 +482,10 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         return metadata.size();
     }
 
+    public int hashCode() {
+        return metadata.hashCode();
+    }
+
     public boolean equals(Object o) {
 
         if (o == null) {
