@@ -72,7 +72,7 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
                     MediaType.image("gif")
             })));
 
-    private static final String LABEL_LANG = "en";
+    private static final String LABEL_LANG = "eng";
 
     @Field
     private URI apiBaseUri = URI.create("http://localhost:8764/inception/v3");

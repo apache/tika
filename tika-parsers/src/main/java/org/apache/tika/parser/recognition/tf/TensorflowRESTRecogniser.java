@@ -62,6 +62,11 @@ import org.xml.sax.SAXException;
  * @since Apache Tika 1.14
  */
 public class TensorflowRESTRecogniser implements ObjectRecogniser {
+
+    /**
+     * Some variables are protected, because this class is extended by TensorflowRESTVideoRecognizer class
+     */
+
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTRecogniser.class);
 
     private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(
@@ -71,10 +76,7 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
                     MediaType.image("gif")
             })));
 
-    /**
-     * Maximum buffer size for image
-     */
-    protected static final String LABEL_LANG = "en";
+    protected static final String LABEL_LANG = "eng";
 
     @Field
     protected URI apiBaseUri = URI.create("http://localhost:8764/inception/v4");
