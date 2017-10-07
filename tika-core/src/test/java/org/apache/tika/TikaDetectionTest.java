@@ -727,7 +727,9 @@ public class TikaDetectionTest {
         // Differ from httpd - An official mimetype has subsequently been issued
         //  favicon.ico +friends should now be image/vnd.microsoft.icon
         //assertEquals("image/x-icon", tika.detect("x.ico"));
-        assertEquals("image/x-pcx", tika.detect("x.pcx"));
+        // Differ from httpd - An official mimetype has subsequently been issued
+        //  pcx PiCture eXchange files should now be image/vnd.zbrush.pcx
+        //assertEquals("image/x-pcx", tika.detect("x.pcx"));
         assertEquals("image/x-pict", tika.detect("x.pic"));
         assertEquals("image/x-pict", tika.detect("x.pct"));
         assertEquals("image/x-portable-anymap", tika.detect("x.pnm"));

@@ -5247,6 +5247,33 @@
     <glob pattern="*.wbmp"/>
   </mime-type>
 
+  <mime-type type="image/vnd.zbrush.dcx">
+    <acronym>DCX</acronym>
+    <_comment>ZSoft Multi-Page Paintbrush</_comment>
+    <alias type="image/x-dcx"/>
+    <magic priority="50">
+      <match value="0xB168DE3A" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.dcx"/>
+  </mime-type>
+
+  <mime-type type="image/vnd.zbrush.pcx">
+    <acronym>PCX</acronym>
+    <_comment>ZSoft Paintbrush PiCture eXchange</_comment>
+    <alias type="image/x-pcx"/>
+    <alias type="image/x-pc-paintbrush"/>
+    <magic priority="40">
+      <match value="0x0A" type="string" offset="0">
+        <match value="0x00" type="string" offset="1"/>
+        <match value="0x02" type="string" offset="1"/>
+        <match value="0x03" type="string" offset="1"/>
+        <match value="0x04" type="string" offset="1"/>
+        <match value="0x05" type="string" offset="1"/>
+      </match>
+    </magic>
+    <glob pattern="*.pcx"/>
+  </mime-type>
+
   <mime-type type="image/webp">
     <acronym>WEBP</acronym>
     <tika:link>http://en.wikipedia.org/wiki/WebP</tika:link>
@@ -5347,9 +5374,6 @@
     </magic>
   </mime-type>
 
-  <mime-type type="image/x-pcx">
-    <glob pattern="*.pcx"/>
-  </mime-type>
   <mime-type type="image/x-pict">
     <_comment>Apple Macintosh QuickDraw/PICT Format</_comment>
     <magic priority="50">

@@ -507,6 +507,19 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testPcxDetection() throws Exception {
+        // Single PCX file
+        assertType("image/vnd.zbrush.pcx", "testPCX.pcx");
+        assertTypeByData("image/vnd.zbrush.pcx", "testPCX.pcx");
+        assertTypeByName("image/vnd.zbrush.pcx", "x.pcx");
+
+        // Multi-Page PCX = DCX
+        assertType("image/vnd.zbrush.dcx", "testDCX.dcx");
+        assertTypeByData("image/vnd.zbrush.dcx", "testDCX.dcx");
+        assertTypeByName("image/vnd.zbrush.dcx", "x.dcx");
+    }
+
+    @Test
     public void testCgmDetection() throws Exception {
         // TODO: Need a test image file
         assertTypeByName("image/cgm", "x.cgm");
