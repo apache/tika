@@ -496,8 +496,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     }
 
     private int getMetadataEntryHashCode(Entry<String, String[]> e) {
-    	return Objects.hashCode(e.getKey()) 
-            ^ (e.getValue() == null ? 0 : Arrays.hashCode(e.getValue()));
+    	return Objects.hashCode(e.getKey()) ^ Arrays.hashCode(e.getValue());
 	}
 
 	public boolean equals(Object o) {
