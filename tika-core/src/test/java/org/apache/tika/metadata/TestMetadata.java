@@ -422,4 +422,50 @@ public class TestMetadata {
             return 1;
         }
     }
+    
+    @Test
+    public void testEquals() {
+        Metadata meta1 = new Metadata();
+        meta1.add("key", "value1");
+        meta1.add("key", "value2");
+        meta1.add("key2", "value12");
+        
+        Metadata meta2 = new Metadata();
+        meta2.add("key", "value1");
+        meta2.add("key", "value2");
+        meta2.add("key2", "value12");
+        
+        assertEquals(meta1, meta2);
+    }
+    
+    @Test
+    public void testNotEquals() {
+        Metadata meta1 = new Metadata();
+        meta1.add("key", "value1");
+        meta1.add("key", "value2");
+        meta1.add("key2", "value12");
+        
+        Metadata meta2 = new Metadata();
+        meta2.add("key", "value1");
+        meta2.add("key", "value2");
+        meta2.add("key2", "value22");
+        
+        assertFalse(meta1.equals(meta2));
+    }
+    
+    @Test
+    public void testEqualAndHashCode() {
+        Metadata meta1 = new Metadata();
+        meta1.add("key", "value1");
+        meta1.add("key", "value2");
+        meta1.add("key2", "value12");
+        
+        Metadata meta2 = new Metadata();
+        meta2.add("key", "value1");
+        meta2.add("key", "value2");
+        meta2.add("key2", "value12");
+        
+        assertEquals(meta1, meta2);
+        assertEquals(meta1.hashCode(), meta2.hashCode());
+    }
 }
