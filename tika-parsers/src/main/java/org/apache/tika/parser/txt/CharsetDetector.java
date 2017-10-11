@@ -8,6 +8,8 @@
  */
 package org.apache.tika.parser.txt;
 
+import org.apache.poi.util.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -190,8 +192,12 @@ public class CharsetDetector {
      * @stable ICU 3.4
      */
     public CharsetDetector setText(byte[] in) {
+        return setText(in, in.length);
+    }
+
+    private CharsetDetector setText(byte[] in, int length) {
         fRawInput = in;
-        fRawLength = in.length;
+        fRawLength = length;
 
         MungeInput();
         return this;
@@ -217,19 +223,23 @@ public class CharsetDetector {
         byte[] inputBytes = new byte[kBufSize];   // Always make a new buffer because the
         //   previous one may have come from the caller,
         //   in which case we can't touch it.
-        int length = 0;
-        int remainingLength = kBufSize;
-        while (remainingLength > 0) {
-            // read() may give data in smallish chunks, esp. for remote sources.  Hence, this loop.
-            int bytesRead = fInputStream.read(inputBytes, length, remainingLength);
-            if (bytesRead <= 0) {
-                break;
+        long bytesRead = -1;
+        try {
+            bytesRead = IOUtils.readFully(fInputStream, inputBytes);
+            if (bytesRead >= Integer.MAX_VALUE) {
+                throw new IOException("Can't have read > Integer.MAX_VALUE bytes");
             }
-            remainingLength -= bytesRead;
+        } finally {
+            fInputStream.reset();
         }
-        fInputStream.reset();
 
-        return setText(inputBytes);
+        if (bytesRead < 1) {
+            return setText(new byte[0]);
+        } else if ( kBufSize > bytesRead) {
+            return setText(inputBytes, (int)bytesRead);
+        } else {
+            return setText(inputBytes);
+        }
     }
 
     /**
