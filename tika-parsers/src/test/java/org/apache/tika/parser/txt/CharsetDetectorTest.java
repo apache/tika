@@ -19,9 +19,8 @@ package org.apache.tika.parser.txt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
+import java.nio.file.Files;
 
 import org.junit.Test;
 
@@ -69,5 +68,22 @@ public class CharsetDetectorTest {
         detector.setText(getClass().getResourceAsStream("/test-documents/testTXT_win-1252.txt"));
         CharsetMatch charset =  detector.detect();
         assertEquals("windows-1252", charset.getName());
+    }
+
+    @Test
+    public void testSetTextConsistency() throws IOException {
+        //TIKA-2475
+        File file = new File("src/test/resources/test-documents/multi-language.txt");
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
+        InputStream fileStream = new ByteArrayInputStream(fileBytes);
+
+        CharsetDetector fromBytesDetector = new CharsetDetector();
+        fromBytesDetector.setText(fileBytes);
+
+        CharsetDetector fromStreamDetector = new CharsetDetector();
+        fromStreamDetector.setText(fileStream);
+
+        assertEquals("ISO-8859-1", fromBytesDetector.detect().getName());
+        assertEquals("ISO-8859-1", fromStreamDetector.detect().getName());
     }
 }

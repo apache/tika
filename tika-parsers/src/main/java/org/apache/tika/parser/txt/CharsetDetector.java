@@ -193,6 +193,7 @@ public class CharsetDetector {
         fRawInput = in;
         fRawLength = in.length;
 
+        MungeInput();
         return this;
     }
 
@@ -213,24 +214,22 @@ public class CharsetDetector {
     public CharsetDetector setText(InputStream in) throws IOException {
         fInputStream = in;
         fInputStream.mark(kBufSize);
-        fRawInput = new byte[kBufSize];   // Always make a new buffer because the
+        byte[] inputBytes = new byte[kBufSize];   // Always make a new buffer because the
         //   previous one may have come from the caller,
         //   in which case we can't touch it.
-        fRawLength = 0;
+        int length = 0;
         int remainingLength = kBufSize;
         while (remainingLength > 0) {
             // read() may give data in smallish chunks, esp. for remote sources.  Hence, this loop.
-            int bytesRead = fInputStream.read(fRawInput, fRawLength, remainingLength);
+            int bytesRead = fInputStream.read(inputBytes, length, remainingLength);
             if (bytesRead <= 0) {
                 break;
             }
-            fRawLength += bytesRead;
             remainingLength -= bytesRead;
         }
         fInputStream.reset();
 
-        MungeInput();                     // Strip html markup, collect byte stats.
-        return this;
+        return setText(inputBytes);
     }
 
     /**
