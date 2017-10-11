@@ -425,7 +425,8 @@ public class RFC822ParserTest extends TikaTest {
         // No filenames available
         assertEquals(null, tracker.filenames.get(0));
         assertEquals(null, tracker.filenames.get(1));
-        assertEquals(null, tracker.filenames.get(2));
+        // Except for this using Content-Disposition filename field
+        assertEquals("logo.gif", tracker.filenames.get(2));
         // Types are available
         assertEquals(MediaType.TEXT_PLAIN, tracker.mediaTypes.get(0));
         assertEquals(MediaType.TEXT_HTML, tracker.mediaTypes.get(1));
@@ -560,6 +561,7 @@ public class RFC822ParserTest extends TikaTest {
         final Parser extParser = new AutoDetectParser();
         final List<MediaType> seenTypes = new ArrayList<MediaType>();
         final List<String> seenText = new ArrayList<String>();
+        final List<String> seenNames = new ArrayList<String>();
         EmbeddedDocumentExtractor ext = new EmbeddedDocumentExtractor() {
             @Override
             public boolean shouldParseEmbedded(Metadata metadata) {
@@ -570,6 +572,7 @@ public class RFC822ParserTest extends TikaTest {
             public void parseEmbedded(InputStream stream, ContentHandler handler,
                     Metadata metadata, boolean outputHtml) throws SAXException,
                     IOException {
+                seenNames.add( metadata.get(Metadata.RESOURCE_NAME_KEY) );
                 seenTypes.add( detector.detect(stream, metadata) );
                 
                 ContentHandler h = new BodyContentHandler();
@@ -596,6 +599,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(2, seenText.size());
         assertEquals("text/plain", seenTypes.get(0).toString());
         assertEquals("image/png", seenTypes.get(1).toString());
+        assertEquals("testPNG.png", seenNames.get(1));
         assertEquals("This email has a PNG attachment included in it\n\n", seenText.get(0));
     }
 }
