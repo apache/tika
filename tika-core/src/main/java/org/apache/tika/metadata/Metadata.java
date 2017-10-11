@@ -538,7 +538,10 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         for (int i = 0; i < names.length; i++) {
             String[] values = _getValues(names[i]);
             for (int j = 0; j < values.length; j++) {
-                buf.append(names[i]).append("=").append(values[j]).append(" ");
+            	if (buf.length() > 0) {
+            		buf.append(" ");
+            	}
+                buf.append(names[i]).append("=").append(values[j]);
             }
         }
         return buf.toString();

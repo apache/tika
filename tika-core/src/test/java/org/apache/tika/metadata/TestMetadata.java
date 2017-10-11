@@ -468,4 +468,20 @@ public class TestMetadata {
         assertEquals(meta1, meta2);
         assertEquals(meta1.hashCode(), meta2.hashCode());
     }
+    
+    @Test
+    public void testToStringWithManyEntries() {
+        Metadata m = new Metadata();
+        m.add("key", "value1");
+        m.add("key", "value2");
+        m.add("key2", "value12");
+        assertEquals("key2=value12 key=value1 key=value2", m.toString());
+    }
+    
+    @Test
+    public void testToStringWithSingleEntry() {
+        Metadata m = new Metadata();
+        m.add("key", "value1");
+        assertEquals("key=value1", m.toString());
+    }
 }
