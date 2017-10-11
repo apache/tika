@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * Narrow mime detection for ms-owner files and add detection
+    for .nls files (TIKA-2469).
+
   * Fix bug in CharsetDetector that led to different detected charsets
     depending on whether user setText with a byte[] or an InputStream
     via Sean Story (TIKA-2475).

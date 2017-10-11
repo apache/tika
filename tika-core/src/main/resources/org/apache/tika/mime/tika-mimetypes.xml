@@ -3608,8 +3608,19 @@
   <mime-type type="application/x-ms-owner">
     <_comment>Temporary files created by MSOffice applications</_comment>
     <_comment>PRONOM fmt-473</_comment>
+    <_comment>First byte and 53rd byte are the same -- the length of the name.</_comment>
+    <_comment>Based on TIKA-2469, we've added a heuristic/wild guess that the first 10 chars</_comment>
+    <_comment>after the length byte should be \x00 or a non-control character.</_comment>
     <magic priority="80">
-      <match value="(?s)^([\\x05-\\x0F]).{53}\\1\x00" type="regex" offset="0"/>
+      <match value="(?s)^([\\x05-\\x0F])[\\x00\\x20-\\x7E]{10}.{43}\\1\x00" type="regex" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-ms-nls">
+    <_comment>Microsoft National Language Support</_comment>
+    <_comment>Should take precedence over x-ms-owner</_comment>
+    <magic priority="70">
+      <match value="(?s)^\\x0D.{51}\\x0C\\x00\\x0D\\x00\\x0E" type="regex" offset="0"/>
+      <match value="(?s)^\\x44\\x43.\\x01" type="regex" offset="0"/>
     </magic>
   </mime-type>
   <mime-type type="application/x-ms-wmd">

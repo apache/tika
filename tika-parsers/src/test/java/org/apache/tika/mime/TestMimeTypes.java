@@ -1148,6 +1148,11 @@ public class TestMimeTypes {
         assertTypeByData("text/plain", "testSAS.sas");
     }
 
+    @Test
+    public void testNLS() throws Exception {
+        assertTypeByData("application/x-ms-nls", "testNLS1.nls");
+        assertTypeByData("application/x-ms-nls", "testNLS2.nls");
+    }
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);

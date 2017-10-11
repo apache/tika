@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -65,16 +66,25 @@ public class MSOwnerFileParser extends AbstractParser {
         byte[] asciiNameBytes = new byte[ASCII_CHUNK_LENGTH];
         IOUtils.readFully(stream, asciiNameBytes);
         int asciiNameLength = (int)asciiNameBytes[0];//don't need to convert to unsigned int because it can't be that long
+        //sanity check name length
+        if (asciiNameLength < 0) {
+            throw new TikaException("ascii name length must be >= 0");
+        } else if (asciiNameLength > ASCII_CHUNK_LENGTH) {
+            throw new TikaException("ascii name length must be < 55");
+        }
+
         String asciiName = new String(asciiNameBytes, 1, asciiNameLength, StandardCharsets.US_ASCII);
         metadata.set(TikaCoreProperties.MODIFIER, asciiName);
 
         int unicodeCharLength = stream.read();
-        if (unicodeCharLength > 0) {
+        if (asciiNameLength == unicodeCharLength) {
             stream.read();//zero after the char length
             byte[] unicodeBytes = new byte[unicodeCharLength * 2];
             IOUtils.readFully(stream, unicodeBytes);
             String unicodeName = new String(unicodeBytes, StandardCharsets.UTF_16LE);
             metadata.set(TikaCoreProperties.MODIFIER, unicodeName);
+        } else {
+            throw new TikaException("Ascii name length should be the same as the unicode length");
         }
         xhtml.endDocument();
     }
