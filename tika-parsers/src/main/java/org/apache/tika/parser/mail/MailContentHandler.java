@@ -27,6 +27,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -154,9 +156,21 @@ class MailContentHandler implements ContentHandler {
 
         if (body instanceof MaximalBodyDescriptor) {
             MaximalBodyDescriptor maximalBody = (MaximalBodyDescriptor) body;
-            String contentDispositionFileName = maximalBody.getContentDispositionFilename();
-            if (contentDispositionFileName != null) {
-                submd.set(Metadata.RESOURCE_NAME_KEY, contentDispositionFileName);
+            String contentDispositionType = maximalBody.getContentDispositionType();
+            if (contentDispositionType != null && !contentDispositionType.isEmpty()) {
+                StringBuilder contentDisposition = new StringBuilder( contentDispositionType );
+                Map<String, String> contentDispositionParameters = maximalBody.getContentDispositionParameters();
+                for ( Entry<String, String> param : contentDispositionParameters.entrySet() ) {
+                    contentDisposition.append("; ")
+                                      .append(param.getKey()).append("=\"").append(param.getValue()).append('"');
+                }
+
+                String contentDispositionFileName = maximalBody.getContentDispositionFilename();
+                if ( contentDispositionFileName != null ) {
+                    submd.set( Metadata.RESOURCE_NAME_KEY, contentDispositionFileName );
+                }
+
+                submd.set( Metadata.CONTENT_DISPOSITION, contentDisposition.toString() );
             }
         }
 
