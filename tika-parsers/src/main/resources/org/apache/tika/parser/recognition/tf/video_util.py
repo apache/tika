@@ -19,7 +19,7 @@ import cv2
 import ntpath
 import numpy as np
 
-print "cv2.__version__", cv2.__version__
+print("cv2.__version__", cv2.__version__)
 
 CV_FRAME_COUNT = None
 

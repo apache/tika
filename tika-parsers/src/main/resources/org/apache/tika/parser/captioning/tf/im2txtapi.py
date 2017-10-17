@@ -34,16 +34,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import json
+import logging
 import math
 import requests
-import xml.etree.ElementTree as ET
-import logging
 import sys
-from time import time
-from PIL import Image
+
+from flask import Flask, request, Response, jsonify
 from io import BytesIO
-import flask
+from PIL import Image
+from time import time
+
 import tensorflow as tf
+import xml.etree.ElementTree as ET
 
 import model_wrapper
 import vocabulary
@@ -94,7 +97,7 @@ tf.flags.DEFINE_integer('port', port, """Server PORT, default:8764""")
 tf.logging.set_verbosity(tf.logging.INFO)
 
 
-class Initializer(flask.Flask):
+class Initializer(Flask):
     """
         Class to initialize the REST API, this class loads the model from the given checkpoint path in model_info.xml
         and prepares a caption_generator object
@@ -122,9 +125,6 @@ def current_time():
 
     return int(1000 * time())
 
-
-from flask import request, Response, jsonify
-import json
 
 app = Initializer(__name__)
 
@@ -201,7 +201,7 @@ def caption_image():
         url = request.args.get("url")
         c_type, image_data = get_remote_file(url)
         if not image_data:
-            return flask.Response(status=400, response=jsonify(error="Could not HTTP GET %s" % url))
+            return Response(status=400, response=jsonify(error="Could not HTTP GET %s" % url))
         if 'image/jpeg' in c_type:
             image_format = "jpeg"
 

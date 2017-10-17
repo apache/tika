@@ -38,22 +38,18 @@ import os
 import sys
 import tarfile
 import tempfile
-
-from io import BytesIO
-from PIL import Image
-from time import time
-
-import tensorflow as tf
-
-from datasets import imagenet, dataset_utils
-from nets import inception
-from preprocessing import inception_preprocessing
-
 import json
 import requests
 
 from flask import Flask, request, Response, jsonify
+from io import BytesIO
+from PIL import Image
 from six.moves import urllib
+from time import time
+
+import tensorflow as tf
+
+from inception_v4 import default_image_size, inception_v4_arg_scope, inception_v4
 
 try:
     # This import is placed inside here to ensure that video_util and OpenCV is not required for image recognition APIs
@@ -65,19 +61,54 @@ json.encoder.FLOAT_REPR = lambda o: format(o, '.2f')  # JSON serialization of fl
 slim = tf.contrib.slim
 FLAGS = tf.app.flags.FLAGS
 
-# inception_v4.ckpt - Inception V4 checkpoint file.
-# imagenet_metadata.txt - Map from synset ID to a human readable string.
-# imagenet_lsvrc_2015_synsets.txt - Text representation of a protocol buffer mapping a label to synset ID.
-
-tf.app.flags.DEFINE_string(
-    'model_dir', '/tmp/imagenet',
-    """Path to inception_v4.ckpt, """
-    """imagenet_lsvrc_2015_synsets.txt, and """
-    """imagenet_metadata.txt.""")
-tf.app.flags.DEFINE_integer('port', '8764', """Server PORT, default:8764""")
-tf.app.flags.DEFINE_string('log', 'inception.log', """Log file name, default: inception.log""")
+tf.app.flags.DEFINE_string('model_dir',
+                           '/usr/share/apache-tika/models/dl/image-video/recognition/',
+                           """Path to inception_v4.ckpt & meta files""")
+tf.app.flags.DEFINE_integer('port',
+                            '8764',
+                            """Server PORT, default:8764""")
+tf.app.flags.DEFINE_string('log',
+                           'inception.log',
+                           """Log file name, default: inception.log""")
 
 DATA_URL = 'http://download.tensorflow.org/models/inception_v4_2016_09_09.tar.gz'
+
+
+def preprocess_image(image, height, width, central_fraction=0.875, scope=None):
+    """Prepare one image for evaluation.
+    If height and width are specified it would output an image with that size by
+    applying resize_bilinear.
+    If central_fraction is specified it would crop the central fraction of the
+    input image.
+    Args:
+      image: 3-D Tensor of image. If dtype is tf.float32 then the range should be
+        [0, 1], otherwise it would converted to tf.float32 assuming that the range
+        is [0, MAX], where MAX is largest positive representable number for
+        int(8/16/32) data type (see `tf.image.convert_image_dtype` for details).
+      height: integer
+      width: integer
+      central_fraction: Optional Float, fraction of the image to crop.
+      scope: Optional scope for name_scope.
+    Returns:
+      3-D float Tensor of prepared image.
+    """
+    with tf.name_scope(scope, 'eval_image', [image, height, width]):
+        if image.dtype != tf.float32:
+            image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+        # Crop the central region of the image with an area containing 87.5% of
+        # the original image.
+        if central_fraction:
+            image = tf.image.central_crop(image, central_fraction=central_fraction)
+
+        if height and width:
+            # Resize the image to the specified height and width.
+            image = tf.expand_dims(image, 0)
+            image = tf.image.resize_bilinear(image, [height, width],
+                                             align_corners=False)
+            image = tf.squeeze(image, [0])
+        image = tf.subtract(image, 0.5)
+        image = tf.multiply(image, 2.0)
+        return image
 
 
 def create_readable_names_for_imagenet_labels():
@@ -182,6 +213,7 @@ def maybe_download_and_extract():
     """Download and extract model tar file."""
 
     dest_directory = FLAGS.model_dir
+    imagenet_base_url = 'https://raw.githubusercontent.com/tensorflow/models/master/research/inception/inception/data'
     if not tf.gfile.Exists(dest_directory):
         tf.gfile.MakeDirs(dest_directory)
 
@@ -189,14 +221,10 @@ def maybe_download_and_extract():
         util_download_tar(DATA_URL, dest_directory)
 
     if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_lsvrc_2015_synsets.txt')):
-        util_download(
-            'https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_lsvrc_2015_synsets.txt',
-            dest_directory)
+        util_download('{}/imagenet_lsvrc_2015_synsets.txt'.format(imagenet_base_url), dest_directory)
 
     if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_metadata.txt')):
-        util_download(
-            'https://raw.githubusercontent.com/tensorflow/models/master/inception/inception/data/imagenet_metadata.txt',
-            dest_directory)
+        util_download('{}/imagenet_metadata.txt'.format(imagenet_base_url), dest_directory)
 
 
 def current_time():
@@ -218,17 +246,16 @@ class Classifier(Flask):
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
-        self.names = imagenet.create_readable_names_for_imagenet_labels()
-        self.image_size = inception.inception_v4.default_image_size
+        self.names = create_readable_names_for_imagenet_labels()
+        self.image_size = default_image_size
 
         self.image_str_placeholder = tf.placeholder(tf.string)
         image = tf.image.decode_jpeg(self.image_str_placeholder, channels=3)
-        processed_image = inception_preprocessing.preprocess_image(image, self.image_size,
-                                                                   self.image_size, is_training=False)
+        processed_image = preprocess_image(image, self.image_size, self.image_size)
         processed_images = tf.expand_dims(processed_image, 0)
         # create the model, use the default arg scope to configure the batch norm parameters.
-        with slim.arg_scope(inception.inception_v4_arg_scope()):
-            logits, _ = inception.inception_v4(processed_images, num_classes=1001, is_training=False)
+        with slim.arg_scope(inception_v4_arg_scope()):
+            logits, _ = inception_v4(processed_images, num_classes=1001, is_training=False)
         self.probabilities = tf.nn.softmax(logits)
 
         dest_directory = FLAGS.model_dir
