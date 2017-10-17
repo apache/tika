@@ -35,16 +35,15 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import sys
-import tarfile
 import tempfile
 import json
+import logging
 import requests
 
 from flask import Flask, request, Response, jsonify
 from io import BytesIO
+from logging.handlers import RotatingFileHandler
 from PIL import Image
-from six.moves import urllib
 from time import time
 
 import tensorflow as tf
@@ -70,8 +69,6 @@ tf.app.flags.DEFINE_integer('port',
 tf.app.flags.DEFINE_string('log',
                            'inception.log',
                            """Log file name, default: inception.log""")
-
-DATA_URL = 'http://download.tensorflow.org/models/inception_v4_2016_09_09.tar.gz'
 
 
 def preprocess_image(image, height, width, central_fraction=0.875, scope=None):
@@ -162,69 +159,20 @@ def create_readable_names_for_imagenet_labels():
     return labels_to_names
 
 
-def util_download(url, dest_directory):
+def get_remote_file(url, success=200, timeout=10):
     """
-        Downloads the file.
-        Args:
-          url: URL to download the file from.
-          dest_directory: Destination directory
-        Returns:
-          Nothing
+        Given HTTP URL, this api gets the content of it
+        returns (Content-Type, image_content)
     """
-    filename = url.split('/')[-1]
-    filepath = os.path.join(dest_directory, filename)
-
-    def _progress(count, block_size, total_size):
-        sys.stdout.write(
-            '\r>> Downloading %s %.1f%%' % (filename, float(count * block_size) / float(total_size) * 100.0))
-        sys.stdout.flush()
-
-    filepath, _ = urllib.request.urlretrieve(url, filepath, _progress)
-    print()
-    statinfo = os.stat(filepath)
-    print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
-
-
-def util_download_tar(url, dest_directory):
-    """
-        Downloads a file and extracts it.
-        Args:
-          url: URL to download the file from.
-          dest_directory: Destination directory
-        Returns:
-          Nothing
-    """
-    filename = url.split('/')[-1]
-    filepath = os.path.join(dest_directory, filename)
-
-    def _progress(count, block_size, total_size):
-        sys.stdout.write(
-            '\r>> Downloading %s %.1f%%' % (filename, float(count * block_size) / float(total_size) * 100.0))
-        sys.stdout.flush()
-
-    filepath, _ = urllib.request.urlretrieve(url, filepath, _progress)
-    print()
-    statinfo = os.stat(filepath)
-    print('Successfully downloaded', filename, statinfo.st_size, 'bytes.')
-    tarfile.open(filepath, 'r:gz').extractall(dest_directory)
-
-
-def maybe_download_and_extract():
-    """Download and extract model tar file."""
-
-    dest_directory = FLAGS.model_dir
-    imagenet_base_url = 'https://raw.githubusercontent.com/tensorflow/models/master/research/inception/inception/data'
-    if not tf.gfile.Exists(dest_directory):
-        tf.gfile.MakeDirs(dest_directory)
-
-    if not tf.gfile.Exists(os.path.join(dest_directory, 'inception_v4.ckpt')):
-        util_download_tar(DATA_URL, dest_directory)
-
-    if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_lsvrc_2015_synsets.txt')):
-        util_download('{}/imagenet_lsvrc_2015_synsets.txt'.format(imagenet_base_url), dest_directory)
-
-    if not tf.gfile.Exists(os.path.join(dest_directory, 'imagenet_metadata.txt')):
-        util_download('{}/imagenet_metadata.txt'.format(imagenet_base_url), dest_directory)
+    try:
+        app.logger.info("GET: %s" % url)
+        auth = None
+        res = requests.get(url, stream=True, timeout=timeout, auth=auth)
+        if res.status_code == success:
+            return res.headers.get('Content-Type', 'application/octet-stream'), res.raw.data
+    except:
+        pass
+    return None, None
 
 
 def current_time():
@@ -238,9 +186,6 @@ class Classifier(Flask):
 
     def __init__(self, name):
         super(Classifier, self).__init__(name)
-        maybe_download_and_extract()
-        import logging
-        from logging.handlers import RotatingFileHandler
         file_handler = RotatingFileHandler(FLAGS.log, maxBytes=1024 * 1024 * 100, backupCount=20)
         file_handler.setLevel(logging.INFO)
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -290,22 +235,6 @@ class Classifier(Flask):
 
 
 app = Classifier(__name__)
-
-
-def get_remote_file(url, success=200, timeout=10):
-    """
-        Given HTTP URL, this api gets the content of it
-        returns (Content-Type, image_content)
-    """
-    try:
-        app.logger.info("GET: %s" % url)
-        auth = None
-        res = requests.get(url, stream=True, timeout=timeout, auth=auth)
-        if res.status_code == success:
-            return res.headers.get('Content-Type', 'application/octet-stream'), res.raw.data
-    except:
-        pass
-    return None, None
 
 
 @app.route("/")
@@ -442,13 +371,6 @@ def classify_image():
     return Response(response=json.dumps(res), status=200, mimetype="application/json")
 
 
-CENTER = "center"
-INTERVAL = "interval"
-FIXED = "fixed"
-
-ALLOWED_MODE = {CENTER, INTERVAL, FIXED}
-
-
 @app.route("/inception/v4/classify/video", methods=["GET", "POST"])
 def classify_video():
     """
@@ -473,8 +395,8 @@ def classify_video():
     min_confidence = float(request.args.get("min_confidence", "0.015"))
     human = request.args.get("human", "true").lower() in ("true", "1", "yes")
 
-    mode = request.args.get("mode", CENTER).lower()
-    if mode not in ALLOWED_MODE:
+    mode = request.args.get("mode", "center").lower()
+    if mode not in {"center", "interval", "fixed"}:
         '''
         Throw invalid request error
         '''
@@ -498,9 +420,9 @@ def classify_video():
     read_time = current_time() - st
     st = current_time()  # reset start time
 
-    if mode == CENTER:
+    if mode == "center":
         image_data_arr = [get_center_frame(url)]
-    elif mode == INTERVAL:
+    elif mode == "interval":
         image_data_arr = get_frames_interval(url, frame_interval)
     else:
         image_data_arr = get_n_frames(url, num_frame)
