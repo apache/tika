@@ -17,17 +17,6 @@
 
 package org.apache.tika.parser.iwork.iwana;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -37,6 +26,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class IWork13PackageParser extends AbstractParser {
 
@@ -64,16 +63,19 @@ public class IWork13PackageParser extends AbstractParser {
               type = IWork13DocumentType.detectIfPossible(entry);
               if (type != null) return type;
            }
+           
+           // If we get here, we don't know what it is
            return UNKNOWN13.getType();
         }
         
         /**
          * @return Specific type if this identifies one, otherwise null
          */
-        public static MediaType detectIfPossible(ZipEntry entry) {
+        protected static MediaType detectIfPossible(ZipEntry entry) {
            String name = entry.getName();
            if (! name.endsWith(".iwa")) return null;
 
+           // Is it a uniquely identifying filename?
            if (name.equals("Index/MasterSlide.iwa") ||
                name.startsWith("Index/MasterSlide-")) {
               return KEYNOTE13.getType();
@@ -82,7 +84,13 @@ public class IWork13PackageParser extends AbstractParser {
                name.startsWith("Index/Slide-")) {
               return KEYNOTE13.getType();
            }
-           //TODO: figure out how to distinguish numbers from pages
+           
+           // Is it the main document?
+           if (name.equals("Index/Document.iwa")) {
+              // TODO Decode the snappy stream, and check for the Message Type
+              // =     2 (TN::SheetArchive), it is a numbers file; 
+              // = 10000 (TP::DocumentArchive), that's a pages file
+           }
 
            // Unknown
            return null;

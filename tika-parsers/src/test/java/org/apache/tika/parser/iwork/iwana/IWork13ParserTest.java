@@ -16,16 +16,11 @@
  */
 package org.apache.tika.parser.iwork.iwana;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -56,8 +51,7 @@ public class IWork13ParserTest {
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
         
-        // Currently parsing is a no-op
-        // Will only get type
+        // Currently parsing is a no-op, so will only get the Type
         assertEquals(1, metadata.size());
         assertEquals("", handler.toString());
         assertEquals(IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString(),
@@ -71,7 +65,8 @@ public class IWork13ParserTest {
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
         
-        // Currently parsing is a no-op
+        // Currently parsing is a no-op, and we can't get the type without
+        //  decoding the Snappy stream
         // TODO Test properly when a full Parser is added
         assertEquals(0, metadata.size());
         assertEquals("", handler.toString());
@@ -84,7 +79,8 @@ public class IWork13ParserTest {
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
         
-        // Currently parsing is a no-op
+        // Currently parsing is a no-op, and we can't get the type without
+        //  decoding the Snappy stream
         // TODO Test properly when a full Parser is added
         assertEquals(0, metadata.size());
         assertEquals("", handler.toString());
