@@ -57,9 +57,11 @@ public class IWork13ParserTest {
         iWorkParser.parse(input, handler, metadata, parseContext);
         
         // Currently parsing is a no-op
-        // TODO Test properly when a full Parser is added
-        assertEquals(0, metadata.size());
+        // Will only get type
+        assertEquals(1, metadata.size());
         assertEquals("", handler.toString());
+        assertEquals(IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString(),
+                     metadata.get(Metadata.CONTENT_TYPE));
     }
     
     @Test

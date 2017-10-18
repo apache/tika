@@ -292,7 +292,6 @@ public class ZipContainerDetector implements Detector {
             return IWork13PackageParser.IWork13DocumentType.detect(zip);
         }
         return null;
-
     }
 
     private static MediaType detectIWork(ZipFile zip) {

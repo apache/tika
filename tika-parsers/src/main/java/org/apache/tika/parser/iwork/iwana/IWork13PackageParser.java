@@ -20,6 +20,7 @@ package org.apache.tika.parser.iwork.iwana;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -31,8 +32,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class IWork13PackageParser extends AbstractParser {
 
@@ -53,13 +57,35 @@ public class IWork13PackageParser extends AbstractParser {
         }
 
         public static MediaType detect(ZipFile zipFile) {
-            ZipArchiveEntry entry = zipFile.getEntry("Index/MasterSlide.iwa");
-            if (zipFile.getEntry("Index/MasterSlide.iwa") != null ||
-                    zipFile.getEntry("Index/Slide.iwa") != null) {
-                return KEYNOTE13.getType();
-            }
-            //TODO: figure out how to distinguish numbers from pages
-            return UNKNOWN13.getType();
+           MediaType type = null;
+           Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
+           while (entries.hasMoreElements()) {
+              ZipEntry entry = entries.nextElement();
+              type = IWork13DocumentType.detectIfPossible(entry);
+              if (type != null) return type;
+           }
+           return UNKNOWN13.getType();
+        }
+        
+        /**
+         * @return Specific type if this identifies one, otherwise null
+         */
+        public static MediaType detectIfPossible(ZipEntry entry) {
+           String name = entry.getName();
+           if (! name.endsWith(".iwa")) return null;
+
+           if (name.equals("Index/MasterSlide.iwa") ||
+               name.startsWith("Index/MasterSlide-")) {
+              return KEYNOTE13.getType();
+           }
+           if (name.equals("Index/Slide.iwa") ||
+               name.startsWith("Index/Slide-")) {
+              return KEYNOTE13.getType();
+           }
+           //TODO: figure out how to distinguish numbers from pages
+
+           // Unknown
+           return null;
         }
     }
 
@@ -81,6 +107,45 @@ public class IWork13PackageParser extends AbstractParser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-        //no-op for now
+       // Open the Zip stream
+       // Use a File if we can, and an already open zip is even better
+       ZipFile zipFile = null;
+       ZipInputStream zipStream = null;
+       if (stream instanceof TikaInputStream) {
+          TikaInputStream tis = (TikaInputStream) stream;
+          Object container = ((TikaInputStream) stream).getOpenContainer();
+          if (container instanceof ZipFile) {
+             zipFile = (ZipFile) container;
+          } else if (tis.hasFile()) {
+             zipFile = new ZipFile(tis.getFile());
+          } else {
+             zipStream = new ZipInputStream(stream);
+          }
+       } else {
+          zipStream = new ZipInputStream(stream);
+       }
+
+       // For now, just detect
+       MediaType type = null;
+       if (zipFile != null) {
+          Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
+          while (entries.hasMoreElements()) {
+             ZipEntry entry = entries.nextElement();
+             if (type == null) {
+                type = IWork13DocumentType.detectIfPossible(entry);
+             }
+          }
+       } else {
+          ZipEntry entry = zipStream.getNextEntry();
+          while (entry != null) {
+             if (type == null) {
+                type = IWork13DocumentType.detectIfPossible(entry);
+             }
+             entry = zipStream.getNextEntry();
+          }
+       }
+       if (type != null) {
+          metadata.add(Metadata.CONTENT_TYPE, type.toString());
+       }
     }
 }
