@@ -425,7 +425,8 @@ public class RFC822ParserTest extends TikaTest {
         // No filenames available
         assertEquals(null, tracker.filenames.get(0));
         assertEquals(null, tracker.filenames.get(1));
-        assertEquals(null, tracker.filenames.get(2));
+        // Except for this using Content-Disposition filename field
+        assertEquals("logo.gif", tracker.filenames.get(2));
         // Types are available
         assertEquals(MediaType.TEXT_PLAIN, tracker.mediaTypes.get(0));
         assertEquals(MediaType.TEXT_HTML, tracker.mediaTypes.get(1));
@@ -560,6 +561,8 @@ public class RFC822ParserTest extends TikaTest {
         final Parser extParser = new AutoDetectParser();
         final List<MediaType> seenTypes = new ArrayList<MediaType>();
         final List<String> seenText = new ArrayList<String>();
+        final List<String> seenNames = new ArrayList<String>();
+        final List<String> seenContentDisposition = new ArrayList<String>();
         EmbeddedDocumentExtractor ext = new EmbeddedDocumentExtractor() {
             @Override
             public boolean shouldParseEmbedded(Metadata metadata) {
@@ -570,7 +573,9 @@ public class RFC822ParserTest extends TikaTest {
             public void parseEmbedded(InputStream stream, ContentHandler handler,
                     Metadata metadata, boolean outputHtml) throws SAXException,
                     IOException {
+                seenNames.add( metadata.get(Metadata.RESOURCE_NAME_KEY) );
                 seenTypes.add( detector.detect(stream, metadata) );
+                seenContentDisposition.add( metadata.get(Metadata.CONTENT_DISPOSITION) );
                 
                 ContentHandler h = new BodyContentHandler();
                 try {
@@ -596,6 +601,52 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(2, seenText.size());
         assertEquals("text/plain", seenTypes.get(0).toString());
         assertEquals("image/png", seenTypes.get(1).toString());
+        assertEquals("testPNG.png", seenNames.get(1));
         assertEquals("This email has a PNG attachment included in it\n\n", seenText.get(0));
+        assertEquals(null, seenContentDisposition.get(0));
+        assertEquals("attachment; filename=\"testPNG.png\"", seenContentDisposition.get(1));
+    }
+
+    @Test
+    public void testEmbeddedMetadata() throws Exception {
+        Metadata metadata = new Metadata();
+        Parser p = new RFC822Parser();
+        ParseContext context = new ParseContext();
+        final Parser extParser = new AutoDetectParser();
+        final List<Metadata> seenMetadata = new ArrayList<>();
+        EmbeddedDocumentExtractor ext = new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(InputStream stream, ContentHandler handler,
+                                      Metadata metadata, boolean outputHtml) throws SAXException,
+                                                                                    IOException {
+                seenMetadata.add( metadata );
+                try {
+                    extParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+                } catch (TikaException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        context.set(EmbeddedDocumentExtractor.class, ext);
+
+        try(InputStream stream = getStream( "test-documents/testRFC822-multipart" )) {
+            p.parse(stream, new DefaultHandler(), metadata, context);
+        }
+
+        assertEquals(3, seenMetadata.size());
+        assertEquals(null, seenMetadata.get(0).get(Metadata.CONTENT_DISPOSITION));
+        assertEquals("text/plain; charset=UTF-8", seenMetadata.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("UTF-8", seenMetadata.get(0).get(Metadata.CONTENT_ENCODING));
+        assertEquals(null, seenMetadata.get(1).get(Metadata.CONTENT_DISPOSITION));
+        assertEquals("text/html; charset=UTF-8", seenMetadata.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("UTF-8", seenMetadata.get(1).get(Metadata.CONTENT_ENCODING));
+        assertEquals("attachment; filename=\"logo.gif\"", seenMetadata.get(2).get(Metadata.CONTENT_DISPOSITION));
+        assertEquals("logo.gif", seenMetadata.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("image/gif", seenMetadata.get(2).get(Metadata.CONTENT_TYPE));
     }
 }

@@ -27,6 +27,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +46,7 @@ import org.apache.james.mime4j.dom.field.MailboxListField;
 import org.apache.james.mime4j.dom.field.ParsedField;
 import org.apache.james.mime4j.dom.field.UnstructuredField;
 import org.apache.james.mime4j.field.LenientFieldParser;
+import org.apache.james.mime4j.message.MaximalBodyDescriptor;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
@@ -150,6 +153,26 @@ class MailContentHandler implements ContentHandler {
         Metadata submd = new Metadata();
         submd.set(Metadata.CONTENT_TYPE, body.getMimeType());
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
+
+        if (body instanceof MaximalBodyDescriptor) {
+            MaximalBodyDescriptor maximalBody = (MaximalBodyDescriptor) body;
+            String contentDispositionType = maximalBody.getContentDispositionType();
+            if (contentDispositionType != null && !contentDispositionType.isEmpty()) {
+                StringBuilder contentDisposition = new StringBuilder( contentDispositionType );
+                Map<String, String> contentDispositionParameters = maximalBody.getContentDispositionParameters();
+                for ( Entry<String, String> param : contentDispositionParameters.entrySet() ) {
+                    contentDisposition.append("; ")
+                                      .append(param.getKey()).append("=\"").append(param.getValue()).append('"');
+                }
+
+                String contentDispositionFileName = maximalBody.getContentDispositionFilename();
+                if ( contentDispositionFileName != null ) {
+                    submd.set( Metadata.RESOURCE_NAME_KEY, contentDispositionFileName );
+                }
+
+                submd.set( Metadata.CONTENT_DISPOSITION, contentDisposition.toString() );
+            }
+        }
 
         try {
             if (extractor.shouldParseEmbedded(submd)) {
