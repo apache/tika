@@ -59,6 +59,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -543,110 +544,34 @@ public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testExtractAttachments() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        Parser p = new RFC822Parser();
-        ParseContext context = new ParseContext();
+        List<Metadata> metadataList = getRecursiveMetadata("testEmailWithPNGAtt.eml");
+        // Check we get the metadata
+        assertEquals("Tika Test <XXXX@apache.org>", metadataList.get(3).get(Metadata.MESSAGE_FROM));
+        assertEquals("Test Attachment Email", metadataList.get(3).get(TikaCoreProperties.TITLE));
 
-        try (InputStream stream = getStream("test-documents/testEmailWithPNGAtt.eml")) {
-            p.parse(stream, handler, metadata, context);
-        }
-
-        // Check we go the metadata
-        assertEquals("Tika Test <XXXX@apache.org>", metadata.get(Metadata.MESSAGE_FROM));
-        assertEquals("Test Attachment Email", metadata.get(TikaCoreProperties.TITLE));
-        
-        // Try again with attachment detecting and fetching
-        final Detector detector = new DefaultDetector();
-        final Parser extParser = new AutoDetectParser();
-        final List<MediaType> seenTypes = new ArrayList<MediaType>();
-        final List<String> seenText = new ArrayList<String>();
-        final List<String> seenNames = new ArrayList<String>();
-        final List<String> seenContentDisposition = new ArrayList<String>();
-        EmbeddedDocumentExtractor ext = new EmbeddedDocumentExtractor() {
-            @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
-                return true;
-            }
-            
-            @Override
-            public void parseEmbedded(InputStream stream, ContentHandler handler,
-                    Metadata metadata, boolean outputHtml) throws SAXException,
-                    IOException {
-                seenNames.add( metadata.get(Metadata.RESOURCE_NAME_KEY) );
-                seenTypes.add( detector.detect(stream, metadata) );
-                seenContentDisposition.add( metadata.get(Metadata.CONTENT_DISPOSITION) );
-                
-                ContentHandler h = new BodyContentHandler();
-                try {
-                    extParser.parse(stream, h, metadata, new ParseContext());
-                } catch (TikaException e) {
-                    throw new RuntimeException(e);
-                }
-                seenText.add(h.toString());
-            }
-        };
-        context.set(EmbeddedDocumentExtractor.class, ext);
-
-        try (InputStream stream = getStream("test-documents/testEmailWithPNGAtt.eml")) {
-            p.parse(stream, handler, metadata, context);
-        }
-        
-        // Check we go the metadata
-        assertEquals("Tika Test <XXXX@apache.org>", metadata.get(Metadata.MESSAGE_FROM));
-        assertEquals("Test Attachment Email", metadata.get(TikaCoreProperties.TITLE));
-        
         // Check attachments
-        assertEquals(2, seenTypes.size());
-        assertEquals(2, seenText.size());
-        assertEquals("text/plain", seenTypes.get(0).toString());
-        assertEquals("image/png", seenTypes.get(1).toString());
-        assertEquals("testPNG.png", seenNames.get(1));
-        assertEquals("This email has a PNG attachment included in it\n\n", seenText.get(0));
-        assertEquals(null, seenContentDisposition.get(0));
-        assertEquals("attachment; filename=\"testPNG.png\"", seenContentDisposition.get(1));
+        assertEquals(4, metadataList.size());
+        assertEquals("text/plain; charset=UTF-8", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("testPNG.png", metadataList.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("This email has a PNG attachment included in it", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals(null, metadataList.get(1).get(Metadata.CONTENT_DISPOSITION));
+        assertEquals("attachment; filename=\"testPNG.png\"", metadataList.get(2).get(Metadata.CONTENT_DISPOSITION));
     }
 
     @Test
     public void testEmbeddedMetadata() throws Exception {
-        Metadata metadata = new Metadata();
-        Parser p = new RFC822Parser();
-        ParseContext context = new ParseContext();
-        final Parser extParser = new AutoDetectParser();
-        final List<Metadata> seenMetadata = new ArrayList<>();
-        EmbeddedDocumentExtractor ext = new EmbeddedDocumentExtractor() {
-            @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
-                return true;
-            }
+        List<Metadata> seenMetadata = getRecursiveMetadata("testRFC822-multipart");
 
-            @Override
-            public void parseEmbedded(InputStream stream, ContentHandler handler,
-                                      Metadata metadata, boolean outputHtml) throws SAXException,
-                                                                                    IOException {
-                seenMetadata.add( metadata );
-                try {
-                    extParser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
-                } catch (TikaException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-        context.set(EmbeddedDocumentExtractor.class, ext);
-
-        try(InputStream stream = getStream( "test-documents/testRFC822-multipart" )) {
-            p.parse(stream, new DefaultHandler(), metadata, context);
-        }
-
-        assertEquals(3, seenMetadata.size());
-        assertEquals(null, seenMetadata.get(0).get(Metadata.CONTENT_DISPOSITION));
-        assertEquals("text/plain; charset=UTF-8", seenMetadata.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals("UTF-8", seenMetadata.get(0).get(Metadata.CONTENT_ENCODING));
+        assertEquals(4, seenMetadata.size());
         assertEquals(null, seenMetadata.get(1).get(Metadata.CONTENT_DISPOSITION));
-        assertEquals("text/html; charset=UTF-8", seenMetadata.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=UTF-8", seenMetadata.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", seenMetadata.get(1).get(Metadata.CONTENT_ENCODING));
-        assertEquals("attachment; filename=\"logo.gif\"", seenMetadata.get(2).get(Metadata.CONTENT_DISPOSITION));
-        assertEquals("logo.gif", seenMetadata.get(2).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("image/gif", seenMetadata.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals(null, seenMetadata.get(2).get(Metadata.CONTENT_DISPOSITION));
+        assertEquals("text/html; charset=UTF-8", seenMetadata.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("UTF-8", seenMetadata.get(2).get(Metadata.CONTENT_ENCODING));
+        assertEquals("attachment; filename=\"logo.gif\"", seenMetadata.get(3).get(Metadata.CONTENT_DISPOSITION));
+        assertEquals("logo.gif", seenMetadata.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("image/gif", seenMetadata.get(3).get(Metadata.CONTENT_TYPE));
     }
 }
