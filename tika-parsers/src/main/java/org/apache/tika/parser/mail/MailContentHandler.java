@@ -56,6 +56,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -131,6 +132,7 @@ class MailContentHandler implements ContentHandler {
     private EmbeddedDocumentExtractor extractor;
 
     private boolean inPart = false;
+    private BodyDescriptor part = null;
 
     MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context, boolean strictParsing) {
         this.handler = xhtml;
@@ -154,6 +156,11 @@ class MailContentHandler implements ContentHandler {
         submd.set(Metadata.CONTENT_TYPE, body.getMimeType());
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
 
+        // TIKA-2455: flag the containing type.
+        if (inPart) {
+            submd.set(Message.MULTIPART_SUBTYPE, part.getSubType());
+            submd.set(Message.MULTIPART_BOUNDARY, part.getBoundary());
+        }   
         if (body instanceof MaximalBodyDescriptor) {
             MaximalBodyDescriptor maximalBody = (MaximalBodyDescriptor) body;
             String contentDispositionType = maximalBody.getContentDispositionType();
@@ -216,6 +223,7 @@ class MailContentHandler implements ContentHandler {
 
     public void endMultipart() throws MimeException {
         inPart = false;
+        part = null;
     }
 
     public void epilogue(InputStream is) throws MimeException, IOException {
@@ -274,6 +282,16 @@ class MailContentHandler implements ContentHandler {
                 processAddressList(parsedField, "Cc:", Metadata.MESSAGE_CC);
             } else if (fieldname.equalsIgnoreCase("BCC")) {
                 processAddressList(parsedField, "Bcc:", Metadata.MESSAGE_BCC);
+            } else if (fieldname.equalsIgnoreCase("Content-Type")) {
+                final MediaType contentType = MediaType.parse(parsedField.getBody());
+
+                if (contentType.getType().equalsIgnoreCase("multipart")) {
+                    metadata.set(Message.MULTIPART_SUBTYPE, contentType.getSubtype());
+                    metadata.set(Message.MULTIPART_BOUNDARY, contentType.getParameters().get("boundary"));
+                } else {
+                    metadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + parsedField.getName(),
+                            field.getBody());
+                }
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 DateTimeField dateField = (DateTimeField) parsedField;
                 Date date = dateField.getDate();
@@ -373,6 +391,7 @@ class MailContentHandler implements ContentHandler {
 
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         inPart = true;
+        part = descr;
     }
 
     private String stripOutFieldPrefix(Field field, String fieldname) {
