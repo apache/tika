@@ -36,6 +36,7 @@ import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.XMLDOMUtil;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -67,7 +68,7 @@ public class BatchProcessBuilder {
     public BatchProcess build(InputStream is, Map<String,String> runtimeAttributes) throws IOException {
         Document doc = null;
         try {
-            DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
+            DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
             doc = docBuilder.parse(is);
         } catch (TikaException|SAXException e) {
             throw new IOExceptionWithCause(e);

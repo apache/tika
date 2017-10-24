@@ -320,6 +320,8 @@ public class TestContainerAwareDetector {
     public void testDetectIWork2013() throws Exception {
         assertTypeByData("testKeynote2013.key",
                 IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString());
+        // Without decoding the Document snappy stream, we can't tell the
+        //  difference between these two just based on the zip entries
         assertTypeByData("testNumbers2013.numbers",
                 IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString());
         assertTypeByData("testPages2013.pages",

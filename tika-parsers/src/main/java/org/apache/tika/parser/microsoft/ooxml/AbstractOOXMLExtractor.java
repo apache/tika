@@ -44,6 +44,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -77,23 +78,16 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
     static final String RELATION_AUDIO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
-    static final String RELATION_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
-    static final String RELATION_OLE_OBJECT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
-    static final String RELATION_PACKAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
-    static final String RELATION_MACRO = "http://schemas.microsoft.com/office/2006/relationships/vbaProject";
-    static final String RELATION_OFFICE_DOCUMENT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
     static final String RELATION_DIAGRAM_DATA = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
-    //once we add this to XWPFRelation, we should swap that out and remove this
-    static final String RELATION_CHART = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
 
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
 
     protected final static String[] EMBEDDED_RELATIONSHIPS = new String[]{
             RELATION_AUDIO,
-            RELATION_IMAGE,
-            RELATION_PACKAGE,
-            RELATION_OFFICE_DOCUMENT,
+            PackageRelationshipTypes.IMAGE_PART,
+            POIXMLDocument.PACK_OBJECT_REL_TYPE,
+            PackageRelationshipTypes.CORE_DOCUMENT,
             RELATION_DIAGRAM_DATA
     };
 
@@ -250,15 +244,15 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             }
 
             String type = rel.getRelationshipType();
-            if (RELATION_OLE_OBJECT.equals(type)
+            if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)
                     && TYPE_OLE_OBJECT.equals(target.getContentType())) {
                 handleEmbeddedOLE(target, handler, sourceDesc + rel.getId(), parentMetadata);
             } else if (RELATION_AUDIO.equals(type)
-                    || RELATION_IMAGE.equals(type)
-                    || RELATION_PACKAGE.equals(type)
-                    || RELATION_OLE_OBJECT.equals(type)) {
+                    || PackageRelationshipTypes.IMAGE_PART.equals(type)
+                    || POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type)
+                    || POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
                 handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
-            } else if (RELATION_MACRO.equals(type)) {
+            } else if (XSSFRelation.VBA_MACROS.getRelation().equals(type)) {
                 handleMacros(target, handler);
             }
         }

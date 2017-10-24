@@ -17,9 +17,9 @@ package org.apache.tika.batch.fs.strawman;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +38,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -60,12 +59,14 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     private final int threadNum;
     private Path inputRoot = null;
     private Path outputRoot = null;
+    private Path fileList = null;
     private String[] args = null;
 
     public StrawManTikaAppDriver(Path inputRoot, Path outputRoot,
-                                 int totalThreads, String[] args) {
+                                 int totalThreads, Path fileList, String[] args) {
         this.inputRoot = inputRoot;
         this.outputRoot = outputRoot;
+        this.fileList = fileList;
         this.args = args;
         threadNum = threadCount.getAndIncrement();
         this.totalThreads = totalThreads;
@@ -73,7 +74,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
 
 
     private class TikaVisitor extends SimpleFileVisitor<Path> {
-        private int processed = 0;
+        private volatile int processed = 0;
 
         int getProcessed() {
             return processed;
@@ -87,10 +88,31 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                     return FileVisitResult.CONTINUE;
                 }
             }
-            assert(file.startsWith(inputRoot));
+            if (! file.startsWith(inputRoot)) {
+                LOG.warn("File ("+file.toAbsolutePath()+
+                        ") doesn't start with input root ("+inputRoot.toAbsolutePath()+")");
+                return FileVisitResult.CONTINUE;
+            }
             Path relPath = inputRoot.relativize(file);
+            String suffix = ".txt";
+            List<String> commandLine = new ArrayList<>();
+            for (String arg : args) {
+                commandLine.add(arg);
+                if (arg.equals("-J")) {
+                    suffix = ".json";
+                } else if (arg.contains("-x")) {
+                    suffix = ".html";
+                }
+            }
+            String fullPath = file.toAbsolutePath().toString();
+            if (fullPath.contains(" ")) {
+                fullPath = "\""+fullPath+"\"";
+            }
+            commandLine.add(fullPath);
+
+
             Path outputFile = Paths.get(outputRoot.toAbsolutePath().toString(),
-                    relPath.toString() + ".txt");
+                    relPath.toString() + suffix);
             try {
                 Files.createDirectories(outputFile.getParent());
             } catch (IOException e) {
@@ -98,23 +120,15 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                         "parent directory for {} was not made!", outputFile);
                 throw new RuntimeException("couldn't make parent file for " + outputFile);
             }
-            List<String> commandLine = new ArrayList<>();
-            for (String arg : args) {
-                commandLine.add(arg);
-            }
-            commandLine.add("-t");
-            commandLine.add("\""+outputFile.toAbsolutePath()+"\"");
-            ProcessBuilder builder = new ProcessBuilder(commandLine.toArray(new String[commandLine.size()]));
+            ProcessBuilder builder = new ProcessBuilder();
+            builder.command(commandLine);
             LOG.info("about to process: {}", file.toAbsolutePath());
+            builder.redirectOutput(outputFile.toFile());
+            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
             Process proc = null;
-            RedirectGobbler gobbler = null;
-            Thread gobblerThread = null;
             try {
-                OutputStream os = Files.newOutputStream(outputFile);
                 proc = builder.start();
-                gobbler = new RedirectGobbler(proc.getInputStream(), os);
-                gobblerThread = new Thread(gobbler);
-                gobblerThread.start();
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
                 return FileVisitResult.CONTINUE;
@@ -141,8 +155,12 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 LOG.warn("Had to kill process working on: {}", file.toAbsolutePath());
                 proc.destroy();
             }
-            gobbler.close();
-            gobblerThread.interrupt();
+            try {
+                proc.getOutputStream().flush();
+                proc.getOutputStream().close();
+            } catch (IOException e) {
+                LOG.warn("couldn't close process outputstream", e);
+            }
             processed++;
             return FileVisitResult.CONTINUE;
         }
@@ -155,52 +173,32 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     public Integer call() throws Exception {
         long start = new Date().getTime();
         TikaVisitor v = new TikaVisitor();
-        Files.walkFileTree(inputRoot, v);
+        if (fileList != null) {
+            TikaVisitor tikaVisitor = new TikaVisitor();
+            try (BufferedReader reader = Files.newBufferedReader(fileList, StandardCharsets.UTF_8)) {
+                String line = reader.readLine();
+                while (line != null) {
+                    Path inputFile = inputRoot.resolve(line.trim());
+                    if (Files.isReadable(inputFile)) {
+                        try {
+                            tikaVisitor.visitFile(inputFile, Files.readAttributes(inputFile, BasicFileAttributes.class));
+                        } catch (IOException e) {
+                            LOG.warn("Problem with: "+inputFile, e);
+                        }
+                    } else {
+                        LOG.warn("Not readable: "+inputFile);
+                    }
+                    line = reader.readLine();
+                }
+            }
+        } else {
+            Files.walkFileTree(inputRoot, v);
+        }
         int processed = v.getProcessed();
         double elapsedSecs = ((double)new Date().getTime()-(double)start)/(double)1000;
         LOG.info("Finished processing {} files in {} seconds.", processed, elapsedSecs);
         return processed;
     }
-
-    private class RedirectGobbler implements Runnable {
-        private OutputStream redirectOs = null;
-        private InputStream redirectIs = null;
-
-        private RedirectGobbler(InputStream is, OutputStream os) {
-            this.redirectIs = is;
-            this.redirectOs = os;
-        }
-
-        private void close() {
-            if (redirectOs != null) {
-                try {
-                    redirectOs.flush();
-                } catch (IOException e) {
-                    LOG.error("can't flush");
-                }
-                try {
-                    redirectIs.close();
-                } catch (IOException e) {
-                    LOG.error("can't close input in redirect gobbler");
-                }
-                try {
-                    redirectOs.close();
-                } catch (IOException e) {
-                    LOG.error("can't close output in redirect gobbler");
-                }
-            }
-        }
-
-        @Override
-        public void run() {
-            try {
-                IOUtils.copy(redirectIs, redirectOs);
-            } catch (IOException e) {
-                LOG.error("IOException while gobbling");
-            }
-        }
-    }
-
 
 
     public static String usage() {
@@ -220,9 +218,18 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         Path inputDir = Paths.get(args[0]);
         Path outputDir = Paths.get(args[1]);
         int totalThreads = Integer.parseInt(args[2]);
+        Path fileList = null;
+        if (args.length > 3) {
+            fileList = Paths.get(args[3]);
+            if (! Files.isReadable(fileList)) {
+                fileList = null;
+            }
+        }
 
         List<String> commandLine = new ArrayList<>();
-        commandLine.addAll(Arrays.asList(args).subList(3, args.length));
+
+        int initialParams = (fileList == null) ? 3 : 4;
+        commandLine.addAll(Arrays.asList(args).subList(initialParams, args.length));
         totalThreads = (totalThreads < 1) ? 1 : totalThreads;
         ExecutorService ex = Executors.newFixedThreadPool(totalThreads);
         ExecutorCompletionService<Integer> completionService =
@@ -230,7 +237,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
 
         for (int i = 0; i < totalThreads; i++) {
             StrawManTikaAppDriver driver =
-                    new StrawManTikaAppDriver(inputDir, outputDir, totalThreads, commandLine.toArray(new String[commandLine.size()]));
+                    new StrawManTikaAppDriver(inputDir, outputDir, totalThreads, fileList,
+                            commandLine.toArray(new String[commandLine.size()]));
             completionService.submit(driver);
         }
 
@@ -247,5 +255,6 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         }
         double elapsedSeconds = (double)(new Date().getTime() - start) / (double)1000;
         LOG.info("Processed {} in {} seconds", totalFilesProcessed, elapsedSeconds);
+        ex.shutdownNow();
     }
 }

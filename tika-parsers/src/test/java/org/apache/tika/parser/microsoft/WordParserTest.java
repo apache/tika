@@ -621,5 +621,11 @@ public class WordParserTest extends TikaTest {
         assertContains("\\s\\up 10(\u3068\u3046\u304D\u3087\u3046),\u6771\u4EAC",
                 getXML("testWORD_phonetic.doc").xml);
     }
+
+    @Test
+    public void testSpecialControlCharacter() throws Exception {
+        //TIKA-2459
+        assertContains("Paragraph one", getXML("testWORD_specialControlCharacter1415.doc").xml);
+    }
 }
 

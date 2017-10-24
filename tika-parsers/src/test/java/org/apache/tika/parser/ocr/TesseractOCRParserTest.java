@@ -278,4 +278,13 @@ public class TesseractOCRParserTest extends TikaTest {
         Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
         assertTrue(m.find());
     }
+
+    @Test
+    public void confirmMultiPageTiffHandling() throws Exception {
+        assumeTrue(canRun());
+        //tesseract should handle multipage tiffs by itself
+        //let's confirm that
+        String xml = getXML("testTIFF_multipage.tif").xml;
+        assertContains("Page 2", xml);
+    }
 }

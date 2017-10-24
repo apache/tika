@@ -45,6 +45,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -74,7 +75,7 @@ public class TikaConfigSerializer {
      */
     public static void serialize(TikaConfig config, Mode mode, Writer writer, Charset charset)
             throws Exception {
-        DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
+        DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
 
         // root elements
         Document doc = docBuilder.newDocument();

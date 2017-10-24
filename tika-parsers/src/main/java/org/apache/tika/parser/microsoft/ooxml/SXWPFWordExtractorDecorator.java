@@ -30,6 +30,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
@@ -156,7 +157,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //for now, just dump other components at end
         for (String rel : new String[]{
                 AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
-                AbstractOOXMLExtractor.RELATION_CHART,
+                XSSFRelation.CHART.getRelation(),
                 XWPFRelation.FOOTNOTE.getRelation(),
                 XWPFRelation.COMMENT.getRelation(),
                 XWPFRelation.FOOTER.getRelation(),

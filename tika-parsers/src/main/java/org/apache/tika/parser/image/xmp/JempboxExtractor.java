@@ -37,6 +37,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -66,7 +67,7 @@ public class JempboxExtractor {
         try (InputStream decoded =
                              new ByteArrayInputStream(xmpraw.toByteArray())
         ) {
-            Document dom = new ParseContext().getDocumentBuilder().parse(decoded);
+            Document dom = XMLReaderUtils.getDocumentBuilder().parse(decoded);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);
             }

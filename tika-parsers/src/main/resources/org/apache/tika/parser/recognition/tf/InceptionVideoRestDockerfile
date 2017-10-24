@@ -65,7 +65,7 @@ WORKDIR /
 # Install tensorflow and other dependencies
 RUN \
   pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.1-cp27-none-linux_x86_64.whl --ignore-installed  && \
-  pip install flask requests
+  pip install flask requests pillow
 
 # Get the TF-slim dependencies
 # Downloading from a specific commit for future compatibility

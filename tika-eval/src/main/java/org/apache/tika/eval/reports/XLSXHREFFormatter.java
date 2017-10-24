@@ -20,12 +20,15 @@ import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import javax.swing.event.HyperlinkListener;
 
 
 public class XLSXHREFFormatter implements XSLXCellFormatter {
@@ -35,15 +38,15 @@ public class XLSXHREFFormatter implements XSLXCellFormatter {
 
 
     private final String urlBase;
-    private final int linkType;
+    private final HyperlinkType linkType;
     private XSSFWorkbook workbook;
     private CellStyle style;
     private int links = 0;
 
     public XLSXHREFFormatter(String urlBase,
-                             int linkType) {
+                             HyperlinkType hyperlinkType) {
         this.urlBase = urlBase;
-        this.linkType = linkType;
+        this.linkType = hyperlinkType;
     }
 
     @Override

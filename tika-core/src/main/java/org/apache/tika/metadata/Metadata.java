@@ -22,12 +22,16 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
 
@@ -482,7 +486,20 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         return metadata.size();
     }
 
-    public boolean equals(Object o) {
+    public int hashCode() {
+        int h = 0;
+        for (Iterator<Entry<String,String[]>> i = metadata.entrySet().iterator();
+             i.hasNext();) {
+            h += getMetadataEntryHashCode(i.next());
+        }
+        return h;
+    }
+
+    private int getMetadataEntryHashCode(Entry<String, String[]> e) {
+    	return Objects.hashCode(e.getKey()) ^ Arrays.hashCode(e.getValue());
+	}
+
+	public boolean equals(Object o) {
 
         if (o == null) {
             return false;
@@ -521,7 +538,10 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         for (int i = 0; i < names.length; i++) {
             String[] values = _getValues(names[i]);
             for (int j = 0; j < values.length; j++) {
-                buf.append(names[i]).append("=").append(values[j]).append(" ");
+            	if (buf.length() > 0) {
+            		buf.append(" ");
+            	}
+                buf.append(names[i]).append("=").append(values[j]);
             }
         }
         return buf.toString();

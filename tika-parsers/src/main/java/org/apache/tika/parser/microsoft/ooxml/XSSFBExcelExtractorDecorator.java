@@ -30,6 +30,7 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xssf.binary.XSSFBCommentsTable;
@@ -307,7 +308,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
         //add main document so that macros can be extracted
         //by AbstractOOXMLExtractor
         for (PackagePart part : extractor.getPackage().
-                getPartsByRelationshipType(RELATION_OFFICE_DOCUMENT)) {
+                getPartsByRelationshipType(PackageRelationshipTypes.CORE_DOCUMENT)) {
             parts.add(part);
         }
 

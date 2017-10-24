@@ -1,6 +1,24 @@
 Release 1.17 - ???
 
-  * Fix detection of emails extracted from mbox (TIKA-2456)
+  * Narrow mime detection for ms-owner files and add detection
+    for .nls files (TIKA-2469).
+
+  * Fix bug in CharsetDetector that led to different detected charsets
+    depending on whether user setText with a byte[] or an InputStream
+    via Sean Story (TIKA-2475).
+
+  * Remove JAXB for easier use with Java 9 via Robert Munteanu (TIKA-2466).
+
+  * Upgrade to POI 3.17 (TIKA-2429).
+
+  * Enabling extraction of standard references from text (TIKA-2449).
+
+  * Load external custom mimetypes XML from system property 
+    tika.custom-mimetypes (TIKA-2460). 
+
+  * Extract number of tiffs in a multi-page tiff (TIKA-2451).
+
+  * Fix detection of emails extracted from mbox (TIKA-2456).
   
   * Add OverrideDetector and allow PSTParser to specify body content type
     as text or html -- to avoid incorrect auto-detection of
@@ -23,7 +41,7 @@ Release 1.17 - ???
   * Tika now has support for automatic image captioning, that
     combines Computer Vision and Natural Language Processing to
     automatically generate a readable caption for an image 
-    (TIKA-2262, TIKA-2355).
+    (TIKA-2262, TIKA-2355, TIKA-2402, Gh-198, Gh-196, Gh-189).
 
   * Add TestCorruptedFiles to allow devs to test parsers against
     corrupted input files (TIKA-2430).

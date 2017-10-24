@@ -39,12 +39,12 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.poi.common.usermodel.Hyperlink;
+import org.apache.poi.common.usermodel.HyperlinkType;
 import org.apache.tika.eval.ExtractComparer;
 import org.apache.tika.eval.ExtractProfiler;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.JDBCUtil;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -104,7 +104,7 @@ public class ResultsReporter {
 
         ResultsReporter r = new ResultsReporter();
 
-        DocumentBuilder docBuilder = new ParseContext().getDocumentBuilder();
+        DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
         Document doc;
         try (InputStream is = Files.newInputStream(p)) {
             doc = docBuilder.parse(is);
@@ -181,7 +181,7 @@ public class ResultsReporter {
                 if (baseNode != null) {
                     base = baseNode.getNodeValue();
                 }
-                XLSXHREFFormatter f = new XLSXHREFFormatter(base, Hyperlink.LINK_URL);
+                XLSXHREFFormatter f = new XLSXHREFFormatter(base, HyperlinkType.URL);
                 ret.put(columnName, f);
             } else if ("fileLink".equals(type)) {
                 String base = "";
@@ -189,7 +189,7 @@ public class ResultsReporter {
                 if (baseNode != null) {
                     base = baseNode.getNodeValue();
                 }
-                XLSXHREFFormatter f = new XLSXHREFFormatter(base, Hyperlink.LINK_FILE);
+                XLSXHREFFormatter f = new XLSXHREFFormatter(base, HyperlinkType.FILE);
                 ret.put(columnName, f);
             }
         }

@@ -17,7 +17,6 @@
 package org.apache.tika.config;
 
 import javax.imageio.spi.ServiceRegistry;
-import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -65,6 +64,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.utils.AnnotationUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -127,7 +127,7 @@ public class TikaConfig {
     }
     public TikaConfig(Path path, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(path.toFile()), loader);
+        this(XMLReaderUtils.getDocumentBuilder().parse(path.toFile()), loader);
     }
 
     public TikaConfig(File file)
@@ -136,7 +136,7 @@ public class TikaConfig {
     }
     public TikaConfig(File file, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(file), loader);
+        this(XMLReaderUtils.getDocumentBuilder().parse(file), loader);
     }
 
     public TikaConfig(URL url)
@@ -145,16 +145,16 @@ public class TikaConfig {
     }
     public TikaConfig(URL url, ClassLoader loader)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(url.toString()).getDocumentElement(), loader);
+        this(XMLReaderUtils.getDocumentBuilder().parse(url.toString()).getDocumentElement(), loader);
     }
     public TikaConfig(URL url, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(url.toString()).getDocumentElement(), loader);
+        this(XMLReaderUtils.getDocumentBuilder().parse(url.toString()).getDocumentElement(), loader);
     }
 
     public TikaConfig(InputStream stream)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(stream));
+        this(XMLReaderUtils.getDocumentBuilder().parse(stream));
     }
 
     public TikaConfig(Document document) throws TikaException, IOException {
@@ -250,7 +250,7 @@ public class TikaConfig {
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
-                Element element = getBuilder().parse(stream).getDocumentElement();
+                Element element = XMLReaderUtils.getDocumentBuilder().parse(stream).getDocumentElement();
                 serviceLoader = serviceLoaderFromDomElement(element, tmpServiceLoader.getLoader());
                 DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
                 EncodingDetectorXmlLoader encodingDetectorLoader = new EncodingDetectorXmlLoader();
@@ -388,10 +388,6 @@ public class TikaConfig {
             throw new RuntimeException(
                     "Unable to access default configuration", e);
         }
-    }
-
-    private static DocumentBuilder getBuilder() throws TikaException {
-        return new ParseContext().getDocumentBuilder();
     }
 
     private static Element getChild(Element element, String name) {
@@ -688,12 +684,8 @@ public class TikaConfig {
                         for (int i = 0; i < childNodes.getLength(); i++) {
                             Node item = childNodes.item(i);
                             if (item.getNodeType() == Node.ELEMENT_NODE){
-                                try {
-                                    Param<?> param = Param.load(item);
-                                    params.put(param.getName(), param);
-                                } catch (JAXBException e) {
-                                    throw new RuntimeException(e);
-                                }
+                                Param<?> param = Param.load(item);
+                                params.put(param.getName(), param);
                             }
                         }
                     }

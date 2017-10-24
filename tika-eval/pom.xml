@@ -37,7 +37,7 @@
         <cli.version>1.4</cli.version> <!--sync version with tika-server or move to parent? -->
         <!-- upgrade to 6.x or something more modern once Tika requires Java 1.8 -->
         <lucene.version>5.5.4</lucene.version>
-        <poi.version>3.17-beta1</poi.version>
+        <poi.version>3.17</poi.version>
     </properties>
 
     <dependencies>

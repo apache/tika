@@ -19,17 +19,17 @@ package org.apache.tika.parser.txt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
+import java.io.*;
+import java.nio.file.Files;
 
+import org.apache.tika.TikaTest;
 import org.junit.Test;
 
-public class CharsetDetectorTest {
+public class CharsetDetectorTest extends TikaTest {
 
     @Test
     public void testTagDropper() throws IOException {
-        try (InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html")) {
+        try (InputStream in = getResourceAsStream("/test-documents/resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             detector.enableInputFilter(true);
             detector.setText(in);
@@ -52,7 +52,7 @@ public class CharsetDetectorTest {
 
     @Test
     public void testEmptyOrNullDeclaredCharset() throws IOException {
-        try (InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html")) {
+        try (InputStream in = getResourceAsStream("/test-documents/resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             Reader reader = detector.getReader(in, null);
             assertTrue(reader.ready());
@@ -66,8 +66,56 @@ public class CharsetDetectorTest {
     public void testWin125XHeuristics() throws Exception {
         //TIKA-2219
         CharsetDetector detector = new CharsetDetector();
-        detector.setText(getClass().getResourceAsStream("/test-documents/testTXT_win-1252.txt"));
+        detector.setText(getResourceAsStream("/test-documents/testTXT_win-1252.txt"));
         CharsetMatch charset =  detector.detect();
         assertEquals("windows-1252", charset.getName());
+    }
+
+    @Test
+    public void testSetTextConsistency() throws Exception {
+        //TIKA-2475
+        File file = getResourceAsFile("/test-documents/multi-language.txt");
+        byte[] fileBytes = Files.readAllBytes(file.toPath());
+        InputStream fileStream = new ByteArrayInputStream(fileBytes);
+
+        CharsetDetector fromBytesDetector = new CharsetDetector();
+        fromBytesDetector.setText(fileBytes);
+
+        CharsetDetector fromStreamDetector = new CharsetDetector();
+        fromStreamDetector.setText(fileStream);
+
+        assertEquals("ISO-8859-1", fromBytesDetector.detect().getName());
+        assertEquals("ISO-8859-1", fromStreamDetector.detect().getName());
+    }
+
+    @Test
+    public void testZeroLength() throws Exception {
+        CharsetDetector detector = new CharsetDetector();
+        detector.setText(new byte[0]);
+        //charset detector returns "UTF-8" when there's no data
+        assertEquals("UTF-8", detector.detect().getName());
+    }
+
+    @Test
+    public void testLengthResetCorrectly() throws IOException {
+        //test that the underlying array.length is reset correctly
+        //first fill the buffer with windows-1256
+
+        String computer = "\u0627\u0644\u062D\u0627\u0633\u0648\u0628";
+        StringBuilder sb = new StringBuilder();
+        CharsetDetector detector = new CharsetDetector();
+        for (int i = 0; i < 5000; i++) {
+            sb.append(computer);
+        }
+        detector.setText(sb.toString().getBytes("windows-1256"));
+        assertEquals("windows-1256", detector.detect().getName());
+
+        sb.setLength(0);
+        for (int i = 0; i < 5; i++) {
+            sb.append(computer);
+        }
+        //then fill a small part of the buffer with UTF-8
+        detector.setText(sb.toString().getBytes("UTF-8"));
+        assertEquals("UTF-8", detector.detect().getName());
     }
 }

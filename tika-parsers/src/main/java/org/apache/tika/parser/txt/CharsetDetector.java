@@ -8,6 +8,8 @@
  */
 package org.apache.tika.parser.txt;
 
+import org.apache.poi.util.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -190,9 +192,14 @@ public class CharsetDetector {
      * @stable ICU 3.4
      */
     public CharsetDetector setText(byte[] in) {
-        fRawInput = in;
-        fRawLength = in.length;
+        return setText(in, in.length);
+    }
 
+    private CharsetDetector setText(byte[] in, int length) {
+        fRawInput = in;
+        fRawLength = length;
+
+        MungeInput();
         return this;
     }
 
@@ -213,24 +220,26 @@ public class CharsetDetector {
     public CharsetDetector setText(InputStream in) throws IOException {
         fInputStream = in;
         fInputStream.mark(kBufSize);
-        fRawInput = new byte[kBufSize];   // Always make a new buffer because the
+        byte[] inputBytes = new byte[kBufSize];   // Always make a new buffer because the
         //   previous one may have come from the caller,
         //   in which case we can't touch it.
-        fRawLength = 0;
-        int remainingLength = kBufSize;
-        while (remainingLength > 0) {
-            // read() may give data in smallish chunks, esp. for remote sources.  Hence, this loop.
-            int bytesRead = fInputStream.read(fRawInput, fRawLength, remainingLength);
-            if (bytesRead <= 0) {
-                break;
+        long bytesRead = -1;
+        try {
+            bytesRead = IOUtils.readFully(fInputStream, inputBytes);
+            if (bytesRead >= Integer.MAX_VALUE) {
+                throw new IOException("Can't have read > Integer.MAX_VALUE bytes");
             }
-            fRawLength += bytesRead;
-            remainingLength -= bytesRead;
+        } finally {
+            fInputStream.reset();
         }
-        fInputStream.reset();
 
-        MungeInput();                     // Strip html markup, collect byte stats.
-        return this;
+        if (bytesRead < 1) {
+            return setText(new byte[0]);
+        } else if ( kBufSize > bytesRead) {
+            return setText(inputBytes, (int)bytesRead);
+        } else {
+            return setText(inputBytes);
+        }
     }
 
     /**

@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.james.mime4j.MimeException;
+import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
@@ -67,7 +68,7 @@ public class RFC822Parser extends AbstractParser {
 
         config = context.get(MimeConfig.class, config);
 
-        MimeStreamParser parser = new MimeStreamParser(config);
+        MimeStreamParser parser = new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(

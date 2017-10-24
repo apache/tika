@@ -32,6 +32,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -54,7 +55,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
    
    public static List<ExternalParser> read(InputStream stream) throws TikaException, IOException {
       try {
-          DocumentBuilder builder = new ParseContext().getDocumentBuilder();
+          DocumentBuilder builder = XMLReaderUtils.getDocumentBuilder();
           Document document = builder.parse(new InputSource(stream));
           return read(document);
       } catch (SAXException e) {

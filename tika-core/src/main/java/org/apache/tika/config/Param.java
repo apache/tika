@@ -16,15 +16,21 @@
  */
 package org.apache.tika.config;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.*;
-import javax.xml.bind.helpers.DefaultValidationEventHandler;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -38,18 +44,13 @@ import java.util.Map;
 
 
 /**
- * This is a JAXB serializable model class for parameters from configuration file.
+ * This is a serializable model class for parameters from configuration file.
  *
  * @param <T> value type. Should be serializable to string and have a constructor with string param
  * @since Apache Tika 1.14
  */
-@XmlRootElement()
-@XmlAccessorType(XmlAccessType.NONE)
 public class Param<T> implements Serializable {
 
-    private static final JAXBContext JAXB_CTX;
-    private static final Marshaller MARSHALLER;
-    private static final Unmarshaller UNMARSHALLER;
     private static final Map<Class<?>, String> map = new HashMap<>();
     private static final Map<String, Class<?>> reverseMap = new HashMap<>();
 
@@ -69,27 +70,14 @@ public class Param<T> implements Serializable {
         for (Map.Entry<Class<?>, String> entry : map.entrySet()) {
             reverseMap.put(entry.getValue(), entry.getKey());
         }
-        try {
-            JAXB_CTX = JAXBContext.newInstance(Param.class);
-            MARSHALLER = JAXB_CTX.createMarshaller();
-            MARSHALLER.setEventHandler(new DefaultValidationEventHandler());
-            UNMARSHALLER = JAXB_CTX.createUnmarshaller();
-            UNMARSHALLER.setEventHandler(new DefaultValidationEventHandler());
-        } catch (JAXBException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    @XmlTransient
     private Class<T> type;
 
-    @XmlAttribute(name = "name")
     private String name;
 
-    @XmlValue()
     private String value;
 
-    @XmlTransient
     private T actualValue;
 
     public Param(){
@@ -113,7 +101,6 @@ public class Param<T> implements Serializable {
         this.name = name;
     }
 
-    @XmlTransient
     public Class<T> getType() {
         return type;
     }
@@ -122,7 +109,6 @@ public class Param<T> implements Serializable {
         this.type = type;
     }
 
-    @XmlAttribute(name = "type")
     public String getTypeString(){
         if (type == null) {
             return null;
@@ -137,28 +123,14 @@ public class Param<T> implements Serializable {
         if (type == null || type.isEmpty()){
             return;
         }
-        if (reverseMap.containsKey(type)){
-            this.type = (Class<T>) reverseMap.get(type);
-        } else try {
-            this.type = (Class<T>) Class.forName(type);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        
+        this.type = classFromType(type);
         this.actualValue = null;
     }
 
-    @XmlTransient
     public T getValue(){
         if (actualValue == null) {
-            try {
-                Constructor<T> constructor = type.getConstructor(String.class);
-                constructor.setAccessible(true);
-                this.actualValue = constructor.newInstance(value);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(type + " doesnt have a constructor that takes String arg", e);
-            } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
+            actualValue = getTypedValue(type, value);
         }
         return actualValue;
     }
@@ -172,20 +144,75 @@ public class Param<T> implements Serializable {
                 '}';
     }
 
-    public void save(OutputStream stream) throws JAXBException {
-        MARSHALLER.marshal(this, stream);
+    public void save(OutputStream stream) throws TransformerException, TikaException {
+        
+        
+        DocumentBuilder builder = XMLReaderUtils.getDocumentBuilder();
+        Document doc = builder.newDocument();
+        Element paramEl = doc.createElement("param");
+        doc.appendChild(paramEl);
+        
+        save(paramEl);
+        
+        Transformer transformer = XMLReaderUtils.getTransformer();
+        transformer.transform(new DOMSource(paramEl), new StreamResult(stream));
     }
 
-    public void save(Node node) throws JAXBException {
-        MARSHALLER.marshal(this, node);
+    public void save(Node node) {
+
+        if ( !(node instanceof Element) ) {
+            throw new IllegalArgumentException("Not an Element : " + node);
+        }
+        
+        Element el = (Element) node;
+        
+        el.setAttribute("name",  getName());
+        el.setAttribute("type", getTypeString());
+        el.setTextContent(value);
     }
 
-    public static <T> Param<T> load(InputStream stream) throws JAXBException {
-        return (Param<T>) UNMARSHALLER.unmarshal(stream);
+    public static <T> Param<T> load(InputStream stream) throws SAXException, IOException, TikaException {
+        
+        DocumentBuilder db = XMLReaderUtils.getDocumentBuilder();
+        Document document = db.parse(stream);
+        
+        return load(document.getFirstChild());
     }
 
-    public static <T> Param<T> load(Node node) throws JAXBException {
-        return (Param<T>) UNMARSHALLER.unmarshal(node);
+    public static <T> Param<T> load(Node node)  {
+        
+        Node nameAttr = node.getAttributes().getNamedItem("name");
+        Node typeAttr = node.getAttributes().getNamedItem("type");
+        Node value = node.getFirstChild();
+        
+        Param<T> ret = new Param<T>();
+        ret.name  = nameAttr.getTextContent();
+        ret.setTypeString(typeAttr.getTextContent());
+        ret.value = value.getTextContent();
+        
+        return ret;
+    }
+    
+    private static <T> Class<T> classFromType(String type) {
+        if (reverseMap.containsKey(type)){
+            return (Class<T>) reverseMap.get(type);
+        } else try {
+            return (Class<T>) Class.forName(type);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    private static <T> T getTypedValue(Class<T> type, String value) {
+        try {
+            Constructor<T> constructor = type.getConstructor(String.class);
+            constructor.setAccessible(true);
+            return constructor.newInstance(value);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(type + " doesnt have a constructor that takes String arg", e);
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }        
     }
 
 }
