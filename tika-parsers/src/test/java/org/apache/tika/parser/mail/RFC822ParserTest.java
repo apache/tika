@@ -577,56 +577,25 @@ public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testMultipartFlags() throws Exception {
-        final ContentHandler handler = new BodyContentHandler();
-        final Metadata metadata = new Metadata();
-        final Parser parser = new RFC822Parser();
-        final ParseContext context = new ParseContext();
-        final Parser autoDetectParser = new AutoDetectParser();
 
-        final List<Metadata> metadataList = new ArrayList<Metadata>();
-
-        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
-
-            @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
-                return true;
-            }
-
-            @Override
-            public void parseEmbedded(InputStream stream, ContentHandler handler,
-                                      Metadata metadata, boolean outputHtml) throws SAXException,
-                    IOException {
-                try {
-                    autoDetectParser.parse(stream, new BodyContentHandler(), metadata, new ParseContext());
-                } catch (TikaException e) {
-                    throw new RuntimeException(e);
-                }
-
-                metadataList.add(metadata);
-            }
-        });
-
-        try (InputStream stream = getStream("test-documents/testRFC822-multipart")) {
-            parser.parse(stream, handler, metadata, context);
-        }
-
+        List<Metadata> metadataList = getRecursiveMetadata("testRFC822-multipart");
         // Check the root metadata.
-        assertTrue(metadata.get(Message.MULTIPART_SUBTYPE).equals("mixed"));
-        assertTrue(metadata.get(Message.MULTIPART_BOUNDARY).equals("0016e64606800312ee04913db790"));
+        assertEquals("mixed", metadataList.get(0).get(Message.MULTIPART_SUBTYPE));
+        assertEquals("0016e64606800312ee04913db790", metadataList.get(0).get(Message.MULTIPART_BOUNDARY));
 
         // Check the metadata of the first alternative.
-        assertTrue(metadataList.get(0).get(Metadata.CONTENT_TYPE).equals("text/plain; charset=UTF-8"));
-        assertTrue(metadataList.get(0).get(Message.MULTIPART_SUBTYPE).equals("alternative"));
-        assertTrue(metadataList.get(0).get(Message.MULTIPART_BOUNDARY).equals("0016e64606800312ea04913db78e"));
-
-        // Check the metadata of the second alternative.
-        assertTrue(metadataList.get(1).get(Metadata.CONTENT_TYPE).equals("text/html; charset=UTF-8"));
+        assertTrue(metadataList.get(1).get(Metadata.CONTENT_TYPE).equals("text/plain; charset=UTF-8"));
         assertTrue(metadataList.get(1).get(Message.MULTIPART_SUBTYPE).equals("alternative"));
         assertTrue(metadataList.get(1).get(Message.MULTIPART_BOUNDARY).equals("0016e64606800312ea04913db78e"));
 
+        // Check the metadata of the second alternative.
+        assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).equals("text/html; charset=UTF-8"));
+        assertTrue(metadataList.get(2).get(Message.MULTIPART_SUBTYPE).equals("alternative"));
+        assertTrue(metadataList.get(2).get(Message.MULTIPART_BOUNDARY).equals("0016e64606800312ea04913db78e"));
+
         // Check the metadata of the attached GIF.
-        assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).equals("image/gif"));
-        assertTrue(metadataList.get(2).get(Message.MULTIPART_SUBTYPE) == null);
-        assertTrue(metadataList.get(2).get(Message.MULTIPART_BOUNDARY) == null);
+        assertTrue(metadataList.get(3).get(Metadata.CONTENT_TYPE).equals("image/gif"));
+        assertTrue(metadataList.get(3).get(Message.MULTIPART_SUBTYPE) == null);
+        assertTrue(metadataList.get(3).get(Message.MULTIPART_BOUNDARY) == null);
     }
 }
