@@ -16,24 +16,26 @@
  */
 package org.apache.tika.parser.mbox;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class MboxParserTest {
+public class MboxParserTest extends TikaTest {
 
     protected ParseContext recursingContext;
     private Parser autoDetectParser;
@@ -166,5 +168,15 @@ public class MboxParserTest {
         
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
         assertEquals("message/rfc822", firstMail.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testTika2478() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMBOX_complex.mbox");
+        assertEquals(2, metadataList.size());
+        assertEquals("application/mbox", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("message/rfc822", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertContains("body 2", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertNotContained("body 1", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
     }
 }

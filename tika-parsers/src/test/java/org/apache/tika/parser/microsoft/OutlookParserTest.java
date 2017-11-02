@@ -27,17 +27,21 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -300,5 +304,40 @@ public class OutlookParserTest extends TikaTest {
     private void testMsgClass(String expected, Metadata metadata) {
         assertTrue(expected + ", but got: " + metadata.get(Office.MAPI_MESSAGE_CLASS),
                 expected.equalsIgnoreCase(metadata.get(Office.MAPI_MESSAGE_CLASS).replaceAll("_", "")));
+    }
+
+    @Test
+    public void testHandlingAllAlternativesBodies() throws Exception {
+        //test that default only has one body
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG.msg");
+        assertEquals(1, metadataList.size());
+        assertContains("breaking your application",
+                metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("application/vnd.ms-outlook",
+                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        //now try extracting all bodies
+        //they should each appear as standalone attachments
+        //with no content in the body of the msg level
+        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("tika-config-extract-all-alternatives-msg.xml"));
+        Parser p = new AutoDetectParser(tikaConfig);
+
+        metadataList = getRecursiveMetadata("testMSG.msg", p);
+        assertEquals(3, metadataList.size());
+
+        assertNotContained("breaking your application",
+                metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("application/vnd.ms-outlook",
+                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        assertContains("breaking your application",
+                metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("application/rtf",
+                metadataList.get(1).get(Metadata.CONTENT_TYPE));
+
+        assertContains("breaking your application",
+                metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
+
     }
 }

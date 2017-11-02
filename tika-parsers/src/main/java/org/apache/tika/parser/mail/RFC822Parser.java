@@ -25,6 +25,7 @@ import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -39,7 +40,7 @@ import org.xml.sax.SAXException;
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
  * <p/>
- * A {@link MimeEntityConfig} object can be passed in the parsing context
+ * A {@link MimeConfig} object can be passed in the parsing context
  * to better control the parsing process.
  *
  * @author jnioche@digitalpebble.com
@@ -52,6 +53,9 @@ public class RFC822Parser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.parse("message/rfc822"));
+
+    @Field
+    private boolean extractAllAlternatives = false;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -72,7 +76,8 @@ public class RFC822Parser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(
-                xhtml, metadata, context, config.isStrictParsing());
+                xhtml, metadata, context, config.isStrictParsing(),
+                extractAllAlternatives);
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
         
@@ -95,4 +100,19 @@ public class RFC822Parser extends AbstractParser {
         }
     }
 
+    /**
+     * Until version 1.17, Tika handled all body parts as embedded objects (see TIKA-2478).
+     * In 1.17, we modified the parser to select only the best alternative body
+     * parts for multipart/alternative sections, and we inline the content
+     * as we do for .msg files.
+     *
+     * The legacy behavior can be set by setting {@link #extractAllAlternatives}
+     * to <code>true</code>.  As of 1.17, the default value is <code>false</code>
+     *
+     * @param extractAllAlternatives whether or not to extract all alternative parts
+     * @since 1.17
+     */
+    public void setExtractAllAlternatives(boolean extractAllAlternatives) {
+        this.extractAllAlternatives = extractAllAlternatives;
+    }
 }

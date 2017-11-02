@@ -113,4 +113,23 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         defaultOfficeParserConfig.getConcatenatePhoneticRuns();
     }
 
+    /**
+     * Some .msg files can contain body content in html, rtf and/or text.
+     * The default behavior is to pick the first non-null value and include only that.
+     * If you'd like to extract all non-null body content, which is likely duplicative,
+     * set this value to true.
+     *
+     * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts from msg files
+     * @since 1.17
+     */
+    @Field
+    public void setExtractAllAlternativesFromMSG(boolean extractAllAlternativesFromMSG) {
+        defaultOfficeParserConfig.setExtractAllAlternativesFromMSG(extractAllAlternativesFromMSG);
+    }
+
+
+    public boolean getExtractAllAlternativesFromMSG() {
+        return defaultOfficeParserConfig.getExtractAllAlternativesFromMSG();
+    }
+
 }

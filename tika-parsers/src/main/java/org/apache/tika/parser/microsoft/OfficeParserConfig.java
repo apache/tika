@@ -17,6 +17,8 @@
 package org.apache.tika.parser.microsoft;
 
 
+import org.apache.tika.config.Field;
+
 import java.io.Serializable;
 
 public class OfficeParserConfig implements Serializable {
@@ -31,6 +33,7 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
+    private boolean extractAllAlternativesFromMSG;
 
     /**
      * Sets whether or not MSOffice parsers should extract macros.
@@ -169,6 +172,25 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setConcatenatePhoneticRuns(boolean concatenatePhoneticRuns) {
         this.concatenatePhoneticRuns = concatenatePhoneticRuns;
+    }
+
+
+    /**
+     * Some .msg files can contain body content in html, rtf and/or text.
+     * The default behavior is to pick the first non-null value and include only that.
+     * If you'd like to extract all non-null body content, which is likely duplicative,
+     * set this value to true.
+     *
+     * @param extractAllAlternativesFromMSG whether or not to extract all alternative parts
+     * @since 1.17
+     */
+    public void setExtractAllAlternativesFromMSG(boolean extractAllAlternativesFromMSG) {
+        this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
+    }
+
+
+    public boolean getExtractAllAlternativesFromMSG() {
+        return extractAllAlternativesFromMSG;
     }
 }
 

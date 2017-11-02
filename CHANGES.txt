@@ -1,5 +1,11 @@
 Release 1.17 - ???
 
+  * RFC822Parser now selects the best alternative for
+    multipart/alternative body components.  This aligns with the
+    behavior of the OutlookParser (TIKA-2478).  Users can select
+    legacy behavior via the "extractAllAlternatives" parameter
+    in the RFC822 parser definition in tika-config.xml.
+
   * Narrow mime detection for ms-owner files and add detection
     for .nls files (TIKA-2469).
 

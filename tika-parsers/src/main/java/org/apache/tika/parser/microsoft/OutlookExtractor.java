@@ -53,6 +53,7 @@ import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.util.CodePageUtil;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -61,6 +62,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
@@ -123,6 +125,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final MAPIMessage msg;
     private final ParseContext parseContext;
 
+    private final boolean extractAllAlternatives;
+
     public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
         this(filesystem.getRoot(), context);
     }
@@ -130,6 +134,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
         this.parseContext = context;
+        this.extractAllAlternatives = context.get(OfficeParserConfig.class).getExtractAllAlternativesFromMSG();
         try {
             this.msg = new MAPIMessage(root);
         } catch (IOException e) {
@@ -240,50 +245,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     textChunk = chunk;
                 }
             }
-
-            boolean doneBody = false;
-            xhtml.startElement("div", "class", "message-body");
-            if (htmlChunk != null) {
-                byte[] data = null;
-                if (htmlChunk instanceof ByteChunk) {
-                    data = ((ByteChunk) htmlChunk).getValue();
-                } else if (htmlChunk instanceof StringChunk) {
-                    data = ((StringChunk) htmlChunk).getRawValue();
-                }
-                if (data != null) {
-                    Parser htmlParser =
-                            EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, parseContext);
-                    if (htmlParser == null) {
-                        htmlParser = new HtmlParser();
-                    }
-                    htmlParser.parse(
-                            new ByteArrayInputStream(data),
-                            new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                            new Metadata(), parseContext
-                    );
-                    doneBody = true;
-                }
-            }
-            if (rtfChunk != null && !doneBody) {
-                ByteChunk chunk = (ByteChunk) rtfChunk;
-                MAPIRtfAttribute rtf = new MAPIRtfAttribute(
-                        MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
-                );
-                Parser rtfParser =
-                        EmbeddedDocumentUtil.tryToFindExistingLeafParser(RTFParser.class, parseContext);
-                if (rtfParser == null) {
-                    rtfParser = new RTFParser();
-                }
-                rtfParser.parse(
-                        new ByteArrayInputStream(rtf.getData()),
-                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                        new Metadata(), parseContext);
-                doneBody = true;
-            }
-            if (textChunk != null && !doneBody) {
-                xhtml.element("p", ((StringChunk) textChunk).getValue());
-            }
-            xhtml.endElement("div");
+            handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml);
 
             // Process the attachments
             for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
@@ -325,6 +287,110 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             //child is read, the fs is closed, and the other children
             //get a java.nio.channels.ClosedChannelException
         }
+    }
+
+    private void handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk, XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
+
+        if (extractAllAlternatives) {
+            extractAllAlternatives(htmlChunk, rtfChunk, textChunk, xhtml);
+            return;
+        }
+
+        boolean doneBody = false;
+        xhtml.startElement("div", "class", "message-body");
+        if (htmlChunk != null) {
+            byte[] data = null;
+            if (htmlChunk instanceof ByteChunk) {
+                data = ((ByteChunk) htmlChunk).getValue();
+            } else if (htmlChunk instanceof StringChunk) {
+                data = ((StringChunk) htmlChunk).getRawValue();
+            }
+            if (data != null) {
+                Parser htmlParser =
+                        EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, parseContext);
+                if (htmlParser == null) {
+                    htmlParser = new HtmlParser();
+                }
+                htmlParser.parse(
+                        new ByteArrayInputStream(data),
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                        new Metadata(), parseContext
+                );
+                doneBody = true;
+            }
+        }
+        if (rtfChunk != null && (extractAllAlternatives || !doneBody)) {
+            ByteChunk chunk = (ByteChunk) rtfChunk;
+            MAPIRtfAttribute rtf = new MAPIRtfAttribute(
+                    MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
+            );
+            Parser rtfParser =
+                    EmbeddedDocumentUtil.tryToFindExistingLeafParser(RTFParser.class, parseContext);
+            if (rtfParser == null) {
+                rtfParser = new RTFParser();
+            }
+            rtfParser.parse(
+                    new ByteArrayInputStream(rtf.getData()),
+                    new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                    new Metadata(), parseContext);
+            doneBody = true;
+        }
+        if (textChunk != null && (extractAllAlternatives || !doneBody)) {
+            xhtml.element("p", ((StringChunk) textChunk).getValue());
+        }
+        xhtml.endElement("div");
+
+    }
+
+    private void extractAllAlternatives(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk, XHTMLContentHandler xhtml)
+            throws TikaException, SAXException, IOException {
+        if (htmlChunk != null) {
+            byte[] data = getValue(htmlChunk);
+            if (data != null) {
+                handleEmbeddedResource(
+                        TikaInputStream.get(data),
+                        "html-body", null,
+                        MediaType.TEXT_HTML.toString(), xhtml, true
+                );
+            }
+        }
+        if (rtfChunk != null) {
+            ByteChunk chunk = (ByteChunk) rtfChunk;
+            MAPIRtfAttribute rtf = new MAPIRtfAttribute(
+                    MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
+            );
+
+            byte[] data = rtf.getData();
+            if (data != null) {
+                handleEmbeddedResource(
+                        TikaInputStream.get(data),
+                        "rtf-body", null,
+                        "application/rtf", xhtml, true
+                );
+            }
+        }
+        if (textChunk != null) {
+            byte[] data = getValue(textChunk);
+            if (data != null) {
+                handleEmbeddedResource(
+                        TikaInputStream.get(data),
+                        "text-body", null,
+                        MediaType.TEXT_PLAIN.toString(), xhtml, true
+                );
+            }
+        }
+
+    }
+
+    //can return null!
+    private byte[] getValue(Chunk chunk) {
+        byte[] data = null;
+        if (chunk instanceof ByteChunk) {
+            data = ((ByteChunk) chunk).getValue();
+        } else if (chunk instanceof StringChunk) {
+            data = ((StringChunk) chunk).getRawValue();
+        }
+        return data;
     }
 
     private void handleFromTo(Map<String, String[]> headers, Metadata metadata) throws ChunkNotFoundException {
@@ -658,7 +724,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
         return recipients;
     }
-
 
     private static class Recipient {
         String name;

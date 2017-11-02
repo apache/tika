@@ -1,0 +1,64 @@
+MIME-Version: 1.0
+Received: by 10.103.33.199 with HTTP; Tue, 6 Jun 2017 14:48:27 -0700 (PDT)
+Bcc: emailtosalesforce@r-kub1lq8760pccrdt39x94qxtajhk3q4zb1fzikf15ygnugofn.6a-euhkuaa.na50.le.salesforce.com
+Date: Tue, 6 Jun 2017 14:48:27 -0700
+Delivered-To: john.doe@gmail.com
+Message-ID: <CACmaLAZ16kghp1Qf99noL2P33AnAzU7bbKfju=JASRYyscvNdw@mail.gmail.com>
+Subject: Test BCCing email (rev 2)
+From: John Doe <john.doe@gmail.com>
+To: john.smith@domain.com
+Content-Type: multipart/mixed; boundary="94eb2c03266668996305515194b6"
+
+--94eb2c03266668996305515194b6
+Content-Type: multipart/related; boundary="94eb2c03266668996205515194b5"
+
+--94eb2c03266668996205515194b5
+Content-Type: multipart/alternative; boundary="94eb2c03266668995d05515194b4"
+
+--94eb2c03266668995d05515194b4
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+This is an email that will have some rich text and an attachment.
+
+*Because I've added some bold text here.*
+
+body 1
+*=E2=80=8B*
+*And here's some more text (still bold)*
+
+-- John
+
+--94eb2c03266668995d05515194b4
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><span style=3D"font-size:12.8px">This is an email that wil=
+l have some rich text and an attachment.</span><div style=3D"font-size:12.8=
+px"><br></div><div style=3D"font-size:12.8px"><b>Because I&#39;ve added som=
+e bold text here.</b></div><div style=3D"font-size:12.8px"><b><br></b></div=
+><div style=3D"font-size:12.8px"><b><img src=3D"cid:ii_j3m3inig0_15c7f60325=
+99828c" width=3D"396" height=3D"544"><br>=E2=80=8B</b></div><div style=3D"f=
+ont-size:12.8px"><b>And here&#39;s some more text (still bold)</b></div><di=
+v style=3D"font-size:12.8px"><b><br></b></div><div style=3D"font-size:12.8p=
+x">-- John</div><div style=3D"font-size:12.8px"><br>body 2</div><div style=3D"font=
+-size:12.8px"></div></div>
+
+--94eb2c03266668995d05515194b4--
+--94eb2c03266668996205515194b5
+Content-Type: image/jpeg; name="Mary with cooler.jpeg"
+Content-Disposition: inline; filename="Mary with cooler.jpeg"
+Content-Transfer-Encoding: base64
+Content-ID: <ii_j3m3inig0_15c7f6032599828c>
+X-Attachment-Id: ii_j3m3inig0_15c7f6032599828c
+
+
+--94eb2c03266668996205515194b5--
+--94eb2c03266668996305515194b6
+Content-Type: image/jpeg; name="mary-coffee.jpg"
+Content-Disposition: attachment; filename="mary-coffee.jpg"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_j3m3jfpq1
+
+
+--94eb2c03266668996305515194b6--

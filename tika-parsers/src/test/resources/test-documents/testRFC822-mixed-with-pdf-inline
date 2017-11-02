@@ -1,0 +1,600 @@
+Delivered-To: johndoe@gmail.com
+Received: by 10.103.83.197 with SMTP id o66csp1421430vsg;
+        Mon, 29 May 2017 16:56:08 -0700 (PDT)
+X-Received: by 10.84.137.3 with SMTP id 3mr78506105plm.68.1496102168554;
+        Mon, 29 May 2017 16:56:08 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1496102168; cv=none;
+        d=google.com; s=arc-20160816;
+        b=XXvx0gWtFZAYNmx5p9cyvz7Vodj0l0QxU5ftVARjjUZyZ7v5KAFHANgbGGBYYaYAw0
+         y7qMlQ2OYoZkHuKKi+ipO9G/Wkp8ZR31rLFPOD6GDgFi1HxdE4uW6PDabzR7tt58zYcX
+         xIzqtLcSZpbAW1jDn2FTX5WelV5toOGTZs7yHdRTFg/oOzybQPCNAQcOLCIYD5nhfMJA
+         bvYdMU23XOIy98iiUxHIOd9JdKeL4JwozdczoBqiwLzSHXKMi702zMcTS7rY182dbd/N
+         WMnPBhjgG7ath/Uv60aMudnWzFL4P8Plmyrf6f0jVL/fOR4pGlCoPuiQ5GSS24hQaEL/
+         kMOQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20160816;
+        h=in-reply-to:to:references:date:subject:mime-version:message-id:from
+         :dkim-signature:arc-authentication-results;
+        bh=PHebpItQ2PaPQF/XYZNUdKyx0Gk68Mpr/iOTNLPN5hI=;
+        b=bsymaadNoACNEkhrBvcJXxGqGVhlaiUQhWC/d9GX0W4FfG0OXdF4Jpy3BCvm0mAstb
+         v+70yG2Cr94R9njJlY8LSBbhc8UOeh9n5TA/plVjkBzVvabJK0nC5B0Ru/0W/XCg3D1B
+         ywc3QRJsoS6Rwg16r6jUg8n/c+cD6K+w4kv/msHA7d9FQj+CPRBsXZ8owojyDREd26rp
+         kXV+h0NWRiO45XL8OVwz7yOyGmElAtzy/Jhg+nHy7UpJLawtN2wWQ+moSCy/m+daLI3p
+         o6MqFnX64Y1GHgWaMBZlCTegcqOC9QsD9rZDI8suvFt1lFg+csHfxJnNqDKnsb74yuhz
+         4FOw==
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@domain-com.20150623.gappssmtp.com;
+       spf=neutral (google.com: 2607:f8b0:400e:c00::22b is neither permitted nor denied by best guess record for domain of john.smith@domain.com) smtp.mailfrom=john.smith@domain.com
+Return-Path: <john.smith@domain.com>
+Received: from mail-pf0-x22b.google.com (mail-pf0-x22b.google.com. [2607:f8b0:400e:c00::22b])
+        by mx.google.com with ESMTPS id r87si10499171pfd.218.2017.05.29.16.56.08
+        for <johndoe@gmail.com>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 29 May 2017 16:56:08 -0700 (PDT)
+Received-SPF: neutral (google.com: 2607:f8b0:400e:c00::22b is neither permitted nor denied by best guess record for domain of john.smith@domain.com) client-ip=2607:f8b0:400e:c00::22b;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@domain-com.20150623.gappssmtp.com;
+       spf=neutral (google.com: 2607:f8b0:400e:c00::22b is neither permitted nor denied by best guess record for domain of john.smith@domain.com) smtp.mailfrom=john.smith@domain.com
+Received: by mail-pf0-x22b.google.com with SMTP id m17so48929191pfg.3
+        for <johndoe@gmail.com>; Mon, 29 May 2017 16:56:08 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=domain-com.20150623.gappssmtp.com; s=20150623;
+        h=from:message-id:mime-version:subject:date:references:to:in-reply-to;
+        bh=PHebpItQ2PaPQF/XYZNUdKyx0Gk68Mpr/iOTNLPN5hI=;
+        b=Ed7nWpP6M/EHJg+1PNTzGA09nRTYofQsBinn3e3F1jVYYvdDTAvyxS7DJf0xKp6XPw
+         k104FZXUOkxrmESut8cjFwKSLHsSMsYbow7U7cLhiAMdQ9qw91cMvpDcFwIYmvaVVI2j
+         fFNTbTwUJDXif2eYuCns2pN++wtDBwTkN+sfn2Q2FrATm4QaXepySwokbl8FOjMvUclb
+         sQplhU1mhKLm/rkSSmCkAe74fo6JbErkpXHfEMwQB7LgLBmAWTJS8WKP0GAlYdnP6X4c
+         uS3bqmH3ayblghn/4GQsHdux6zAZtXgz4fgHK2m67W5/sDh/Zywj8VDt8PtMXu1M106m
+         O+xg==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20161025;
+        h=x-gm-message-state:from:message-id:mime-version:subject:date
+         :references:to:in-reply-to;
+        bh=PHebpItQ2PaPQF/XYZNUdKyx0Gk68Mpr/iOTNLPN5hI=;
+        b=axmOeTETLUmbOqxvWrkgR1vFQRLjAvDpAZbiJtBFpvPbLxj9WWqBDZF94sxOMWc5RF
+         P/0m5HUaa5HPb8nykr0tUie6zhIrzT6HubLdvvyWPL/oX9g3YpDKQXtzeaJUG3+kzONI
+         BeRwjDEbmyLUegj2Gess1NtV91s3ivb1pueaVPHbBKkiztNR/tzRGIkF9MnGAmIJ/Rof
+         9F0raho8/SJflts8K4wyM7fyfgt2+So3uxoYrg9HkNaj2dUzgPRhWk9UYy8UNkEvKubW
+         JX26xzQFLc5gkICKVVW+SBhcdnbuLIX/R/kW416PSVFH6lrc83v2ex6elMlBowWR1zMK
+         GT/w==
+X-Gm-Message-State: AODbwcBjD1bfO7UplrL7hRhgSzEeyjbcitGrIpG3QAM5bIjL6ygvx5vd Hyu3kdfSeB4b1ohL88z98Q==
+X-Received: by 10.99.112.66 with SMTP id a2mr21687762pgn.7.1496102167547;
+        Mon, 29 May 2017 16:56:07 -0700 (PDT)
+Return-Path: <john.smith@domain.com>
+Received: from [192.168.1.243] (108-196-129-58.lightspeed.frokca.sbcglobal.net. [108.196.129.58])
+        by smtp.gmail.com with ESMTPSA id o66sm18408039pga.64.2017.05.29.16.55.28
+        for <johndoe@gmail.com>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Mon, 29 May 2017 16:56:06 -0700 (PDT)
+From: John Smith <john.smith@domain.com>
+Content-Type: multipart/alternative; boundary="Apple-Mail=_C81A339C-755B-4F48-AEF5-6A55B22BC8FA"
+Message-Id: <55CFD80C-6447-4C8E-B68C-016D8C206F7B@domain.com>
+Mime-Version: 1.0 (Mac OS X Mail 9.3 \(3124\))
+Subject: Re: Jane Doe Has Invited You to Team "Jane" at RealtimeBoard
+Date: Mon, 29 May 2017 16:55:27 -0700
+References: <30166792.20170519222441.591f70a9caafe7.16435733@mail186-9.suw21.mandrillapp.com> <5905CAEF-F03D-4C65-A848-4B86D65498FA@domain.com> <EA5DA741-A746-482C-A912-070E9D2FEA18@domain.com>
+To: johndoe@gmail.com
+In-Reply-To: <EA5DA741-A746-482C-A912-070E9D2FEA18@domain.com>
+X-Mailer: Apple Mail (2.3124)
+
+--Apple-Mail=_C81A339C-755B-4F48-AEF5-6A55B22BC8FA
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+
+Attachment in middle
+
+body 1
+Hi Jane,
+
+I cannot access that page, but I don=E2=80=99t see any content on it.
+
+It might be my internet connection at Java Johns, I=E2=80=99ll try again wh=
+en I=E2=80=99m back at my office.
+
+=E2=80=94 John
+
+
+> On May 22, 2017, at 9:16am, Jane Doe <jane.doe@domain.com <=
+mailto:jane.doe@domain.com>> wrote:
+>=20
+>=20
+> Hi John,=20
+> Did you have a chance to take a look at the Board with competitor screens=
+hots. https://realtimeboard.com/app/board/o9J_k0-_0Xg=3D/ <https://realtime=
+board.com/app/board/o9J_k0-_0Xg=3D/>
+> Can you work with it? I think there is no need to upload it to our Wiki. =
+I plan to add more competitors to the board.
+>=20
+> Please let me know how I can help you.=20
+> Jane=20
+> =20
+>=20
+>> On 22 May 2017, at 07:54, John Smith <john.smith@domain.com <mailto:=
+john.smith@domain.com>> wrote:
+>>=20
+>> Hi Jane,
+>>=20
+>> I=E2=80=99m signed up, and part of the =E2=80=9CDomain=E2=80=9D team.
+>>=20
+>> =E2=80=94 John
+>>=20
+>>> Begin forwarded message:
+>>>=20
+>>> From: RealtimeBoard Team <notification@realtimeboard.com <mailto:notifi=
+cation@realtimeboard.com>>
+>>> Subject: Jane Doe Has Invited You to Team "Jane" at RealtimeBoard
+>>> Date: May 19, 2017 at 3:24:41pm PDT
+>>> To: <john.smith@domain.com <mailto:john.smith@domain.com>>
+>>> Reply-To: Jane Doe <jane.doe@domain.com <mailto:jane.doe=
+@domain.com>>
+
+
+
+>>>=20
+>>>   <https://mandrillapp.com/track/click/30166792/realtimeboard.com?p=3De=
+yJzIjoiMEVnZUstNFZxcERLRFE5blZRMHlSS1BLRS0wIiwidiI6MSwicCI6IntcInVcIjozMDE2=
+Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3JlYWx0aW1lYm9hcmQuY29tXFx=
+cL2luZGV4XFxcL1wiLFwiaWRcIjpcIjc0YjY5NzcwYTQwNzRlMjFiNTU4MmY5NDE1YmRlYTZjXC=
+IsXCJ1cmxfaWRzXCI6W1wiMDk5NjcwYTJiNmVhYTliMDE1YzdhZDkxOGUyZDNkMDBlOWY2OGFmY=
+lwiXX0ifQ>=09
+>>> =20
+>>> Hi john.smith@domain.com <mailto:john.smith@domain.com>!
+>>> =20
+>>> =09=09
+>>> Jane Doe has added you to the team "Jane".
+>>> =20
+>>> RealtimeBoard is an endless online whiteboard that can store an endless=
+ flow of ideas. Work on your projects visually and see what your colleagues=
+ and friends are doing in real-time!
+>>> =20
+>>> JOIN RIGHT NOW
+>>>  <https://mandrillapp.com/track/click/30166792/realtimeboard.com?p=3Dey=
+JzIjoieWxuSjNqdXdXZjByb2VadXhJSEFrY21BMUFNIiwidiI6MSwicCI6IntcInVcIjozMDE2N=
+jc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3JlYWx0aW1lYm9hcmQuY29tXFxc=
+L2FwcFxcXC8_aW52aXRlPTJhYWFhYWFhYjYzMDkzZDg4NWU5NGM2MzRlNmExNTQyLWQxNzQxOGF=
+hNmQyOThjMDktY2MwZTgzM2I2YjI4ZmI3OS1kNjg4NzcyMTUzYTljMzYwJmV2ZW50PW1haWxJbn=
+ZpdGUmbWFpbFVzZXJFbWFpbD1rZW4ua3J1Z2xlciU0MHNhbGVzaGVyby5haSZ0cmFjaz10cnVlX=
+CIsXCJpZFwiOlwiNzRiNjk3NzBhNDA3NGUyMWI1NTgyZjk0MTViZGVhNmNcIixcInVybF9pZHNc=
+IjpbXCI3NGNkMDQ2MmRhOWE2ZDA5OTAzZTdlNGY1OTRiM2IyMzRjMjAxYzg3XCJdfSJ9>=09
+>>> =20
+>>> =20
+>>>  =09=09Not sure why you are receiving this?
+>>> Ask Jane Doe at jane.doe@domain.com <mailto:jane.doe=
+@domain.com>=09
+>>>  =09=09
+>>> Other people in this team:
+>>> Jane Doe, Thomas=09
+>>>  =09=09
+>>> Happy whiteboarding!
+>>> RealtimeBoard Team.=09
+>>> =20
+>>> =20
+>>> RealtimeBlog <https://mandrillapp.com/track/click/30166792/realtimeboar=
+d.com?p=3DeyJzIjoicXZneG9NVVppWkZHSTVlUmtObHRvSFZPMXRRIiwidiI6MSwicCI6IntcI=
+nVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3JlYWx0aW1lYm9h=
+cmQuY29tXFxcL3ByZXBhcmVcXFwvYmxvZ1xcXC8_dHJhY2s9dHJ1ZVwiLFwiaWRcIjpcIjc0YjY=
+5NzcwYTQwNzRlMjFiNTU4MmY5NDE1YmRlYTZjXCIsXCJ1cmxfaWRzXCI6W1wiMjc1ZmQ0NGZmYW=
+FkM2RjMjZhNzI4ZWI0NGExNjk2MGQ1ZmZiN2IwYVwiXX0ifQ>
+>>> =20
+>>>                                                    <https://mandrillapp=
+.com/track/click/30166792/www.facebook.com?p=3DeyJzIjoicUlPaUlQODhxb0c1cmpN=
+a3VhV01aaXZHYjVrIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI=
+6XCJodHRwczpcXFwvXFxcL3d3dy5mYWNlYm9vay5jb21cXFwvUmVhbHRpbWVCb2FyZFwiLFwiaW=
+RcIjpcIjc0YjY5NzcwYTQwNzRlMjFiNTU4MmY5NDE1YmRlYTZjXCIsXCJ1cmxfaWRzXCI6W1wiZ=
+TdlN2QyYWRlMWU3ZGNkYTNlMmQxNGRjYmNjNjNmODA4MDBiNDFiY1wiXX0ifQ>             =
+                                =09 =09                                    =
+               <https://mandrillapp.com/track/click/30166792/twitter.com?p=
+=3DeyJzIjoiQm5xalpTem1Td1kzZHZQWFMzMWx2TW95YUw4IiwidiI6MSwicCI6IntcInVcIjoz=
+MDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3R3aXR0ZXIuY29tXFxcL3J=
+lYWx0aW1lYm9hcmRcIixcImlkXCI6XCI3NGI2OTc3MGE0MDc0ZTIxYjU1ODJmOTQxNWJkZWE2Y1=
+wiLFwidXJsX2lkc1wiOltcImZhYmNlMTMxMjgyYmU4NDI4MGJlY2FmMmI3YWE2OGZjZDFmNDU2Y=
+TFcIl19In0>                                             =09 =09            =
+                                       <https://mandrillapp.com/track/click=
+/30166792/vimeo.com?p=3DeyJzIjoiS0V5ZTRVLVpfcEdKRGFpbExKM3hiM2c0enBnIiwidiI=
+6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3=
+ZpbWVvLmNvbVxcXC9yZWFsdGltZWJvYXJkXCIsXCJpZFwiOlwiNzRiNjk3NzBhNDA3NGUyMWI1N=
+TgyZjk0MTViZGVhNmNcIixcInVybF9pZHNcIjpbXCI3MGIyYmUyODU2MWZkZmU4MDUyZmQ1ZDIx=
+YjA1NzRiNzM1NmEyYjIzXCJdfSJ9>                                             =
+=09 =09                                                   <https://mandrill=
+app.com/track/click/30166792/plus.google.com?p=3DeyJzIjoidEZ0eVBCLWNlTnJHU0=
+U1bXRXNEIyd3c1YUxzIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsX=
+CI6XCJodHRwczpcXFwvXFxcL3BsdXMuZ29vZ2xlLmNvbVxcXC8xMTE5NDQ4ODc0NTMxNTMzMTkx=
+NjVcXFwvcG9zdHNcIixcImlkXCI6XCI3NGI2OTc3MGE0MDc0ZTIxYjU1ODJmOTQxNWJkZWE2Y1w=
+iLFwidXJsX2lkc1wiOltcImRjNzZlZjZkMDIyMzEwOTgxNGE0NWJhODZhOWE2YmM4MTY4ZDRhND=
+NcIl19In0>                                            =20
+>>> =20
+>>> =20
+>>> =20
+>>>=20
+>>=20
+>=20
+
+
+--Apple-Mail=_C81A339C-755B-4F48-AEF5-6A55B22BC8FA
+Content-Type: multipart/mixed; boundary="Apple-Mail=_7280EA35-27ED-4485-9978-4D9FFCE613A6"
+
+--Apple-Mail=_7280EA35-27ED-4485-9978-4D9FFCE613A6
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset=utf-8
+
+<html><head><meta http-equiv=3D"Content-Type" content=3D"text/html charset=
+=3Dutf-8"><meta http-equiv=3D"Content-Type" content=3D"text/html charset=3D=
+utf-8"></head><body style=3D"word-wrap: break-word; -webkit-nbsp-mode: spac=
+e; -webkit-line-break: after-white-space;" class=3D""><div class=3D"">Attac=
+hment in middle</div><div class=3D""><br class=3D""></div><div class=3D""><=
+br class=3D""></div>Hi Jane,<div class=3D""><br class=3D""></div><div class=
+=3D"">I can access that page, but I don=E2=80=99t see any content on it.</d=
+iv><div class=3D""><br class=3D""></div><div class=3D"">It might be my inte=
+rnet connection at Java Johns, I=E2=80=99ll try again when I=E2=80=99m back=
+ at my office.</div><div class=3D""><br class=3D""></div><div class=3D"">=
+=E2=80=94 John</div><div class=3D""><br class=3D""></div><div class=3D""><br=
+ class=3D""><div class=3D""><blockquote type=3D"cite" class=3D""><div class=
+=3D"">On May 22, 2017, at 9:16am, Jane Doe &lt;<a href=3D"mailto:jane.=
+doe@domain.com" class=3D"">jane.doe@domain.com</a>&gt; wro=
+te:</div><br class=3D"Apple-interchange-newline"><div class=3D""><meta http=
+-equiv=3D"Content-Type" content=3D"text/html charset=3Dutf-8" class=3D""><d=
+iv style=3D"word-wrap: break-word; -webkit-nbsp-mode: space; -webkit-line-b=
+reak: after-white-space;" class=3D""><br class=3D""><div class=3D"">
+<div style=3D"letter-spacing: normal; text-align: start; text-indent: 0px; =
+text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-=
+stroke-width: 0px; word-wrap: break-word; -webkit-nbsp-mode: space; -webkit=
+-line-break: after-white-space;" class=3D""><div style=3D"word-wrap: break-=
+word; -webkit-nbsp-mode: space; -webkit-line-break: after-white-space;" cla=
+ss=3D""><div style=3D"font-family: Helvetica; font-size: 12px; font-style: =
+normal; font-variant-caps: normal; font-weight: normal; letter-spacing: nor=
+mal; text-align: start; text-indent: 0px; text-transform: none; white-space=
+: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px;" class=3D"">Hi=
+ John,&nbsp;</div><div style=3D"font-family: Helvetica; font-size: 12px; fon=
+t-style: normal; font-variant-caps: normal; font-weight: normal; letter-spa=
+cing: normal; text-align: start; text-indent: 0px; text-transform: none; wh=
+ite-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px;" clas=
+s=3D"">Did you have a chance to body 2 look at the Board with competitor sc=
+reenshots.&nbsp;<a href=3D"https://realtimeboard.com/app/board/o9J_k0-_0Xg=
+=3D/" class=3D"">https://realtimeboard.com/app/board/o9J_k0-_0Xg=3D/</a></d=
+iv><div style=3D"font-family: Helvetica; font-size: 12px; font-style: norma=
+l; font-variant-caps: normal; font-weight: normal; letter-spacing: normal; =
+text-align: start; text-indent: 0px; text-transform: none; white-space: nor=
+mal; word-spacing: 0px; -webkit-text-stroke-width: 0px;" class=3D"">Can you=
+ work with it? I think there is no need to upload it to our Wiki. I plan to=
+ add more competitors to the board.</div><div style=3D"font-family: Helveti=
+ca; font-size: 12px; font-style: normal; font-variant-caps: normal; font-we=
+ight: normal; letter-spacing: normal; text-align: start; text-indent: 0px; =
+text-transform: none; white-space: normal; word-spacing: 0px; -webkit-text-=
+stroke-width: 0px;" class=3D""><br class=3D""></div><div style=3D"font-fami=
+ly: Helvetica; font-size: 12px; font-style: normal; font-variant-caps: norm=
+al; font-weight: normal; letter-spacing: normal; text-align: start; text-in=
+dent: 0px; text-transform: none; white-space: normal; word-spacing: 0px; -w=
+ebkit-text-stroke-width: 0px;" class=3D"">Please let me know how I can help=
+ you.&nbsp;</div><div style=3D"font-family: Helvetica; font-size: 12px; fon=
+t-style: normal; font-variant-caps: normal; font-weight: normal; letter-spa=
+cing: normal; text-align: start; text-indent: 0px; text-transform: none; wh=
+ite-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px;" clas=
+s=3D"">Jane&nbsp;</div><div style=3D"font-family: Helvetica; font-size: 12px=
+; font-style: normal; font-variant-caps: normal; font-weight: normal; lette=
+r-spacing: normal; text-align: start; text-indent: 0px; text-transform: non=
+e; white-space: normal; word-spacing: 0px; -webkit-text-stroke-width: 0px;"=
+ class=3D"">&nbsp;</div></div></div>
+</div>
+<br class=3D""><div class=3D""><blockquote type=3D"cite" class=3D""><div cl=
+ass=3D"">On 22 May 2017, at 07:54, John Smith &lt;<a href=3D"mailto:john.sm=
+ith@domain.com" class=3D"">john.smith@domain.com</a>&gt; wrote:</div=
+><br class=3D"Apple-interchange-newline"><div class=3D""><meta http-equiv=
+=3D"Content-Type" content=3D"text/html charset=3Dutf-8" class=3D""><div sty=
+le=3D"word-wrap: break-word; -webkit-nbsp-mode: space; -webkit-line-break: =
+after-white-space;" class=3D"">Hi Jane,<div class=3D""><br class=3D""></div>=
+<div class=3D"">I=E2=80=99m signed up, and part of the =E2=80=9CDomain=
+=E2=80=9D team.</div><div class=3D""><br class=3D""></div><div class=3D"">=
+=E2=80=94 John<br class=3D""><div class=3D""><br class=3D""><blockquote type=
+=3D"cite" class=3D""><div class=3D"">Begin forwarded message:</div><br clas=
+s=3D"Apple-interchange-newline"><div style=3D"margin-top: 0px; margin-right=
+: 0px; margin-bottom: 0px; margin-left: 0px;" class=3D""><span style=3D"fon=
+t-family: -webkit-system-font, 'Helvetica Neue', Helvetica, sans-serif;" cl=
+ass=3D""><b class=3D"">From: </b></span><span style=3D"font-family: -webkit=
+-system-font, Helvetica Neue, Helvetica, sans-serif;" class=3D"">RealtimeBo=
+ard Team &lt;<a href=3D"mailto:notification@realtimeboard.com" class=3D"">n=
+otification@realtimeboard.com</a>&gt;<br class=3D""></span></div><div style=
+=3D"margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0p=
+x;" class=3D""><span style=3D"font-family: -webkit-system-font, 'Helvetica =
+Neue', Helvetica, sans-serif;" class=3D""><b class=3D"">Subject: </b></span=
+><span style=3D"font-family: -webkit-system-font, Helvetica Neue, Helvetica=
+, sans-serif;" class=3D""><b class=3D"">Jane Doe Has Invited You to T=
+eam "Jane" at RealtimeBoard</b><br class=3D""></span></div><div style=3D"mar=
+gin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-left: 0px;" cla=
+ss=3D""><span style=3D"font-family: -webkit-system-font, 'Helvetica Neue', =
+Helvetica, sans-serif;" class=3D""><b class=3D"">Date: </b></span><span sty=
+le=3D"font-family: -webkit-system-font, Helvetica Neue, Helvetica, sans-ser=
+if;" class=3D"">May 19, 2017 at 3:24:41pm PDT<br class=3D""></span></div><d=
+iv style=3D"margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-=
+left: 0px;" class=3D""><span style=3D"font-family: -webkit-system-font, 'He=
+lvetica Neue', Helvetica, sans-serif;" class=3D""><b class=3D"">To: </b></s=
+pan><span style=3D"font-family: -webkit-system-font, Helvetica Neue, Helvet=
+ica, sans-serif;" class=3D"">&lt;<a href=3D"mailto:john.smith@domain.com=
+" class=3D"">john.smith@domain.com</a>&gt;<br class=3D""></span></div><d=
+iv style=3D"margin-top: 0px; margin-right: 0px; margin-bottom: 0px; margin-=
+left: 0px;" class=3D""><span style=3D"font-family: -webkit-system-font, 'He=
+lvetica Neue', Helvetica, sans-serif;" class=3D""><b class=3D"">Reply-To: <=
+/b></span><span style=3D"font-family: -webkit-system-font, Helvetica Neue, =
+Helvetica, sans-serif;" class=3D"">Jane Doe &lt;<a href=3D"mailto:jane=
+.doe@domain.com" class=3D"">jane.doe@domain.com</a>&gt;<br=
+ class=3D""></span></div></blockquote></div></div></div></div></blockquote>=
+</div></div></div></blockquote><div class=3D""><br class=3D""></div><div cl=
+ass=3D""><br class=3D""></div></div></div></body></html>
+--Apple-Mail=_7280EA35-27ED-4485-9978-4D9FFCE613A6
+Content-Disposition: inline; filename=tzora-titan-4-hummer-xl-manual.pdf
+Content-Type: application/pdf; x-unix-mode=0644; name="tzora-titan-4-hummer-xl-manual.pdf"
+Content-Transfer-Encoding: base64
+
+
+--Apple-Mail=_7280EA35-27ED-4485-9978-4D9FFCE613A6
+Content-Transfer-Encoding: 7bit
+Content-Type: text/html; charset=us-ascii
+
+<html><head><meta http-equiv="Content-Type" content="text/html charset=us-ascii"><meta http-equiv="Content-Type" content="text/html charset=utf-8"></head><body style="word-wrap: break-word; -webkit-nbsp-mode: space; -webkit-line-break: after-white-space;" class=""><div class=""><div class=""><br class=""><blockquote type="cite" class=""><div class=""><div style="word-wrap: break-word; -webkit-nbsp-mode: space; -webkit-line-break: after-white-space;" class=""><div class=""><blockquote type="cite" class=""><div class=""><div style="word-wrap: break-word; -webkit-nbsp-mode: space; -webkit-line-break: after-white-space;" class=""><div class=""><div class=""><blockquote type="cite" class=""><br class=""><div class=""><!-- name: Invite To Team En -->
+<!-- template slug: invite-to-team-en -->
+<!-- template labels: System -->
+<!-- from address: notification@realtimeboard.com -->
+<!-- from name: RealtimeBoard Team -->
+<!-- subject: Jane Doe Has Invited You to Team "Jane" at RealtimeBoard -->
+<!-- text:  -->
+
+
+
+
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" class="">
+
+
+<div style="Margin: 0;" class="">
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background-color: #F0F5F7;" class="">
+    <tbody class=""><tr class="">
+        <td align="center" class="">
+            <table width="580" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;" class="">
+                <tbody class=""><tr class="">
+                    <td class="">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" class="">
+                            <tbody class=""><tr class="">
+                                <td class="">
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" class="">
+                                        <tbody class=""><tr class="">
+                                            <td align="right" valign="top" class="">
+                                                <div style="width: 80px; height: 30px; background: #FBCF47;" class=""></div>
+                                            </td>
+                                            <td width="50" class=""></td>
+                                        </tr>
+                                    </tbody></table>
+                                </td>
+                            </tr>
+                        </tbody></table>
+
+
+                        <!-- ================== -->
+                        <!-- START CONTENT HERE -->
+                        <!-- ================== -->
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fff; border-radius:2px;" class="">
+                            <tbody class=""><tr class="">
+                                <td colspan="4" class="">
+
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0" class="">
+                                        <tbody class=""><tr class="">
+                                            <td class="">
+                                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" class="">
+                                                    <tbody class=""><tr class="">
+                                                        <td align="right" valign="top" class="">
+                                                            <a href="https://mandrillapp.com/track/click/30166792/realtimeboard.com?p=eyJzIjoiMEVnZUstNFZxcERLRFE5blZRMHlSS1BLRS0wIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3JlYWx0aW1lYm9hcmQuY29tXFxcL2luZGV4XFxcL1wiLFwiaWRcIjpcIjc0YjY5NzcwYTQwNzRlMjFiNTU4MmY5NDE1YmRlYTZjXCIsXCJ1cmxfaWRzXCI6W1wiMDk5NjcwYTJiNmVhYTliMDE1YzdhZDkxOGUyZDNkMDBlOWY2OGFmYlwiXX0ifQ" target="_blank" class="">
+                                                                <img src="https://letter.realtimeboard.com/2015-09-17/logo-small.png" width="80" height="50" border="0" alt="" style="display: inline-block;" class="">
+                                                            </a>
+                                                        </td>
+                                                        <td width="50" class=""></td>
+                                                    </tr>
+                                                </tbody></table>
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" class="">
+                                        <tbody class=""><tr class="">
+                                            <td colspan="2" class="">
+                                                <div style="line-height: 30px;" class="">&nbsp;<br class=""></div>
+                                            </td>
+                                        </tr>
+                                        <tr class="">
+                                            <td width="120" class=""></td>
+                                            <td align="left" valign="top" style="font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: normal; color: #343C4C; line-height: 16px;" class="">Hi <a href="mailto:john.smith@domain.com" class="">john.smith@domain.com</a>!</td>
+                                        </tr>
+                                    </tbody></table>
+
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" class="">
+                                        <tbody class=""><tr class="">
+                                            <td colspan="4" class="">
+                                                <div style="line-height: 30px;" class="">&nbsp;<br class=""></div>
+                                            </td>
+                                        </tr>
+                                        <tr class="">
+                                            <td align="right" valign="middle" width="100" class="">
+                                                
+                                                <img src="https://d38pxtc7jddmir.cloudfront.net/5252525252/125642/204/77/1/big.jpg" alt="" border="0" style="width: 50px; height: 50px; display: block; border-radius: 50%;" width="50" height="50" class="">
+                                                
+                                            </td>
+                                            <td width="20" class=""></td>
+                                            <td align="left" valign="middle" class="">
+                                                <div style="font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: normal; color: #343C4C; line-height: 24px;" class="">Jane Doe has added you to the team "Jane".</div>
+                                            </td>
+                                            <td width="120" align="left" valign="middle" class=""></td>
+                                        </tr>
+                                    </tbody></table>
+
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" class="">
+                                        <tbody class=""><tr class="">
+                                            <td colspan="4" class="">
+                                                <div style="line-height: 25px;" class="">&nbsp;<br class=""></div>
+                                            </td>
+                                        </tr>
+                                        <tr class="">
+                                            <td align="right" valign="middle" width="100" class=""></td>
+                                            <td width="20" class=""></td>
+                                            <td align="left" valign="middle" class="">
+                                                <div style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: normal; color: #6B7588; line-height: 22px;" class="">
+                                                    body 3 RealtimeBoard is an endless online whiteboard that can store an endless flow of ideas. Work on your projects visually and see what your colleagues and friends are doing in real-time!
+                                                </div>
+                                            </td>
+                                            <td width="120" align="left" valign="middle" class=""></td>
+                                        </tr>
+                                    </tbody></table>
+
+
+                                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" class="">
+                                        <tbody class=""><tr class="">
+                                            <td colspan="2" class="">
+                                                <div style="line-height: 25px;" class="">&nbsp;<br class=""></div>
+                                            </td>
+                                        </tr>
+                                        <tr class="">
+                                            <td width="120" class=""></td>
+                                            <td class="">
+                                                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#6699FF; border-radius:2px;" class="">
+                                                    <tbody class=""><tr class="">
+                                                        <td align="center" valign="middle" height="60" style="font-family: Helvetica, Arial, sans-serif; font-size: 14px; line-height: 17px; font-weight: bold; text-transform: uppercase; color: #FFFFFF; letter-spacing: 1px;" class="">
+                                                            <a href="https://mandrillapp.com/track/click/30166792/realtimeboard.com?p=eyJzIjoieWxuSjNqdXdXZjByb2VadXhJSEFrY21BMUFNIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3JlYWx0aW1lYm9hcmQuY29tXFxcL2FwcFxcXC8_aW52aXRlPTJhYWFhYWFhYjYzMDkzZDg4NWU5NGM2MzRlNmExNTQyLWQxNzQxOGFhNmQyOThjMDktY2MwZTgzM2I2YjI4ZmI3OS1kNjg4NzcyMTUzYTljMzYwJmV2ZW50PW1haWxJbnZpdGUmbWFpbFVzZXJFbWFpbD1rZW4ua3J1Z2xlciU0MHNhbGVzaGVyby5haSZ0cmFjaz10cnVlXCIsXCJpZFwiOlwiNzRiNjk3NzBhNDA3NGUyMWI1NTgyZjk0MTViZGVhNmNcIixcInVybF9pZHNcIjpbXCI3NGNkMDQ2MmRhOWE2ZDA5OTAzZTdlNGY1OTRiM2IyMzRjMjAxYzg3XCJdfSJ9" target="_blank" style="color:#FFFFFF; text-decoration:none; display: block; line-height: 70px;" class="">Join right now</a>
+                                                        </td>
+                                                    </tr>
+                                                </tbody></table>
+                                            </td>
+                                            <td width="120" class=""></td>
+                                        </tr>
+                                        <tr class="">
+                                            <td colspan="2" class="">
+                                                <div style="line-height: 41px;" class="">&nbsp;<br class=""></div>
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+                                </td>
+                            </tr>
+                            <tr class="">
+                                <td colspan="4" class="">
+                                    <div style="line-height: 34px; border-top: 1px solid #F0F5F7;" class="">&nbsp;<br class=""></div>
+                                </td>
+                            </tr>
+                            <tr class="">
+                                <td width="50" class="">&nbsp;</td>
+                                <td valign="top" width="70" class="">
+                                    <img src="https://letter.realtimeboard.com/2015-09-17/welcome.png" width="48" height="48" border="0" alt="" style="display: inline-block;" class="">
+                                </td>
+                                <td align="left" valign="middle" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: normal; color: #6B7588; line-height: 22px;" class="">
+                                    Not sure why you are receiving this?<br class="">
+                                    Ask Jane Doe at <a href="mailto:jane.doe@domain.com" target="_blank" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: normal; color: #6699FF; line-height: 22px; text-decoration: underline;" class="">jane.doe@domain.com</a>
+                                </td>
+                                <td width="130" class=""></td>
+                            </tr>
+                            <tr class="">
+                                <td width="50" class="">&nbsp;</td>
+                                <td valign="top" width="70" class=""></td>
+                                <td align="left" valign="middle" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: normal; color: #6B7588; line-height: 22px;" class="">
+                                    <br class="">
+                                    Other people in this team:<br class="">
+                                    Jane Doe, Thomas
+                                </td>
+                                <td width="130" class=""></td>
+                            </tr>
+                            <tr class="">
+                                <td width="50" class="">&nbsp;</td>
+                                <td valign="top" width="70" class=""></td>
+                                <td align="left" valign="middle" style="font-family: Helvetica, Arial, sans-serif; font-size: 12px; font-weight: normal; color: #6B7588; line-height: 22px;" class="">
+                                    <br class="">
+                                    Happy whiteboarding!<br class="">
+                                    RealtimeBoard Team.
+                                </td>
+                                <td width="130" class=""></td>
+                            </tr>
+                            <tr class="">
+                                <td colspan="4" class="">
+                                    <div style="line-height: 37px;" class="">&nbsp;<br class=""></div>
+                                </td>
+                            </tr>
+                        </tbody></table>
+                        <!-- ================== -->
+                        <!--  END CONTENT HERE  -->
+                        <!-- ================== -->
+
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" class="">
+                            <tbody class=""><tr class="">
+                                <td class="">
+                                    <div style="line-height: 45px;" class="">&nbsp;<br class=""></div>
+                                </td>
+                            </tr>
+
+                            <tr class="">
+                                <td align="center" class="">
+                                    <a href="https://mandrillapp.com/track/click/30166792/realtimeboard.com?p=eyJzIjoicXZneG9NVVppWkZHSTVlUmtObHRvSFZPMXRRIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3JlYWx0aW1lYm9hcmQuY29tXFxcL3ByZXBhcmVcXFwvYmxvZ1xcXC8_dHJhY2s9dHJ1ZVwiLFwiaWRcIjpcIjc0YjY5NzcwYTQwNzRlMjFiNTU4MmY5NDE1YmRlYTZjXCIsXCJ1cmxfaWRzXCI6W1wiMjc1ZmQ0NGZmYWFkM2RjMjZhNzI4ZWI0NGExNjk2MGQ1ZmZiN2IwYVwiXX0ifQ" target="_blank" style="font-family: Helvetica, Arial, sans-serif; font-size: 14px; font-weight: normal; color: #6B7588; line-height: 16px; text-decoration: underline;" class="">RealtimeBlog</a>
+                                </td>
+                            </tr>
+
+                            <tr class="">
+                                <td class="">
+                                    <div style="line-height: 39px;" class="">&nbsp;<br class=""></div>
+                                </td>
+                            </tr>
+
+                            <tr class="">
+                                <td align="center" class="">
+                                    <table width="176" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse; text-align: center;" class="">
+                                        <tbody class=""><tr class="">
+                                            <td width="35" class="">
+                                                <a href="https://mandrillapp.com/track/click/30166792/www.facebook.com?p=eyJzIjoicUlPaUlQODhxb0c1cmpNa3VhV01aaXZHYjVrIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3d3dy5mYWNlYm9vay5jb21cXFwvUmVhbHRpbWVCb2FyZFwiLFwiaWRcIjpcIjc0YjY5NzcwYTQwNzRlMjFiNTU4MmY5NDE1YmRlYTZjXCIsXCJ1cmxfaWRzXCI6W1wiZTdlN2QyYWRlMWU3ZGNkYTNlMmQxNGRjYmNjNjNmODA4MDBiNDFiY1wiXX0ifQ" target="_blank" class="">
+                                                    <img src="https://letter.realtimeboard.com/2015-09-17/f.png" width="35" height="35" border="0" alt="" style="display: inline-block;" class="">
+                                                </a>
+                                            </td>
+                                            <td width="12" class="">&nbsp;</td>
+                                            <td width="35" class="">
+                                                <a href="https://mandrillapp.com/track/click/30166792/twitter.com?p=eyJzIjoiQm5xalpTem1Td1kzZHZQWFMzMWx2TW95YUw4IiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3R3aXR0ZXIuY29tXFxcL3JlYWx0aW1lYm9hcmRcIixcImlkXCI6XCI3NGI2OTc3MGE0MDc0ZTIxYjU1ODJmOTQxNWJkZWE2Y1wiLFwidXJsX2lkc1wiOltcImZhYmNlMTMxMjgyYmU4NDI4MGJlY2FmMmI3YWE2OGZjZDFmNDU2YTFcIl19In0" target="_blank" class="">
+                                                    <img src="https://letter.realtimeboard.com/2015-09-17/t.png" width="35" height="35" border="0" alt="" style="display: inline-block;" class="">
+                                                </a>
+                                            </td>
+                                            <td width="12" class="">&nbsp;</td>
+                                            <td width="35" class="">
+                                                <a href="https://mandrillapp.com/track/click/30166792/vimeo.com?p=eyJzIjoiS0V5ZTRVLVpfcEdKRGFpbExKM3hiM2c0enBnIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3ZpbWVvLmNvbVxcXC9yZWFsdGltZWJvYXJkXCIsXCJpZFwiOlwiNzRiNjk3NzBhNDA3NGUyMWI1NTgyZjk0MTViZGVhNmNcIixcInVybF9pZHNcIjpbXCI3MGIyYmUyODU2MWZkZmU4MDUyZmQ1ZDIxYjA1NzRiNzM1NmEyYjIzXCJdfSJ9" target="_blank" class="">
+                                                    <img src="https://letter.realtimeboard.com/2015-09-17/v.png" width="35" height="35" border="0" alt="" style="display: inline-block;" class="">
+                                                </a>
+                                            </td>
+                                            <td width="12" class="">&nbsp;</td>
+                                            <td width="35" class="">
+                                                <a href="https://mandrillapp.com/track/click/30166792/plus.google.com?p=eyJzIjoidEZ0eVBCLWNlTnJHU0U1bXRXNEIyd3c1YUxzIiwidiI6MSwicCI6IntcInVcIjozMDE2Njc5MixcInZcIjoxLFwidXJsXCI6XCJodHRwczpcXFwvXFxcL3BsdXMuZ29vZ2xlLmNvbVxcXC8xMTE5NDQ4ODc0NTMxNTMzMTkxNjVcXFwvcG9zdHNcIixcImlkXCI6XCI3NGI2OTc3MGE0MDc0ZTIxYjU1ODJmOTQxNWJkZWE2Y1wiLFwidXJsX2lkc1wiOltcImRjNzZlZjZkMDIyMzEwOTgxNGE0NWJhODZhOWE2YmM4MTY4ZDRhNDNcIl19In0" target="_blank" class="">
+                                                    <img src="https://letter.realtimeboard.com/2015-09-17/g.png" width="35" height="35" border="0" alt="" style="display: inline-block;" class="">
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody></table>
+                                </td>
+                            </tr>
+
+                            <tr class="">
+                                <td class="">
+                                    <div style="line-height: 34px;" class="">&nbsp;<br class=""></div>
+                                </td>
+                            </tr>
+
+                            <tr class="">
+                                <td class="">
+                                    <div style="line-height: 22px;" class="">&nbsp;<br class=""></div>
+                                </td>
+                            </tr>
+
+                        </tbody></table>
+                    </td>
+                </tr>
+
+                <tr class="">
+                    <td class="">
+                        <div style="line-height: 45px;" class="">&nbsp;<br class=""></div>
+                    </td>
+                </tr>
+
+            </tbody></table>
+        </td>
+    </tr>
+</tbody></table>
+<div style="display:none; white-space:nowrap; font:15px courier; line-height:0;" class="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+<img src="https://mandrillapp.com/track/open.php?u=30166792&amp;id=74b69770a4074e21b5582f9415bdea6c" height="1" width="1" class=""></div>
+
+</div></blockquote></div><br class=""></div></div></div></blockquote></div><br class=""></div></div></blockquote></div><br class=""></div></body></html>
+--Apple-Mail=_7280EA35-27ED-4485-9978-4D9FFCE613A6--
+--Apple-Mail=_C81A339C-755B-4F48-AEF5-6A55B22BC8FA--
