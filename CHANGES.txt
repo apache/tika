@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * Allow configuration of markLimit in EncodingDetectors
+    via tika-config.xml (TIKA-2485).
+
   * RFC822Parser now selects the best alternative for
     multipart/alternative body components.  This aligns with the
     behavior of the OutlookParser (TIKA-2478).  Users can select

@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.CharsetUtils;
@@ -39,7 +40,7 @@ import org.apache.tika.utils.CharsetUtils;
 public class HtmlEncodingDetector implements EncodingDetector {
 
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
-    private static final int META_TAG_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_MARK_LIMIT = 8192;
 
 
     private static final Pattern HTTP_META_PATTERN = Pattern.compile(
@@ -62,6 +63,9 @@ public class HtmlEncodingDetector implements EncodingDetector {
 
     private static final Charset ASCII = Charset.forName("US-ASCII");
 
+    @Field
+    private int markLimit = DEFAULT_MARK_LIMIT;
+
     public Charset detect(InputStream input, Metadata metadata)
             throws IOException {
         if (input == null) {
@@ -69,8 +73,8 @@ public class HtmlEncodingDetector implements EncodingDetector {
         }
 
         // Read enough of the text stream to capture possible meta tags
-        input.mark(META_TAG_BUFFER_SIZE);
-        byte[] buffer = new byte[META_TAG_BUFFER_SIZE];
+        input.mark(markLimit);
+        byte[] buffer = new byte[markLimit];
         int n = 0;
         int m = input.read(buffer);
         while (m != -1 && n < buffer.length) {
@@ -120,4 +124,18 @@ public class HtmlEncodingDetector implements EncodingDetector {
         return null;
     }
 
+    /**
+     * How far into the stream to read for charset detection.
+     * Default is 8192.
+     *
+     * @param markLimit
+     */
+    @Field
+    public void setMarkLimit(int markLimit) {
+        this.markLimit = markLimit;
+    }
+
+    public int getMarkLimit() {
+        return markLimit;
+    }
 }

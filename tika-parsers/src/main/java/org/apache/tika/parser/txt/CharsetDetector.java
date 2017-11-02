@@ -53,8 +53,10 @@ public class CharsetDetector {
 //   actually choose the "real" charset.  All assuming that the application just
 //   wants the data, and doesn't care about a char set name.
 
-    private static final int kBufSize = 12000;//This is a Tika modification; ICU's is 8000
     private static final int MAX_CONFIDENCE = 100;
+
+    static final int DEFAULT_MARK_LIMIT = 12000; //This is a Tika modification; ICU's is 8000
+
     /*
      * List of recognizers for all charsets known to the implementation.
      */
@@ -112,8 +114,9 @@ public class CharsetDetector {
      *     the recognition process
      *
      */
-    byte[] fInputBytes =       // The text to be checked.  Markup will have been
-            new byte[kBufSize];  //   removed if appropriate.
+    final byte[] fInputBytes;  // The text to be checked.  Markup will have been
+                               // removed if appropriate.
+
     int fInputLen;          // Length of the byte data in fInputBytes.
     short fByteStats[] =      // byte frequency statistics for the input text.
             new short[256];  //   Value is percent, not absolute.
@@ -133,12 +136,20 @@ public class CharsetDetector {
             false;
     private boolean[] fEnabledRecognizers;   // If not null, active set of charset recognizers had
 
+    private final int kBufSize;
+
     /**
      * Constructor
      *
      * @stable ICU 3.4
      */
     public CharsetDetector() {
+        this(DEFAULT_MARK_LIMIT);
+    }
+
+    public CharsetDetector(int markLimit) {
+        kBufSize = markLimit;
+        fInputBytes = new byte[kBufSize];
     }
 
     /**

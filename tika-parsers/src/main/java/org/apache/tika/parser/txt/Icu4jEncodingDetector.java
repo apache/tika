@@ -31,13 +31,16 @@ public class Icu4jEncodingDetector implements EncodingDetector {
     @Field
     private boolean stripMarkup = false;
 
+    @Field
+    private int markLimit = CharsetDetector.DEFAULT_MARK_LIMIT;
+
     public Charset detect(InputStream input, Metadata metadata)
             throws IOException {
         if (input == null) {
             return null;
         }
 
-        CharsetDetector detector = new CharsetDetector();
+        CharsetDetector detector = new CharsetDetector(markLimit);
 
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         String incomingType = metadata.get(Metadata.CONTENT_TYPE);
@@ -93,5 +96,20 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
     public boolean getStripMarkup() {
         return stripMarkup;
+    }
+
+    /**
+     * How far into the stream to read for charset detection.
+     * Default is 12000.
+     *
+     * @param markLimit
+     */
+    @Field
+    public void setMarkLimit(int markLimit) {
+        this.markLimit = markLimit;
+    }
+
+    public int getMarkLimit() {
+        return markLimit;
     }
 }

@@ -25,12 +25,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import jj2000.j2k.codestream.HeaderInfo;
 import org.apache.tika.Tika;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.NonDetectingEncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.AutoDetectParser;
@@ -177,6 +179,76 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         }
 
     }
+
+    @Test
+    public void testMarkLimitUnit() throws Exception {
+        TikaConfig tikaConfig = new TikaConfig(
+                getResourceAsStream("/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
+        AutoDetectParser p = new AutoDetectParser(tikaConfig);
+        List<Parser> parsers = new ArrayList<>();
+        findEncodingDetectionParsers(p, parsers);
+
+        assertEquals(3, parsers.size());
+        for (Parser childParser : parsers) {
+            EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser)childParser).getEncodingDetector();
+            assertTrue(encodingDetector instanceof CompositeEncodingDetector);
+            assertEquals(3, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
+            for (EncodingDetector childEncodingDetector : ((CompositeEncodingDetector)encodingDetector).getDetectors()) {
+                if (childEncodingDetector instanceof HtmlEncodingDetector) {
+                    assertEquals(childParser.getClass().toString(), 64000, ((HtmlEncodingDetector) childEncodingDetector).getMarkLimit());
+                } else if (childEncodingDetector instanceof  UniversalEncodingDetector) {
+                    assertEquals(childParser.getClass().toString(), 64001, ((UniversalEncodingDetector)childEncodingDetector).getMarkLimit());
+                } else if (childEncodingDetector instanceof Icu4jEncodingDetector) {
+                    assertEquals(childParser.getClass().toString(), 64002, ((Icu4jEncodingDetector)childEncodingDetector).getMarkLimit());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testMarkLimitIntegration() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<html><head><script>");
+        for (int i = 0; i < 4000; i++) { //script length = 20000
+            sb.append("blah ");
+        }
+        sb.append("</script>");
+        sb.append("<meta charset=\"utf-8\">").append("</head><body>");
+        sb.append("<p>Frugt, gr&#248;nd og mere</p>");
+        sb.append("<p>5 kg \u00f8kologisk frugt og gr\u00F8nt, lige til at g\u00E5 til</p>");
+        sb.append("</body></html>");
+
+        byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+
+        //assert default fails -- will need to fix this if we change our defaults!
+        AutoDetectParser p = new AutoDetectParser();
+
+        Metadata metadata = new Metadata();
+        String xml = getXML(
+                TikaInputStream.get(bytes),
+                p, metadata).xml;
+
+        assertContains("gr\u00F8nd", xml);
+        assertNotContained("\u00f8kologisk", xml);
+        assertNotContained("gr\u00F8nt", xml);
+        assertNotContained("g\u00E5 til", xml);
+
+        //now test that fix works
+        TikaConfig tikaConfig = new TikaConfig(
+                getResourceAsStream("/org/apache/tika/config/TIKA-2485-encoding-detector-mark-limits.xml"));
+        p = new AutoDetectParser(tikaConfig);
+
+        metadata = new Metadata();
+        xml = getXML(
+                TikaInputStream.get(bytes),
+                p, metadata).xml;
+
+        assertContains("gr\u00F8nd", xml);
+        assertContains("\u00f8kologisk", xml);
+        assertContains("gr\u00F8nt", xml);
+        assertContains("g\u00E5 til", xml);
+    }
+
 
     private void findEncodingDetectionParsers(Parser p, List<Parser> encodingDetectionParsers) {
 
