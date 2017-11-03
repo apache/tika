@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Upgrade to PDFBox 2.0.8 (TIKA-2489).
+
   * Allow configuration of markLimit in EncodingDetectors
     via tika-config.xml (TIKA-2485).
 
