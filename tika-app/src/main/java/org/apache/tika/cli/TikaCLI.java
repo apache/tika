@@ -188,7 +188,6 @@ public class TikaCLI {
                     "Aside from the -z option, this is not the default behavior\n"+
                     "in Tika generally or in tika-server.";
             LOG.info(warn);
-            System.err.println(warn);
             context.set(PDFParserConfig.class, pdfParserConfig);
         }
     }
@@ -1092,7 +1091,6 @@ public class TikaCLI {
                     name,
                     e.getMessage()
                 );
-                System.err.println(msg);
                 LOG.warn(msg, e);
             }
         }

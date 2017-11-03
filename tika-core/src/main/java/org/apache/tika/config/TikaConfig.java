@@ -71,6 +71,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import static org.apache.tika.config.ServiceLoader.getContextClassLoader;
+
 /**
  * Parse xml config file.
  */
@@ -123,7 +125,7 @@ public class TikaConfig {
 
     public TikaConfig(Path path)
             throws TikaException, IOException, SAXException {
-        this(path, new ServiceLoader());
+        this(XMLReaderUtils.getDocumentBuilder().parse(path.toFile()));
     }
     public TikaConfig(Path path, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
@@ -132,8 +134,9 @@ public class TikaConfig {
 
     public TikaConfig(File file)
             throws TikaException, IOException, SAXException {
-        this(file, new ServiceLoader());
+        this(XMLReaderUtils.getDocumentBuilder().parse(file));
     }
+
     public TikaConfig(File file, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
         this(XMLReaderUtils.getDocumentBuilder().parse(file), loader);
@@ -241,7 +244,7 @@ public class TikaConfig {
 
         if (config == null) {
             this.serviceLoader = new ServiceLoader();
-            this.mimeTypes = getDefaultMimeTypes(ServiceLoader.getContextClassLoader());
+            this.mimeTypes = getDefaultMimeTypes(getContextClassLoader());
             this.encodingDetector = getDefaultEncodingDetector(serviceLoader);
             this.parser = getDefaultParser(mimeTypes, serviceLoader, encodingDetector);
             this.detector = getDefaultDetector(mimeTypes, serviceLoader);
@@ -477,6 +480,7 @@ public class TikaConfig {
     private static ServiceLoader serviceLoaderFromDomElement(Element element, ClassLoader loader) throws TikaConfigException {
         Element serviceLoaderElement = getChild(element, "service-loader");
         ServiceLoader serviceLoader;
+
         if (serviceLoaderElement != null) {
             boolean dynamic = Boolean.parseBoolean(serviceLoaderElement.getAttribute("dynamic"));
             LoadErrorHandler loadErrorHandler = LoadErrorHandler.IGNORE;
@@ -486,8 +490,11 @@ public class TikaConfig {
             } else if(LoadErrorHandler.THROW.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.THROW;
             }
-
             InitializableProblemHandler initializableProblemHandler = getInitializableProblemHandler(serviceLoaderElement.getAttribute("initializableProblemHandler"));
+
+            if (loader == null) {
+                loader = ServiceLoader.getContextClassLoader();
+            }
             serviceLoader = new ServiceLoader(loader, loadErrorHandler, initializableProblemHandler, dynamic);
         } else if(loader != null) {
             serviceLoader = new ServiceLoader(loader);

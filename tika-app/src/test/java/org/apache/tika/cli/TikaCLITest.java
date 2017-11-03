@@ -29,6 +29,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -379,6 +380,18 @@ public class TikaCLITest {
         assertTrue(content.contains("apple"));
         assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
     }
+
+    @Test
+    public void testConfigIgnoreInit() throws Exception {
+        String[] params = new String[]{"--config="+testDataFile.toString()+"/TIKA-2389-ignore-init-problems.xml",
+                resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString(UTF_8.name());
+        assertTrue(content.contains("embed_1a"));
+        //TODO: add a real unit test that configures logging to a file to test that nothing is
+        //written at the various logging levels
+    }
+
 
     @Test
     public void testJsonRecursiveMetadataParserMetadataOnly() throws Exception {
