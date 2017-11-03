@@ -31,7 +31,7 @@ public class DL4JVGG16NetTest {
         TikaConfig config = null;
         try {
             config = new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
-        } catch (TikaConfigException e) {
+        } catch (Exception e) {
             if (e.getMessage() != null
                     && (e.getMessage().contains("Connection refused")
             || e.getMessage().contains("connect timed out"))) {

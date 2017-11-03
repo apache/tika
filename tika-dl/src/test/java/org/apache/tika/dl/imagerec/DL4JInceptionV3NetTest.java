@@ -28,14 +28,16 @@ public class DL4JInceptionV3NetTest {
 
     @Test
     public void recognise() throws Exception {
-        TikaConfig config;
+        TikaConfig config = null;
         try {
              config = new TikaConfig(getClass().getResourceAsStream("dl4j-inception3-config.xml"));
-        } catch (TikaConfigException e) {
-            if (e.getMessage() != null && e.getMessage().contains("Connection refused") ) {
+        } catch (Exception e) {
+            if (e.getMessage() != null
+                    && (e.getMessage().contains("Connection refused")
+                    || e.getMessage().contains("connect timed out"))) {
+                //skip test
                 return;
             }
-            throw e;
         }
         Tika tika = new Tika(config);
         Metadata md = new Metadata();
