@@ -15,24 +15,29 @@
 # limitations under the License.
 #
 
-FROM uscdatascience/inception-rest-tika
+FROM uscdatascience/tf-tika-base
 MAINTAINER Apache Tika Team
 
-# Install missing part of ubuntu core + python + building dependencies
-RUN apt-get update && \
-      apt-get install -y software-properties-common apt-utils \
-      build-essential cmake pkg-config \
-      libjpeg8-dev libtiff5-dev libjasper-dev libpng12-dev \
-      libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
-      libxvidcore-dev libx264-dev libgtk2.0-dev libatlas-base-dev gfortran \
-      ffmpeg
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      build-essential \
+      cmake \
+      libavcodec-dev \
+      libavformat-dev \
+      libswscale-dev \
+      libv4l-dev \
+      libavutil-dev \
+      pkg-config \
+      && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Download OpenCV + OpenCV_Contrib
 WORKDIR /usr/local/src
+
 RUN \
-      wget -O opencv.zip https://github.com/Itseez/opencv/archive/3.2.0.zip && \
+      wget -O opencv.zip https://github.com/opencv/opencv/archive/3.2.0.zip && \
       unzip opencv.zip && \
-      wget -O opencv_contrib.zip https://github.com/Itseez/opencv_contrib/archive/3.2.0.zip && \
+      wget -O opencv_contrib.zip https://github.com/opencv/opencv_contrib/archive/3.2.0.zip && \
       unzip opencv_contrib.zip
 
 # Build + Install OpenCV
@@ -40,33 +45,64 @@ RUN mkdir -p opencv-3.2.0/build
 WORKDIR /usr/local/src/opencv-3.2.0/build
 RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
       -D CMAKE_INSTALL_PREFIX=/usr/local \
-      -D INSTALL_PYTHON_EXAMPLES=ON \
-      -D INSTALL_C_EXAMPLES=OFF \
       -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib-3.2.0/modules \
-      -D BUILD_EXAMPLES=ON ..
-RUN make -j4
-RUN make install
+      -D BUILD_PYTHON_SUPPORT=ON \
+      -D BUILD_EXAMPLES=OFF \
+      -D PYTHON_DEFAULT_EXECUTABLE=/usr/bin/python3 \
+      -D BUILD_opencv_python3=OFF \
+      -D BUILD_opencv_python2=ON \
+      -D WITH_IPP=OFF \
+      -D WITH_FFMPEG=ON \
+      -D WITH_V4L=ON ..
+
+RUN make -j$(nproc) && make install
+
+# Download the pretrained inception v4 checkpoint & other meta files
+WORKDIR /usr/share/apache-tika/models/dl/image-video/recognition/
+
+RUN curl -O http://download.tensorflow.org/models/inception_v4_2016_09_09.tar.gz && \
+    tar -xzvf inception_v4_2016_09_09.tar.gz && rm -rf inception_v4_2016_09_09.tar.gz && \
+    curl -O https://raw.githubusercontent.com/tensorflow/models/master/research/inception/inception/data/imagenet_lsvrc_2015_synsets.txt && \
+    curl -O https://raw.githubusercontent.com/tensorflow/models/master/research/inception/inception/data/imagenet_metadata.txt
+
+# Download server related source files
+WORKDIR /usr/share/apache-tika/src/dl/image-video/recognition/
+
+RUN curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py && \
+    curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inception_v4.py && \
+    curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py && \
+    chmod +x inceptionapi.py
 
 WORKDIR /
-RUN \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/inceptionapi.py -O /usr/bin/inceptionapi.py && \
-  wget https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/recognition/tf/video_util.py -O /usr/bin/video_util.py && \
-  chmod +x /usr/bin/inceptionapi.py && \
-  chmod +x /usr/bin/video_util.py
 
-# Clean up cache + delete OpenCV source files, so we can publish smaller image to hub
-RUN apt-get clean
+# Remove unnecessary packages comes with base
+RUN apt-get -y remove \
+        apt-utils \
+        curl \
+        git \
+        software-properties-common \
+        unzip \
+        wget
+
+# Remove unnecessary packages
+RUN apt-get -y remove \
+      apt-utils \
+      build-essential \
+      cmake \
+      libavcodec-dev \
+      libavformat-dev \
+      libswscale-dev \
+      libv4l-dev \
+      libavutil-dev \
+      pkg-config
+
+# Delete OpenCV source files
 RUN rm -rf /usr/local/src
 
-# Set environment variables
-ENV PYTHONPATH="$PYTHONPATH:/models-c15fada28113eca32dc98d6e3bec4755d0d5b4c2/slim"
-ENV LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
-ENV PYTHONPATH="$PYTHONPATH:$PATH"
+# Add symbolic link to inceptionapi.py
+RUN ln -s /usr/share/apache-tika/src/dl/image-video/recognition/inceptionapi.py /usr/bin/inceptionapi
 
-# To cache the trained model
-RUN python -c "import inceptionapi"
-
-# expose API port, this is the default port
+# Expose API port, this is the default port
 EXPOSE 8764
 
-CMD inceptionapi.py
+CMD inceptionapi
