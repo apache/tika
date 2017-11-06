@@ -153,10 +153,6 @@
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
         </exclusion>
-        <exclusion>
-        <groupId>org.apache.pdfbox</groupId>
-        <artifactId>pdfbox-debugger</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -167,6 +163,10 @@
         <exclusion>
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.pdfbox</groupId>
+          <artifactId>pdfbox-debugger</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
