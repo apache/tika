@@ -26,7 +26,7 @@ RUN echo "We're downloading the checkpoint file for image captioning, the shell 
     git config --global http.postBuffer 1048576000 && \
     git clone https://github.com/USCDataScience/img2text.git && \
     # Join the parts
-    cat img2text/models/1M_iters_ckpt_parts_a* >1M_iters_ckpt.tar.gz && \
+    cat img2text/models/1M_iters_ckpt_parts_* >1M_iters_ckpt.tar.gz && \
     tar -xzvf 1M_iters_ckpt.tar.gz && rm -rf 1M_iters_ckpt.tar.gz
 
 RUN curl -O https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml
