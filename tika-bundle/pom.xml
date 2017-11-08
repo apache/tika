@@ -220,6 +220,7 @@
               org.apache.commons.vfs2.util;resolution:=optional,
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
+              org.apache.pdfbox.debugger;resolution:=optional,
               org.apache.sis;resolution:=optional,
               org.apache.sis.distance;resolution:=optional,
               org.apache.sis.geometry;resolution:=optional,
