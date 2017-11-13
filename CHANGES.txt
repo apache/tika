@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * Catch potential NPE in getting InputStream for attachments
+    in PST file (TIKA-2488).
+
   * Upgrade to PDFBox 2.0.8 (TIKA-2489).
 
   * Allow configuration of markLimit in EncodingDetectors
