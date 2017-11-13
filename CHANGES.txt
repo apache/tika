@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Upgrade to metadata-extractor 2.10.1 (TIKA-2486).
+
   * Upgrade to OpenNLP 1.8.3 (TIKA-2502).
 
   * Upgrade to Jackson 2.9.2 (TIKA-2501).
