@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Upgrade to Jackson 2.9.2 (TIKA-2501).
+
   * Catch potential NPE in getting InputStream for attachments
     in PST file (TIKA-2488).
 
