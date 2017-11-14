@@ -284,6 +284,11 @@
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging-api</artifactId>
         </exclusion>
+        <!-- TIKA-2504 exclude to avoid vulnerability in plexus-utils -->
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-vfs2</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
