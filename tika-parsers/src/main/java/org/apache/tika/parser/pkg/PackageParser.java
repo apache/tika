@@ -41,7 +41,6 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -51,7 +50,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
@@ -85,14 +83,15 @@ public class PackageParser extends AbstractParser {
     private static final MediaType TAR = MediaType.application("x-tar");
     private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
+    private static final MediaType TIKA_OOXML = MediaType.application("tika-ooxml");
+    private static final MediaType GTAR = MediaType.application("x-gtar");
+
+
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
 
-    //this can't be static because of the ForkParser
-    //lazily load this when parse is called if it is null.
-    private MediaTypeRegistry bufferedMediaTypeRegistry;
-
-    private final Object lock = new Object[0];
+    private static final Set<MediaType> DONT_OVERWRITE_CONTENT_TYPE =
+            MediaType.set(TIKA_OOXML, GTAR);
 
     @Deprecated
     static MediaType getMediaType(ArchiveInputStream stream) {
@@ -149,26 +148,6 @@ public class PackageParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        //lazily load the MediaTypeRegistry at parse time
-        //only want to call getDefaultConfig() once, and can't
-        //load statically because of the ForkParser
-        TikaConfig config = context.get(TikaConfig.class);
-        MediaTypeRegistry mediaTypeRegistry = null;
-        if (config != null) {
-            mediaTypeRegistry = config.getMediaTypeRegistry();
-        } else {
-            if (bufferedMediaTypeRegistry == null) {
-                //buffer this for next time.
-                synchronized (lock) {
-                    //now that we're locked, check again
-                    if (bufferedMediaTypeRegistry == null) {
-                        bufferedMediaTypeRegistry = TikaConfig.getDefaultConfig().getMediaTypeRegistry();
-                    }
-                }
-            }
-            mediaTypeRegistry = bufferedMediaTypeRegistry;
-        }
-
         // Ensure that the stream supports the mark feature
         if (! stream.markSupported()) {
             stream = new BufferedInputStream(stream);
@@ -216,7 +195,7 @@ public class PackageParser extends AbstractParser {
             throw new TikaException("Unable to unpack document stream", e);
         }
 
-        updateMediaType(ais, mediaTypeRegistry, metadata);
+        updateMediaType(ais, metadata);
         // Use the delegate parser to parse the contained document
         EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
@@ -248,7 +227,7 @@ public class PackageParser extends AbstractParser {
         xhtml.endDocument();
     }
 
-    private void updateMediaType(ArchiveInputStream ais, MediaTypeRegistry mediaTypeRegistry, Metadata metadata) {
+    private void updateMediaType(ArchiveInputStream ais, Metadata metadata) {
         MediaType type = getMediaType(ais);
         if (type.equals(MediaType.OCTET_STREAM)) {
             return;
@@ -267,13 +246,10 @@ public class PackageParser extends AbstractParser {
             metadata.set(CONTENT_TYPE, type.toString());
             return;
         }
-        //if the existing type is a specialization of the detected type,
-        //leave in the specialization; otherwise set the detected
-        if (! mediaTypeRegistry.isSpecializationOf(incomingMediaType, type)) {
-            metadata.set(CONTENT_TYPE, type.toString());
-            return;
-        }
 
+        if (! DONT_OVERWRITE_CONTENT_TYPE.contains(incomingMediaType)) {
+            metadata.set(CONTENT_TYPE, type.toString());
+        }
     }
 
     private void parseEntry(

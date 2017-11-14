@@ -17,6 +17,7 @@
 package org.apache.tika.parser.fork;
 
 import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.debug;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -29,6 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
@@ -46,7 +48,7 @@ import org.xml.sax.SAXException;
  * Test that the ForkParser correctly behaves when
  *  wired in to the regular Parsers and their test data
  */
-public class ForkParserIntegrationTest {
+public class ForkParserIntegrationTest extends TikaTest {
 
     private Tika tika = new Tika(); // TODO Use TikaConfig instead, when it works
 
@@ -265,6 +267,22 @@ public class ForkParserIntegrationTest {
             assertContains("Tika - Content Analysis Toolkit", content);
             assertContains("incubator", content);
             assertContains("Apache Software Foundation", content);
+        } finally {
+            parser.close();
+        }
+    }
+
+    @Test
+    public void testForkedPackageParsing() throws Exception {
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+            tika.getParser());
+        try {
+            ContentHandler output = new BodyContentHandler();
+            InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
+                "/test-documents/moby.zip");
+            ParseContext context = new ParseContext();
+            parser.parse(stream, output, new Metadata(), context);
+            assertContains("Moby Dick", output.toString());
         } finally {
             parser.close();
         }
