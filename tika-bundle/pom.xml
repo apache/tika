@@ -54,7 +54,6 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
     </dependency>
 
     <!-- Test dependencies -->
@@ -126,29 +125,62 @@
             <Bundle-Activator>
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
-            <Embed-Dependency>
-              tika-parsers;inline=true,
-              commons-compress, xz, commons-codec, commons-csv,
-              commons-io, commons-exec, commons-collections4, junrar,
-              pdfbox,pdfbox-tools,pdfbox-debugger,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
-              poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
-              curvesapi,
-              xmlbeans,
-              jackcess,
-              commons-lang,
-              tagsoup,
-              asm,
-              juniversalchardet,
-              vorbis-java-core, vorbis-java-tika,
-              isoparser,
-              metadata-extractor, xmpcore, json-simple,
-              boilerpipe, rome, rome-utils, sentiment-analysis-parser;type=jar;inline=false, opennlp-tools,
-              geoapi, sis-metadata, sis-netcdf, sis-utility,
-              sis-storage, apache-mime4j-core, apache-mime4j-dom,
-              jsr-275, jhighlight, java-libpst,
-              netcdf4, grib, cdm, httpservices, jcip-annotations,
-              jmatio, guava, age-predictor-api;type=jar;inline=false
-            </Embed-Dependency>
+            <Embed-Dependency>*;scope=compile;artifactId=tika-parsers|
+              commons-compress|
+              xz|
+              commons-codec|
+              commons-csv|
+              commons-io|
+              commons-exec|
+              commons-collections4|
+              junrar|
+              pdfbox|
+              pdfbox-tools|
+              pdfbox-debugger|
+              fontbox|
+              jempbox|
+              bcmail-jdk15on|
+              bcprov-jdk15on|
+              bcpkix-jdk15on|
+              poi|poi-scratchpad|
+              poi-ooxml|
+              poi-ooxml-schemas|
+              curvesapi|
+              xmlbeans|
+              jackcess|
+              commons-lang|
+              tagsoup|
+              asm|
+              juniversalchardet|
+              vorbis-java-core|
+              vorbis-java-tika|
+              isoparser|
+              metadata-extractor|
+              xmpcore|
+              json-simple|
+              boilerpipe|
+              rome|
+              rome-utils|
+              sentiment-analysis-parser|
+              opennlp-tools|
+              geoapi|
+              sis-metadata|
+              sis-netcdf|
+              sis-utility|
+              sis-storage|
+              apache-mime4j-core|
+              apache-mime4j-dom|
+              jsr-275|
+              jhighlight|
+              java-libpst|
+              netcdf4|
+              grib|
+              cdm|
+              httpservices|
+              jcip-annotations|
+              jmatio|
+              guava|
+              age-predictor-api</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Export-Package>
@@ -169,7 +201,6 @@
 	      !org.apache.spark.ml.*,
 	      !org.apache.spark.mllib.*,
 	      !org.apache.spark.sql.*,
-              *,
 	          org.apache.tika.mime,
               org.apache.tika.fork,
               android.util;resolution:=optional,
@@ -186,7 +217,7 @@
               com.sun.tools.javadoc;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
               edu.wisc.ssec.mcidas.adde;resolution:=optional,
-	      edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
+	          edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
               javax.activation;resolution:=optional,
               javax.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
@@ -203,7 +234,7 @@
               opendap.dap.parser;resolution:=optional,
               opennlp.maxent;resolution:=optional,
               opennlp.tools.namefind;resolution:=optional,
-	      opennlp.tools.authorage;resolution:=optional,
+	          opennlp.tools.authorage;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
@@ -370,7 +401,8 @@
               org.apache.http.protocol;resolution:=optional,
               org.apache.http.util;resolution:=optional,
               org.apache.commons.logging;resolution:=optional,
-              org.apache.log4j;resolution:=optional
+              org.apache.log4j;resolution:=optional,
+              *
             </Import-Package>
           </instructions>
         </configuration>
