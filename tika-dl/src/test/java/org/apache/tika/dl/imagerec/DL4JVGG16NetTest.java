@@ -39,16 +39,20 @@ public class DL4JVGG16NetTest {
                 return;
             }
         }
-        Tika tika = new Tika(config);
-        Metadata md = new Metadata();
-        tika.parse(getClass().getResourceAsStream("lion.jpg"), md);
-        String[] objects = md.getValues("OBJECT");
-        boolean found = false;
-        for (String object : objects) {
-            if (object.contains("lion")){
-                found = true;
+        
+        if(config != null)
+        {
+        	Tika tika = new Tika(config);
+            Metadata md = new Metadata();
+            tika.parse(getClass().getResourceAsStream("lion.jpg"), md);
+            String[] objects = md.getValues("OBJECT");
+            boolean found = false;
+            for (String object : objects) {
+                if (object.contains("lion")){
+                    found = true;
+                }
             }
+            assertTrue(found);
         }
-        assertTrue(found);
     }
 }
