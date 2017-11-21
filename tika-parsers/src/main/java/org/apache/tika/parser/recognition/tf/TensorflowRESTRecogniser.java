@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collections;
@@ -56,11 +57,16 @@ import org.xml.sax.SAXException;
  * Tensor Flow image recogniser which has high performance.
  * This implementation uses Tensorflow via REST API.
  * <p>
- * NOTE : //TODO: link to wiki page here
+ * NOTE : https://wiki.apache.org/tika/TikaAndVision
  *
  * @since Apache Tika 1.14
  */
 public class TensorflowRESTRecogniser implements ObjectRecogniser {
+
+    /**
+     * Some variables are protected, because this class is extended by TensorflowRESTVideoRecognizer class
+     */
+
     private static final Logger LOG = LoggerFactory.getLogger(TensorflowRESTRecogniser.class);
 
     private static final Set<MediaType> SUPPORTED_MIMES = Collections.unmodifiableSet(
@@ -70,22 +76,27 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
                     MediaType.image("gif")
             })));
 
-    /**
-     * Maximum buffer size for image
-     */
-    private static final String LABEL_LANG = "en";
+    protected static final String LABEL_LANG = "eng";
 
     @Field
-    private URI apiUri = URI.create("http://localhost:8764/inception/v4/classify?topk=10");
-    @Field
-    private URI healthUri = URI.create("http://localhost:8764/inception/v4/ping");
+    protected URI apiBaseUri = URI.create("http://localhost:8764/inception/v4");
 
-    private boolean available;
-    
-    protected URI getApiUri(Metadata metadata){
-    	return apiUri;
+    @Field
+    protected int topN = 2;
+
+    @Field
+    protected double minConfidence = 0.015;
+
+    protected URI apiUri;
+
+    protected URI healthUri;
+
+    protected boolean available;
+
+    protected URI getApiUri(Metadata metadata) {
+        return apiUri;
     }
-    
+
     @Override
     public Set<MediaType> getSupportedMimes() {
         return SUPPORTED_MIMES;
@@ -99,10 +110,16 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
+            healthUri = URI.create(apiBaseUri + "/ping");
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/classify/image?topn=%1$d&min_confidence=%2$f",
+                    topN, minConfidence));
+
             DefaultHttpClient client = new DefaultHttpClient();
             HttpResponse response = client.execute(new HttpGet(healthUri));
             available = response.getStatusLine().getStatusCode() == 200;
+
             LOG.info("Available = {}, API Status = {}", available, response.getStatusLine());
+            LOG.info("topN = {}, minConfidence = {}", topN, minConfidence);
         } catch (Exception e) {
             available = false;
             throw new TikaConfigException(e.getMessage(), e);
@@ -140,9 +157,9 @@ public class TensorflowRESTRecogniser implements ObjectRecogniser {
                     JSONObject jReply = new JSONObject(replyMessage);
                     JSONArray jClasses = jReply.getJSONArray("classnames");
                     JSONArray jConfidence = jReply.getJSONArray("confidence");
-            if (jClasses.length() != jConfidence.length()) {
-                LOG.warn("Classes of size {} is not equal to confidence of size {}", jClasses.length(), jConfidence.length());
-            }
+                    if (jClasses.length() != jConfidence.length()) {
+                        LOG.warn("Classes of size {} is not equal to confidence of size {}", jClasses.length(), jConfidence.length());
+                    }
                     assert jClasses.length() == jConfidence.length();
                     for (int i = 0; i < jClasses.length(); i++) {
                         RecognisedObject recObj = new RecognisedObject(jClasses.getString(i),

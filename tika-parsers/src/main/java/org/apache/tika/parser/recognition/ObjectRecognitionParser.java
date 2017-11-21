@@ -55,11 +55,9 @@ import org.xml.sax.SAXException;
  * &lt;properties&gt;
  *  &lt;parsers&gt;
  *   &lt;parser class=&quot;org.apache.tika.parser.recognition.ObjectRecognitionParser&quot;&gt;
- *    &lt;mime&gt;image/jpeg&lt;/mime&gt;
  *    &lt;params&gt;
- *      &lt;param name=&quot;topN&quot; type=&quot;int&quot;&gt;2&lt;/param&gt;
- *      &lt;param name=&quot;minConfidence&quot; type=&quot;double&quot;&gt;0.015&lt;/param&gt;
  *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;org.apache.tika.parser.recognition.tf.TensorflowRESTRecogniser&lt;/param&gt;
+ *      &lt;param name=&quot;class&quot; type=&quot;string&quot;&gt;org.apache.tika.parser.captioning.tf.TensorflowRESTCaptioner&lt;/param&gt;
  *    &lt;/params&gt;
  *   &lt;/parser&gt;
  *  &lt;/parsers&gt;
@@ -83,12 +81,6 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
                 }
             };
 
-    @Field
-    private double minConfidence = 0.05;
-
-    @Field
-    private int topN = 2;
-
     private ObjectRecogniser recogniser;
 
     @Field(name = "class")
@@ -102,7 +94,6 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
         recogniser.initialize(params);
         LOG.info("Recogniser = {}", recogniser.getClass().getName());
         LOG.info("Recogniser Available = {}", recogniser.isAvailable());
-        LOG.info("minConfidence = {}, topN={}", minConfidence, topN);
     }
 
     @Override
@@ -140,29 +131,17 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
             for (RecognisedObject object : objects) {
                 if (object instanceof CaptionObject) {
                     if (xhtmlStartVal == null) xhtmlStartVal = "captions";
-                    LOG.debug("Add {}", object);
-                    String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-                            object.getLabel(), object.getConfidence());
-                    metadata.add(MD_KEY_IMG_CAP, mdValue);
-                    acceptedObjects.add(object);
+                    String labelAndConfidence = String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY_IMG_CAP, labelAndConfidence);
                     xhtmlIds.add(String.valueOf(count++));
                 } else {
                     if (xhtmlStartVal == null) xhtmlStartVal = "objects";
-                    if (object.getConfidence() >= minConfidence) {
-                        count++;
-                        LOG.info("Add {}", object);
-                        String mdValue = String.format(Locale.ENGLISH, "%s (%.5f)",
-                                object.getLabel(), object.getConfidence());
-                        metadata.add(MD_KEY_OBJ_REC, mdValue);
-                        acceptedObjects.add(object);
-                        xhtmlIds.add(object.getId());
-                        if (count >= topN) {
-                            break;
-                        }
-                    } else {
-                        LOG.warn("Object {} confidence {} less than min {}", object, object.getConfidence(), minConfidence);
-                    }
+                    String labelAndConfidence = String.format(Locale.ENGLISH, "%s (%.5f)", object.getLabel(), object.getConfidence());
+                    metadata.add(MD_KEY_OBJ_REC, labelAndConfidence);
+                    xhtmlIds.add(object.getId());
                 }
+                LOG.info("Add {}", object);
+                acceptedObjects.add(object);
             }
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();

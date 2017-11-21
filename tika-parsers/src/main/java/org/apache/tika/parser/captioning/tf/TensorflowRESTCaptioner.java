@@ -72,16 +72,16 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
                     MediaType.image("gif")
             })));
 
-    private static final String LABEL_LANG = "en";
+    private static final String LABEL_LANG = "eng";
 
     @Field
-    private URI apiBaseUri;
+    private URI apiBaseUri = URI.create("http://localhost:8764/inception/v3");
 
     @Field
-    private int captions;
+    private int captions = 5;
 
     @Field
-    private int maxCaptionLength;
+    private int maxCaptionLength = 15;
 
     private URI apiUri;
 
@@ -107,7 +107,7 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             healthUri = URI.create(apiBaseUri + "/ping");
-            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/captions?beam_size=%1$d&max_caption_length=%2$d",
+            apiUri = URI.create(apiBaseUri + String.format(Locale.getDefault(), "/caption/image?beam_size=%1$d&max_caption_length=%2$d",
                     captions, maxCaptionLength));
 
             DefaultHttpClient client = new DefaultHttpClient();

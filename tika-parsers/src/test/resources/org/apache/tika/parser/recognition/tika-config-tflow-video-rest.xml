@@ -21,11 +21,11 @@
         <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
             <mime>video/mp4</mime>
             <params>
-                <param name="topN" type="int">4</param>
+                <param name="apiBaseUri" type="uri">http://localhost:8764/inception/v4</param>
+                <param name="topN" type="int">2</param>
                 <param name="minConfidence" type="double">0.015</param>
+                <param name="mode" type="string">fixed</param>
                 <param name="class" type="string">org.apache.tika.parser.recognition.tf.TensorflowRESTVideoRecogniser</param>
-                <param name="healthUri" type="uri">http://localhost:8764/inception/v4/ping</param>
-                <param name="apiUri" type="uri">http://localhost:8764/inception/v4/classify/video?mode=fixed</param>
             </params>
         </parser>
     </parsers>

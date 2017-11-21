@@ -15,49 +15,41 @@
 # limitations under the License.
 #
 
-FROM inception-rest-tika
+FROM uscdatascience/tf-tika-base
 MAINTAINER Apache Tika Team
-
-# Install python pillow. TODO: Remove this with the fix for TIKA 2398
-RUN pip install pillow
 
 # Download the pretrained im2txt checkpoint
 WORKDIR /usr/share/apache-tika/models/dl/image/caption/
 
-RUN \
+RUN echo "We're downloading the checkpoint file for image captioning, the shell might look unresponsive. Please be patient."  && \
     # To get rid of early EOF error
     git config --global http.postBuffer 1048576000 && \
-    echo "We're downloading the checkpoint file for image captioning, the shell might look unresponsive. Please be patient."  && \
-    git clone -b models https://github.com/USCDataScience/img2text.git && \
+    git clone https://github.com/USCDataScience/img2text.git && \
     # Join the parts
-    cat img2text/models/1M_iters_ckpt_parts_a* >1M_iters_ckpt.tar.gz && \
-    tar -xzvf 1M_iters_ckpt.tar.gz && \
-    # Delete all files except 1M_iters_ckpt
-    rm -rf {1M_iters_ckpt.tar.gz,img2text}
+    cat img2text/models/1M_iters_ckpt_parts_* >1M_iters_ckpt.tar.gz && \
+    tar -xzvf 1M_iters_ckpt.tar.gz && rm -rf 1M_iters_ckpt.tar.gz
 
-RUN \
-    wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml \
-        -O model_info.xml
+RUN curl -O https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_info.xml
 
 # Download server related source files
 WORKDIR /usr/share/apache-tika/src/dl/image/caption/
 
-RUN \
-    wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py \
-        -O caption_generator.py && \
-
-    wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py \
-        -O im2txtapi.py && \
-
-    wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py \
-        -O model_wrapper.py && \
-
-    wget https://raw.githubusercontent.com/apache/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py \
-        -O vocabulary.py && \
-
+RUN curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/caption_generator.py && \
+    curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/im2txtapi.py && \
+    curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/model_wrapper.py && \
+    curl -O https://raw.githubusercontent.com/ThejanW/tika/master/tika-parsers/src/main/resources/org/apache/tika/parser/captioning/tf/vocabulary.py && \
     chmod +x im2txtapi.py
 
 WORKDIR /
+
+# Remove unnecessary packages comes with base
+RUN apt-get -y remove \
+        apt-utils \
+        curl \
+        git \
+        software-properties-common \
+        unzip \
+        wget
 
 # Add symbolic link to im2txtapi.py
 RUN ln -s /usr/share/apache-tika/src/dl/image/caption/im2txtapi.py /usr/bin/im2txtapi
