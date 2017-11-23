@@ -600,6 +600,17 @@ public class OOXMLParserTest extends TikaTest {
             assertEquals("Should have found some text", false, handler.toString().isEmpty());
         }
     }
+    
+    @Test
+    public void testTextDecoration() throws Exception {
+      XMLResult result = getXML("testWORD_various.docx");
+      String xml = result.xml;
+
+      assertTrue(xml.contains("<b>Bold</b>"));
+      assertTrue(xml.contains("<i>italic</i>"));
+      assertTrue(xml.contains("<u>underline</u>"));
+
+    }
 
     @Test
     public void testVarious() throws Exception {
