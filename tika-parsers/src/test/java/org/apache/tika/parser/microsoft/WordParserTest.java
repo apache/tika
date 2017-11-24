@@ -208,6 +208,17 @@ public class WordParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testTextDecorationNested() throws Exception {
+        XMLResult result = getXML("testWORD_various.doc");
+        String xml = result.xml;
+
+        assertTrue(xml.contains("<i>ita<s>li</s>c</i>"));
+        assertTrue(xml.contains("<i>ita<s>l<u>i</u></s>c</i>"));
+        assertTrue(xml.contains("<i><u>unde</u><s><u>r</u></s><u>line</u></i>"));
+    }
+
+
     //TIKA-2346
     @Test
     public void testTurningOffTextBox() throws Exception {

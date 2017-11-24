@@ -263,7 +263,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("a");
         }
 
-        TmpFormatting fmtg = new TmpFormatting(false, false, false);
+        TmpFormatting fmtg = new TmpFormatting(false, false, false, false);
 
         //hyperlinks may or may not have hyperlink ids
         String lastHyperlinkId = null;
@@ -371,6 +371,10 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         	xhtml.endElement("u");
         	fmtg.setUnderline(false);
         }
+        if (fmtg.isStrikeThrough()) {
+            xhtml.endElement("strike");
+            fmtg.setStrikeThrough(false);
+        }
         return fmtg;
     }
 
@@ -379,6 +383,10 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             throws SAXException, XmlException, IOException {
         // True if we are currently in the named style tag:
         if (run.isBold() != tfmtg.isBold()) {
+            if (tfmtg.isStrikeThrough()) {
+                xhtml.endElement("strike");
+                tfmtg.setStrikeThrough(false);
+            }
             if (tfmtg.isUnderline()) {
                 xhtml.endElement("u");
                 tfmtg.setUnderline(false);
@@ -396,6 +404,10 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         if (run.isItalic() != tfmtg.isItalic()) {
+            if (tfmtg.isStrikeThrough()) {
+                xhtml.endElement("strike");
+                tfmtg.setStrikeThrough(false);
+            }
             if (tfmtg.isUnderline()) {
                 xhtml.endElement("u");
                 tfmtg.setUnderline(false);
@@ -407,7 +419,20 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
             tfmtg.setItalic(run.isItalic());
         }
-        
+
+        if (run.isStrikeThrough() != tfmtg.isStrikeThrough()) {
+            if (tfmtg.isUnderline()) {
+                xhtml.endElement("u");
+                tfmtg.setUnderline(false);
+            }
+            if (run.isStrikeThrough()) {
+                xhtml.startElement("strike");
+            } else {
+                xhtml.endElement("strike");
+            }
+            tfmtg.setStrikeThrough(run.isStrikeThrough());
+        }
+
         boolean isUnderline = run.getUnderline() != UnderlinePatterns.NONE;
         if (isUnderline != tfmtg.isUnderline()) {
             if (isUnderline) {
@@ -550,11 +575,15 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         private boolean bold = false;
         private boolean italic = false;
         private boolean underline = false;
+        private boolean strikeThrough = false;
 
-        private TmpFormatting(boolean bold, boolean italic, boolean underline) {
+
+        private TmpFormatting(boolean bold, boolean italic, boolean underline,
+                              boolean strikeThrough) {
             this.bold = bold;
             this.italic = italic;
             this.underline = underline;
+            this.strikeThrough = strikeThrough;
         }
 
         public boolean isBold() {
@@ -582,6 +611,13 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             this.underline = underline;
         }
 
+        public boolean isStrikeThrough() {
+            return strikeThrough;
+        }
+
+        public void setStrikeThrough(boolean strikeThrough) {
+            this.strikeThrough = strikeThrough;
+        }
     }
 
 }

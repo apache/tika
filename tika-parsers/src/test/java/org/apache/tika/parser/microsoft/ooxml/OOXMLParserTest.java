@@ -609,7 +609,17 @@ public class OOXMLParserTest extends TikaTest {
       assertTrue(xml.contains("<b>Bold</b>"));
       assertTrue(xml.contains("<i>italic</i>"));
       assertTrue(xml.contains("<u>underline</u>"));
+      assertTrue(xml.contains("<strike>strikethrough</strike>"));
+    }
 
+    @Test
+    public void testTextDecorationNested() throws Exception {
+        XMLResult result = getXML("testWORD_various.docx");
+        String xml = result.xml;
+
+        assertTrue(xml.contains("<i>ita<strike>li</strike>c</i>"));
+        assertTrue(xml.contains("<i>ita<strike>l<u>i</u></strike>c</i>"));
+        assertTrue(xml.contains("<i><u>unde</u><strike><u>r</u></strike><u>line</i></u>"));
     }
 
     @Test
