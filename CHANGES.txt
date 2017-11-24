@@ -75,6 +75,9 @@ Release 1.17 - ???
     which are the same (TIKA-2445)
 
   * PSDParser memory use improvements (TIKA-2447)
+
+  * Add underline extraction from Word documents (doc/docx)
+    as well as strikethrough extraction in docx (TIKA-2347, GitHub-173)
     
 Release 1.16 - 7/7/2017
 
