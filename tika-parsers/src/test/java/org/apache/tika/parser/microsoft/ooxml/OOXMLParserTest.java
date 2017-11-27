@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -45,7 +44,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.poi.util.LocaleUtil;
-import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
@@ -75,7 +73,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-import ucar.nc2.util.xml.Parse;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -600,26 +597,36 @@ public class OOXMLParserTest extends TikaTest {
             assertEquals("Should have found some text", false, handler.toString().isEmpty());
         }
     }
-    
+
     @Test
     public void testTextDecoration() throws Exception {
-      XMLResult result = getXML("testWORD_various.docx");
-      String xml = result.xml;
+        String xml = getXML("testWORD_various.docx").xml;
 
-      assertTrue(xml.contains("<b>Bold</b>"));
-      assertTrue(xml.contains("<i>italic</i>"));
-      assertTrue(xml.contains("<u>underline</u>"));
-      assertTrue(xml.contains("<strike>strikethrough</strike>"));
+        assertContains("<b>Bold</b>", xml);
+        assertContains("<i>italic</i>", xml);
+        assertContains("<u>underline</u>", xml);
+        assertContains("<strike>strikethrough</strike>", xml);
     }
 
     @Test
     public void testTextDecorationNested() throws Exception {
-        XMLResult result = getXML("testWORD_various.docx");
-        String xml = result.xml;
+        String xml = getXML("testWORD_various.docx").xml;
 
-        assertTrue(xml.contains("<i>ita<strike>li</strike>c</i>"));
-        assertTrue(xml.contains("<i>ita<strike>l<u>i</u></strike>c</i>"));
-        assertTrue(xml.contains("<i><u>unde</u><strike><u>r</u></strike><u>line</i></u>"));
+        assertContains("<i>ita<strike>li</strike>c</i>", xml);
+        assertContains("<i>ita<strike>l<u>i</u></strike>c</i>", xml);
+        assertContains("<i><u>unde</u><strike><u>r</u></strike><u>line</i></u>", xml);
+
+        //confirm that spaces aren't added for <strike/> and </u>
+        ContentHandler contentHandler = new BodyContentHandler();
+        try (InputStream is = getResourceAsStream("/test-documents/testWORD_various.docx")){
+            new AutoDetectParser().parse(is, contentHandler, new Metadata(), new ParseContext());
+        }
+        String txt = contentHandler.toString();
+        assertContainsCount("italic", txt, 3);
+        assertNotContained("ita ", txt);
+
+        assertContainsCount("underline", txt, 2);
+        assertNotContained("unde ", txt);
     }
 
     @Test
