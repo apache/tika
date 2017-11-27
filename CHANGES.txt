@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Extract media files from ooxml (TIKA-2510).
+
   * Standardize the way the Image and Video captioning 
     dockers and extraction work (TIKA-2400, GitHub-208)
 

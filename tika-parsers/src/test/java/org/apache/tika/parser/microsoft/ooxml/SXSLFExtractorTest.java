@@ -580,4 +580,15 @@ public class SXSLFExtractorTest extends TikaTest {
         assertNotContained("chartSpace", xml);
     }
 
+    @Test
+    public void testEmbeddedMedia() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedMP3.pptx", parseContext);
+        assertEquals(4, metadataList.size());
+        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
+
+    }
 }

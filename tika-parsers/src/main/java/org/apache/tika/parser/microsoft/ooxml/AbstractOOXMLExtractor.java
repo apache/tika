@@ -78,6 +78,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
     static final String RELATION_AUDIO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
+    static final String RELATION_MEDIA = "http://schemas.microsoft.com/office/2007/relationships/media";
+    static final String RELATION_VIDEO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video";
     static final String RELATION_DIAGRAM_DATA = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData";
 
     private static final String TYPE_OLE_OBJECT =
@@ -247,7 +249,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)
                     && TYPE_OLE_OBJECT.equals(target.getContentType())) {
                 handleEmbeddedOLE(target, handler, sourceDesc + rel.getId(), parentMetadata);
-            } else if (RELATION_AUDIO.equals(type)
+            } else if (
+                    RELATION_MEDIA.equals(type)
+                    || RELATION_VIDEO.equals(type)
+                    || RELATION_AUDIO.equals(type)
                     || PackageRelationshipTypes.IMAGE_PART.equals(type)
                     || POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type)
                     || POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
