@@ -1,5 +1,8 @@
 Release 1.17 - ???
 
+  * Cache TikaConfig in EmbeddedDocumentUtil for better performance
+    in documents with large number of attachments (TIKA-2511).
+
   * Extract media files from ooxml (TIKA-2510).
 
   * Standardize the way the Image and Video captioning 

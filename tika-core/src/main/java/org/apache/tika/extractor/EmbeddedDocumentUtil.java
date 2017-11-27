@@ -51,6 +51,7 @@ import org.xml.sax.SAXException;
  */
 public class EmbeddedDocumentUtil implements Serializable {
 
+
     private final ParseContext context;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     //these are lazily initialized and can be null
@@ -99,27 +100,38 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     public Detector getDetector() {
-        //be as lazy as possible and cache the detector
-        if (detector == null) {
-            detector = context.get(Detector.class);
-            if (detector == null) {
-                detector = getTikaConfig().getDetector();
-            }
+        //be as lazy as possible and cache
+        Detector localDetector = context.get(Detector.class);
+        if (localDetector != null) {
+            return localDetector;
         }
+        if (detector != null) {
+            return detector;
+        }
+
+        detector = getTikaConfig().getDetector();
         return detector;
     }
 
     public MimeTypes getMimeTypes() {
+        MimeTypes localMimeTypes = context.get(MimeTypes.class);
         //be as lazy as possible and cache the mimeTypes
-        if (mimeTypes == null) {
-            mimeTypes = context.get(MimeTypes.class);
-            if (mimeTypes == null) {
-                mimeTypes = getTikaConfig().getMimeRepository();
-            }
+        if (localMimeTypes != null) {
+            return localMimeTypes;
         }
+        if (mimeTypes != null) {
+            return mimeTypes;
+        }
+        mimeTypes = getTikaConfig().getMimeRepository();
         return mimeTypes;
     }
 
+    /**
+     * @return Returns a {@link TikaConfig} -- trying to find it first in the ParseContext
+     * that was included during initialization, and then creating a new one from
+     * via {@link TikaConfig#getDefaultConfig()} if it can't find one in the
+     * ParseContext. This caches the default config so that it only has to be created once.
+     */
     public TikaConfig getTikaConfig() {
         //be as lazy as possible and cache the TikaConfig
         if (tikaConfig == null) {
@@ -133,22 +145,23 @@ public class EmbeddedDocumentUtil implements Serializable {
 
     public String getExtension(TikaInputStream is, Metadata metadata) {
         String mimeString = metadata.get(Metadata.CONTENT_TYPE);
-        TikaConfig config = getConfig();
+
+        //use the buffered mimetypes as default
+        MimeTypes localMimeTypes = getMimeTypes();
+
         MimeType mimeType = null;
-        MimeTypes types = config.getMimeRepository();
         boolean detected = false;
         if (mimeString != null) {
             try {
-                mimeType = types.forName(mimeString);
+                mimeType = localMimeTypes.forName(mimeString);
             } catch (MimeTypeException e) {
                 //swallow
             }
         }
         if (mimeType == null) {
-            Detector detector = config.getDetector();
             try {
-                MediaType mediaType = detector.detect(is, metadata);
-                mimeType = types.forName(mediaType.toString());
+                MediaType mediaType = getDetector().detect(is, metadata);
+                mimeType = localMimeTypes.forName(mediaType.toString());
                 detected = true;
                 is.reset();
             } catch (IOException e) {
@@ -167,6 +180,15 @@ public class EmbeddedDocumentUtil implements Serializable {
         return ".bin";
     }
 
+    /**
+     * @return Returns a {@link TikaConfig} -- trying to find it first in the ParseContext
+     * that was included in the initialization, and then creating a new one from
+     * via {@link TikaConfig#getDefaultConfig()} if it can't find one in the
+     * ParseContext.
+     *
+     * @deprecated as of 1.17, use {@link #getTikaConfig()} instead
+     */
+    @Deprecated
     public TikaConfig getConfig() {
         TikaConfig config = context.get(TikaConfig.class);
         if (config == null) {
