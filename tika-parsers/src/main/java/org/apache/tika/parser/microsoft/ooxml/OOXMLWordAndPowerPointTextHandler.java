@@ -21,6 +21,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.util.Date;
 import java.util.Map;
 
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
@@ -72,6 +73,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String TC = "tc";
     private final static String TR = "tr";
     private final static String I = "i";
+    private final static String U = "u";
+    private final static String STRIKE = "strike";
     private final static String NUM_PR = "numPr";
     private final static String BR = "br";
     private final static String HYPERLINK = "hyperlink";
@@ -88,6 +91,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String V = "v";
     private final static String RUBY = "ruby"; //phonetic section
     private final static String RT = "rt"; //phonetic run
+    private static final String VAL = "val";
 
 
     public final static String W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
@@ -247,6 +251,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             if (inR && inRPr) {
                 currRunProperties.setItalics(true);
             }
+        } else if (STRIKE.equals(localName)) {
+            if (inR && inRPr) {
+                currRunProperties.setStrike(true);
+            }
+        } else if (U.equals(localName)) {
+            if (inR && inRPr) {
+                currRunProperties.setUnderline(getStringVal(atts));
+            }
         } else if (TR.equals(localName)) {
             bodyContentsHandler.startTableRow();
         } else if (NUM_PR.equals(localName)) {
@@ -354,8 +366,16 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         this.editType = editType;
     }
 
+    private String getStringVal(Attributes atts) {
+        String valString = atts.getValue(W_NS, VAL);
+        if (valString != null) {
+            return valString;
+        }
+        return "";
+    }
+
     private int getIntVal(Attributes atts) {
-        String valString = atts.getValue(W_NS, "val");
+        String valString = atts.getValue(W_NS, VAL);
         if (valString != null) {
             try {
                 return Integer.parseInt(valString);
@@ -454,6 +474,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         runBuffer.setLength(0);
         currRunProperties.setBold(false);
         currRunProperties.setItalics(false);
+        currRunProperties.setStrike(false);
+        currRunProperties.setUnderline(UnderlinePatterns.NONE.name());
     }
 
     private void handlePict() {

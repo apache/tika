@@ -838,4 +838,36 @@ public class SXWPFExtractorTest extends TikaTest {
         assertNotContained("\u3068", xml);
     }
 
+    @Test
+    public void testTextDecoration() throws Exception {
+        String xml = getXML("testWORD_various.docx", parseContext).xml;
+
+        assertContains("<b>Bold</b>", xml);
+        assertContains("<i>italic</i>", xml);
+        assertContains("<u>underline</u>", xml);
+        assertContains("<strike>strikethrough</strike>", xml);
+    }
+
+    @Test
+    public void testTextDecorationNested() throws Exception {
+        String xml = getXML("testWORD_various.docx", parseContext).xml;
+
+        assertContains("<i>ita<strike>li</strike>c</i>", xml);
+        assertContains("<i>ita<strike>l<u>i</u></strike>c</i>", xml);
+        assertContains("<i><u>unde</u><strike><u>r</u></strike><u>line</u></i>", xml);
+
+        //confirm that spaces aren't added for <strike/> and <u/>
+        ContentHandler contentHandler = new BodyContentHandler();
+        try (InputStream is = getResourceAsStream("/test-documents/testWORD_various.docx")){
+            new AutoDetectParser().parse(is, contentHandler, new Metadata(), parseContext);
+        }
+        String txt = contentHandler.toString();
+        assertContainsCount("italic", txt, 3);
+        assertNotContained("ita ", txt);
+
+        assertContainsCount("underline", txt, 2);
+        assertNotContained("unde ", txt);
+    }
+
+
 }

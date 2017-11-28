@@ -21,6 +21,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.math.BigInteger;
 import java.util.Date;
 
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
@@ -45,6 +46,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     private int sdtDepth = 0;//
     private boolean isItalics = false;
     private boolean isBold = false;
+    private boolean isUnderline = false;
+    private boolean isStrikeThrough = false;
     private boolean wroteHyperlinkStart = false;
 
     //TODO: fix this
@@ -78,29 +81,67 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     @Override
     public void run(RunProperties runProperties, String contents) {
         try {
+
             // True if we are currently in the named style tag:
-            if (runProperties.getBold() != isBold) {
+            if (runProperties.isBold() != isBold) {
+                if (isStrikeThrough) {
+                    xhtml.endElement("strike");
+                    isStrikeThrough = false;
+                }
+                if (isUnderline) {
+                    xhtml.endElement("u");
+                    isUnderline = false;;
+                }
                 if (isItalics) {
                     xhtml.endElement("i");
                     isItalics = false;
                 }
-                if (runProperties.getBold()) {
+                if (runProperties.isBold()) {
                     xhtml.startElement("b");
-                    isBold = true;
                 } else {
                     xhtml.endElement("b");
-                    isBold = false;
                 }
+                isBold = runProperties.isBold();
             }
 
-            if (runProperties.getItalics() != isItalics) {
-                if (runProperties.getItalics()) {
+            if (runProperties.isItalics() != isItalics) {
+                if (isStrikeThrough) {
+                    xhtml.endElement("strike");
+                    isStrikeThrough = false;
+                }
+                if (isUnderline) {
+                    xhtml.endElement("u");
+                    isUnderline = false;
+                }
+                if (runProperties.isItalics()) {
                     xhtml.startElement("i");
-                    isItalics = true;
                 } else {
                     xhtml.endElement("i");
-                    isItalics = false;
                 }
+                isItalics = runProperties.isItalics();
+            }
+
+            if (runProperties.isStrikeThrough() != isStrikeThrough) {
+                if (isUnderline) {
+                    xhtml.endElement("u");
+                    isUnderline = false;
+                }
+                if (runProperties.isStrikeThrough()) {
+                    xhtml.startElement("strike");
+                } else {
+                    xhtml.endElement("strike");
+                }
+                isStrikeThrough = runProperties.isStrikeThrough();
+            }
+
+            boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
+            if (runIsUnderlined != isUnderline) {
+                if (runIsUnderlined) {
+                    xhtml.startElement("u");
+                } else {
+                    xhtml.endElement("u");
+                }
+                isUnderline = runIsUnderlined;
             }
 
             xhtml.characters(contents);
@@ -371,10 +412,22 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     private void closeStyleTags() throws SAXException {
+
+        if (isStrikeThrough) {
+            xhtml.endElement("strike");
+            isStrikeThrough = false;
+        }
+
+        if (isUnderline) {
+            xhtml.endElement("u");
+            isUnderline = false;
+        }
+
         if (isItalics) {
             xhtml.endElement("i");
             isItalics = false;
         }
+
         if (isBold) {
             xhtml.endElement("b");
             isBold = false;

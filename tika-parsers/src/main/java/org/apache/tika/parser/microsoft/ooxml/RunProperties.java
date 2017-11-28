@@ -17,6 +17,9 @@
 
 package org.apache.tika.parser.microsoft.ooxml;
 
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTUnderline;
+
 /**
  * WARNING: This class is mutable.  Make a copy of it
  * if you want persistence!
@@ -25,12 +28,15 @@ package org.apache.tika.parser.microsoft.ooxml;
 public class RunProperties {
     boolean italics = false;
     boolean bold = false;
+    boolean strikeThrough = false;
 
-    public boolean getItalics() {
+    UnderlinePatterns underline = UnderlinePatterns.NONE;
+
+    public boolean isItalics() {
         return italics;
     }
 
-    public boolean getBold() {
+    public boolean isBold() {
         return bold;
     }
 
@@ -40,5 +46,28 @@ public class RunProperties {
 
     public void setBold(boolean bold) {
         this.bold = bold;
+    }
+
+    public boolean isStrikeThrough() {
+        return strikeThrough;
+    }
+
+    public void setStrike(boolean strikeThrough) {
+        this.strikeThrough = strikeThrough;
+    }
+
+    public UnderlinePatterns getUnderline() {
+        return underline;
+    }
+
+    public void setUnderline(String underlineString) {
+        if (underlineString == null || underlineString.equals("")) {
+            underline = UnderlinePatterns.SINGLE;
+        } else if (UnderlinePatterns.NONE.name().equals(underlineString)) {
+            underline = UnderlinePatterns.NONE;
+        } else {
+            //TODO -- fill out rest
+            underline = UnderlinePatterns.SINGLE;
+        }
     }
 }
