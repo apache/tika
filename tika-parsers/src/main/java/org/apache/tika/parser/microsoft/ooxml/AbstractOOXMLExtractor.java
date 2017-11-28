@@ -189,7 +189,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private void handleEmbeddedParts(ContentHandler handler, Metadata metadata)
             throws TikaException, IOException, SAXException {
-        Set<String> seen = new HashSet<>();
+        //keep track of media items that have been handled
+        //there can be multiple relationships pointing to the
+        //same underlying media item.  We only want to process
+        //the underlying media item once.
+        Set<String> handledTarget = new HashSet<>();
         try {
             for (PackagePart source : getMainDocumentParts()) {
                 if (source == null) {
@@ -198,7 +202,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 }
                 for (PackageRelationship rel : source.getRelationships()) {
                     try {
-                        handleEmbeddedPart(source, rel, handler, metadata, seen);
+                        handleEmbeddedPart(source, rel, handler, metadata, handledTarget);
                     } catch (Exception e) {
                         if (e instanceof SAXException) {
                             throw e;
@@ -213,14 +217,13 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     private void handleEmbeddedPart(PackagePart source, PackageRelationship rel,
-                                    ContentHandler handler, Metadata parentMetadata, Set<String> seen)
+                                    ContentHandler handler, Metadata parentMetadata, Set<String> handledTarget)
             throws IOException, SAXException, TikaException, InvalidFormatException {
         URI targetURI = rel.getTargetURI();
         if (targetURI != null) {
-            if (seen.contains(targetURI.toString())) {
+            if (handledTarget.contains(targetURI.toString())) {
                 return;
             }
-            seen.add(targetURI.toString());
         }
         URI sourceURI = rel.getSourceURI();
         String sourceDesc;
@@ -237,30 +240,33 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (rel.getTargetMode() != TargetMode.INTERNAL) {
             return;
         }
-            PackagePart target;
+        PackagePart target;
 
-            try {
-                target = source.getRelatedPart(rel);
-            } catch (IllegalArgumentException ex) {
-                return;
-            }
-
-            String type = rel.getRelationshipType();
-            if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)
-                    && TYPE_OLE_OBJECT.equals(target.getContentType())) {
-                handleEmbeddedOLE(target, handler, sourceDesc + rel.getId(), parentMetadata);
-            } else if (
-                    RELATION_MEDIA.equals(type)
-                    || RELATION_VIDEO.equals(type)
-                    || RELATION_AUDIO.equals(type)
-                    || PackageRelationshipTypes.IMAGE_PART.equals(type)
-                    || POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type)
-                    || POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
-                handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
-            } else if (XSSFRelation.VBA_MACROS.getRelation().equals(type)) {
-                handleMacros(target, handler);
-            }
+        try {
+            target = source.getRelatedPart(rel);
+        } catch (IllegalArgumentException ex) {
+            return;
         }
+
+        String type = rel.getRelationshipType();
+        if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)
+                && TYPE_OLE_OBJECT.equals(target.getContentType())) {
+            handleEmbeddedOLE(target, handler, sourceDesc + rel.getId(), parentMetadata);
+            handledTarget.add(targetURI.toString());
+        } else if (
+                RELATION_MEDIA.equals(type)
+                        || RELATION_VIDEO.equals(type)
+                        || RELATION_AUDIO.equals(type)
+                        || PackageRelationshipTypes.IMAGE_PART.equals(type)
+                        || POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type)
+                        || POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
+            handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
+            handledTarget.add(targetURI.toString());
+        } else if (XSSFRelation.VBA_MACROS.getRelation().equals(type)) {
+            handleMacros(target, handler);
+            handledTarget.add(targetURI.toString());
+        }
+    }
 
 
 
