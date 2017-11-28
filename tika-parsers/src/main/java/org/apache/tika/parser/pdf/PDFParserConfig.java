@@ -135,6 +135,8 @@ public class PDFParserConfig implements Serializable {
 
     private boolean extractActions = false;
 
+    private long maxMainMemoryBytes = -1;
+
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
@@ -224,6 +226,8 @@ public class PDFParserConfig implements Serializable {
         } else {
             accessChecker = new AccessChecker(allowExtractionForAccessibility);
         }
+
+        maxMainMemoryBytes = getIntProp(props.getProperty("maxMainMemoryBytes"), -1);
     }
 
     /**
@@ -541,6 +545,16 @@ public class PDFParserConfig implements Serializable {
 
     //throws NumberFormatException if there's a non-null unparseable
     //string passed in
+    private long getLongProp(String p, long defaultMissing) {
+        if (p == null) {
+            return defaultMissing;
+        }
+
+        return Long.parseLong(p);
+    }
+
+    //throws NumberFormatException if there's a non-null unparseable
+    //string passed in
     private static float getFloatProp(String p, float defaultMissing) {
         if (p == null) {
             return defaultMissing;
@@ -660,6 +674,20 @@ public class PDFParserConfig implements Serializable {
         return extractActions;
     }
 
+
+    /**
+     * The maximum amount of memory to use when loading a pdf into a PDDocument. Additional buffering is done using a
+     * temp file.
+     * @return
+     */
+    public long getMaxMainMemoryBytes() {
+        return maxMainMemoryBytes;
+    }
+
+    public void setMaxMainMemoryBytes(int maxMainMemoryBytes) {
+        this.maxMainMemoryBytes = maxMainMemoryBytes;
+    }
+
     private ImageType parseImageType(String ocrImageType) {
         for (ImageType t : ImageType.values()) {
             if (ocrImageType.equalsIgnoreCase(t.toString())) {
@@ -704,8 +732,8 @@ public class PDFParserConfig implements Serializable {
         if (getOcrImageType() != config.getOcrImageType()) return false;
         if (!getOcrImageFormatName().equals(config.getOcrImageFormatName())) return false;
         if (getExtractActions() != config.getExtractActions()) return false;
-        return getAccessChecker().equals(config.getAccessChecker());
-
+        if (!getAccessChecker().equals(config.getAccessChecker())) return false;
+        return getMaxMainMemoryBytes() == config.getMaxMainMemoryBytes();
     }
 
     @Override
@@ -728,6 +756,7 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + getAccessChecker().hashCode();
         result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
         result = 31 * result + (getExtractActions() ? 1 : 0);
+        result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
         return result;
     }
 
@@ -752,6 +781,7 @@ public class PDFParserConfig implements Serializable {
                 ", accessChecker=" + accessChecker +
                 ", extractActions=" + extractActions +
                 ", catchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
+                ", maxMainMemoryBytes=" + maxMainMemoryBytes +
                 '}';
     }
 }
