@@ -39,6 +39,7 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.common.PDMetadata;
@@ -136,17 +137,17 @@ public class PDFParser extends AbstractParser implements Initializable {
 
         String password = "";
         try {
-            // PDFBox can process entirely in memory, or can use a temp file
-            //  for unpacked / processed resources
-            // Decide which to do based on if we're reading from a file or not already
-            //TODO: make this configurable via MemoryUsageSetting
             TikaInputStream tstream = TikaInputStream.cast(stream);
             password = getPassword(metadata, context);
+            MemoryUsageSetting memoryUsageSetting = MemoryUsageSetting.setupMainMemoryOnly();
+            if (localConfig.getMaxMainMemoryBytes() >= 0) {
+                memoryUsageSetting = MemoryUsageSetting.setupMixed(localConfig.getMaxMainMemoryBytes());
+            }
             if (tstream != null && tstream.hasFile()) {
                 // File based -- send file directly to PDFBox
-                pdfDocument = PDDocument.load(tstream.getPath().toFile(), password);
+                pdfDocument = PDDocument.load(tstream.getPath().toFile(), password, memoryUsageSetting);
             } else {
-                pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), password);
+                pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), password, memoryUsageSetting);
             }
             metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(pdfDocument.isEncrypted()));
 
