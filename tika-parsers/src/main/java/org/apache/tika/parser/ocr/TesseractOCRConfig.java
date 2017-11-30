@@ -94,6 +94,9 @@ public class TesseractOCRConfig implements Serializable {
     // whether or not to preserve interword spacing
     private boolean preserveInterwordSpacing = false;
 
+    // whether or not to apply rotation calculated by the rotation.py script
+    private boolean applyRotation = false;
+
 
     /**
      * Default contructor.
@@ -169,6 +172,8 @@ public class TesseractOCRConfig implements Serializable {
                 getProp(props, "filter", getFilter()));
         setResize(
                 getProp(props, "resize", getResize()));
+        setApplyRotation(
+        		getProp(props, "applyRotation", getApplyRotation()));
 
     }
 
@@ -470,6 +475,23 @@ public class TesseractOCRConfig implements Serializable {
             ImageMagickPath += File.separator;
 
         this.ImageMagickPath = ImageMagickPath;
+    }
+
+    /**
+     * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
+     * (Requires that Python is installed).
+     */
+    public boolean getApplyRotation() {
+    	return this.applyRotation;
+    }
+
+    /**
+     * Sets whether or not a rotation value should be calculated and passed to ImageMagick.
+     * 
+     * @param true to calculate and apply rotation, false to skip.  Default is false, true required Python installed.
+     */
+    public void setApplyRotation(boolean applyRotation) {
+    	this.applyRotation = applyRotation;
     }
 
     /**
