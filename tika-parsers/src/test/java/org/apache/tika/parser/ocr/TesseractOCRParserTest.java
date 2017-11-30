@@ -287,4 +287,19 @@ public class TesseractOCRParserTest extends TikaTest {
         String xml = getXML("testTIFF_multipage.tif").xml;
         assertContains("Page 2", xml);
     }
+
+    @Test
+    public void testRotatedOCR() throws Exception {
+        if (TesseractOCRParser.hasPython()) {
+            TesseractOCRConfig config = new TesseractOCRConfig();
+            config.setApplyRotation(true);
+            config.setEnableImageProcessing(1);
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(TesseractOCRConfig.class, config);
+            assumeTrue(canRun(config));
+
+            String ocr = getText(getResourceAsStream("/test-documents/testRotated.png"), new AutoDetectParser(), parseContext);
+            assertContains("Its had resolving otherwise she contented therefore", ocr);
+        }
+    }
 }

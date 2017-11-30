@@ -46,12 +46,12 @@ def main(argv):
 	     filename = arg
 
 	try:
-      from parabolic import parabolic
+	  from parabolic import parabolic
 
 	  def argmax(x):
-	   	 return parabolic(x, numpy.argmax(x))[0]
-	  except ImportError:
-         from numpy import argmax
+	   	return parabolic(x, numpy.argmax(x))[0]
+	except ImportError:
+	  from numpy import argmax
 
 	# Load file, converting to grayscale
 	I = asarray(Image.open(filename).convert('L'))
