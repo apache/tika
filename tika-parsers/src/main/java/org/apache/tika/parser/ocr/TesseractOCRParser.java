@@ -170,21 +170,20 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
     
     static boolean hasPython() {
-    	// check if python is installed and if the rotation program path has been specified correctly
-        
-    	boolean hasPython = false;
-    	
-		try {
-			Process proc = Runtime.getRuntime().exec("python -h");
-			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"));
-			if(stdInput.read() != -1) {
-				hasPython = true;
-			}
-		} catch (IOException e) {
+    	// check if python is installed, it has the required dependencies for the rotation program to run
+        boolean hasPython = false;
+        DefaultExecutor executor = new DefaultExecutor();
+        CommandLine cmdLine = CommandLine.parse("python -c \"import numpy, matplotlib, skimage;\"");
+        try {
+            int returnCode = executor.execute(cmdLine);
+            if (returnCode != -1) {
+                hasPython = true;
+            }
 
-		} 
-
-		return hasPython;	
+        } catch(Exception e) {
+            // Do nothing
+        }
+        return hasPython;
     }
     
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
