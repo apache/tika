@@ -168,24 +168,26 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         return hasImageMagick;
      
     }
-    
+
     static boolean hasPython() {
-    	// check if python is installed, it has the required dependencies for the rotation program to run
+        // check if python is installed, it has the required dependencies for the rotation program to run
         boolean hasPython = false;
-        DefaultExecutor executor = new DefaultExecutor();
-        CommandLine cmdLine = CommandLine.parse("python -c \"import numpy, matplotlib, skimage;\"");
+
         try {
-            int returnCode = executor.execute(cmdLine);
-            if (returnCode != -1) {
+            String[] commands = {"python", "-c", "\"import numpy, matplotlib, skimage;\"" };
+
+            Process proc = Runtime.getRuntime().exec(commands);
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"));
+            if(stdInput.read() != -1) {
                 hasPython = true;
             }
+        } catch (IOException e) {
 
-        } catch(Exception e) {
-            // Do nothing
         }
+
         return hasPython;
     }
-    
+
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
