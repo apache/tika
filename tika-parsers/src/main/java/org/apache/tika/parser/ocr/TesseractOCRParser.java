@@ -23,10 +23,12 @@ import javax.xml.parsers.SAXParser;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -170,18 +172,25 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     static boolean hasPython() {
-        // check if python is installed, it has the required dependencies for the rotation program to run
+        // check if python is installed and it has the required dependencies for the rotation program to run
         boolean hasPython = false;
 
         try {
-            String[] commands = {"python", "-c", "\"import numpy, matplotlib, skimage;\"" };
+            TemporaryResources tmp = new TemporaryResources();
+            File importCheck = tmp.createTemporaryFile();
+            String prg = "import numpy, mathplotlib, skimage";
+            BufferedWriter out = new BufferedWriter(new FileWriter(importCheck));
+            out.write(prg);
+            out.close();
 
-            Process proc = Runtime.getRuntime().exec(commands);
-            BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"));
-            if(stdInput.read() != -1) {
+            Process p = Runtime.getRuntime().exec("python " + importCheck.getAbsolutePath());
+            if (p.waitFor() == 0) {
                 hasPython = true;
             }
-        } catch (IOException e) {
+
+            tmp.close();
+
+        } catch (Exception e) {
 
         }
 
