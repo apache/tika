@@ -22,17 +22,16 @@ import javax.imageio.ImageIO;
 import javax.xml.parsers.SAXParser;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
@@ -179,7 +178,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             TemporaryResources tmp = new TemporaryResources();
             File importCheck = tmp.createTemporaryFile();
             String prg = "import numpy, matplotlib, skimage";
-            BufferedWriter out = new BufferedWriter(new FileWriter(importCheck));
+            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importCheck), Charset.forName("UTF-8"));
             out.write(prg);
             out.close();
 
