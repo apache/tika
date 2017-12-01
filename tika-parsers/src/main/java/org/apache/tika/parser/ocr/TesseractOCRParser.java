@@ -178,7 +178,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         try {
             TemporaryResources tmp = new TemporaryResources();
             File importCheck = tmp.createTemporaryFile();
-            String prg = "import numpy, mathplotlib, skimage";
+            String prg = "import numpy, matplotlib, skimage";
             BufferedWriter out = new BufferedWriter(new FileWriter(importCheck));
             out.write(prg);
             out.close();
