@@ -87,7 +87,10 @@ Release 1.17 - ???
 
   * Add underline extraction from Word documents (doc/docx) via Stuart Hendren
     as well as strikethrough extraction in docx (TIKA-2347, GitHub-173)
-    
+
+  * Corrected Tesseract OCR rotation.py script and made it a configurable
+    option via Peter Weiss (TIKA-2385) 
+ 
 Release 1.16 - 7/7/2017
 
   * Exclude jj2000 from edu.ucar grip to avoid potential

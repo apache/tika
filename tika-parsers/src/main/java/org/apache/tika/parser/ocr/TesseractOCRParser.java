@@ -22,7 +22,6 @@ import javax.imageio.ImageIO;
 import javax.xml.parsers.SAXParser;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,7 +29,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
@@ -168,25 +169,33 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         return hasImageMagick;
      
     }
-    
-    private static boolean hasPython() {
-    	// check if python is installed and if the rotation program path has been specified correctly
-        
-    	boolean hasPython = false;
-    	
-		try {
-			Process proc = Runtime.getRuntime().exec("python -h");
-			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"));
-			if(stdInput.read() != -1) {
-				hasPython = true;
-			}
-		} catch (IOException e) {
 
-		} 
+    static boolean hasPython() {
+        // check if python is installed and it has the required dependencies for the rotation program to run
+        boolean hasPython = false;
 
-		return hasPython;	
+        try {
+            TemporaryResources tmp = new TemporaryResources();
+            File importCheck = tmp.createTemporaryFile();
+            String prg = "import numpy, matplotlib, skimage";
+            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importCheck), Charset.forName("UTF-8"));
+            out.write(prg);
+            out.close();
+
+            Process p = Runtime.getRuntime().exec("python " + importCheck.getAbsolutePath());
+            if (p.waitFor() == 0) {
+                hasPython = true;
+            }
+
+            tmp.close();
+
+        } catch (Exception e) {
+
+        }
+
+        return hasPython;
     }
-    
+
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
@@ -320,7 +329,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         
         // determine the angle of rotation required to make the text horizontal
         CommandLine cmdLine = CommandLine.parse(cmd);
-        if(hasPython()) {
+        if(config.getApplyRotation() && hasPython()) {
             try {
                 executor.execute(cmdLine);
                 angle = outputStream.toString("UTF-8").trim();
