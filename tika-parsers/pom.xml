@@ -49,6 +49,7 @@
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.54</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
+    <httpcomponents.version>4.5.4</httpcomponents.version>
   </properties>
 
   <dependencies>
@@ -441,7 +442,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <version>4.5.3</version>
+      <version>${httpcomponents.version}</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -452,7 +453,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpmime</artifactId>
-      <version>4.5.3</version>
+      <version>${httpcomponents.version}</version>
     </dependency>
 
     <!-- Apache Commons CSV -->
