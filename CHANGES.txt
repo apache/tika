@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Upgrade cxf to 3.0.16 (TIKA-2516).
+
   * Allow users to configure maxMainMemoryBytes for PDFs via shrike (PR-213).
 
   * Extract underline and strikethrough in docx (TIKA-2347 and TIKA-2512).
