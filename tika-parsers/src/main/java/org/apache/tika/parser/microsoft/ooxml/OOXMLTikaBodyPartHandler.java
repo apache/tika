@@ -178,6 +178,17 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
 
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) {
+
+        //if you're in a table cell and your after the first paragraph
+        //make sure to prepend a \n
+        if (tableCellDepth > 0 && pWithinCell > 0) {
+            try {
+                xhtml.characters(NEWLINE, 0, 1);
+            } catch (SAXException e) {
+                //swallow
+            }
+        }
+
         if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
             paragraphTag = P;
             String styleClass = null;
