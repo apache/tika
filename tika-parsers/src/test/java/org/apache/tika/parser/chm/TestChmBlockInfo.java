@@ -27,6 +27,7 @@ import org.apache.tika.parser.chm.accessor.ChmLzxcResetTable;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
+import org.apache.tika.parser.chm.exception.ChmParsingException;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
 import org.junit.After;
 import org.junit.Before;
@@ -98,14 +99,14 @@ public class TestChmBlockInfo {
     }
 
     @Test
-    public void testToString() {
+    public void testToString() throws ChmParsingException {
         if (chmBlockInfo == null)
             testGetChmBlockInfo();
         assertTrue(chmBlockInfo.toString().length() > 0);
     }
 
     @Test
-    public void testGetChmBlockInfo() {
+    public void testGetChmBlockInfo() throws ChmParsingException {
         for (DirectoryListingEntry directoryListingEntry : chmDirListCont.getDirectoryListingEntryList()) {
             chmBlockInfo = ChmBlockInfo.getChmBlockInfoInstance(
                     directoryListingEntry, (int) clrt.getBlockLen(),

@@ -50,7 +50,7 @@ public class MultiThreadedTikaTest extends TikaTest {
      */
     protected void testMultiThreaded(int numThreads, int numIterations, FileFilter filter) throws Exception {
         Path[] allFiles = getTestFiles(filter);
-        testEach(allFiles, numThreads, numIterations);
+        //testEach(allFiles, numThreads, numIterations);
         testAll(allFiles, numThreads, numIterations);
     }
 
@@ -105,7 +105,7 @@ public class MultiThreadedTikaTest extends TikaTest {
 
         ExecutorService ex = Executors.newFixedThreadPool(numThreads);
         try {
-            _testAll(files, numThreads, numIterations, truth, ex);
+            _testAll(testFiles, numThreads, numIterations, truth, ex);
         } finally {
             ex.shutdown();
             ex.shutdownNow();

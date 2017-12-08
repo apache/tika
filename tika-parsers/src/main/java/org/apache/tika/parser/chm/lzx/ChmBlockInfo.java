@@ -37,56 +37,27 @@ public class ChmBlockInfo {
     private int startOffset;
     private int endOffset;
 
-    public ChmBlockInfo() {
+    private ChmBlockInfo() {
 
-    }
-
-    /**
-     * Returns an information related to the chmBlockInfo
-     * 
-     * @param dle
-     *            - DirectoryListingEntry
-     * @param bytesPerBlock
-     *            - int, = chmLzxcResetTable.block_length
-     * @param clcd
-     *            - ChmLzxcControlData
-     * @param chmBlockInfo
-     *            - ChmBlockInfo
-     * 
-     * @return ChmBlockInfo
-     * @throws TikaException 
-     */
-    protected ChmBlockInfo getChmBlockInfo(DirectoryListingEntry dle,
-            int bytesPerBlock, ChmLzxcControlData clcd,
-            ChmBlockInfo chmBlockInfo) throws TikaException {
-        if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo))
-            throw new ChmParsingException("Please check you parameters");
-
-        chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
-        chmBlockInfo.setEndBlock((dle.getOffset() + dle.getLength())
-                / bytesPerBlock);
-        chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
-        chmBlockInfo.setEndOffset((dle.getOffset() + dle.getLength())
-                % bytesPerBlock);
-        // potential problem with casting long to int
-        chmBlockInfo
-                .setIniBlock(chmBlockInfo.startBlock - 
-                        chmBlockInfo.startBlock % (int) clcd.getResetInterval());
-//                .setIniBlock((chmBlockInfo.startBlock - chmBlockInfo.startBlock)
-//                        % (int) clcd.getResetInterval());
-        return chmBlockInfo;
     }
 
     @Deprecated
     public static ChmBlockInfo getChmBlockInfoInstance(
             DirectoryListingEntry dle, int bytesPerBlock,
-            ChmLzxcControlData clcd) {
-        return resetChmBlockInfoInstance(dle, bytesPerBlock, clcd, new ChmBlockInfo());
+            ChmLzxcControlData clcd) throws ChmParsingException {
+        return getChmBlockInfoInstance(dle, bytesPerBlock, clcd, new ChmBlockInfo());
     }
 
-    public static ChmBlockInfo resetChmBlockInfoInstance(
+
+    public static ChmBlockInfo getChmBlockInfoInstance(
                 DirectoryListingEntry dle, int bytesPerBlock,
-        ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) {
+        ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) throws ChmParsingException{
+        if (chmBlockInfo == null) {
+            chmBlockInfo = new ChmBlockInfo();
+        }
+        if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo))
+            throw new ChmParsingException("Please check you parameters");
+
 
         chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
         chmBlockInfo.setEndBlock(
@@ -117,7 +88,7 @@ public class ChmBlockInfo {
         return sb.toString();
     }
 
-    private boolean validateParameters(DirectoryListingEntry dle,
+    private static boolean validateParameters(DirectoryListingEntry dle,
             int bytesPerBlock, ChmLzxcControlData clcd,
             ChmBlockInfo chmBlockInfo) {
         int goodParameter = 0;

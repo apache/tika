@@ -207,19 +207,27 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         }
     }
 
+    @Test(expected = TikaException.class)
+    public void testOOM() throws Exception {
+        getXML("testChm_oom.chm");
+    }
 
     @Test
     public void testMultiThreaded() throws Exception {
-        testMultiThreaded(10, 100, null);
-/*                new FileFilter() {
+        testMultiThreaded(10, 10, new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
                         if (pathname.getName().toLowerCase(Locale.ENGLISH).endsWith(".chm")) {
-                            return true;
+                            //this file is a beast, skip it
+                            if (pathname.getName().equals("testChm2.chm")) {
+                                return false;
+                            } else {
+                                return true;
+                            }
                         } else {
                             return false;
                         }
                     }
-                });*/
+                });
     }
 }

@@ -58,7 +58,7 @@ public class ChmExtractor {
     private int indexOfContent;
     private long lzxBlockOffset;
     private long lzxBlockLength;
-    private final ChmBlockInfo chmBlockInfo = new ChmBlockInfo();
+    private ChmBlockInfo chmBlockInfo = null;//this will be instantiated at first call of
 
     /**
      * Returns lzxc control data.
@@ -267,7 +267,7 @@ public class ChmExtractor {
             } else if (directoryListingEntry.getEntryType() == EntryType.COMPRESSED
                     && !ChmCommons.hasSkip(directoryListingEntry)) {
                 /* Gets a chm hit_cache info */
-                ChmBlockInfo.resetChmBlockInfoInstance(
+                chmBlockInfo = ChmBlockInfo.getChmBlockInfoInstance(
                         directoryListingEntry, (int) getChmLzxcResetTable()
                                 .getBlockLen(), getChmLzxcControlData(), chmBlockInfo);
 
