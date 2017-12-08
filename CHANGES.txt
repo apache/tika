@@ -1,3 +1,6 @@
+Release 2.0.0 - ???
+
+
 Release 1.17 - December 8, 2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
