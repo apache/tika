@@ -1,4 +1,7 @@
-Release 1.17 - ???
+Release 1.17 - December 8, 2017
+
+  ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
+     ON Java 7.  The next versions will require Java 8***
 
   * Fix thread-safety in ChmExtractor (TIKA-2519).
 
