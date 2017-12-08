@@ -16,11 +16,21 @@
  */
 package org.apache.tika.parser.chm;
 
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.MultiThreadedTikaTest;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
+import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
+import org.apache.tika.parser.chm.core.ChmExtractor;
+import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
+import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,18 +44,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
-import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
-import org.apache.tika.parser.chm.core.ChmExtractor;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.SAXException;
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static org.junit.Assert.assertTrue;
 
-public class TestChmExtraction {
+public class TestChmExtraction extends MultiThreadedTikaTest {
 
     private final Parser parser = new ChmParser();
 
@@ -161,7 +163,7 @@ public class TestChmExtraction {
     }
     
 
-    @Test
+    @Test //TODO: redo with new MultiThreadedTikaTest
     public void testMultiThreadedChmExtraction() throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(TestParameters.NTHREADS);
         for (int i = 0; i < TestParameters.NTHREADS; i++) {
@@ -203,5 +205,21 @@ public class TestChmExtraction {
             InputStream stream = new FileInputStream(file);
             testingChm(stream);
         }
+    }
+
+
+    @Test
+    public void testMultiThreaded() throws Exception {
+        testMultiThreaded(10, 100, null);
+/*                new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.getName().toLowerCase(Locale.ENGLISH).endsWith(".chm")) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                });*/
     }
 }

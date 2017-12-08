@@ -37,9 +37,7 @@ public class ChmBlockInfo {
     private int startOffset;
     private int endOffset;
 
-    private static ChmBlockInfo chmBlockInfo = null;
-
-    private ChmBlockInfo() {
+    public ChmBlockInfo() {
 
     }
 
@@ -79,23 +77,30 @@ public class ChmBlockInfo {
         return chmBlockInfo;
     }
 
+    @Deprecated
     public static ChmBlockInfo getChmBlockInfoInstance(
             DirectoryListingEntry dle, int bytesPerBlock,
             ChmLzxcControlData clcd) {
-        setChmBlockInfo(new ChmBlockInfo());
-        getChmBlockInfo().setStartBlock(dle.getOffset() / bytesPerBlock);
-        getChmBlockInfo().setEndBlock(
+        return resetChmBlockInfoInstance(dle, bytesPerBlock, clcd, new ChmBlockInfo());
+    }
+
+    public static ChmBlockInfo resetChmBlockInfoInstance(
+                DirectoryListingEntry dle, int bytesPerBlock,
+        ChmLzxcControlData clcd, ChmBlockInfo chmBlockInfo) {
+
+        chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
+        chmBlockInfo.setEndBlock(
                 (dle.getOffset() + dle.getLength()) / bytesPerBlock);
-        getChmBlockInfo().setStartOffset(dle.getOffset() % bytesPerBlock);
-        getChmBlockInfo().setEndOffset(
+        chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
+        chmBlockInfo.setEndOffset(
                 (dle.getOffset() + dle.getLength()) % bytesPerBlock);
         // potential problem with casting long to int
-        getChmBlockInfo().setIniBlock(
-                getChmBlockInfo().startBlock - getChmBlockInfo().startBlock
+        chmBlockInfo.setIniBlock(
+                chmBlockInfo.startBlock - chmBlockInfo.startBlock
                         % (int) clcd.getResetInterval());
 //                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
 //                        % (int) clcd.getResetInterval());
-        return getChmBlockInfo();
+        return chmBlockInfo;
     }
 
     /**
@@ -225,11 +230,4 @@ public class ChmBlockInfo {
         this.endOffset = endOffset;
     }
 
-    public static void setChmBlockInfo(ChmBlockInfo chmBlockInfo) {
-        ChmBlockInfo.chmBlockInfo = chmBlockInfo;
-    }
-
-    public static ChmBlockInfo getChmBlockInfo() {
-        return chmBlockInfo;
-    }
 }

@@ -1,5 +1,7 @@
 Release 1.17 - ???
 
+  * Fix thread-safety in ChmExtractor (TIKA-2519).
+
   * Upgrade cxf to 3.0.16 (TIKA-2516).
 
   * Allow users to configure maxMainMemoryBytes for PDFs via shrike (PR-213).

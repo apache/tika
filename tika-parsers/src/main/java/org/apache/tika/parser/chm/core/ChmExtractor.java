@@ -58,6 +58,7 @@ public class ChmExtractor {
     private int indexOfContent;
     private long lzxBlockOffset;
     private long lzxBlockLength;
+    private final ChmBlockInfo chmBlockInfo = new ChmBlockInfo();
 
     /**
      * Returns lzxc control data.
@@ -266,9 +267,9 @@ public class ChmExtractor {
             } else if (directoryListingEntry.getEntryType() == EntryType.COMPRESSED
                     && !ChmCommons.hasSkip(directoryListingEntry)) {
                 /* Gets a chm hit_cache info */
-                ChmBlockInfo bb = ChmBlockInfo.getChmBlockInfoInstance(
+                ChmBlockInfo.resetChmBlockInfoInstance(
                         directoryListingEntry, (int) getChmLzxcResetTable()
-                                .getBlockLen(), getChmLzxcControlData());
+                                .getBlockLen(), getChmLzxcControlData(), chmBlockInfo);
 
                 int i = 0, start = 0, hit_cache = 0;
 
@@ -281,7 +282,7 @@ public class ChmExtractor {
                         for (i = 0; i < getLzxBlocksCache().size(); i++) {
                             //lzxBlock = getLzxBlocksCache().get(i);
                             int bn = getLzxBlocksCache().get(i).getBlockNumber();
-                            for (int j = bb.getIniBlock(); j <= bb.getStartBlock(); j++) {
+                            for (int j = chmBlockInfo.getIniBlock(); j <= chmBlockInfo.getStartBlock(); j++) {
                                 if (bn == j) {
                                     if (j > start) {
                                         start = j;
@@ -289,14 +290,14 @@ public class ChmExtractor {
                                     }
                                 }
                             }
-                            if (start == bb.getStartBlock())
+                            if (start == chmBlockInfo.getStartBlock())
                                 break;
                         }
                     }
 
 //                    if (i == getLzxBlocksCache().size() && i == 0) {
                     if (start<0) {
-                        start = bb.getIniBlock();
+                        start = chmBlockInfo.getIniBlock();
 
                         byte[] dataSegment = ChmCommons.getChmBlockSegment(
                                 getData(),
@@ -312,25 +313,25 @@ public class ChmExtractor {
                         lzxBlock = getLzxBlocksCache().get(hit_cache);
                     }
 
-                    for (i = start; i <= bb.getEndBlock();) {
-                        if (i == bb.getStartBlock() && i == bb.getEndBlock()) {
+                    for (i = start; i <= chmBlockInfo.getEndBlock();) {
+                        if (i == chmBlockInfo.getStartBlock() && i == chmBlockInfo.getEndBlock()) {
                             buffer.write(lzxBlock.getContent(
-                                    bb.getStartOffset(), bb.getEndOffset()));
+                                    chmBlockInfo.getStartOffset(), chmBlockInfo.getEndOffset()));
                             break;
                         }
 
-                        if (i == bb.getStartBlock()) {
+                        if (i == chmBlockInfo.getStartBlock()) {
                             buffer.write(lzxBlock.getContent(
-                                    bb.getStartOffset()));
+                                    chmBlockInfo.getStartOffset()));
                         }
 
-                        if (i > bb.getStartBlock() && i < bb.getEndBlock()) {
+                        if (i > chmBlockInfo.getStartBlock() && i < chmBlockInfo.getEndBlock()) {
                             buffer.write(lzxBlock.getContent());
                         }
 
-                        if (i == bb.getEndBlock()) {
+                        if (i == chmBlockInfo.getEndBlock()) {
                             buffer.write(lzxBlock.getContent(
-                                    0, bb.getEndOffset()));
+                                    0, chmBlockInfo.getEndOffset()));
                             break;
                         }
 
