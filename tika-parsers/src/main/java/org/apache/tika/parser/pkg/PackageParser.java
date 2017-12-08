@@ -16,12 +16,13 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.PasswordRequiredException;
@@ -83,15 +84,88 @@ public class PackageParser extends AbstractParser {
     private static final MediaType TAR = MediaType.application("x-tar");
     private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
-    private static final MediaType TIKA_OOXML = MediaType.application("tika-ooxml");
+    private static final MediaType TIKA_OOXML = MediaType.application("x-tika-ooxml");
     private static final MediaType GTAR = MediaType.application("x-gtar");
+    private static final MediaType KMZ = MediaType.application("vnd.google-earth.kmz");
 
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(ZIP, JAR, AR, ARJ, CPIO, DUMP, TAR, SEVENZ);
 
-    private static final Set<MediaType> DONT_OVERWRITE_CONTENT_TYPE =
-            MediaType.set(TIKA_OOXML, GTAR);
+    //We used to avoid overwriting file types if the file type
+    //was a specialization of zip/tar.  We determined specialization of zip
+    //via TikaConfig at parse time.
+    //However, TIKA-2483 showed that TikaConfig is not serializable
+    //and this causes an exception in the ForkParser.
+    //The following is an inelegant hack, but until we can serialize TikaConfig,
+    //or dramatically rework the ForkParser to avoid serialization
+    //of parsers, this is what we have.
+    //There is at least a test in PackageParserTest that makes sure that we
+    //keep this list updated.
+    static final Set<MediaType> PACKAGE_SPECIALIZATIONS =
+            loadPackageSpecializations();
+
+    static final Set<MediaType> loadPackageSpecializations() {
+        Set<MediaType> zipSpecializations = new HashSet<>();
+        for (String mediaTypeString : new String[]{
+                //specializations of ZIP
+                "application/bizagi-modeler",
+                "application/epub+zip",
+                "application/java-archive",
+                "application/vnd.adobe.air-application-installer-package+zip",
+                "application/vnd.android.package-archive",
+                "application/vnd.apple.iwork",
+                "application/vnd.apple.keynote",
+                "application/vnd.apple.numbers",
+                "application/vnd.apple.pages",
+                "application/vnd.etsi.asic-e+zip",
+                "application/vnd.etsi.asic-s+zip",
+                "application/vnd.google-earth.kmz",
+                "application/vnd.mindjet.mindmanager",
+                "application/vnd.ms-excel.addin.macroenabled.12",
+                "application/vnd.ms-excel.sheet.binary.macroenabled.12",
+                "application/vnd.ms-excel.sheet.macroenabled.12",
+                "application/vnd.ms-excel.template.macroenabled.12",
+                "application/vnd.ms-powerpoint.addin.macroenabled.12",
+                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                "application/vnd.ms-powerpoint.slide.macroenabled.12",
+                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                "application/vnd.ms-powerpoint.template.macroenabled.12",
+                "application/vnd.ms-visio.drawing",
+                "application/vnd.ms-visio.drawing.macroenabled.12",
+                "application/vnd.ms-visio.stencil",
+                "application/vnd.ms-visio.stencil.macroenabled.12",
+                "application/vnd.ms-visio.template",
+                "application/vnd.ms-visio.template.macroenabled.12",
+                "application/vnd.ms-word.document.macroenabled.12",
+                "application/vnd.ms-word.template.macroenabled.12",
+                "application/vnd.ms-xpsdocument",
+                "application/vnd.oasis.opendocument.formula",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.openxmlformats-officedocument.presentationml.slide",
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                "application/vnd.openxmlformats-officedocument.presentationml.template",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+                "application/x-ibooks+zip",
+                "application/x-itunes-ipa",
+                "application/x-tika-iworks-protected",
+                "application/x-tika-java-enterprise-archive",
+                "application/x-tika-java-web-archive",
+                "application/x-tika-ooxml",
+                "application/x-tika-ooxml-protected",
+                "application/x-tika-visio-ooxml",
+                "application/x-xmind",
+                "model/vnd.dwfx+xps",
+
+                "application/x-gtar" //specialization of tar
+        }) {
+            zipSpecializations.add(MediaType.parse(mediaTypeString));
+        }
+        return Collections.unmodifiableSet(zipSpecializations);
+    }
 
     @Deprecated
     static MediaType getMediaType(ArchiveInputStream stream) {
@@ -234,21 +308,21 @@ public class PackageParser extends AbstractParser {
         }
 
         //now see if the user or an earlier step has passed in a content type
-        String incomingContentTypeString = metadata.get(CONTENT_TYPE);
+        String incomingContentTypeString = metadata.get(Metadata.CONTENT_TYPE);
         if (incomingContentTypeString == null) {
-            metadata.set(CONTENT_TYPE, type.toString());
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
             return;
         }
 
 
         MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
         if (incomingMediaType == null) {
-            metadata.set(CONTENT_TYPE, type.toString());
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
             return;
         }
 
-        if (! DONT_OVERWRITE_CONTENT_TYPE.contains(incomingMediaType)) {
-            metadata.set(CONTENT_TYPE, type.toString());
+        if (! PACKAGE_SPECIALIZATIONS.contains(incomingMediaType)) {
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
         }
     }
 

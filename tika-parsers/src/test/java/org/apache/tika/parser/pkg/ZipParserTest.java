@@ -31,6 +31,7 @@ import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.tika.Tika;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -213,4 +214,17 @@ public class ZipParserTest extends AbstractPkgTest {
 
         assertContains("hello world", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
     }
+
+    @Test
+    public void testKMZDetection() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testKMZ.kmz");
+        assertEquals("application/vnd.google-earth.kmz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testJARDetection() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testJAR.jar");
+        assertEquals("application/java-archive", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+    }
+
 }

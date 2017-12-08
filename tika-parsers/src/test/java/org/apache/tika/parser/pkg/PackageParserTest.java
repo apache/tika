@@ -18,12 +18,18 @@
 package org.apache.tika.parser.pkg;
 
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 import org.junit.Test;
 
@@ -49,5 +55,26 @@ public class PackageParserTest {
                 fail("PackageParser should support: "+mt.toString());
             }
         }
+    }
+
+    @Test
+    public void testSpecializations() throws Exception {
+        //Test that our manually constructed list of children of zip and tar
+        //in PackageParser is current with TikaConfig's defaultConfig.
+        TikaConfig config = TikaConfig.getDefaultConfig();
+        MediaTypeRegistry mediaTypeRegistry = config.getMimeRepository().getMediaTypeRegistry();
+        Set<MediaType> currentSpecializations = new HashSet<>();
+        MediaType tar = MediaType.parse("application/x-tar");
+        for (MediaType type : mediaTypeRegistry.getTypes()) {
+            if (mediaTypeRegistry.isSpecializationOf(type, MediaType.APPLICATION_ZIP)
+                    || mediaTypeRegistry.isSpecializationOf(type, tar)) {
+                currentSpecializations.add(type);
+//                System.out.println("\""+type.toString()+"\",");
+            }
+        }
+        for (MediaType mediaType : currentSpecializations) {
+            assertTrue("missing: "+mediaType, PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
+        }
+        assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
     }
 }
