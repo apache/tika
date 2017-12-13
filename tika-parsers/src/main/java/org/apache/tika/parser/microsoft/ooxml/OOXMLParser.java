@@ -41,6 +41,8 @@ public class OOXMLParser extends AbstractOfficeParser {
         ZipSecureFile.setMinInflateRatio(-1.0d);
     }
 
+    protected static final MediaType XPS = MediaType.application("vnd.ms-xpsdocument");
+
     protected static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
@@ -84,9 +86,11 @@ public class OOXMLParser extends AbstractOfficeParser {
      * by Tika and/or POI.
      */
     protected static final Set<MediaType> UNSUPPORTED_OOXML_TYPES =
-            Collections.singleton(
+            Collections.EMPTY_SET;
+        //TODO: should we do a singleton for dwfx+xps?
+            /*Collections.singleton(
                     MediaType.application("vnd.ms-xpsdocument")
-            );
+            );*/
     /**
      * Serial version UID
      */
