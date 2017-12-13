@@ -45,6 +45,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.apache.tika.parser.microsoft.ooxml.xps.XPSExtractorDecorator;
+import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
@@ -66,7 +68,7 @@ public class OOXMLExtractorFactory {
         ExtractorFactory.setThreadPrefersEventExtractors(true);
 
         try {
-            OOXMLExtractor extractor;
+            OOXMLExtractor extractor = null;
             OPCPackage pkg;
 
             // Locate or Open the OPCPackage for the file
@@ -83,13 +85,16 @@ public class OOXMLExtractorFactory {
 
             // Get the type, and ensure it's one we handle
             MediaType type = ZipContainerDetector.detectOfficeOpenXML(pkg);
+            if (type == null) {
+                type = ZipContainerDetector.detectXPSOPC(pkg);
+            }
+
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
                 // Not a supported type, delegate to Empty Parser
                 EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
                 return;
             }
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
-
             // Have the appropriate OOXML text extractor picked
             POIXMLTextExtractor poiExtractor = null;
             // This has already been set by OOXMLParser's call to configure()
@@ -101,6 +106,10 @@ public class OOXMLExtractorFactory {
             if (poiExtractor == null && config.getUseSAXPptxExtractor()) {
                 poiExtractor = trySXSLF(pkg);
             }
+            if (type.equals(OOXMLParser.XPS)) {
+                poiExtractor = new XPSTextExtractor(pkg);
+            }
+
             if (poiExtractor == null) {
                 poiExtractor = ExtractorFactory.createExtractor(pkg);
             }
@@ -119,6 +128,8 @@ public class OOXMLExtractorFactory {
                 extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
                         (XSLFEventBasedPowerPointExtractor) poiExtractor);
                 metadata.add("X-Parsed-By", XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
+            } else if (poiExtractor instanceof XPSTextExtractor) {
+                extractor = new XPSExtractorDecorator(context, poiExtractor);
             } else if (document == null) {
                 throw new TikaException(
                         "Expecting UserModel based POI OOXML extractor with a document, but none found. " +
