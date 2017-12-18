@@ -20,12 +20,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -122,5 +126,34 @@ public class RarParserTest extends AbstractPkgTest {
        assertContains("test-documents/testTXT.txt", content);
        assertContains("test-documents/testWORD.doc", content);
        assertContains("test-documents/testXML.xml", content);
+    }
+    
+    /**
+     * Note - we don't currently support Encrypted RAR files,
+     * so all we can do is throw a helpful exception
+     */
+    @Test
+    public void testEncryptedRar() throws Exception {
+        Parser parser = new RarParser();
+        
+        try (InputStream input = RarParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents-enc.rar")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            context.set(PasswordProvider.class, new PasswordProvider() {
+                @Override
+                public String getPassword(Metadata metadata) {
+                    return "ApacheTika";
+                }
+            });
+        
+            // Note - we don't currently support encrypted RAR
+            // files so we can't check the contents
+            parser.parse(input, handler, metadata, trackingContext);
+            fail("No support yet for Encrypted RAR files");
+        } catch (EncryptedDocumentException e) {
+            // Good, as expected right now
+        }
     }
 }
