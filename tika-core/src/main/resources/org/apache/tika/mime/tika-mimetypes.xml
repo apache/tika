@@ -308,6 +308,26 @@
     <sub-class-of type="text/plain"/>
     <_comment>JavaScript Source Code</_comment>
     <glob pattern="*.js"/>
+
+    <!-- Note - there is no Unique Magic for JavaScript files! -->
+    <!-- Generally you can only detect JS with the filename -->
+    <!-- However... A few common JS libraries accidentally trigger -->
+    <!--  the HTML priority=20 magic incorrectly. So, for those only, -->
+    <!--  we list "magic" for those specific files -->
+    <magic priority="50">
+      <!-- jQuery -->
+      <match value="/* jQuery " type="string" offset="0"/>
+      <match value="/*! jQuery " type="string" offset="0"/>
+      <match value="/*!" type="string" offset="0">
+         <match value="* jQuery " offset="4:8"/>
+      </match>
+      <match value="(function(e,undefined){" type="string" offset="0"/>
+      <match value="!function(window,undefined){" type="string" offset="0"/>
+      <!-- Prototype -->
+      <match value="/*  Prototype JavaScript " type="string" offset="0"/>
+      <match value="var Prototype={ " type="string" offset="0"/>
+      <match value="function $w(t){" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="application/json">
