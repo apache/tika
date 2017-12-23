@@ -1149,6 +1149,17 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testDolbyDigitalAC3() throws Exception {
+        // By name, both come as AC3, as same extension
+        assertTypeByName("audio/ac3", "testAC3.ac3");
+        assertTypeByName("audio/ac3", "testEAC3.ac3");
+
+        // With data can detect EAC3 subtype
+        assertTypeByData("audio/ac3", "testAC3.ac3");
+        assertTypeByData("audio/eac3", "testEAC3.ac3");
+    }
+
+    @Test
     public void testNLS() throws Exception {
         assertTypeByData("application/x-ms-nls", "testNLS1.nls");
         assertTypeByData("application/x-ms-nls", "testNLS2.nls");
