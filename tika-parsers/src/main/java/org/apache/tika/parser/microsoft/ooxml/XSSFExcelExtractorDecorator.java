@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import javax.xml.parsers.SAXParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -25,7 +24,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.poi.POIXMLDocument;
+import javax.xml.parsers.SAXParser;
+
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -39,6 +39,8 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.HeaderFooter;
+import org.apache.poi.ss.util.CellAddress;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -400,6 +402,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         private final boolean includeHeadersFooters;
         protected List<String> headers;
         protected List<String> footers;
+        private int currentRow = -1;
+        private int currentCol = -1;
 
         protected SheetTextAsHTML(boolean includeHeaderFooters, XHTMLContentHandler xhtml) {
             this.includeHeadersFooters = includeHeaderFooters;
@@ -408,7 +412,24 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             footers = new ArrayList<String>();
         }
 
+        private void outputMissingRows(int number) {
+            for (int i=0; i<number; i++) {
+                try {
+                    xhtml.startElement("tr");
+                    xhtml.endElement("tr");
+                } catch (SAXException e) {
+                }
+            }
+        }
+
         public void startRow(int rowNum) {
+            // If there were gaps, output the missing rows
+            outputMissingRows(rowNum-currentRow-1);
+
+            // Prepare for this row
+            currentRow = rowNum;
+            currentCol = -1;
+
             try {
                 xhtml.startElement("tr");
             } catch (SAXException e) {
@@ -423,7 +444,22 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         public void cell(String cellRef, String formattedValue, XSSFComment comment) {
+            // gracefully handle missing CellRef here in a similar way as XSSFCell does
+            if (cellRef == null) {
+                cellRef = new CellAddress(currentRow, currentCol).formatAsString();
+            }
+
             try {
+                // Did we miss any cells?
+                int thisCol = (new CellReference(cellRef)).getCol();
+                int missedCols = thisCol - currentCol - 1;
+
+                for (int i=0; i<missedCols; i++) {
+                        xhtml.startElement("td");
+                        xhtml.endElement("td");
+                }
+                currentCol = thisCol;
+
                 xhtml.startElement("td");
 
                 // Main cell contents
