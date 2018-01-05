@@ -39,6 +39,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,6 +71,7 @@ import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.MetadataBodyContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
@@ -352,7 +354,15 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("form")
     public StreamingOutput getTextFromMultipart(Attachment att, @Context final UriInfo info) {
-        return produceText(att.getObject(InputStream.class), att.getHeaders(), info);
+        return produceText(att.getObject(InputStream.class), att.getHeaders(), info, false);
+    }
+
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("text/xml")
+    @Path("form/plain")
+    public StreamingOutput getTextAndMetadataFromMultipart(Attachment att, @Context final UriInfo info) {
+        return produceText(att.getObject(InputStream.class), att.getHeaders(), info, true);
     }
 
     //this is equivalent to text-main in tika-app
@@ -399,10 +409,18 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceText(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
+        return produceText(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, false);
     }
 
-    public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/xml")
+    @Path("plain")
+    public StreamingOutput getTextAndMetadata(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceText(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, true);
+    }
+
+    public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info, final boolean includeMetadata) {
         final Parser parser = createParser();
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
@@ -411,14 +429,14 @@ public class TikaResource {
         fillParseContext(context, httpHeaders, parser);
 
         logRequest(LOG, info, metadata);
-
+        
         return new StreamingOutput() {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
+                ContentHandler handler = includeMetadata ? 
+                		new MetadataBodyContentHandler(outputStream,UTF_8.name()) : 
+               			new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(outputStream, UTF_8)));
 
-                BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
-
-                parse(parser, LOG, info.getPath(), is, body, metadata, context);
+                parse(parser, LOG, info.getPath(), is, handler, metadata, context);
             }
         };
     }
