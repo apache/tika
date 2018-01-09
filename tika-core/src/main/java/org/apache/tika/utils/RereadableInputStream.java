@@ -190,7 +190,7 @@ public class RereadableInputStream extends InputStream {
         firstPass = false;
         boolean newStreamIsInMemory = (size < maxBytesInMemory);
         inputStream = newStreamIsInMemory
-                ? new ByteArrayInputStream(byteBuffer)
+                ? new ByteArrayInputStream(byteBuffer, 0, size)
                 : new BufferedInputStream(new FileInputStream(storeFile));
     }
 
