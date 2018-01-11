@@ -22,11 +22,13 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.fork.unusedpackage.ClassInUnusedPackage;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.junit.Assert;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -54,4 +56,12 @@ class ForkTestParser extends AbstractParser {
         xhtml.endDocument();
     }
 
+    static class ForkTestParserAccessingPackage extends ForkTestParser {
+        @Override
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                ParseContext context) throws IOException, SAXException, TikaException {
+            Assert.assertNotNull(ClassInUnusedPackage.class.getPackage());
+            super.parse(stream, handler, metadata, context);
+        }
+    }
 }
