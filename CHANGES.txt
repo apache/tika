@@ -4,6 +4,9 @@ Release 2.0.0 - ???
 
    * Mime magic for Dolby Digital AC3 and EAC3 files
 
+   * Fixed bug where TesseractOCRParser ignores configured ImageMagickPath,
+     and set rotation script to ignore Python warnings (TIKA-2509)
+
 Release 1.17 - 12/8/2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
