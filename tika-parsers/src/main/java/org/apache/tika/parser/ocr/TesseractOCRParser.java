@@ -323,7 +323,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     	File rotationScript = tmp.createTemporaryFile();
     	Files.copy(in, rotationScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
     	
-    	String cmd = "python " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
+    	String cmd = "python -W ignore " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
     	String angle = "0"; 
     			
     	DefaultExecutor executor = new DefaultExecutor();
