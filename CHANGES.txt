@@ -5,6 +5,8 @@ Release 1.18 - ???
    * Fixed bug where TesseractOCRParser ignores configured ImageMagickPath,
      and set rotation script to ignore Python warnings (TIKA-2509)
 
+   * Upgrade geo-apis to 3.0.1 (TIKA-2535).
+
 Release 1.17 - December 8, 2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
