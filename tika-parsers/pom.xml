@@ -45,7 +45,7 @@
     <pdfbox.version>2.0.8</pdfbox.version>
     <jempbox.version>1.8.13</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <sis.version>0.6</sis.version>
+    <sis.version>0.8</sis.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.54</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
@@ -481,7 +481,7 @@
     <dependency>
       <groupId>org.opengis</groupId>
       <artifactId>geoapi</artifactId>
-      <version>3.0.0</version>
+      <version>3.0.1</version>
     </dependency>
 
     <dependency>
