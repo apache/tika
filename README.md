@@ -10,7 +10,11 @@ Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika project 
 Getting Started
 ---------------
 
-Tika is based on Java 6 and uses the [Maven 3](http://maven.apache.org) build system. To build Tika, use the following command in this directory:
+Pre-build binaries of Apache Tika standalone applications are available
+from http://tika.apache.org/download.html . Pre-build binaries of all the
+Tika jars can be fetched from Maven Central or your favourite Maven mirror.
+
+Tika is based on Java 7 and uses the [Maven 3](http://maven.apache.org) build system. To build Tika from source, use the following command in this directory:
 
     mvn clean install
 
