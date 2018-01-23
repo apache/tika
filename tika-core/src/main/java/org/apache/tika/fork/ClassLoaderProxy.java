@@ -112,13 +112,30 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
             // Receive the response
             if (input.readBoolean()) {
                 byte[] data = readStream();
-                return defineClass(name, data, 0, data.length);
+                Class<?> clazz = defineClass(name, data, 0, data.length);
+                definePackageIfNecessary(name, clazz);
+                return clazz;
             } else {
                 throw new ClassNotFoundException("Unable to find class " + name);
             }
         } catch (IOException e) {
             throw new ClassNotFoundException("Unable to load class " + name, e);
         }
+    }
+
+    private void definePackageIfNecessary(String className, Class<?> clazz) {
+        String packageName = toPackageName(className);
+        if (packageName != null && getPackage(packageName) == null) {
+            definePackage(packageName, null, null, null, null, null, null, null);
+        }
+    }
+
+    private String toPackageName(String className) {
+        int packageEndIndex = className.lastIndexOf('.');
+        if (packageEndIndex > 0) {
+            return className.substring(0, packageEndIndex);
+        }
+        return null;
     }
 
     private byte[] readStream() throws IOException {

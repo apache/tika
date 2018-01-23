@@ -2,6 +2,11 @@ Release 2.0.0 - ???
 
    * Add a parser for XPS (TIKA-2524).
 
+   * Mime magic for Dolby Digital AC3 and EAC3 files
+
+   * Fixed bug where TesseractOCRParser ignores configured ImageMagickPath,
+     and set rotation script to ignore Python warnings (TIKA-2509)
+
    * Upgrade geo-apis to 3.0.1 (TIKA-2535)
 
 Release 1.17 - 12/8/2017

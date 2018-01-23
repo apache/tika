@@ -308,6 +308,31 @@
     <sub-class-of type="text/plain"/>
     <_comment>JavaScript Source Code</_comment>
     <glob pattern="*.js"/>
+
+    <!-- Note - there is no Unique Magic for JavaScript files! -->
+    <!-- Generally you can only detect JS with the filename -->
+    <!-- However... A few common JS libraries accidentally trigger -->
+    <!--  the HTML priority=20 magic incorrectly. So, for those only, -->
+    <!--  we list "magic" for those specific files -->
+    <magic priority="50">
+      <!-- jQuery -->
+      <match value="/* jQuery " type="string" offset="0"/>
+      <match value="/*! jQuery " type="string" offset="0"/>
+      <match value="/*!" type="string" offset="0">
+         <match value="* jQuery " offset="4:8"/>
+      </match>
+      <match value="(function(e,undefined){" type="string" offset="0"/>
+      <match value="!function(window,undefined){" type="string" offset="0"/>
+      <!-- Prototype -->
+      <match value="/*  Prototype JavaScript " type="string" offset="0"/>
+      <match value="var Prototype={" type="string" offset="0"/>
+      <match value="function $w(t){" type="string" offset="0"/>
+      <!-- React -->
+      <match value="/** @license React" type="string" offset="0"/>
+      <match value="/**" type="string" offset="0">
+         <match value="* React " offset="4:8"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="application/json">
@@ -4432,7 +4457,46 @@
   <mime-type type="audio/32kadpcm"/>
   <mime-type type="audio/3gpp"/>
   <mime-type type="audio/3gpp2"/>
-  <mime-type type="audio/ac3"/>
+
+  <mime-type type="audio/ac3">
+    <acronym>AC3</acronym>
+    <_comment>Dolby Digital Audio Compression File</_comment>
+    <magic priority="40">
+      <!-- AC3 Syncword -->
+      <match value="0x0b77" type="string" offset="0"/>
+    </magic>
+    <magic priority="50">
+      <match value="0x0b77" type="string" offset="0">
+         <!-- BSID 0-8 = AC3, BSID=byte5>>3 -->
+         <match value="0x00" type="string" mask="0xF8" offset="5"/>
+         <match value="0x08" type="string" mask="0xF8" offset="5"/>
+         <match value="0x10" type="string" mask="0xF8" offset="5"/>
+         <match value="0x18" type="string" mask="0xF8" offset="5"/>
+         <match value="0x20" type="string" mask="0xF8" offset="5"/>
+         <match value="0x28" type="string" mask="0xF8" offset="5"/>
+         <match value="0x30" type="string" mask="0xF8" offset="5"/>
+         <match value="0x38" type="string" mask="0xF8" offset="5"/>
+         <match value="0x40" type="string" mask="0xF8" offset="5"/>
+      </match>
+    </magic>
+    <glob pattern="*.ac3"/>
+  </mime-type>
+  <mime-type type="audio/eac3">
+    <acronym>EAC3</acronym>
+    <magic priority="50">
+      <match value="0x0b77" type="string" offset="0">
+         <!-- BSID 11-16 = EAC3, BSID=byte5>>3 -->
+         <match value="0x58" type="string" mask="0xF8" offset="5"/>
+         <match value="0x60" type="string" mask="0xF8" offset="5"/>
+         <match value="0x68" type="string" mask="0xF8" offset="5"/>
+         <match value="0x70" type="string" mask="0xF8" offset="5"/>
+         <match value="0x78" type="string" mask="0xF8" offset="5"/>
+         <match value="0x80" type="string" mask="0xF8" offset="5"/>
+      </match>
+    </magic>
+    <sub-class-of type="audio/ac3" />
+  </mime-type>
+
   <mime-type type="audio/adpcm">
     <glob pattern="*.adp"/>
   </mime-type>
@@ -4488,7 +4552,6 @@
   <mime-type type="audio/dsr-es202211"/>
   <mime-type type="audio/dsr-es202212"/>
   <mime-type type="audio/dvi4"/>
-  <mime-type type="audio/eac3"/>
   <mime-type type="audio/evrc"/>
   <mime-type type="audio/evrc-qcp"/>
   <mime-type type="audio/evrc0"/>

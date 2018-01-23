@@ -154,7 +154,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     
     private boolean hasImageMagick(TesseractOCRConfig config) {
         // Fetch where the config says to find ImageMagick Program
-        String ImageMagick = config.getImageMagickPath() + getImageMagickProg();
+        String ImageMagick = getImageMagickPath(config);
 
         // Have we already checked for a copy of ImageMagick Program there?
         if (TESSERACT_PRESENT.containsKey(ImageMagick)) {
@@ -168,6 +168,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         
         return hasImageMagick;
      
+    }
+
+    private String getImageMagickPath(TesseractOCRConfig config) {
+        return config.getImageMagickPath() + getImageMagickProg();
     }
 
     static boolean hasPython() {
@@ -319,7 +323,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     	File rotationScript = tmp.createTemporaryFile();
     	Files.copy(in, rotationScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
     	
-    	String cmd = "python " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
+    	String cmd = "python -W ignore " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
     	String angle = "0"; 
     			
     	DefaultExecutor executor = new DefaultExecutor();
@@ -339,7 +343,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         }
               
         // process the image - parameter values can be set in TesseractOCRConfig.properties
-    	String line = "convert -density " + config.getDensity() + " -depth " + config.getDepth() + 
+    	String line = getImageMagickPath(config) + " -density " + config.getDensity() + " -depth " + config.getDepth() +
     			" -colorspace " + config.getColorspace() +  " -filter " + config.getFilter() + 
     			" -resize " + config.getResize() + "% -rotate "+ angle + " " + streamingObject.getAbsolutePath() + 
     			" " + streamingObject.getAbsolutePath();    	
