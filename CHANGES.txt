@@ -1,5 +1,7 @@
 Release 2.0.0 - ???
 
+   * Require Java 8 (TIKA-2553).
+
    * Add a parser for XPS (TIKA-2524).
 
    * Mime magic for Dolby Digital AC3 and EAC3 files
