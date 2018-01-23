@@ -82,11 +82,17 @@ public class TikaFileTypeDetectorTest {
         
         Iterator<FileTypeDetector> iterator = serviceLoader.iterator();
         assertTrue(iterator.hasNext());
-        
+        boolean foundTika = false;
         while(iterator.hasNext()) {
             FileTypeDetector fileTypeDetector = iterator.next();
             assertNotNull(fileTypeDetector);
-            assertTrue(fileTypeDetector instanceof TikaFileTypeDetector);
+            if (fileTypeDetector instanceof TikaFileTypeDetector) {
+                foundTika = true;
+            }
         }
+        //o.a.sis.internal.storage.StoreTypeDetector appears with latest upgrade
+        //check that TikaFileTypeDetector appears at all
+        assertTrue(foundTika);
+
     }
 }
