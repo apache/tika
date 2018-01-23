@@ -168,9 +168,9 @@
               sis-netcdf|
               sis-utility|
               sis-storage|
+              unit-api|
               apache-mime4j-core|
               apache-mime4j-dom|
-              jsr-275|
               jhighlight|
               java-libpst|
               netcdf4|
@@ -254,7 +254,12 @@
               org.apache.pdfbox.debugger;resolution:=optional,
               org.apache.sis;resolution:=optional,
               org.apache.sis.distance;resolution:=optional,
+              org.apache.sis.feature;resolution:=optional,
               org.apache.sis.geometry;resolution:=optional,
+              org.apache.sis.internal.feature;resolution:=optional,
+              org.apache.sis.internal.referencing;resolution:=optional,
+              org.apache.sis.parameter;resolution:=optional,
+              org.apache.sis.referencing;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
