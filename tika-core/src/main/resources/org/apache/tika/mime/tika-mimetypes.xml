@@ -4329,6 +4329,7 @@
     </magic>
     <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html"/>
     <glob pattern="*.xhtml"/>
+    <glob pattern="*.xhtml2"/>
     <glob pattern="*.xht"/>
   </mime-type>
 
@@ -5995,16 +5996,23 @@
     <!-- TIKA-85: http://www.apache.org/dev/svn-eol-style.txt -->
     <glob pattern="INSTALL"/>
     <glob pattern="KEYS"/>
+    <glob pattern="LICENSE"/>
+    <glob pattern="NOTICE"/>
     <glob pattern="README"/>
     <glob pattern="abs-linkmap"/>
     <glob pattern="abs-menulinks"/>
     <glob pattern="*.aart"/>
     <glob pattern="*.ac"/>
     <glob pattern="*.am"/>
+    <glob pattern="*.apt"/>
+    <glob pattern="*.bsh"/>
     <glob pattern="*.classpath"/>
+    <glob pattern="*.cnd"/>
     <glob pattern="*.cwiki"/>
     <glob pattern="*.data"/>
     <glob pattern="*.dcl"/>
+    <glob pattern="*.dsp"/>
+    <glob pattern="*.dsw"/>
     <glob pattern="*.egrm"/>
     <glob pattern="*.ent"/>
     <glob pattern="*.ft"/>
@@ -6013,6 +6021,8 @@
     <glob pattern="*.grm"/>
     <glob pattern="*.g"/>
     <glob pattern=".htaccess"/>
+    <glob pattern="*.handlers"/>
+    <glob pattern="*.htc"/>
     <glob pattern="*.ihtml"/>
     <glob pattern="*.jmx"/>
     <glob pattern="*.junit"/>
@@ -6022,6 +6032,7 @@
     <glob pattern="*.mf"/>
     <glob pattern="*.MF"/>
     <glob pattern="*.meta"/>
+    <glob pattern="*.mdo"/>
     <glob pattern="*.n3"/>
     <glob pattern="*.pen"/>
     <glob pattern="*.pod"/>
@@ -6030,6 +6041,7 @@
     <glob pattern="*.rng"/>
     <glob pattern="*.rnx"/>
     <glob pattern="*.roles"/>
+    <glob pattern="*.schemas"/>
     <glob pattern="*.tld"/>
     <glob pattern="*.types"/>
     <glob pattern="*.vm"/>
@@ -6045,6 +6057,7 @@
     <glob pattern="*.xroles"/>
     <glob pattern="*.xsamples"/>
     <glob pattern="*.xsp"/>
+    <glob pattern="*.xtest"/>
     <glob pattern="*.xweb"/>
     <glob pattern="*.xwelcome"/>
   </mime-type>
@@ -6086,6 +6099,7 @@
     <glob pattern="*.t"/>
     <glob pattern="*.tr"/>
     <glob pattern="*.roff"/>
+    <glob pattern="*.nroff"/>
     <glob pattern="*.man"/>
     <glob pattern="*.me"/>
     <glob pattern="*.ms"/>
