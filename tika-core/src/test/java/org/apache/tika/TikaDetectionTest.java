@@ -762,7 +762,8 @@ public class TikaDetectionTest {
         assertEquals("text/html", tika.detect("x.htm"));
         assertEquals("text/plain", tika.detect("x.txt"));
         assertEquals("text/plain", tika.detect("x.text"));
-        assertEquals("text/plain", tika.detect("x.conf"));
+        // Differ from httpd - Use a dedicated mimetype for Config files
+        //assertEquals("text/plain", tika.detect("x.conf"));
         assertEquals("text/plain", tika.detect("x.def"));
         assertEquals("text/plain", tika.detect("x.list"));
         assertEquals("text/x-log", tika.detect("x.log"));
