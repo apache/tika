@@ -5872,6 +5872,14 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="text/x-config">
+    <glob pattern="*.config"/>
+    <glob pattern="*.conf"/>
+    <glob pattern="*.cfg"/>
+    <glob pattern="*.xconf"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/css">
     <_comment>Cascading Style Sheet</_comment>
     <glob pattern="*.css"/>
@@ -5980,8 +5988,6 @@
 
     <glob pattern="*.txt"/>
     <glob pattern="*.text"/>
-    <glob pattern="*.conf"/>
-    <glob pattern="*.cfg"/>
     <glob pattern="*.def"/>
     <glob pattern="*.list"/>
     <glob pattern="*.in"/>
@@ -5996,7 +6002,6 @@
     <glob pattern="*.ac"/>
     <glob pattern="*.am"/>
     <glob pattern="*.classpath"/>
-    <glob pattern="*.config"/>
     <glob pattern="*.cwiki"/>
     <glob pattern="*.data"/>
     <glob pattern="*.dcl"/>
@@ -6032,7 +6037,6 @@
     <glob pattern="*.wsdd"/>
     <glob pattern="*.xargs"/>
     <glob pattern="*.xcat"/>
-    <glob pattern="*.xconf"/>
     <glob pattern="*.xegrm"/>
     <glob pattern="*.xgrm"/>
     <glob pattern="*.xlex"/>
