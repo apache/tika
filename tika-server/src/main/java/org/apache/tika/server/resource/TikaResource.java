@@ -107,10 +107,6 @@ public class TikaResource {
     public static Parser createParser() {
         final Parser parser = new AutoDetectParser(tikaConfig);
 
-        Map<MediaType, Parser> parsers = ((AutoDetectParser)parser).getParsers();
-        parsers.put(MediaType.APPLICATION_XML, new HtmlParser());
-        ((AutoDetectParser)parser).setParsers(parsers);
-
         ((AutoDetectParser)parser).setFallback(new Parser() {
             public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
                 return parser.getSupportedTypes(parseContext);
