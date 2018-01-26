@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
@@ -237,7 +238,7 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals("66", m.get(Metadata.IMAGE_LENGTH));
         assertEquals("8", m.get(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, m.get(Metadata.SAMPLES_PER_PIXEL));
-        assertContains("This is a test Apache Tika imag", m.get(Metadata.COMMENTS));
+        assertContains("This is a test Apache Tika imag", m.get(TikaCoreProperties.COMMENTS));
 
         //bmp
         m = getXML("testBMP.bmp").metadata;

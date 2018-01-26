@@ -24,6 +24,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPRights;
 import org.apache.tika.metadata.Property.PropertyType;
 
@@ -51,7 +52,7 @@ public class GenericConverter extends AbstractConverter {
 
         String[] keys = metadata.names();
         for (String key : keys) {
-            String[] keyParts = key.split( Metadata.NAMESPACE_PREFIX_DELIMITER );
+            String[] keyParts = key.split( TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER );
             if (keyParts.length > 0 && keyParts.length <= 2) {
                 String uri = registry.getNamespaceURI( keyParts[0] );
 

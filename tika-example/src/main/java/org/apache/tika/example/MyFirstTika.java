@@ -30,6 +30,7 @@ import org.apache.tika.langdetect.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
@@ -84,7 +85,7 @@ public class MyFirstTika {
 
         System.out.println("Examining: [" + filename + "]");
 
-        metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         System.out.println("The MIME type (based on filename) is: ["
                 + mimeRegistry.detect(null, metadata) + "]");
 

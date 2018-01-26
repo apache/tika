@@ -34,6 +34,7 @@ import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
@@ -65,7 +66,7 @@ public class SQLite3ParserTest extends TikaTest {
         int tests = 0;
         for (InputStream stream : streams) {
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             //1) getXML closes the stream
             //2) getXML runs recursively on the contents, so the embedded docs should show up
             XMLResult result = getXML(stream, p, metadata);
@@ -104,7 +105,7 @@ public class SQLite3ParserTest extends TikaTest {
     public void testSpacesInBodyContentHandler() throws Exception {
         Parser p = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ContentHandler handler = new BodyContentHandler(-1);
         ParseContext ctx = new ParseContext();
         ctx.set(Parser.class, p);
@@ -125,7 +126,7 @@ public class SQLite3ParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             p.parse(is, handler, metadata, parseContext);
         }
         String xml = handler.toString();
@@ -148,7 +149,7 @@ public class SQLite3ParserTest extends TikaTest {
                         BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
         Metadata metadata = new Metadata();
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
         }
         List<Metadata> metadataList = wrapper.getMetadata();
@@ -182,7 +183,7 @@ public class SQLite3ParserTest extends TikaTest {
         ByteCopyingHandler byteCopier = new ByteCopyingHandler();
         Metadata metadata = new Metadata();
         try (TikaInputStream is = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             ex.extract(is, ex, byteCopier);
         }
         assertEquals(4, byteCopier.bytes.size());
@@ -224,7 +225,7 @@ public class SQLite3ParserTest extends TikaTest {
         ParserContainerExtractor ex = new ParserContainerExtractor();
         InputStreamResettingHandler byteCopier = new InputStreamResettingHandler();
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             try (TikaInputStream tis = TikaInputStream.get(is)) {
                 ex.extract(tis, ex, byteCopier);

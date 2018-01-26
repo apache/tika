@@ -73,9 +73,6 @@ public class OutlookParserTest extends TikaTest {
         assertEquals(
                 "L'\u00C9quipe Microsoft Outlook Express",
                 metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals(
-                "L'\u00C9quipe Microsoft Outlook Express",
-                metadata.get(Metadata.AUTHOR));
 
         //ensure that "raw" header is correctly decoded
         assertEquals(

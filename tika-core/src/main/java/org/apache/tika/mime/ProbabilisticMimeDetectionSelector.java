@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Selector for combining different mime detection results
@@ -141,7 +142,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
 
         MimeType extHint = null;
         // Get type based on resourceName hint (if available)
-        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (resourceName != null) {
             String name = null;
 

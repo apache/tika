@@ -29,7 +29,7 @@ public class MetadataFieldsTest {
     public void testIsMetadataField() {
         assertFalse(MetadataFields.isMetadataField("random string that is not a field"));
         assertFalse(MetadataFields.isMetadataField("xyz"));
-        assertTrue(MetadataFields.isMetadataField(TikaCoreProperties.KEYWORDS));
+        assertTrue(MetadataFields.isMetadataField(TikaCoreProperties.SUBJECT));
         assertTrue(MetadataFields.isMetadataField(TIFF.F_NUMBER.getName()));
     }
 

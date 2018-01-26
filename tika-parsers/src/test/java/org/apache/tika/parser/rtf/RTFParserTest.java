@@ -181,7 +181,6 @@ public class RTFParserTest extends TikaTest {
         assertEquals("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
                 r.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("VMazel", r.metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("VMazel", r.metadata.get(Metadata.AUTHOR));
         assertEquals("StarWriter", r.metadata.get(TikaCoreProperties.COMMENTS));
 
         // Special version of (GHQ)
@@ -290,14 +289,12 @@ public class RTFParserTest extends TikaTest {
         }
 
         assertContains("Keyword1 Keyword2", content);
-        assertEquals("Keyword1 Keyword2",
-                r.metadata.get(TikaCoreProperties.KEYWORDS));
+        assertContains("Keyword1 Keyword2",
+                Arrays.asList(r.metadata.getValues(Office.KEYWORDS)));
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
                 r.metadata.get(OfficeOpenXMLCore.SUBJECT));
-        assertEquals("Subject is here",
-                r.metadata.get(Metadata.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -439,7 +436,7 @@ public class RTFParserTest extends TikaTest {
         for (Map.Entry<Integer, Pair> e : expected.entrySet()) {
             Metadata metadata = metadataList.get(e.getKey());
             Pair p = e.getValue();
-            assertNotNull(metadata.get(Metadata.RESOURCE_NAME_KEY));
+            assertNotNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             //necessary to getName() because MSOffice extractor includes
             //directory: _1457338524/HW.txt
             assertEquals("filename equals ",
@@ -461,7 +458,7 @@ public class RTFParserTest extends TikaTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         ContentHandler handler = new BodyContentHandler();
         Metadata rootMetadata = new Metadata();
-        rootMetadata.add(Metadata.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
+        rootMetadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFRegularImages.rtf"))) {
             parser.parse(tis, handler, rootMetadata, ctx);
         }
@@ -472,15 +469,15 @@ public class RTFParserTest extends TikaTest {
 
         assertTrue(meta_jpg_exif != null);
         assertTrue(meta_jpg != null);
-        assertTrue(Arrays.asList(meta_jpg_exif.getValues("dc:subject")).contains("serbor"));
-        assertTrue(meta_jpg.get("Comments").contains("Licensed to the Apache"));
+        assertTrue(Arrays.asList(meta_jpg_exif.getValues(TikaCoreProperties.SUBJECT)).contains("serbor"));
+        assertTrue(meta_jpg.get(TikaCoreProperties.COMMENTS).contains("Licensed to the Apache"));
         //make sure old metadata doesn't linger between objects
-        assertFalse(Arrays.asList(meta_jpg.getValues("dc:subject")).contains("serbor"));
+        assertFalse(Arrays.asList(meta_jpg.getValues(TikaCoreProperties.SUBJECT)).contains("serbor"));
         assertEquals("false", meta_jpg.get(RTFMetadata.THUMBNAIL));
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
         assertEquals(50, meta_jpg.names().length);
-        assertEquals(114, meta_jpg_exif.names().length);
+        assertEquals(109, meta_jpg_exif.names().length);
     }
 
     @Test

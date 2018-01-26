@@ -44,7 +44,7 @@ public class DcXMLParser extends XMLParser {
         return new TeeContentHandler(
                 super.getContentHandler(handler, metadata, context),
                 getDublinCoreHandler(metadata, TikaCoreProperties.TITLE, "title"),
-                getDublinCoreHandler(metadata, TikaCoreProperties.KEYWORDS, "subject"),
+                getDublinCoreHandler(metadata, TikaCoreProperties.SUBJECT, "subject"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.CREATOR, "creator"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.DESCRIPTION, "description"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.PUBLISHER, "publisher"),

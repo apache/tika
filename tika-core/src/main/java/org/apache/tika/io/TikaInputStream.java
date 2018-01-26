@@ -38,6 +38,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Input stream with extended capabilities. The purpose of this class is
@@ -222,7 +223,7 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(Path path, Metadata metadata)
             throws IOException {
-        metadata.set(Metadata.RESOURCE_NAME_KEY, path.getFileName().toString());
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
         return new TikaInputStream(path);
     }
@@ -262,7 +263,7 @@ public class TikaInputStream extends TaggedInputStream {
     @Deprecated
     public static TikaInputStream get(File file, Metadata metadata)
             throws FileNotFoundException {
-        metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, file.getName());
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
         return new TikaInputStream(file);
     }
@@ -410,7 +411,7 @@ public class TikaInputStream extends TaggedInputStream {
         String path = url.getPath();
         int slash = path.lastIndexOf('/');
         if (slash + 1 < path.length()) { // works even with -1!
-            metadata.set(Metadata.RESOURCE_NAME_KEY, path.substring(slash + 1));
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.substring(slash + 1));
         }
 
         String type = connection.getContentType();

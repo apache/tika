@@ -59,7 +59,7 @@ public class CommonsDigester extends CompositeDigester {
         }
         String getMetadataKey() {
             return TikaCoreProperties.TIKA_META_PREFIX +
-                    "digest" + Metadata.NAMESPACE_PREFIX_DELIMITER + this.toString();
+                    "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + this.toString();
         }
     }
 

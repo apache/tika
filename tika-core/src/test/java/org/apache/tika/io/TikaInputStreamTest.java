@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 public class TikaInputStreamTest {
@@ -101,7 +102,7 @@ public class TikaInputStreamTest {
         URL url = TikaInputStreamTest.class.getResource("test.txt");
         Metadata metadata = new Metadata();
         TikaInputStream.get(url, metadata).close();
-        assertEquals("test.txt", metadata.get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("test.txt", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(
                 Long.toString(Files.size(Paths.get(url.toURI()))),
                 metadata.get(Metadata.CONTENT_LENGTH));

@@ -156,7 +156,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
 
     private String getMetadataKey() {
         return TikaCoreProperties.TIKA_META_PREFIX +
-                "digest" + Metadata.NAMESPACE_PREFIX_DELIMITER +
+                "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
                 algorithmKeyName;
     }
 

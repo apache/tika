@@ -29,7 +29,6 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.ExceptionUtils;
@@ -246,10 +245,10 @@ public class RecursiveParserWrapper implements Parser {
     
     private String getResourceName(Metadata metadata) {
         String objectName = "";
-        if (metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY) != null) {
-            objectName = metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY);
-         } else if (metadata.get(TikaMetadataKeys.EMBEDDED_RELATIONSHIP_ID) != null) {
-            objectName = metadata.get(TikaMetadataKeys.EMBEDDED_RELATIONSHIP_ID);
+        if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) != null) {
+            objectName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+         } else if (metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID) != null) {
+            objectName = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
          } else {
             objectName = "embedded-" + (++unknownCount);
          }

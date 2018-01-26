@@ -34,7 +34,6 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.MSOffice;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -104,9 +103,10 @@ public class SummaryExtractor {
     private void parse(SummaryInformation summary) {
         set(TikaCoreProperties.TITLE, summary.getTitle());
         addMulti(metadata, TikaCoreProperties.CREATOR, summary.getAuthor());
-        set(TikaCoreProperties.KEYWORDS, summary.getKeywords());
-        // TODO Move to OO subject in Tika 2.0
-        set(TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, summary.getSubject());
+        //make sure these are retrievable specifically
+        add(Office.KEYWORDS, summary.getKeywords());
+        add(OfficeOpenXMLCore.SUBJECT, summary.getSubject());
+
         set(TikaCoreProperties.MODIFIER, summary.getLastAuthor());
         set(TikaCoreProperties.COMMENTS, summary.getComments());
         set(OfficeOpenXMLExtended.TEMPLATE, summary.getTemplate());
@@ -115,7 +115,7 @@ public class SummaryExtractor {
         set(TikaCoreProperties.CREATED, summary.getCreateDateTime());
         set(TikaCoreProperties.MODIFIED, summary.getLastSaveDateTime());
         set(TikaCoreProperties.PRINT_DATE, summary.getLastPrinted());
-        set(Metadata.EDIT_TIME, summary.getEditTime());
+        set(OfficeOpenXMLExtended.TOTAL_TIME, Long.toString(summary.getEditTime()));
         set(OfficeOpenXMLExtended.DOC_SECURITY, summary.getSecurity());
 
         // New style counts
@@ -125,16 +125,6 @@ public class SummaryExtractor {
         if (summary.getPageCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getPageCount());
         }
-
-        // Old style, Tika 1.0 properties
-        // TODO Remove these in Tika 2.0
-        set(Metadata.TEMPLATE, summary.getTemplate());
-        set(Metadata.APPLICATION_NAME, summary.getApplicationName());
-        set(Metadata.REVISION_NUMBER, summary.getRevNumber());
-        set(Metadata.SECURITY, summary.getSecurity());
-        set(MSOffice.WORD_COUNT, summary.getWordCount());
-        set(MSOffice.CHARACTER_COUNT, summary.getCharCount());
-        set(MSOffice.PAGE_COUNT, summary.getPageCount());
     }
 
     private void parse(DocumentSummaryInformation summary) {
@@ -148,12 +138,6 @@ public class SummaryExtractor {
         if (summary.getSlideCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getSlideCount());
         }
-        // Old style, Tika 1.0 counts
-        // TODO Remove these in Tika 2.0
-        set(Metadata.COMPANY, summary.getCompany());
-        set(Metadata.MANAGER, summary.getManager());
-        set(MSOffice.SLIDE_COUNT, summary.getSlideCount());
-        set(Metadata.CATEGORY, summary.getCategory());
 
         parse(summary.getCustomProperties());
     }
@@ -178,7 +162,7 @@ public class SummaryExtractor {
         if (customProperties != null) {
             for (String name : customProperties.nameSet()) {
                 // Apply the custom prefix
-                String key = Metadata.USER_DEFINED_METADATA_NAME_PREFIX + name;
+                String key = Office.USER_DEFINED_METADATA_NAME_PREFIX + name;
 
                 // Get, convert and save property value
                 Object value = customProperties.get(name);
@@ -213,6 +197,12 @@ public class SummaryExtractor {
     private void set(Property property, String value) {
         if (value != null) {
             metadata.set(property, value);
+        }
+    }
+
+    private void add(Property property, String value) {
+        if (value != null) {
+            metadata.add(property, value);
         }
     }
 

@@ -29,6 +29,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
@@ -60,7 +61,7 @@ public class TestContainerAwareDetector {
                 TestContainerAwareDetector.class.getResource("/test-documents/" + dataFile))) {
             Metadata m = new Metadata();
             if (name != null)
-                m.add(Metadata.RESOURCE_NAME_KEY, name);
+                m.add(TikaCoreProperties.RESOURCE_NAME_KEY, name);
 
             // Mime Magic version is likely to be less precise
             if (typeFromMagic != null) {
@@ -410,7 +411,7 @@ public class TestContainerAwareDetector {
         
         // With truncated data + filename, we can use the filename to specialise
         m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
+        m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
         try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
             assertEquals(
                     MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
@@ -427,7 +428,7 @@ public class TestContainerAwareDetector {
         
         // Finally a truncated OLE2 file, with a filename available
         m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xls");
+        m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testEXCEL.xls");
         try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
             assertEquals(
                     MediaType.application("vnd.ms-excel"),

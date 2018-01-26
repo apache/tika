@@ -36,41 +36,44 @@ public interface OfficeOpenXMLCore
      * A categorization of the content of this package.
      */
     Property CATEGORY = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "category");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "category");
     
     /**
      * The status of the content.
      */
     Property CONTENT_STATUS = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "contentStatus");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "contentStatus");
     
     /**
      * The user who performed the last modification. The identification is environment-specific.
      */
     Property LAST_MODIFIED_BY = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "lastModifiedBy");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "lastModifiedBy");
     
     /**
      * The date and time of the last printing.
      */
     Property LAST_PRINTED = Property.externalDate(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "lastPrinted");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "lastPrinted");
     
     /**
      * The revision number.
      */
     Property REVISION = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "revision");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "revision");
     
     /**
      * The version number. This value is set by the user or by the application.
      */
     Property VERSION = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "version");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "version");
     
     /**
-     * The document's subject.
+     * The document's subject.  Also populates {@link DublinCore#SUBJECT}
      */
-    Property SUBJECT = Property.externalText(
-                PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "subject");
+    Property SUBJECT = Property.composite(Property.externalText(
+                PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "subject"),
+            new Property[] {
+                    DublinCore.SUBJECT,
+            });
 }

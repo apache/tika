@@ -31,6 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.PropertyTypeException;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.xmp.convert.TikaToXMP;
 
 import com.adobe.xmp.XMPDateTime;
@@ -642,7 +643,7 @@ public class XMPMetadata extends Metadata {
      *         or too much of them
      */
     private String[] splitKey(String key) {
-        String[] keyParts = key.split( Metadata.NAMESPACE_PREFIX_DELIMITER );
+        String[] keyParts = key.split( TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER );
         if (keyParts.length > 0 && keyParts.length <= 2) {
             return keyParts;
         }

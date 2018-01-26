@@ -71,10 +71,9 @@ public class BPGParserTest {
         if (false) {
             assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
-            List<String> keywords = Arrays.asList(metadata.getValues(Metadata.KEYWORDS));
+            List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
             assertTrue(keywords.contains("coast"));
             assertTrue(keywords.contains("bird watching"));
-            assertEquals(keywords, Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS)));
         }
 
         // TODO Get the exif data to be properly extracted, see TIKA-1495

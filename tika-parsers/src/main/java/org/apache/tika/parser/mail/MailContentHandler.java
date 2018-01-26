@@ -198,7 +198,7 @@ class MailContentHandler implements ContentHandler {
 
                 String contentDispositionFileName = maximalBody.getContentDispositionFilename();
                 if ( contentDispositionFileName != null ) {
-                    submd.set( Metadata.RESOURCE_NAME_KEY, contentDispositionFileName );
+                    submd.set( TikaCoreProperties.RESOURCE_NAME_KEY, contentDispositionFileName );
                 }
 
                 submd.set( Metadata.CONTENT_DISPOSITION, contentDisposition.toString() );
@@ -354,7 +354,9 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
+                metadata.set(TikaCoreProperties.TITLE,
+                        ((UnstructuredField) parsedField).getValue());
+                metadata.set(TikaCoreProperties.SUBJECT,
                         ((UnstructuredField) parsedField).getValue());
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);

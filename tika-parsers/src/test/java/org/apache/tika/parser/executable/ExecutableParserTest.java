@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 public class ExecutableParserTest extends TikaTest {
@@ -33,7 +34,7 @@ public class ExecutableParserTest extends TikaTest {
 
         assertEquals("application/x-msdownload", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2012-05-13T13:40:11Z",
-                metadata.get(Metadata.CREATION_DATE));
+                metadata.get(TikaCoreProperties.CREATED));
 
         assertEquals(ExecutableParser.MACHINE_x86_32,
                 metadata.get(ExecutableParser.MACHINE_TYPE));

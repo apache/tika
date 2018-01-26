@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.james.mime4j.stream.MimeConfig;
+import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -108,7 +109,7 @@ public class RFC822ParserTest extends TikaTest {
             assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed",
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed",
-                    metadata.get(Metadata.SUBJECT));
+                    metadata.get(TikaCoreProperties.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -235,7 +236,7 @@ public class RFC822ParserTest extends TikaTest {
             assertEquals("If you can read this you understand the example.",
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("If you can read this you understand the example.",
-                    metadata.get(Metadata.SUBJECT));
+                    metadata.get(TikaCoreProperties.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -257,7 +258,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("Air Permit Programs | Air & Radiation | US EPA",
                 metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Air Permit Programs | Air & Radiation | US EPA",
-                metadata.get(Metadata.SUBJECT));
+                metadata.get(TikaCoreProperties.SUBJECT));
     }
 
     /**
@@ -313,7 +314,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("abc", metadata.getValues(Metadata.MESSAGE_TO)[0]);
         assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
         assertEquals("abcd", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("abcd", metadata.get(Metadata.SUBJECT));
+        assertEquals("abcd", metadata.get(TikaCoreProperties.SUBJECT));
         assertContains("bar biz bat", handler.toString());
     }
 
@@ -551,7 +552,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(4, metadataList.size());
         assertEquals("text/plain; charset=UTF-8", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
-        assertEquals("testPNG.png", metadataList.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("testPNG.png", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("This email has a PNG attachment included in it", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
         assertEquals(null, metadataList.get(1).get(Metadata.CONTENT_DISPOSITION));
         assertEquals("attachment; filename=\"testPNG.png\"", metadataList.get(2).get(Metadata.CONTENT_DISPOSITION));
@@ -570,7 +571,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("text/html; charset=UTF-8", seenMetadata.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", seenMetadata.get(2).get(Metadata.CONTENT_ENCODING));
         assertEquals("attachment; filename=\"logo.gif\"", seenMetadata.get(3).get(Metadata.CONTENT_DISPOSITION));
-        assertEquals("logo.gif", seenMetadata.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("logo.gif", seenMetadata.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image/gif", seenMetadata.get(3).get(Metadata.CONTENT_TYPE));
     }
 

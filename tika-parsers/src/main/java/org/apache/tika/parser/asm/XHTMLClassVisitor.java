@@ -81,7 +81,7 @@ class XHTMLClassVisitor extends ClassVisitor {
         }
 
         metadata.set(TikaCoreProperties.TITLE, className);
-        metadata.set(Metadata.RESOURCE_NAME_KEY, className + ".class");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, className + ".class");
 
         try {
             xhtml.startDocument();

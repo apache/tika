@@ -33,6 +33,7 @@ import java.net.URL;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -1185,7 +1186,7 @@ public class TestMimeTypes {
                 "/test-documents/" + filename)) {
             assertNotNull("Test file not found: " + filename, stream);
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             assertEquals(expected, repo.detect(stream, metadata).toString());
         }
     }
@@ -1193,7 +1194,7 @@ public class TestMimeTypes {
     private void assertTypeByName(String expected, String filename)
             throws IOException {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         assertEquals(expected, repo.detect(null, metadata).toString());
     }
 
@@ -1237,7 +1238,7 @@ public class TestMimeTypes {
                 "/test-documents/" + filename)) {
             assertNotNull("Test document not found: " + filename, stream);
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             return repo.detect(stream, metadata);
         }
     }

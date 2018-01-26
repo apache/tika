@@ -108,13 +108,13 @@ abstract class AbstractPOIFSExtractor {
             Metadata metadata = new Metadata();
             if (filename != null) {
                 metadata.set(Metadata.TIKA_MIME_FILE, filename);
-                metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             }
             if (relationshipID != null) {
-                metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, relationshipID);
+                metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipID);
             }
             if (storageClassID != null) {
-                metadata.set(Metadata.EMBEDDED_STORAGE_CLASS_ID, storageClassID.toString());
+                metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID, storageClassID.toString());
             }
             if (mediaType != null) {
                 metadata.set(Metadata.CONTENT_TYPE, mediaType);
@@ -170,9 +170,9 @@ abstract class AbstractPOIFSExtractor {
 
         // What kind of document is it?
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, dir.getName());
+        metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, dir.getName());
         if (dir.getStorageClsid() != null) {
-            metadata.set(Metadata.EMBEDDED_STORAGE_CLASS_ID, dir.getStorageClsid().toString());
+            metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID, dir.getStorageClsid().toString());
         }
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         TikaInputStream embedded = null;
@@ -183,7 +183,7 @@ abstract class AbstractPOIFSExtractor {
                     // Try to un-wrap the OLE10Native record:
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode) dir);
                     if (ole.getLabel() != null) {
-                        metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '/' + ole.getLabel());
+                        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + '/' + ole.getLabel());
                     }
                     if (ole.getCommand() != null) {
                         metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getCommand());
@@ -229,14 +229,14 @@ abstract class AbstractPOIFSExtractor {
 
                     // Record what we can do about it
                     metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, rName + extension);
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
                 } catch (Exception e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     return;
                 }
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-                metadata.set(Metadata.RESOURCE_NAME_KEY, rName + '.' + type.getExtension());
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + '.' + type.getExtension());
             }
 
             // Should we parse it?

@@ -55,7 +55,7 @@ public class RTFConverter extends AbstractConverter {
                 PropertyOptions.ARRAY_ORDERED );
         createLangAltProperty( TikaCoreProperties.TITLE, XMPConst.NS_DC, "title" );
         createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
-        createCommaSeparatedArray( TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject",
+        createCommaSeparatedArray( TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
                 PropertyOptions.ARRAY );
         createProperty( OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre" );
         createProperty( OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI,

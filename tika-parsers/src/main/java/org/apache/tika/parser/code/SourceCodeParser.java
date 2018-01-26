@@ -93,7 +93,7 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
                 new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             String mediaType = metadata.get(Metadata.CONTENT_TYPE);
-            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             if (mediaType != null && name != null) {
                 MediaType type = MediaType.parse(mediaType);
                 metadata.set(Metadata.CONTENT_TYPE, type.toString());

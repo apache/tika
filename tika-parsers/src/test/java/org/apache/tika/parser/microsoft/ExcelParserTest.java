@@ -62,15 +62,12 @@ public class ExcelParserTest extends TikaTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
 
             // Mon Oct 01 17:13:56 BST 2007
             assertEquals("2007-10-01T16:13:56Z", metadata.get(TikaCoreProperties.CREATED));
-            assertEquals("2007-10-01T16:13:56Z", metadata.get(Metadata.CREATION_DATE));
 
             // Mon Oct 01 17:31:43 BST 2007
             assertEquals("2007-10-01T16:31:43Z", metadata.get(TikaCoreProperties.MODIFIED));
-            assertEquals("2007-10-01T16:31:43Z", metadata.get(Metadata.DATE));
 
             String content = handler.toString();
             assertContains("Sample Excel Worksheet", content);
@@ -280,7 +277,7 @@ public class ExcelParserTest extends TikaTest {
 
         // First try detection of Excel 5
         m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "excel_5.xls");
+        m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "excel_5.xls");
         try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel", type.toString());
@@ -288,7 +285,7 @@ public class ExcelParserTest extends TikaTest {
 
         // Now Excel 95
         m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "excel_95.xls");
+        m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "excel_95.xls");
         try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel", type.toString());
@@ -392,7 +389,6 @@ public class ExcelParserTest extends TikaTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Internal spreadsheet", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Aeham Abushwashi", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Aeham Abushwashi", metadata.get(Metadata.AUTHOR));
 
             String content = handler.toString();
             assertContains("John Smith1", content);

@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -216,11 +217,11 @@ public class MimeTypesReaderTest {
           // Check that we can correct detect with the file one:
           // By name
           Metadata m = new Metadata();
-          m.add(Metadata.RESOURCE_NAME_KEY, "test.hello.world");
+          m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
           assertEquals(hwf.toString(), this.mimeTypes.detect(null, m).toString());
           
           m = new Metadata();
-          m.add(Metadata.RESOURCE_NAME_KEY, "test.x-hello-world");
+          m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
           assertEquals(hxw.toString(), this.mimeTypes.detect(null, m).toString());
           
           // By contents - picks the x one as that sorts later
@@ -245,7 +246,7 @@ public class MimeTypesReaderTest {
                 "src/test/resources/org/apache/tika/mime/external-mimetypes.xml");
         MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
         Metadata m = new Metadata();
-        m.add(Metadata.RESOURCE_NAME_KEY, "test.external.mime.type");
+        m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "test.external.mime.type");
         assertEquals("external/mime-type", mimeTypes.detect(null, m).toString());
     }
     

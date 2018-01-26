@@ -23,9 +23,10 @@ import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
-import org.apache.tika.metadata.MSOffice;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -64,10 +65,10 @@ public class OpenDocumentConverter extends AbstractConverter {
                 PropertyOptions.ARRAY_ORDERED );
         createProperty( TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate" );
         createProperty( TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments" );
-        createCommaSeparatedArray( TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject",
+        createCommaSeparatedArray( TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
                 PropertyOptions.ARRAY );
         createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
-        createProperty( MSOffice.EDIT_TIME, Office.NAMESPACE_URI_DOC_META, "editing-duration" );
+        createProperty( OfficeOpenXMLExtended.TOTAL_TIME, Office.NAMESPACE_URI_DOC_META, "editing-duration" );
         createProperty( "editing-cycles", Office.NAMESPACE_URI_DOC_META, "editing-cycles" );
         createProperty( "generator", XMPConst.NS_XMP, "CreatorTool" );
         createProperty( Office.IMAGE_COUNT, Office.NAMESPACE_URI_DOC_META, "image-count" );

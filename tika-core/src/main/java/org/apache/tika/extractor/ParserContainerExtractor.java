@@ -28,6 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
@@ -111,7 +112,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
                 TikaInputStream tis = TikaInputStream.get(stream, tmp);
 
                 // Figure out what we have to process
-                String filename = metadata.get(Metadata.RESOURCE_NAME_KEY);
+                String filename = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
                 MediaType type = detector.detect(tis, metadata);
 
                 if (extractor == null) {

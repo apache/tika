@@ -57,7 +57,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
@@ -542,7 +541,7 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(IptcDirectory.TAG_KEYWORDS)) {
                 String[] keywords = directory.getStringArray(IptcDirectory.TAG_KEYWORDS);
                 for (String k : keywords) {
-                    metadata.add(TikaCoreProperties.KEYWORDS, k);
+                    metadata.add(TikaCoreProperties.SUBJECT, k);
                 }
             }
             if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {

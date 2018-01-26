@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -80,7 +81,7 @@ public class HDFParser extends AbstractParser {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         IOUtils.copy(stream, os);
 
-        String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (name == null) {
             name = "";
         }

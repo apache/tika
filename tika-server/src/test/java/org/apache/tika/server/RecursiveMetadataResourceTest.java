@@ -36,6 +36,8 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.server.resource.RecursiveMetadataResource;
@@ -80,7 +82,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
         assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get("Application-Name"));
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
         assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
 
         assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
@@ -112,8 +114,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         // Check results
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertNotNull(metadataList.get(0).get("Author"));
-        assertEquals("pavel", metadataList.get(0).get("Author"));
+        assertNotNull(metadataList.get(0).get(TikaCoreProperties.CREATOR));
+        assertEquals("pavel", metadataList.get(0).get(TikaCoreProperties.CREATOR));
     }
 
     @Test

@@ -125,6 +125,7 @@
                 <exlude>org/apache/tika/metadata/Metadata</exlude>
                 <exlude>org/apache/tika/metadata/MSOffice</exlude>
                 <exlude>org/apache/tika/parser/EmptyParser</exlude>
+                <exclude>org/apache/tika/metadata/TikaMetadataKeys</exclude>
               </excludes>
               <comparisonArtifacts>
                 <comparisonArtifact>

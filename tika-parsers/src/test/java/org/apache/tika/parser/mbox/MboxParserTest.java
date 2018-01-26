@@ -99,8 +99,7 @@ public class MboxParserTest extends TikaTest {
 
         assertEquals("2009-06-10T03:58:45Z", mailMetadata.get(TikaCoreProperties.CREATED));
         assertEquals("<author@domain.com>", mailMetadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("subject", mailMetadata.get(Metadata.SUBJECT));
-        assertEquals("<author@domain.com>", mailMetadata.get(Metadata.AUTHOR));
+        assertEquals("subject", mailMetadata.get(TikaCoreProperties.SUBJECT));
         assertEquals("message/rfc822", mailMetadata.get(Metadata.CONTENT_TYPE));
         assertEquals("author@domain.com", mailMetadata.get("Message-From"));
         assertEquals("<name@domain.com>", mailMetadata.get("MboxParser-return-path"));
@@ -146,9 +145,8 @@ public class MboxParserTest extends TikaTest {
         assertEquals("Nb. Of mails", 3, mboxParser.getTrackingMetadata().size());
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
-        assertEquals("Re: question about when shuffle/sort start working", firstMail.get(Metadata.SUBJECT));
+        assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.SUBJECT));
         assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.TITLE));
-        assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(Metadata.AUTHOR));
         assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(TikaCoreProperties.CREATOR));
         assertEquals("core-user@hadoop.apache.org", firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
 

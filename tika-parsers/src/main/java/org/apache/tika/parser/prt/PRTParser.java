@@ -89,7 +89,7 @@ public class PRTParser extends AbstractParser {
              dateStr.substring(10, 12) + ":00";
           metadata.set(TikaCoreProperties.CREATED, formattedDate);
           // TODO Metadata.DATE is used as modified, should it be here?
-          metadata.set(Metadata.DATE, formattedDate);
+          metadata.set(TikaCoreProperties.CREATED, formattedDate);
        }
        metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
        

@@ -22,9 +22,9 @@ package org.apache.tika.metadata;
  * See also {@link Office}'s MAPI-specific properties.
  */
 public interface Message {
-    String MESSAGE_PREFIX = "Message"+ Metadata.NAMESPACE_PREFIX_DELIMITER;
+    String MESSAGE_PREFIX = "Message"+ TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    String MESSAGE_RAW_HEADER_PREFIX = MESSAGE_PREFIX+"Raw-Header"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+    String MESSAGE_RAW_HEADER_PREFIX = MESSAGE_PREFIX+"Raw-Header"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     String MESSAGE_RECIPIENT_ADDRESS = "Message-Recipient-Address";
     

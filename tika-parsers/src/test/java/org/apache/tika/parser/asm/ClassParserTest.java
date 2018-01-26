@@ -38,7 +38,7 @@ public class ClassParserTest {
         assertEquals("AutoDetectParser", metadata.get(TikaCoreProperties.TITLE));
         assertEquals(
                 "AutoDetectParser.class",
-                metadata.get(Metadata.RESOURCE_NAME_KEY));
+                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         assertTrue(content.contains("package org.apache.tika.parser;"));
         assertTrue(content.contains(

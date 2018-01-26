@@ -36,7 +36,6 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -239,7 +238,7 @@ public class OpenDocumentParser extends AbstractParser {
                             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
                 }*/
                 if (embeddedName.contains("Pictures/")) {
-                    embeddedMetadata.set(TikaMetadataKeys.EMBEDDED_RESOURCE_TYPE,
+                    embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                             TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
                 }
                 if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {

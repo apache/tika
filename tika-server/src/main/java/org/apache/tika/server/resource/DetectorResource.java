@@ -29,6 +29,7 @@ import java.io.InputStream;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +49,7 @@ public class DetectorResource {
         String filename = TikaResource.detectFilename(httpHeaders
                 .getRequestHeaders());
         LOG.info("Detecting media type for Filename: {}", filename);
-        met.add(Metadata.RESOURCE_NAME_KEY, filename);
+        met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         try {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {

@@ -774,7 +774,7 @@ public class IptcAnpaParser implements Parser {
       // in other consuming applications, like Lucene
       metadata.set(Metadata.CONTENT_TYPE,  clean("text/anpa-1312"));
       metadata.set(TikaCoreProperties.TITLE,         clean(properties.get("title")));
-      metadata.set(TikaCoreProperties.KEYWORDS,       clean(properties.get("subject")));
+      metadata.set(TikaCoreProperties.SUBJECT,       clean(properties.get("subject")));
       metadata.set(TikaCoreProperties.CREATOR,        clean(properties.get("author")));
       metadata.set(TikaCoreProperties.CREATED, clean(properties.get("created")));
       metadata.set(TikaCoreProperties.MODIFIED,      clean(properties.get("modified")));

@@ -17,6 +17,7 @@
 package org.apache.tika.parser.iwork;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
@@ -54,7 +55,7 @@ class KeynoteContentHandler extends DefaultHandler {
 
     @Override
     public void endDocument() throws SAXException {
-        metadata.set(Metadata.SLIDE_COUNT, String.valueOf(numberOfSlides));
+        metadata.set(Office.SLIDE_COUNT, String.valueOf(numberOfSlides));
     }
 
     @Override

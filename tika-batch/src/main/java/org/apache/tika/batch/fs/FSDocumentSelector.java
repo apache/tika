@@ -22,11 +22,12 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.util.PropsUtil;
 
 /**
  * Selector that chooses files based on their file name
- * and their size, as determined by Metadata.RESOURCE_NAME_KEY and Metadata.CONTENT_LENGTH.
+ * and their size, as determined by TikaCoreProperties.RESOURCE_NAME_KEY and Metadata.CONTENT_LENGTH.
  * <p/>
  * The {@link #excludeFileName} pattern is applied first (if it isn't null).
  * Then the {@link #includeFileName} pattern is applied (if it isn't null),
@@ -52,7 +53,7 @@ public class FSDocumentSelector implements DocumentSelector {
 
     @Override
     public boolean select(Metadata metadata) {
-        String fName = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        String fName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         long sz = PropsUtil.getLong(metadata.get(Metadata.CONTENT_LENGTH), -1L);
         if (maxFileSizeBytes > -1 && sz > 0) {
             if (sz > maxFileSizeBytes) {

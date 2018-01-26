@@ -80,6 +80,7 @@ import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
@@ -1036,7 +1037,7 @@ public class TikaCLI {
         }
 
         public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
-            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
             if (name == null) {
                 name = "file" + count++;
@@ -1053,7 +1054,7 @@ public class TikaCLI {
                 }
             }
 
-            String relID = metadata.get(Metadata.EMBEDDED_RELATIONSHIP_ID);
+            String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
             if (relID != null && !name.startsWith(relID)) {
                 name = relID + "_" + name;
             }

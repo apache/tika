@@ -23,7 +23,7 @@ public interface XMP {
     String PREFIX = "xmp";
 
     /** The xmp prefix followed by the colon delimiter */
-    String PREFIX_ = PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER;
+    String PREFIX_ = PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * The date and time the resource was created. For a digital file, this need not

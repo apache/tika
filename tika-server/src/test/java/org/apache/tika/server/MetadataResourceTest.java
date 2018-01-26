@@ -38,6 +38,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.server.resource.MetadataResource;
 import org.apache.tika.server.writer.CSVMessageBodyWriter;
@@ -87,9 +88,11 @@ public class MetadataResourceTest extends CXFTestBase {
             metadata.put(nextLine[0], nextLine[1]);
         }
         csvReader.close();
-
-        assertNotNull(metadata.get("Author"));
-        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        for (String n : metadata.keySet()) {
+            System.out.println(n + " : "+metadata.get(n));
+        }
+        assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
+        assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("X-TIKA:digest:MD5", "f8be45c34e8919eedba48cc8d207fbf0",
                 metadata.get("X-TIKA:digest:MD5"));
     }
@@ -139,8 +142,8 @@ public class MetadataResourceTest extends CXFTestBase {
         }
         csvReader.close();
 
-        assertNotNull(metadata.get("Author"));
-        assertEquals("pavel", metadata.get("Author"));
+        assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
+        assertEquals("pavel", metadata.get(TikaCoreProperties.CREATOR.getName()));
     }
 
     @Test
@@ -155,8 +158,8 @@ public class MetadataResourceTest extends CXFTestBase {
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
         Metadata metadata = JsonMetadata.fromJson(reader);
-        assertNotNull(metadata.get("Author"));
-        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        assertNotNull(metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR));
     }
 
     @Test
@@ -195,7 +198,8 @@ public class MetadataResourceTest extends CXFTestBase {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
-        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+        Response response = WebClient.create(endPoint + META_PATH + "/"+TikaCoreProperties.CREATOR.getName())
+                .type("application/msword")
                 .accept(MediaType.TEXT_PLAIN).put(copy(stream, 12000));
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         String s = IOUtils.readStringFromStream((InputStream) response.getEntity());
@@ -207,12 +211,13 @@ public class MetadataResourceTest extends CXFTestBase {
 
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
-        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+        Response response = WebClient.create(endPoint + META_PATH + "/"+TikaCoreProperties.CREATOR.getName())
+                .type("application/msword")
                 .accept(MediaType.APPLICATION_JSON).put(copy(stream, 12000));
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
                 (InputStream) response.getEntity(), UTF_8));
-        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals(1, metadata.names().length);
     }
 

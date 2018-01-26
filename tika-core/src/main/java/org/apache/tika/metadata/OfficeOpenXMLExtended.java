@@ -36,34 +36,34 @@ public interface OfficeOpenXMLExtended
     String WORD_PROCESSING_PREFIX = "w";
 
     Property TEMPLATE = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Template");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Template");
     
     Property MANAGER = Property.externalTextBag(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Manager");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Manager");
     
-    Property COMPANY = Property.externalText(    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Company");
+    Property COMPANY = Property.externalText(    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Company");
     
     Property PRESENTATION_FORMAT = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "PresentationFormat");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PresentationFormat");
     
     Property NOTES = Property.externalInteger(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Notes");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Notes");
     
     Property TOTAL_TIME = Property.externalInteger(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "TotalTime");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "TotalTime");
     
     Property HIDDEN_SLIDES = Property.externalInteger(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "HiddedSlides");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "HiddedSlides");
     
     Property APPLICATION = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Application");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Application");
     
     Property APP_VERSION = Property.externalText(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "AppVersion");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AppVersion");
     
     Property DOC_SECURITY = Property.externalInteger(
-    		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "DocSecurity");
+    		PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DocSecurity");
     
     Property COMMENTS = Property.externalTextBag(
-            WORD_PROCESSING_PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "comments");
+            WORD_PROCESSING_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Comments");
 }

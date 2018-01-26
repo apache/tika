@@ -80,7 +80,7 @@ public abstract class AbstractPkgTest extends TikaTest {
       public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-         filenames.add(metadata.get(Metadata.RESOURCE_NAME_KEY));
+         filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
          mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
          createdAts.add(metadata.get(TikaCoreProperties.CREATED));
          modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));

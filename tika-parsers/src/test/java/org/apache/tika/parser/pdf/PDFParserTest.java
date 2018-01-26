@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,7 @@ import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -125,7 +127,6 @@ public class PDFParserTest extends TikaTest {
         String xml = r.xml;
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(Metadata.AUTHOR));
         assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
 
@@ -161,7 +162,6 @@ public class PDFParserTest extends TikaTest {
         Metadata metadata = r.metadata;
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Document author", metadata.get(Metadata.AUTHOR));
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
 
         assertEquals("Custom Value", metadata.get("Custom Property"));
@@ -186,9 +186,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("true", metadata.get("pdf:encrypted"));
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
         assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
-        assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
         assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
         assertContains("RETHINKING THE FINANCIAL NETWORK", r.xml);
@@ -210,7 +208,6 @@ public class PDFParserTest extends TikaTest {
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
-        assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
         assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
         assertContains("RETHINKING THE FINANCIAL NETWORK", r.xml);
@@ -300,13 +297,11 @@ public class PDFParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                     metadata.get(Metadata.KEYWORDS));
+                     metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
                      metadata.get(OfficeOpenXMLCore.SUBJECT));
-        assertEquals("Subject is here",
-                     metadata.get(Metadata.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -643,10 +638,10 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadatas = p.getMetadata();
 
         assertEquals(5, metadatas.size());
-        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("image0.jpg", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("Press Quality(1).joboptions", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("Unit10.doc", metadatas.get(4).get(Metadata.RESOURCE_NAME_KEY));
+        assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("image0.jpg", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("Press Quality(1).joboptions", metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("Unit10.doc", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("jpeg").toString(), metadatas.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals(MediaType.image("tiff").toString(), metadatas.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("text/plain; charset=ISO-8859-1", metadatas.get(3).get(Metadata.CONTENT_TYPE));
@@ -675,9 +670,9 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
         assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
         
-        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+        assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image0.jb2", 
-                metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+                metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("x-jbig2").toString(), 
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));
     }
@@ -774,22 +769,10 @@ public class PDFParserTest extends TikaTest {
     public void testMultipleAuthors() throws Exception {
 
         XMLResult r = getXML("testPDF_twoAuthors.pdf");
-        String[] keys = new String[]{
-                "dc:creator",
-                "meta:author",
-                "creator",
-                "Author"
-        };
+        List<String> authors = Arrays.asList(r.metadata.getValues(TikaCoreProperties.CREATOR));
+        assertContains("Sample Author 1", authors);
+        assertContains("Sample Author 2", authors);
 
-        for (String k : keys) {
-            String[] vals = r.metadata.getValues(k);
-            assertEquals("number of authors == 2 for key: " + k, 2, vals.length);
-            Set<String> set = new HashSet<String>();
-            set.add(vals[0]);
-            set.add(vals[1]);
-            assertTrue("Sample Author 1", set.contains("Sample Author 1"));
-            assertTrue("Sample Author 2", set.contains("Sample Author 2"));
-        }
     }
 
     //STUB test for once TIKA-1295 is fixed
@@ -902,7 +885,7 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
         Metadata firstAttachment = metadatas.get(1);
-        assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("attachment file name", "Test.txt", firstAttachment.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test //TIKA-1374
@@ -910,13 +893,13 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
         assertEquals("metadata size", 5, metadatas.size());
 
-        assertEquals("file name", "Test.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("file name", "Test.txt", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("os specific", metadatas.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("file name", "TestMac.txt", metadatas.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("file name", "TestMac.txt", metadatas.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("mac embedded", metadatas.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("file name", "TestDos.txt", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("file name", "TestDos.txt", metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("dos embedded", metadatas.get(3).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("file name", "TestUnix.txt", metadatas.get(4).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("file name", "TestUnix.txt", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("unix embedded", metadatas.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
 
     }

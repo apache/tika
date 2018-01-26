@@ -43,8 +43,7 @@ public class PRTParserTest extends TikaTest {
           // This file has a date
           assertEquals("2011-06-20T16:54:00",
                   metadata.get(TikaCoreProperties.CREATED));
-          assertEquals("2011-06-20T16:54:00",
-                  metadata.get(Metadata.CREATION_DATE));
+
           // But no description
           assertEquals(null, metadata.get(TikaCoreProperties.DESCRIPTION));
 
@@ -78,9 +77,7 @@ public class PRTParserTest extends TikaTest {
 
           // File has both a date and a description
           assertEquals("1997-04-01T08:59:00",
-                  metadata.get(Metadata.DATE));
-          assertEquals("1997-04-01T08:59:00",
-                  metadata.get(Metadata.CREATION_DATE));
+                  metadata.get(TikaCoreProperties.CREATED));
           assertEquals("TIKA TEST PART DESCRIPTION INFORMATION\r\n",
                   metadata.get(TikaCoreProperties.DESCRIPTION));
 

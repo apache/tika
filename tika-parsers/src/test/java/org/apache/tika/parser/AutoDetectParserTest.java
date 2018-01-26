@@ -91,7 +91,7 @@ public class AutoDetectParserTest extends TikaTest {
                         + tp.resourceRealName);
             }
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.RESOURCE_NAME_KEY, tp.resourceStatedName);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, tp.resourceStatedName);
             metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
             ContentHandler handler = new BodyContentHandler();
             new AutoDetectParser(tika).parse(input, handler, metadata);
@@ -345,8 +345,8 @@ public class AutoDetectParserTest extends TikaTest {
 
                // Check some of the common metadata
                // Old style metadata
-               assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
-               assertEquals("Test Title", metadata.get(Metadata.TITLE));
+               assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
+               assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
                // New style metadata
                assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
                assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
@@ -401,7 +401,7 @@ public class AutoDetectParserTest extends TikaTest {
 
         for (int i = 0; i < exts.length; i++) {
             Metadata m = new Metadata();
-            m.set(Metadata.RESOURCE_NAME_KEY, "file." + exts[i]);
+            m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "file." + exts[i]);
             try {
                 getXML(TikaInputStream.get(new byte[0]), new AutoDetectParser(), m);
                 fail("should have thrown zero byte exception");

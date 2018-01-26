@@ -1049,10 +1049,9 @@ final class TextExtractor {
                 } else if (equals("title")) {
                     nextMetaData = TikaCoreProperties.TITLE;
                 } else if (equals("subject")) {
-                    // TODO: Move to OO subject in Tika 2.0
-                    nextMetaData = TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT;
+                    nextMetaData = OfficeOpenXMLCore.SUBJECT;
                 } else if (equals("keywords")) {
-                    nextMetaData = TikaCoreProperties.TRANSITION_KEYWORDS_TO_DC_SUBJECT;
+                    nextMetaData = Office.KEYWORDS;
                 } else if (equals("category")) {
                     nextMetaData = OfficeOpenXMLCore.CATEGORY;
                 } else if (equals("comment")) {

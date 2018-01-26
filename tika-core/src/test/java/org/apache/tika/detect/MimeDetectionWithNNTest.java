@@ -112,7 +112,7 @@ public class MimeDetectionWithNNTest {
 					expected, mime);
 
 			// Add resource name and test again
-			// metadata.set(Metadata.RESOURCE_NAME_KEY, urlOrFileName);
+			// metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
 			mime = this.detector.detect(in, metadata).toString();
 			assertEquals(urlOrFileName
 					+ " is not properly detected after adding resource name.",

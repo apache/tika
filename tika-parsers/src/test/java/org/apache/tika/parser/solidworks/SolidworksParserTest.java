@@ -48,13 +48,13 @@ public class SolidworksParserTest extends TikaTest {
             //Check properties
             assertEquals("2012-04-18T10:27:29Z", metadata.get(TikaCoreProperties.CREATED));
             assertEquals(null, metadata.get(TikaCoreProperties.CONTRIBUTOR));
-            assertEquals("2013-09-06T08:12:12Z", metadata.get(Metadata.MODIFIED));
+            assertEquals("2013-09-06T08:12:12Z", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("solidworks-dcom_dev", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals(null, metadata.get(TikaCoreProperties.RELATION));
             assertEquals(null, metadata.get(TikaCoreProperties.RIGHTS));
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("", metadata.get(TikaCoreProperties.KEYWORDS));
+            assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
         }
     }
 
@@ -75,13 +75,13 @@ public class SolidworksParserTest extends TikaTest {
             //Check properties
             assertEquals("2012-04-18T10:27:29Z", metadata.get(TikaCoreProperties.CREATED));
             assertEquals(null, metadata.get(TikaCoreProperties.CONTRIBUTOR));
-            assertEquals("2013-11-28T12:38:28Z", metadata.get(Metadata.MODIFIED));
+            assertEquals("2013-11-28T12:38:28Z", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("solidworks-dcom_dev", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals(null, metadata.get(TikaCoreProperties.RELATION));
             assertEquals(null, metadata.get(TikaCoreProperties.RIGHTS));
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("", metadata.get(TikaCoreProperties.KEYWORDS));
+            assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
         }
     }
 
@@ -102,13 +102,13 @@ public class SolidworksParserTest extends TikaTest {
             //Check properties
             assertEquals("2012-04-25T09:51:38Z", metadata.get(TikaCoreProperties.CREATED));
             assertEquals(null, metadata.get(TikaCoreProperties.CONTRIBUTOR));
-            assertEquals("2013-09-06T08:11:08Z", metadata.get(Metadata.MODIFIED));
+            assertEquals("2013-09-06T08:11:08Z", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("solidworks-dcom_dev", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals(null, metadata.get(TikaCoreProperties.RELATION));
             assertEquals(null, metadata.get(TikaCoreProperties.RIGHTS));
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("", metadata.get(TikaCoreProperties.KEYWORDS));
+            assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
         }    	
     }
 
@@ -130,13 +130,13 @@ public class SolidworksParserTest extends TikaTest {
             //Check properties
             assertEquals("2012-04-25T09:51:38Z", metadata.get(TikaCoreProperties.CREATED));
             assertEquals(null, metadata.get(TikaCoreProperties.CONTRIBUTOR));
-            assertEquals("2013-11-28T12:41:49Z", metadata.get(Metadata.MODIFIED));
+            assertEquals("2013-11-28T12:41:49Z", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("solidworks-dcom_dev", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals(null, metadata.get(TikaCoreProperties.RELATION));
             assertEquals(null, metadata.get(TikaCoreProperties.RIGHTS));
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("", metadata.get(TikaCoreProperties.KEYWORDS));
+            assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
         } finally {
             input.close();
         }    	
@@ -159,13 +159,13 @@ public class SolidworksParserTest extends TikaTest {
             //Check properties
             assertEquals("2012-07-03T12:05:29Z", metadata.get(TikaCoreProperties.CREATED));
             assertEquals(null, metadata.get(TikaCoreProperties.CONTRIBUTOR));
-            assertEquals("2013-09-06T08:06:57Z", metadata.get(Metadata.MODIFIED));
+            assertEquals("2013-09-06T08:06:57Z", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("solidworks-dcom_dev", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals(null, metadata.get(TikaCoreProperties.RELATION));
             assertEquals(null, metadata.get(TikaCoreProperties.RIGHTS));
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("", metadata.get(TikaCoreProperties.KEYWORDS));
+            assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
         }    	
     }
 
@@ -186,13 +186,13 @@ public class SolidworksParserTest extends TikaTest {
             //Check properties
             assertEquals("2012-07-03T12:05:29Z", metadata.get(TikaCoreProperties.CREATED));
             assertEquals(null, metadata.get(TikaCoreProperties.CONTRIBUTOR));
-            assertEquals("2013-11-28T12:41:49Z", metadata.get(Metadata.MODIFIED));
+            assertEquals("2013-11-28T12:41:49Z", metadata.get(TikaCoreProperties.MODIFIED));
             assertEquals("solidworks-dcom_dev", metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals(null, metadata.get(TikaCoreProperties.RELATION));
             assertEquals(null, metadata.get(TikaCoreProperties.RIGHTS));
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("", metadata.get(TikaCoreProperties.KEYWORDS));
+            assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
         }    	
     }
 }

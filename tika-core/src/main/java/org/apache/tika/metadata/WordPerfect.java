@@ -26,41 +26,41 @@ public interface WordPerfect {
     */
    Property FILE_SIZE = Property.internalText(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "FileSize");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FileSize");
    /**
     * File identifier. 
     */
    Property FILE_ID = Property.internalText(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "FileId");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FileId");
    /**
     * Product type. 
     */
    Property PRODUCT_TYPE = Property.internalInteger(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "ProductType");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ProductType");
    /**
     * File type. 
     */
    Property FILE_TYPE = Property.internalInteger(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "FileType");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FileType");
    /**
     * Major version. 
     */
    Property MAJOR_VERSION = Property.internalInteger(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "MajorVersion");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MajorVersion");
    /**
     * Minor version. 
     */
    Property MINOR_VERSION = Property.internalInteger(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "MinorVersion");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MinorVersion");
    /**
     * Is encrypted?. 
     */
    Property ENCRYPTED = Property.internalBoolean(
            WORDPERFECT_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "Encrypted");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Encrypted");
 }
