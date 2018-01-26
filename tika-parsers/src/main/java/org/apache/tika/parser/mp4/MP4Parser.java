@@ -168,7 +168,7 @@ public class MP4Parser extends AbstractParser {
                 MovieHeaderBox mHeader = getOrNull(moov, MovieHeaderBox.class);
                 if (mHeader != null) {
                     // Get the creation and modification dates
-                    metadata.set(Metadata.CREATION_DATE, mHeader.getCreationTime());
+                    metadata.set(TikaCoreProperties.CREATED, mHeader.getCreationTime());
                     metadata.set(TikaCoreProperties.MODIFIED, mHeader.getModificationTime());
 
                     // Get the duration

@@ -48,20 +48,13 @@ public class DcXMLParserTest extends TikaTest {
 
             // The file contains 5 dc:subject tags, which come through as
             //  a multi-valued Tika Metadata entry in file order
-            assertEquals(true, metadata.isMultiValued(TikaCoreProperties.KEYWORDS));
-            assertEquals(5, metadata.getValues(TikaCoreProperties.KEYWORDS).length);
-            assertEquals("Java", metadata.getValues(TikaCoreProperties.KEYWORDS)[0]);
-            assertEquals("XML", metadata.getValues(TikaCoreProperties.KEYWORDS)[1]);
-            assertEquals("XSLT", metadata.getValues(TikaCoreProperties.KEYWORDS)[2]);
-            assertEquals("JDOM", metadata.getValues(TikaCoreProperties.KEYWORDS)[3]);
-            assertEquals("Indexation", metadata.getValues(TikaCoreProperties.KEYWORDS)[4]);
-            assertEquals(true, metadata.isMultiValued(Metadata.SUBJECT));
-            assertEquals(5, metadata.getValues(Metadata.SUBJECT).length);
-            assertEquals("Java", metadata.getValues(Metadata.SUBJECT)[0]);
-            assertEquals("XML", metadata.getValues(Metadata.SUBJECT)[1]);
-            assertEquals("XSLT", metadata.getValues(Metadata.SUBJECT)[2]);
-            assertEquals("JDOM", metadata.getValues(Metadata.SUBJECT)[3]);
-            assertEquals("Indexation", metadata.getValues(Metadata.SUBJECT)[4]);
+            assertEquals(true, metadata.isMultiValued(TikaCoreProperties.SUBJECT));
+            assertEquals(5, metadata.getValues(TikaCoreProperties.SUBJECT).length);
+            assertEquals("Java", metadata.getValues(TikaCoreProperties.SUBJECT)[0]);
+            assertEquals("XML", metadata.getValues(TikaCoreProperties.SUBJECT)[1]);
+            assertEquals("XSLT", metadata.getValues(TikaCoreProperties.SUBJECT)[2]);
+            assertEquals("JDOM", metadata.getValues(TikaCoreProperties.SUBJECT)[3]);
+            assertEquals("Indexation", metadata.getValues(TikaCoreProperties.SUBJECT)[4]);
 
             assertEquals(
                     "Framework d\'indexation des documents XML, HTML, PDF etc..",

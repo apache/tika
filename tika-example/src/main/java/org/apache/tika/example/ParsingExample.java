@@ -30,6 +30,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
@@ -165,7 +166,7 @@ public class ParsingExample {
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, factory);
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         ParseContext context = new ParseContext();
 
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {

@@ -67,6 +67,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -367,7 +368,7 @@ public class TikaGUI extends JFrame
             }
         }
 
-        String name = md.get(Metadata.RESOURCE_NAME_KEY);
+        String name = md.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (name != null && name.length() > 0) {
             setTitle("Apache Tika: " + name);
         } else {
@@ -653,7 +654,7 @@ public class TikaGUI extends JFrame
       public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-         String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
          if(name != null && wanted.containsKey(name)) {
             FileOutputStream out = new FileOutputStream(wanted.get(name));
             IOUtils.copy(stream, out);

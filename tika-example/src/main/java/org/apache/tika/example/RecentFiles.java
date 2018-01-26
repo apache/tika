@@ -36,6 +36,7 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Builds on top of the LuceneIndexer and the Metadata discussions in Chapter 6
@@ -62,7 +63,7 @@ public class RecentFiles {
             String nowDateTime = ISO8601.format(gc);
             gc.add(java.util.GregorianCalendar.MINUTE, -5);
             String fiveMinsAgo = ISO8601.format(gc);
-            TermRangeQuery query = new TermRangeQuery(Metadata.DATE.toString(),
+            TermRangeQuery query = new TermRangeQuery(TikaCoreProperties.CREATED.getName(),
                     fiveMinsAgo, nowDateTime, true, true);
             TopScoreDocCollector collector = TopScoreDocCollector.create(20,
                     true);
@@ -87,16 +88,16 @@ public class RecentFiles {
         output.append("<item>");
         output.append(emitTag("guid", doc.get(DublinCore.SOURCE.getName()),
                 "isPermalink", "true"));
-        output.append(emitTag("title", doc.get(Metadata.TITLE), null, null));
+        output.append(emitTag("title", doc.get(TikaCoreProperties.TITLE.getName()), null, null));
         output.append(emitTag("link", doc.get(DublinCore.SOURCE.getName()),
                 null, null));
-        output.append(emitTag("author", doc.get(Metadata.CREATOR), null, null));
-        for (String topic : doc.getValues(Metadata.SUBJECT)) {
+        output.append(emitTag("author", doc.get(TikaCoreProperties.CREATOR.getName()), null, null));
+        for (String topic : doc.getValues(TikaCoreProperties.SUBJECT.getName())) {
             output.append(emitTag("category", topic, null, null));
         }
         output.append(emitTag("pubDate", rssDateFormat.format(ISO8601.parse(doc
-                .get(Metadata.DATE.toString()))), null, null));
-        output.append(emitTag("description", doc.get(Metadata.TITLE), null,
+                .get(TikaCoreProperties.CREATED.getName()))), null, null));
+        output.append(emitTag("description", doc.get(TikaCoreProperties.TITLE.getName()), null,
                 null));
         output.append("</item>");
         return output.toString();

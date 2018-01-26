@@ -69,7 +69,7 @@ public class XML2003ParserTest extends TikaTest {
 
         //make sure embedded docs were properly processed
         assertContains("moscow-birds",
-                Arrays.asList(list.get(7).getValues(TikaCoreProperties.KEYWORDS)));
+                Arrays.asList(list.get(7).getValues(TikaCoreProperties.SUBJECT)));
 
         //check that text is extracted with breaks between elements
         String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"), new AutoDetectParser());

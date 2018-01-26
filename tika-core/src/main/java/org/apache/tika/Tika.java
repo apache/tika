@@ -32,6 +32,7 @@ import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -180,7 +181,7 @@ public class Tika {
      */
     public String detect(InputStream stream, String name) throws IOException {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, name);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         return detect(stream, metadata);
     }
 

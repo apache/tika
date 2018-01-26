@@ -382,14 +382,14 @@ public class PackageParser extends AbstractParser {
         }
         if (name != null && name.length() > 0) {
             name = name.replace("\\", "/");
-            entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+            entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             attributes.addAttribute("", "id", "id", "CDATA", name);
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
 
-            entrydata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, name);
+            entrydata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, name);
         }
         return entrydata;
     }

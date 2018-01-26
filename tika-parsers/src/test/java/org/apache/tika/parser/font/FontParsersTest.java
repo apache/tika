@@ -57,7 +57,7 @@ public class FontParsersTest {
 
         assertEquals("application/x-font-adobe-metric", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("TestFullName", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Fri Jul 15 17:50:51 2011", metadata.get(Metadata.CREATION_DATE));
+        assertEquals("Fri Jul 15 17:50:51 2011", metadata.get(TikaCoreProperties.CREATED));
 
         assertEquals("TestFontName", metadata.get(MET_FONT_NAME));
         assertEquals("TestFullName", metadata.get(MET_FONT_FULL_NAME));
@@ -92,7 +92,6 @@ public class FontParsersTest {
         assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Open Sans Bold", metadata.get(TikaCoreProperties.TITLE));
 
-        assertEquals("2010-12-30T11:04:00Z", metadata.get(Metadata.CREATION_DATE));
         assertEquals("2010-12-30T11:04:00Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2011-05-05T12:37:53Z", metadata.get(TikaCoreProperties.MODIFIED));
 

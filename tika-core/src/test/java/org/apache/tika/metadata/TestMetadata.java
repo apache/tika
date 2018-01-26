@@ -370,7 +370,7 @@ public class TestMetadata {
        Metadata meta = new Metadata();
        Property compositeProperty = Property.composite(
              DublinCore.DESCRIPTION, new Property[] { 
-                   Property.internalText(Metadata.DESCRIPTION),
+                   TikaCoreProperties.DESCRIPTION,
                    Property.internalText("testDescriptionAlt")
              });
        String message = "composite description";
@@ -381,7 +381,6 @@ public class TestMetadata {
        // Fetch as the primary property on the composite
        assertEquals(message, meta.get(DublinCore.DESCRIPTION));
        // Fetch as the aliases
-       assertEquals(message, meta.get(Metadata.DESCRIPTION));
        assertEquals(message, meta.get("testDescriptionAlt"));
     }
 

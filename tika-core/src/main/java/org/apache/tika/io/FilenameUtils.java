@@ -83,7 +83,7 @@ public class FilenameUtils {
      * <p>
      * The goal of this is to get a filename from a path.
      * The package parsers and some other embedded doc
-     * extractors could put anything into Metadata.RESOURCE_NAME_KEY.
+     * extractors could put anything into TikaCoreProperties.RESOURCE_NAME_KEY.
      * <p>
      * If a careless client used that filename as if it were a
      * filename and not a path when writing embedded files,

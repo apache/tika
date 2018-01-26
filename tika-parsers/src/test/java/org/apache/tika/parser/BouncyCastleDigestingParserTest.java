@@ -45,7 +45,7 @@ import org.junit.Test;
 public class BouncyCastleDigestingParserTest extends TikaTest {
 
     private final static String P = TikaCoreProperties.TIKA_META_PREFIX+
-            "digest"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+            "digest"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     private final static int UNLIMITED = 1000000;//well, not really, but longer than input file
 

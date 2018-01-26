@@ -121,7 +121,7 @@ public class ImageMetadataExtractorTest {
         when(t1.getTagName()).thenReturn("Image Description");
         when(t1.getDescription()).thenReturn("t1");
         Tag t2 = mock(Tag.class);
-        when(t2.getTagName()).thenReturn(Metadata.KEYWORDS);
+        when(t2.getTagName()).thenReturn(TikaCoreProperties.SUBJECT.toString());
         when(t2.getDescription()).thenReturn("known");
         Tag t3 = mock(Tag.class);
         when(t3.getTagName()).thenReturn(TikaCoreProperties.DESCRIPTION.getName());
@@ -132,7 +132,7 @@ public class ImageMetadataExtractorTest {
         new ImageMetadataExtractor.CopyUnknownFieldsHandler().handle(d, metadata);
         assertEquals("t1", metadata.get("Image Description"));
         assertNull("keywords should be excluded from bulk copy because it is a defined field",
-                metadata.get(Metadata.KEYWORDS));
+                metadata.get(TikaCoreProperties.SUBJECT));
         assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
     }
 

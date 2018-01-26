@@ -17,7 +17,7 @@ package org.apache.tika.metadata;
  * limitations under the License.
  */
 public interface Database {
-    final static String PREFIX = "database"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+    final static String PREFIX = "database"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     Property TABLE_NAME = Property.externalTextBag(PREFIX+"table_name");
     Property COLUMN_COUNT = Property.externalText(PREFIX+"column_count");

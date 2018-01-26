@@ -37,6 +37,7 @@ import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -183,7 +184,7 @@ public abstract class TikaTest {
 
     protected XMLResult getXML(String filePath, Parser parser) throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, filePath);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filePath);
         return getXML(filePath, parser, metadata);
     }
 

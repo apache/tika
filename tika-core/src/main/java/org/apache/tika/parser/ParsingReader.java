@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -91,7 +92,7 @@ public class ParsingReader extends Reader {
     private static Metadata getMetadata(String name) {
         Metadata metadata = new Metadata();
         if (name != null && name.length() > 0) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, name);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         }
         return metadata;
     }
@@ -162,7 +163,7 @@ public class ParsingReader extends Reader {
             ParseContext context) throws IOException {
         this(parser, stream, metadata, context, new Executor() {
             public void execute(Runnable command) {
-                String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+                String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
                 if (name != null) {
                     name = "Apache Tika: " + name;
                 } else {

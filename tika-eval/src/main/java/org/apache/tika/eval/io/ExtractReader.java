@@ -20,6 +20,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -182,7 +183,7 @@ public class ExtractReader {
         //Let's hope the file name has a suffix that can
         //be used to determine the mime.  Could be wrong or missing,
         //but better than nothing.
-        m.set(Metadata.RESOURCE_NAME_KEY, fileSuffixes.originalFileName);
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileSuffixes.originalFileName);
 
         MediaType mimeType = tikaConfig.getMimeRepository().detect(null, m);
         if (mimeType != null) {

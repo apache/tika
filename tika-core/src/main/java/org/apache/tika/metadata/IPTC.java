@@ -92,7 +92,7 @@ public interface IPTC {
     * Maps to this IIM property: 2:100 Country/Primary Location Code
     */
    Property COUNTRY_CODE = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CountryCode");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CountryCode");
 
    /**
     * A textual description, including captions, of the item's content,
@@ -129,7 +129,7 @@ public interface IPTC {
     * Maps to this IIM property: 2:04 Object Attribute Reference
     */
    Property INTELLECTUAL_GENRE = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "IntellectualGenre");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "IntellectualGenre");
 
    /**
     * Keywords to express the subject of the content. Keywords may be free
@@ -173,7 +173,7 @@ public interface IPTC {
     * about the IPTC Scene-NewsCodes at www.newscodes.org.
     */
    Property SCENE_CODE = Property.internalTextBag(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "Scene");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Scene");
 
    /**
     * Specifies one or more Subjects from the IPTC Subject-NewsCodes taxonomy
@@ -185,7 +185,7 @@ public interface IPTC {
     * IPTC Subject-NewsCodes at www.newscodes.org.
     */
    Property SUBJECT_CODE = Property.internalTextBag(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "SubjectCode");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "SubjectCode");
 
    /**
     * Name of a sublocation the content is focussing on -- either the
@@ -204,7 +204,7 @@ public interface IPTC {
     * Maps to this IIM property: 2:92 Sublocation
     */
    Property SUBLOCATION = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "Location");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Location");
 
    /**
     * Designates the date and optionally the time the intellectual content was
@@ -343,7 +343,7 @@ public interface IPTC {
     * specification RFC 2426.
     */
    Property CREATORS_CONTACT_INFO = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CreatorContactInfo");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CreatorContactInfo");
 
    /**
     * Contains the job title of the person who created the content of this
@@ -407,7 +407,7 @@ public interface IPTC {
     * Note 2: the ContactInfo naming aligns with the vCard specification RFC 2426.
     */
    Property CONTACT_INFO_ADDRESS = Property.internalTextBag(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiAdrExtadr");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiAdrExtadr");
 
    /**
     * The contact information city part.
@@ -417,7 +417,7 @@ public interface IPTC {
     * Note 2: the ContactInfo naming aligns with the vCard specification RFC 2426.
     */
    Property CONTACT_INFO_CITY = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiAdrCity");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiAdrCity");
 
    /**
     * The contact information country part.
@@ -427,7 +427,7 @@ public interface IPTC {
     * Note 2: the ContactInfo naming aligns with the vCard specification RFC 2426.
     */
    Property CONTACT_INFO_COUNTRY = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiAdrCtry");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiAdrCtry");
 
    /**
     * The contact information email address part.
@@ -444,7 +444,7 @@ public interface IPTC {
     * specification RFC 2426.
     */
    Property CONTACT_INFO_EMAIL = Property.internalTextBag(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiEmailWork");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiEmailWork");
 
    /**
     * The contact information phone number part.
@@ -461,7 +461,7 @@ public interface IPTC {
     * specification RFC 2426.
     */
    Property CONTACT_INFO_PHONE = Property.internalTextBag(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiTelWork");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiTelWork");
 
    /**
     * The contact information part denoting the local postal code.
@@ -471,7 +471,7 @@ public interface IPTC {
     * Note 2: the ContactInfo naming aligns with the vCard specification RFC 2426.
     */
    Property CONTACT_INFO_POSTAL_CODE = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiAdrPcode");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiAdrPcode");
 
    /**
     * The contact information part denoting regional information such as state or province.
@@ -481,7 +481,7 @@ public interface IPTC {
     * Note 2: the ContactInfo naming aligns with the vCard specification RFC 2426.
     */
    Property CONTACT_INFO_STATE_PROVINCE = Property.internalText(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiAdrRegion");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiAdrRegion");
 
    /**
     * The contact information web address part. Multiple addresses can be given, separated by a comma.
@@ -494,7 +494,7 @@ public interface IPTC {
     * specification RFC 2426.
     */
    Property CONTACT_INFO_WEB_URL = Property.internalTextBag(
-         PREFIX_IPTC_CORE + Metadata.NAMESPACE_PREFIX_DELIMITER + "CiUrlWork");
+         PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiUrlWork");
 
    /**
     * As this metadata element pertains to distribution management, it was not
@@ -535,19 +535,19 @@ public interface IPTC {
     * Use the Model Age field for the age of model(s).
     */
    Property ADDITIONAL_MODEL_INFO = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AddlModelInfo");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AddlModelInfo");
 
    /**
     * A set of metadata about artwork or an object in the item
     */
    Property ARTWORK_OR_OBJECT = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "ArtworkOrObject");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ArtworkOrObject");
 
    /**
     * A set of metadata about artwork or an object in the item
     */
    Property ORGANISATION_CODE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "OrganisationInImageCode");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "OrganisationInImageCode");
 
    /**
     * A term to describe the content of the image by a value from a Controlled
@@ -558,7 +558,7 @@ public interface IPTC {
     * IPTC metadata or other user interfaces unless agreed by the IPTC.
     */
    Property CONTROLLED_VOCABULARY_TERM = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "CVterm");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CVterm");
 
    /**
     * A location the content of the item is about. For photos that is a
@@ -568,7 +568,7 @@ public interface IPTC {
     * the property Location Created should be used too.
     */
    Property LOCATION_SHOWN = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShown");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShown");
 
    /**
     * Age of the human model(s) at the time this image was taken in a model
@@ -578,7 +578,7 @@ public interface IPTC {
     * young models. Ages below 18 years should not be included.
     */
    Property MODEL_AGE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "ModelAge");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ModelAge");
 
    /**
     * Name of the organisation or company which is featured in the content.
@@ -587,14 +587,14 @@ public interface IPTC {
     * Organisation Code field.
     */
    Property ORGANISATION_NAME = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "OrganisationInImageName");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "OrganisationInImageName");
 
    /**
     * Name of a person the content of the item is about. For photos that is a
     * person shown in the image.
     */
    Property PERSON = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "PersonInImage");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PersonInImage");
 
    /**
     * Globally unique identifier for the item. It is created and applied by the
@@ -625,7 +625,7 @@ public interface IPTC {
     * its type and brand can be found in the Exif/technical metadata.
     */
    Property DIGITAL_IMAGE_GUID = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "DigImageGUID");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DigImageGUID");
 
    /**
     * The type of the source digital file.
@@ -635,13 +635,13 @@ public interface IPTC {
     * @deprecated
     */
    Property DIGITAL_SOURCE_FILE_TYPE = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "DigitalSourcefileType");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DigitalSourcefileType");
 
    /**
     * The type of the source of this digital image
     */
    Property DIGITAL_SOURCE_TYPE = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "DigitalSourceType");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DigitalSourceType");
 
    /**
     * Names or describes the specific event the content relates to.
@@ -652,7 +652,7 @@ public interface IPTC {
     * be named by this property too.
     */
    Property EVENT = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "Event");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Event");
 
    /**
     * Both a Registry Item Id and a Registry Organisation Id to record any
@@ -666,7 +666,7 @@ public interface IPTC {
     * fields should be made mandatory.
     */
    Property IMAGE_REGISTRY_ENTRY = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "RegistryId");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "RegistryId");
 
    /**
     * Identifies the most recent supplier of the item, who is not necessarily
@@ -681,7 +681,7 @@ public interface IPTC {
     * schema.
     */
    Property IMAGE_SUPPLIER = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplier");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplier");
 
    /**
     * Identifies the most recent supplier of the item, who is not necessarily
@@ -697,12 +697,12 @@ public interface IPTC {
     */
    Property IMAGE_SUPPLIER_ID = Property.composite(
            Property.internalText(
-                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierID"),
+                   PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierID"),
            new Property[] { Property.internalText(IPTC.IMAGE_SUPPLIER_ID_WRONG_CASE) });
    
    /** @deprecated use {@link IPTC#IMAGE_SUPPLIER_ID} */
    public static final String IMAGE_SUPPLIER_ID_WRONG_CASE = 
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierId";
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierId";
 
    /**
     * Identifies the most recent supplier of the item, who is not necessarily
@@ -717,7 +717,7 @@ public interface IPTC {
     * schema.
     */
    Property IMAGE_SUPPLIER_NAME = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierName");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierName");
 
    /**
     * Optional identifier assigned by the Image Supplier to the image.
@@ -726,7 +726,7 @@ public interface IPTC {
     * schema.
     */
    Property IMAGE_SUPPLIER_IMAGE_ID = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierImageID");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierImageID");
 
    /**
     * The date and optionally time when any of the IPTC photo metadata fields
@@ -742,7 +742,7 @@ public interface IPTC {
     * property of the XMP Basic scheme.
     */
    Property IPTC_LAST_EDITED = Property.internalDate(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "IptcLastEdited");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "IptcLastEdited");
 
    /**
     * The location the content of the item was created.
@@ -752,21 +752,21 @@ public interface IPTC {
     * used.
     */
    Property LOCATION_CREATED = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreated");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreated");
 
    /**
     * The maximum available height in pixels of the original photo from which
     * this photo has been derived by downsizing.
     */
    Property MAX_AVAIL_HEIGHT = Property.internalInteger(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "MaxAvailHeight");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MaxAvailHeight");
 
    /**
     * The maximum available width in pixels of the original photo from which
     * this photo has been derived by downsizing.
     */
    Property MAX_AVAIL_WIDTH = Property.internalInteger(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "MaxAvailWidth");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MaxAvailWidth");
 
    /**
     * The version number of the PLUS standards in place at the time of the
@@ -777,7 +777,7 @@ public interface IPTC {
     * "PLUS Version" should be set to the string "1.2.0"
     */
    Property PLUS_VERSION = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "Version");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Version");
 
    /**
     * Owner or owners of the copyright in the licensed image.
@@ -789,7 +789,7 @@ public interface IPTC {
     * schema.
     */
    Property COPYRIGHT_OWNER = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwner");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwner");
 
    /**
     * The ID of the owner or owners of the copyright in the licensed image.
@@ -802,12 +802,12 @@ public interface IPTC {
     */
    Property COPYRIGHT_OWNER_ID = Property.composite(
            Property.internalTextBag(
-                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerID"),
+                   PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerID"),
            new Property[] { Property.internalTextBag(IPTC.COPYRIGHT_OWNER_ID_WRONG_CASE) });
    
    /** @deprecated use {@link IPTC#COPYRIGHT_OWNER_ID} */
    public static final String COPYRIGHT_OWNER_ID_WRONG_CASE = 
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerId";
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerId";
 
    /**
     * The name of the owner or owners of the copyright in the licensed image.
@@ -819,7 +819,7 @@ public interface IPTC {
     * schema.
     */
    Property COPYRIGHT_OWNER_NAME = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerName");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerName");
 
    /**
     * Creator or creators of the image.
@@ -834,7 +834,7 @@ public interface IPTC {
     * schema.
     */
    Property IMAGE_CREATOR = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreator");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreator");
 
    /**
     * The ID of the creator or creators of the image.
@@ -850,12 +850,12 @@ public interface IPTC {
     */
    Property IMAGE_CREATOR_ID = Property.composite(
            Property.internalTextBag(
-                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorID"),
+                   PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorID"),
            new Property[] { Property.internalTextBag(IPTC.IMAGE_CREATOR_ID_WRONG_CASE) });
    
    /** @deprecated use {@link IPTC#IMAGE_CREATOR_ID} */
    public static final String IMAGE_CREATOR_ID_WRONG_CASE = 
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorId";
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorId";
 
    /**
     * The name of the creator or creators of the image.
@@ -870,7 +870,7 @@ public interface IPTC {
     * schema.
     */
    Property IMAGE_CREATOR_NAME = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorName");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorName");
 
    /**
     * A person or company that should be contacted to obtain a licence for
@@ -880,7 +880,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "Licensor");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Licensor");
 
    /**
     * The ID of the person or company that should be contacted to obtain a licence for
@@ -891,12 +891,12 @@ public interface IPTC {
     */
    Property LICENSOR_ID = Property.composite(
            Property.internalTextBag(
-                   PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorID"),
+                   PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorID"),
            new Property[] { Property.internalTextBag(IPTC.LICENSOR_ID_WRONG_CASE) });
    
    /** @deprecated use {@link IPTC#LICENSOR_ID} */
    public static final String LICENSOR_ID_WRONG_CASE = 
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorId";
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorId";
 
    /**
     * The name of the person or company that should be contacted to obtain a licence for
@@ -906,7 +906,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_NAME = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorName");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorName");
 
    /**
     * The city of a person or company that should be contacted to obtain a licence for
@@ -916,7 +916,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_CITY = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorCity");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorCity");
 
    /**
     * The country of a person or company that should be contacted to obtain a licence for
@@ -926,7 +926,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_COUNTRY = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorCountry");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorCountry");
 
    /**
     * The email of a person or company that should be contacted to obtain a licence for
@@ -936,7 +936,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_EMAIL = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorEmail");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorEmail");
 
    /**
     * The extended address of a person or company that should be contacted to obtain a licence for
@@ -946,7 +946,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_EXTENDED_ADDRESS = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorExtendedAddress");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorExtendedAddress");
 
    /**
     * The postal code of a person or company that should be contacted to obtain a licence for
@@ -956,7 +956,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_POSTAL_CODE = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorPostalCode");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorPostalCode");
 
    /**
     * The region of a person or company that should be contacted to obtain a licence for
@@ -966,7 +966,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_REGION = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorRegion");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorRegion");
 
    /**
     * The street address of a person or company that should be contacted to obtain a licence for
@@ -976,7 +976,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_STREET_ADDRESS = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorStreetAddress");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorStreetAddress");
 
    /**
     * The phone number of a person or company that should be contacted to obtain a licence for
@@ -986,7 +986,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_TELEPHONE_1 = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorTelephone1");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorTelephone1");
 
    /**
     * The phone number of a person or company that should be contacted to obtain a licence for
@@ -996,7 +996,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_TELEPHONE_2 = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorTelephone2");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorTelephone2");
 
    /**
     * The URL of a person or company that should be contacted to obtain a licence for
@@ -1006,7 +1006,7 @@ public interface IPTC {
     * schema.
     */
    Property LICENSOR_URL = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "LicensorURL");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorURL");
 
    /**
     * Age of the youngest model pictured in the image, at the time that the
@@ -1020,7 +1020,7 @@ public interface IPTC {
     * schema.
     */
    Property MINOR_MODEL_AGE_DISCLOSURE = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "MinorModelAgeDisclosure");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "MinorModelAgeDisclosure");
 
    /**
     * Optional identifier associated with each Model Release.
@@ -1029,7 +1029,7 @@ public interface IPTC {
     * schema.
     */
    Property MODEL_RELEASE_ID = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ModelReleaseID");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ModelReleaseID");
 
    /**
     * Summarizes the availability and scope of model releases authorizing usage
@@ -1043,7 +1043,7 @@ public interface IPTC {
     * schema.
     */
    Property MODEL_RELEASE_STATUS = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "ModelReleaseStatus");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ModelReleaseStatus");
 
    /**
     * Optional identifier associated with each Property Release.
@@ -1052,7 +1052,7 @@ public interface IPTC {
     * schema.
     */
    Property PROPERTY_RELEASE_ID = Property.internalTextBag(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "PropertyReleaseID");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PropertyReleaseID");
 
    /**
     * Summarises the availability and scope of property releases authorizing
@@ -1065,7 +1065,7 @@ public interface IPTC {
     * schema.
     */
    Property PROPERTY_RELEASE_STATUS = Property.internalText(
-         PREFIX_PLUS + Metadata.NAMESPACE_PREFIX_DELIMITER + "PropertyReleaseStatus");
+         PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PropertyReleaseStatus");
 
    /**
     * Contains any necessary copyright notice for claiming the intellectual
@@ -1074,13 +1074,13 @@ public interface IPTC {
     * property rights.
     */
    Property ARTWORK_OR_OBJECT_DETAIL_COPYRIGHT_NOTICE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOCopyrightNotice");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AOCopyrightNotice");
 
    /**
     * Contains the name of the artist who has created artwork or an object in the image.
     */
    Property ARTWORK_OR_OBJECT_DETAIL_CREATOR = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOCreator");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AOCreator");
 
    /**
     * Designates the date and optionally the time the artwork or object in the
@@ -1088,34 +1088,34 @@ public interface IPTC {
     * intellectual property rights.
     */
    Property ARTWORK_OR_OBJECT_DETAIL_DATE_CREATED = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AODateCreated");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AODateCreated");
 
    /**
     * The organisation or body holding and registering the artwork or object in
     * the image for inventory purposes.
     */
    Property ARTWORK_OR_OBJECT_DETAIL_SOURCE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOSource");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AOSource");
 
    /**
     * The inventory number issued by the organisation or body holding and
     * registering the artwork or object in the image.
     */
    Property ARTWORK_OR_OBJECT_DETAIL_SOURCE_INVENTORY_NUMBER = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOSourceInvNo");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AOSourceInvNo");
 
    /**
     * A reference for the artwork or object in the image.
     */
    Property ARTWORK_OR_OBJECT_DETAIL_TITLE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "AOTitle");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AOTitle");
 
    /**
     * Name of the city of a location. This element is at the fourth level of a
     * top-down geographical hierarchy.
     */
    Property LOCATION_SHOWN_CITY = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownCity");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShownCity");
 
    /**
     * The ISO code of a country of a location. This element is at the second
@@ -1126,14 +1126,14 @@ public interface IPTC {
     * scheme as no explicit indication can be provided.
     */
    Property LOCATION_SHOWN_COUNTRY_CODE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownCountryCode");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShownCountryCode");
 
    /**
     * The name of a country of a location. This element is at the second level
     * of a top-down geographical hierarchy.
     */
    Property LOCATION_SHOWN_COUNTRY_NAME = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownCountryName");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShownCountryName");
 
    /**
     * The name of a subregion of a country - a province or state - of a
@@ -1141,7 +1141,7 @@ public interface IPTC {
     * hierarchy.
     */
    Property LOCATION_SHOWN_PROVINCE_OR_STATE = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownProvinceState");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShownProvinceState");
 
    /**
     * Name of a sublocation. This sublocation name could either be the name of
@@ -1150,21 +1150,21 @@ public interface IPTC {
     * element is at the fifth level of a top-down geographical hierarchy.
     */
    Property LOCATION_SHOWN_SUBLOCATION = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownSublocation");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShownSublocation");
 
    /**
     * The name of a world region of a location. This element is at the first
     * (topI) level of a top- down geographical hierarchy.
     */
    Property LOCATION_SHOWN_WORLD_REGION = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationShownWorldRegion");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationShownWorldRegion");
 
    /**
     * Name of the city of a location. This element is at the fourth level of a
     * top-down geographical hierarchy.
     */
    Property LOCATION_CREATED_CITY = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedCity");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedCity");
 
    /**
     * The ISO code of a country of a location. This element is at the second
@@ -1175,14 +1175,14 @@ public interface IPTC {
     * scheme as no explicit indication can be provided.
     */
    Property LOCATION_CREATED_COUNTRY_CODE = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedCountryCode");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedCountryCode");
 
    /**
     * The name of a country of a location. This element is at the second level
     * of a top-down geographical hierarchy.
     */
    Property LOCATION_CREATED_COUNTRY_NAME = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedCountryName");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedCountryName");
 
    /**
     * The name of a subregion of a country - a province or state - of a
@@ -1190,7 +1190,7 @@ public interface IPTC {
     * hierarchy.
     */
    Property LOCATION_CREATED_PROVINCE_OR_STATE = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedProvinceState");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedProvinceState");
 
    /**
     * Name of a sublocation. This sublocation name could either be the name of
@@ -1199,14 +1199,14 @@ public interface IPTC {
     * element is at the fifth level of a top-down geographical hierarchy.
     */
    Property LOCATION_CREATED_SUBLOCATION = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedSublocation");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedSublocation");
 
    /**
     * The name of a world region of a location. This element is at the first
     * (topI) level of a top- down geographical hierarchy.
     */
    Property LOCATION_CREATED_WORLD_REGION = Property.internalText(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedWorldRegion");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LocationCreatedWorldRegion");
 
    /**
     * A unique identifier created by a registry and applied by the creator of
@@ -1214,13 +1214,13 @@ public interface IPTC {
     * identifier is linked to a corresponding Registry Organisation Identifier.
     */
    Property REGISTRY_ENTRY_CREATED_ITEM_ID = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "RegItemId");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "RegItemId");
 
    /**
     * An identifier for the registry which issued the corresponding Registry Image Id.
     */
    Property REGISTRY_ENTRY_CREATED_ORGANISATION_ID = Property.internalTextBag(
-         PREFIX_IPTC_EXT + Metadata.NAMESPACE_PREFIX_DELIMITER + "RegOrgId");
+         PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "RegOrgId");
 
 
    Property[] PROPERTY_GROUP_IPTC_CORE = new Property[] {

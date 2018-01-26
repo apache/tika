@@ -42,7 +42,7 @@ import org.apache.tika.utils.DateUtils;
  * A multi-valued metadata container.
  */
 public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
-        Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
+        Message, ClimateForcast, TIFF, TikaMimeKeys,
         Serializable {
 
     /** Serial version UID */
@@ -53,43 +53,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      */
     private Map<String, String[]> metadata = null;
 
-    /**
-     * The common delimiter used between the namespace abbreviation and the property name
-     */
-    public static final String NAMESPACE_PREFIX_DELIMITER = ":";
 
-    /** @deprecated use TikaCoreProperties#FORMAT */
-    public static final String FORMAT = "format";
-    /** @deprecated use TikaCoreProperties#IDENTIFIER */
-    public static final String IDENTIFIER = "identifier";
-    /** @deprecated use TikaCoreProperties#MODIFIED */
-    public static final String MODIFIED = "modified";
-    /** @deprecated use TikaCoreProperties#CONTRIBUTOR */
-    public static final String CONTRIBUTOR = "contributor";
-    /** @deprecated use TikaCoreProperties#COVERAGE */
-    public static final String COVERAGE = "coverage";
-    /** @deprecated use TikaCoreProperties#CREATOR */
-    public static final String CREATOR = "creator";
-    /** @deprecated use TikaCoreProperties#CREATED */
-    public static final Property DATE = Property.internalDate("date");
-    /** @deprecated use TikaCoreProperties#DESCRIPTION */
-    public static final String DESCRIPTION = "description";
-    /** @deprecated use TikaCoreProperties#LANGUAGE */
-    public static final String LANGUAGE = "language";
-    /** @deprecated use TikaCoreProperties#PUBLISHER */
-    public static final String PUBLISHER = "publisher";
-    /** @deprecated use TikaCoreProperties#RELATION */
-    public static final String RELATION = "relation";
-    /** @deprecated use TikaCoreProperties#RIGHTS */
-    public static final String RIGHTS = "rights";
-    /** @deprecated use TikaCoreProperties#SOURCE */
-    public static final String SOURCE = "source";
-    /** @deprecated use TikaCoreProperties#KEYWORDS */
-    public static final String SUBJECT = "subject";
-    /** @deprecated use TikaCoreProperties#TITLE */
-    public static final String TITLE = "title";
-    /** @deprecated use TikaCoreProperties#TYPE */
-    public static final String TYPE = "type";
 
     /**
      * Some parsers will have the date as a ISO-8601 string
@@ -298,16 +262,30 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      *          the metadata value.
      */
     public void add(final Property property, final String value) {
-        String[] values = metadata.get(property.getName());
-        if (values == null) {
-            set(property, value);
+
+        if (property == null) {
+            throw new NullPointerException("property must not be null");
+        }
+        if (property.getPropertyType() == PropertyType.COMPOSITE) {
+            add(property.getPrimaryProperty(), value);
+            if (property.getSecondaryExtractProperties() != null) {
+                for (Property secondaryExtractProperty : property.getSecondaryExtractProperties()) {
+                    add(secondaryExtractProperty, value);
+                }
+            }
         } else {
-             if (property.isMultiValuePermitted()) {
-                 set(property, appendedValues(values, value));
-             } else {
-                 throw new PropertyTypeException(property.getName() +
-                         " : " + property.getPropertyType());
-             }
+            String[] values = metadata.get(property.getName());
+
+            if (values == null) {
+                set(property, value);
+            } else {
+                if (property.isMultiValuePermitted()) {
+                    set(property, appendedValues(values, value));
+                } else {
+                    throw new PropertyTypeException(property.getName() +
+                            " : " + property.getPropertyType());
+                }
+            }
         }
     }
 

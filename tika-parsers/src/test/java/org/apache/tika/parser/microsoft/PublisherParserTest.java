@@ -43,7 +43,6 @@ public class PublisherParserTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Nick Burch", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Nick Burch", metadata.get(Metadata.AUTHOR));
             String content = handler.toString();
             assertContains("0123456789", content);
             assertContains("abcdef", content);

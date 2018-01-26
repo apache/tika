@@ -66,7 +66,7 @@ public class MSOfficeBinaryConverter extends AbstractConverter {
         createProperty( TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments" );
         createProperty( OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI,
                 "Company" );
-        createCommaSeparatedArray( TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject",
+        createCommaSeparatedArray( TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
                 PropertyOptions.ARRAY );
         createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
         createProperty( TikaCoreProperties.LANGUAGE, OfficeOpenXMLCore.NAMESPACE_URI, "language" );

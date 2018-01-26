@@ -32,6 +32,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.DefaultProbDetector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector.Builder;
 import org.junit.Before;
 import org.junit.Test;
@@ -175,7 +176,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
                     expected, mime);
 
             // Add resource name and test again
-            metadata.set(Metadata.RESOURCE_NAME_KEY, urlOrFileName);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             // mime = this.proDetector.detect(in, metadata).toString();
             mime = tika.detect(in, metadata).toString();
             assertEquals(urlOrFileName
@@ -198,7 +199,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
                 new ByteArrayInputStream(new byte[0]), new Metadata()));
 
         Metadata namehint = new Metadata();
-        namehint.set(Metadata.RESOURCE_NAME_KEY, "test.txt");
+        namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
         assertEquals(MediaType.TEXT_PLAIN.toString(),
                 tika.detect(new ByteArrayInputStream(new byte[0]), namehint));
 
@@ -249,18 +250,18 @@ public class ProbabilisticMimeDetectionTestWithTika {
 
         // With a filename, picks the right one
         metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.hello.world");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
         assertEquals(helloType.toString(),
                 tika.detect(new ByteArrayInputStream(helloWorld), metadata));
 
         metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.x-hello-world");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
         assertEquals(helloXType.toString(),
                 tika.detect(new ByteArrayInputStream(helloWorld), metadata));
 
         // Without, goes for the one that sorts last
         metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testingTESTINGtesting");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
         assertEquals(helloXType.toString(),
                 tika.detect(new ByteArrayInputStream(helloWorld), metadata));
     }

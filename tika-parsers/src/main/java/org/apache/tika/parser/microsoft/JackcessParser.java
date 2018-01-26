@@ -33,6 +33,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -50,9 +51,9 @@ import org.xml.sax.SAXException;
  */
 public class JackcessParser extends AbstractParser {
 
-    public static final String SUMMARY_PROPERTY_PREFIX = "MDB_SUMMARY_PROP" + Metadata.NAMESPACE_PREFIX_DELIMITER;
-    public static String MDB_PROPERTY_PREFIX = "MDB_PROP" + Metadata.NAMESPACE_PREFIX_DELIMITER;
-    public static String USER_DEFINED_PROPERTY_PREFIX = "MDB_USER_PROP" + Metadata.NAMESPACE_PREFIX_DELIMITER;
+    public static final String SUMMARY_PROPERTY_PREFIX = "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String MDB_PROPERTY_PREFIX = "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String USER_DEFINED_PROPERTY_PREFIX = "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static Property MDB_PW = Property.externalText("Password");
     private final static LinkResolver IGNORE_LINK_RESOLVER = new IgnoreLinkResolver();
 

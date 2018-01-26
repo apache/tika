@@ -146,7 +146,7 @@ public class AdobeFontMetricParser extends AbstractParser {
 
        // If appropriate date then store as metadata
        if( date != null ) {
-          addMetadataByProperty( metadata, Metadata.CREATION_DATE, date );
+          addMetadataByProperty( metadata, TikaCoreProperties.CREATED, date );
        }
     }
 }

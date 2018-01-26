@@ -23,6 +23,7 @@ import java.io.InputStream;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -32,9 +33,9 @@ import org.xml.sax.ContentHandler;
 public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
     
     private Property FIRST_NAME = Property.internalTextBag(
-            "custom" + Metadata.NAMESPACE_PREFIX_DELIMITER + "FirstName");
+            "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "FirstName");
     private Property LAST_NAME = Property.internalTextBag(
-            "custom" + Metadata.NAMESPACE_PREFIX_DELIMITER + "LastName");
+            "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LastName");
 
     @Test
     public void testDefaultBehavior() throws Exception {

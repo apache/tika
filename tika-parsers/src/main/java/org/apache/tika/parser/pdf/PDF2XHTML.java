@@ -226,7 +226,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                     imageNumber = inlineImageCounter++;
                 }
                 String fileName = "image" + imageNumber + "."+extension;
-                embeddedMetadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+                embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
 
                 // Output the img tag
                 AttributesImpl attr = new AttributesImpl();

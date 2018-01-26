@@ -77,7 +77,7 @@ class HtmlHandler extends TextContentHandler {
         this.extractScripts = extractScripts;
         // Try to determine the default base URL, if one has not been given
         if (metadata.get(Metadata.CONTENT_LOCATION) == null) {
-            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             if (name != null) {
                 name = name.trim();
                 try {
@@ -304,7 +304,7 @@ class HtmlHandler extends TextContentHandler {
         }
         //do anything with attrs?
         Metadata m = new Metadata();
-        m.set(Metadata.EMBEDDED_RESOURCE_TYPE,
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
         String src = scriptAtts.getValue("src");
         if (src != null) {

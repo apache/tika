@@ -51,7 +51,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
@@ -175,7 +175,7 @@ public class UnpackerResource {
             IOUtils.copy(inputStream, bos);
             byte[] data = bos.toByteArray();
 
-            String name = metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
 
             if (name == null) {

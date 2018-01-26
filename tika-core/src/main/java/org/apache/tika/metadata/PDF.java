@@ -23,19 +23,19 @@ package org.apache.tika.metadata;
  */
 public interface PDF {
 
-    String PDF_PREFIX = "pdf"+Metadata.NAMESPACE_PREFIX_DELIMITER;
-    String PDFA_PREFIX = "pdfa"+Metadata.NAMESPACE_PREFIX_DELIMITER;
-    String PDFAID_PREFIX = "pdfaid"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+    String PDF_PREFIX = "pdf"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PDFA_PREFIX = "pdfa"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String PDFAID_PREFIX = "pdfaid"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * Prefix to be used for properties that record what was stored
      * in the docinfo section (as opposed to XMP)
      */
     String PDF_DOC_INFO_PREFIX = PDF_PREFIX + "docinfo" +
-            Metadata.NAMESPACE_PREFIX_DELIMITER;
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     String PDF_DOC_INFO_CUSTOM_PREFIX = PDF_DOC_INFO_PREFIX+"custom"+
-            Metadata.NAMESPACE_PREFIX_DELIMITER;
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     Property DOC_INFO_CREATED = Property.internalDate(PDF_DOC_INFO_PREFIX + "created");
 

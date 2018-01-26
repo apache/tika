@@ -58,6 +58,8 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
@@ -249,24 +251,21 @@ public class PDFParser extends AbstractParser implements Initializable {
         extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, null, dcSchema);
         addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
-        addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
+        addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
         addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
-        addMetadata(metadata, "producer", info.getProducer());
         addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
         extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
 
         addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
 
-        // TODO: Move to description in Tika 2.0
-        addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
-        addMetadata(metadata, "trapped", info.getTrapped());
+        addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getKeywords());
+        addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
+        addMetadata(metadata, OfficeOpenXMLCore.SUBJECT, info.getSubject());
+
         addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
-            // TODO Remove these in Tika 2.0
-        addMetadata(metadata, "created", info.getCreationDate());
         addMetadata(metadata, PDF.DOC_INFO_CREATED, info.getCreationDate());
         addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
         Calendar modified = info.getModificationDate();
-        addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
         addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
         addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, info.getModificationDate());
 

@@ -26,6 +26,7 @@ import java.util.Date;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Generates document summaries for corpus analysis in the Open Relevance
@@ -39,8 +40,8 @@ public class TrecDocumentGenerator {
         Metadata met = new Metadata();
 
         String contents = tika.parseToString(new FileInputStream(file), met);
-        return new TrecDocument(met.get(Metadata.RESOURCE_NAME_KEY), contents,
-                met.getDate(Metadata.DATE));
+        return new TrecDocument(met.get(TikaCoreProperties.RESOURCE_NAME_KEY), contents,
+                met.getDate(TikaCoreProperties.CREATED));
 
     }
 

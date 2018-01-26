@@ -65,7 +65,7 @@ public class OldExcelParserTest extends TikaTest {
 
         // But no other metadata
         assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
-        assertEquals(null, metadata.get(Metadata.SUBJECT));
+        assertEquals(null, metadata.get(TikaCoreProperties.SUBJECT));
     }
 
     /**

@@ -36,53 +36,53 @@ public interface Photoshop {
     String PREFIX_PHOTOSHOP = "photoshop";
 
     Property AUTHORS_POSITION = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "AuthorsPosition");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "AuthorsPosition");
 
     // TODO Replace this with proper indexed choices support
     String[] _COLOR_MODE_CHOICES_INDEXED = { "Bitmap", "Greyscale", "Indexed Colour", 
             "RGB Color", "CMYK Colour", "Multi-Channel", "Duotone", "LAB Colour",
             "reserved", "reserved", "YCbCr Colour", "YCgCo Colour", "YCbCrK Colour"};
     Property COLOR_MODE = Property.internalClosedChoise(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "ColorMode",
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ColorMode",
             _COLOR_MODE_CHOICES_INDEXED);
     
     Property CAPTION_WRITER = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "CaptionWriter");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CaptionWriter");
 
     Property CATEGORY = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Category");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Category");
 
     Property CITY = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "City");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "City");
 
     Property COUNTRY = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Country");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Country");
 
     Property CREDIT = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Credit");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Credit");
 
     Property DATE_CREATED = Property.internalDate(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "DateCreated");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DateCreated");
 
     Property HEADLINE = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Headline");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Headline");
 
     Property INSTRUCTIONS = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Instructions");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Instructions");
 
     Property SOURCE = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Source");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Source");
 
     Property STATE = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "State");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "State");
 
     Property SUPPLEMENTAL_CATEGORIES = Property.internalTextBag(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "SupplementalCategories");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "SupplementalCategories");
 
     Property TRANSMISSION_REFERENCE = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "TransmissionReference");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "TransmissionReference");
 
     Property URGENCY = Property.internalText(
-            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Urgency");
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Urgency");
 
 }

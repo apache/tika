@@ -29,6 +29,7 @@ import java.net.URL;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -156,7 +157,7 @@ public class MimeDetectionTest {
             assertEquals(urlOrFileName + " is not properly detected: detected.", expected, mime);
 
             //Add resource name and test again
-            metadata.set(Metadata.RESOURCE_NAME_KEY, urlOrFileName);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             mime = this.mimeTypes.detect(in, metadata).toString();
             assertEquals(urlOrFileName + " is not properly detected after adding resource name.", expected, mime);
         } finally {
@@ -180,7 +181,7 @@ public class MimeDetectionTest {
                 new ByteArrayInputStream(new byte[0]), new Metadata()));
 
         Metadata namehint = new Metadata();
-        namehint.set(Metadata.RESOURCE_NAME_KEY, "test.txt");
+        namehint.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
                 new ByteArrayInputStream(new byte[0]), namehint));
 
@@ -231,16 +232,16 @@ public class MimeDetectionTest {
         
         // With a filename, picks the right one
         metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.hello.world");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.hello.world");
         assertEquals(helloType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
         
         metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.x-hello-world");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.x-hello-world");
         assertEquals(helloXType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
         
         // Without, goes for the one that sorts last
         metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testingTESTINGtesting");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testingTESTINGtesting");
         assertEquals(helloXType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
     }
 }

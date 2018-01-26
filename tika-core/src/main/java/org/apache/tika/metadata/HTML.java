@@ -24,6 +24,6 @@ public interface HTML {
      * is set in the embedded document's metadata
      */
     Property SCRIPT_SOURCE = Property.internalText(PREFIX_HTML_META +
-            Metadata.NAMESPACE_PREFIX_DELIMITER + "scriptSrc");
+            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "scriptSrc");
 
 }

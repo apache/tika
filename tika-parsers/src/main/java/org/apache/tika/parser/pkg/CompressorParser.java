@@ -44,6 +44,7 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -193,7 +194,7 @@ public class CompressorParser extends AbstractParser {
 
         try {
             Metadata entrydata = new Metadata();
-            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             if (name != null) {
                 if (name.endsWith(".tbz")) {
                     name = name.substring(0, name.length() - 4) + ".tar";
@@ -212,7 +213,7 @@ public class CompressorParser extends AbstractParser {
                 } else if (name.length() > 0) {
                     name = GzipUtils.getUncompressedFilename(name);
                 }
-                entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+                entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             }
 
             // Use the delegate parser to parse the compressed document

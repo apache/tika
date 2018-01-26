@@ -26,23 +26,23 @@ public interface QuattroPro {
     */
    Property ID = Property.internalText(
            QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "Id");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Id");
    /**
     * Version.
     */
    Property VERSION = Property.internalInteger(
            QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "Version");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Version");
    /**
     * Build.
     */
    Property BUILD = Property.internalInteger(
            QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "Build");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Build");
    /**
     * Lowest version.
     */
    Property LOWEST_VERSION = Property.internalInteger(
            QUATTROPRO_METADATA_NAME_PREFIX
-                   + Metadata.NAMESPACE_PREFIX_DELIMITER + "LowestVersion");
+                   + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LowestVersion");
 }

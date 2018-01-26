@@ -27,6 +27,7 @@ import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -64,7 +65,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         FilenameFilter filter = context.get(FilenameFilter.class);
         if (filter != null) {
-            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             if (name != null) {
                 return filter.accept(ABSTRACT_PATH, name);
             }
@@ -82,7 +83,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
            handler.startElement(XHTML, "div", "div", attributes);
         }
 
-        String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (name != null && name.length() > 0 && outputHtml) {
             handler.startElement(XHTML, "h1", "h1", new AttributesImpl());
             char[] chars = name.toCharArray();

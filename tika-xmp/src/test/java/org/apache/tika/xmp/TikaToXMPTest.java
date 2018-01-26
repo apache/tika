@@ -60,7 +60,7 @@ public class TikaToXMPTest {
         // language alternative
         metadata.set( TikaCoreProperties.TITLE, "title" );
         // comma separated array
-        metadata.set( TikaCoreProperties.KEYWORDS, "keyword1,keyword2" );
+        metadata.set( TikaCoreProperties.SUBJECT, "keyword1,keyword2" );
         // OOXML specific simple prop
         metadata.set( TikaCoreProperties.MODIFIER, "lastModifiedBy" );
     }
@@ -146,7 +146,7 @@ public class TikaToXMPTest {
         // language alternative
         tikaMetadata.set( TikaCoreProperties.TITLE, "title" );
         // array
-        tikaMetadata.set( TikaCoreProperties.KEYWORDS, new String[] { "keyword1", "keyword2" } );
+        tikaMetadata.set( TikaCoreProperties.SUBJECT, new String[] { "keyword1", "keyword2" } );
 
         XMPMeta xmp = TikaToXMP.convert( tikaMetadata, null );
 

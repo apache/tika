@@ -256,7 +256,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         // TODO: other metadata?
         Metadata embeddedMetadata = new Metadata();
-        embeddedMetadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+        embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         embeddedMetadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
         embeddedMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,

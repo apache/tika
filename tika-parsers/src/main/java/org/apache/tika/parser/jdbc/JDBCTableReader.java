@@ -41,7 +41,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -190,7 +190,7 @@ class JDBCTableReader {
         m.set(Database.PREFIX + "IS_CLOB_TRUNCATED", Boolean.toString(truncated));
         m.set(Metadata.CONTENT_TYPE, "text/plain; charset=UTF-8");
         m.set(Metadata.CONTENT_LENGTH, Integer.toString(readSize));
-        m.set(TikaMetadataKeys.RESOURCE_NAME_KEY,
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                 //just in case something screwy is going on with the column name
                 FilenameUtils.normalize(FilenameUtils.getName(columnName + "_" + rowNum + ".txt")));
 
@@ -224,7 +224,7 @@ class JDBCTableReader {
             handler.startElement("", "span", "span", attrs);
             String extension = embeddedDocumentUtil.getExtension(is, m);
 
-            m.set(TikaMetadataKeys.RESOURCE_NAME_KEY,
+            m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                     //just in case something screwy is going on with the column name
                     FilenameUtils.normalize(FilenameUtils.getName(columnName + "_" + rowNum + extension)));
             if (embeddedDocumentUtil.shouldParseEmbedded(m)) {

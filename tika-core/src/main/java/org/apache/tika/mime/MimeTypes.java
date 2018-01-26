@@ -38,6 +38,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
@@ -498,7 +499,7 @@ public final class MimeTypes implements Detector, Serializable {
         }
 
         // Get type based on resourceName hint (if available)
-        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (resourceName != null) {
             String name = null;
 

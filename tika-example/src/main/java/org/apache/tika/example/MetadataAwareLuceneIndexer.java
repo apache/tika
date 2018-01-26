@@ -31,6 +31,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Builds on the LuceneIndexer from Chapter 5 and adds indexing of Metadata.
@@ -63,15 +64,15 @@ public class MetadataAwareLuceneIndexer {
 
     public void indexWithDublinCore(File file) throws Exception {
         Metadata met = new Metadata();
-        met.add(Metadata.CREATOR, "Manning");
-        met.add(Metadata.CREATOR, "Tika in Action");
-        met.set(Metadata.DATE, new Date());
-        met.set(Metadata.FORMAT, tika.detect(file));
+        met.add(TikaCoreProperties.CREATOR, "Manning");
+        met.add(TikaCoreProperties.CREATOR, "Tika in Action");
+        met.set(TikaCoreProperties.CREATED, new Date());
+        met.set(TikaCoreProperties.FORMAT, tika.detect(file));
         met.set(DublinCore.SOURCE, file.toURI().toURL().toString());
-        met.add(Metadata.SUBJECT, "File");
-        met.add(Metadata.SUBJECT, "Indexing");
-        met.add(Metadata.SUBJECT, "Metadata");
-        met.set(Property.externalClosedChoise(Metadata.RIGHTS, "public",
+        met.add(TikaCoreProperties.SUBJECT, "File");
+        met.add(TikaCoreProperties.SUBJECT, "Indexing");
+        met.add(TikaCoreProperties.SUBJECT, "Metadata");
+        met.set(Property.externalClosedChoise(TikaCoreProperties.RIGHTS.getName(), "public",
                 "private"), "public");
         try (InputStream is = new FileInputStream(file)) {
             tika.parse(is, met);

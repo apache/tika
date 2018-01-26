@@ -190,7 +190,7 @@ public class MboxParser extends AbstractParser {
             }
             metadata.add(property, headerContent);
         } else if (headerTag.equalsIgnoreCase("Subject")) {
-            metadata.add(Metadata.SUBJECT, headerContent);
+            metadata.add(TikaCoreProperties.SUBJECT, headerContent);
         } else if (headerTag.equalsIgnoreCase("Date")) {
             try {
                 Date date = parseDate(headerContent);

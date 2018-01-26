@@ -63,7 +63,7 @@ public class MSOfficeXMLConverter extends AbstractConverter {
                 PropertyOptions.ARRAY_ORDERED );
         createProperty( TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments" );
         createProperty( TikaCoreProperties.IDENTIFIER, XMPConst.NS_DC, "identifier" );
-        createCommaSeparatedArray( TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject",
+        createCommaSeparatedArray( TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "subject",
                 PropertyOptions.ARRAY );
         createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
         createProperty( TikaCoreProperties.LANGUAGE, XMPConst.NS_DC, "language" );

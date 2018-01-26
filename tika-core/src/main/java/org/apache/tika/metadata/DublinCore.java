@@ -37,7 +37,7 @@ public interface DublinCore {
      * of Internet Media Types [MIME] defining computer media formats).
      */
 	Property FORMAT = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "format");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "format");
 
     /**
      * Recommended best practice is to identify the resource by means of
@@ -48,13 +48,13 @@ public interface DublinCore {
      * Book Number (ISBN).
      */
 	Property IDENTIFIER = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "identifier");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "identifier");
 
     /**
      * Date on which the resource was changed.
      */
 	Property MODIFIED = Property.internalDate(
-		PREFIX_DC_TERMS + Metadata.NAMESPACE_PREFIX_DELIMITER + "modified");
+		PREFIX_DC_TERMS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "modified");
 
     /**
      * An entity responsible for making contributions to the content of the
@@ -63,7 +63,7 @@ public interface DublinCore {
      * indicate the entity.
      */
 	Property CONTRIBUTOR = Property.internalTextBag(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "contributor");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "contributor");
 
     /**
      * The extent or scope of the content of the resource. Coverage will
@@ -76,7 +76,7 @@ public interface DublinCore {
      * numeric identifiers such as sets of coordinates or date ranges.
      */
 	Property COVERAGE = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "coverage");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "coverage");
 
     /**
      * An entity primarily responsible for making the content of the resource.
@@ -84,13 +84,13 @@ public interface DublinCore {
      * Typically, the name of a Creator should be used to indicate the entity.
      */
 	Property CREATOR = Property.internalTextBag(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "creator");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "creator");
 
     /**
      * Date of creation of the resource.
      */
         Property CREATED = Property.internalDate(
-                PREFIX_DC_TERMS + Metadata.NAMESPACE_PREFIX_DELIMITER + "created");
+                PREFIX_DC_TERMS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "created");
 
     /**
      * A date associated with an event in the life cycle of the resource.
@@ -100,7 +100,7 @@ public interface DublinCore {
      * format.
      */
 	Property DATE = Property.internalDate(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "date");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "date");
 
     /**
      * An account of the content of the resource. Description may include
@@ -109,7 +109,7 @@ public interface DublinCore {
      * the content.
      */
 	Property DESCRIPTION = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "description");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "description");
 
     /**
      * A language of the intellectual content of the resource. Recommended
@@ -119,7 +119,7 @@ public interface DublinCore {
      * "akk" for Akkadian, and "en-GB" for English used in the United Kingdom.
      */
 	Property LANGUAGE = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "language");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "language");
 
     /**
      * An entity responsible for making the resource available. Examples of
@@ -127,7 +127,7 @@ public interface DublinCore {
      * the name of a Publisher should be used to indicate the entity.
      */
 	Property PUBLISHER = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "publisher");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "publisher");
 
     /**
      * A reference to a related resource. Recommended best practice is to
@@ -135,7 +135,7 @@ public interface DublinCore {
      * a formal identification system.
      */
 	Property RELATION = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "relation");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "relation");
 
     /**
      * Information about rights held in and over the resource. Typically,
@@ -147,7 +147,7 @@ public interface DublinCore {
      * other rights with respect to the resource.
      */
 	Property RIGHTS = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "rights");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "rights");
 
     /**
      * A reference to a resource from which the present resource is derived.
@@ -157,7 +157,7 @@ public interface DublinCore {
      * system.
      */
 	Property SOURCE = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "source");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "source");
 
     /**
      * The topic of the content of the resource. Typically, a Subject will
@@ -167,14 +167,14 @@ public interface DublinCore {
      * scheme.
      */
 	Property SUBJECT = Property.internalTextBag(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "subject");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "subject");
 
     /**
      * A name given to the resource. Typically, a Title will be a name by
      * which the resource is formally known.
      */
 	Property TITLE = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "title");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "title");
 
     /**
      * The nature or genre of the content of the resource. Type includes terms
@@ -185,6 +185,6 @@ public interface DublinCore {
      * the resource, use the Format element.
      */
 	Property TYPE = Property.internalText(
-    		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "type");
+    		PREFIX_DC + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "type");
 
 }

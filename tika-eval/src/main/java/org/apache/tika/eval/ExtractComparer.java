@@ -89,7 +89,7 @@ public class ExtractComparer extends AbstractProfiler {
     }
 
     private static final String DIGEST_KEY_PREFIX = TikaCoreProperties.TIKA_META_PREFIX+
-            "digest"+Metadata.NAMESPACE_PREFIX_DELIMITER;
+            "digest"+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     public static void USAGE() {
         HelpFormatter helpFormatter = new HelpFormatter();

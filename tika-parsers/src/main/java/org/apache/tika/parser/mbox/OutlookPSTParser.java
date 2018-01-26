@@ -152,8 +152,8 @@ public class OutlookPSTParser extends AbstractParser {
 
     private void parserMailItem(XHTMLContentHandler handler, PSTMessage pstMail, Metadata mailMetadata,
                                 EmbeddedDocumentExtractor embeddedExtractor) throws SAXException, IOException {
-        mailMetadata.set(Metadata.RESOURCE_NAME_KEY, pstMail.getInternetMessageId());
-        mailMetadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
+        mailMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, pstMail.getInternetMessageId());
+        mailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pstMail.getInternetMessageId());
         mailMetadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
         mailMetadata.set(TikaCoreProperties.TITLE, pstMail.getSubject());
         mailMetadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
@@ -241,8 +241,8 @@ public class OutlookPSTParser extends AbstractParser {
                 xhtml.element("p", filename);
 
                 Metadata attachMeta = new Metadata();
-                attachMeta.set(Metadata.RESOURCE_NAME_KEY, filename);
-                attachMeta.set(Metadata.EMBEDDED_RELATIONSHIP_ID, filename);
+                attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+                attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
                 AttributesImpl attributes = new AttributesImpl();
                 attributes.addAttribute("", "class", "class", "CDATA", "embedded");
                 attributes.addAttribute("", "id", "id", "CDATA", filename);

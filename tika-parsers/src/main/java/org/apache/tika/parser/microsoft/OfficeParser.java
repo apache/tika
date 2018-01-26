@@ -327,7 +327,7 @@ public class OfficeParser extends AbstractOfficeParser {
         }
         for (Map.Entry<String, String> e : macros.entrySet()) {
             Metadata m = new Metadata();
-            m.set(Metadata.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
             if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
                 embeddedDocumentExtractor.parseEmbedded(

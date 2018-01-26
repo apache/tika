@@ -28,13 +28,14 @@ import java.util.Locale;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * FileSystem(FS)Resource wraps a file name.
  * <p/>
  * This class automatically sets the following keys in Metadata:
  * <ul>
- *     <li>Metadata.RESOURCE_NAME_KEY (file name)</li>
+ *     <li>TikaCoreProperties.RESOURCE_NAME_KEY (file name)</li>
  *     <li>Metadata.CONTENT_LENGTH</li>
  *     <li>FSProperties.FS_REL_PATH</li>
  *     <li>FileResource.FILE_EXTENSION</li>
@@ -76,7 +77,7 @@ public class FSFileResource implements FileResource {
 
         //need to set these now so that the filter can determine
         //whether or not to crawl this file
-        metadata.set(Metadata.RESOURCE_NAME_KEY, fullPath.getFileName().toString());
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath.getFileName().toString());
         long sz = -1;
         try {
             sz = Files.size(fullPath);

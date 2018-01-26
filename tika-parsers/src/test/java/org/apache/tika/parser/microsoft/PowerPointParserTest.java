@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -49,7 +50,6 @@ public class PowerPointParserTest extends TikaTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Sample Powerpoint Slide", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             String content = handler.toString();
             assertContains("Sample Powerpoint Slide", content);
             assertContains("Powerpoint X for Mac", content);
@@ -97,16 +97,20 @@ public class PowerPointParserTest extends TikaTest {
                 assertContains("Row " + row + " Col " + col, xml);
             }
         }
+
         assertContains("Keyword1 Keyword2", xml);
         assertEquals("Keyword1 Keyword2",
-                     metadata.get(TikaCoreProperties.KEYWORDS));
+                metadata.get(Office.KEYWORDS));
+        assertContains("Keyword1 Keyword2",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+
 
         assertContains("Subject is here", xml);
+        assertContains("Subject is here",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertEquals("Subject is here",
                      metadata.get(OfficeOpenXMLCore.SUBJECT));
-        // TODO: Remove subject in Tika 2.0
-        assertEquals("Subject is here",
-                     metadata.get(Metadata.SUBJECT));
+
 
         assertContains("Suddenly some Japanese text:", xml);
         // Special version of (GHQ)
@@ -201,11 +205,8 @@ public class PowerPointParserTest extends TikaTest {
         assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("JOUVIN ETIENNE", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.MODIFIER));
-        assertEquals("EJ04325S", metadata.get(Metadata.LAST_AUTHOR));
         assertEquals("2011-08-22T13:32:58Z", metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("2011-08-22T13:32:58Z", metadata.get(Metadata.DATE));
         assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
         assertEquals("1", metadata.get(Office.SLIDE_COUNT));
         assertEquals("3", metadata.get(Office.WORD_COUNT));
         assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
@@ -246,9 +247,9 @@ public class PowerPointParserTest extends TikaTest {
     public void testEmbeddedPDF() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.ppt");
         assertContains("Apache Tika project", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("3.pdf", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("3.pdf", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertContains("Hello World", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("4.pdf", metadataList.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("4.pdf", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test

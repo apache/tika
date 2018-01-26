@@ -46,6 +46,7 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
@@ -130,10 +131,10 @@ public class BundleIT {
     @Test
     public void testBundleDetection() throws Exception {
         Metadata metadataTXT = new Metadata();
-        metadataTXT.set(Metadata.RESOURCE_NAME_KEY, "test.txt");
+        metadataTXT.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
 
         Metadata metadataPDF = new Metadata();
-        metadataPDF.set(Metadata.RESOURCE_NAME_KEY, "test.pdf");
+        metadataPDF.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.pdf");
 
         // Simple type detection
         assertEquals(MediaType.TEXT_PLAIN, contentTypeDetector.detect(null, metadataTXT));

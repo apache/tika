@@ -77,8 +77,8 @@ public class TNEFParser extends AbstractParser {
         // Set the message subject if known
         String subject = msg.getSubject();
         if (subject != null && subject.length() > 0) {
-            // TODO: Move to title in Tika 2.0
-            metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE, subject);
+            metadata.set(TikaCoreProperties.TITLE, subject);
+            metadata.set(TikaCoreProperties.SUBJECT, subject);
         }
 
         // Recurse into the message body RTF
@@ -116,7 +116,7 @@ public class TNEFParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
         if (name != null)
-            metadata.set(Metadata.RESOURCE_NAME_KEY, name);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         if (type != null)
             metadata.set(Metadata.CONTENT_TYPE, type);
 

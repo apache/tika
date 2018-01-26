@@ -25,7 +25,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.xml.sax.Attributes;
@@ -71,7 +71,7 @@ public class FictionBookParser extends XMLParser {
                 binaryData.setLength(0);
                 metadata = new Metadata();
 
-                metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, attributes.getValue(ATTRIBUTE_ID));
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attributes.getValue(ATTRIBUTE_ID));
                 metadata.set(Metadata.CONTENT_TYPE, attributes.getValue(ATTRIBUTE_CONTENT_TYPE));
             }
         }

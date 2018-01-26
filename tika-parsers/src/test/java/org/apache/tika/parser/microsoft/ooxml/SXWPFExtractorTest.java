@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -194,7 +195,6 @@ public class SXWPFExtractorTest extends TikaTest {
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Sample Word Document", xmlResult.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Keith Bennett", xmlResult.metadata.get(Metadata.AUTHOR));
         assertTrue(xmlResult.xml.contains("Sample Word Document"));
 
     }
@@ -228,7 +228,6 @@ public class SXWPFExtractorTest extends TikaTest {
                 metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
         assertTrue(xml.contains("Sample Word Document"));
         // Check that custom headings came through
         assertTrue(xml.contains("<h1 class=\"title\">"));
@@ -383,12 +382,9 @@ public class SXWPFExtractorTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                metadata.get(Metadata.KEYWORDS));
+                metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", content);
-        // TODO: Remove subject in Tika 2.0
-        assertEquals("Subject is here",
-                metadata.get(Metadata.SUBJECT));
         assertEquals("Subject is here",
                 metadata.get(OfficeOpenXMLCore.SUBJECT));
 
@@ -419,21 +415,16 @@ public class SXWPFExtractorTest extends TikaTest {
                 metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Etienne Jouvin", metadata.get(TikaCoreProperties.MODIFIER));
-        assertEquals("Etienne Jouvin", metadata.get(Metadata.LAST_AUTHOR));
         assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2011-07-29T16:52:00Z", metadata.get(Metadata.CREATION_DATE));
         assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("2012-01-03T22:14:00Z", metadata.get(Metadata.DATE));
-        assertEquals("Microsoft Office Word", metadata.get(Metadata.APPLICATION_NAME));
         assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
         assertEquals("1", metadata.get(Office.PAGE_COUNT));
         assertEquals("2", metadata.get(Office.WORD_COUNT));
         assertEquals("My Title", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("My Keyword", metadata.get(TikaCoreProperties.KEYWORDS));
-        assertEquals("Normal.dotm", metadata.get(Metadata.TEMPLATE));
+        assertEquals("My Keyword", metadata.get(Office.KEYWORDS));
+        assertContains("My Keyword",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
         assertEquals("Normal.dotm", metadata.get(OfficeOpenXMLExtended.TEMPLATE));
-        // TODO: Remove subject in Tika 2.0
-        assertEquals("My subject", metadata.get(Metadata.SUBJECT));
         assertEquals("My subject", metadata.get(OfficeOpenXMLCore.SUBJECT));
         assertEquals("EDF-DIT", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("true", metadata.get("custom:myCustomBoolean"));

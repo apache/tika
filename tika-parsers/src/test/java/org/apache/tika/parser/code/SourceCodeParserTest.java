@@ -93,7 +93,7 @@ public class SourceCodeParserTest extends TikaTest {
 
   private Metadata createMetadata(String mimeType) {
     Metadata metadata = new Metadata();
-    metadata.add(Metadata.RESOURCE_NAME_KEY, "testFile");
+    metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testFile");
     metadata.add(Metadata.CONTENT_TYPE, mimeType);
     return metadata;
   }
