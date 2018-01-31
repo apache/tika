@@ -337,10 +337,15 @@
       </exclusions>
     </dependency>
 
-    <dependency>
+<!--    <dependency>
       <groupId>com.tdunning</groupId>
       <artifactId>json</artifactId>
       <version>1.8</version>
+    </dependency> -->
+    <dependency>
+      <groupId>com.github.openjson</groupId>
+      <artifactId>openjson</artifactId>
+      <version>1.0.10</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

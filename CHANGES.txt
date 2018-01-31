@@ -1,13 +1,17 @@
 Release 1.18 - ???
+   * Swap out com.tdunning:json for com.github.openjson:openjson to avoid
+     jar conflicts (TIKA-2556).
 
    * Add a parser for XPS (TIKA-2524).
+
+   * Mime magic for Dolby Digital AC3 and EAC3 files
 
    * Fixed bug where TesseractOCRParser ignores configured ImageMagickPath,
      and set rotation script to ignore Python warnings (TIKA-2509)
 
    * Upgrade geo-apis to 3.0.1 (TIKA-2535).
 
-Release 1.17 - December 8, 2017
+Release 1.17 - 12/8/2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
      ON Java 7.  The next versions will require Java 8***
