@@ -4,6 +4,10 @@ Release 2.0.0 - ???
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
    Other changes
+
+   * RFC822 with multipart/mixed, first text element should be treated
+     as the main body of the email, not an attachment (TIKA-2547).
+
    * Swap out com.tdunning:json for com.github.openjson:openjson to avoid
      jar conflicts (TIKA-2556).
 
