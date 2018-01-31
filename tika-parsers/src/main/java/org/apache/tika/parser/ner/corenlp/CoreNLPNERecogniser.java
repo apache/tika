@@ -29,8 +29,8 @@ import java.util.Set;
 
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.ner.NERecogniser;
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.github.openjson.JSONException;
+import com.github.openjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

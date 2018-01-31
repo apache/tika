@@ -4,6 +4,8 @@ Release 2.0.0 - ???
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
    Other changes
+   * Swap out com.tdunning:json for com.github.openjson:openjson to avoid
+     jar conflicts (TIKA-2556).
 
    * No longer hardcode HtmlParser for XML files in tika-server (TIKA-2551).
 
