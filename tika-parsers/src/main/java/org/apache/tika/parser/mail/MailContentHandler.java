@@ -33,6 +33,7 @@ import org.apache.james.mime4j.message.MaximalBodyDescriptor;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -147,6 +148,7 @@ class MailContentHandler implements ContentHandler {
     private boolean strictParsing = false;
     private final boolean extractAllAlternatives;
     private final EmbeddedDocumentExtractor extractor;
+    private final Detector detector;
 
     //this is used to buffer a multipart body that
     //keeps track of multipart/alternative and its children
@@ -167,6 +169,7 @@ class MailContentHandler implements ContentHandler {
 
         // Was an EmbeddedDocumentExtractor explicitly supplied?
         this.extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        this.detector = new EmbeddedDocumentUtil(context).getDetector();
     }
 
     @Override
@@ -184,16 +187,16 @@ class MailContentHandler implements ContentHandler {
         if (parts.size() > 0) {
             submd.set(Message.MULTIPART_SUBTYPE, parts.peek().getSubType());
             submd.set(Message.MULTIPART_BOUNDARY, parts.peek().getBoundary());
-        }   
+        }
         if (body instanceof MaximalBodyDescriptor) {
             MaximalBodyDescriptor maximalBody = (MaximalBodyDescriptor) body;
             String contentDispositionType = maximalBody.getContentDispositionType();
             if (contentDispositionType != null && !contentDispositionType.isEmpty()) {
-                StringBuilder contentDisposition = new StringBuilder( contentDispositionType );
+                StringBuilder contentDisposition = new StringBuilder(contentDispositionType);
                 Map<String, String> contentDispositionParameters = maximalBody.getContentDispositionParameters();
-                for ( Entry<String, String> param : contentDispositionParameters.entrySet() ) {
+                for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
                     contentDisposition.append("; ")
-                                      .append(param.getKey()).append("=\"").append(param.getValue()).append('"');
+                            .append(param.getKey()).append("=\"").append(param.getValue()).append('"');
                 }
 
                 String contentDispositionFileName = maximalBody.getContentDispositionFilename();
@@ -201,21 +204,53 @@ class MailContentHandler implements ContentHandler {
                     submd.set( Metadata.RESOURCE_NAME_KEY, contentDispositionFileName );
                 }
 
-                submd.set( Metadata.CONTENT_DISPOSITION, contentDisposition.toString() );
+                submd.set(Metadata.CONTENT_DISPOSITION, contentDisposition.toString());
             }
         }
         //if we're in a multipart/alternative or any one of its children
         //add the bodypart to the latest that was added
-        if (! extractAllAlternatives && alternativePartBuffer.size() > 0) {
+        if (!extractAllAlternatives && alternativePartBuffer.size() > 0) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             IOUtils.copy(is, bos);
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
+        } else if (!extractAllAlternatives && parts.size() == 1) {
+            //if you're at the first level of embedding
+            //and you're not in an alternative part block
+            //and you're text/html, put that in the body of the email
+            //otherwise treat as a regular attachment
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(is, bos);
+            byte[] bytes = bos.toByteArray();
+            if (isTextOrHtml(submd, bytes)) {
+                handleInlineBodyPart(new BodyContents(submd, bos.toByteArray()));
+            } else {
+                //else handle as you would any other embedded content
+                try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+                    handleEmbedded(tis, submd);
+                }
+            }
         } else {
             //else handle as you would any other embedded content
             try (TikaInputStream tis = TikaInputStream.get(is)) {
                 handleEmbedded(tis, submd);
             }
         }
+    }
+
+    private boolean isTextOrHtml(Metadata submd, byte[] bytes) {
+        String mediaTypeString = submd.get(Metadata.CONTENT_TYPE);
+        if (mediaTypeString != null && mediaTypeString.startsWith("text")) {
+            return true;
+        }
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            MediaType mediaType = detector.detect(tis, submd);
+            if (mediaType != null && mediaType.toString().startsWith("text")) {
+                return true;
+            }
+        } catch (IOException e) {
+
+        }
+        return false;
     }
 
     private void handleEmbedded(TikaInputStream tis, Metadata metadata) throws MimeException, IOException {
@@ -516,7 +551,7 @@ class MailContentHandler implements ContentHandler {
         }
 
         if (part instanceof BodyContents) {
-            handlePart((BodyContents)part);
+            handleInlineBodyPart((BodyContents)part);
             return;
         }
 
@@ -539,7 +574,7 @@ class MailContentHandler implements ContentHandler {
         }
     }
 
-    private void handlePart(BodyContents part) throws MimeException, IOException {
+    private void handleInlineBodyPart(BodyContents part) throws MimeException, IOException {
         String contentType = part.metadata.get(Metadata.CONTENT_TYPE);
         Parser parser = null;
         if (MediaType.TEXT_HTML.toString().equalsIgnoreCase(contentType)) {
@@ -555,6 +590,7 @@ class MailContentHandler implements ContentHandler {
 
 
         if (parser == null) {
+            //back off and treat it as an embedded chunk
             try (TikaInputStream tis = TikaInputStream.get(part.bytes)) {
                 handleEmbedded(tis, part.metadata);
             }

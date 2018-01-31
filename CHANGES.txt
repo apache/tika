@@ -1,6 +1,14 @@
 Release 1.18 - ???
+
+   * RFC822 with multipart/mixed, first text element should be treated
+     as the main body of the email, not an attachment (TIKA-2547).
+
    * Swap out com.tdunning:json for com.github.openjson:openjson to avoid
      jar conflicts (TIKA-2556).
+
+   * No longer hardcode HtmlParser for XML files in tika-server (TIKA-2551).
+
+   * Require Java 8 (TIKA-2553).
 
    * Add a parser for XPS (TIKA-2524).
 

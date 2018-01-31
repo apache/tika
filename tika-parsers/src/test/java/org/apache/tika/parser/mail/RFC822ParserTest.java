@@ -260,6 +260,25 @@ public class RFC822ParserTest extends TikaTest {
                 metadata.get(Metadata.SUBJECT));
     }
 
+    @Test
+    public void testMainBody() throws Exception {
+        //test that the first text or html chunk is processed in the main body
+        //not treated as an attachment. TIKA-2547
+        List<Metadata> metadataList = getRecursiveMetadata("testRFC822_oddfrom");
+        assertEquals(7, metadataList.size());
+        assertContains("Air Quality Planning", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+
+        //Make sure text alternative doesn't get treated as an attachment
+        metadataList = getRecursiveMetadata("testRFC822_normal_zip");
+        assertEquals(3, metadataList.size());
+        assertContains("This is the HTML part", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("application/zip", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+
+        metadataList = getRecursiveMetadata("testRFC822-txt-body");
+        assertEquals(2, metadataList.size());
+        assertContains("body 1", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
+
     /**
      * Test for TIKA-640, increase header max beyond 10k bytes
      */
