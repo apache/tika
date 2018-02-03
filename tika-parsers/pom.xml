@@ -44,6 +44,7 @@
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.8</pdfbox.version>
     <jempbox.version>1.8.13</jempbox.version>
+    <!-- the version of netcdf is old -->
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>0.8</sis.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
