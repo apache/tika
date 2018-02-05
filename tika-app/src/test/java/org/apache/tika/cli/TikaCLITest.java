@@ -282,6 +282,34 @@ public class TikaCLITest {
             FileUtils.deleteDirectory(tempFile);
         }
     }
+
+    @Test
+    public void testExtractTgz() throws Exception {
+        //TIKA-2564
+        File tempFile = File.createTempFile("tika-test-", "");
+        tempFile.delete();
+        tempFile.mkdir();
+
+        try {
+            String[] params = {"--extract-dir="+tempFile.getAbsolutePath(),"-z", resourcePrefix + "/test-documents.tgz"};
+
+            TikaCLI.main(params);
+
+            StringBuffer allFiles = new StringBuffer();
+            for (String f : tempFile.list()) {
+                if (allFiles.length() > 0) allFiles.append(" : ");
+                allFiles.append(f);
+            }
+
+            File expectedTAR = new File(tempFile, "test-documents.tar");
+
+            assertExtracted(expectedTAR, allFiles.toString());
+        } finally {
+            FileUtils.deleteDirectory(tempFile);
+        }
+    }
+
+
     protected static void assertExtracted(File f, String allFiles) {
 
         assertTrue(

@@ -1041,7 +1041,9 @@ public class TikaCLI {
             if (name == null) {
                 name = "file" + count++;
             }
-
+            if (! inputStream.markSupported()) {
+                inputStream = TikaInputStream.get(inputStream);
+            }
             MediaType contentType = detector.detect(inputStream, metadata);
 
             if (name.indexOf('.')==-1 && contentType!=null) {
