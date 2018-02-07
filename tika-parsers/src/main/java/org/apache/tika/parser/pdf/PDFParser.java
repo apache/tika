@@ -222,6 +222,9 @@ public class PDFParser extends AbstractParser implements Initializable {
         metadata.set(AccessPermissions.CAN_PRINT_DEGRADED,
                 Boolean.toString(ap.canPrintDegraded()));
 
+        if (document.getDocumentCatalog().getLanguage() != null) {
+            metadata.set(TikaCoreProperties.LANGUAGE, document.getDocumentCatalog().getLanguage());
+        }
 
         //now go for the XMP
         Document dom = loadDOM(document.getDocumentCatalog().getMetadata(), metadata, context);

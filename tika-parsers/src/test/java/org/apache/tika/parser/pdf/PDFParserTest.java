@@ -1370,6 +1370,14 @@ public class PDFParserTest extends TikaTest {
         assertFalse(path + " should have thrown exception", noEx);
     }
 
+    @Test
+    public void testLanguageMetadata() throws Exception {
+        assertEquals("de-CH", getXML("testPDF-custommetadata.pdf")
+                .metadata.get(TikaCoreProperties.LANGUAGE));
+        assertEquals("zh-CN", getXML("testPDFFileEmbInAnnotation.pdf")
+                .metadata.get(TikaCoreProperties.LANGUAGE));
+    }
+
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
