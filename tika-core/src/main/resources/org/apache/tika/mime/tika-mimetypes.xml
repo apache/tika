@@ -6481,7 +6481,12 @@
     </magic>
     <!-- Single-output or no output function definition -->
     <magic priority="40">
-      <match value="function [a-zA-Z][A-Za-z0-9_]{0,5}" type="regex" offset="0"/>
+      <match value="function [a-zA-Z][A-Za-z0-9_]{0,62}\\s*=" type="regex" offset="0"/>
+    </magic>
+    <!-- No-output function definition in short form -->
+    <!-- Be careful to avoid a false-match on JS functions! -->
+    <magic priority="40">
+      <match value="function [a-zA-Z][A-Za-z0-9_]{0,62}[\\r\\n]" type="regex" offset="0"/>
     </magic>
     <!-- Two matlab-style comments fairly early in the file -->
     <magic priority="25">
