@@ -216,6 +216,9 @@ public class ZipContainerDetector implements Detector {
                 return null;
         } catch (IOException e) {
             return null;
+        } catch (SecurityException e) {
+            //TIKA-2571
+            throw e;
         } catch (RuntimeException e) {
             return null;
         } catch (InvalidFormatException e) {
