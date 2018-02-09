@@ -32,6 +32,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -64,7 +65,7 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("<p>[1] This is a footnote.", xml);
         assertContains("<p>This is the header text.</p>", xml);
         assertContains("<p>This is the footer text.</p>", xml);
-        assertContains("<p>Here is a text box</p>", xml);
+        assertContainsCount("<p>Here is a text box</p>", xml, 1);
         assertContains("<p>Bold ", xml);
         assertContains("italic underline superscript subscript", xml);
         assertContains("underline", xml);
@@ -293,5 +294,53 @@ public class PowerPointParserTest extends TikaTest {
     @Test(expected = EncryptedDocumentException.class)
     public void testEncrypted() throws Exception {
         getXML("testPPT_protected_passtika.ppt");
+    }
+
+    @Test
+    public void testGroups() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.ppt");
+        assertEquals(3, metadataList.size());
+        String content =  metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        //this tests that we're ignoring text shapes at depth=0
+        //i.e. POI has already included them in the slide's getTextParagraphs()
+        assertContainsCount("Text box1", content, 1);
+
+
+        //the WordArt and text box count tests will fail
+        //if this content is available via getTextParagraphs() of the slide in POI
+        //i.e. when POI is fixed, these tests will fail, and
+        //we'll have to remove the workaround in HSLFExtractor's extractGroupText(...)
+        assertContainsCount("WordArt1", content, 1);
+        assertContainsCount("WordArt2", content, 1);
+        assertContainsCount("Ungrouped text box", content, 1);//should only be 1
+        assertContains("Text box2", content);
+        assertContains("Text box3", content);
+        assertContains("Text box4", content);
+        assertContains("Text box5", content);
+
+        //see below -- need to extract hyperlinks
+        assertContains("tika", content);
+        assertContains("MyTitle", content);
+
+        assertEquals("/embedded-1",
+                metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+
+        assertEquals("/embedded-2",
+                metadataList.get(2).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+
+    }
+
+    @Ignore("until we add smart text extraction")
+    @Test
+    public void testSmartArtText() throws Exception {
+        String content = getXML("testPPT_groups.ppt").xml;
+        assertContains("smart1", content);
+    }
+
+    @Ignore("until we fix hyperlink extraction from text boxes")
+    @Test
+    public void testHyperlinksInTextBoxes() throws Exception {
+        String content = getXML("testPPT_groups.ppt").xml;
+        assertContains("href=\"http://tika.apache.org", content);
     }
 }

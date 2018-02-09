@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -30,15 +31,18 @@ import org.apache.poi.hslf.record.DocInfoListContainer;
 import org.apache.poi.hslf.record.RecordTypes;
 import org.apache.poi.hslf.record.VBAInfoAtom;
 import org.apache.poi.hslf.record.VBAInfoContainer;
+import org.apache.poi.hslf.usermodel.HSLFGroupShape;
 import org.apache.poi.hslf.usermodel.HSLFMasterSheet;
 import org.apache.poi.hslf.usermodel.HSLFNotes;
 import org.apache.poi.hslf.usermodel.HSLFObjectData;
 import org.apache.poi.hslf.usermodel.HSLFPictureData;
+import org.apache.poi.hslf.usermodel.HSLFPictureShape;
 import org.apache.poi.hslf.usermodel.HSLFShape;
 import org.apache.poi.hslf.usermodel.HSLFSlide;
 import org.apache.poi.hslf.usermodel.HSLFSlideShow;
 import org.apache.poi.hslf.usermodel.HSLFTable;
 import org.apache.poi.hslf.usermodel.HSLFTableCell;
+import org.apache.poi.hslf.usermodel.HSLFTextBox;
 import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
 import org.apache.poi.hslf.usermodel.HSLFTextRun;
 import org.apache.poi.hslf.usermodel.HSLFTextShape;
@@ -116,6 +120,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     extractTableText(xhtml, (HSLFTable) shape);
                 }
             }
+
+            extractGroupText(xhtml, slide.getShapes(), 0);
 
             // Slide footer, if present
             if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
@@ -216,6 +222,33 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             extractMacros(ss, xhtml);
         }
         xhtml.endElement("div");
+    }
+
+    //Extract any text that's within an HSLFTextShape that's a descendant of
+    //an HSLFGroupShape.
+    private void extractGroupText(XHTMLContentHandler xhtml, List<HSLFShape> shapes, int depth) throws SAXException {
+
+        if (shapes == null) {
+            return;
+        }
+
+        //Only process items with depth > 0 because they should have been included
+        //already in slide.getTextParagraphs above.
+
+        //However, cells are considered grouped within the table, so ignore them.
+        //I don't believe that cells can be inside a text box or other
+        //grouped text containing object, so always ignore them.
+        List<List<HSLFTextParagraph>> paragraphList = new ArrayList<>();
+        for (HSLFShape shape : shapes) {
+            if (shape instanceof HSLFGroupShape) {
+                //work recursively, HSLFGroupShape can contain HSLFGroupShape
+                extractGroupText(xhtml, ((HSLFGroupShape)shape).getShapes(), depth+1);
+            } else if (shape instanceof HSLFTextShape
+                    && ! (shape instanceof HSLFTableCell) && depth > 0) {
+                paragraphList.add(((HSLFTextShape)shape).getTextParagraphs());
+            }
+        }
+        textRunsToText(xhtml, paragraphList);
     }
 
     private void extractMacros(HSLFSlideShow ppt, XHTMLContentHandler xhtml) {
