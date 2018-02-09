@@ -1,5 +1,7 @@
 Release 1.18 - ???
 
+   * Extract text from grouped text boxes in PPT (TIKA-2569).
+
    * Extract language metadata item from PDF files via Matt Sheppard (TIKA-2559)
 
    * RFC822 with multipart/mixed, first text element should be treated

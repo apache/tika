@@ -1741,6 +1741,32 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    public void testPPTXGroups() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.pptx");
+        assertEquals(3, metadataList.size());
+        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        assertContains("WordArt1", content);
+        assertContains("WordArt2", content);
+        assertContainsCount("Ungrouped text box", content, 1);//should only be 1
+        assertContains("Text box1", content);
+        assertContains("Text box2", content);
+        assertContains("Text box3", content);
+        assertContains("Text box4", content);
+        assertContains("Text box5", content);
+
+
+        assertContains("href=\"http://tika.apache.org", content);
+        assertContains("smart1", content);
+        assertContains("MyTitle", content);
+
+        assertEquals("/image1.jpg",
+                metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+
+        assertEquals("/thumbnail.jpeg",
+                metadataList.get(2).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+    }
+
+    @Test
     public void testXLSXPhoneticStrings() throws Exception {
         //This unit test and test file come from Apache POI 51519.xlsx
 
