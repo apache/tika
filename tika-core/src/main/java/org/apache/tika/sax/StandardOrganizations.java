@@ -159,8 +159,17 @@ public class StandardOrganizations {
 	 * @return the regular expression containing the most important technical standard organizations.
 	 */
 	public static String getOrganzationsRegex() {
-		String regex = "(" + String.join("|", organizations.keySet()) + ")";
-		
-		return regex;
+		StringBuilder sb = new StringBuilder();
+		sb.append("(");
+		int i = 0;
+		for (String org : organizations.keySet()) {
+			if (i > 0) {
+				sb.append("|");
+			}
+			sb.append(org);
+			i++;
+		}
+		sb.append(")");
+		return sb.toString();
 	}
 }
