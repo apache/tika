@@ -34,6 +34,7 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -465,12 +466,20 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      *           if an input error occurred
      */
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
-        String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
+        ArrayList<String> cmd = new ArrayList<>(Arrays.asList(
+                config.getTesseractPath() + getTesseractProg(), input.getPath(),  output.getPath(), "-l",
                 config.getLanguage(), "-psm", config.getPageSegMode(),
-                config.getOutputType().name().toLowerCase(Locale.US),
+                config.getOutputType().name().toLowerCase(Locale.US)
+        ));
+        for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
+            cmd.add("-c");
+            cmd.add(entry.getKey() + "=" + entry.getValue());
+        }
+        cmd.addAll(Arrays.asList(
                 "-c", "page_separator=" + config.getPageSeparator(),
                 "-c",
-                (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0"};
+                (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0"
+        ));
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
         final Process process = pb.start();
