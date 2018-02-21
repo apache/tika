@@ -87,3 +87,8 @@ Issue Tracker
 -------------
 
 If you encounter errors in Tika or want to suggest an improvement or a new feature, please visit the [Tika issue tracker](https://issues.apache.org/jira/browse/TIKA). There you can also find the latest information on known issues and recent bug fixes and enhancements.
+
+Continuous Integration
+----------------------
+
+Apache Tika has automated builds and tests running at [builds.apache.org](https://builds.apache.org/view/T/view/Tika/).
