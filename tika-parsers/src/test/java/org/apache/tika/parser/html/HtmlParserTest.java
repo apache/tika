@@ -1279,7 +1279,7 @@ public class HtmlParserTest extends TikaTest {
         Metadata imgMetadata = metadataList.get(1);
         assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
         assertContains("moscow-birds",
-                Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
+                Arrays.asList(imgMetadata.getValues(Metadata.SUBJECT)));
     }
 
     @Test
@@ -1295,7 +1295,7 @@ public class HtmlParserTest extends TikaTest {
         Metadata imgMetadata = metadataList.get(1);
         assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));
         assertContains("moscow-birds",
-                Arrays.asList(imgMetadata.getValues(TikaCoreProperties.SUBJECT)));
+                Arrays.asList(imgMetadata.getValues(Metadata.SUBJECT)));
     }
 
     @Test
