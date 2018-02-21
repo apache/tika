@@ -586,7 +586,7 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.9.2</version>
+      <version>2.9.4</version>
     </dependency>
 
     <!-- Java ImageIO plugin for JBIG2 support (often used in PDF)
