@@ -5,6 +5,9 @@ Release 2.0.0 - ???
 
    Other changes
 
+   * Extract files embedded in HTML and javascript inside HTML
+     that are stored in the Data URI scheme (TIKA-2563).
+
    * Extract text from grouped text boxes in PPT (TIKA-2569).
 
    * Extract language metadata item from PDF files via Matt Sheppard (TIKA-2559)
