@@ -139,7 +139,9 @@ public class TesseractOCRParserTest extends TikaTest {
                 TesseractOCRConfig.OUTPUT_TYPE.HOCR);
 
         assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
-        assertContains("Happy</span>", contents);
+        // Tesseract 3.x tags this with just a <span>.
+        // Tesseract 4.0 tags this with <span><strong>.
+        assertContainsEither("Happy</span>", "Happy</strong></span>", contents);
 
     }
 
