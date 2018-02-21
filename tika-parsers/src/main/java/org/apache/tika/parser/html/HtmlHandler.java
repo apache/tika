@@ -24,6 +24,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -36,6 +37,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.utils.DataURIScheme;
+import org.apache.tika.parser.utils.DataURISchemeParseException;
+import org.apache.tika.parser.utils.DataURISchemeUtil;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
@@ -57,6 +61,7 @@ class HtmlHandler extends TextContentHandler {
     private final ParseContext context;
     private final boolean extractScripts;
     private final StringBuilder title = new StringBuilder();
+    private final DataURISchemeUtil dataURISchemeUtil = new DataURISchemeUtil();
     private int bodyLevel = 0;
     private int discardLevel = 0;
     private int titleLevel = 0;
@@ -169,6 +174,10 @@ class HtmlHandler extends TextContentHandler {
         }
 
         title.setLength(0);
+        String value = atts.getValue("src");
+        if (value != null && value.startsWith("data:")) {
+            handleDataURIScheme(value);
+        }
     }
 
     /**
@@ -231,6 +240,15 @@ class HtmlHandler extends TextContentHandler {
                 // And resolve relative links. Eventually this should be pushed
                 // into the HtmlMapper code.
                 if (URI_ATTRIBUTES.contains(normAttrName)) {
+                    //if this is a src="data: " element,
+                    //we've handled that as an embedded file, don't include the full thing
+                    //here
+                    if (normAttrName.equals("src")) {
+                        String v = newAttributes.getValue(att);
+                        if (v.startsWith("data:")) {
+                            newAttributes.setValue(att, "data:");
+                        }
+                    }
                     newAttributes.setValue(att, resolve(newAttributes.getValue(att)));
                 } else if (isObject && "codebase".equals(normAttrName)) {
                     newAttributes.setValue(att, codebase);
@@ -296,6 +314,35 @@ class HtmlHandler extends TextContentHandler {
         }
     }
 
+    private void handleDataURIScheme(String string) throws SAXException {
+        DataURIScheme dataURIScheme = null;
+        try {
+            dataURIScheme = dataURISchemeUtil.parse(string);
+        } catch (DataURISchemeParseException e) {
+            //swallow
+            return;
+        }
+
+        //do anything with attrs?
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        if (dataURIScheme.getMediaType() != null) {
+            m.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
+        }
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            try (InputStream stream = dataURIScheme.getInputStream()) {
+                embeddedDocumentExtractor.parseEmbedded(
+                        stream, xhtml, m, false
+                );
+            } catch (IOException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            }
+        }
+    }
+
     private void writeScript() throws SAXException {
         //don't write an attached macro if there is no content
         //we may want to revisit this behavior
@@ -313,6 +360,24 @@ class HtmlHandler extends TextContentHandler {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        //try to scrape dataURISchemes from javascript
+        List<DataURIScheme> dataURISchemes = dataURISchemeUtil.extract(script.toString());
+        for (DataURIScheme dataURIScheme : dataURISchemes) {
+            Metadata dataUriMetadata = new Metadata();
+            dataUriMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+            dataUriMetadata.set(Metadata.CONTENT_TYPE,
+                    dataURIScheme.getMediaType().toString());
+            if (embeddedDocumentExtractor.shouldParseEmbedded(dataUriMetadata)) {
+                try (InputStream dataURISchemeInputStream = dataURIScheme.getInputStream()) {
+                    embeddedDocumentExtractor.parseEmbedded(dataURISchemeInputStream,
+                            xhtml, dataUriMetadata, false);
+                } catch (IOException e) {
+                    //swallow
+                }
+            }
+        }
+
         try (InputStream stream = new ByteArrayInputStream(
                 script.toString().getBytes(StandardCharsets.UTF_8))) {
             embeddedDocumentExtractor.parseEmbedded(
