@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -100,6 +102,9 @@ public class TesseractOCRConfig implements Serializable {
     // whether or not to apply rotation calculated by the rotation.py script
     private boolean applyRotation = false;
 
+    // See addOtherTesseractConfig.
+    private Map<String, String> otherTesseractConfig = new HashMap<>();
+
 
     /**
      * Default contructor.
@@ -178,6 +183,7 @@ public class TesseractOCRConfig implements Serializable {
         setApplyRotation(
         		getProp(props, "applyRotation", getApplyRotation()));
 
+        loadOtherTesseractConfig(props);
     }
 
     /**
@@ -517,6 +523,28 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
+     * @see #addOtherTesseractConfig(String, String)
+     */
+    public Map<String, String> getOtherTesseractConfig() {
+        return otherTesseractConfig;
+    }
+
+    /**
+     * Add a key-value pair to pass to Tesseract using its -c command line option.
+     * To see the possible options, run tesseract --print-parameters.
+     *
+     * You may also add these parameters in TesseractOCRConfig.properties; any
+     * key-value pair in the properties file where the key contains an underscore
+     * is passed directly to Tesseract.
+     *
+     * @param key
+     * @param value
+     */
+    public void addOtherTesseractConfig(String key, String value) {
+        otherTesseractConfig.put(key, value);
+    }
+
+    /**
      * Get property from the properties file passed in.
      *
      * @param properties     properties file to read from.
@@ -565,4 +593,18 @@ public class TesseractOCRConfig implements Serializable {
                 property, propVal));
     }
 
+    /**
+     * Populate otherTesseractConfig from the given properties.
+     * This assumes that any key-value pair where the key contains
+     * an underscore is an option to be passed opaquely to Tesseract.
+     *
+     * @param properties properties file to read from.
+     */
+    private void loadOtherTesseractConfig(Properties properties) {
+        for (String k : properties.stringPropertyNames()) {
+            if (k.contains("_")) {
+                otherTesseractConfig.put(k, properties.getProperty(k));
+            }
+        }
+    }
 }
