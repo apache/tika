@@ -468,6 +468,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
                 config.getLanguage(), "-psm", config.getPageSegMode(),
                 config.getOutputType().name().toLowerCase(Locale.US),
+                "-c", "page_separator=" + config.getPageSeparator(),
                 "-c",
                 (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0"};
         ProcessBuilder pb = new ProcessBuilder(cmd);
