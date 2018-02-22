@@ -32,7 +32,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * {@link #ignorableWhitespace(char[], int, int)}) passed to the decorated
  * content handler contain only valid XML characters. All invalid characters
  * are replaced with the Unicode replacement character U+FFFD (though a
- * subclass may change this by overriding the writeReplacement method).
+ * subclass may change this by overriding the {@link #writeReplacement(Output)}  method).
  * <p>
  * The XML standard defines the following Unicode character ranges as
  * valid XML characters:
