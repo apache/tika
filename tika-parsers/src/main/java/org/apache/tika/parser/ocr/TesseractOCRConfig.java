@@ -319,7 +319,7 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * Set output type from ocr process.  Default is "txt", but can be "hocr".
-     * Default value is 120s.
+     * Default value is {@link OUTPUT_TYPE#TXT}.
      */
     public void setOutputType(OUTPUT_TYPE outputType) {
         this.outputType = outputType;
@@ -488,7 +488,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Sets whether or not a rotation value should be calculated and passed to ImageMagick.
      * 
-     * @param true to calculate and apply rotation, false to skip.  Default is false, true required Python installed.
+     * @param applyRotation to calculate and apply rotation, false to skip.  Default is false, true required Python installed.
      */
     public void setApplyRotation(boolean applyRotation) {
     	this.applyRotation = applyRotation;
