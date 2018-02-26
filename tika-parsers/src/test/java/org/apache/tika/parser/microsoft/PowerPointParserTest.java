@@ -342,4 +342,17 @@ public class PowerPointParserTest extends TikaTest {
         String content = getXML("testPPT_groups.ppt").xml;
         assertContains("href=\"http://tika.apache.org", content);
     }
+
+    @Test
+    public void testEmbeddedXLSInOLEObject() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_oleWorkbook.ppt");
+        debug(metadataList);
+        assertEquals(3, metadataList.size());
+        Metadata xlsx = metadataList.get(1);
+        assertContains("<h1>Sheet1</h1>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("<td>1</td>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                xlsx.get(Metadata.CONTENT_TYPE));
+
+    }
 }

@@ -1,5 +1,8 @@
 Release 1.18 - ???
 
+   * Extract xlsx files embedded in OLE objects within PPT and PPTX
+     via Brian McColgan (TIKA-2588).
+
    * Extract files embedded in HTML and javascript inside HTML
      that are stored in the Data URI scheme (TIKA-2563).
 

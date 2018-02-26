@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,6 +41,8 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
@@ -299,15 +302,25 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             DirectoryNode root = fs.getRoot();
             POIFSDocumentType type = POIFSDocumentType.detectType(root);
 
-            if (root.hasEntry("CONTENTS")
-                    && root.hasEntry("\u0001Ole")
-                    && root.hasEntry("\u0001CompObj")) {
+            if (root.hasEntry("\u0001Ole")
+                    && root.hasEntry("\u0001CompObj")
+                    && (
+                            root.hasEntry("CONTENTS") || root.hasEntry("Package")
+                    )) {
                 // TIKA-704: OLE 2.0 embedded non-Office document?
                 //TODO: figure out if the equivalent of OLE 1.0's
                 //getCommand() and getFileName() exist for OLE 2.0 to populate
                 //TikaCoreProperties.ORIGINAL_RESOURCE_NAME
-                stream = TikaInputStream.get(
-                        fs.createDocumentInputStream("CONTENTS"));
+                if (root.hasEntry("CONTENTS")) {
+                    stream = TikaInputStream.get(
+                            fs.createDocumentInputStream("CONTENTS"));
+                } else if (root.hasEntry("Package")) {
+                    //TIKA-2588
+                    stream = TikaInputStream.get(
+                            fs.createDocumentInputStream("Package"));
+                } else {
+                    throw new IllegalStateException("Shouldn't ever arrive here; please open a ticket on our jira");
+                }
                 if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor.parseEmbedded(
                             stream, new EmbeddedContentHandler(handler),
