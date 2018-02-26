@@ -5,6 +5,9 @@ Release 2.0.0 - ???
 
    Other changes
 
+   * Allow for RFC822 detection for files starting with "dkim-"
+     and/or "x-" via Andreas Meier (TIKA-2578 and TIKA-2587)
+
    * Extract xlsx files embedded in OLE objects within PPT and PPTX
      via Brian McColgan (TIKA-2588).
 
