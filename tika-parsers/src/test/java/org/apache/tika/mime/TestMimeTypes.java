@@ -897,8 +897,15 @@ public class TestMimeTypes {
         // MBOX
         assertTypeDetection("headers.mbox", "application/mbox");
         
-        // Thunderbird - doesn't currently work by name
-        assertTypeByNameAndData("message/rfc822", "testThunderbirdEml.eml");
+        // Thunderbird
+        assertTypeDetection("testThunderbirdEml.eml", "message/rfc822");
+
+        //dkim header
+        assertTypeDetection("testThunderbirdEml.eml", "message/rfc822");
+
+        //x- custom header
+        assertTypeDetection("testRFC822_x-.eml", "message/rfc822");
+
     }
     
     @Test
