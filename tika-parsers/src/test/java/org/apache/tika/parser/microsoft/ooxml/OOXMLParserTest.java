@@ -1816,6 +1816,17 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
         assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
     }
+
+    @Test
+    public void testEmbeddedXLSInOLEObject() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_oleWorkbook.pptx");
+        assertEquals(4, metadataList.size());
+        Metadata xlsx = metadataList.get(2);
+        assertContains("<h1>Sheet1</h1>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("<td>1</td>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                xlsx.get(Metadata.CONTENT_TYPE));
+    }
 }
 
 

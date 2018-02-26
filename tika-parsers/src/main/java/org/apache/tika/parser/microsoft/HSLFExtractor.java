@@ -487,7 +487,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             MediaType mt = getTikaConfig().getDetector().detect(stream, new Metadata());
                             mediaType = mt.toString();
                         }
-                        if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")) {
+                        if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
+                                || mediaType.equals("application/x-tika-msoffice")) {
                             try(NPOIFSFileSystem npoifs = new NPOIFSFileSystem(new CloseShieldInputStream(stream))) {
                                 handleEmbeddedOfficeDoc(npoifs.getRoot(), objID, xhtml);
                             }
