@@ -5174,6 +5174,7 @@
     </magic>
     <glob pattern="*.tiff"/>
     <glob pattern="*.tif"/>
+    <sub-class-of type="application/x-tar"/>
   </mime-type>
 
   <mime-type type="image/tiff-fx"/>
