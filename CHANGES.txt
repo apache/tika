@@ -40,6 +40,9 @@ Release 2.0.0 - ???
    * Mime definition and magic improvements for text-based programming
      and config formats (TIKA-2554, TIKA-2567, TIKA-1141)
 
+   * Added local Docker image build using dockerfile-maven-plugin to allow
+     images to be built from source (TIKA-1518).
+
 Release 1.17 - 12/8/2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
