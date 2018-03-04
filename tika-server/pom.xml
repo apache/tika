@@ -273,7 +273,7 @@
           </execution>
         </executions>
         <configuration>
-          <repository>apache/tika</repository>
+          <repository>apache/tika-server</repository>
           <tag>${project.version}</tag>
           <buildArgs>
             <JAR_FILE>tika-server-${project.version}.jar</JAR_FILE>
