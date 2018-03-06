@@ -81,11 +81,17 @@
       <groupId>org.gagravarr</groupId>
       <artifactId>vorbis-java-tika</artifactId>
       <version>${vorbis.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>2.1.8</version>
+      <version>2.1.10</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -96,11 +102,17 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
-      <version>2.1.2</version>
+      <version>2.1.4</version>
       <exclusions>
         <exclusion>
           <groupId>org.bouncycastle</groupId>
           <artifactId>bcprov-jdk15on</artifactId>
+        </exclusion>
+        <!-- to avoid maven-enforcer convergence error,
+          let's make this explicit -->
+        <exclusion>
+          <groupId>com.healthmarketscience.jackcess</groupId>
+          <artifactId>jackcess</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -316,7 +328,7 @@
     <dependency>
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
-      <version>1.8.3</version>
+      <version>1.8.4</version>
     </dependency>
 
     <dependency>
@@ -350,7 +362,7 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.8.1</version>
+      <version>${gson.version}</version>
     </dependency>
 
     <!-- logging dependencies -->
@@ -375,7 +387,7 @@
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
-      <version>1.7</version>
+      <version>2.15.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -395,6 +407,10 @@
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom2</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -409,6 +425,10 @@
         <exclusion>
           <groupId>org.jsoup</groupId>
           <artifactId>jsoup</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom2</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -431,6 +451,14 @@
           <groupId>org.slf4j</groupId>
           <artifactId>jcl-over-slf4j</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom2</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -448,6 +476,9 @@
           <artifactId>httpclient</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>        <exclusion>
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpmime</artifactId>
         </exclusion>
@@ -552,7 +583,7 @@
     <dependency>
       <groupId>org.apache.ctakes</groupId>
       <artifactId>ctakes-core</artifactId>
-      <version>3.2.2</version>
+      <version>4.0.0</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -579,9 +610,62 @@
           <groupId>org.springframework</groupId>
           <artifactId>spring-core</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.opennlp</groupId>
+          <artifactId>opennlp-tools</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.uima</groupId>
+          <artifactId>uimafit-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.uima</groupId>
+          <artifactId>uimaj-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jdom</groupId>
+          <artifactId>jdom2</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
+    <!-- need to specify this to avoid
+      version clash within ctakes-core 4.0.0 -->
+    <dependency>
+      <groupId>org.apache.uima</groupId>
+      <artifactId>uimafit-core</artifactId>
+      <version>2.2.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.uima</groupId>
+          <artifactId>uimaj-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- need to specify this to avoid
+      version clash within ctakes-core 4.0.0 -->
+    <dependency>
+      <groupId>org.apache.uima</groupId>
+      <artifactId>uimaj-core</artifactId>
+      <version>2.9.0</version>
+    </dependency>
 
+    <dependency>
+      <groupId>org.jdom</groupId>
+      <artifactId>jdom2</artifactId>
+      <version>2.0.6</version>
+    </dependency>
     <!--Jackson parse String to JSON-->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -614,6 +698,12 @@
       <artifactId>jai-imageio-jpeg2000</artifactId>
       <version>1.3.0</version>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+            <groupId>com.github.jai-imageio</groupId>
+            <artifactId>jai-imageio-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
   </dependencies>

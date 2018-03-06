@@ -307,7 +307,8 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <commons.compress.version>1.14</commons.compress.version>
-    <commons.io.version>2.5</commons.io.version>
+    <commons.io.version>2.6</commons.io.version>
+    <gson.version>2.8.1</gson.version>
     <cxf.version>3.0.16</cxf.version>
     <slf4j.version>1.7.24</slf4j.version>
   </properties>
@@ -325,7 +326,8 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <version>2.3</version>
+        <!-- if this version contains commons-io 2.6, remove hard-coded commons-io version below -->
+        <version>2.4.1</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
           <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
@@ -335,7 +337,11 @@
             <bundledSignature>jdk-deprecated</bundledSignature>
             <bundledSignature>jdk-non-portable</bundledSignature>
             <bundledSignature>jdk-internal</bundledSignature>
-            <bundledSignature>commons-io-unsafe-${commons.io.version}</bundledSignature>
+            <!--2.6 is the same as 2.5
+              TODO: change back to the following when we upgrade forbidden apis
+              <bundledSignature>commons-io-unsafe-${commons.io.version}</bundledSignature>
+            -->
+            <bundledSignature>commons-io-unsafe-2.5</bundledSignature>
           </bundledSignatures>
         </configuration>
         <executions>
@@ -376,6 +382,24 @@
            <version>1.9.5</version>
          </dependency>
        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.0.0-M1</version>
+        <executions>
+          <execution>
+            <id>enforce</id>
+            <configuration>
+              <rules>
+                <dependencyConvergence/>
+              </rules>
+            </configuration>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
