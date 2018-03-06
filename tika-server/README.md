@@ -15,6 +15,23 @@ $ java -jar tika-server/target/tika-server.jar --help
                         if there is an exception during 'parse'
 ```
 
+Running via Docker
+------------------
+Assuming you have Docker installed, you can build you own local image using the:
+
+`mvn dockerfile:build`
+
+The image will be named apache/tika with the tag being the version being built.
+For example, building Apache Tika Server 1.17 will result in an image of `apache/tika-server:1.17`
+
+You can then run this image by executing the following, replacing `1.17` with your build version:
+
+`docker run -d -p 9998:9998 apache/tika-server:1.17`
+
+This will load Apache Tika Server and expose its interface on:
+
+`http://localhost:9998`
+
 Usage
 -----
 Usage examples from command line with `curl` utility:

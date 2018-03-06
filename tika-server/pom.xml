@@ -261,6 +261,26 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>com.spotify</groupId>
+        <artifactId>dockerfile-maven-plugin</artifactId>
+        <version>1.3.7</version>
+        <executions>
+          <execution>
+            <id>default</id>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <repository>apache/tika-server</repository>
+          <tag>${project.version}</tag>
+          <buildArgs>
+            <JAR_FILE>tika-server-${project.version}.jar</JAR_FILE>
+          </buildArgs>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <executions>
