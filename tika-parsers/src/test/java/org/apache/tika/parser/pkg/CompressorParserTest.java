@@ -42,6 +42,7 @@ public class CompressorParserTest extends TikaTest {
         NOT_COVERED.add(MediaType.application("x-brotli"));
         NOT_COVERED.add(MediaType.application("x-lz4-block"));
         NOT_COVERED.add(MediaType.application("x-snappy-raw"));
+        NOT_COVERED.add(MediaType.application("deflate64"));
     }
 
     @Test
@@ -58,6 +59,12 @@ public class CompressorParserTest extends TikaTest {
         //xml parser throws an exception for test1.xml
         //for now, be content that the container file is correctly identified
         assertContains("test1.xml", r.xml);
+    }
+
+    @Test
+    public void testZstd() throws Exception {
+        XMLResult r = getXML("testZSTD.zstd");
+        assertContains("0123456789", r.xml);
     }
 
     @Test

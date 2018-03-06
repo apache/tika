@@ -75,10 +75,12 @@ public class CompressorParser extends AbstractParser {
     private static final MediaType ZLIB = MediaType.application("zlib");
     private static final MediaType LZMA = MediaType.application("x-lzma");
     private static final MediaType LZ4_FRAMED = MediaType.application("x-lz4");
+    private static final MediaType ZSTD = MediaType.application("zstd");
+    private static final MediaType DEFLATE64= MediaType.application("deflate64");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS,
-                    XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA);
+                    XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA, ZSTD);
 
     private int memoryLimitInKb = 100000;//100MB
 
@@ -141,6 +143,10 @@ public class CompressorParser extends AbstractParser {
             return SNAPPY_RAW;
         } else if (CompressorStreamFactory.LZMA.equals(name)) {
             return LZMA;
+        } else if (CompressorStreamFactory.ZSTANDARD.equals(name)) {
+            return ZSTD;
+        } else if (CompressorStreamFactory.DEFLATE64.equals(name)) {
+            return DEFLATE64;
         } else {
             return MediaType.OCTET_STREAM;
         }

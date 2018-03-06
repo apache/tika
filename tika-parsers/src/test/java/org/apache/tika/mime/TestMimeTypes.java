@@ -379,6 +379,8 @@ public class TestMimeTypes {
        // For spanned zip files, the .zip file doesn't have the header, it's the other parts
        assertTypeByData("application/octet-stream", "test-documents-spanned.zip");
        assertTypeByData("application/zip",          "test-documents-spanned.z01");
+
+       assertTypeDetection("testZSTD.zstd", "application/zstd");
     }
     
     @Test

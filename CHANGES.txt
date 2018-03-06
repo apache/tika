@@ -1,5 +1,8 @@
 Release 1.18 - ???
 
+   * Add detection and parsing of zstd (if user provides
+     com.github.luben:zstd-jni) via Andreas Meier (TIKA-2576)
+
    * Allow for RFC822 detection for files starting with "dkim-"
      and/or "x-" via Andreas Meier (TIKA-2578 and TIKA-2587)
 
