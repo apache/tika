@@ -43,7 +43,20 @@
     <dependency>
       <groupId>com.optimaize.languagedetector</groupId>
       <artifactId>language-detector</artifactId>
-      <version>0.5</version>
+      <version>0.6</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- exclude and then add back in to avoid
+         conflicts with edu.ucar:cdm in tika-parsers -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>17.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
@@ -53,7 +66,7 @@
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
-      <version>2.6.1</version>
+      <version>${gson.version}</version>
     </dependency>
 
     <!-- Test dependencies -->
