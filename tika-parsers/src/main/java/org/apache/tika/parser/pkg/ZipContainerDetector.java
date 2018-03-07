@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -56,6 +57,19 @@ import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
  * formats to figure out exactly what the file is.
  */
 public class ZipContainerDetector implements Detector {
+
+    //Regrettably, some tiff files can be incorrectly identified
+    //as tar files.  We need this ugly workaround to rule out TIFF.
+    //If commons-compress ever chooses to take over TIFF detection
+    //we can remove all of this. See TIKA-2591.
+    private final static MediaType TIFF = MediaType.image("tiff");
+    private final static byte[][] TIFF_SIGNATURES = new byte[3][];
+    static {
+        TIFF_SIGNATURES[0] = new byte[]{'M','M',0x00,0x2a};
+        TIFF_SIGNATURES[1] = new byte[]{'I','I',0x2a, 0x00};
+        TIFF_SIGNATURES[2] = new byte[]{'M','M', 0x00, 0x2b};
+    }
+
     private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
 
     // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
@@ -86,8 +100,11 @@ public class ZipContainerDetector implements Detector {
             int length = tis.peek(prefix);
 
             MediaType type = detectArchiveFormat(prefix, length);
-            if (PackageParser.isZipArchive(type)
-                    && TikaInputStream.isTikaInputStream(input)) {
+
+            if (type == TIFF) {
+                return TIFF;
+            } else if (PackageParser.isZipArchive(type)
+                        && TikaInputStream.isTikaInputStream(input)) {
                 return detectZipFormat(tis);
             } else if (!type.equals(MediaType.OCTET_STREAM)) {
                 return type;
@@ -112,7 +129,28 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
+    private static boolean isTiff(byte[] prefix) {
+        for (byte[] sig : TIFF_SIGNATURES) {
+            if(arrayStartWith(sig, prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean arrayStartWith(byte[] needle, byte[] haystack) {
+        for (int i = 0; i < needle.length; i++) {
+            if (haystack[i] != needle[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private static MediaType detectArchiveFormat(byte[] prefix, int length) {
+        if (isTiff(prefix)) {
+            return TIFF;
+        }
         try {
             String name = ArchiveStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
             return PackageParser.getMediaType(name);
