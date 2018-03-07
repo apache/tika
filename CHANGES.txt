@@ -1,5 +1,8 @@
 Release 1.18 - ???
 
+   * Revert to listenForAllRecords=false in ExcelExtractor
+     via Grigoriy Alekseev (TIKA-2590)
+
    * Add workaround to identify TIFFs that might confuse
      commons-compress's tar detection via Daniel Schmidt
      (TIKA-2591)
