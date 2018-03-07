@@ -5,6 +5,10 @@ Release 2.0.0 - ???
 
    Other changes
 
+   * Ignore non-IANA supported charsets in HTML meta-headers
+     during charset detection in HTMLEncodingDetector
+     via Andreas Meier (TIKA-2592)
+
    * Add detection and parsing of zstd (if user provides
      com.github.luben:zstd-jni) via Andreas Meier (TIKA-2576)
 
