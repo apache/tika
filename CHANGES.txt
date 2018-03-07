@@ -5,6 +5,10 @@ Release 2.0.0 - ???
 
    Other changes
 
+   * Add workaround to identify TIFFs that might confuse
+     commons-compress's tar detection via Daniel Schmidt
+     (TIKA-2591)
+
    * Ignore non-IANA supported charsets in HTML meta-headers
      during charset detection in HTMLEncodingDetector
      via Andreas Meier (TIKA-2592)
