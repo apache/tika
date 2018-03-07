@@ -104,19 +104,16 @@
                         <include name="tika-eval/target/tika-eval-${project.version}.jar*" />
                       </fileset>
                     </copy>
-                    <checksum algorithm="MD5" fileext=".md5">
+                    <checksum algorithm="SHA-512" fileext=".sha512">
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.zip" />
                         <include name="*.?ar" />
                       </fileset>
                     </checksum>
-                    <checksum algorithm="SHA1" fileext=".sha">
-                      <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.zip" />
-                        <include name="*.?ar" />
-                      </fileset>
-                    </checksum>
-                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA1" property="checksum" />
+                    <checksum
+                            file="${basedir}/target/${project.version}/tika-${project.version}-src.zip"
+                            algorithm="SHA-512"
+                            property="checksum" />
                     <echo file="${basedir}/target/vote.txt">
 From: ${username}@apache.org
 To: dev@tika.apache.org
@@ -129,7 +126,7 @@ A candidate for the Tika ${project.version} release is available at:
 The release candidate is a zip archive of the sources in:
   https://github.com/apache/tika/tree/{project.version}-rcN/
 
-The SHA1 checksum of the archive is
+The SHA-512 checksum of the archive is
   ${checksum}.
 
 In addition, a staged maven repository is available here:
