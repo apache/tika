@@ -284,7 +284,6 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
             // Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
-            listenForAllRecords = true;
             if (listenForAllRecords) {
                 hssfRequest.addListenerForAllRecords(formatListener);
             } else {
