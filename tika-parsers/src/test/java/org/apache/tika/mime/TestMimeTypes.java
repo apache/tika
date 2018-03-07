@@ -909,6 +909,9 @@ public class TestMimeTypes {
         //x- custom header
         assertTypeDetection("testRFC822_x-.eml", "message/rfc822");
 
+        //embedded xhtml and img
+        assertTypeDetection("testEML_embedded_xhtml_and_img.eml", "message/rfc822");
+
     }
     
     @Test

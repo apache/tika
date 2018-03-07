@@ -5693,6 +5693,7 @@
       <match value="From:" type="stringignorecase" offset="0"/>
       <match value="Received:" type="stringignorecase" offset="0"/>
       <match value="Message-ID:" type="stringignorecase" offset="0"/>
+      <match value="\nMessage-ID:" type="stringignorecase" offset="0:8192"/>
       <match value="Date:" type="string" offset="0"/>
       <match value="User-Agent:" type="string" offset="0"/>
       <match value="MIME-Version:" type="stringignorecase" offset="0"/>
