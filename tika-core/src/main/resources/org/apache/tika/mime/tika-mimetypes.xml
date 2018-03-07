@@ -119,6 +119,27 @@
   <mime-type type="application/cnrp+xml"/>
   <mime-type type="application/commonground"/>
   <mime-type type="application/conference-info+xml"/>
+  
+  <mime-type type="application/coreldraw">
+     <alias type="application/x-coreldraw"/>
+     <alias type="application/x-cdr"/>
+     <alias type="application/cdr"/>
+     <alias type="image/x-cdr"/>
+     <alias type="image/cdr"/>
+     <_comment>CorelDraw</_comment>
+     <_comment>cdr: CorelDraw</_comment>
+     <_comment>des: CorelDraw X4 and newer</_comment>
+     <magic priority="60">
+        <match value="RIFF" type="string" offset="0">
+           <match value="CDR" type="string" offset="8" />
+           <match value="cdr" type="string" offset="8" />
+           <match value="DES" type="string" offset="8" />
+           <match value="des" type="string" offset="8" />
+        </match>
+     </magic>
+     <glob pattern="*.cdr"/>
+  </mime-type>
+  
   <mime-type type="application/cpl+xml"/>
   <mime-type type="application/csta+xml"/>
   <mime-type type="application/cstadata+xml"/>
@@ -373,7 +394,7 @@
     <alias type="application/mac-binhex"/>
     <alias type="application/binhex"/>
     <magic priority="50">
-      <match value="must\ be\ converted\ with\ BinHex" type="string" offset="11"/>
+      <match value="must be converted with BinHex" type="string" offset="11"/>
     </magic>
     <glob pattern="*.hqx"/>
   </mime-type>
@@ -865,6 +886,8 @@
   <mime-type type="application/smil+xml">
     <alias type="application/smil"/>
     <_comment>SMIL Multimedia</_comment>
+    <root-XML localName="smil"/>
+    <sub-class-of type="application/xml"/>
     <glob pattern="*.smi"/>
     <glob pattern="*.smil"/>
     <glob pattern="*.sml"/>
@@ -1416,10 +1439,22 @@
   <mime-type type="application/vnd.intu.qfx">
     <glob pattern="*.qfx"/>
   </mime-type>
+  <mime-type type="application/vnd.iptc.g2.catalogitem+xml"/>
   <mime-type type="application/vnd.iptc.g2.conceptitem+xml"/>
   <mime-type type="application/vnd.iptc.g2.knowledgeitem+xml"/>
   <mime-type type="application/vnd.iptc.g2.newsitem+xml"/>
+    
+  <mime-type type="application/vnd.iptc.g2.newsmessage+xml">
+    <root-XML localName="newsMessage"/>
+    <root-XML localName="newsMessage" namespaceURI="http://iptc.org/std/nar/2006-10-01/"/>
+    <sub-class-of type="application/xml"/>
+    <_comment>XML syntax for IPTC NewsMessages</_comment>
+    <glob pattern="*.nar"/>
+  </mime-type>
+  
   <mime-type type="application/vnd.iptc.g2.packageitem+xml"/>
+  <mime-type type="application/vnd.iptc.g2.planningitem+xml"/>
+
   <mime-type type="application/vnd.ipunplugged.rcprofile">
     <glob pattern="*.rcprofile"/>
   </mime-type>
@@ -2800,6 +2835,30 @@
   <mime-type type="application/wspolicy+xml">
     <glob pattern="*.wspolicy"/>
   </mime-type>
+  
+  <mime-type type="image/x-tga">
+     <alias type="image/x-targa"/>
+     <!-- trailer bytes: 54 52 55 45 56 49 53 49 4F 4E 2D 58 46 49 4C 45 2E 00
+          trailer as string: TRUEVISION-XFILE\\x2E\\x00
+          Some .tga files may be conflicting with application/x-123 recognition, 
+          therefore this mime-type must be set in front of application/x-123 -->
+     <_comment>Targa image data</_comment>
+     <magic priority="90">
+        <match value="0x01010000" type="big32" offset="1" >
+           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        </match>
+        <match value="0x00020000" type="big32" offset="1" >
+           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        </match>
+        <match value="0x00030000" type="big32" offset="1" >
+           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        </match>
+     </magic>
+     <glob pattern="*.tga"/>
+     <glob pattern="*.icb"/>
+     <glob pattern="*.vda"/>
+     <!-- <glob pattern="*.vst"/> --> <!-- conflicting with application/vnd.visio-->
+  </mime-type>
 
   <mime-type type="application/x-123">
     <magic priority="50">
@@ -3624,6 +3683,29 @@
       <match value="-lz5-" type="string" offset="2"/>
     </magic>
   </mime-type>
+  
+  <mime-type type="application/x-lz4">
+     <_comment>First match LZ4 Frame</_comment>
+     <_comment>Second match Legacy Frame</_comment>
+     <magic priority="60">
+        <match value="0x184d2204" type="little32" offset="0" />
+        <match value="0x184c2102" type="little32" offset="0" />
+     </magic>
+     <glob pattern="*.lz4"/>
+  </mime-type>
+  
+  <mime-type type="application/x-lzip">
+    <_comment>Lzip (LZMA) compressed archive</_comment>
+    <magic priority="50">
+      <match value="\x4c\x5a\x49\x50" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.lz"/>
+  </mime-type>
+  
+  <mime-type type="application/x-lzma">
+    <_comment>LZMA compressed archive</_comment>
+    <glob pattern="*.lzma"/>
+  </mime-type>  
 
   <mime-type type="application/x-mobipocket-ebook">
     <acronym>MOBI</acronym>
@@ -4035,7 +4117,7 @@
     <acronym>ESRI Shapefiles</acronym>
     <_comment>ESRI Shapefiles</_comment>
     <magic priority="60">
-      <match value="0x0000270a" type="big32" offset="2" />
+      <match value="0x0000270a" type="big32" offset="0" />
     </magic>
     <glob pattern="*.shp"/>
   </mime-type>
@@ -4812,7 +4894,7 @@
     <glob pattern="*.aac"/>
   </mime-type>
 
-  <mime-type type="audio/x-adbcm">
+  <mime-type type="audio/x-adpcm">
     <magic priority="20">
       <match value=".snd" type="string" offset="0">
         <match value="23" type="big32" offset="12"/>
@@ -4838,6 +4920,15 @@
     <glob pattern="*.aiff"/>
     <glob pattern="*.aifc"/>
   </mime-type>
+  
+  <mime-type type="audio/x-caf">
+     <_comment>Core Audio Format</_comment>
+     <_comment>com.apple.coreaudio-format</_comment>
+     <magic priority="60">
+        <match value="caff" type="string" offset="0" />
+     </magic>
+     <glob pattern="*.caf"/>
+  </mime-type>
 
   <mime-type type="audio/x-dec-basic">
     <magic priority="20">
@@ -4853,7 +4944,7 @@
     </magic>
   </mime-type>
 
-  <mime-type type="audio/x-dec-adbcm">
+  <mime-type type="audio/x-dec-adpcm">
     <magic priority="20">
       <match value="0x0064732E" type="big32" offset="0">
         <match value="23" type="big32" offset="12"/>
