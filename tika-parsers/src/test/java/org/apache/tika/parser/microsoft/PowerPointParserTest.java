@@ -346,7 +346,6 @@ public class PowerPointParserTest extends TikaTest {
     @Test
     public void testEmbeddedXLSInOLEObject() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_oleWorkbook.ppt");
-        debug(metadataList);
         assertEquals(3, metadataList.size());
         Metadata xlsx = metadataList.get(1);
         assertContains("<h1>Sheet1</h1>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
