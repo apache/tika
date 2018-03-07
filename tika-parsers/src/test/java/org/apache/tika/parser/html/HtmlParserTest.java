@@ -1385,4 +1385,14 @@ public class HtmlParserTest extends TikaTest {
             }
         }
     }
+
+    @Test
+    public void testCharsetsNotSupportedByIANA() throws Exception {
+        assertContains("This is a sample text",
+                getXML("testHTML_charset_utf8.html").xml);
+
+        assertContains("This is a sample text",
+                getXML("testHTML_charset_utf16le.html").xml);
+
+    }
 }

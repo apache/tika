@@ -16,10 +16,17 @@
  */
 package org.apache.tika.parser.html;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +46,37 @@ import org.apache.tika.utils.CharsetUtils;
  */
 public class HtmlEncodingDetector implements EncodingDetector {
 
+    /**
+     * HTML can include non-iana supported charsets that Java
+     * recognizes, e.g. "unicode".  This can lead to incorrect detection/mojibake.
+     * Ignore charsets in html meta-headers that are not supported by IANA.
+     * See: TIKA-2592
+     */
+    private static Set<String> CHARSETS_UNSUPPORTED_BY_IANA;
+    static {
+        Set<String> unsupported = new HashSet<>();
+        try (BufferedReader reader =
+                     new BufferedReader(
+                             new InputStreamReader(
+                                     HtmlEncodingDetector.class
+                                        .getResourceAsStream("StandardCharsets_unsupported_by_IANA.txt"),
+                                     StandardCharsets.UTF_8))) {
+            String line = reader.readLine();
+            while (line != null) {
+                if (line.startsWith("#")) {
+                    continue;
+                }
+                line = line.trim();
+                if (line.length() > 0) {
+                    unsupported.add(line.toLowerCase(Locale.US));
+                }
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("couldn't find StandardCharsets_unsupported_by_IANA.txt on the class path");
+        }
+        CHARSETS_UNSUPPORTED_BY_IANA = Collections.unmodifiableSet(unsupported);
+    }
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
     private static final int DEFAULT_MARK_LIMIT = 8192;
 
@@ -112,6 +150,9 @@ public class HtmlEncodingDetector implements EncodingDetector {
             //that is valid
             while (charsetMatcher.find()) {
                 String candCharset = charsetMatcher.group(1);
+                if (CHARSETS_UNSUPPORTED_BY_IANA.contains(candCharset.toLowerCase(Locale.US))) {
+                    continue;
+                }
                 if (CharsetUtils.isSupported(candCharset)) {
                     try {
                         return CharsetUtils.forName(candCharset);
