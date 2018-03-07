@@ -72,6 +72,28 @@
       <groupId>org.ops4j.pax.exam</groupId>
       <artifactId>pax-exam-container-native</artifactId>
       <version>${pax.exam.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.ops4j.base</groupId>
+          <artifactId>ops4j-base-util-property</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.ops4j.base</groupId>
+          <artifactId>ops4j-base-lang</artifactId>
+        </exclusion>
+      </exclusions>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.base</groupId>
+      <artifactId>ops4j-base-util-property</artifactId>
+      <version>1.5.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.base</groupId>
+      <artifactId>ops4j-base-lang</artifactId>
+      <version>1.5.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -206,6 +228,7 @@
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
+              com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
               com.google.protobuf;resolution:=optional,
               com.ibm.icu.text;resolution:=optional,
