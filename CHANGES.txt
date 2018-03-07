@@ -1,5 +1,8 @@
 Release 1.18 - ???
 
+   * Various new mimes and typo fixes in tika-mimetypes.xml
+     via Andreas Meier (TIKA-2527).
+
    * Revert to listenForAllRecords=false in ExcelExtractor
      via Grigoriy Alekseev (TIKA-2590)
 
