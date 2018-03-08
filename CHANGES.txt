@@ -5,6 +5,8 @@ Release 2.0.0 - ???
 
    Other changes
    
+   * Support for TIFF images in PDF files (TIKA-2338)
+   
    * Detection of full encrypted 7z files (TIKA-2568)
 
    * Various new mimes and typo fixes in tika-mimetypes.xml
