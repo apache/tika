@@ -139,6 +139,9 @@ public class ZipContainerDetector implements Detector {
     }
 
     private static boolean arrayStartWith(byte[] needle, byte[] haystack) {
+        if (haystack.length < needle.length) {
+            return false;
+        }
         for (int i = 0; i < needle.length; i++) {
             if (haystack[i] != needle[i]) {
                 return false;
