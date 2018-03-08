@@ -74,6 +74,7 @@ import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.bouncycastle.cms.Recipient;
 import org.xml.sax.SAXException;
 
 /**
@@ -321,19 +322,24 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
         if (rtfChunk != null && (extractAllAlternatives || !doneBody)) {
             ByteChunk chunk = (ByteChunk) rtfChunk;
-            MAPIRtfAttribute rtf = new MAPIRtfAttribute(
-                    MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
-            );
-            Parser rtfParser =
-                    EmbeddedDocumentUtil.tryToFindExistingLeafParser(RTFParser.class, parseContext);
-            if (rtfParser == null) {
-                rtfParser = new RTFParser();
+            //avoid buffer underflow TIKA-2530
+            //TODO -- would be good to find an example triggering file and
+            //figure out if this is a bug in POI or a genuine 0 length chunk
+            if (chunk.getValue() != null && chunk.getValue().length > 0) {
+                MAPIRtfAttribute rtf = new MAPIRtfAttribute(
+                        MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
+                );
+                Parser rtfParser =
+                        EmbeddedDocumentUtil.tryToFindExistingLeafParser(RTFParser.class, parseContext);
+                if (rtfParser == null) {
+                    rtfParser = new RTFParser();
+                }
+                rtfParser.parse(
+                        new ByteArrayInputStream(rtf.getData()),
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                        new Metadata(), parseContext);
+                doneBody = true;
             }
-            rtfParser.parse(
-                    new ByteArrayInputStream(rtf.getData()),
-                    new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                    new Metadata(), parseContext);
-            doneBody = true;
         }
         if (textChunk != null && (extractAllAlternatives || !doneBody)) {
             xhtml.element("p", ((StringChunk) textChunk).getValue());
