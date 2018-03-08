@@ -141,6 +141,21 @@ public class Seven7ParserTest extends AbstractPkgTest {
         }
         
         assertTrue("test no password", ex);
+        
+        // No password, will fail with EncryptedDocumentException
+        ex = false;
+        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/full_encrypted.7z")) {
+            parser.parse(stream, handler, metadata, recursingContext);
+            fail("Shouldn't be able to read a full password protected 7z without the password");
+        } catch (EncryptedDocumentException e) {
+            // Good
+            ex = true;
+        } catch (Exception e){
+            ex = false;
+        }
+        
+        assertTrue("test no password for full encrypted 7z", ex);
 
         ex = false;
         

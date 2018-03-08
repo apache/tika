@@ -4,6 +4,8 @@ Release 2.0.0 - ???
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
    Other changes
+   
+   * Detection of full encrypted 7z files (TIKA-2568)
 
    * Various new mimes and typo fixes in tika-mimetypes.xml
      via Andreas Meier (TIKA-2527).
