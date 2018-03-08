@@ -1,4 +1,6 @@
 Release 1.18 - ???
+   
+   * Detection of full encrypted 7z files (TIKA-2568)
 
    * Various new mimes and typo fixes in tika-mimetypes.xml
      via Andreas Meier (TIKA-2527).
