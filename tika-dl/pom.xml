@@ -137,6 +137,10 @@
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.github.jai-imageio</groupId>
+          <artifactId>jai-imageio-core</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
