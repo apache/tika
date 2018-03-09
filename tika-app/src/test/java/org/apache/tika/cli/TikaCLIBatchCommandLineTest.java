@@ -41,6 +41,7 @@ public class TikaCLIBatchCommandLineTest {
     Path testFile = null;
 
     String testInputPathForCommandLine;
+    String escapedInputPathForCommandLine;
 
     @Before
     public void init() {
@@ -57,6 +58,7 @@ public class TikaCLIBatchCommandLineTest {
             throw new RuntimeException("Couldn't open testFile");
         }
         testInputPathForCommandLine = testInput.toAbsolutePath().toString();
+        escapedInputPathForCommandLine = BatchCommandLineBuilder.commandLineSafe(testInputPathForCommandLine);
     }
 
     @After
@@ -114,7 +116,7 @@ public class TikaCLIBatchCommandLineTest {
         assertEquals("true", attrs.get("-recursiveParserWrapper"));
         assertEquals("html", attrs.get("-basicHandlerType"));
         assertEquals("batch-config.xml", attrs.get("-bc"));
-        assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
     }
 
     @Test
@@ -125,7 +127,7 @@ public class TikaCLIBatchCommandLineTest {
 
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
-        assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
         assertEquals(outputRoot, attrs.get("-outputDir"));
     }
 
@@ -136,21 +138,21 @@ public class TikaCLIBatchCommandLineTest {
 
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
-        assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
         assertEquals(outputRoot, attrs.get("-outputDir"));
 
         params = new String[]{"--inputDir", testInputPathForCommandLine, "--outputDir", outputRoot};
 
         commandLine = BatchCommandLineBuilder.build(params);
         attrs = mapify(commandLine);
-        assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
         assertEquals(outputRoot, attrs.get("-outputDir"));
 
         params = new String[]{"-inputDir", testInputPathForCommandLine, "-outputDir", outputRoot};
 
         commandLine = BatchCommandLineBuilder.build(params);
         attrs = mapify(commandLine);
-        assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
         assertEquals(outputRoot, attrs.get("-outputDir"));
     }
 
@@ -163,7 +165,7 @@ public class TikaCLIBatchCommandLineTest {
                 "--config="+configPath};
         String[] commandLine = BatchCommandLineBuilder.build(params);
         Map<String, String> attrs = mapify(commandLine);
-        assertEquals(testInputPathForCommandLine, attrs.get("-inputDir"));
+        assertEquals(escapedInputPathForCommandLine, attrs.get("-inputDir"));
         assertEquals(outputRoot, attrs.get("-outputDir"));
         assertEquals(configPath, attrs.get("-c"));
 

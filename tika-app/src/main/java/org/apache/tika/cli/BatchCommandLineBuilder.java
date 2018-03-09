@@ -17,6 +17,9 @@
 
 package org.apache.tika.cli;
 
+
+import org.apache.commons.lang.SystemUtils;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +44,7 @@ class BatchCommandLineBuilder {
     static Pattern JVM_OPTS_PATTERN = Pattern.compile("^(--?)J(.+)");
 
     protected static String[] build(String[] args) throws IOException {
+
         Map<String, String> processArgs = new LinkedHashMap<String, String>();
         Map<String, String> jvmOpts = new LinkedHashMap<String,String>();
         //take the args, and divide them into process args and options for
@@ -53,11 +57,6 @@ class BatchCommandLineBuilder {
         //maybe the user specified a different classpath?!
         if (! jvmOpts.containsKey("-cp") && ! jvmOpts.containsKey("--classpath")) {
             String cp = System.getProperty("java.class.path");
-            //need to test for " " on *nix, can't just add double quotes
-            //across platforms.
-            if (cp.contains(" ")){
-                cp = "\""+cp+"\"";
-            }
             jvmOpts.put("-cp", cp);
         }
 
@@ -70,7 +69,7 @@ class BatchCommandLineBuilder {
         }
         //use the log4j config file inside the app /resources/log4j_batch_process.properties
         if (! hasLog4j) {
-            jvmOpts.put("-Dlog4j.configuration=\"log4j_batch_process.properties\"", "");
+            jvmOpts.put("-Dlog4j.configuration=log4j_batch_process.properties", "");
         }
         //now build the full command line
         List<String> fullCommand = new ArrayList<String>();
@@ -79,7 +78,7 @@ class BatchCommandLineBuilder {
         for (Map.Entry<String, String> e : jvmOpts.entrySet()) {
             fullCommand.add(e.getKey());
             if (e.getValue().length() > 0) {
-                fullCommand.add(e.getValue());
+                fullCommand.add(commandLineSafe(e.getValue()));
             }
             if (e.getKey().contains("java.awt.headless")) {
                 foundHeadlessOption = true;
@@ -94,10 +93,22 @@ class BatchCommandLineBuilder {
         for (Map.Entry<String, String> e : processArgs.entrySet()) {
             fullCommand.add(e.getKey());
             if (e.getValue().length() > 0) {
-                fullCommand.add(e.getValue());
+                fullCommand.add(commandLineSafe(e.getValue()));
             }
         }
         return fullCommand.toArray(new String[fullCommand.size()]);
+    }
+
+    protected static String commandLineSafe(String arg) {
+        if (arg == null) {
+            return arg;
+        }
+        //need to test for " " on windows, can't just add double quotes
+        //across platforms.
+        if (arg.contains(" ") && SystemUtils.IS_OS_WINDOWS) {
+            arg = "\"" + arg + "\"";
+        }
+        return arg;
     }
 
 
