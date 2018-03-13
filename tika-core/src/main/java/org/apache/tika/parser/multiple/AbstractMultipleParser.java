@@ -167,13 +167,9 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             ContentHandler handler, Exception exception);
     
     /**
-     * Delegates the call to one or more Parsers, 
-     * Delegates the call to the matching component parser.
-     * <p>
-     * Potential {@link RuntimeException}s, {@link IOException}s and
-     * {@link SAXException}s unrelated to the given input stream and content
-     * handler are automatically wrapped into {@link TikaException}s to better
-     * honor the {@link Parser} contract.
+     * Processes the given Stream through one or more parsers, 
+     *  resetting things between parsers as requested by policy.
+     * The actual processing is delegated to one or more {@link Parser}s
      */
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -187,11 +183,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             // Force the stream to be a Tika one
-            // Force the stream to be file-backed, so we can
-            //  re-wind it safely if required
-            // TODO Support an InputStreamFactory as an alternative to
-            //  Files, see TIKA-2585
-            // TODO Rewind support copy from ParserDecorator.withFallbacks
+            // Force the stream to be file-backed, so we can re-read safely
+            //  later if required for parser 2+
             // TODO Should we use RereadableInputStream instead?
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             Path path = taggedStream.getPath();
@@ -202,8 +195,10 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             // TODO Provide a way to supply a ContentHandlerFactory?
 
             for (Parser p : parsers) {
-                // TODO What's the best way to reset each time?
-                TikaInputStream parserStream = TikaInputStream.get(path);
+                // Indicate we may need to re-read the stream later
+                // TODO Support an InputStreamFactory as an alternative to
+                //  Files, see TIKA-2585
+                taggedStream.mark(-1);
                 
                 // Record that we used this parser
                 recordParserDetails(p, metadata);
@@ -213,7 +208,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 // Process if possible
                 Exception failure = null;
                 try {
-                    p.parse(parserStream, handler, metadata, context);
+                    p.parse(taggedStream, handler, metadata, context);
                 } catch (Exception e) {
                     recordParserFailure(p, e, metadata);
                     failure = e;
@@ -236,6 +231,9 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 
                 // TODO Handle metadata clashes based on the Policy
                 lastMetadata = cloneMetadata(metadata);
+                
+                // Prepare for the next parser, if present
+                taggedStream.reset();
             }
         } finally {
             tmp.dispose();
