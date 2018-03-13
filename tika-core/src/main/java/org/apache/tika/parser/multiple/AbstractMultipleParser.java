@@ -83,6 +83,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     
     // TODO Figure out some sort of Content Policy and how
     //  it might possibly work
+    // TODO Is an overridden method that takes a 
+    //  ContentHandlerFactory the best way?
 
     /**
      * Media type registry.
@@ -184,12 +186,14 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             //  re-wind it safely if required
             // TODO Support an InputStreamFactory as an alternative to
             //  Files, see TIKA-2585
+            // TODO Rewind support copy from ParserDecorator.withFallbacks
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             Path path = taggedStream.getPath();
             
             // TODO Somehow shield/wrap the Handler, so that we can
             //  avoid failures if multiple parsers want to do content
             // TODO Solve the multiple-content problem!
+            // TODO Provide a way to supply a ContentHandlerFactory?
 
             for (Parser p : parsers) {
                 // TODO What's the best way to reset each time?
@@ -201,6 +205,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 // TODO Handle metadata clashes based on the Policy
                 
                 // Process if possible
+                // TODO Share error recording logic with RecursiveParserWrapper
                 Exception failure = null;
                 try {
                     p.parse(parserStream, handler, metadata, context);
@@ -210,7 +215,11 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 
                 // Notify the implementation how it went
                 boolean tryNext = parserCompleted(p, metadata, handler, failure);
-                if (!tryNext) break;
+                // Abort if requested, with the exception if there was one
+                if (!tryNext) {
+                   if (failure != null) throw failure;
+                   break;
+                }
                 
                 // TODO Handle metadata clashes based on the Policy
             }
