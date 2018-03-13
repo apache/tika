@@ -13,6 +13,7 @@ nb-configuration.xml
 *.DS_Store
 *.tmp-inception
 *.snap
+.*.swp
 tika-deployment/tika-snap-app/parts/
 tika-deployment/tika-snap-app/prime/
 tika-deployment/tika-snap-app/snap/
