@@ -16,9 +16,12 @@
  */
 package org.apache.tika.parser.multiple;
 
+import static org.apache.tika.utils.ParserUtils.cloneMetadata;
+import static org.apache.tika.utils.ParserUtils.recordParserDetails;
+import static org.apache.tika.utils.ParserUtils.recordParserFailure;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -34,7 +37,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import static org.apache.tika.utils.ParserUtils.*;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -187,7 +189,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             //  later if required for parser 2+
             // TODO Should we use RereadableInputStream instead?
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
-            Path path = taggedStream.getPath();
+            taggedStream.getPath();
             
             // TODO Somehow shield/wrap the Handler, so that we can
             //  avoid failures if multiple parsers want to do content
@@ -202,8 +204,9 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 
                 // Record that we used this parser
                 recordParserDetails(p, metadata);
-                
-                // TODO Handle metadata clashes based on the Policy
+
+                // Prepare an near-empty Metadata, will merge after
+                metadata = cloneMetadata(originalMetadata);
                 
                 // Process if possible
                 Exception failure = null;
@@ -229,14 +232,45 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                    break;
                 }
                 
-                // TODO Handle metadata clashes based on the Policy
-                lastMetadata = cloneMetadata(metadata);
+                // Handle metadata merging / clashes
+                metadata = mergeMetadata(metadata, lastMetadata, policy);
                 
                 // Prepare for the next parser, if present
+                lastMetadata = cloneMetadata(metadata);
                 taggedStream.reset();
             }
         } finally {
             tmp.dispose();
         }
+    }
+    
+    // TODO Provide a method that takes an InputStreamSource as well,
+    //  and a ContentHandlerFactory. Will need wrappers to convert standard
+    
+    protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata, MetadataPolicy policy) {
+        if (policy == MetadataPolicy.DISCARD_ALL) {
+            return newMetadata;
+        }
+        
+        for (String n : lastMetadata.names()) {
+            if (newMetadata.get(n) == null) {
+                newMetadata.set(n, lastMetadata.get(n));
+            } else {
+                switch (policy) {
+                case FIRST_WINS:
+                    // Use the earlier value 
+                    newMetadata.set(n, lastMetadata.get(n));
+                    continue;
+                case LAST_WINS:
+                    // Most recent (last) parser has already won
+                    continue;
+                case KEEP_ALL:
+                    // TODO Find unique values to add
+                    // TODO Implement
+                    continue;
+                }
+            }
+        }
+        return newMetadata;
     }
 }
