@@ -23,6 +23,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
+import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -271,11 +272,7 @@ public class CompositeParser extends AbstractParser {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             TaggedContentHandler taggedHandler = 
                 handler != null ? new TaggedContentHandler(handler) : null;
-            if (parser instanceof ParserDecorator){
-                metadata.add("X-Parsed-By", ((ParserDecorator) parser).getWrappedParser().getClass().getName());
-            } else {
-                metadata.add("X-Parsed-By", parser.getClass().getName());
-            }
+            metadata.add("X-Parsed-By", ParserUtils.getParserClassname(parser));
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
             } catch (RuntimeException e) {

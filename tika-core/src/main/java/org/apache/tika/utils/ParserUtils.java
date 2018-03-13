@@ -17,6 +17,8 @@
 package org.apache.tika.utils;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 
 /**
  * Helper util methods for Parsers themselves.
@@ -39,5 +41,17 @@ public class ParserUtils {
             }
         }
         return clone;
+    }
+
+    /**
+     * Identifies the real class name of the {@link Parser}, unwrapping
+     *  any {@link ParserDecorator} decorations on top of it.
+     */
+    public static String getParserClassname(Parser parser) {
+        if (parser instanceof ParserDecorator){
+            return ((ParserDecorator) parser).getWrappedParser().getClass().getName();
+        } else {
+            return parser.getClass().getName();
+        }
     }
 }

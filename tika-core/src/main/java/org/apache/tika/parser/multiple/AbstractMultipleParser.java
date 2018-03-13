@@ -34,7 +34,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.utils.ParserUtils;
+import static org.apache.tika.utils.ParserUtils.*;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -180,7 +180,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
-        Metadata originalMetadata = ParserUtils.cloneMetadata(metadata);
+        Metadata originalMetadata = cloneMetadata(metadata);
         Metadata lastMetadata = originalMetadata;
         
         // Start tracking resources, so we can clean up when done
@@ -206,7 +206,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 TikaInputStream parserStream = TikaInputStream.get(path);
                 
                 // Record this parser
-                metadata.add("X-Parsed-By", getParserName(p));
+                metadata.add("X-Parsed-By", getParserClassname(p));
                 
                 // TODO Handle metadata clashes based on the Policy
                 
@@ -234,19 +234,10 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 }
                 
                 // TODO Handle metadata clashes based on the Policy
-                lastMetadata = ParserUtils.cloneMetadata(metadata);
+                lastMetadata = cloneMetadata(metadata);
             }
         } finally {
             tmp.dispose();
-        }
-    }
-    
-    private String getParserName(Parser parser) {
-        // TODO Share this logic with CompositeParser
-        if (parser instanceof ParserDecorator){
-            return ((ParserDecorator) parser).getWrappedParser().getClass().getName();
-        } else {
-            return parser.getClass().getName();
         }
     }
 }
