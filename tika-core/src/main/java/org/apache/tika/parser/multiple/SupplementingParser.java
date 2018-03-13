@@ -63,7 +63,11 @@ public class SupplementingParser extends AbstractMultipleParser {
     public SupplementingParser(MediaTypeRegistry registry, MetadataPolicy policy,
                                List<Parser> parsers) {
         super(registry, policy, parsers);
-        // TODO Check the policy is one we support
+        
+        // Ensure it's a supported policy
+        if (!allowedPolicies.contains(policy)) {
+            throw new IllegalArgumentException("Unsupported policy for SupplementingParser: " + policy);
+        }
     }
 
     @Override

@@ -211,7 +211,6 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 // TODO Handle metadata clashes based on the Policy
                 
                 // Process if possible
-                // TODO Share error recording logic with RecursiveParserWrapper
                 Exception failure = null;
                 try {
                     p.parse(parserStream, handler, metadata, context);
@@ -222,6 +221,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 
                 // Notify the implementation how it went
                 boolean tryNext = parserCompleted(p, metadata, handler, failure);
+                
                 // Abort if requested, with the exception if there was one
                 if (!tryNext) {
                    if (failure != null) {
@@ -242,4 +242,3 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         }
     }
 }
-
