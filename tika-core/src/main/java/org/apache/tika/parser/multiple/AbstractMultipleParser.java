@@ -175,11 +175,11 @@ public abstract class AbstractMultipleParser extends AbstractParser {
      */
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
+            Metadata originalMetadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
-        Metadata originalMetadata = cloneMetadata(metadata);
-        Metadata lastMetadata = originalMetadata;
+        Metadata lastMetadata = cloneMetadata(originalMetadata);
+        Metadata metadata = lastMetadata;
         
         // Start tracking resources, so we can clean up when done
         TemporaryResources tmp = new TemporaryResources();
@@ -203,7 +203,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 taggedStream.mark(-1);
                 
                 // Record that we used this parser
-                recordParserDetails(p, metadata);
+                recordParserDetails(p, originalMetadata);
 
                 // Prepare an near-empty Metadata, will merge after
                 metadata = cloneMetadata(originalMetadata);
@@ -220,6 +220,9 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 // Notify the implementation how it went
                 boolean tryNext = parserCompleted(p, metadata, handler, failure);
                 
+                // Handle metadata merging / clashes
+                metadata = mergeMetadata(metadata, lastMetadata, policy);
+                
                 // Abort if requested, with the exception if there was one
                 if (!tryNext) {
                    if (failure != null) {
@@ -232,15 +235,17 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                    break;
                 }
                 
-                // Handle metadata merging / clashes
-                metadata = mergeMetadata(metadata, lastMetadata, policy);
-                
                 // Prepare for the next parser, if present
                 lastMetadata = cloneMetadata(metadata);
                 taggedStream.reset();
             }
         } finally {
             tmp.dispose();
+        }
+        
+        // Finally, copy the latest metadata back onto their supplied object
+        for (String n : metadata.names()) {
+            originalMetadata.set(n, metadata.get(n));
         }
     }
     
