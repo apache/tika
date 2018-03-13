@@ -32,6 +32,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -169,7 +170,7 @@ public class RecursiveParserWrapper implements Parser {
             if (hitMaxEmbeddedResources) {
                 metadata.set(EMBEDDED_RESOURCE_LIMIT_REACHED, "true");
             }
-            metadatas.add(0, deepCopy(metadata));
+            metadatas.add(0, ParserUtils.cloneMetadata(metadata));
         }
     }
 
@@ -224,23 +225,6 @@ public class RecursiveParserWrapper implements Parser {
         } else {
             return t.getCause() != null && isWriteLimitReached(t.getCause());
         }
-    }
-    
-    //defensive copy
-    private Metadata deepCopy(Metadata m) {
-        Metadata clone = new Metadata();
-        
-        for (String n : m.names()){
-            if (! m.isMultiValued(n)) {
-                clone.set(n, m.get(n));
-            } else {
-                String[] vals = m.getValues(n);
-                for (int i = 0; i < vals.length; i++) {
-                    clone.add(n, vals[i]);
-                }
-            }
-        }
-        return clone;
     }
     
     private String getResourceName(Metadata metadata) {
@@ -348,9 +332,7 @@ public class RecursiveParserWrapper implements Parser {
                 return;
             }
             addContent(localHandler, metadata);
-            metadatas.add(deepCopy(metadata));
+            metadatas.add(ParserUtils.cloneMetadata(metadata));
         }        
     }
-
-
 }
