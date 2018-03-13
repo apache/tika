@@ -17,6 +17,8 @@
 package org.apache.tika.utils;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 
@@ -24,6 +26,11 @@ import org.apache.tika.parser.ParserDecorator;
  * Helper util methods for Parsers themselves.
  */
 public class ParserUtils {
+    public final static Property EMBEDDED_PARSER =
+            Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
+    public final static Property EMBEDDED_EXCEPTION =
+            Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+    
     /**
      * Does a deep clone of a Metadata object.
      */
@@ -56,11 +63,24 @@ public class ParserUtils {
     }
 
     /**
-     * Records details of the {@link Parser} used to the Metadata,
+     * Records details of the {@link Parser} used to the {@link Metadata},
      *  typically wanted where multiple parsers could be picked between
      *  or used.
      */
     public static void recordParserDetails(Parser parser, Metadata metadata) {
         metadata.add("X-Parsed-By", getParserClassname(parser));
+    }
+
+    /**
+     * Records details of a {@link Parser}'s failure to the
+     *  {@link Metadata}, so you can check what went wrong even if the
+     *  {@link Exception} wasn't immediately thrown (eg when several different
+     *  Parsers are used)
+     */
+    public static void recordParserFailure(Parser parser, Exception failure, 
+                                           Metadata metadata) {
+        String trace = ExceptionUtils.getStackTrace(failure);
+        metadata.add(EMBEDDED_EXCEPTION, trace);
+        metadata.add(EMBEDDED_PARSER, getParserClassname(parser));
     }
 }

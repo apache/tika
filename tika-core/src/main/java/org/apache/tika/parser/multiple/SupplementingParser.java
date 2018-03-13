@@ -72,9 +72,6 @@ public class SupplementingParser extends AbstractMultipleParser {
         // If there was no exception, just carry on to the next
         if (exception == null) return true;
         
-        // Record the details of this exception in the metadata
-        // TODO Share logic with the Recursive Parser Wrapper
-        
         // Have the next parser tried
         return true;
     }

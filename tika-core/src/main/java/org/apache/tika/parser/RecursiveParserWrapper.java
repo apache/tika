@@ -31,7 +31,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -85,8 +84,7 @@ public class RecursiveParserWrapper implements Parser {
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = 
                 Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 
-    public final static Property EMBEDDED_EXCEPTION =
-            Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+    public final static Property EMBEDDED_EXCEPTIONx = ParserUtils.EMBEDDED_EXCEPTION;
     //move this to TikaCoreProperties?
     public final static Property EMBEDDED_RESOURCE_PATH = 
                 Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"embedded_resource_path");
@@ -304,16 +302,14 @@ public class RecursiveParserWrapper implements Parser {
                     metadata.add(WRITE_LIMIT_REACHED, "true");
                 } else {
                     if (catchEmbeddedExceptions) {
-                        String trace = ExceptionUtils.getStackTrace(e);
-                        metadata.set(EMBEDDED_EXCEPTION, trace);
+                        ParserUtils.recordParserFailure(this, e, metadata);
                     } else {
                         throw e;
                     }
                 }
             } catch (TikaException e) {
                 if (catchEmbeddedExceptions) {
-                    String trace = ExceptionUtils.getStackTrace(e);
-                    metadata.set(EMBEDDED_EXCEPTION, trace);
+                    ParserUtils.recordParserFailure(this, e, metadata);
                 } else {
                     throw e;
                 }

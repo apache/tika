@@ -61,9 +61,6 @@ public class FallbackParser extends AbstractMultipleParser {
         // If there was no exception, abort further parsers
         if (exception == null) return false;
         
-        // Record the details of this exception in the metadata
-        // TODO Share logic with the Recursive Parser Wrapper
-        
         // Have the next parser tried
         return true;
     }

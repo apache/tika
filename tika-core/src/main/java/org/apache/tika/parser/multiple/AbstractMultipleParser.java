@@ -216,6 +216,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 try {
                     p.parse(parserStream, handler, metadata, context);
                 } catch (Exception e) {
+                    recordParserFailure(p, e, metadata);
                     failure = e;
                 }
                 
