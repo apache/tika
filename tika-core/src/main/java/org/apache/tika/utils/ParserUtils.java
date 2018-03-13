@@ -54,4 +54,13 @@ public class ParserUtils {
             return parser.getClass().getName();
         }
     }
+
+    /**
+     * Records details of the {@link Parser} used to the Metadata,
+     *  typically wanted where multiple parsers could be picked between
+     *  or used.
+     */
+    public static void recordParserDetails(Parser parser, Metadata metadata) {
+        metadata.add("X-Parsed-By", getParserClassname(parser));
+    }
 }

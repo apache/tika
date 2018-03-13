@@ -205,8 +205,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 // TODO What's the best way to reset each time?
                 TikaInputStream parserStream = TikaInputStream.get(path);
                 
-                // Record this parser
-                metadata.add("X-Parsed-By", getParserClassname(p));
+                // Record that we used this parser
+                recordParserDetails(p, metadata);
                 
                 // TODO Handle metadata clashes based on the Policy
                 
