@@ -34,6 +34,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -178,7 +179,11 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        // Track the metadata between parsers, so we can apply our policy
+        Metadata originalMetadata = ParserUtils.cloneMetadata(metadata);
+        Metadata lastMetadata = originalMetadata;
         
+        // Start tracking resources, so we can clean up when done
         TemporaryResources tmp = new TemporaryResources();
         try {
             // Force the stream to be a Tika one
@@ -187,6 +192,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             // TODO Support an InputStreamFactory as an alternative to
             //  Files, see TIKA-2585
             // TODO Rewind support copy from ParserDecorator.withFallbacks
+            // TODO Should we use RereadableInputStream instead?
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             Path path = taggedStream.getPath();
             
@@ -222,6 +228,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 }
                 
                 // TODO Handle metadata clashes based on the Policy
+                lastMetadata = ParserUtils.cloneMetadata(metadata);
             }
         } finally {
             tmp.dispose();
