@@ -223,7 +223,13 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 boolean tryNext = parserCompleted(p, metadata, handler, failure);
                 // Abort if requested, with the exception if there was one
                 if (!tryNext) {
-                   if (failure != null) throw failure;
+                   if (failure != null) {
+                       if (failure instanceof IOException) throw (IOException)failure;
+                       if (failure instanceof SAXException) throw (SAXException)failure;
+                       if (failure instanceof TikaException) throw (TikaException)failure;
+                       throw new TikaException("Unexpected RuntimeException from " + p, failure);
+                   }
+                   // Abort processing, don't try any more parsers
                    break;
                 }
                 
