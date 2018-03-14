@@ -220,7 +220,27 @@ public class MultipleParserTest {
         assertEquals(EmptyParser.class.getName(), usedParsers[3]);
         
         
-        // TODO Implement then check the Merge policies
+        // Merge
+        p = new SupplementingParser(null, MetadataPolicy.KEEP_ALL, pFail, 
+                                    pContent1, pContent2, pNothing);
+
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("Fell back 1!Fell back 2!", handler.toString());
+
+        assertEquals("Test1", metadata.get("T1"));
+        assertEquals("Test2", metadata.get("T2"));
+        assertEquals(2, metadata.getValues("TBoth").length);
+        assertEquals("Test1", metadata.getValues("TBoth")[0]);
+        assertEquals("Test2", metadata.getValues("TBoth")[1]);
+
+        usedParsers = metadata.getValues("X-Parsed-By");
+        assertEquals(4, usedParsers.length);
+        assertEquals(ErrorParser.class.getName(), usedParsers[0]);
+        assertEquals(DummyParser.class.getName(), usedParsers[1]);
+        assertEquals(DummyParser.class.getName(), usedParsers[2]);
+        assertEquals(EmptyParser.class.getName(), usedParsers[3]);
 
         
         // Check the error details always come through, no matter the policy

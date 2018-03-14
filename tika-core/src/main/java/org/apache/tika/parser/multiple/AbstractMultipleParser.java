@@ -22,6 +22,7 @@ import static org.apache.tika.utils.ParserUtils.recordParserFailure;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -326,8 +327,19 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                     // Most recent (last) parser has already won
                     continue;
                 case KEEP_ALL:
-                    // TODO Find unique values to add
-                    // TODO Implement
+                    // Start with old list, then add any new unique values
+                    List<String> vals = new ArrayList<>(Arrays.asList(oldVals));
+                    newMetadata.remove(n);
+                    for (String oldVal : oldVals) {
+                        newMetadata.add(n, oldVal);
+                    }
+                    for (String newVal : newVals) {
+                        if (! vals.contains(newVal)) {
+                            newMetadata.add(n, newVal);
+                            vals.add(newVal);
+                        }
+                    }
+                    
                     continue;
                 }
             }
