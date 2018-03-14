@@ -284,7 +284,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             // Merge as per policy 
             String[] newVals = newMetadata.getValues(n);
             String[] oldVals = lastMetadata.getValues(n);
-            if (newVals == null) {
+            if (newVals == null || newVals.length == 0) {
                 // Metadata only in previous run, keep old values
                 for (String val : oldVals) {
                     newMetadata.add(n, val);

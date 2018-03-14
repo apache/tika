@@ -17,6 +17,7 @@
 package org.apache.tika.parser.multiple;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
@@ -36,6 +37,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.ParserUtils;
 import org.junit.Test;
 
 public class MultipleParserTest {
@@ -100,11 +102,27 @@ public class MultipleParserTest {
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
         
-        // TODO Check we got an exception
+        // Check we got an exception
+        assertNotNull(metadata.get(ParserUtils.EMBEDDED_EXCEPTION));
+        assertNotNull(metadata.get(ParserUtils.EMBEDDED_PARSER));
+        assertEquals(ErrorParser.class.getName(), metadata.get(ParserUtils.EMBEDDED_PARSER));
         
         
-        // Won't go past the working one
-        // TODO
+        // Won't go past a working parser to a second one, stops after one works
+        p = new FallbackParser(null, MetadataPolicy.DISCARD_ALL, pFail, pContent, pNothing);
+
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("Fell back!", handler.toString());
+       
+        usedParsers = metadata.getValues("X-Parsed-By");
+        assertEquals(2, usedParsers.length);
+        assertEquals(ErrorParser.class.getName(), usedParsers[0]);
+        assertEquals(DummyParser.class.getName(), usedParsers[1]);
+        
+        
+        // TODO Check merge policies - First vs Discard
     }
     
     /**
@@ -159,8 +177,10 @@ public class MultipleParserTest {
         assertEquals(DummyParser.class.getName(), usedParsers[0]);
         
         
-        // Check the First, Last and All policies
-        p = new SupplementingParser(null, MetadataPolicy.FIRST_WINS, pFail, pContent1, pContent2);
+        // Check the First, Last and All policies:
+        // First Wins
+        p = new SupplementingParser(null, MetadataPolicy.FIRST_WINS, pFail, 
+                                    pContent1, pContent2, pNothing);
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
@@ -168,24 +188,40 @@ public class MultipleParserTest {
         assertEquals("Fell back 1!Fell back 2!", handler.toString());
         
         assertEquals("Test1", metadata.get("T1"));
+        assertEquals("Test2", metadata.get("T2"));
         assertEquals("Test1", metadata.get("TBoth"));
        
         usedParsers = metadata.getValues("X-Parsed-By");
-        assertEquals(3, usedParsers.length);
+        assertEquals(4, usedParsers.length);
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
         assertEquals(DummyParser.class.getName(), usedParsers[2]);
+        assertEquals(EmptyParser.class.getName(), usedParsers[3]);
         
-        // TODO Other policies
+        
+        // Last Wins
+        p = new SupplementingParser(null, MetadataPolicy.LAST_WINS, pFail, 
+                                    pContent1, pContent2, pNothing);
 
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("Fell back 1!Fell back 2!", handler.toString());
         
-        // Check the Discard policy
-        // First with the last parser being a "real" one
-        // TODO
+        assertEquals("Test1", metadata.get("T1"));
+        assertEquals("Test2", metadata.get("T2"));
+        assertEquals("Test2", metadata.get("TBoth"));
+       
+        usedParsers = metadata.getValues("X-Parsed-By");
+        assertEquals(4, usedParsers.length);
+        assertEquals(ErrorParser.class.getName(), usedParsers[0]);
+        assertEquals(DummyParser.class.getName(), usedParsers[1]);
+        assertEquals(DummyParser.class.getName(), usedParsers[2]);
+        assertEquals(EmptyParser.class.getName(), usedParsers[3]);
         
-        // Then with the last parser being one that emits no metadata
-        // TODO
         
+        // TODO Implement then check the Merge policies
+
         
         // Check the error details always come through, no matter the policy
         // TODO
