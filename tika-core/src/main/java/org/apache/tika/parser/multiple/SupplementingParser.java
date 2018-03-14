@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.xml.sax.ContentHandler;
@@ -72,7 +73,7 @@ public class SupplementingParser extends AbstractMultipleParser {
 
     @Override
     protected boolean parserCompleted(Parser parser, Metadata metadata,
-            ContentHandler handler, Exception exception) {
+            ContentHandler handler, ParseContext context, Exception exception) {
         // If there was no exception, just carry on to the next
         if (exception == null) return true;
         

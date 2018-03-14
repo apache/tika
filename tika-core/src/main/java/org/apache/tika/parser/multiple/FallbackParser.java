@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 
@@ -57,7 +58,7 @@ public class FallbackParser extends AbstractMultipleParser {
 
     @Override
     protected boolean parserCompleted(Parser parser, Metadata metadata,
-            ContentHandler handler, Exception exception) {
+            ContentHandler handler, ParseContext context, Exception exception) {
         // If there was no exception, abort further parsers
         if (exception == null) return false;
         

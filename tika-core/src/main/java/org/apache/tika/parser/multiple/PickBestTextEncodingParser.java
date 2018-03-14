@@ -19,6 +19,9 @@ package org.apache.tika.parser.multiple;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.detect.EncodingDetector;
@@ -26,6 +29,7 @@ import org.apache.tika.detect.NonDetectingEncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
@@ -55,21 +59,19 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
      */
     private String[] charsetsToTry;
     
-    /**
-     * What charset we felt was best
-     * TODO Does this need to be thread-safe?
-     */
-    private String pickedCharset;
-    /**
-     * What text we got for each charset, so we can test for the best
-     * TODO Does this need to be thread-safe?
-     */
-    private Map<String,String> charsetText;
-
     public PickBestTextEncodingParser(MediaTypeRegistry registry, String[] charsets) {
         // TODO Actually give 1 more TXTParser than we have charsets
-        super(registry, MetadataPolicy.DISCARD_ALL, (Parser)null);
+        super(registry, MetadataPolicy.DISCARD_ALL, makeParsers(charsets));
         this.charsetsToTry = charsets;
+    }
+    private static List<Parser> makeParsers(String[] charsets) {
+        // One more TXTParser than we have charsets, for the real thing
+        List<Parser> parsers = new ArrayList<>(charsets.length+1);
+        for (int i=0; i<charsets.length+1; i++) {
+            // TODO Actually get the right parser, TXTParser
+            parsers.set(i, new EmptyParser());
+        }
+        return parsers;
     }
 
     @Override
@@ -78,18 +80,29 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
         super.parserPrepare(parser, metadata, context);
         
         // Specify which charset to try
-        // TODO How to get the next one to try?
-        Charset charset = Charset.forName(charsetsToTry[0]);
+        String charset = context.get(CharsetTester.class).getNextCharset();
+        Charset charsetCS = Charset.forName(charset);
         context.set(EncodingDetector.class, 
-                    new NonDetectingEncodingDetector(charset));
+                    new NonDetectingEncodingDetector(charsetCS));
     }
 
     @Override
     protected boolean parserCompleted(Parser parser, Metadata metadata,
-            ContentHandler handler, Exception exception) {
-        // TODO How to get the current charset?
-        // TODO Record the text
-        // TODO If this was the last real charset, see which one is best
+            ContentHandler handler, ParseContext context, Exception exception) {
+        // Get the current charset
+        CharsetTester charsetTester = context.get(CharsetTester.class); 
+        String charset = charsetTester.getCurrentCharset();
+        
+        // Record the text
+        if (charsetTester.stillTesting()) {
+            charsetTester.charsetText.put(charset, handler.toString());
+            
+            // If this was the last real charset, see which one is best
+            if (! charsetTester.moreToTest()) {
+                // TODO Properly work out the best!
+                charsetTester.pickedCharset = charsetsToTry[0];
+            }
+        }
         
         // Always have the next parser tried
         return true;
@@ -103,7 +116,43 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
         // This will give a BodyContentHandler for each of the charset
         //  tests, then their real ContentHandler for the last one
         
+        // Put something on the ParseContext to get the charset
+        context.set(CharsetTester.class, new CharsetTester());
+        
         // TODO Have the parsing done with our ContentHandlerFactory instead
         super.parse(stream, handler, originalMetadata, context);
+    }
+    
+    protected class CharsetTester {
+        /**
+         * Our current charset's index
+         */
+        private int index = -1;
+        
+        /**
+         * What charset we felt was best
+         */
+        private String pickedCharset;
+        /**
+         * What text we got for each charset, so we can test for the best
+         */
+        private Map<String,String> charsetText = new HashMap<>();
+        
+        protected String getNextCharset() {
+            index++;
+            return getCurrentCharset();
+        }
+        protected String getCurrentCharset() {
+            if (index < charsetsToTry.length) {
+                return charsetsToTry[index];
+            }
+            return pickedCharset;
+        }
+        protected boolean stillTesting() {
+            return index < charsetsToTry.length;
+        }
+        protected boolean moreToTest() {
+            return index < charsetsToTry.length-1;
+        }
     }
 }

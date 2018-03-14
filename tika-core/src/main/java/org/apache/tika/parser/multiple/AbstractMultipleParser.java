@@ -172,8 +172,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
      *  abort further parsing
      */
     protected abstract boolean parserCompleted(
-            Parser parser, Metadata metadata, 
-            ContentHandler handler, Exception exception);
+            Parser parser, Metadata metadata, ContentHandler handler, 
+            ParseContext context, Exception exception);
     
     /**
      * Processes the given Stream through one or more parsers, 
@@ -228,7 +228,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 }
                 
                 // Notify the implementation how it went
-                boolean tryNext = parserCompleted(p, metadata, handler, failure);
+                boolean tryNext = parserCompleted(p, metadata, handler, context, failure);
                 
                 // Handle metadata merging / clashes
                 metadata = mergeMetadata(metadata, lastMetadata, policy);
