@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.parser.DummyParser;
@@ -44,6 +45,11 @@ public class MultipleParserTest {
     @Test
     public void testMimeTypeSupported() {
         // TODO
+        // Some media types
+        Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
+        Set<MediaType> octAndText = new HashSet<MediaType>(Arrays.asList(
+                MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
+        // TODO One with a subtype
     }
     
     /**
@@ -59,8 +65,6 @@ public class MultipleParserTest {
         
         // Some media types
         Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
-        Set<MediaType> octAndText = new HashSet<MediaType>(Arrays.asList(
-                MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
         
         // Some parsers
         ErrorParser pFail = new ErrorParser();
@@ -106,6 +110,79 @@ public class MultipleParserTest {
      */
     @Test
     public void testSupplemental() throws Exception {
-        // TODO 
+        ParseContext context = new ParseContext();
+        BodyContentHandler handler;
+        Metadata metadata;
+        Parser p;
+        String[] usedParsers;
+        
+        // Some media types
+        Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
+        
+        // Some test metadata
+        Map<String,String> m1 = new HashMap<>();
+        m1.put("T1","Test1");
+        m1.put("TBoth","Test1");
+        Map<String,String> m2 = new HashMap<>();
+        m2.put("T2","Test2");
+        m2.put("TBoth","Test2");
+        
+        // Some parsers
+        ErrorParser pFail = new ErrorParser();
+        DummyParser pContent1 = new DummyParser(onlyOct, m1, "Fell back 1!");
+        DummyParser pContent2 = new DummyParser(onlyOct, m2, "Fell back 2!");
+        EmptyParser pNothing = new EmptyParser();
+        
+        
+        // With only one parser defined, works as normal
+        p = new FallbackParser(null, MetadataPolicy.DISCARD_ALL, pContent1);
+
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("Fell back 1!", handler.toString());
+        
+        assertEquals("Test1", metadata.get("T1"));
+        assertEquals("Test1", metadata.get("TBoth"));
+       
+        usedParsers = metadata.getValues("X-Parsed-By");
+        assertEquals(1, usedParsers.length);
+        assertEquals(DummyParser.class.getName(), usedParsers[0]);
+        
+        
+        // Check the First, Last and All policies
+        p = new FallbackParser(null, MetadataPolicy.FIRST_WINS, pFail, pContent1, pContent2);
+
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("Fell back 1!", handler.toString());
+        
+        assertEquals("Test1", metadata.get("T1"));
+        assertEquals("Test1", metadata.get("TBoth"));
+       
+        usedParsers = metadata.getValues("X-Parsed-By");
+        assertEquals(3, usedParsers.length);
+        assertEquals(ErrorParser.class.getName(), usedParsers[0]);
+        assertEquals(DummyParser.class.getName(), usedParsers[1]);
+        assertEquals(DummyParser.class.getName(), usedParsers[2]);
+        
+        // TODO Other policies
+
+        
+        // Check the Discard policy
+        // First with the last parser being a "real" one
+        // TODO
+        
+        // Then with the last parser being one that emits no metadata
+        // TODO
+        
+        
+        // Check the error details always come through, no matter the policy
+        // TODO
+        
+        
+        // Check that each parser gets its own ContentHandler if a factory was given
+        // TODO
     }
 }
