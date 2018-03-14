@@ -160,6 +160,13 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     }
     
     /**
+     * Used to allow implementations to prepare or change things
+     *  before parsing occurs
+     */
+    protected void parserPrepare(Parser parser, Metadata metadata,
+                                 ParseContext context) {}
+
+    /**
      * Used to notify implementations that a Parser has Finished
      *  or Failed, and to allow them to decide to continue or 
      *  abort further parsing
@@ -208,6 +215,9 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 // Prepare an near-empty Metadata, will merge after
                 metadata = cloneMetadata(originalMetadata);
                 
+                // Notify the implementation of what we're about to do
+                parserPrepare(p, metadata, context);
+
                 // Process if possible
                 Exception failure = null;
                 try {
