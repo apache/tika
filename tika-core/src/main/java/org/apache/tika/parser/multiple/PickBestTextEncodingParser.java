@@ -18,6 +18,8 @@ package org.apache.tika.parser.multiple;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +34,9 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.txt.TXTParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -45,6 +50,8 @@ import org.xml.sax.SAXException;
  * This is not recommended for actual production use... It is mostly to
  *  prove that the {@link AbstractMultipleParser} environment is
  *  sufficient to support this use-case
+ *  
+ * TODO Move this to the parsers package so it can get {@link TXTParser}
  *
  * @deprecated Currently not suitable for real use, more a demo / prototype!
  */
@@ -112,17 +119,46 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
     public void parse(InputStream stream, ContentHandler handler,
             Metadata originalMetadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        // TODO Create our own ContentHandlerFactory
-        // This will give a BodyContentHandler for each of the charset
-        //  tests, then their real ContentHandler for the last one
+        // Use a BodyContentHandler for each of the charset test,
+        //  then their real ContentHandler for the last one
+        CharsetContentHandlerFactory handlerFactory = new CharsetContentHandlerFactory();
+        handlerFactory.handler = handler;
         
         // Put something on the ParseContext to get the charset
         context.set(CharsetTester.class, new CharsetTester());
         
-        // TODO Have the parsing done with our ContentHandlerFactory instead
-        super.parse(stream, handler, originalMetadata, context);
+        // Have the parsing done
+        super.parse(stream, handlerFactory, originalMetadata, context);
+    }
+    @Override
+    public void parse(InputStream stream, ContentHandlerFactory handlers,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        // We only work with one ContentHandler as far as the user is
+        //  concerned, any others are purely internal!
+        parse(stream, handlers.getNewContentHandler(), metadata, context);
     }
     
+    protected class CharsetContentHandlerFactory implements ContentHandlerFactory {
+        // Which one we're on
+        private int index = -1;
+        // The real one for at the end
+        private ContentHandler handler;
+        
+        @Override
+        public ContentHandler getNewContentHandler() {
+            index++;
+            if (index < charsetsToTry.length)
+                return new BodyContentHandler();
+            return handler;
+        }
+        @Override
+        public ContentHandler getNewContentHandler(OutputStream os,
+                String encoding) throws UnsupportedEncodingException {
+            return getNewContentHandler();
+        }
+    }
+
     protected class CharsetTester {
         /**
          * Our current charset's index

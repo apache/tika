@@ -37,6 +37,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -47,6 +48,8 @@ import org.xml.sax.SAXException;
  *  of the various parsers used.
  * End users should normally use {@link FallbackParser} or
  *  {@link SupplementingParser} along with a Strategy.
+ * Note that unless you give a {@link ContentHandlerFactory},
+ *  you'll get content from every parser tried mushed together!
  *
  * @since Apache Tika 1.18
  */
@@ -85,11 +88,6 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         KEEP_ALL
     };
     
-    // TODO Figure out some sort of Content Policy and how
-    //  it might possibly work
-    // TODO Is an overridden method that takes a 
-    //  ContentHandlerFactory the best way?
-
     /**
      * Media type registry.
      */
@@ -179,10 +177,34 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     /**
      * Processes the given Stream through one or more parsers, 
      *  resetting things between parsers as requested by policy.
-     * The actual processing is delegated to one or more {@link Parser}s
+     * The actual processing is delegated to one or more {@link Parser}s.
+     * 
+     * Note that you'll get text from every parser this way, to have 
+     *  control of which content is from which parser you need to
+     *  call the method with a {@link ContentHandlerFactory} instead. 
      */
+    @Override
     public void parse(
             InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        parse(stream, handler, null, metadata, context);
+    }
+    /**
+     * Processes the given Stream through one or more parsers, 
+     *  resetting things between parsers as requested by policy.
+     * The actual processing is delegated to one or more {@link Parser}s.
+     * You will get one ContentHandler fetched for each Parser used.
+     * TODO Do we need to return all the ContentHandler instances we created?
+     */
+    public void parse(
+            InputStream stream, ContentHandlerFactory handlers,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        parse(stream, null, handlers, metadata, context);
+    }
+    private void parse(InputStream stream, 
+            ContentHandler handler, ContentHandlerFactory handlerFactory,
             Metadata originalMetadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         // Track the metadata between parsers, so we can apply our policy
@@ -200,16 +222,18 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             taggedStream.getPath();
             
-            // TODO Somehow shield/wrap the Handler, so that we can
-            //  avoid failures if multiple parsers want to do content
-            // TODO Solve the multiple-content problem!
-            // TODO Provide a way to supply a ContentHandlerFactory?
-
             for (Parser p : parsers) {
                 // Indicate we may need to re-read the stream later
                 // TODO Support an InputStreamFactory as an alternative to
                 //  Files, see TIKA-2585
                 taggedStream.mark(-1);
+                
+                // Get a new handler for this parser, if we can
+                // If not, the user will get text from every parser
+                //  mushed together onto the one solitary handler...
+                if (handlerFactory != null) {
+                    handler = handlerFactory.getNewContentHandler();
+                }
                 
                 // Record that we used this parser
                 recordParserDetails(p, originalMetadata);
@@ -265,9 +289,6 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             }
         }
     }
-    
-    // TODO Provide a method that takes an InputStreamSource as well,
-    //  and a ContentHandlerFactory. Will need wrappers to convert standard
     
     protected static Metadata mergeMetadata(Metadata newMetadata, Metadata lastMetadata, MetadataPolicy policy) {
         if (policy == MetadataPolicy.DISCARD_ALL) {
