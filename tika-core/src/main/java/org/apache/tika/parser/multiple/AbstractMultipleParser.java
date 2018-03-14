@@ -37,6 +37,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -194,7 +195,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             // Force the stream to be a Tika one
             // Force the stream to be file-backed, so we can re-read safely
             //  later if required for parser 2+
-            // TODO Should we use RereadableInputStream instead?
+            // TODO Should we support RereadableInputStream as well?
+            // TODO Can we put this re-read logic in a utils method?
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             taggedStream.getPath();
             
@@ -223,6 +225,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 try {
                     p.parse(taggedStream, handler, metadata, context);
                 } catch (Exception e) {
+                    // Record the failure such that it can't get lost / overwritten
+                    recordParserFailure(p, e, originalMetadata);
                     recordParserFailure(p, e, metadata);
                     failure = e;
                 }
@@ -255,7 +259,10 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         
         // Finally, copy the latest metadata back onto their supplied object
         for (String n : metadata.names()) {
-            originalMetadata.set(n, metadata.get(n));
+            originalMetadata.remove(n);
+            for (String val : metadata.getValues(n)) {
+                originalMetadata.add(n, val);
+            }
         }
     }
     
@@ -268,13 +275,31 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         }
         
         for (String n : lastMetadata.names()) {
-            if (newMetadata.get(n) == null) {
-                newMetadata.set(n, lastMetadata.get(n));
+            // If this is one of the metadata keys we're setting ourselves
+            //  for tracking/errors, then always keep the latest one!
+            if (n.equals(ParserUtils.X_PARSED_BY)) continue;
+            if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) continue;
+            if (n.equals(ParserUtils.EMBEDDED_EXCEPTION.getName())) continue;
+            
+            // Merge as per policy 
+            String[] newVals = newMetadata.getValues(n);
+            String[] oldVals = lastMetadata.getValues(n);
+            if (newVals == null) {
+                // Metadata only in previous run, keep old values
+                for (String val : oldVals) {
+                    newMetadata.add(n, val);
+                }
+            } else if (Arrays.deepEquals(oldVals, newVals)) {
+                // Metadata is the same, nothing to do
+                continue;
             } else {
                 switch (policy) {
                 case FIRST_WINS:
-                    // Use the earlier value 
-                    newMetadata.set(n, lastMetadata.get(n));
+                    // Use the earlier value(s) in place of this/these one/s
+                    newMetadata.remove(n);
+                    for (String val : oldVals) {
+                        newMetadata.add(n, val);
+                    }
                     continue;
                 case LAST_WINS:
                     // Most recent (last) parser has already won

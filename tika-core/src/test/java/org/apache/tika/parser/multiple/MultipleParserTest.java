@@ -17,6 +17,7 @@
 package org.apache.tika.parser.multiple;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
@@ -96,7 +97,8 @@ public class MultipleParserTest {
        
         usedParsers = metadata.getValues("X-Parsed-By");
         assertEquals(2, usedParsers.length);
-        assertEquals(DummyParser.class.getName(), usedParsers[0]);
+        assertEquals(ErrorParser.class.getName(), usedParsers[0]);
+        assertEquals(DummyParser.class.getName(), usedParsers[1]);
         
         // TODO Check we got an exception
         
@@ -134,8 +136,15 @@ public class MultipleParserTest {
         EmptyParser pNothing = new EmptyParser();
         
         
+        // Supplemental doesn't support DISCARD
+        try {
+            new SupplementingParser(null, MetadataPolicy.DISCARD_ALL, new Parser[0]);
+            fail("Discard shouldn't be supported");
+        } catch (IllegalArgumentException e) {}
+        
+        
         // With only one parser defined, works as normal
-        p = new FallbackParser(null, MetadataPolicy.DISCARD_ALL, pContent1);
+        p = new SupplementingParser(null, MetadataPolicy.FIRST_WINS, pContent1);
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
@@ -151,12 +160,12 @@ public class MultipleParserTest {
         
         
         // Check the First, Last and All policies
-        p = new FallbackParser(null, MetadataPolicy.FIRST_WINS, pFail, pContent1, pContent2);
+        p = new SupplementingParser(null, MetadataPolicy.FIRST_WINS, pFail, pContent1, pContent2);
 
         metadata = new Metadata();
         handler = new BodyContentHandler();
         p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
-        assertEquals("Fell back 1!", handler.toString());
+        assertEquals("Fell back 1!Fell back 2!", handler.toString());
         
         assertEquals("Test1", metadata.get("T1"));
         assertEquals("Test1", metadata.get("TBoth"));
