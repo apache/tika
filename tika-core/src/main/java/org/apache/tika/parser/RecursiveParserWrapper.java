@@ -84,7 +84,7 @@ public class RecursiveParserWrapper implements Parser {
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = 
                 Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 
-    public final static Property EMBEDDED_EXCEPTIONx = ParserUtils.EMBEDDED_EXCEPTION;
+    public final static Property EMBEDDED_EXCEPTION = ParserUtils.EMBEDDED_EXCEPTION;
     //move this to TikaCoreProperties?
     public final static Property EMBEDDED_RESOURCE_PATH = 
                 Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"embedded_resource_path");
