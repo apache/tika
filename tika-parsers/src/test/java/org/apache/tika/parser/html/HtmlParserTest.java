@@ -78,6 +78,7 @@ import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -848,6 +849,38 @@ public class HtmlParserTest extends TikaTest {
         String result = sw.toString();
         // Make sure we don't get <body><BODY/></body>
         assertTrue(Pattern.matches("(?s).*<body/>.*$", result));
+    }
+
+    /**
+     * Test case for TIKA-2610
+     *
+     * HtmlParser should take element attributes into account while deciding on what elements to discard during processing if a
+     * corresponding {@link HtmlMapper} is provided in {@link ParseContext}
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDiscardByAttributes() throws Exception {
+
+        HtmlMapper attributeSensitiveHtmlMapper = new IdentityHtmlMapper() {
+            @Override
+            public boolean isDiscardElement(String name, Attributes attributes) {
+                return ("div".equalsIgnoreCase(name) && attributes.getValue("data-meta-discard-content") != null)
+                        || super.isDiscardElement(name, attributes);
+            }
+        };
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HtmlMapper.class, attributeSensitiveHtmlMapper);
+        BodyContentHandler bodyContentHandler = new BodyContentHandler();
+
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream("/test-documents/testHTML_discardByAttribute.html"),
+                bodyContentHandler, new Metadata(), parseContext);
+
+        String content = bodyContentHandler.toString();
+
+        assertContainsCount("Content To Be Included", content, 2);
+        assertNotContained("Discarded Content", content);
     }
 
     /**
