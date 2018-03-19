@@ -29,7 +29,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +53,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ServiceLoader;
@@ -62,7 +60,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
@@ -78,7 +75,6 @@ import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
@@ -876,7 +872,6 @@ public class HtmlParserTest extends TikaTest {
         new HtmlParser().parse(
                 HtmlParserTest.class.getResourceAsStream("/test-documents/testHTML_discardByAttribute.html"),
                 bodyContentHandler, new Metadata(), parseContext);
-
         String content = bodyContentHandler.toString();
 
         assertContainsCount("Content To Be Included", content, 2);
