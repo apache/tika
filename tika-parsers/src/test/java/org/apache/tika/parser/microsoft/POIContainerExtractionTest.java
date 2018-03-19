@@ -27,7 +27,7 @@ import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.utils.ParserUtils;
 import org.junit.Test;
 
 /**
@@ -374,7 +374,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
                 if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
-                assertNull(m.get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
+                assertNull(m.get(ParserUtils.EMBEDDED_EXCEPTION));
             }
             assertTrue("didn't find chart in "+suffix, found);
         }

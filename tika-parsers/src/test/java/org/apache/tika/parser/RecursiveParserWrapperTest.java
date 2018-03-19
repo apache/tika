@@ -36,6 +36,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.utils.ParserUtils;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -206,7 +207,7 @@ public class RecursiveParserWrapperTest {
         //is to catch the exception
         assertEquals(13, list.size());
         Metadata mockNPEMetadata = list.get(10);
-        assertContains("java.lang.NullPointerException", mockNPEMetadata.get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
+        assertContains("java.lang.NullPointerException", mockNPEMetadata.get(ParserUtils.EMBEDDED_EXCEPTION));
 
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded_npe.docx");
