@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -215,20 +214,11 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         // Start tracking resources, so we can clean up when done
         TemporaryResources tmp = new TemporaryResources();
         try {
-            // Force the stream to be a Tika one
-            // Force the stream to be file-backed, so we can re-read safely
-            //  later if required for parser 2+
-            // TODO Should we support RereadableInputStream as well?
-            // TODO Can we put this re-read logic in a utils method?
-            TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
-            taggedStream.getPath();
+            // Ensure we'll be able to re-read safely, buffering to disk if so,
+            //  to permit Parsers 2+ to be able to read the same data
+            InputStream taggedStream = ParserUtils.ensureStreamReReadable(stream, tmp);
             
             for (Parser p : parsers) {
-                // Indicate we may need to re-read the stream later
-                // TODO Support an InputStreamFactory as an alternative to
-                //  Files, see TIKA-2585
-                taggedStream.mark(-1);
-                
                 // Get a new handler for this parser, if we can
                 // If not, the user will get text from every parser
                 //  mushed together onto the one solitary handler...
@@ -276,7 +266,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
                 
                 // Prepare for the next parser, if present
                 lastMetadata = cloneMetadata(metadata);
-                taggedStream.reset();
+                taggedStream = ParserUtils.streamResetForReRead(taggedStream, tmp);
             }
         } finally {
             tmp.dispose();

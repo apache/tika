@@ -96,7 +96,7 @@ public class ParserUtils {
      * Streams that are automatically OK include {@link TikaInputStream}s
      *  created from Files or InputStreamFactories, and {@link RereadableInputStream}.
      */
-    public InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp) throws IOException {
+    public static InputStream ensureStreamReReadable(InputStream stream, TemporaryResources tmp) throws IOException {
         // If it's re-readable, we're done
         if (stream instanceof RereadableInputStream) return stream;
 
@@ -120,7 +120,7 @@ public class ParserUtils {
      *  {@link #ensureStreamReReadable(InputStream, TemporaryResources)})
      * so that it can be re-read again.
      */
-    public InputStream streamResetForReRead(InputStream stream, TemporaryResources tmp) throws IOException {
+    public static InputStream streamResetForReRead(InputStream stream, TemporaryResources tmp) throws IOException {
         // If re-readable, rewind to start
         if (stream instanceof RereadableInputStream) {
             ((RereadableInputStream)stream).rewind();
