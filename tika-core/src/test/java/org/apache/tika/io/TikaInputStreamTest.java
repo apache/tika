@@ -20,6 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +39,10 @@ public class TikaInputStreamTest {
     @Test
     public void testFileBased() throws IOException {
         Path path = createTempFile("Hello, World!");
-        InputStream stream = TikaInputStream.get(path);
+        TikaInputStream stream = TikaInputStream.get(path);
+        assertTrue(stream.hasFile());
+        assertNull(stream.getOpenContainer());
+        assertNull(stream.getInputStreamFactory());
 
         assertEquals(
                 "The file returned by the getFile() method should"
@@ -61,10 +66,16 @@ public class TikaInputStreamTest {
     @Test
     public void testStreamBased() throws IOException {
         InputStream input = IOUtils.toInputStream("Hello, World!", UTF_8.name());
-        InputStream stream = TikaInputStream.get(input);
+        TikaInputStream stream = TikaInputStream.get(input);
+        assertFalse(stream.hasFile());
+        assertNull(stream.getOpenContainer());
+        assertNull(stream.getInputStreamFactory());
 
         Path file = TikaInputStream.get(stream).getPath();
         assertTrue(file != null && Files.isRegularFile(file));
+        assertTrue(stream.hasFile());
+        assertNull(stream.getOpenContainer());
+        assertNull(stream.getInputStreamFactory());
 
         assertEquals(
                 "The contents of the file returned by the getFile method"
@@ -81,6 +92,25 @@ public class TikaInputStreamTest {
                 "The close() method must remove the temporary file created"
                 + " by a TikaInputStream",
                 Files.exists(file));
+    }
+    
+    @Test
+    public void testInputStreamFactoryBased() throws IOException {
+        TikaInputStream stream = TikaInputStream.get(new InputStreamFactory() {
+            @Override
+            public InputStream getInputStream() throws IOException {
+                return IOUtils.toInputStream("Hello, World!", UTF_8.name());
+            }
+        });
+        assertFalse(stream.hasFile());
+        assertNull(stream.getOpenContainer());
+        assertNotNull(stream.getInputStreamFactory());
+
+        assertEquals(
+                "The contents of the TikaInputStream should not get modified"
+                + " by reading the file first",
+                "Hello, World!", readStream(stream));
+        stream.close();
     }
 
     private Path createTempFile(String data) throws IOException {
