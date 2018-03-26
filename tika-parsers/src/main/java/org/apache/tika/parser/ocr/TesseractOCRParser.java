@@ -468,8 +468,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
         ArrayList<String> cmd = new ArrayList<>(Arrays.asList(
                 config.getTesseractPath() + getTesseractProg(), input.getPath(),  output.getPath(), "-l",
-                config.getLanguage(), "-psm", config.getPageSegMode(),
-                config.getOutputType().name().toLowerCase(Locale.US)
+                config.getLanguage(), "--psm", config.getPageSegMode()
         ));
         for (Map.Entry<String, String> entry : config.getOtherTesseractConfig().entrySet()) {
             cmd.add("-c");
@@ -478,7 +477,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         cmd.addAll(Arrays.asList(
                 "-c", "page_separator=" + config.getPageSeparator(),
                 "-c",
-                (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0"
+                (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
+                config.getOutputType().name().toLowerCase(Locale.US)
         ));
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
