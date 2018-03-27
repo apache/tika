@@ -673,12 +673,6 @@
       <artifactId>jdom2</artifactId>
       <version>2.0.6</version>
     </dependency>
-    <!--Jackson parse String to JSON-->
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>2.9.4</version>
-    </dependency>
 
     <!-- Java ImageIO plugin for JBIG2 support (often used in PDF)
          This jbig2 dep is not distributed with Tika due to licensing
