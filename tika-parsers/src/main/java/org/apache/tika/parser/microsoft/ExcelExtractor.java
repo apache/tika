@@ -541,7 +541,16 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 CellValueRecordInterface value =
                         (CellValueRecordInterface) record;
                 Point point = new Point(value.getColumn(), value.getRow());
-                currentSheet.put(point, cell);
+                if (currentSheet.containsKey(point)) {
+                    //avoid overwriting content
+                    //for now, add to extraTextCells
+                    //TODO: consider allowing multiple text pieces
+                    //per x,y to keep the text together
+                    extraTextCells.add(cell);
+                } else {
+                    currentSheet.put(point, cell);
+                }
+
             } else {
                 // Cell outside the worksheets
                 extraTextCells.add(cell);
@@ -647,6 +656,12 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale) {
                 super(childListener, locale);
                 generalFormat = new TikaExcelGeneralFormat(locale);
+            }
+
+            @Override
+            public void processRecord(Record record) {
+//                System.out.println(record.getClass() + " : "+record.toString());
+                super.processRecord(record);
             }
 
             @Override
