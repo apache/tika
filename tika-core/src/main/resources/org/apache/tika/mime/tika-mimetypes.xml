@@ -5787,7 +5787,6 @@
       <match value="\nReturn-Path:" type="stringignorecase" offset="0:1000"/>
       <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:1000"/>
       <match value="\nReceived:" type="stringignorecase" offset="0:1000"/>
-      <match value="\nMessage-ID:" type="stringignorecase" offset="0:1000"/>
       <match value="Date:" type="string" offset="0"/>
       <match value="User-Agent:" type="string" offset="0"/>
       <match value="MIME-Version:" type="stringignorecase" offset="0"/>
@@ -5809,6 +5808,10 @@
         <match value="\nSubject:" type="string" offset="0:8192"/>
         <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
       </match>
+    </magic>
+    <magic priority="40">
+      <!-- lower priority than message/news -->
+      <match value="\nMessage-ID:" type="stringignorecase" offset="0:1000"/>
     </magic>
     <glob pattern="*.eml"/>
     <glob pattern="*.mime"/>

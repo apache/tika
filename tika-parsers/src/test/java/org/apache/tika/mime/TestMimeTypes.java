@@ -913,7 +913,11 @@ public class TestMimeTypes {
         assertTypeDetection("testEML_embedded_xhtml_and_img.eml", "message/rfc822");
 
     }
-    
+
+    @Test
+    public void testMessageNews() throws Exception {
+        assertTypeByData("message/news", "testMessageNews.txt");
+    }
     @Test
     public void testAxCrypt() throws Exception {
         // test-TXT.txt encrypted with a key of "tika"
