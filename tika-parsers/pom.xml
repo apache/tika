@@ -42,7 +42,7 @@
     <tukaani.version>1.8</tukaani.version>
     <mime4j.version>0.8.1</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.8</pdfbox.version>
+    <pdfbox.version>2.0.9</pdfbox.version>
     <jempbox.version>1.8.13</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>0.8</sis.version>
@@ -678,18 +678,12 @@
       <artifactId>jackson-core</artifactId>
       <version>2.9.4</version>
     </dependency>
-
-    <!-- Java ImageIO plugin for JBIG2 support (often used in PDF)
-         This jbig2 dep is not distributed with Tika due to licensing
-         issue (GPLV3). That's why it is included here as "test".
-         https://github.com/levigo/jbig2-imageio
-      -->
     <dependency>
-      <groupId>com.levigo.jbig2</groupId>
-      <artifactId>levigo-jbig2-imageio</artifactId>
-      <version>1.6.5</version>
-      <scope>test</scope>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>jbig2-imageio</artifactId>
+      <version>3.0.0</version>
     </dependency>
+
     <!-- jai-imageio-core is allowed since LEGAL-304 -->
     <dependency>
       <groupId>com.github.jai-imageio</groupId>

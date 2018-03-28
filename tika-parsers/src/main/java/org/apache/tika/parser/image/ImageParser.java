@@ -66,12 +66,10 @@ public class ImageParser extends AbstractParser {
                 MediaType.image("png"),
                 MediaType.image("vnd.wap.wbmp"),
                 MediaType.image("x-icon"),
-                MediaType.image("x-xcf")));
-        try {
-            Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-            TMP_SUPPORTED.add(MediaType.image("x-jbig2"));
-        } catch (ClassNotFoundException e) {
-        }
+                MediaType.image("x-xcf"),
+                MediaType.image("x-jbig2")));
+        //add try/catch class.forName() for image types relying on
+        //provided dependencies
     }
 
     private static final Set<MediaType> SUPPORTED_TYPES =
