@@ -213,7 +213,7 @@ class MailContentHandler implements ContentHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             IOUtils.copy(is, bos);
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
-        } else if (!extractAllAlternatives && parts.size() == 1) {
+        } else if (!extractAllAlternatives && parts.size() < 2) {
             //if you're at the first level of embedding
             //and you're not in an alternative part block
             //and you're text/html, put that in the body of the email
