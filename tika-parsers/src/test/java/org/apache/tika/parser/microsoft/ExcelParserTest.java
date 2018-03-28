@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.InputStream;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
@@ -543,5 +544,11 @@ public class ExcelParserTest extends TikaTest {
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xls", parser).xml);
 
+    }
+
+    @Test
+    public void testLabelsAreExtracted() throws Exception {
+        String xml = getXML("testEXCEL_labels-govdocs-515858.xls").xml;
+        assertContains("Morocco", xml);
     }
 }
