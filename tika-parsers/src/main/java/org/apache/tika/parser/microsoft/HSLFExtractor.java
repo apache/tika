@@ -36,7 +36,6 @@ import org.apache.poi.hslf.usermodel.HSLFMasterSheet;
 import org.apache.poi.hslf.usermodel.HSLFNotes;
 import org.apache.poi.hslf.usermodel.HSLFObjectData;
 import org.apache.poi.hslf.usermodel.HSLFPictureData;
-import org.apache.poi.hslf.usermodel.HSLFPictureShape;
 import org.apache.poi.hslf.usermodel.HSLFShape;
 import org.apache.poi.hslf.usermodel.HSLFSlide;
 import org.apache.poi.hslf.usermodel.HSLFSlideShow;
@@ -52,6 +51,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -489,8 +489,19 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         }
                         if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
                                 || mediaType.equals("application/x-tika-msoffice")) {
-                            try(NPOIFSFileSystem npoifs = new NPOIFSFileSystem(new CloseShieldInputStream(stream))) {
+                            NPOIFSFileSystem npoifs = null;
+
+                            try {
+                                npoifs = new NPOIFSFileSystem(new CloseShieldInputStream(stream));
+                            } catch (RuntimeException e) {
+                                throw new IOExceptionWithCause(e);
+                            }
+                            try {
                                 handleEmbeddedOfficeDoc(npoifs.getRoot(), objID, xhtml);
+                            } finally {
+                                if (npoifs != null) {
+                                    npoifs.close();
+                                }
                             }
                         } else {
                             handleEmbeddedResource(
