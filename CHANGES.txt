@@ -1,5 +1,8 @@
 Release 1.18 - ???
-   
+
+   * Upgrade PDFBox to 2.0.9 and include new jbig2-imageio
+     from org.apache.pdfbox (TIKA-2579 and TIKA-2607).
+
    * Support for TIFF images in PDF files (TIKA-2338)
    
    * Detection of full encrypted 7z files (TIKA-2568)
