@@ -132,6 +132,9 @@ public class PDFParser extends AbstractParser implements Initializable {
             throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+        if (localConfig.getSetKCMS()) {
+            System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
+        }
 
         PDDocument pdfDocument = null;
 
@@ -700,6 +703,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     @Field
     void setExtractActions(boolean extractActions) {
         defaultConfig.setExtractActions(extractActions);
+    }
+
+    @Field
+    void setSetKCMS(boolean setKCMS) {
+        defaultConfig.setSetKCMS(setKCMS);
     }
 
     @Field
