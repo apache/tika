@@ -80,11 +80,11 @@ public class CompressorParserTest extends TikaTest {
     @Test
     public void testBrotli() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testBROTLI_compressed.br");
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "testBROTLI_compressed.br");
         List<Metadata> metadataList = getRecursiveMetadata("testBROTLI_compressed.br", metadata);
 
         assertContains("XXXXXXXXXXYYYYYYYYYY", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("testBROTLI_compressed", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("testBROTLI_compressed", metadataList.get(1).get(Metadata.RESOURCE_NAME_KEY));
     }
 
     @Test
