@@ -3135,6 +3135,20 @@
       <match value="bplist" type="string" offset="0"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-gtar">
+    <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
+    <magic priority="50">
+      <!-- GNU tar archive -->
+      <match value="ustar  \0" type="string" offset="257" />
+    </magic>
+    <glob pattern="*.gtar"/>
+    <sub-class-of type="application/x-tar"/>
+  </mime-type>
+
+  <mime-type type="application/x-brotli">
+    <glob pattern="*.br" />
+    <glob pattern="*.brotli" />
+  </mime-type>
 
   <mime-type type="application/x-bzip">
     <magic priority="40">

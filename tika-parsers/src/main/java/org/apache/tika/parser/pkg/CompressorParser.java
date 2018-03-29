@@ -21,6 +21,10 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.compress.MemoryLimitException;
@@ -78,9 +82,47 @@ public class CompressorParser extends AbstractParser {
     private static final MediaType ZSTD = MediaType.application("zstd");
     private static final MediaType DEFLATE64= MediaType.application("deflate64");
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS,
-                    XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA, ZSTD);
+    private static Set<MediaType> SUPPORTED_TYPES;
+    private static Map<String, String> MIMES_TO_NAME;
+
+    static {
+        Set<MediaType> TMP_SET = new HashSet<>();
+        TMP_SET.addAll(
+                MediaType.set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS,
+                        XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA));
+        try {
+            Class.forName("org.brotli.dec.BrotliInputStream");
+            TMP_SET.add(BROTLI);
+        } catch (NoClassDefFoundError|ClassNotFoundException e) {
+            //swallow
+        }
+        try {
+            Class.forName("com.github.luben.zstd.ZstdInputStream");
+            TMP_SET.add(ZSTD);
+        } catch (NoClassDefFoundError|ClassNotFoundException e) {
+            //swallow
+        }
+        SUPPORTED_TYPES = Collections.unmodifiableSet(TMP_SET);
+    }
+
+    static {
+        //map the mime type strings to the compressor stream names
+        Map<String, String> tmpMimesToName = new HashMap<>();
+        tmpMimesToName.put(BZIP2.toString(), CompressorStreamFactory.BZIP2);
+        tmpMimesToName.put(GZIP.toString(), CompressorStreamFactory.GZIP);
+        tmpMimesToName.put(LZ4_FRAMED.toString(), CompressorStreamFactory.LZ4_FRAMED);
+        tmpMimesToName.put(LZ4_BLOCK.toString(), CompressorStreamFactory.LZ4_BLOCK);
+        tmpMimesToName.put(XZ.toString(), CompressorStreamFactory.XZ);
+        tmpMimesToName.put(PACK.toString(), CompressorStreamFactory.PACK200);
+        tmpMimesToName.put(SNAPPY_FRAMED.toString(), CompressorStreamFactory.SNAPPY_FRAMED);
+        tmpMimesToName.put(ZLIB.toString(), CompressorStreamFactory.DEFLATE);
+        tmpMimesToName.put(COMPRESS.toString(), CompressorStreamFactory.Z);
+        tmpMimesToName.put(LZMA.toString(), CompressorStreamFactory.LZMA);
+        tmpMimesToName.put(BROTLI.toString(), CompressorStreamFactory.BROTLI);
+        tmpMimesToName.put(ZSTD.toString(), CompressorStreamFactory.ZSTANDARD);
+        MIMES_TO_NAME = Collections.unmodifiableMap(tmpMimesToName);
+    }
+
 
     private int memoryLimitInKb = 100000;//100MB
 
@@ -181,7 +223,19 @@ public class CompressorParser extends AbstractParser {
                  });
             CompressorStreamFactory factory =
                     new CompressorStreamFactory(options.decompressConcatenated(metadata), memoryLimitInKb);
-            cis = factory.createCompressorInputStream(stream);
+            //if we've already identified it via autodetect
+            //trust that and go with the appropriate name
+            //to avoid calling CompressorStreamFactory.detect() twice
+            String name = getStreamName(metadata);
+            if (name != null) {
+                cis = factory.createCompressorInputStream(name, stream);
+            } else {
+                cis = factory.createCompressorInputStream(stream);
+                MediaType type = getMediaType(cis);
+                if (!type.equals(MediaType.OCTET_STREAM)) {
+                    metadata.set(CONTENT_TYPE, type.toString());
+                }
+            }
         } catch (CompressorException e) {
             if (e.getCause() != null && e.getCause() instanceof MemoryLimitException) {
                 throw new TikaMemoryLimitException(e.getMessage());
@@ -189,10 +243,6 @@ public class CompressorParser extends AbstractParser {
             throw new TikaException("Unable to uncompress document stream", e);
         }
 
-        MediaType type = getMediaType(cis);
-        if (!type.equals(MediaType.OCTET_STREAM)) {
-            metadata.set(CONTENT_TYPE, type.toString());
-        }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -215,6 +265,8 @@ public class CompressorParser extends AbstractParser {
                     name = name.substring(0, name.length() - 5);
                 } else if (name.endsWith(".pack")) {
                     name = name.substring(0, name.length() - 5);
+                } else if (name.endsWith(".br")) {
+                    name = name.substring(0, name.length() - 3);
                 } else if (name.length() > 0) {
                     name = GzipUtils.getUncompressedFilename(name);
                 }
@@ -232,6 +284,20 @@ public class CompressorParser extends AbstractParser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * @param metadata
+     * @return CompressorStream name based on the content-type value
+     * in metadata or <code>null</code> if not found
+     *  ind
+     */
+    private String getStreamName(Metadata metadata) {
+        String mimeString = metadata.get(Metadata.CONTENT_TYPE);
+        if (mimeString == null) {
+            return null;
+        }
+        return MIMES_TO_NAME.get(mimeString);
     }
 
     @Field
