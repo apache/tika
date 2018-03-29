@@ -1,5 +1,7 @@
 Release 1.18 - ???
 
+   * Add support for brotli (TIKA-2621).
+
    * Upgrade PDFBox to 2.0.9 and include new jbig2-imageio
      from org.apache.pdfbox (TIKA-2579 and TIKA-2607).
 
