@@ -137,6 +137,8 @@ public class PDFParserConfig implements Serializable {
 
     private long maxMainMemoryBytes = -1;
 
+    private boolean setKCMS = false;
+
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
@@ -215,6 +217,7 @@ public class PDFParserConfig implements Serializable {
 
         setExtractActions(getBooleanProp(props.getProperty("extractActions"), false));
 
+        setSetKCMS(getBooleanProp(props.getProperty("setKCMS"), false));
 
         boolean checkExtractAccessPermission = getBooleanProp(props.getProperty("checkExtractAccessPermission"), false);
         boolean allowExtractionForAccessibility = getBooleanProp(props.getProperty("allowExtractionForAccessibility"), true);
@@ -686,6 +689,30 @@ public class PDFParserConfig implements Serializable {
 
     public void setMaxMainMemoryBytes(int maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
+    }
+
+    /**
+     * <p>
+     *     Whether to call <code>System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider")</code>.
+     *     KCMS is the unmaintained, legacy provider and is far faster than the newer replacement.
+     *     However, there are stability and security risks with using the unmaintained legacy provider.
+     * </p>
+     * <p>
+     *     Note, of course, that this is <b>not</b> thread safe.  If the value is <code>false</code>
+     *     in your first thread, and the second thread changes this to <code>true</code>,
+     *     the system property in the first thread will now be <code>true</code>.
+     * </p>
+     * <p>
+     * Default is <code>false</code>.
+     * </p>
+     * @param setKCMS whether or not to set KCMS
+     */
+    public void setSetKCMS(boolean setKCMS) {
+        this.setKCMS = setKCMS;
+    }
+
+    public boolean getSetKCMS() {
+        return setKCMS;
     }
 
     private ImageType parseImageType(String ocrImageType) {
