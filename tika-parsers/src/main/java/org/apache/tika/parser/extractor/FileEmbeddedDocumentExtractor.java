@@ -1,4 +1,4 @@
-package org.apache.tika.extractor;
+package org.apache.tika.parser.extractor;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,6 +13,8 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -25,7 +27,12 @@ public class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor 
 
 	private int count = 0;
 	private final TikaConfig config = TikaConfig.getDefaultConfig();
+	private File extractDir;
 
+	public FileEmbeddedDocumentExtractor(File extractDir) {
+		this.extractDir = extractDir;
+	}
+	
 	public boolean shouldParseEmbedded(Metadata metadata) {
 		return true;
 	}
@@ -39,7 +46,9 @@ public class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor 
 		if (! inputStream.markSupported()) {
 			inputStream = TikaInputStream.get(inputStream);
 		}
-		MediaType contentType = detector.detect(inputStream, metadata);
+		
+		Detector detector = config.getDetector();
+		MediaType contentType = detector .detect(inputStream, metadata);
 
 		if (name.indexOf('.')==-1 && contentType!=null) {
 			try {
@@ -88,7 +97,7 @@ public class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor 
 					name,
 					e.getMessage()
 					);
-			LOG.warn(msg, e);
+//			LOG.warn(msg, e);
 		}
 	}
 

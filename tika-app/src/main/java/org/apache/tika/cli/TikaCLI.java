@@ -95,6 +95,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.extractor.FileEmbeddedDocumentExtractor;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.utils.CommonsDigester;
@@ -444,7 +445,7 @@ public class TikaCLI {
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             extractInlineImagesFromPDFs();
             type = NO_OUTPUT;
-            context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
+            context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor(extractDir));
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
         } else if (arg.equals("-p") || arg.equals("--port")
