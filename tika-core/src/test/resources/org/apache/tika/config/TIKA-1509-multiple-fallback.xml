@@ -29,8 +29,8 @@
        <params>
           <param name="metadataPolicy" value="DISCARD" />
        </params>
-       <parser class="org.apache.tika.parser.ErrorParser".>
-       <parser class="org.apache.tika.parser.EmptyParser">
+       <parser class="org.apache.tika.parser.ErrorParser"/>
+       <parser class="org.apache.tika.parser.EmptyParser"/>
        <mime>application/pdf</mime>
     </parser>
 
