@@ -106,7 +106,10 @@ public class ParserDecorator extends AbstractParser {
         // Delegate to the new FallbackParser for now, until people upgrade
         // Keep old behaviour on metadata, which was to preseve all
         MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
-        return new FallbackParser(registry, MetadataPolicy.KEEP_ALL, parsers);
+        Parser p = new FallbackParser(registry, MetadataPolicy.KEEP_ALL, parsers);
+        
+        if (types == null || types.isEmpty()) return p;
+        return withTypes(p, types);
     }
 
     /**
