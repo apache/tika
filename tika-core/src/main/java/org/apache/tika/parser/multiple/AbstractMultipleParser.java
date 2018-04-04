@@ -197,6 +197,8 @@ public abstract class AbstractMultipleParser extends AbstractParser {
      * The actual processing is delegated to one or more {@link Parser}s.
      * You will get one ContentHandler fetched for each Parser used.
      * TODO Do we need to return all the ContentHandler instances we created?
+     * @deprecated The {@link ContentHandlerFactory} override is still experimental 
+     *  and the method signature is subject to change before Tika 2.0
      */
     public void parse(
             InputStream stream, ContentHandlerFactory handlers,
