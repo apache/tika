@@ -17,6 +17,7 @@
 package org.apache.tika.parser.multiple;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
@@ -48,7 +49,7 @@ public class FallbackParser extends AbstractMultipleParser {
 
 
     public FallbackParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                           List<Parser> parsers) {
+                          Collection<? extends Parser> parsers) {
         super(registry, policy, parsers);
     }
     public FallbackParser(MediaTypeRegistry registry, MetadataPolicy policy,

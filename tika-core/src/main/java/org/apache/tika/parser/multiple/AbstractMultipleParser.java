@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -101,7 +102,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     /**
      * List of the multiple parsers to try.
      */
-    private List<Parser> parsers;
+    private Collection<? extends Parser> parsers;
     
     /**
      * Computed list of Mime Types to offer, which is all
@@ -138,7 +139,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         this(registry, policy, Arrays.asList(parsers));
     }
     public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                                  List<Parser> parsers) {
+                                  Collection<? extends Parser> parsers) {
         this.policy = policy;
         this.parsers = parsers;
         this.registry = registry;

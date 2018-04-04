@@ -16,19 +16,15 @@
  */
 package org.apache.tika.parser.multiple;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Runs the input stream through all available parsers,
@@ -62,7 +58,7 @@ public class SupplementingParser extends AbstractMultipleParser {
         this(registry, policy, Arrays.asList(parsers));
     }
     public SupplementingParser(MediaTypeRegistry registry, MetadataPolicy policy,
-                               List<Parser> parsers) {
+                               Collection<? extends Parser> parsers) {
         super(registry, policy, parsers);
         
         // Ensure it's a supported policy
