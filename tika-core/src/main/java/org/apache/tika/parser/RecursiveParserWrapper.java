@@ -70,7 +70,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * The unit tests for this class are in the tika-parsers module.
  * </p>
  */
-public class RecursiveParserWrapper implements Parser {
+public class RecursiveParserWrapper extends ParserDecorator {
     
     /**
      * Generated serial version
@@ -126,6 +126,7 @@ public class RecursiveParserWrapper implements Parser {
      */
     public RecursiveParserWrapper(Parser wrappedParser,
                                   ContentHandlerFactory contentHandlerFactory, boolean catchEmbeddedExceptions) {
+        super(wrappedParser);
         this.wrappedParser = wrappedParser;
         this.contentHandlerFactory = contentHandlerFactory;
         this.catchEmbeddedExceptions = catchEmbeddedExceptions;
