@@ -19,7 +19,9 @@ package org.apache.tika.parser.multiple;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.tika.config.Param;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
@@ -53,6 +55,10 @@ public class SupplementingParser extends AbstractMultipleParser {
                           MetadataPolicy.KEEP_ALL);
 
 
+    public SupplementingParser(MediaTypeRegistry registry,
+                               Collection<? extends Parser> parsers, Map<String, Param> params) {
+        super(registry, parsers, params);
+    }
     public SupplementingParser(MediaTypeRegistry registry, MetadataPolicy policy,
                                Parser... parsers) {
         this(registry, policy, Arrays.asList(parsers));

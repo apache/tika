@@ -27,8 +27,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
@@ -88,6 +90,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
          */
         KEEP_ALL
     };
+    protected static final String METADATA_POLICY_CONFIG_KEY = "metadataPolicy";
     
     /**
      * Media type registry.
@@ -134,6 +137,17 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     }
 
     
+    protected static MetadataPolicy getMetadataPolicy(Map<String, Param> params) {
+        if (params.containsKey(METADATA_POLICY_CONFIG_KEY)) {
+            return (MetadataPolicy)params.get(METADATA_POLICY_CONFIG_KEY).getValue();
+        }
+        throw new IllegalArgumentException("Required parameter '"+METADATA_POLICY_CONFIG_KEY+"' not supplied");
+    }
+    public AbstractMultipleParser(MediaTypeRegistry registry, 
+                                  Collection<? extends Parser> parsers,
+                                  Map<String, Param> params) {
+        
+    }
     public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
                                   Parser... parsers) {
         this(registry, policy, Arrays.asList(parsers));
