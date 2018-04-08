@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -172,6 +173,9 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     
     public MetadataPolicy getMetadataPolicy() {
         return policy;
+    }
+    public List<Parser> getAllParsers() {
+        return Collections.unmodifiableList(new ArrayList<>(parsers));
     }
     
     /**

@@ -45,6 +45,7 @@ import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -254,6 +255,9 @@ public class TikaConfigSerializer {
                     (mode == Mode.STATIC || mode == Mode.STATIC_FULL)) {
                 outputParser = false;
             }
+        } else if (parser instanceof AbstractMultipleParser) {
+            // Always output the parsers that go into the multiple
+            children = ((AbstractMultipleParser)parser).getAllParsers();
         }
 
         if (outputParser) {
@@ -290,6 +294,16 @@ public class TikaConfigSerializer {
         parserElement.setAttribute("class", className);
         rootElement.appendChild(parserElement);
 
+        // TODO Output configurable parameters in a genric way, see TIKA-1508
+        if (parser instanceof AbstractMultipleParser) {
+            Element paramsElement = doc.createElement("params");
+            Element paramElement = doc.createElement("param");
+            paramElement.setAttribute("name", "metadataPolicy");
+            paramElement.setAttribute("value", ((AbstractMultipleParser)parser).getMetadataPolicy().toString());
+            paramsElement.appendChild(paramElement);
+            parserElement.appendChild(paramsElement);
+        }
+        
         for (MediaType type : addedTypes) {
             Element mimeElement = doc.createElement("mime");
             mimeElement.appendChild(doc.createTextNode(type.toString()));

@@ -31,9 +31,9 @@ import org.apache.tika.detect.NonDetectingEncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.xml.sax.ContentHandler;
@@ -49,8 +49,8 @@ import org.xml.sax.SAXException;
  * This is not recommended for actual production use... It is mostly to
  *  prove that the {@link AbstractMultipleParser} environment is
  *  sufficient to support this use-case
- *  
- * TODO Move this to the parsers package so it can get {@link TXTParser}
+ *
+ * TODO Implement proper "Junk" detection
  *
  * @deprecated Currently not suitable for real use, more a demo / prototype!
  */
@@ -66,7 +66,6 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
     private String[] charsetsToTry;
     
     public PickBestTextEncodingParser(MediaTypeRegistry registry, String[] charsets) {
-        // TODO Actually give 1 more TXTParser than we have charsets
         super(registry, MetadataPolicy.DISCARD_ALL, makeParsers(charsets));
         this.charsetsToTry = charsets;
     }
@@ -74,8 +73,7 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
         // One more TXTParser than we have charsets, for the real thing
         List<Parser> parsers = new ArrayList<>(charsets.length+1);
         for (int i=0; i<charsets.length+1; i++) {
-            // TODO Actually get the right parser, TXTParser
-            parsers.set(i, new EmptyParser());
+            parsers.set(i, new TXTParser());
         }
         return parsers;
     }
@@ -104,9 +102,25 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
             charsetTester.charsetText.put(charset, handler.toString());
             
             // If this was the last real charset, see which one is best
+            // TODO Do this in a more generic, less english-only way!
             if (! charsetTester.moreToTest()) {
-                // TODO Properly work out the best!
-                charsetTester.pickedCharset = charsetsToTry[0];
+                int numEnglish = 0;
+                String bestcharset = null;
+                for (String pcharset : charsetTester.charsetText.keySet()) {
+                    String text = charsetTester.charsetText.get(pcharset);
+                    int cEnglish = 0;
+                    for (char c : text.toCharArray()) {
+                       if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                           (c >= '0' && c <= '9')) {
+                           cEnglish++;
+                       }
+                    }
+                    if (cEnglish > numEnglish) {
+                        numEnglish = cEnglish;
+                        bestcharset = pcharset;
+                    }
+                }
+                charsetTester.pickedCharset = bestcharset;
             }
         }
         
