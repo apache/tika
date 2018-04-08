@@ -1,0 +1,13 @@
+Newsgroups: comp.unix.shell,comp.unix.questions,news.answers
+From: blah
+Subject: Csh Programming Considered Harmful 
+Message-ID: <1992Nov30.123449.8118@news.eng.convex.com>
+Date: Mon, 30 Nov 1992 12:34:49 GMT
+Organization: blah
+Lines: 496
+
+Archive-name: unix-faq/shell/csh-whynot
+Version: $Id: csh-faq,v 1.2 92/11/30 05:26:37 tchrist Exp Locker: tchrist $
+
+The following periodic article answers in excruciating detail
+the frequently asked question "Why shouldn't I program in csh?".

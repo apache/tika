@@ -21,14 +21,25 @@ package org.apache.tika.parser.pkg;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -39,7 +50,6 @@ public class CompressorParserTest extends TikaTest {
 
     @BeforeClass
     public static void setUp() {
-        NOT_COVERED.add(MediaType.application("x-brotli"));
         NOT_COVERED.add(MediaType.application("x-lz4-block"));
         NOT_COVERED.add(MediaType.application("x-snappy-raw"));
         NOT_COVERED.add(MediaType.application("deflate64"));
@@ -65,6 +75,16 @@ public class CompressorParserTest extends TikaTest {
     public void testZstd() throws Exception {
         XMLResult r = getXML("testZSTD.zstd");
         assertContains("0123456789", r.xml);
+    }
+
+    @Test
+    public void testBrotli() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testBROTLI_compressed.br");
+        List<Metadata> metadataList = getRecursiveMetadata("testBROTLI_compressed.br", metadata);
+
+        assertContains("XXXXXXXXXXYYYYYYYYYY", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("testBROTLI_compressed", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test

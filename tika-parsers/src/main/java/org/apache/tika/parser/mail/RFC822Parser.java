@@ -26,7 +26,9 @@ import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.config.Field;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -54,6 +56,10 @@ public class RFC822Parser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.parse("message/rfc822"));
 
+    //rely on the detector to be thread-safe
+    //built lazily and then reused
+    private Detector detector;
+
     @Field
     private boolean extractAllAlternatives = false;
 
@@ -71,12 +77,20 @@ public class RFC822Parser extends AbstractParser {
                 .build();
 
         config = context.get(MimeConfig.class, config);
-
+        Detector localDetector = context.get(Detector.class);
+        if (localDetector == null) {
+            //lazily load this if necessary
+            if (detector == null) {
+                EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+                detector = embeddedDocumentUtil.getDetector();
+            }
+            localDetector = detector;
+        }
         MimeStreamParser parser = new MimeStreamParser(config, null, new DefaultBodyDescriptorBuilder());
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(
-                xhtml, metadata, context, config.isStrictParsing(),
+                xhtml, localDetector, metadata, context, config.isStrictParsing(),
                 extractAllAlternatives);
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);

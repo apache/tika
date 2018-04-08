@@ -134,6 +134,9 @@ public class PDFParser extends AbstractParser implements Initializable {
             throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
+        if (localConfig.getSetKCMS()) {
+            System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
+        }
 
         PDDocument pdfDocument = null;
 
@@ -702,6 +705,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    void setSetKCMS(boolean setKCMS) {
+        defaultConfig.setSetKCMS(setKCMS);
+    }
+
+    @Field
     void setInitializableProblemHander(String name) {
         if ("ignore".equals(name)) {
             setInitializableProblemHandler(InitializableProblemHandler.IGNORE);
@@ -765,13 +773,6 @@ public class PDFParser extends AbstractParser implements Initializable {
                 return;
             }
             StringBuilder sb = new StringBuilder();
-            try {
-                Class.forName("com.levigo.jbig2.JBIG2ImageReader");
-            } catch (ClassNotFoundException e) {
-                sb.append("JBIG2ImageReader not loaded. jbig2 files will be ignored\n");
-                sb.append("See https://pdfbox.apache.org/2.0/dependencies.html#jai-image-io\n");
-                sb.append("for optional dependencies.\n");
-            }
             try {
                 Class.forName("com.github.jaiimageio.impl.plugins.tiff.TIFFImageWriter");
             } catch (ClassNotFoundException e) {

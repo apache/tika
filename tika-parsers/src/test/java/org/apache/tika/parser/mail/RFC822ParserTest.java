@@ -691,4 +691,11 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("application/pdf", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("/tzora-titan-4-hummer-xl-manual.pdf", metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
     }
+
+    @Test
+    public void testSimpleBodyInlined() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testRFC822_simple_inline_body.txt");
+        assertEquals(1, metadataList.size());
+        assertContains("asked", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
 }

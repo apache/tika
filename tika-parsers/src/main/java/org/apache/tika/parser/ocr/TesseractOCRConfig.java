@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -91,11 +93,17 @@ public class TesseractOCRConfig implements Serializable {
     // factor by which image is to be scaled.
     private int resize = 900;
 
+    // See setPageSeparator.
+    private String pageSeparator = "";
+
     // whether or not to preserve interword spacing
     private boolean preserveInterwordSpacing = false;
 
     // whether or not to apply rotation calculated by the rotation.py script
     private boolean applyRotation = false;
+
+    // See addOtherTesseractConfig.
+    private Map<String, String> otherTesseractConfig = new HashMap<>();
 
 
     /**
@@ -175,6 +183,7 @@ public class TesseractOCRConfig implements Serializable {
         setApplyRotation(
         		getProp(props, "applyRotation", getApplyRotation()));
 
+        loadOtherTesseractConfig(props);
     }
 
     /**
@@ -253,6 +262,25 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Invalid page segmentation mode");
         }
         this.pageSegMode = pageSegMode;
+    }
+
+    /**
+     * @see #setPageSeparator(String pageSeparator)
+     */
+    public String getPageSeparator() {
+        return pageSeparator;
+    }
+
+    /**
+     * The page separator to use in plain text output.  This corresponds to Tesseract's page_separator config option.
+     * The default here is the empty string (i.e. no page separators).  Note that this is also the default in
+     * Tesseract 3.x, but in Tesseract 4.0 the default is to use the form feed control character.  We are overriding
+     * Tesseract 4.0's default here.
+     *
+     * @param pageSeparator
+     */
+    public void setPageSeparator(String pageSeparator) {
+        this.pageSeparator = pageSeparator;
     }
 
     /**
@@ -495,6 +523,28 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
+     * @see #addOtherTesseractConfig(String, String)
+     */
+    public Map<String, String> getOtherTesseractConfig() {
+        return otherTesseractConfig;
+    }
+
+    /**
+     * Add a key-value pair to pass to Tesseract using its -c command line option.
+     * To see the possible options, run tesseract --print-parameters.
+     *
+     * You may also add these parameters in TesseractOCRConfig.properties; any
+     * key-value pair in the properties file where the key contains an underscore
+     * is passed directly to Tesseract.
+     *
+     * @param key
+     * @param value
+     */
+    public void addOtherTesseractConfig(String key, String value) {
+        otherTesseractConfig.put(key, value);
+    }
+
+    /**
      * Get property from the properties file passed in.
      *
      * @param properties     properties file to read from.
@@ -543,4 +593,18 @@ public class TesseractOCRConfig implements Serializable {
                 property, propVal));
     }
 
+    /**
+     * Populate otherTesseractConfig from the given properties.
+     * This assumes that any key-value pair where the key contains
+     * an underscore is an option to be passed opaquely to Tesseract.
+     *
+     * @param properties properties file to read from.
+     */
+    private void loadOtherTesseractConfig(Properties properties) {
+        for (String k : properties.stringPropertyNames()) {
+            if (k.contains("_")) {
+                otherTesseractConfig.put(k, properties.getProperty(k));
+            }
+        }
+    }
 }

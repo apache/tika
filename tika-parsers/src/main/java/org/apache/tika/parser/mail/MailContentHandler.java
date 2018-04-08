@@ -149,14 +149,13 @@ class MailContentHandler implements ContentHandler {
     private final boolean extractAllAlternatives;
     private final EmbeddedDocumentExtractor extractor;
     private final Detector detector;
-
     //this is used to buffer a multipart body that
     //keeps track of multipart/alternative and its children
     private Stack<Part> alternativePartBuffer = new Stack<>();
 
     private Stack<BodyDescriptor> parts = new Stack<>();
 
-    MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata,
+    MailContentHandler(XHTMLContentHandler xhtml, Detector detector, Metadata metadata,
                        ParseContext context, boolean strictParsing, boolean extractAllAlternatives) {
         this.handler = xhtml;
         this.metadata = metadata;
@@ -169,7 +168,7 @@ class MailContentHandler implements ContentHandler {
 
         // Was an EmbeddedDocumentExtractor explicitly supplied?
         this.extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        this.detector = new EmbeddedDocumentUtil(context).getDetector();
+        this.detector = detector;
     }
 
     @Override
@@ -213,7 +212,7 @@ class MailContentHandler implements ContentHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             IOUtils.copy(is, bos);
             alternativePartBuffer.peek().children.add(new BodyContents(submd, bos.toByteArray()));
-        } else if (!extractAllAlternatives && parts.size() == 1) {
+        } else if (!extractAllAlternatives && parts.size() < 2) {
             //if you're at the first level of embedding
             //and you're not in an alternative part block
             //and you're text/html, put that in the body of the email
@@ -221,7 +220,7 @@ class MailContentHandler implements ContentHandler {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             IOUtils.copy(is, bos);
             byte[] bytes = bos.toByteArray();
-            if (isTextOrHtml(submd, bytes)) {
+            if (detectTextOrHtml(submd, bytes)) {
                 handleInlineBodyPart(new BodyContents(submd, bos.toByteArray()));
             } else {
                 //else handle as you would any other embedded content
@@ -237,15 +236,23 @@ class MailContentHandler implements ContentHandler {
         }
     }
 
-    private boolean isTextOrHtml(Metadata submd, byte[] bytes) {
+    private boolean detectTextOrHtml(Metadata submd, byte[] bytes) {
         String mediaTypeString = submd.get(Metadata.CONTENT_TYPE);
-        if (mediaTypeString != null && mediaTypeString.startsWith("text")) {
-            return true;
+        if (mediaTypeString != null) {
+            if (mediaTypeString.startsWith("text")) {
+                return true;
+            } else {
+                return false;
+            }
         }
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             MediaType mediaType = detector.detect(tis, submd);
-            if (mediaType != null && mediaType.toString().startsWith("text")) {
-                return true;
+            if (mediaType != null) {
+                //detect only once
+                submd.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, mediaType.toString());
+                if (mediaType.toString().startsWith("text")) {
+                    return true;
+                }
             }
         } catch (IOException e) {
 
