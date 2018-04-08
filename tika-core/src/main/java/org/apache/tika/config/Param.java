@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -53,6 +54,7 @@ public class Param<T> implements Serializable {
 
     private static final Map<Class<?>, String> map = new HashMap<>();
     private static final Map<String, Class<?>> reverseMap = new HashMap<>();
+    private static final Map<String, Class<?>> wellKnownMap = new HashMap<>();
 
     static {
         map.put(Boolean.class, "bool");
@@ -70,6 +72,7 @@ public class Param<T> implements Serializable {
         for (Map.Entry<Class<?>, String> entry : map.entrySet()) {
             reverseMap.put(entry.getValue(), entry.getKey());
         }
+        wellKnownMap.put("metadataPolicy", AbstractMultipleParser.MetadataPolicy.class);
     }
 
     private Class<T> type;
@@ -87,6 +90,10 @@ public class Param<T> implements Serializable {
         this.name = name;
         this.type = type;
         this.value = value.toString();
+        
+        if (this.type == null) {
+            this.type = (Class<T>)wellKnownMap.get(name);
+        }
     }
 
     public Param(String name, T value){
@@ -183,11 +190,19 @@ public class Param<T> implements Serializable {
         
         Node nameAttr = node.getAttributes().getNamedItem("name");
         Node typeAttr = node.getAttributes().getNamedItem("type");
+        Node valueAttr = node.getAttributes().getNamedItem("value");
         Node value = node.getFirstChild();
+        if (valueAttr != null && (value == null || value.getTextContent() == null)) {
+            value = valueAttr;
+        }
         
         Param<T> ret = new Param<T>();
         ret.name  = nameAttr.getTextContent();
-        ret.setTypeString(typeAttr.getTextContent());
+        if (typeAttr != null) {
+            ret.setTypeString(typeAttr.getTextContent());
+        } else {
+            ret.type = (Class<T>)wellKnownMap.get(ret.name);
+        }
         ret.value = value.getTextContent();
         
         return ret;
@@ -205,6 +220,11 @@ public class Param<T> implements Serializable {
     
     private static <T> T getTypedValue(Class<T> type, String value) {
         try {
+            if (type.isEnum()) {
+                Object val = Enum.valueOf((Class)type, value);
+                return (T)val;
+            }
+            
             Constructor<T> constructor = type.getConstructor(String.class);
             constructor.setAccessible(true);
             return constructor.newInstance(value);

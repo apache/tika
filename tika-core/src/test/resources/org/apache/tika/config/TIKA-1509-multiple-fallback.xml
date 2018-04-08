@@ -27,7 +27,7 @@
     <!--  if the first parser fails (as it will!) -->
     <parser class="org.apache.tika.parser.multiple.FallbackParser">
        <params>
-          <param name="metadataPolicy" value="DISCARD" />
+          <param name="metadataPolicy" value="DISCARD_ALL" />
        </params>
        <parser class="org.apache.tika.parser.ErrorParser"/>
        <parser class="org.apache.tika.parser.EmptyParser"/>
