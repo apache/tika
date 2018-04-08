@@ -789,6 +789,12 @@ public class TikaConfig {
             }
             if (parser == null) {
                 try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class, Collection.class, Map.class);
+                    parser = c.newInstance(registry, childParsers, params);
+                } catch (NoSuchMethodException me) {}
+            }
+            if (parser == null) {
+                try {
                     c = parserClass.getConstructor(MediaTypeRegistry.class, List.class);
                     parser = c.newInstance(registry, childParsers);
                 } catch (NoSuchMethodException me) {}

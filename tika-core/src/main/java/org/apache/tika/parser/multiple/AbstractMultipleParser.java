@@ -146,7 +146,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     public AbstractMultipleParser(MediaTypeRegistry registry, 
                                   Collection<? extends Parser> parsers,
                                   Map<String, Param> params) {
-        
+        this(registry, getMetadataPolicy(params), parsers);
     }
     public AbstractMultipleParser(MediaTypeRegistry registry, MetadataPolicy policy,
                                   Parser... parsers) {
@@ -171,6 +171,10 @@ public abstract class AbstractMultipleParser extends AbstractParser {
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return offeredTypes;
+    }
+    
+    public MetadataPolicy getMetadataPolicy() {
+        return policy;
     }
     
     /**

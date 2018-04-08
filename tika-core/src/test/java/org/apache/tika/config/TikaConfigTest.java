@@ -37,6 +37,7 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ErrorParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.multiple.FallbackParser;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -285,11 +286,28 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         TikaConfig config = getConfig("TIKA-2389-throw-default-overridden.xml");
     }
 
-
     @Test
     public void testInitializerPerParserWarn() throws Exception {
         //TODO: test that this was logged at WARN level
         TikaConfig config = getConfig("TIKA-2389-warn-per-parser.xml");
     }
 
+    @Test
+    public void testMultipleWithFallback() throws Exception {
+        TikaConfig config = getConfig("TIKA-1509-multiple-fallback.xml");
+        CompositeParser parser = (CompositeParser)config.getParser();
+        assertEquals(2, parser.getAllComponentParsers().size());
+        Parser p;
+
+        p = parser.getAllComponentParsers().get(0);
+        assertTrue(p.toString(), p instanceof ParserDecorator);
+        assertEquals(DefaultParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+
+        p = parser.getAllComponentParsers().get(1);
+        assertTrue(p.toString(), p instanceof ParserDecorator);
+        assertEquals(FallbackParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+        
+        FallbackParser fbp = (FallbackParser)((ParserDecorator)p).getWrappedParser();
+        assertEquals("DISCARD_ALL", fbp.getMetadataPolicy().toString());
+    }
 }
