@@ -54,7 +54,7 @@ public class SupplementingParser extends AbstractMultipleParser {
                           MetadataPolicy.LAST_WINS,
                           MetadataPolicy.KEEP_ALL);
 
-
+    @SuppressWarnings("rawtypes")
     public SupplementingParser(MediaTypeRegistry registry,
                                Collection<? extends Parser> parsers, Map<String, Param> params) {
         super(registry, parsers, params);

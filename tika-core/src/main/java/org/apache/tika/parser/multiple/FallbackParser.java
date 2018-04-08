@@ -49,7 +49,7 @@ public class FallbackParser extends AbstractMultipleParser {
     public static final List<MetadataPolicy> allowedPolicies =
             Arrays.asList(MetadataPolicy.values());
 
-
+    @SuppressWarnings("rawtypes")
     public FallbackParser(MediaTypeRegistry registry,
                           Collection<? extends Parser> parsers, Map<String, Param> params) {
         super(registry, parsers, params);

@@ -114,10 +114,6 @@ public abstract class AbstractMultipleParser extends AbstractParser {
      */
     private Set<MediaType> offeredTypes;
     
-    // TODO Tika Config XML Support for these parsers and their
-    //  metadata policies + parsers + mimetypes
-    // See https://wiki.apache.org/tika/CompositeParserDiscussion
-    
     /**
      * Returns the media type registry used to infer type relationships.
      *
@@ -136,13 +132,14 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         this.registry = registry;
     }
 
-    
+    @SuppressWarnings("rawtypes")
     protected static MetadataPolicy getMetadataPolicy(Map<String, Param> params) {
         if (params.containsKey(METADATA_POLICY_CONFIG_KEY)) {
             return (MetadataPolicy)params.get(METADATA_POLICY_CONFIG_KEY).getValue();
         }
         throw new IllegalArgumentException("Required parameter '"+METADATA_POLICY_CONFIG_KEY+"' not supplied");
     }
+    @SuppressWarnings("rawtypes")
     public AbstractMultipleParser(MediaTypeRegistry registry, 
                                   Collection<? extends Parser> parsers,
                                   Map<String, Param> params) {
