@@ -64,6 +64,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
             String line = reader.readLine();
             while (line != null) {
                 if (line.startsWith("#")) {
+                    line = reader.readLine();
                     continue;
                 }
                 line = line.trim();
