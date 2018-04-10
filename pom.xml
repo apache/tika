@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.18-SNAPSHOT</version>
+    <version>1.18</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -110,10 +110,7 @@
                         <include name="*.?ar" />
                       </fileset>
                     </checksum>
-                    <checksum
-                            file="${basedir}/target/${project.version}/tika-${project.version}-src.zip"
-                            algorithm="SHA-512"
-                            property="checksum" />
+                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA-512" property="checksum" />
                     <echo file="${basedir}/target/vote.txt">
 From: ${username}@apache.org
 To: dev@tika.apache.org
