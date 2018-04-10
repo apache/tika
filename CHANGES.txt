@@ -1,4 +1,4 @@
-Release 1.18 - ???
+Release 1.18 - 4/9/2018
 
    * Add support for brotli (TIKA-2621).
 
