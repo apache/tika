@@ -16,7 +16,8 @@
  */
 package org.apache.tika.parser.ocr;
 
-import java.io.File;
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -24,6 +25,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Configuration for TesseractOCRParser.
@@ -42,6 +45,12 @@ import java.util.Properties;
 public class TesseractOCRConfig implements Serializable {
 
     private static final long serialVersionUID = -4861942486845757891L;
+
+    private static Pattern ALLOWABLE_PAGE_SEPARATORS_PATTERN =
+            Pattern.compile("(?i)^[-_<>A-Z0-9 \n\r]+$");
+
+    private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN =
+            Pattern.compile("(?i)^[-/_<>A-Z0-9]+$");
 
     public enum OUTPUT_TYPE {
         TXT,
@@ -157,12 +166,7 @@ public class TesseractOCRConfig implements Serializable {
                 getProp(props, "maxFileSizeToOcr", getMaxFileSizeToOcr()));
         setTimeout(
                 getProp(props, "timeout", getTimeout()));
-        String outputTypeString = props.getProperty("outputType");
-        if ("txt".equals(outputTypeString)) {
-            setOutputType(OUTPUT_TYPE.TXT);
-        } else if ("hocr".equals(outputTypeString)) {
-            setOutputType(OUTPUT_TYPE.HOCR);
-        }
+        setOutputType(getProp(props, "outputType", getOutputType().toString()));
         setPreserveInterwordSpacing(getProp(props, "preserveInterwordSpacing", false));
 
         // set parameters for ImageMagick
@@ -201,10 +205,7 @@ public class TesseractOCRConfig implements Serializable {
      * </p>
      */
     public void setTesseractPath(String tesseractPath) {
-        if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator))
-            tesseractPath += File.separator;
-
-        this.tesseractPath = tesseractPath;
+        this.tesseractPath = FilenameUtils.normalize(tesseractPath);
     }
 
     /**
@@ -220,10 +221,7 @@ public class TesseractOCRConfig implements Serializable {
      * (such as when Tesseract is built from source), it may be located elsewhere.
      */
     public void setTessdataPath(String tessdataPath) {
-        if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
-            tessdataPath += File.separator;
-
-        this.tessdataPath = tessdataPath;
+        this.tessdataPath = FilenameUtils.normalize(tessdataPath);
     }
 
     /**
@@ -280,6 +278,20 @@ public class TesseractOCRConfig implements Serializable {
      * @param pageSeparator
      */
     public void setPageSeparator(String pageSeparator) {
+        Matcher m = ALLOWABLE_PAGE_SEPARATORS_PATTERN.matcher(pageSeparator);
+        if (! m.find()) {
+            throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n"+
+            "If you trust this value, set it with setTrustedPageSeparator");
+        }
+        this.pageSeparator = pageSeparator;
+    }
+
+    /**
+     * Same as {@link #setPageSeparator(String)} but does not perform
+     * any checks on the string.
+     * @param pageSeparator
+     */
+    public void setTrustedPageSeparator(String pageSeparator) {
         this.pageSeparator = pageSeparator;
     }
 
@@ -351,6 +363,22 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setOutputType(OUTPUT_TYPE outputType) {
         this.outputType = outputType;
+    }
+
+    public void setOutputType(String outputType) {
+        if (outputType == null) {
+            throw new IllegalArgumentException("outputType must not be null");
+        }
+        String lc = outputType.toLowerCase(Locale.US);
+        if ("txt".equals(lc)) {
+            setOutputType(OUTPUT_TYPE.TXT);
+        } else if ("hocr".equals(lc)) {
+            setOutputType(OUTPUT_TYPE.HOCR);
+        } else {
+            throw new IllegalArgumentException("outputType must be either 'txt' or 'hocr'");
+        }
+
+
     }
 
     /**
@@ -499,10 +527,7 @@ public class TesseractOCRConfig implements Serializable {
      * @param ImageMagickPath to ImageMagick file.
      */
     public void setImageMagickPath(String ImageMagickPath) {
-        if (!ImageMagickPath.isEmpty() && !ImageMagickPath.endsWith(File.separator))
-            ImageMagickPath += File.separator;
-
-        this.ImageMagickPath = ImageMagickPath;
+        this.ImageMagickPath = FilenameUtils.normalize(ImageMagickPath);
     }
 
     /**
@@ -541,7 +566,23 @@ public class TesseractOCRConfig implements Serializable {
      * @param value
      */
     public void addOtherTesseractConfig(String key, String value) {
-        otherTesseractConfig.put(key, value);
+        if (key == null) {
+            throw new IllegalArgumentException("key must not be null");
+        }
+        if (value == null) {
+            throw new IllegalArgumentException("value must not be null");
+        }
+
+        Matcher m = ALLOWABLE_OTHER_PARAMS_PATTERN.matcher(key);
+        if (! m.find()) {
+            throw new IllegalArgumentException("Value contains illegal characters: "+key);
+        }
+        m.reset(value);
+        if (! m.find()) {
+            throw new IllegalArgumentException("Value contains illegal characters: "+value);
+        }
+
+        otherTesseractConfig.put(key.trim(), value.trim());
     }
 
     /**
@@ -603,7 +644,7 @@ public class TesseractOCRConfig implements Serializable {
     private void loadOtherTesseractConfig(Properties properties) {
         for (String k : properties.stringPropertyNames()) {
             if (k.contains("_")) {
-                otherTesseractConfig.put(k, properties.getProperty(k));
+                addOtherTesseractConfig(k, properties.getProperty(k));
             }
         }
     }

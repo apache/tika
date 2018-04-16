@@ -47,8 +47,9 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -67,7 +68,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
@@ -82,6 +82,9 @@ import org.xml.sax.SAXException;
 
 @Path("/tika")
 public class TikaResource {
+
+    private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-_<>A-Z0-9 ]+$");
+
     public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
@@ -190,38 +193,86 @@ public class TikaResource {
      * @throws WebApplicationException thrown when field cannot be found.
      */
     private static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
+
         try {
             String property = StringUtils.removeStart(key, prefix);
+            String setter = property;
+            setter = "set"+setter.substring(0,1).toUpperCase(Locale.US)+setter.substring(1);
             Field field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
+            //default assume string class
+            //if there's a more specific type, e.g. double, int, boolean
+            //try that.
+            Class clazz = String.class;
 
-            field.setAccessible(true);
-            if (field.getType() == String.class) {
-                field.set(object, httpHeaders.getFirst(key));
-            } else if (field.getType() == int.class) {
-                field.setInt(object, Integer.parseInt(httpHeaders.getFirst(key)));
+            if (field.getType() == int.class) {
+                clazz = int.class;
             } else if (field.getType() == double.class) {
-                field.setDouble(object, Double.parseDouble(httpHeaders.getFirst(key)));
+                clazz = double.class;
             } else if (field.getType() == boolean.class) {
-                field.setBoolean(object, Boolean.parseBoolean(httpHeaders.getFirst(key)));
-            } else {
-                //couldn't find a directly accessible field
-                //try for setX(String s)
-                String setter = StringUtils.uncapitalize(property);
-                setter = "set"+setter.substring(0,1).toUpperCase(Locale.US)+setter.substring(1);
-                Method m = null;
-                try {
-                    m = object.getClass().getMethod(setter, String.class);
-                } catch (NoSuchMethodException e) {
-                    //swallow
-                }
-                if (m != null) {
-                    m.invoke(object, httpHeaders.getFirst(key));
-                }
+                clazz = boolean.class;
             }
+
+            Method m = tryToGetMethod(object, setter, clazz);
+            //if you couldn't find more specific setter, back off
+            //to string setter and try that.
+            if (m == null && clazz != String.class) {
+                m = tryToGetMethod(object, setter, String.class);
+            }
+
+            if (m != null) {
+                String val = httpHeaders.getFirst(key);
+                val = val.trim();
+                if (clazz == String.class) {
+                    checkTrustWorthy(setter, val);
+                    m.invoke(object, val);
+                } else if (clazz == int.class) {
+                    m.invoke(object, Integer.parseInt(val));
+                } else if (clazz == double.class) {
+                    m.invoke(object, Double.parseDouble(val));
+                } else if (clazz == boolean.class) {
+                    m.invoke(object, Boolean.parseBoolean(val));
+                } else {
+                    throw new IllegalArgumentException("setter must be String, int, double or boolean...for now");
+                }
+            } else {
+                throw new NoSuchMethodException("Couldn't find: "+setter);
+            }
+
         } catch (Throwable ex) {
             throw new WebApplicationException(String.format(Locale.ROOT,
                     "%s is an invalid %s header", key, X_TIKA_OCR_HEADER_PREFIX));
         }
+    }
+
+    private static void checkTrustWorthy(String setter, String val) {
+        if (setter == null || val == null) {
+            throw new IllegalArgumentException("setter and val must not be null");
+        }
+        if (setter.toLowerCase(Locale.US).contains("trusted")) {
+            throw new IllegalArgumentException("Can't call a trusted method via tika-server headers");
+        }
+        Matcher m = ALLOWABLE_HEADER_CHARS.matcher(val);
+        if (! m.find()) {
+            throw new IllegalArgumentException("Header val: "+val +" contains illegal characters. " +
+                    "Must contain: TikaResource.ALLOWABLE_HEADER_CHARS");
+        }
+    }
+
+    /**
+     * Tries to get method. Silently swallows NoMethodException and returns
+     * <code>null</code> if not found.
+     * @param object
+     * @param method
+     * @param clazz
+     * @return
+     */
+    private static Method tryToGetMethod(Object object, String method, Class clazz) {
+        try {
+            return object.getClass().getMethod(method, clazz);
+        } catch (NoSuchMethodException e) {
+            //swallow
+        }
+        return null;
     }
 
     @SuppressWarnings("serial")
