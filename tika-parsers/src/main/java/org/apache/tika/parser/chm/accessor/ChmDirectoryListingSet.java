@@ -20,7 +20,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
@@ -137,6 +139,7 @@ public class ChmDirectoryListingSet {
 
             /* loops over all pmgls */
             byte[] dir_chunk = null;
+            Set<Integer> processed = new HashSet<>();
             for (int i = startPmgl; i>=0; ) {
                 dir_chunk = new byte[(int) chmItspHeader.getBlock_len()];
                 int start = i * (int) chmItspHeader.getBlock_len() + dir_offset;
@@ -147,10 +150,15 @@ public class ChmDirectoryListingSet {
                 PMGLheader = new ChmPmglHeader();
                 PMGLheader.parse(dir_chunk, PMGLheader);
                 enumerateOneSegment(dir_chunk);
-                
-                i=PMGLheader.getBlockNext();
+                int nextBlock = PMGLheader.getBlockNext();
+                processed.add(i);
+                if (processed.contains(nextBlock)) {
+                    throw new ChmParsingException("already processed block; avoiding cycle");
+                }
+                i=nextBlock;
                 dir_chunk = null;
             }
+            System.out.println("done");
         } catch (ChmParsingException e) {
             LOG.warn("Chm parse exception", e);
         } finally {
