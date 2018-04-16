@@ -230,6 +230,9 @@ public class EndianUtils {
                 break;
             }
         }
+        if (i < 0) {
+            throw new IOException("Buffer underun; expected one more byte");
+        }
         return v;
     }
 
