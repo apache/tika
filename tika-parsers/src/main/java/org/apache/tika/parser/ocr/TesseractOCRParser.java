@@ -33,6 +33,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,6 +112,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                     MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
     private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<>();
+    private static Map<String,Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
 
 
     @Override
@@ -145,6 +147,16 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         if (TESSERACT_PRESENT.containsKey(tesseract)) {
             return TESSERACT_PRESENT.get(tesseract);
         }
+        //prevent memory bloat
+        if (TESSERACT_PRESENT.size() > 100) {
+            TESSERACT_PRESENT.clear();
+        }
+        //check that the parent directory exists
+        if (! Files.isDirectory(Paths.get(config.getTesseractPath()))) {
+            TESSERACT_PRESENT.put(tesseract, false);
+            return false;
+        }
+
         // Try running Tesseract from there, and see if it exists + works
         String[] checkCmd = { tesseract };
         boolean hasTesseract = ExternalParser.check(checkCmd);
@@ -158,14 +170,22 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         String ImageMagick = getImageMagickPath(config);
 
         // Have we already checked for a copy of ImageMagick Program there?
-        if (TESSERACT_PRESENT.containsKey(ImageMagick)) {
-            return TESSERACT_PRESENT.get(ImageMagick);
+        if (IMAGE_MAGICK_PRESENT.containsKey(ImageMagick)) {
+            return IMAGE_MAGICK_PRESENT.get(ImageMagick);
         }
-
+        //prevent memory bloat
+        if (IMAGE_MAGICK_PRESENT.size() > 100) {
+            IMAGE_MAGICK_PRESENT.clear();
+        }
+        //check that directory exists
+        if (! Files.isDirectory(Paths.get(config.getImageMagickPath()))) {
+            IMAGE_MAGICK_PRESENT.put(ImageMagick, false);
+            return false;
+        }
         // Try running ImageMagick program from there, and see if it exists + works
         String[] checkCmd = { ImageMagick };
         boolean hasImageMagick = ExternalParser.check(checkCmd);
-        TESSERACT_PRESENT.put(ImageMagick, hasImageMagick);
+        IMAGE_MAGICK_PRESENT.put(ImageMagick, hasImageMagick);
         
         return hasImageMagick;
      
@@ -178,9 +198,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     static boolean hasPython() {
         // check if python is installed and it has the required dependencies for the rotation program to run
         boolean hasPython = false;
-
+        TemporaryResources tmp = null;
         try {
-            TemporaryResources tmp = new TemporaryResources();
+            tmp = new TemporaryResources();
             File importCheck = tmp.createTemporaryFile();
             String prg = "import numpy, matplotlib, skimage";
             OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importCheck), Charset.forName("UTF-8"));
@@ -192,10 +212,11 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 hasPython = true;
             }
 
-            tmp.close();
 
         } catch (Exception e) {
 
+        } finally {
+            IOUtils.closeQuietly(tmp);
         }
 
         return hasPython;
@@ -311,20 +332,26 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
     /**
      * This method is used to process the image to an OCR-friendly format.
-     * @param streamingObject input image to be processed
+     * @param scratchFile input image to be processed
      * @param config TesseractOCRconfig class to get ImageMagick properties
      * @throws IOException if an input error occurred
      * @throws TikaException if an exception timed out
      */
-    private void processImage(File streamingObject, TesseractOCRConfig config) throws IOException, TikaException {
+    private void processImage(File scratchFile, TesseractOCRConfig config) throws IOException, TikaException {
     	
     	// fetch rotation script from resources
     	InputStream in = getClass().getResourceAsStream("rotation.py");
     	TemporaryResources tmp = new TemporaryResources();
     	File rotationScript = tmp.createTemporaryFile();
     	Files.copy(in, rotationScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
-    	
-    	String cmd = "python -W ignore " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
+
+    	CommandLine commandLine = new CommandLine("python");
+    	String[] args = {"-W",
+                "ignore",
+                rotationScript.getAbsolutePath(),
+                "-f",
+                scratchFile.getAbsolutePath()};
+    	commandLine.addArguments(args, true);
     	String angle = "0"; 
     			
     	DefaultExecutor executor = new DefaultExecutor();
@@ -333,24 +360,33 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         executor.setStreamHandler(streamHandler);
         
         // determine the angle of rotation required to make the text horizontal
-        CommandLine cmdLine = CommandLine.parse(cmd);
         if(config.getApplyRotation() && hasPython()) {
             try {
-                executor.execute(cmdLine);
-                angle = outputStream.toString("UTF-8").trim();
+                executor.execute(commandLine);
+                String tmpAngle = outputStream.toString("UTF-8").trim();
+                //verify that you've gotten a numeric value out
+                Double.parseDouble(tmpAngle);
+                angle = tmpAngle;
             } catch(Exception e) {	
 
             }
         }
               
         // process the image - parameter values can be set in TesseractOCRConfig.properties
-    	String line = getImageMagickPath(config) + " -density " + config.getDensity() + " -depth " + config.getDepth() +
-    			" -colorspace " + config.getColorspace() +  " -filter " + config.getFilter() + 
-    			" -resize " + config.getResize() + "% -rotate "+ angle + " " + streamingObject.getAbsolutePath() + 
-    			" " + streamingObject.getAbsolutePath();    	
-        cmdLine = CommandLine.parse(line);
+        commandLine = new CommandLine(getImageMagickPath(config));
+        args = new String[]{
+                "-density", Integer.toString(config.getDensity()),
+                "-depth ", Integer.toString(config.getDepth()),
+                "-colorspace", config.getColorspace(),
+                " -filter ", config.getFilter(),
+                "-resize", config.getResize() + "%",
+                "-rotate", angle,
+                scratchFile.getAbsolutePath(),
+                scratchFile.getAbsolutePath()
+        };
+        commandLine.addArguments(args, true);
 		try {
-			executor.execute(cmdLine);
+			executor.execute(commandLine);
 		} catch(Exception e) {	
 
 		} 

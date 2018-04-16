@@ -171,4 +171,55 @@ public class TesseractOCRConfigTest extends TikaTest {
     	config.setResize(1000);
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void testDataPathCheck() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setTessdataPath("blah\u0000deblah");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testPathCheck() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setTesseractPath("blah\u0000deblah");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadOtherKey() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("bad bad", "bad");
+
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadOtherValue() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("bad", "bad bad");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadOtherValueSlash() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("bad", "bad\\bad");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadOtherValueControl() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("bad", "bad\u0001bad");
+    }
+
+    @Test
+    public void testGoodOtherParameters() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.addOtherTesseractConfig("good", "good");
+    }
+
+    @Test
+    public void testBogusPathCheck() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setTesseractPath("blahdeblahblah");
+        assertEquals("blahdeblahblah", config.getTesseractPath());
+    }
+
+
 }

@@ -88,9 +88,7 @@ public class MetadataResourceTest extends CXFTestBase {
             metadata.put(nextLine[0], nextLine[1]);
         }
         csvReader.close();
-        for (String n : metadata.keySet()) {
-            System.out.println(n + " : "+metadata.get(n));
-        }
+
         assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("X-TIKA:digest:MD5", "f8be45c34e8919eedba48cc8d207fbf0",
