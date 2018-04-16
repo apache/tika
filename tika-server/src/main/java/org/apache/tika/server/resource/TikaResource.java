@@ -192,20 +192,26 @@ public class TikaResource {
 
         try {
             String property = StringUtils.removeStart(key, prefix);
+            Field field = null;
+            try {
+                object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
+            } catch (NoSuchFieldException e) {
+                //swallow
+            }
             String setter = property;
             setter = "set"+setter.substring(0,1).toUpperCase(Locale.US)+setter.substring(1);
-            Field field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
             //default assume string class
             //if there's a more specific type, e.g. double, int, boolean
             //try that.
             Class clazz = String.class;
-
-            if (field.getType() == int.class) {
-                clazz = int.class;
-            } else if (field.getType() == double.class) {
-                clazz = double.class;
-            } else if (field.getType() == boolean.class) {
-                clazz = boolean.class;
+            if (field != null) {
+                if (field.getType() == int.class) {
+                    clazz = int.class;
+                } else if (field.getType() == double.class) {
+                    clazz = double.class;
+                } else if (field.getType() == boolean.class) {
+                    clazz = boolean.class;
+                }
             }
 
             Method m = tryToGetMethod(object, setter, clazz);

@@ -301,4 +301,17 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         assertEquals(200, response.getStatus());
     }
+
+    @Test
+    public void testTrustedMethodPrevention() {
+            Response response = WebClient.create(endPoint + TIKA_PATH)
+                    .type("application/pdf")
+                    .accept("text/plain")
+                    .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
+                                    "trustedPageSeparator",
+                            "\u0010")
+                    .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
+            assertEquals(500, response.getStatus());
+
+        }
 }
