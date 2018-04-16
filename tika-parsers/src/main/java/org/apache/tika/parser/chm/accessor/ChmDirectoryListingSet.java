@@ -158,7 +158,7 @@ public class ChmDirectoryListingSet {
                 i=nextBlock;
                 dir_chunk = null;
             }
-            System.out.println("done");
+
         } catch (ChmParsingException e) {
             LOG.warn("Chm parse exception", e);
         } finally {
