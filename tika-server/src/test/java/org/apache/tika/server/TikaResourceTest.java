@@ -17,15 +17,6 @@
 
 package org.apache.tika.server;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import javax.ws.rs.core.Response;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -34,6 +25,15 @@ import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.resource.TikaResource;
 import org.junit.Test;
+
+import javax.ws.rs.core.Response;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test.doc";
@@ -304,14 +304,27 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testTrustedMethodPrevention() {
-            Response response = WebClient.create(endPoint + TIKA_PATH)
-                    .type("application/pdf")
-                    .accept("text/plain")
-                    .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
-                                    "trustedPageSeparator",
-                            "\u0010")
-                    .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-            assertEquals(500, response.getStatus());
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
+                                "trustedPageSeparator",
+                        "\u0010")
+                .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
+        assertEquals(500, response.getStatus());
 
-        }
+    }
+
+    @Test
+    public void testFloatInHeader() {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX +
+                                "averageCharTolerance",
+                        "2.0")
+                .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
+        assertEquals(200, response.getStatus());
+
+    }
 }

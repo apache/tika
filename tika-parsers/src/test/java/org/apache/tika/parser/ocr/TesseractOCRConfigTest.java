@@ -216,10 +216,15 @@ public class TesseractOCRConfigTest extends TikaTest {
 
     @Test
     public void testBogusPathCheck() {
+        //allow path that doesn't actually exist
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setTesseractPath("blahdeblahblah");
         assertEquals("blahdeblahblah", config.getTesseractPath());
     }
 
-
+    @Test(expected=IllegalArgumentException.class)
+    public void testBadColorSpace() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setColorspace("someth!ng");
+    }
 }
