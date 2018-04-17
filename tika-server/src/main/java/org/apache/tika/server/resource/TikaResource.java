@@ -85,7 +85,7 @@ import org.xml.sax.SAXException;
 @Path("/tika")
 public class TikaResource {
 
-    private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-_<>A-Z0-9 ]+$");
+    private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_\\.A-Z0-9 ]+$");
 
     public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
@@ -196,11 +196,10 @@ public class TikaResource {
      */
     private static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
 
-        try {
-            String property = StringUtils.removeStart(key, prefix);
+        try {String property = StringUtils.removeStart(key, prefix);
             Field field = null;
             try {
-                object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
+                field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
             } catch (NoSuchFieldException e) {
                 //swallow
             }
@@ -211,12 +210,20 @@ public class TikaResource {
             //try that.
             Class clazz = String.class;
             if (field != null) {
-                if (field.getType() == int.class) {
+                if (field.getType() == int.class || field.getType() == Integer.class) {
                     clazz = int.class;
                 } else if (field.getType() == double.class) {
                     clazz = double.class;
+                } else if (field.getType() == Double.class) {
+                    clazz = Double.class;
+                } else if (field.getType() == float.class) {
+                    clazz = float.class;
+                } else if (field.getType() == Float.class) {
+                    clazz = Float.class;
                 } else if (field.getType() == boolean.class) {
                     clazz = boolean.class;
+                } else if (field.getType() == Boolean.class) {
+                    clazz = Boolean.class;
                 }
             }
 
@@ -233,14 +240,16 @@ public class TikaResource {
                 if (clazz == String.class) {
                     checkTrustWorthy(setter, val);
                     m.invoke(object, val);
-                } else if (clazz == int.class) {
+                } else if (clazz == int.class || clazz == Integer.class) {
                     m.invoke(object, Integer.parseInt(val));
-                } else if (clazz == double.class) {
+                } else if (clazz == double.class || clazz == Double.class) {
                     m.invoke(object, Double.parseDouble(val));
-                } else if (clazz == boolean.class) {
+                } else if (clazz == boolean.class || clazz == Boolean.class) {
                     m.invoke(object, Boolean.parseBoolean(val));
+                } else if (clazz == float.class || clazz == Float.class) {
+                    m.invoke(object, Float.parseFloat(val));
                 } else {
-                    throw new IllegalArgumentException("setter must be String, int, double or boolean...for now");
+                    throw new IllegalArgumentException("setter must be String, int, float, double or boolean...for now");
                 }
             } else {
                 throw new NoSuchMethodException("Couldn't find: "+setter);

@@ -47,10 +47,10 @@ public class TesseractOCRConfig implements Serializable {
     private static final long serialVersionUID = -4861942486845757891L;
 
     private static Pattern ALLOWABLE_PAGE_SEPARATORS_PATTERN =
-            Pattern.compile("(?i)^[-_<>A-Z0-9 \n\r]+$");
+            Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
 
     private static Pattern ALLOWABLE_OTHER_PARAMS_PATTERN =
-            Pattern.compile("(?i)^[-/_<>A-Z0-9]+$");
+            Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
 
     public enum OUTPUT_TYPE {
         TXT,
@@ -283,7 +283,7 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException(pageSeparator + " contains illegal characters.\n"+
             "If you trust this value, set it with setTrustedPageSeparator");
         }
-        this.pageSeparator = pageSeparator;
+        setTrustedPageSeparator(pageSeparator);
     }
 
     /**
@@ -456,11 +456,13 @@ public class TesseractOCRConfig implements Serializable {
      *                   Deafult value is gray.
      */
     public void setColorspace(String colorspace) {
-        if (!colorspace.equals(null)) {
-            this.colorspace = colorspace;
-        } else {
+        if (colorspace == null) {
             throw new IllegalArgumentException("Colorspace value cannot be null.");
         }
+        if (! colorspace.matches("(?i)^[-_A-Z0-9]+$")) {
+            throw new IllegalArgumentException("colorspace must match this pattern: (?i)^[-_A-Z0-9]+$");
+        }
+        this.colorspace = colorspace;
     }
 
     /**
@@ -575,7 +577,7 @@ public class TesseractOCRConfig implements Serializable {
 
         Matcher m = ALLOWABLE_OTHER_PARAMS_PATTERN.matcher(key);
         if (! m.find()) {
-            throw new IllegalArgumentException("Value contains illegal characters: "+key);
+            throw new IllegalArgumentException("Key contains illegal characters: "+key);
         }
         m.reset(value);
         if (! m.find()) {
