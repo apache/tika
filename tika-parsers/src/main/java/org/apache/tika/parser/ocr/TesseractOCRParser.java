@@ -55,6 +55,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
 import org.apache.tika.config.Param;
@@ -184,6 +185,12 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             IMAGE_MAGICK_PRESENT.put(ImageMagick, false);
             return false;
         }
+        if (SystemUtils.IS_OS_WINDOWS && config.getImageMagickPath().isEmpty()) {
+            LOG.warn("Must specify path for imagemagick on Windows OS to avoid accidental confusion with convert.exe");
+            IMAGE_MAGICK_PRESENT.put(ImageMagick, false);
+            return false;
+        }
+
         // Try running ImageMagick program from there, and see if it exists + works
         String[] checkCmd = { ImageMagick };
         boolean hasImageMagick = ExternalParser.check(checkCmd);
