@@ -219,7 +219,33 @@ public class TesseractOCRConfigTest extends TikaTest {
         //allow path that doesn't actually exist
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setTesseractPath("blahdeblahblah");
-        assertEquals("blahdeblahblah", config.getTesseractPath());
+        assertEquals("blahdeblahblah"+File.separator, config.getTesseractPath());
+    }
+
+    @Test
+    public void testTrailingSlashInPathBehavior() {
+
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setTesseractPath("blah");
+        assertEquals("blah"+File.separator, config.getTesseractPath());
+        config.setTesseractPath("blah"+File.separator);
+        assertEquals("blah"+File.separator, config.getTesseractPath());
+        config.setTesseractPath("");
+        assertEquals("", config.getTesseractPath());
+
+        config.setTessdataPath("blahdata");
+        assertEquals("blahdata"+File.separator, config.getTessdataPath());
+        config.setTessdataPath("blahdata"+File.separator);
+        assertEquals("blahdata"+File.separator, config.getTessdataPath());
+        config.setTessdataPath("");
+        assertEquals("", config.getTessdataPath());
+
+        config.setImageMagickPath("imagemagickpath");
+        assertEquals("imagemagickpath"+File.separator, config.getImageMagickPath());
+        config.setImageMagickPath("imagemagickpath"+File.separator);
+        assertEquals("imagemagickpath"+File.separator, config.getImageMagickPath());
+        config.setImageMagickPath("");
+        assertEquals("", config.getImageMagickPath());
     }
 
     @Test(expected=IllegalArgumentException.class)
