@@ -4,6 +4,9 @@ Release 2.0.0 - ???
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
    Other changes
+
+   * Upgrade jackson to 2.9.5 (TIKA-2634).
+
    * Add support for brotli (TIKA-2621).
 
    * Upgrade PDFBox to 2.0.9 and include new jbig2-imageio
