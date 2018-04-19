@@ -18,6 +18,7 @@ package org.apache.tika.parser.ocr;
 
 import org.apache.commons.io.FilenameUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -85,7 +86,7 @@ public class TesseractOCRConfig implements Serializable {
     private int enableImageProcessing = 0;
 
     // Path to ImageMagick program, if not on system path.
-    private String ImageMagickPath = "";
+    private String imageMagickPath = "";
 
     // resolution of processed image (in dpi).
     private int density = 300;
@@ -198,14 +199,19 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set the path to the Tesseract executable, needed if it is not on system path.
+     * Set the path to the Tesseract executable's directory, needed if it is not on system path.
      * <p>
      * Note that if you set this value, it is highly recommended that you also
      * set the path to the 'tessdata' folder using {@link #setTessdataPath}.
      * </p>
      */
     public void setTesseractPath(String tesseractPath) {
-        this.tesseractPath = FilenameUtils.normalize(tesseractPath);
+
+        tesseractPath = FilenameUtils.normalize(tesseractPath);
+        if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator))
+            tesseractPath += File.separator;
+
+        this.tesseractPath = tesseractPath;
     }
 
     /**
@@ -221,7 +227,11 @@ public class TesseractOCRConfig implements Serializable {
      * (such as when Tesseract is built from source), it may be located elsewhere.
      */
     public void setTessdataPath(String tessdataPath) {
-        this.tessdataPath = FilenameUtils.normalize(tessdataPath);
+        tessdataPath = FilenameUtils.normalize(tessdataPath);
+        if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
+            tessdataPath += File.separator;
+
+        this.tessdataPath = tessdataPath;
     }
 
     /**
@@ -515,21 +525,25 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * @return path to ImageMagick file.
-     * @see #setImageMagickPath(String ImageMagickPath)
+     * @return path to ImageMagick executable directory.
+     * @see #setImageMagickPath(String imageMagickPath)
      */
     public String getImageMagickPath() {
 
-        return ImageMagickPath;
+        return imageMagickPath;
     }
 
     /**
-     * Set the path to the ImageMagick executable, needed if it is not on system path.
+     * Set the path to the ImageMagick executable directory, needed if it is not on system path.
      *
-     * @param ImageMagickPath to ImageMagick file.
+     * @param imageMagickPath to ImageMagick executable directory.
      */
-    public void setImageMagickPath(String ImageMagickPath) {
-        this.ImageMagickPath = FilenameUtils.normalize(ImageMagickPath);
+    public void setImageMagickPath(String imageMagickPath) {
+        imageMagickPath = FilenameUtils.normalize(imageMagickPath);
+        if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator))
+            imageMagickPath += File.separator;
+
+        this.imageMagickPath = imageMagickPath;
     }
 
     /**

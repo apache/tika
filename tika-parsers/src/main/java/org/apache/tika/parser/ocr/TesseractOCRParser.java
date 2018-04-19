@@ -152,7 +152,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             TESSERACT_PRESENT.clear();
         }
         //check that the parent directory exists
-        if (! Files.isDirectory(Paths.get(config.getTesseractPath()))) {
+        if (! config.getTesseractPath().isEmpty() &&
+                ! Files.isDirectory(Paths.get(config.getTesseractPath()))) {
             TESSERACT_PRESENT.put(tesseract, false);
             return false;
         }
@@ -178,7 +179,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             IMAGE_MAGICK_PRESENT.clear();
         }
         //check that directory exists
-        if (! Files.isDirectory(Paths.get(config.getImageMagickPath()))) {
+        if (!config.getImageMagickPath().isEmpty() &&
+                ! Files.isDirectory(Paths.get(config.getImageMagickPath()))) {
             IMAGE_MAGICK_PRESENT.put(ImageMagick, false);
             return false;
         }
@@ -378,7 +380,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 "-density", Integer.toString(config.getDensity()),
                 "-depth ", Integer.toString(config.getDepth()),
                 "-colorspace", config.getColorspace(),
-                " -filter ", config.getFilter(),
+                "-filter", config.getFilter(),
                 "-resize", config.getResize() + "%",
                 "-rotate", angle,
                 scratchFile.getAbsolutePath(),
