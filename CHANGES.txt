@@ -1,4 +1,6 @@
-Release 1.18 - 4/10/2018
+Release 1.18 - ???
+
+   * Upgrade Jackson to 2.9.5 (TIKA-2634).
 
    * Add support for brotli (TIKA-2621).
 
