@@ -1,4 +1,4 @@
-Release 1.18 - ???
+Release 1.18 - 4/20/2018
 
    * Upgrade Jackson to 2.9.5 (TIKA-2634).
 
