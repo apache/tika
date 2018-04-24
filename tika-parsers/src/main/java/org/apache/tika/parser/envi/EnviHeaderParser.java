@@ -20,7 +20,9 @@ package org.apache.tika.parser.envi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -44,10 +46,18 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.application("envi.hdr"));
 
+    private List<String> multiLineFieldValueList = new ArrayList<>();
+
+    private transient XHTMLContentHandler xhtml;
+
+    private transient AutoDetectReader reader;
+
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
@@ -62,27 +72,54 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         if (tikaConfig == null) {
             tikaConfig = TikaConfig.getDefaultConfig();
         }
-        try (AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+        reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context));
             Charset charset = reader.getCharset();
-            MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
             // deprecated, see TIKA-431
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler,
+            xhtml = new XHTMLContentHandler(handler,
                     metadata);
 
             xhtml.startDocument();
-
-            // text contents of the xhtml
-            String line;
-            while ((line = reader.readLine()) != null) {
-                xhtml.startElement("p");
-                xhtml.characters(line);
-                xhtml.endElement("p");
-            }
-
+            readLines();
             xhtml.endDocument();
+    }
+
+    private void readLines() throws IOException, SAXException {
+      // text contents of the xhtml
+      String line;
+      while ((line = reader.readLine()) != null) {
+          if (line.contains("{") && !line.endsWith("}") || line.startsWith(" ")) {
+              String completeField = parseMultiLineFieldValue(line);
+              if (completeField != null) {
+                xhtml.startElement("p");
+                xhtml.characters(completeField);
+                xhtml.endElement("p");
+              }
+          } else {
+              xhtml.startElement("p");
+              xhtml.characters(line);
+              xhtml.endElement("p");
+          }
+      }
+    }
+
+    /*
+     * Enables correct extraction of fiel values which span more
+     * than one line. Essentially, multi-line fiel values are
+     * typically enclosed within curly braces, so a primitive
+     * check it made to ensure the multi-line contents are contained in
+     * opening and closing braces.
+     */
+    private String parseMultiLineFieldValue(String line) {
+        multiLineFieldValueList.add(line);
+        if (line.endsWith("}")) {
+          return String.join("", multiLineFieldValueList);
+        } else {
+          //do nothing
         }
+        return null;
+      
     }
 }
