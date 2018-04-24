@@ -40,8 +40,7 @@ public class DL4JVGG16NetTest {
             }
         }
         
-        if(config != null)
-        {
+        if(config != null) {
         	Tika tika = new Tika(config);
             Metadata md = new Metadata();
             tika.parse(getClass().getResourceAsStream("lion.jpg"), md);
