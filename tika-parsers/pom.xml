@@ -176,6 +176,11 @@
       <version>${tukaani.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.epam</groupId>
+      <artifactId>parso</artifactId>
+      <version>${parso.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.brotli</groupId>
       <artifactId>dec</artifactId>
       <version>${brotli.version}</version>
