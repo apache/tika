@@ -199,6 +199,7 @@
               netcdf4|
               grib|
               cdm|
+              parso|
               httpservices|
               jcip-annotations|
               jmatio|
@@ -233,6 +234,7 @@
               com.github.openjson;resolution:=optional,
               com.google.protobuf;resolution:=optional,
               com.ibm.icu.text;resolution:=optional,
+              com.parso;resolution:=optional,
               com.sleepycat.je;resolution:=optional,
               com.sun.javadoc;resolution:=optional,
               com.sun.xml.bind.marshaller;resolution:=optional,
