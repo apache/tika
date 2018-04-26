@@ -34,12 +34,16 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     private static final long serialVersionUID = -1479368523072408091L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(EnviHeaderParser.class);
 
     public static final String ENVI_MIME_TYPE = "application/envi.hdr";
 
@@ -72,18 +76,25 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         if (tikaConfig == null) {
             tikaConfig = TikaConfig.getDefaultConfig();
         }
-        reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context));
-            Charset charset = reader.getCharset();
-            // deprecated, see TIKA-431
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+        try {
+            reader = new AutoDetectReader(
+                  new CloseShieldInputStream(stream), metadata, getEncodingDetector(context));
+                Charset charset = reader.getCharset();
+                // deprecated, see TIKA-431
+                metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
-            xhtml = new XHTMLContentHandler(handler,
-                    metadata);
+                xhtml = new XHTMLContentHandler(handler,
+                      metadata);
 
-            xhtml.startDocument();
-            readLines();
-            xhtml.endDocument();
+                xhtml.startDocument();
+                readLines();
+                xhtml.endDocument();
+        } catch (IOException | TikaException e) {
+          LOG.error("Error reading input data stream.", e);
+        } finally {
+          reader.close();
+        }
+
     }
 
     private void readLines() throws IOException, SAXException {
@@ -93,16 +104,21 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
           if (line.contains("{") && !line.endsWith("}") || line.startsWith(" ")) {
               String completeField = parseMultiLineFieldValue(line);
               if (completeField != null) {
-                xhtml.startElement("p");
-                xhtml.characters(completeField);
-                xhtml.endElement("p");
+                  writeParagraph(completeField);
               }
           } else {
-              xhtml.startElement("p");
-              xhtml.characters(line);
-              xhtml.endElement("p");
+              writeParagraph(line);
           }
       }
+    }
+
+    /*
+     * Simple write a line to the XHTMLContentHandler
+     */
+    private void writeParagraph(String line) throws SAXException {
+        xhtml.startElement("p");
+        xhtml.characters(line);
+        xhtml.endElement("p");
     }
 
     /*
