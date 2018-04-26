@@ -63,7 +63,7 @@ public class SAS7BDATParser extends AbstractParser {
         xhtml.startDocument();
         
         SasFileReader sas = new SasFileReaderImpl(stream);
-        
+
         // TODO Metadata
 
         // Output as a table
@@ -85,9 +85,7 @@ public class SAS7BDATParser extends AbstractParser {
         while ((row = sas.readNext()) != null) {
             xhtml.startElement("tr");
             for (String val : DataWriterUtil.getRowValues(sas.getColumns(), row)) {
-                xhtml.startElement("td");
-                xhtml.characters(val);
-                xhtml.endElement("td");
+                xhtml.element("td", val);
             }
             xhtml.endElement("tr");
             xhtml.newline();
@@ -95,6 +93,6 @@ public class SAS7BDATParser extends AbstractParser {
 
         // Finish
         xhtml.endElement("table");
-        xhtml.newline();
+        xhtml.endDocument();
     }
 }
