@@ -48,8 +48,20 @@ public class SAS7BDATParserTest extends TikaTest {
         }
 
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
-        // TODO Test the metadata
-        // TODO Test the contents
+        assertEquals("TESTING", metadata.get(TikaCoreProperties.TITLE));
+
+        // Mon Jan 30 07:31:47 GMT 2017
+        assertEquals("2017-01-30T07:31:47Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2017-01-30T07:31:47Z", metadata.get(TikaCoreProperties.MODIFIED));
+        
+        // TODO Test the rest of the metadata
+        
+        String content = handler.toString();
+        assertContains("TESTING", content);
+        assertContains("\t3\t", content);
+        assertContains("\t10\t", content);
+        assertContains("\tThis is row", content);
+        assertContains(" of ", content);
     }
     
     @Test
@@ -64,9 +76,24 @@ public class SAS7BDATParserTest extends TikaTest {
         }
 
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
-        // TODO Test the metadata
-        // TODO Test the contents
+        assertEquals("SHEET1", metadata.get(TikaCoreProperties.TITLE));
+
+        // Fri Mar 06 19:10:19 GMT 2015
+        assertEquals("2015-03-06T19:10:19Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2015-03-06T19:10:19Z", metadata.get(TikaCoreProperties.MODIFIED));
+        
+        // TODO Test the rest of the metadata
+        
+        String content = handler.toString();
+        assertContains("SHEET1", content);
+        assertContains("A\tB\tC", content);
+        assertContains("Num=0\t", content);
+        assertContains("Num=404242\t", content);
+        assertContains("\t0\t", content);
+        assertContains("\t404242\t", content);
+        assertContains("\t08Feb1904\t", content);
     }
 
     // TODO HTML contents unit test
+    // TODO Column names vs labels, with a different test file
 }

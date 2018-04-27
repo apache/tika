@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 
 import com.epam.parso.Column;
 import com.epam.parso.DataWriterUtil;
+import com.epam.parso.SasFileProperties;
 import com.epam.parso.SasFileReader;
 import com.epam.parso.impl.SasFileReaderImpl;
 
@@ -63,10 +64,61 @@ public class SAS7BDATParser extends AbstractParser {
         xhtml.startDocument();
         
         SasFileReader sas = new SasFileReaderImpl(stream);
+        SasFileProperties props = sas.getSasFileProperties();
 
-        // TODO Metadata
+        // Record the interesting parts of the file's metadata
+        metadata.set(TikaCoreProperties.TITLE, props.getName());
+        metadata.set(TikaCoreProperties.CREATED, props.getDateCreated());
+        metadata.set(TikaCoreProperties.MODIFIED, props.getDateModified());
 
-        // Output as a table
+        // TODO What about these?
+/*
+u64 - false
+compressionMethod - null
+endianness - 1
+encoding - windows-1252
+sessionEncoding - null
+fileType - DATA
+sasRelease - 9.0101M3
+serverType - XP_PRO
+osName - 
+osType - 
+headerLength - 1024
+pageLength - 8192
+pageCount - 1
+rowLength - 96
+rowCount - 31
+mixPageRowCount - 69
+columnsCount - 5
+*/
+
+        // TODO Should we output more Column info as metadata?
+/*
+5 Columns defined:
+ 1 - A
+  Label: A
+  Format: $58.
+  Size 58 of java.lang.String
+ 2 - B
+  Label: B
+  Format: 
+  Size 8 of java.lang.Number
+ 3 - C
+  Label: C
+  Format: DATE8.
+  Size 8 of java.lang.Number
+ 4 - D
+  Label: D
+  Format: DATETIME17.
+  Size 8 of java.lang.Number
+ 5 - E
+  Label: E
+  Format: 
+  Size 8 of java.lang.Number
+*/
+
+        // Output file contents as a table
+        xhtml.element("h1", props.getName());
         xhtml.startElement("table");
         xhtml.newline();
         
