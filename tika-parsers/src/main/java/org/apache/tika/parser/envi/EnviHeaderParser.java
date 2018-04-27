@@ -54,8 +54,6 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     private transient XHTMLContentHandler xhtml;
 
-    private transient AutoDetectReader reader;
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -76,9 +74,8 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         if (tikaConfig == null) {
             tikaConfig = TikaConfig.getDefaultConfig();
         }
-        try {
-            reader = new AutoDetectReader(
-                  new CloseShieldInputStream(stream), metadata, getEncodingDetector(context));
+        try (AutoDetectReader reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))){
                 Charset charset = reader.getCharset();
                 // deprecated, see TIKA-431
                 metadata.set(Metadata.CONTENT_ENCODING, charset.name());
@@ -87,17 +84,15 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                       metadata);
 
                 xhtml.startDocument();
-                readLines();
+                readLines(reader);
                 xhtml.endDocument();
         } catch (IOException | TikaException e) {
           LOG.error("Error reading input data stream.", e);
-        } finally {
-          reader.close();
         }
 
     }
 
-    private void readLines() throws IOException, SAXException {
+    private void readLines(AutoDetectReader reader) throws IOException, SAXException {
       // text contents of the xhtml
       String line;
       while ((line = reader.readLine()) != null) {
