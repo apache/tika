@@ -46,7 +46,7 @@
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.9</pdfbox.version>
     <jempbox.version>1.8.13</jempbox.version>
-    <netcdf-java.version>4.5.5</netcdf-java.version>
+    <netcdf-java.version>4.6.11</netcdf-java.version>
     <sis.version>0.8</sis.version>
     <parso.version>2.0.9</parso.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
@@ -54,6 +54,14 @@
     <commonsexec.version>1.3</commonsexec.version>
     <httpcomponents.version>4.5.4</httpcomponents.version>
   </properties>
+
+  <repositories>
+    <repository>
+        <id>unidata-all</id>
+        <name>Unidata All</name>
+        <url>https://artifacts.unidata.ucar.edu/repository/unidata-all/</url>
+    </repository>
+  </repositories>
 
   <dependencies>
     <!-- Optional OSGi dependency, used only when running within OSGi -->
