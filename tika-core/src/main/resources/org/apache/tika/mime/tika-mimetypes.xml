@@ -221,6 +221,9 @@
   <mime-type type="application/emma+xml">
     <glob pattern="*.emma"/>
   </mime-type>
+  <mime-type type="application/envi.hdr">
+    <glob pattern="*.hdr"/>
+  </mime-type>
   <mime-type type="application/epp+xml"/>
 
   <mime-type type="application/epub+zip">
