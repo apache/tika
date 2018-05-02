@@ -59,6 +59,7 @@ org.apache.tika.parser.pkg.CompressorParser
 org.apache.tika.parser.pkg.PackageParser
 org.apache.tika.parser.pkg.RarParser
 org.apache.tika.parser.rtf.RTFParser
+org.apache.tika.parser.sas.SAS7BDATParser
 org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser
 org.apache.tika.parser.wordperfect.QuattroProParser

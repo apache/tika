@@ -71,6 +71,8 @@ Release 2.0.0 - ???
    * Added local Docker image build using dockerfile-maven-plugin to allow
      images to be built from source (TIKA-1518).
 
+   * Support for SAS7BDAT data files (TIKA-2462)
+
 Release 1.17 - 12/8/2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
