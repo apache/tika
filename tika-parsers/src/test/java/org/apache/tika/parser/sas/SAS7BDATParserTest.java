@@ -21,13 +21,19 @@ import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Database;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.executable.MachineMetadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
@@ -54,7 +60,16 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("2017-01-30T07:31:47Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2017-01-30T07:31:47Z", metadata.get(TikaCoreProperties.MODIFIED));
         
-        // TODO Test the rest of the metadata
+        assertEquals("1", metadata.get(PagedText.N_PAGES));
+        assertEquals("2", metadata.get(Database.COLUMN_COUNT));
+        assertEquals("11", metadata.get(Database.ROW_COUNT));
+        assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
+        assertEquals("W32_7PRO", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertEquals("9.0301M2", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
+        assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
+        assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
+        assertEquals(Arrays.asList("recnum","label"),
+                     Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
         
         String content = handler.toString();
         assertContains("TESTING", content);
@@ -82,7 +97,16 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("2015-03-06T19:10:19Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2015-03-06T19:10:19Z", metadata.get(TikaCoreProperties.MODIFIED));
         
-        // TODO Test the rest of the metadata
+        assertEquals("1", metadata.get(PagedText.N_PAGES));
+        assertEquals("5", metadata.get(Database.COLUMN_COUNT));
+        assertEquals("31", metadata.get(Database.ROW_COUNT));
+        assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
+        assertEquals("XP_PRO", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertEquals("9.0101M3", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
+        assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
+        assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
+        assertEquals(Arrays.asList("A","B","C","D","E"),
+                     Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
         
         String content = handler.toString();
         assertContains("SHEET1", content);

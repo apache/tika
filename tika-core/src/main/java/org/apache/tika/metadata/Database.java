@@ -20,6 +20,7 @@ public interface Database {
     final static String PREFIX = "database"+Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     Property TABLE_NAME = Property.externalTextBag(PREFIX+"table_name");
-    Property COLUMN_COUNT = Property.externalText(PREFIX+"column_count");
+    Property ROW_COUNT = Property.externalInteger(PREFIX+"row_count");
+    Property COLUMN_COUNT = Property.externalInteger(PREFIX+"column_count");
     Property COLUMN_NAME = Property.externalTextBag(PREFIX+"column_name");
 }
