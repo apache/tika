@@ -22,11 +22,16 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Database;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.executable.MachineMetadata;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -71,51 +76,40 @@ public class SAS7BDATParser extends AbstractParser {
         metadata.set(TikaCoreProperties.CREATED, props.getDateCreated());
         metadata.set(TikaCoreProperties.MODIFIED, props.getDateModified());
 
-        // TODO What about these?
-/*
-u64 - false
-compressionMethod - null
-endianness - 1
-encoding - windows-1252
-sessionEncoding - null
-fileType - DATA
-sasRelease - 9.0101M3
-serverType - XP_PRO
-osName - 
-osType - 
-headerLength - 1024
-pageLength - 8192
-pageCount - 1
-rowLength - 96
-rowCount - 31
-mixPageRowCount - 69
-columnsCount - 5
-*/
+        metadata.set(PagedText.N_PAGES,     (int)props.getPageCount());
+        metadata.set(Database.COLUMN_COUNT, (int)props.getColumnsCount());
+        metadata.set(Database.ROW_COUNT,    (int)props.getRowCount());
 
-        // TODO Should we output more Column info as metadata?
-/*
-5 Columns defined:
- 1 - A
-  Label: A
-  Format: $58.
-  Size 58 of java.lang.String
- 2 - B
-  Label: B
-  Format: 
-  Size 8 of java.lang.Number
- 3 - C
-  Label: C
-  Format: DATE8.
-  Size 8 of java.lang.Number
- 4 - D
-  Label: D
-  Format: DATETIME17.
-  Size 8 of java.lang.Number
- 5 - E
-  Label: E
-  Format: 
-  Size 8 of java.lang.Number
-*/
+        // TODO Can we find more general properties for these / move
+        //  these to more general places?
+        metadata.set(HttpHeaders.CONTENT_ENCODING, props.getEncoding());
+        metadata.set(OfficeOpenXMLExtended.APPLICATION, props.getServerType());
+        metadata.set(OfficeOpenXMLExtended.APP_VERSION, props.getSasRelease());
+        metadata.set(MachineMetadata.ARCHITECTURE_BITS, 
+                     props.isU64() ? "64" : "32");
+        metadata.set(MachineMetadata.ENDIAN, props.getEndianness() == 1 ? 
+                     MachineMetadata.Endian.LITTLE.getName() : 
+                     MachineMetadata.Endian.BIG.getName());
+
+        // The following SAS Metadata fields are currently ignored:
+        // compressionMethod
+        // sessionEncoding
+        // fileType
+        // osName - 
+        // osType - 
+        // mixPageRowCount
+        // headerLength
+        // pageLength
+        // rowLength
+
+        // Process the column metadata
+        // TODO Find keys to record the format and the type
+        for (Column c : sas.getColumns()) {
+            String name = c.getLabel();
+            if (name == null || name.isEmpty()) name = c.getName();
+            metadata.add(Database.COLUMN_NAME, name);
+        }
+
 
         // Output file contents as a table
         xhtml.element("h1", props.getName());
