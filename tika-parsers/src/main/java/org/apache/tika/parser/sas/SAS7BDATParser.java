@@ -119,8 +119,11 @@ public class SAS7BDATParser extends AbstractParser {
         // Do the column headings
         xhtml.startElement("tr");
         for (Column c : sas.getColumns()) {
+            String label = c.getLabel();
+            if (label == null || label.isEmpty()) label = c.getName();
+
             xhtml.startElement("th", "title", c.getName());
-            xhtml.characters(c.getLabel());
+            xhtml.characters(label);
             xhtml.endElement("th");
         }
         xhtml.endElement("tr");

@@ -118,6 +118,22 @@ public class SAS7BDATParserTest extends TikaTest {
         assertContains("\t08Feb1904\t", content);
     }
 
-    // TODO HTML contents unit test
+    @Test
+    public void testHTML() throws Exception {
+        XMLResult result = getXML("testSAS.sas7bdat");
+        String xml = result.xml;
+
+        // Check the title came through
+        assertContains("<h1>TESTING</h1>", xml);
+        // Check the headings
+        assertContains("<th title=\"recnum\">recnum</th>", xml);
+        assertContains("<th title=\"label\">label</th>", xml);
+        // Check some rows
+        assertContains("<td>3</td>", xml);
+        assertContains("<td>This is row", xml);
+        assertContains("10</td>", xml);
+    }
+
     // TODO Column names vs labels, with a different test file
+    // TODO Columnar consistency test
 }
