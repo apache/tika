@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -53,6 +54,13 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     private List<String> multiLineFieldValueList = new ArrayList<>();
 
     private transient XHTMLContentHandler xhtml;
+
+    public EnviHeaderParser() {
+        super();
+    }
+    public EnviHeaderParser(EncodingDetector encodingDetector) {
+        super(encodingDetector);
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
