@@ -82,36 +82,36 @@ public class SAS7BDATParserTest extends TikaTest {
         Metadata metadata = new Metadata();
 
         try (InputStream stream = SAS7BDATParserTest.class.getResourceAsStream(
-                "/test-documents/test-columnar.sas7bdat")) {
+                "/test-documents/test-columnar.sas7bdat")) {            
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("SHEET1", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("TESTING", metadata.get(TikaCoreProperties.TITLE));
 
-        // Fri Mar 06 19:10:19 GMT 2015
-        assertEquals("2015-03-06T19:10:19Z", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2015-03-06T19:10:19Z", metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2018-05-09T16:42:04Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2018-05-09T16:42:04Z", metadata.get(TikaCoreProperties.MODIFIED));
         
         assertEquals("1", metadata.get(PagedText.N_PAGES));
-        assertEquals("5", metadata.get(Database.COLUMN_COUNT));
-        assertEquals("31", metadata.get(Database.ROW_COUNT));
+        assertEquals("7", metadata.get(Database.COLUMN_COUNT));
+        assertEquals("11", metadata.get(Database.ROW_COUNT));
         assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
-        assertEquals("XP_PRO", metadata.get(OfficeOpenXMLExtended.APPLICATION));
-        assertEquals("9.0101M3", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
+        assertEquals("W32_7PRO", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertEquals("9.0301M2", metadata.get(OfficeOpenXMLExtended.APP_VERSION));
         assertEquals("32", metadata.get(MachineMetadata.ARCHITECTURE_BITS));
         assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
-        assertEquals(Arrays.asList("A","B","C","D","E"),
+        assertEquals(Arrays.asList("Record Number","Square of the Record Number",
+                                   "Description of the Row","Percent Done",
+                                   "Percent Increment","date","datetime"),
                      Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
         
         String content = handler.toString();
-        assertContains("SHEET1", content);
-        assertContains("A\tB\tC", content);
-        assertContains("Num=0\t", content);
-        assertContains("Num=404242\t", content);
-        assertContains("\t0\t", content);
-        assertContains("\t404242\t", content);
-        assertContains("\t08Feb1904\t", content);
+        assertContains("TESTING", content);
+        assertContains("0\t0\tThis", content);
+        assertContains("2\t4\tThis", content);
+        assertContains("4\t16\tThis", content);
+        assertContains("\t01-01-1960\t", content);
+        assertContains("\t01Jan1960:00:00", content);
     }
 
     @Test
@@ -129,7 +129,20 @@ public class SAS7BDATParserTest extends TikaTest {
         assertContains("<td>This is row", xml);
         assertContains("10</td>", xml);
     }
+    
+    @Test
+    public void testHTML2() throws Exception {
+        XMLResult result = getXML("test-columnar.sas7bdat");
+        String xml = result.xml;
 
-    // TODO Column names vs labels, with a different test file
-    // TODO Columnar consistency test
+        // Check the title came through
+        assertContains("<h1>TESTING</h1>", xml);
+        // Check the headings
+        assertContains("<th title=\"recnum\">Record Number</th>", xml);
+        assertContains("<th title=\"square\">Square of the Record Number</th>", xml);
+        assertContains("<th title=\"date\">date</th>", xml);
+        // Check formatting of dates
+        assertContains("<td>01-01-1960</td>", xml);
+        assertContains("<td>01Jan1960:00:00:10.00</td>", xml);
+    }
 }
