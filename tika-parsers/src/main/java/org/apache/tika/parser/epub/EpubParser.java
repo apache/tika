@@ -105,7 +105,8 @@ public class EpubParser extends AbstractParser {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".opf")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
-            } else if (entry.getName().endsWith(".html") || 
+            } else if (entry.getName().endsWith(".htm") || 
+                           entry.getName().endsWith(".html") || 
             		   entry.getName().endsWith(".xhtml")) {
                 content.parse(zip, childHandler, metadata, context);
             }

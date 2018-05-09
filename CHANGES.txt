@@ -73,6 +73,9 @@ Release 2.0.0 - ???
 
    * Support for SAS7BDAT data files (TIKA-2462)
 
+   * Handle .epub files using .htm rather than .html extensions for the
+     embedded contents (TIKA-1288)
+
 Release 1.17 - 12/8/2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
