@@ -8,6 +8,7 @@
       <pctincr missing="M" />
       <date>0</date>
       <datetime>1960-01-01T00:00:01</datetime>
+      <time>00:00:01</time>
    </TESTXML>
    <TESTXML>
       <recnum>1</recnum>
@@ -17,6 +18,7 @@
       <pctincr>0</pctincr>
       <date>1</date>
       <datetime>1960-01-01T00:00:10</datetime>
+      <time>00:00:03</time>
    </TESTXML>
    <TESTXML>
       <recnum>2</recnum>
@@ -26,6 +28,7 @@
       <pctincr>0.5</pctincr>
       <date>16</date>
       <datetime>1960-01-01T00:01:40</datetime>
+      <time>00:00:09</time>
    </TESTXML>
    <TESTXML>
       <recnum>3</recnum>
@@ -35,6 +38,7 @@
       <pctincr>0.6666666667</pctincr>
       <date>81</date>
       <datetime>1960-01-01T00:16:40</datetime>
+      <time>00:00:27</time>
    </TESTXML>
    <TESTXML>
       <recnum>4</recnum>
@@ -44,6 +48,7 @@
       <pctincr>0.75</pctincr>
       <date>256</date>
       <datetime>1960-01-01T02:46:40</datetime>
+      <time>00:01:21</time>
    </TESTXML>
    <TESTXML>
       <recnum>5</recnum>
@@ -53,6 +58,7 @@
       <pctincr>0.8</pctincr>
       <date>625</date>
       <datetime>1960-01-02T03:46:40</datetime>
+      <time>00:04:03</time>
    </TESTXML>
    <TESTXML>
       <recnum>6</recnum>
@@ -62,6 +68,7 @@
       <pctincr>0.8333333333</pctincr>
       <date>1296</date>
       <datetime>1960-01-12T13:46:40</datetime>
+      <time>00:12:09</time>
    </TESTXML>
    <TESTXML>
       <recnum>7</recnum>
@@ -71,6 +78,7 @@
       <pctincr>0.8571428571</pctincr>
       <date>2401</date>
       <datetime>1960-04-25T17:46:40</datetime>
+      <time>00:36:27</time>
    </TESTXML>
    <TESTXML>
       <recnum>8</recnum>
@@ -80,6 +88,7 @@
       <pctincr>0.875</pctincr>
       <date>4096</date>
       <datetime>1963-03-03T09:46:40</datetime>
+      <time>01:49:21</time>
    </TESTXML>
    <TESTXML>
       <recnum>9</recnum>
@@ -89,6 +98,7 @@
       <pctincr>0.8888888889</pctincr>
       <date>6561</date>
       <datetime>1991-09-09T01:46:40</datetime>
+      <time>05:28:03</time>
    </TESTXML>
    <TESTXML>
       <recnum>10</recnum>
@@ -98,5 +108,6 @@
       <pctincr>0.9</pctincr>
       <date>10000</date>
       <datetime>2276-11-19T17:46:40</datetime>
+      <time>16:24:09</time>
    </TESTXML>
 </TABLE>

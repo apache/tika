@@ -26,25 +26,31 @@ import org.junit.Test;
  * This is mostly focused on the XHTML output
  */
 public class TabularFormatsTest extends TikaTest {
-    protected static final String[] headers = new String[] {
-        "String (Num=)","Number","Date","Datetime","Number"
+    protected static final String[] columnNames = new String[] {
+         "recnum","square","desc","pctdone","pctinc",
+         "date","datetime","time"
     };
+    protected static final String[] columnLabels = new String[] {
+        "Record Number","Square of the Record Number",
+        "Description of the Row","Percent Done",
+        "Percent Increment","date","datetime","time"    
+    };
+
     /**
      * Expected values, by <em>column</em>
      */
     protected static final String[][] table = new String[][] {
         // TODO All values
         new String[] {
-                "Num=0"
+             "0","1","2","3","4","5","6","7","8","9","10"
         },
         new String[] {
-                "0.0"
+             "0","1","4" // etc
         },
-        new String[] {
-                "1899-12-30"
+        new String[] {  // etc
+                "01-01-1960"
         },
-        new String[] {
-                "1900-01-01 11:00:00"
+        new String[] {  // etc
         },
         new String[] {
                 ""
