@@ -134,7 +134,11 @@ public class SAS7BDATParser extends AbstractParser {
         while ((row = sas.readNext()) != null) {
             xhtml.startElement("tr");
             for (String val : DataWriterUtil.getRowValues(sas.getColumns(), row)) {
-                xhtml.element("td", val);
+                // Use explicit start/end, rather than element, to 
+                //  ensure that empty cells still get output
+                xhtml.startElement("td");
+                xhtml.characters(val);
+                xhtml.endElement("td");
             }
             xhtml.endElement("tr");
             xhtml.newline();
