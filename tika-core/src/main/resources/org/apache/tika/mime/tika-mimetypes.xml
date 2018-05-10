@@ -5019,6 +5019,15 @@
     <glob pattern="*.xyz"/>
   </mime-type>
 
+  <mime-type type="image/aces">
+    <_comment>ACES Image Container File</_comment>
+    <magic priority="50">
+      <match value="0x762F310102000000" type="string" offset="0"/>
+      <match value="0x762F310102040000" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.exr"/>
+  </mime-type> 
+
   <mime-type type="image/bmp">
     <alias type="image/x-bmp"/>
     <alias type="image/x-ms-bmp"/>
@@ -5066,6 +5075,16 @@
       </match>
     </magic>
     <glob pattern="*.cgm"/>
+  </mime-type>
+
+  <mime-type type="image/x-dpx">
+    <acronym>DPX</acronym>
+    <_comment>Digital Picture Exchange from SMPTE</_comment>
+    <magic priority="50">
+      <match value="SDPX" type="string" offset="0" />
+      <match value="XPDS" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.dpx"/>
   </mime-type>
 
   <mime-type type="image/emf">
