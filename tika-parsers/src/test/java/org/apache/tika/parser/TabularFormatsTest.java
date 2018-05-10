@@ -226,7 +226,7 @@ public class TabularFormatsTest extends TikaTest {
         XMLResult result = getXML("test-columnar.xls");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        // TODO Correctly handle empty cells then test
+        // TODO Correctly handle empty cells then enable this test
         //assertContents(xml, true, false);
     }
     @Test
@@ -234,10 +234,18 @@ public class TabularFormatsTest extends TikaTest {
         XMLResult result = getXML("test-columnar.xlsx");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        // TODO Correctly handle empty cells then test
+        // TODO Correctly handle empty cells then enable this test
         //assertContents(xml, true, false);
     }
-    // TODO Test OpenDocument ODS test
+    // TODO Fix the ODS test - currently failing with
+    // org.xml.sax.SAXException: Namespace http://www.w3.org/1999/xhtml not declared
+//    @Test
+//    public void testODS() throws Exception {
+//        XMLResult result = getXML("test-columnar.ods");
+//        String xml = result.xml;
+//        assertHeaders(xml, false, true, false);
+//        assertContents(xml, true, true);
+//    }
     
     // TODO Test other formats, eg Database formats
 
