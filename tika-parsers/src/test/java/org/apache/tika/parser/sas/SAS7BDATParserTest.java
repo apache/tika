@@ -89,11 +89,11 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("TESTING", metadata.get(TikaCoreProperties.TITLE));
 
-        assertEquals("2018-05-09T16:42:04Z", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2018-05-09T16:42:04Z", metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2018-05-09T17:59:33Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2018-05-09T17:59:33Z", metadata.get(TikaCoreProperties.MODIFIED));
         
         assertEquals("1", metadata.get(PagedText.N_PAGES));
-        assertEquals("7", metadata.get(Database.COLUMN_COUNT));
+        assertEquals("8", metadata.get(Database.COLUMN_COUNT));
         assertEquals("11", metadata.get(Database.ROW_COUNT));
         assertEquals("windows-1252", metadata.get(HttpHeaders.CONTENT_ENCODING));
         assertEquals("W32_7PRO", metadata.get(OfficeOpenXMLExtended.APPLICATION));
@@ -102,7 +102,7 @@ public class SAS7BDATParserTest extends TikaTest {
         assertEquals("Little", metadata.get(MachineMetadata.ENDIAN));
         assertEquals(Arrays.asList("Record Number","Square of the Record Number",
                                    "Description of the Row","Percent Done",
-                                   "Percent Increment","date","datetime"),
+                                   "Percent Increment","date","datetime","time"),
                      Arrays.asList(metadata.getValues(Database.COLUMN_NAME)));
         
         String content = handler.toString();
