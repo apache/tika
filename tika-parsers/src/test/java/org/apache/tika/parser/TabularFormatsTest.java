@@ -18,10 +18,11 @@ package org.apache.tika.parser;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
 import org.junit.Test;
@@ -45,14 +46,14 @@ public class TabularFormatsTest extends TikaTest {
     /**
      * Expected values, by <em>column</em>
      */
-    protected static final String[][] table = new String[][] {
+    protected static final Object[][] table = new Object[][] {
         new String[] {
              "0","1","2","3","4","5","6","7","8","9","10"
         },
         new String[] {
              "0","1","4","9","16","25","36","49","64","81","100"
         },
-        new String[] {}, // Done later
+        new String[] {}, // Generated later
         new String[] {
                 "0%","10%","20%","30%","40%","50%",
                 "60%","70%","80%","90%","100%"
@@ -62,37 +63,44 @@ public class TabularFormatsTest extends TikaTest {
                 "75.0%","80.0%","83.3%","85.7%",
                 "87.5%","88.9%","90.0%"
         },
-        new String[] {
-             "01-01-1960", "02-01-1960", "17-01-1960",
-             "22-03-1960", "13-09-1960", "17-09-1961",
-             "20-07-1963", "29-07-1966", "20-03-1971",
-             "18-12-1977", "19-05-1987"
+        new Pattern[] {
+                Pattern.compile("01-(01|JAN|Jan)-(60|1960)"),
+                Pattern.compile("02-01-1960"),
+                Pattern.compile("17-01-1960"),
+                Pattern.compile("22-03-1960"),
+                Pattern.compile("13-09-1960"),
+                Pattern.compile("17-09-1961"),
+                Pattern.compile("20-07-1963"),
+                Pattern.compile("29-07-1966"),
+                Pattern.compile("20-03-1971"),
+                Pattern.compile("18-12-1977"),
+                Pattern.compile("19-05-1987"),
         },
-        new String[] {
-             "01JAN60:00:00:01",
-             "01JAN60:00:00:10",
-             "01JAN60:00:01:40",
-             "01JAN60:00:16:40",
-             "01JAN60:02:46:40",
-             "02JAN60:03:46:40",
-             "12JAN60:13:46:40",
-             "25APR60:17:46:40",
-             "03MAR63:09:46:40",
-             "09SEP91:01:46:40",
-             "19NOV76:17:46:40"
+        new Pattern[] {
+             Pattern.compile("01(JAN|Jan)(60|1960):00:00:01(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960):00:00:10(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960):00:01:40(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960):00:16:40(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960):02:46:40(.00)?"),
+             Pattern.compile("02(JAN|Jan)(60|1960):03:46:40(.00)?"),
+             Pattern.compile("12(JAN|Jan)(60|1960):13:46:40(.00)?"),
+             Pattern.compile("25(APR|Apr)(60|1960):17:46:40(.00)?"),
+             Pattern.compile("03(MAR|Mar)(63|1963):09:46:40(.00)?"),
+             Pattern.compile("09(SEP|Sep)(91|1991):01:46:40(.00)?"),
+             Pattern.compile("19(NOV|Nov)(76|2276):17:46:40(.00)?")
         },
-        new String[] {
-             "0:00:01",
-             "0:00:03",
-             "0:00:09",
-             "0:00:27",
-             "0:01:21",
-             "0:04:03",
-             "0:12:09",
-             "0:36:27",
-             "1:49:21",
-             "5:28:03",
-             "16:24:09"
+        new Pattern[] {
+             Pattern.compile("0?0:00:01(.\\d\\d)?"),
+             Pattern.compile("0?0:00:03(.\\d\\d)?"),
+             Pattern.compile("0?0:00:09(.\\d\\d)?"),
+             Pattern.compile("0?0:00:27(.\\d\\d)?"),
+             Pattern.compile("0?0:01:21(.\\d\\d)?"),
+             Pattern.compile("0?0:04:03(.\\d\\d)?"),
+             Pattern.compile("0?0:12:09(.\\d\\d)?"),
+             Pattern.compile("0?0:36:27(.\\d\\d)?"),
+             Pattern.compile("0?1:49:21(.\\d\\d)?"),
+             Pattern.compile("0?5:28:03(.\\d\\d)?"),
+             Pattern.compile("16:24:09(.\\d\\d)?")
         }
     };
     static {
@@ -106,11 +114,6 @@ public class TabularFormatsTest extends TikaTest {
     //  correctly format these...
     protected static final List<Integer> percentageColumns = 
             Arrays.asList(new Integer[] { 3, 4 });
-    // Which columns hold dates? Some parsers output
-    //  bits of the month in lower case, some all upper, eg JAN vs Jan
-    protected static final List<Integer> dateColumns = 
-            Arrays.asList(new Integer[] { 5, 6 });
-    // TODO Handle 60 vs 1960
     
     protected static String[] toCells(String row, boolean isTH) {
         // Split into cells, ignoring stuff before first cell
@@ -194,13 +197,17 @@ public class TabularFormatsTest extends TikaTest {
                 // If the parser doesn't know about % formats,
                 //  skip the cell if the column in a % one
                 if (!doesPercents && percentageColumns.contains(cn)) continue;
-                if (dateColumns.contains(cn)) val = val.toUpperCase(Locale.ROOT);
 
                 // Ignore cell attributes
                 if (! val.isEmpty()) val = val.split(">")[1];
                 // Check
-                assertEquals("Wrong text in row " + (rn+1) + " and column " + (cn+1),
-                             table[cn][rn], val);
+                String error = "Wrong text in row " + (rn+1) + " and column " + 
+                               (cn+1) + " - " + table[cn][rn] + " vs " + val;
+                if (table[cn][rn] instanceof String) {
+                    assertEquals(error, table[cn][rn], val);
+                } else {
+                    assertTrue(error, ((Pattern)table[cn][rn]).matcher(val).matches());
+                }
             }
         }
     }
@@ -212,7 +219,7 @@ public class TabularFormatsTest extends TikaTest {
         assertHeaders(xml, true, true, true);
         // TODO Wait for https://github.com/epam/parso/issues/28 to be fixed
         //  then check the % formats again
-//        assertContents(xml, true, false);
+        assertContents(xml, true, false);
     }
     @Test
     public void testXLS() throws Exception {
@@ -230,7 +237,7 @@ public class TabularFormatsTest extends TikaTest {
         // TODO Correctly handle empty cells then test
         //assertContents(xml, true, false);
     }
-    // TODO Test ODS
+    // TODO Test OpenDocument ODS test
     
     // TODO Test other formats, eg Database formats
 
@@ -249,9 +256,13 @@ public class TabularFormatsTest extends TikaTest {
         for (String label : columnLabels) {
             assertContains(label, xml);
         }
-        for (String[] vals : table) {
-            for (String val : vals) {
-                assertContains(val, xml);
+        for (Object[] vals : table) {
+            for (Object val : vals) {
+                if (val instanceof String)
+                    assertContains((String)val, xml);
+                else if (val instanceof Pattern)
+                    assertTrue("Not matched: " + val, 
+                            ((Pattern)val).matcher(xml).find());
             }
         }
     }
