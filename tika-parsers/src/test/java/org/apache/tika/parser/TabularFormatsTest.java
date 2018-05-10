@@ -20,6 +20,8 @@ package org.apache.tika.parser;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.TikaTest;
 import org.junit.Test;
@@ -56,7 +58,7 @@ public class TabularFormatsTest extends TikaTest {
                 "60%","70%","80%","90%","100%"
         },
         new String[] {
-                "M","0.0%","50.0%","66.7%",
+                "","0.0%","50.0%","66.7%",
                 "75.0%","80.0%","83.3%","85.7%",
                 "87.5%","88.9%","90.0%"
         },
@@ -100,6 +102,15 @@ public class TabularFormatsTest extends TikaTest {
             table[2][i] = "This is row " + i + " of 10";
         }
     }
+    // Which columns hold percentages? Not all parsers
+    //  correctly format these...
+    protected static final List<Integer> percentageColumns = 
+            Arrays.asList(new Integer[] { 3, 4 });
+    // Which columns hold dates? Some parsers output
+    //  bits of the month in lower case, some all upper, eg JAN vs Jan
+    protected static final List<Integer> dateColumns = 
+            Arrays.asList(new Integer[] { 5, 6 });
+    // TODO Handle 60 vs 1960
     
     protected static String[] toCells(String row, boolean isTH) {
         // Split into cells, ignoring stuff before first cell
@@ -152,7 +163,7 @@ public class TabularFormatsTest extends TikaTest {
             }
         }
     }
-    protected void assertContents(String xml, boolean hasHeader) {
+    protected void assertContents(String xml, boolean hasHeader, boolean doesPercents) {
         // Ignore anything before the first <tr>
         // Ignore the header row if there is one
         int ignores = 1;
@@ -178,8 +189,14 @@ public class TabularFormatsTest extends TikaTest {
                          table.length, cells.length);
 
             for (int cn=0; cn<table.length; cn++) {
+                String val = cells[cn];
+
+                // If the parser doesn't know about % formats,
+                //  skip the cell if the column in a % one
+                if (!doesPercents && percentageColumns.contains(cn)) continue;
+                if (dateColumns.contains(cn)) val = val.toUpperCase(Locale.ROOT);
+
                 // Ignore cell attributes
-                String val = cells.length > (cn-1) ? cells[cn] : "";
                 if (! val.isEmpty()) val = val.split(">")[1];
                 // Check
                 assertEquals("Wrong text in row " + (rn+1) + " and column " + (cn+1),
@@ -193,21 +210,25 @@ public class TabularFormatsTest extends TikaTest {
         XMLResult result = getXML("test-columnar.sas7bdat");
         String xml = result.xml;
         assertHeaders(xml, true, true, true);
-        //assertContents(xml, true);
+        // TODO Wait for https://github.com/epam/parso/issues/28 to be fixed
+        //  then check the % formats again
+//        assertContents(xml, true, false);
     }
     @Test
     public void testXLS() throws Exception {
         XMLResult result = getXML("test-columnar.xls");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        //assertContents(xml, true);
+        // TODO Correctly handle empty cells then test
+        //assertContents(xml, true, false);
     }
     @Test
     public void testXLSX() throws Exception {
         XMLResult result = getXML("test-columnar.xlsx");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        //assertContents(xml, true);
+        // TODO Correctly handle empty cells then test
+        //assertContents(xml, true, false);
     }
     // TODO Test ODS
     
