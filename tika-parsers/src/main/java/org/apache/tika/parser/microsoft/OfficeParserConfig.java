@@ -29,6 +29,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeMoveFromContent = false;
     private boolean includeShapeBasedContent = true;
     private boolean includeHeadersAndFooters = true;
+    private boolean includeMissingRows = false;
     private boolean concatenatePhoneticRuns = true;
 
     private boolean useSAXDocxExtractor = false;
@@ -188,9 +189,22 @@ public class OfficeParserConfig implements Serializable {
         this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
     }
 
-
     public boolean getExtractAllAlternativesFromMSG() {
         return extractAllAlternativesFromMSG;
+    }
+
+    /**
+     * For table-like formats, and tables within other formats, should
+     *  missing rows in sparse tables be output where detected?
+     * The default is to only output rows defined within the file, which
+     *  avoid lots of blank lines, but means layout isn't preserved.
+     */
+    public void setIncludeMissingRows(boolean includeMissingRows) {
+        this.includeMissingRows = includeMissingRows;
+    }
+
+    public boolean getIncludeMissingRows() {
+        return includeMissingRows;
     }
 }
 
