@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -39,6 +38,7 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.HeaderFooter;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
@@ -57,6 +57,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -146,8 +147,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         while (iter.hasNext()) {
-
-            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config.getIncludeHeadersAndFooters(), xhtml);
+            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
             PackagePart sheetPart = null;
             try (InputStream stream = iter.next()) {
                 sheetPart = iter.getSheetPart();
@@ -396,11 +396,15 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     protected static class SheetTextAsHTML implements SheetContentsHandler {
         private XHTMLContentHandler xhtml;
         private final boolean includeHeadersFooters;
+        private final boolean includeMissingRows;
         protected List<String> headers;
         protected List<String> footers;
+        private int lastSeenRow = -1;
+        private int lastSeenCol = -1;
 
-        protected SheetTextAsHTML(boolean includeHeaderFooters, XHTMLContentHandler xhtml) {
-            this.includeHeadersFooters = includeHeaderFooters;
+        protected SheetTextAsHTML(OfficeParserConfig config, XHTMLContentHandler xhtml) {
+            this.includeHeadersFooters = config.getIncludeHeadersAndFooters();
+            this.includeMissingRows = config.getIncludeMissingRows();
             this.xhtml = xhtml;
             headers = new ArrayList<String>();
             footers = new ArrayList<String>();
@@ -408,7 +412,19 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         public void startRow(int rowNum) {
             try {
+                // Missing rows, if desired, with a single empty row
+                if (includeMissingRows && rowNum > (lastSeenRow+1)) {
+                    for (int rn=lastSeenRow+1; rn<rowNum; rn++) {
+                        xhtml.startElement("tr");
+                        xhtml.startElement("td");
+                        xhtml.endElement("td");
+                        xhtml.endElement("tr");
+                    }
+                }
+
+                // Start the new row
                 xhtml.startElement("tr");
+                lastSeenCol = -1;
             } catch (SAXException e) {
             }
         }
@@ -422,6 +438,15 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         public void cell(String cellRef, String formattedValue, XSSFComment comment) {
             try {
+                // Handle any missing cells
+                int colNum = (new CellReference(cellRef)).getCol();
+                for (int cn=lastSeenCol+1; cn<colNum; cn++) {
+                    xhtml.startElement("td");
+                    xhtml.endElement("td");
+                }
+                lastSeenCol = colNum;
+
+                // Start this cell
                 xhtml.startElement("td");
 
                 // Main cell contents

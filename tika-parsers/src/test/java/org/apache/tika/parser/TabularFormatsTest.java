@@ -234,9 +234,18 @@ public class TabularFormatsTest extends TikaTest {
         XMLResult result = getXML("test-columnar.xlsx");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        // TODO Correctly handle empty cells then enable this test
+        // TODO Fix formatting in export then enable this test
         //assertContents(xml, true, false);
     }
+    // Get a test XLSB file, then enable this unit test
+//    @Test
+//    public void testXLSB() throws Exception {
+//        XMLResult result = getXML("test-columnar.xlsb");
+//        String xml = result.xml;
+//        assertHeaders(xml, false, true, false);
+//        assertContents(xml, true, false);
+//    }
+
     // TODO Fix the ODS test - currently failing with
     // org.xml.sax.SAXException: Namespace http://www.w3.org/1999/xhtml not declared
 //    @Test
