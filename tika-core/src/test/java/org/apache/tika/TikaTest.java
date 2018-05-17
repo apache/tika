@@ -44,6 +44,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -219,40 +220,47 @@ public abstract class TikaTest {
 
     protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context, Metadata metadata) throws Exception {
         Parser p = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, new DefaultHandler(), metadata, context);
+            wrapper.parse(is, handler, metadata, context);
         }
-        return wrapper.getMetadata();
+        return handler.getMetadataList();
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
         Parser p = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
+
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, new DefaultHandler(), new Metadata(), context);
+            wrapper.parse(is, handler, new Metadata(), context);
         }
-        return wrapper.getMetadata();
+        return handler.getMetadataList();
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap) throws Exception {
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap,
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+            wrapper.parse(is, handler, new Metadata(), new ParseContext());
         }
-        return wrapper.getMetadata();
+        return handler.getMetadataList();
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap, ParseContext parseContext) throws Exception {
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap,
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
-            wrapper.parse(is, new DefaultHandler(), new Metadata(), parseContext);
+            wrapper.parse(is, handler, new Metadata(), parseContext);
         }
-        return wrapper.getMetadata();
+        return handler.getMetadataList();
     }
 
 

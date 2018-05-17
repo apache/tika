@@ -37,6 +37,7 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -180,7 +181,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
         StringBuilder contents = new StringBuilder();
         for (Metadata m : metadataList) {
-            contents.append(m.get(RecursiveParserWrapper.TIKA_CONTENT));
+            contents.append(m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         }
  
         for (String needle : nonOCRContains) {

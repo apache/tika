@@ -30,6 +30,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -176,7 +177,7 @@ public class MboxParserTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertEquals("application/mbox", metadataList.get(0).get(Metadata.CONTENT_TYPE));
         assertEquals("message/rfc822", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        assertContains("body 2", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertNotContained("body 1", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("body 2", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNotContained("body 1", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 }

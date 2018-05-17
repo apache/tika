@@ -61,6 +61,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,7 +255,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.FILE_NAME, fps.getRelativeSourceFilePath().getFileName().toString());
         } else {
             data.put(Cols.IS_EMBEDDED, TRUE);
-            data.put(Cols.FILE_NAME, getFileName(m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
+            data.put(Cols.FILE_NAME, getFileName(m.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH)));
         }
         String ext = FilenameUtils.getExtension(data.get(Cols.FILE_NAME));
         ext = (ext == null) ? "" : ext.toLowerCase(Locale.US);
@@ -391,7 +392,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     String getTime(Metadata m) {
         String elapsed = "-1";
 
-        String v = m.get(RecursiveParserWrapper.PARSE_TIME_MILLIS);
+        String v = m.get(AbstractRecursiveParserWrapperHandler.PARSE_TIME_MILLIS);
         if (v != null) {
             return v;
         }
@@ -414,7 +415,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         String fullTrace = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "runtime");
 
         if (fullTrace == null) {
-            fullTrace = metadata.get(RecursiveParserWrapper.EMBEDDED_EXCEPTION);
+            fullTrace = metadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION);
         }
 
         if (fullTrace != null) {
@@ -475,7 +476,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (metadata == null) {
             return "";
         }
-        String c = metadata.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String c = metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         if (c == null) {
             return "";
         }
@@ -723,7 +724,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
         Map<String, Integer> counts = new HashMap<>();
         for (int i = 1; i < list.size(); i++) {
-            String path = list.get(i).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+            String path = list.get(i).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
             if (path == null) {
                 //shouldn't ever happen
                 continue;
@@ -745,7 +746,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
 
         for (int i = 1; i < list.size(); i++) {
-            Integer count = counts.get(list.get(i).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+            Integer count = counts.get(list.get(i).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
             if (count == null) {
                 count = 0;
             }

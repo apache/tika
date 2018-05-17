@@ -71,6 +71,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -1249,8 +1250,8 @@ public class HtmlParserTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertContains("cool",
-                metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertNotContained("cool", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+                metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNotContained("cool", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 
     @Test
@@ -1263,8 +1264,8 @@ public class HtmlParserTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertContains("cool",
-                metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertNotContained("cool", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+                metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNotContained("cool", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
     }
 
@@ -1272,7 +1273,7 @@ public class HtmlParserTest extends TikaTest {
     public void testDataURI() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img.html");
         assertEquals(2, metadataList.size());
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("some content", content);
         //make sure that you've truncated the data: value
         assertContains("src=\"data:\"", content);
@@ -1290,7 +1291,7 @@ public class HtmlParserTest extends TikaTest {
         Parser p = new AutoDetectParser(tikaConfig);
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img_in_js.html", p);
         assertEquals(3, metadataList.size());
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("some content", content);
         Metadata imgMetadata = metadataList.get(1);
         assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));

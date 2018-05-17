@@ -35,6 +35,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -108,7 +109,7 @@ public class TikaCLIBatchIntegrationTest {
         try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
-            assertTrue(metadataList.get(6).get(RecursiveParserWrapper.TIKA_CONTENT).contains("human events"));
+            assertTrue(metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).contains("human events"));
         }
     }
 

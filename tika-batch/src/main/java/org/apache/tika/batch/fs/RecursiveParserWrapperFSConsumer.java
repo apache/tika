@@ -37,6 +37,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -49,35 +50,45 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
 
-
-    private final ParserFactory parserFactory;
+    private final Parser parser;
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
-    private final TikaConfig tikaConfig;
     private String outputEncoding = "UTF-8";
 
 
+    /**
+     * @deprecated use {@link RecursiveParserWrapperFSConsumer#RecursiveParserWrapperFSConsumer(ArrayBlockingQueue, Parser, ContentHandlerFactory, OutputStreamFactory)}
+     * @param queue
+     * @param parserFactory
+     * @param contentHandlerFactory
+     * @param fsOSFactory
+     * @param config
+     */
     public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
                                             ParserFactory parserFactory,
                                             ContentHandlerFactory contentHandlerFactory,
-                                            OutputStreamFactory fsOSFactory, TikaConfig tikaConfig) {
+                                            OutputStreamFactory fsOSFactory, TikaConfig config) {
         super(queue);
-        this.parserFactory = parserFactory;
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
-        this.tikaConfig = tikaConfig;
+        Parser parserToWrap = parserFactory.getParser(config);
+        this.parser = new RecursiveParserWrapper(parserToWrap, contentHandlerFactory);
+    }
+
+    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
+                                            Parser parserToWrap,
+                                            ContentHandlerFactory contentHandlerFactory,
+                                            OutputStreamFactory fsOSFactory) {
+        super(queue);
+        this.contentHandlerFactory = contentHandlerFactory;
+        this.fsOSFactory = fsOSFactory;
+        this.parser = new RecursiveParserWrapper(parserToWrap, contentHandlerFactory);
     }
 
     @Override
     public boolean processFileResource(FileResource fileResource) {
 
-        Parser wrapped = parserFactory.getParser(tikaConfig);
-        RecursiveParserWrapper parser = new RecursiveParserWrapper(wrapped, contentHandlerFactory);
         ParseContext context = new ParseContext();
-
-//        if (parseRecursively == true) {
-        context.set(Parser.class, parser);
-//        }
 
         //try to open outputstream first
         OutputStream os = getOutputStream(fsOSFactory, fileResource);
@@ -100,13 +111,14 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         Throwable thrown = null;
         List<Metadata> metadataList = null;
         Metadata containerMetadata = fileResource.getMetadata();
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory, -1);
         try {
-            parse(fileResource.getResourceId(), parser, is, new DefaultHandler(),
+            parse(fileResource.getResourceId(), parser, is, handler,
                     containerMetadata, context);
-            metadataList = parser.getMetadata();
+            metadataList = handler.getMetadataList();
         } catch (Throwable t) {
             thrown = t;
-            metadataList = parser.getMetadata();
+            metadataList = handler.getMetadataList();
             if (metadataList == null) {
                 metadataList = new LinkedList<>();
             }

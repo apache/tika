@@ -35,7 +35,10 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.junit.Test;
 
@@ -69,9 +72,10 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         queue.add(new PoisonFileResource());
 
         MockOSFactory mockOSFactory = new MockOSFactory();
+        Parser p = new AutoDetectParserFactory().getParser(new TikaConfig());
         RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
-                queue, new AutoDetectParserFactory(), new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                mockOSFactory, new TikaConfig());
+                queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                mockOSFactory);
 
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
@@ -80,12 +84,12 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
         assertEquals(4, results.size());
         assertContains("another null pointer",
-                results.get(2).get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
+                results.get(2).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION));
 
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         for (int i = 1; i < 4; i++) {
             assertEquals("embeddedAuthor"+i, results.get(i).get("author"));
-            assertContains("some_embedded_content"+i, results.get(i).get(RecursiveParserWrapper.TIKA_CONTENT));
+            assertContains("some_embedded_content"+i, results.get(i).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         }
     }
 
@@ -116,9 +120,10 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         queue.add(new PoisonFileResource());
 
         MockOSFactory mockOSFactory = new MockOSFactory();
+        Parser p = new AutoDetectParserFactory().getParser(new TikaConfig());
         RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
-                queue, new AutoDetectParserFactory(), new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                mockOSFactory, new TikaConfig());
+                queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                mockOSFactory);
 
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
@@ -129,7 +134,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
                 results.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "runtime"));
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         assertEquals("embeddedAuthor", results.get(1).get("author"));
-        assertContains("some_embedded_content", results.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("some_embedded_content", results.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 
 

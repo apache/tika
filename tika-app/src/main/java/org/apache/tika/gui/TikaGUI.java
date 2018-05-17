@@ -80,6 +80,7 @@ import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
@@ -395,13 +396,16 @@ public class TikaGUI extends JFrame
             );
         }
         if (isReset) {
-            RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
-                    new BasicContentHandlerFactory(
-                            BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
-            wrapper.parse(input, null, new Metadata(), new ParseContext());
+            RecursiveParserWrapperHandler recursiveParserWrapperHandler =
+                    new RecursiveParserWrapperHandler(
+                            new BasicContentHandlerFactory(
+                                    BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1),
+                            -1);
+            RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+            wrapper.parse(input, recursiveParserWrapperHandler, new Metadata(), new ParseContext());
             StringWriter jsonBuffer = new StringWriter();
             JsonMetadataList.setPrettyPrinting(true);
-            JsonMetadataList.toJson(wrapper.getMetadata(), jsonBuffer);
+            JsonMetadataList.toJson(recursiveParserWrapperHandler.getMetadataList(), jsonBuffer);
             setText(json, jsonBuffer.toString());
         }
         layout.show(cards, "metadata");

@@ -21,12 +21,18 @@ import org.xml.sax.ContentHandler;
 
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 /**
  * Interface to allow easier injection of code for getting a new ContentHandler
  */
 public interface ContentHandlerFactory {
     public ContentHandler getNewContentHandler();
+    /**
+     * @deprecated use {@link #getNewContentHandler(OutputStream, Charset)}
+     */
+    @Deprecated
     public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException;
+    public ContentHandler getNewContentHandler(OutputStream os, Charset charset);
 
 }

@@ -45,6 +45,7 @@ import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 public class ExtractComparer extends AbstractProfiler {
 
@@ -352,10 +353,10 @@ public class ExtractComparer extends AbstractProfiler {
         String pathA = null;
         String pathB = null;
         if (mA != null) {
-            pathA = mA.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+            pathA = mA.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
         }
         if (mB != null) {
-            pathB = mB.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+            pathB = mB.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
         }
         if (pathA != null) {
             Map<Cols, String> d = new HashMap<>();
@@ -390,7 +391,7 @@ public class ExtractComparer extends AbstractProfiler {
 
 
     /**
-     * Try to find the matching metadata based on the RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH
+     * Try to find the matching metadata based on the AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH
      * If you can't find it, return -1;
      *
      * @param i                index for match in metadataListA
@@ -419,11 +420,11 @@ public class ExtractComparer extends AbstractProfiler {
 
         //assume same embedded resource path.  Not always true!
         Metadata thisMetadata = metadataListA.get(i);
-        String embeddedPath = thisMetadata.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+        String embeddedPath = thisMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
         if (embeddedPath != null) {
             for (int j = 0; j < metadataListB.size(); j++) {
                 String thatEmbeddedPath = metadataListB.get(j).get(
-                        RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
+                        AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
                 if (embeddedPath.equals(thatEmbeddedPath)) {
                     return j;
                 }

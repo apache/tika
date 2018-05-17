@@ -26,7 +26,7 @@ public class PrettyMetadataKeyComparator implements java.util.Comparator<String>
             return -1;
         }
 
-        //this is stinky.  This should reference RecursiveParserWrapper.TIKA_CONTENT
+        //this is stinky.  This should reference AbstractRecursiveParserWrapperHandler.TIKA_CONTENT
         //but that would require making core a dependency of serialization...
         //do we want to do that?
         if (s1.equals("tika:content")) {

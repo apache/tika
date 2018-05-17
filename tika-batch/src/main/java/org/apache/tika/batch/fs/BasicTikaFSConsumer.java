@@ -22,6 +22,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.io.IOUtils;
@@ -45,29 +47,45 @@ import org.xml.sax.ContentHandler;
 public class BasicTikaFSConsumer extends AbstractFSConsumer {
 
     private boolean parseRecursively = true;
-    private final ParserFactory parserFactory;
+    private final Parser parser;
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
-    private final TikaConfig config;
-    private String outputEncoding = UTF_8.toString();
 
+    private Charset outputEncoding = StandardCharsets.UTF_8;
 
+    /**
+     * @param queue
+     * @param parserFactory
+     * @param contentHandlerFactory
+     * @param fsOSFactory
+     * @param tikaConfig
+     *
+     * @deprecated use {@link BasicTikaFSConsumer#BasicTikaFSConsumer(ArrayBlockingQueue, Parser, ContentHandlerFactory, OutputStreamFactory)}
+     */
+    @Deprecated
     public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue,
                                ParserFactory parserFactory,
                                ContentHandlerFactory contentHandlerFactory,
-                               OutputStreamFactory fsOSFactory,
-                               TikaConfig config) {
+                               OutputStreamFactory fsOSFactory, TikaConfig tikaConfig) {
         super(queue);
-        this.parserFactory = parserFactory;
+        this.parser = parserFactory.getParser(tikaConfig);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
-        this.config = config;
+    }
+
+    public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue,
+                               Parser parser,
+                               ContentHandlerFactory contentHandlerFactory,
+                               OutputStreamFactory fsOSFactory) {
+        super(queue);
+        this.parser = parser;
+        this.contentHandlerFactory = contentHandlerFactory;
+        this.fsOSFactory = fsOSFactory;
     }
 
     @Override
     public boolean processFileResource(FileResource fileResource) {
 
-        Parser parser = parserFactory.getParser(config);
         ParseContext context = new ParseContext();
         if (parseRecursively) {
             context.set(Parser.class, parser);
@@ -87,14 +105,8 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
             return false;
         }
         ContentHandler handler;
-        try {
-            handler = contentHandlerFactory.getNewContentHandler(os, getOutputEncoding());
-        } catch (UnsupportedEncodingException e) {
-            incrementHandledExceptions();
-            LOG.error(getXMLifiedLogMsg("output_encoding_ex", fileResource.getResourceId(), e));
-            flushAndClose(os);
-            throw new RuntimeException(e);
-        }
+        handler = contentHandlerFactory.getNewContentHandler(os, getOutputEncoding());
+
 
         //now actually call parse!
         Throwable thrown = null;
@@ -115,11 +127,11 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
         return true;
     }
 
-    public String getOutputEncoding() {
+    public Charset getOutputEncoding() {
         return outputEncoding;
     }
 
-    public void setOutputEncoding(String outputEncoding) {
-        this.outputEncoding = outputEncoding;
+    public void setOutputEncoding(Charset charset) {
+        this.outputEncoding = charset;
     }
 }

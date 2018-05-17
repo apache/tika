@@ -37,6 +37,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.MetadataList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,20 +129,28 @@ public class RecursiveMetadataResource {
 		final ParseContext context = new ParseContext();
 		Parser parser = TikaResource.createParser();
 		// TODO: parameterize choice of max chars/max embedded attachments
-		BasicContentHandlerFactory.HANDLER_TYPE type =
-                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
-		RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
-				new BasicContentHandlerFactory(type, -1));
+		RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+
+
 		TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
 		// no need to add parser to parse recursively
 		TikaResource.fillParseContext(context, httpHeaders, null);
 		TikaResource.logRequest(LOG, info, metadata);
-		TikaResource.parse(wrapper, LOG, info.getPath(), is,
-				new LanguageHandler() {
+
+        BasicContentHandlerFactory.HANDLER_TYPE type =
+                BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+		        new BasicContentHandlerFactory(type, -1), -1);
+		TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+		/*
+		    We used to have this non-functional bit of code...refactor to add it back and make it work?
+						new LanguageHandler() {
 					public void endDocument() {
 						metadata.set("language", getLanguage().getLanguage());
 					}
-				}, metadata, context);
-		return new MetadataList(wrapper.getMetadata());
+				},
+		 */
+		return new MetadataList(handler.getMetadataList());
 	}
+
 }

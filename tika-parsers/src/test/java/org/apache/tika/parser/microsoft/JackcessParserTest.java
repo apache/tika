@@ -36,6 +36,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -46,22 +47,24 @@ public class JackcessParserTest extends TikaTest {
 
         Parser p = new AutoDetectParser();
 
-        RecursiveParserWrapper w = new RecursiveParserWrapper(p,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        RecursiveParserWrapper w = new RecursiveParserWrapper(p);
 
         for (String fName : new String[]{"testAccess2.accdb", "testAccess2_2000.mdb",
                 "testAccess2_2002-2003.mdb"}) {
             InputStream is = null;
+            RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1)
+            );
             try {
                 is = this.getResourceAsStream("/test-documents/" + fName);
 
                 Metadata meta = new Metadata();
                 ParseContext c = new ParseContext();
-                w.parse(is, new DefaultHandler(), meta, c);
+                w.parse(is, handler, meta, c);
             } finally {
                 IOUtils.closeQuietly(is);
             }
-            List<Metadata> list = w.getMetadata();
+            List<Metadata> list = handler.getMetadataList();
             assertEquals(4, list.size());
             String mainContent = list.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
 
@@ -83,8 +86,6 @@ public class JackcessParserTest extends TikaTest {
             //test embedded document handling
             assertContains("Test Document with embedded pdf",
                     list.get(3).get(RecursiveParserWrapper.TIKA_CONTENT));
-
-            w.reset();
         }
     }
 
