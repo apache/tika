@@ -40,6 +40,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -83,7 +84,7 @@ public class CompressorParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testBROTLI_compressed.br");
         List<Metadata> metadataList = getRecursiveMetadata("testBROTLI_compressed.br", metadata);
 
-        assertContains("XXXXXXXXXXYYYYYYYYYY", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("XXXXXXXXXXYYYYYYYYYY", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("testBROTLI_compressed", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 

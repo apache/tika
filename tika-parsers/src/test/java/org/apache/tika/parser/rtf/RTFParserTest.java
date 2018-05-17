@@ -49,8 +49,10 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -441,7 +443,7 @@ public class RTFParserTest extends TikaTest {
             //directory: _1457338524/HW.txt
             assertEquals("filename equals ",
                     p.fileName, FilenameUtils.getName(
-                            metadata.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH)));
+                            metadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH)));
 
             assertEquals(p.mimeType, metadata.get(Metadata.CONTENT_TYPE));
         }
@@ -454,15 +456,15 @@ public class RTFParserTest extends TikaTest {
     public void testRegularImages() throws Exception {
         Parser base = new AutoDetectParser();
         ParseContext ctx = new ParseContext();
-        RecursiveParserWrapper parser = new RecursiveParserWrapper(base,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
-        ContentHandler handler = new BodyContentHandler();
+        RecursiveParserWrapper parser = new RecursiveParserWrapper(base);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1),-1);
         Metadata rootMetadata = new Metadata();
         rootMetadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFRegularImages.rtf"))) {
             parser.parse(tis, handler, rootMetadata, ctx);
         }
-        List<Metadata> metadatas = parser.getMetadata();
+        List<Metadata> metadatas = handler.getMetadataList();
 
         Metadata meta_jpg_exif = metadatas.get(1);//("testJPEG_EXIF_\u666E\u6797\u65AF\u987F.jpg");
         Metadata meta_jpg = metadatas.get(3);//("testJPEG_\u666E\u6797\u65AF\u987F.jpg");

@@ -40,6 +40,7 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -164,15 +165,16 @@ public class ParsingExample {
         ContentHandlerFactory factory = new BasicContentHandlerFactory(
                 BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
 
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, factory);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         ParseContext context = new ParseContext();
-
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(factory, -1);
         try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
-            wrapper.parse(stream, new DefaultHandler(), metadata, context);
+            wrapper.parse(stream, handler, metadata, context);
         }
-        return wrapper.getMetadata();
+
+        return handler.getMetadataList();
     }
 
     /**

@@ -61,9 +61,11 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -621,8 +623,7 @@ public class PDFParserTest extends TikaTest {
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
         assertTrue(xml.contains("regressiveness"));
 
-        RecursiveParserWrapper p = new RecursiveParserWrapper(new AutoDetectParser(),
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
+        RecursiveParserWrapper p = new RecursiveParserWrapper(new AutoDetectParser());
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
@@ -630,12 +631,14 @@ public class PDFParserTest extends TikaTest {
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, p);
 
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE,-1));
         try (TikaInputStream tis = TikaInputStream.get(
                 getResourceAsStream("/test-documents/testPDF_childAttachments.pdf"))) {
-            p.parse(tis, new BodyContentHandler(-1), new Metadata(), context);
+            p.parse(tis, handler, new Metadata(), context);
         }
 
-        List<Metadata> metadatas = p.getMetadata();
+        List<Metadata> metadatas = handler.getMetadataList();
 
         assertEquals(5, metadatas.size());
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -660,7 +663,7 @@ public class PDFParserTest extends TikaTest {
 
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
         assertEquals(2, metadatas.size());
-        assertContains("test images compressed using JBIG2", metadatas.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("test images compressed using JBIG2", metadatas.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
         for (String key : metadatas.get(1).names()) {
             if (key.startsWith("X-TIKA:EXCEPTION")) {
@@ -894,13 +897,13 @@ public class PDFParserTest extends TikaTest {
         assertEquals("metadata size", 5, metadatas.size());
 
         assertEquals("file name", "Test.txt", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("os specific", metadatas.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("os specific", metadatas.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("file name", "TestMac.txt", metadatas.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("mac embedded", metadatas.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("mac embedded", metadatas.get(2).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("file name", "TestDos.txt", metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("dos embedded", metadatas.get(3).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("dos embedded", metadatas.get(3).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("file name", "TestUnix.txt", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("unix embedded", metadatas.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("unix embedded", metadatas.get(4).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
     }
 

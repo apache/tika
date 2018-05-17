@@ -41,6 +41,7 @@ import org.apache.tika.batch.fs.FSOutputStreamFactory;
 import org.apache.tika.batch.fs.FSUtil;
 import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.util.ClassLoaderUtil;
@@ -129,17 +130,17 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         OutputStreamFactory outputStreamFactory = getOutputStreamFactory(
                 outputStreamFactoryNode, runtimeAttributes,
                 contentHandlerFactory, recursiveParserWrapper);
-
+        Parser parser = parserFactory.getParser(config);
         if (recursiveParserWrapper) {
             for (int i = 0; i < numConsumers; i++) {
                 FileResourceConsumer c = new RecursiveParserWrapperFSConsumer(queue,
-                        parserFactory, contentHandlerFactory, outputStreamFactory, config);
+                        parser, contentHandlerFactory, outputStreamFactory);
                 consumers.add(c);
             }
         } else {
             for (int i = 0; i < numConsumers; i++) {
                 FileResourceConsumer c = new BasicTikaFSConsumer(queue,
-                        parserFactory, contentHandlerFactory, outputStreamFactory, config);
+                        parser, contentHandlerFactory, outputStreamFactory);
                 consumers.add(c);
             }
         }

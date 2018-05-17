@@ -24,6 +24,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,13 +150,13 @@ public class ExtractReader {
                     Metadata containerMetadata = metadataList.get(0);
                     for (int i = 0; i < metadataList.size(); i++) {
                         Metadata m = metadataList.get(i);
-                        String c = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+                        String c = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
                         if (c != null) {
                             sb.append(c);
                             sb.append(" ");
                         }
                     }
-                    containerMetadata.set(RecursiveParserWrapper.TIKA_CONTENT, sb.toString());
+                    containerMetadata.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, sb.toString());
                     while (metadataList.size() > 1) {
                         metadataList.remove(metadataList.size()-1);
                     }
@@ -179,7 +180,7 @@ public class ExtractReader {
         List<Metadata> metadataList = new ArrayList<>();
         String content = IOUtils.toString(reader);
         Metadata m = new Metadata();
-        m.set(RecursiveParserWrapper.TIKA_CONTENT, content);
+        m.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, content);
         //Let's hope the file name has a suffix that can
         //be used to determine the mime.  Could be wrong or missing,
         //but better than nothing.

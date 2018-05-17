@@ -102,6 +102,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.xmp.XMPMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -498,14 +499,15 @@ public class TikaCLI {
 
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser, getContentHandlerFactory(type));
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type), -1);
         try (InputStream input = TikaInputStream.get(url, metadata)) {
-            wrapper.parse(input, null, metadata, context);
+            wrapper.parse(input, handler, metadata, context);
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         Writer writer = getOutputWriter(output, encoding);
         try {
-            JsonMetadataList.toJson(wrapper.getMetadata(), writer);
+            JsonMetadataList.toJson(handler.getMetadataList(), writer);
         } finally {
             writer.flush();
         }

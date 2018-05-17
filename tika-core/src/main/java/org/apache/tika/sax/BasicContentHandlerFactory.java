@@ -19,6 +19,7 @@ package org.apache.tika.sax;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Locale;
 
 import org.xml.sax.ContentHandler;
@@ -116,40 +117,48 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
     @Override
     public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException {
+        return getNewContentHandler(os, Charset.forName(encoding));
+    }
+
+    @Override
+    public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
 
         if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
         }
+        try {
+            if (writeLimit > -1) {
+                switch (type) {
+                    case BODY:
+                        return new WriteOutContentHandler(
+                                new BodyContentHandler(
+                                        new OutputStreamWriter(os, charset)), writeLimit);
+                    case TEXT:
+                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                    case HTML:
+                        return new WriteOutContentHandler(new ToHTMLContentHandler(os, charset.name()), writeLimit);
+                    case XML:
+                        return new WriteOutContentHandler(new ToXMLContentHandler(os, charset.name()), writeLimit);
+                    default:
+                        return new WriteOutContentHandler(new ToTextContentHandler(os, charset.name()), writeLimit);
+                }
+            } else {
+                switch (type) {
+                    case BODY:
+                        return new BodyContentHandler(new OutputStreamWriter(os, charset));
+                    case TEXT:
+                        return new ToTextContentHandler(os, charset.name());
+                    case HTML:
+                        return new ToHTMLContentHandler(os, charset.name());
+                    case XML:
+                        return new ToXMLContentHandler(os, charset.name());
+                    default:
+                        return new ToTextContentHandler(os, charset.name());
 
-        if (writeLimit > -1) {
-            switch(type) {
-                case BODY:
-                    return new WriteOutContentHandler(
-                            new BodyContentHandler(
-                                    new OutputStreamWriter(os, encoding)), writeLimit);
-                case TEXT:
-                    return new WriteOutContentHandler(new ToTextContentHandler(os, encoding), writeLimit);
-                case HTML:
-                    return new WriteOutContentHandler(new ToHTMLContentHandler(os, encoding), writeLimit);
-                case XML:
-                    return new WriteOutContentHandler(new ToXMLContentHandler(os, encoding), writeLimit);
-                default:
-                    return new WriteOutContentHandler(new ToTextContentHandler(os, encoding), writeLimit);
+                }
             }
-        } else {
-            switch (type) {
-                case BODY:
-                    return new BodyContentHandler(new OutputStreamWriter(os, encoding));
-                case TEXT:
-                    return new ToTextContentHandler(os, encoding);
-                case HTML:
-                    return new ToHTMLContentHandler(os, encoding);
-                case XML:
-                    return new ToXMLContentHandler(os, encoding);
-                default:
-                    return new ToTextContentHandler(os, encoding);
-
-            }
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("couldn't find charset for name: "+charset);
         }
     }
 

@@ -22,7 +22,9 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -136,8 +138,10 @@ public class MultiThreadedTikaTest extends TikaTest {
 
         //use the same parser in all threads
         Parser parser = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
         for (int i = 0; i < numThreads; i++) {
-            executorCompletionService.submit(new TikaRunner(parser, numIterations, testFiles, truth));
+            executorCompletionService.submit(new TikaRunner(wrapper, numIterations, testFiles, truth));
         }
 
         int completed = 0;
@@ -184,12 +188,14 @@ public class MultiThreadedTikaTest extends TikaTest {
 
             try {
                 Parser p = new AutoDetectParser();
-                RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
-                        new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+                RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
+                RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                        new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                        -1);
                 try (InputStream is = Files.newInputStream(f)) {
-                    wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+                    wrapper.parse(is, handler, new Metadata(), new ParseContext());
                 }
-                List<Metadata> metadataList = wrapper.getMetadata();
+                List<Metadata> metadataList = handler.getMetadataList();
                 baseline.put(f, new Extract(metadataList));
             } catch (Exception e) {
                 //swallow
@@ -198,26 +204,28 @@ public class MultiThreadedTikaTest extends TikaTest {
         return baseline;
     }
 
-    private static List<Metadata> getRecursiveMetadata(InputStream is, Parser p) throws Exception {
+    private static List<Metadata> getRecursiveMetadata(InputStream is, RecursiveParserWrapper wrapper) throws Exception {
         //different from parent TikaTest in that this extracts text.
         //can't extract xhtml because "tmp" file names wind up in
         //content's metadata and they'll differ by file.
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
-        wrapper.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
-        return wrapper.getMetadata();
+
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                -1);
+        wrapper.parse(is, handler, new Metadata(), new ParseContext());
+        return handler.getMetadataList();
     }
 
     //TODO: make this return something useful besides an integer
     private class TikaRunner implements Callable<Integer> {
-        private final Parser parser;
+        private final RecursiveParserWrapper parser;
         private final int iterations;
         private final Path[] files;
         private final Map<Path, Extract> truth;
 
         private final Random random = new Random();
 
-        private TikaRunner(Parser parser, int iterations, Path[] files, Map<Path, Extract> truth) {
+        private TikaRunner(RecursiveParserWrapper parser, int iterations, Path[] files, Map<Path, Extract> truth) {
             this.parser = parser;
             this.iterations = iterations;
             this.files = files;
@@ -253,8 +261,8 @@ public class MultiThreadedTikaTest extends TikaTest {
                     extractA.metadataList.get(i).size(), extractB.metadataList.get(i).size());
 
             assertEquals("content in attachment: " + i,
-                    extractA.metadataList.get(i).get(RecursiveParserWrapper.TIKA_CONTENT),
-                    extractB.metadataList.get(i).get(RecursiveParserWrapper.TIKA_CONTENT));
+                    extractA.metadataList.get(i).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT),
+                    extractB.metadataList.get(i).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         }
     }
 

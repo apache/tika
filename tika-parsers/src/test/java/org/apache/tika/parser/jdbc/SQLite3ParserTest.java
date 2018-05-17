@@ -41,8 +41,10 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -145,31 +147,35 @@ public class SQLite3ParserTest extends TikaTest {
         Parser p = new AutoDetectParser();
 
         RecursiveParserWrapper wrapper =
-                new RecursiveParserWrapper(p, new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
+                new RecursiveParserWrapper(p);
         Metadata metadata = new Metadata();
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1)
+        );
+
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
+            wrapper.parse(is, handler, metadata, new ParseContext());
         }
-        List<Metadata> metadataList = wrapper.getMetadata();
+        List<Metadata> metadataList = handler.getMetadataList();
         int i = 0;
         assertEquals(5, metadataList.size());
         //make sure the \t are inserted in a body handler
 
-        String table = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String table = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("0\t2.3\t2.4\tlorem", table);
         assertContains("普林斯顿大学", table);
 
         //make sure the \n is inserted
-        String table2 = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String table2 = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("do eiusmod tempor\n", table2);
 
-        assertContains("The quick brown fox", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("The quick brown fox", metadataList.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(2).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(4).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test

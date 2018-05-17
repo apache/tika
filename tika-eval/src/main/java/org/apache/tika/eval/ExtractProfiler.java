@@ -37,6 +37,7 @@ import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 public class ExtractProfiler extends AbstractProfiler {
 
@@ -247,7 +248,7 @@ public class ExtractProfiler extends AbstractProfiler {
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.ID, fileId);
         data.put(Cols.EMBEDDED_FILE_PATH,
-                m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                m.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
         try {
             writer.writeRow(embeddedFilePathTable, data);
         } catch (IOException e) {

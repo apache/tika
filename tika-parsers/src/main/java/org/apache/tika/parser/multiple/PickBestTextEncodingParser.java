@@ -170,6 +170,11 @@ public class PickBestTextEncodingParser extends AbstractMultipleParser {
                 String encoding) throws UnsupportedEncodingException {
             return getNewContentHandler();
         }
+
+        @Override
+        public ContentHandler getNewContentHandler(OutputStream os, Charset charset) {
+            return getNewContentHandler();
+        }
     }
 
     protected class CharsetTester {
