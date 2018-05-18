@@ -57,6 +57,9 @@ proc export data=testing label
 putnames=yes;
 run;
 
+/* Due to SAS Limitations, you will need to manually */
+/* style the % and Date/Datetime columns in Excel */
+/* You will also need to save-as XLSB to generate that */
 proc export data=testing label 
   outfile="&outpath./testing.xls"
   dbms=XLS;
