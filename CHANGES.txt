@@ -101,6 +101,11 @@ Release 1.18 - 4/20/2018
      images to be built from source (TIKA-1518).
 
 
+   * For sparse XLSX and XLSB files, always output missing cells to
+     the left of filled ones (matching XLS), and optionally output
+     missing rows on all 3 formats if requested via the
+     OfficeParserContext (TIKA-2479)
+
 Release 1.17 - 12/8/2017
 
   ***NOTE: THIS IS THE LAST VERSION OF TIKA THAT WILL RUN
