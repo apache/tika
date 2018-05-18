@@ -64,8 +64,8 @@ public class TabularFormatsTest extends TikaTest {
                 "87.5%","88.9%","90.0%"
         },
         new Pattern[] {
-                Pattern.compile("01-(01|JAN|Jan)-(60|1960)"),
-                Pattern.compile("02-01-1960"),
+                Pattern.compile("0?1-01-1960"),
+                Pattern.compile("0?2-01-1960"),
                 Pattern.compile("17-01-1960"),
                 Pattern.compile("22-03-1960"),
                 Pattern.compile("13-09-1960"),
@@ -77,17 +77,17 @@ public class TabularFormatsTest extends TikaTest {
                 Pattern.compile("19-05-1987"),
         },
         new Pattern[] {
-             Pattern.compile("01(JAN|Jan)(60|1960):00:00:01(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960):00:00:10(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960):00:01:40(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960):00:16:40(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960):02:46:40(.00)?"),
-             Pattern.compile("02(JAN|Jan)(60|1960):03:46:40(.00)?"),
-             Pattern.compile("12(JAN|Jan)(60|1960):13:46:40(.00)?"),
-             Pattern.compile("25(APR|Apr)(60|1960):17:46:40(.00)?"),
-             Pattern.compile("03(MAR|Mar)(63|1963):09:46:40(.00)?"),
-             Pattern.compile("09(SEP|Sep)(91|1991):01:46:40(.00)?"),
-             Pattern.compile("19(NOV|Nov)(76|2276):17:46:40(.00)?")
+             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:00:01(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:00:10(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:01:40(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:16:40(.00)?"),
+             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]02:46:40(.00)?"),
+             Pattern.compile("02(JAN|Jan)(60|1960)[:\\s]03:46:40(.00)?"),
+             Pattern.compile("12(JAN|Jan)(60|1960)[:\\s]13:46:40(.00)?"),
+             Pattern.compile("25(APR|Apr)(60|1960)[:\\s]17:46:40(.00)?"),
+             Pattern.compile("03(MAR|Mar)(63|1963)[:\\s]09:46:40(.00)?"),
+             Pattern.compile("09(SEP|Sep)(91|1991)[:\\s]01:46:40(.00)?"),
+             Pattern.compile("19(NOV|Nov)(76|2276)[:\\s]17:46:40(.00)?")
         },
         new Pattern[] {
              Pattern.compile("0?0:00:01(.\\d\\d)?"),
@@ -226,25 +226,22 @@ public class TabularFormatsTest extends TikaTest {
         XMLResult result = getXML("test-columnar.xls");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        // TODO Correctly handle empty cells then enable this test
-        //assertContents(xml, true, false);
+        assertContents(xml, true, false);
     }
     @Test
     public void testXLSX() throws Exception {
         XMLResult result = getXML("test-columnar.xlsx");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        // TODO Fix formatting in export then enable this test
-        //assertContents(xml, true, false);
+        assertContents(xml, true, false);
     }
-    // Get a test XLSB file, then enable this unit test
-//    @Test
-//    public void testXLSB() throws Exception {
-//        XMLResult result = getXML("test-columnar.xlsb");
-//        String xml = result.xml;
-//        assertHeaders(xml, false, true, false);
-//        assertContents(xml, true, false);
-//    }
+    @Test
+    public void testXLSB() throws Exception {
+        XMLResult result = getXML("test-columnar.xlsb");
+        String xml = result.xml;
+        assertHeaders(xml, false, true, false);
+        assertContents(xml, true, false);
+    }
 
     // TODO Fix the ODS test - currently failing with
     // org.xml.sax.SAXException: Namespace http://www.w3.org/1999/xhtml not declared
