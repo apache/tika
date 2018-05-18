@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.io.InputStream;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
@@ -78,6 +77,30 @@ public class ExcelParserTest extends TikaTest {
             assertNotContained("9.0", content);
             assertContains("196", content);
             assertNotContained("196.0", content);
+
+
+            // Won't include missing rows by default
+            assertContains("Numbers and their Squares\n\t\tNumber", content);
+            assertContains("\tSquare\n\t\t1", content);
+        }
+
+        // Request with missing rows
+        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL.xls")) {
+            OfficeParserConfig config = new OfficeParserConfig();
+            config.setIncludeMissingRows(true);
+
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            context.set(OfficeParserConfig.class, config);
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            // Will now have the missing rows, each with a single empty cell
+            String content = handler.toString();
+            assertContains("Numbers and their Squares\n\t\n\t\n\t\tNumber", content);
+            assertContains("\tSquare\n\t\n\t\t1", content);
         }
     }
 

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.awt.*;
+import java.awt.Point;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -42,7 +42,6 @@ import org.apache.poi.hssf.record.CountryRecord;
 import org.apache.poi.hssf.record.DateWindow1904Record;
 import org.apache.poi.hssf.record.DrawingGroupRecord;
 import org.apache.poi.hssf.record.EOFRecord;
-import org.apache.poi.hssf.record.ExtSSTRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FooterRecord;
 import org.apache.poi.hssf.record.FormatRecord;
@@ -281,7 +280,6 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
         public void processFile(DirectoryNode root, boolean listenForAllRecords)
                 throws IOException, SAXException, TikaException {
-
             // Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
             if (listenForAllRecords) {
@@ -494,15 +492,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         HeaderRecord headerRecord = (HeaderRecord) record;
                         addTextCell(record, headerRecord.getText());
                     }
-                	break;
+                    break;
                 	
                 case FooterRecord.sid:
                     if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
                         FooterRecord footerRecord = (FooterRecord) record;
                         addTextCell(record, footerRecord.getText());
                     }
-                	break;
-
+                    break;
             }
 
             previousSid = record.getSid();
@@ -599,12 +596,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             handler.startElement("tr");
             handler.startElement("td");
             for (Map.Entry<Point, Cell> entry : currentSheet.entrySet()) {
-                while (currentRow < entry.getKey().y) {
-                    handler.endElement("td");
-                    handler.endElement("tr");
-                    handler.startElement("tr");
-                    handler.startElement("td");
-                    currentRow++;
+                if (currentRow != entry.getKey().y) {
+                    // We've moved onto a new row, possibly skipping some
+                    do {
+                        handler.endElement("td");
+                        handler.endElement("tr");
+                        handler.startElement("tr");
+                        handler.startElement("td");
+                        currentRow++;
+                    } while (officeParserConfig.getIncludeMissingRows() &&
+                             currentRow < entry.getKey().y);
+                    currentRow = entry.getKey().y;
                     currentColumn = 0;
                 }
 
