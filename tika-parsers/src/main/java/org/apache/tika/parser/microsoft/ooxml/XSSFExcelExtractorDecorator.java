@@ -195,11 +195,14 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         //consider adding this back to POI
+        SAXParser parser = null;
         try (InputStream wbData = xssfReader.getWorkbookData()) {
-            SAXParser parser = parseContext.getSAXParser();
+            parser = parseContext.acquireSAXParser();
             parser.parse(wbData, new OfflineContentHandler(new AbsPathExtractorHandler()));
         } catch (InvalidFormatException|TikaException e) {
             //swallow
+        } finally {
+            parseContext.releaseParser(parser);
         }
     }
 
@@ -335,8 +338,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             InputStream sheetInputStream)
             throws IOException, SAXException {
         InputSource sheetSource = new InputSource(sheetInputStream);
+        SAXParser parser = null;
         try {
-            XMLReader sheetParser = parseContext.getXMLReader();
+            parser = parseContext.acquireSAXParser();
+
+            XMLReader sheetParser = parser.getXMLReader();
             XSSFSheetInterestingPartsCapturer handler =
                     new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
                             styles, comments, strings, sheetContentsExtractor, formatter, false));
@@ -349,6 +355,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         } catch (TikaException e) {
             throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
+        } finally {
+            parseContext.releaseParser(parser);
         }
     }
 

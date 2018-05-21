@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.SAXParser;
 
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -203,10 +204,17 @@ public class IWorkPackageParser extends AbstractParser {
                metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
                xhtml.startDocument();
                if (contentHandler != null) {
-                  context.getSAXParser().parse(
-                          new CloseShieldInputStream(entryStream),
-                          new OfflineContentHandler(contentHandler)
-                  );
+                   SAXParser parser = null;
+                   try {
+                       parser = context.acquireSAXParser();
+
+                       parser.parse(
+                               new CloseShieldInputStream(entryStream),
+                               new OfflineContentHandler(contentHandler)
+                       );
+                   } finally {
+                       context.releaseParser(parser);
+                   }
                }
                xhtml.endDocument();
             }

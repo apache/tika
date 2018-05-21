@@ -592,10 +592,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         if (parseContext == null) {
             parseContext = new ParseContext();
         }
-        SAXParser parser = parseContext.getSAXParser();
+
         xhtml.startElement("div", "class", "ocr");
-        parser.parse(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)));
+        SAXParser parser = null;
+        try {
+            parser = parseContext.acquireSAXParser();
+            parser.parse(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)));
+        } finally {
+            parseContext.releaseParser(parser);
+        }
         xhtml.endElement("div");
+
     }
 
     /**

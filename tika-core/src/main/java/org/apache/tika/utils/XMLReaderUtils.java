@@ -288,19 +288,25 @@ public class XMLReaderUtils implements Serializable {
      */
     public static SAXParser acquireSAXParser()
             throws TikaException {
+        int waiting = 0;
         while (true) {
             SAXParser parser = null;
             try {
                 READ_WRITE_LOCK.readLock().lock();
-                parser = SAX_PARSERS.poll(10, TimeUnit.MILLISECONDS);
+                parser = SAX_PARSERS.poll(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 throw new TikaException("interrupted while waiting for SAXParser", e);
             } finally {
                 READ_WRITE_LOCK.readLock().unlock();
-
             }
             if (parser != null) {
                 return parser;
+            }
+            waiting++;
+            if (waiting > 3000) {
+                //better to get an exception than have permahang by a bug in one of our parsers
+                throw new TikaException("Waited more than 5 minutes for a SAXParser; this could indicate SAXParser leakage.  " +
+                        "Please report this to the Tika team dev@tika.apache.org");
             }
         }
     }
@@ -321,6 +327,10 @@ public class XMLReaderUtils implements Serializable {
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = SAX_PARSERS.offer(parser);
+            if (! success) {
+                LOG.warning("SAXParser not taken back into pool.  If you haven't resized the pool, this could " +
+                        "be a sign that there are more calls to 'acquire' than to 'release'");
+            }
         } finally {
             READ_WRITE_LOCK.readLock().unlock();
         }

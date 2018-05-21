@@ -52,7 +52,6 @@ public class ParseContext implements Serializable {
     /** Serial version UID. */
     private static final long serialVersionUID = -5921436862145826534L;
 
-    private final XMLReaderUtils xmlReaderUtils = new XMLReaderUtils();
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
 
@@ -153,7 +152,7 @@ public class ParseContext implements Serializable {
         if (context.containsKey(SAXParser.class)) {
             return get(SAXParser.class);
         }
-        return xmlReaderUtils.acquireSAXParser();
+        return XMLReaderUtils.acquireSAXParser();
     }
 
     /**
@@ -163,11 +162,11 @@ public class ParseContext implements Serializable {
      * @param parser
      * @throws TikaException
      */
-    public void releaseParser(SAXParser parser) throws TikaException {
+    public void releaseParser(SAXParser parser) {
         if (context.containsKey(SAXParser.class)) {
             return;
         }
-        xmlReaderUtils.releaseParser(parser);
+        XMLReaderUtils.releaseParser(parser);
     }
 
     /**

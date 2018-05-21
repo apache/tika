@@ -48,10 +48,16 @@ public class EpubContentParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        SAXParser parser = context.getSAXParser();
-        parser.parse(
-                new CloseShieldInputStream(stream),
-                new OfflineContentHandler(handler));
+        SAXParser parser = null;
+        try {
+            parser = context.acquireSAXParser();
+
+            parser.parse(
+                    new CloseShieldInputStream(stream),
+                    new OfflineContentHandler(handler));
+        } finally {
+            context.releaseParser(parser);
+        }
     }
 
 }

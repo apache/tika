@@ -40,6 +40,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -128,12 +129,15 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void handleDocuments(PackageRelationship packageRelationship,
                                  XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
-
+        SAXParser parser = null;
         try (InputStream stream = pkg.getPart(packageRelationship).getInputStream()) {
-            context.getSAXParser().parse(
+            parser = context.acquireSAXParser();
+            parser.parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new FixedDocSeqHandler(xhtml))));
+        } finally {
+            context.releaseParser(parser);
         }
     }
 
@@ -179,14 +183,18 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             }
             String zipPath = (docRef.startsWith("/") ? docRef.substring(1) : docRef);
             if (pkg instanceof ZipPackage) {
+                SAXParser parser = null;
                 try (InputStream stream = getZipStream(zipPath, pkg)) {
-                    context.getSAXParser().parse(
+                    parser = context.acquireSAXParser();
+                    parser.parse(
                             new CloseShieldInputStream(stream),
                             new OfflineContentHandler(new EmbeddedContentHandler(
                                     new PageContentPartHandler(relativeRoot, xhtml))));
 
                 } catch (IOException | TikaException e) {
                     throw new SAXException(new TikaException("IOException trying to read: " + docRef));
+                } finally {
+                    context.releaseParser(parser);
                 }
             } else {
                 throw new SAXException(new TikaException("Package must be ZipPackage"));
@@ -226,8 +234,10 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
                     if (pagePath.startsWith("/")) {
                         pagePath = pagePath.substring(1);
                     }
+                    SAXParser parser = null;
                     try (InputStream stream = getZipStream(pagePath, pkg)) {
-                        context.getSAXParser().parse(
+                        parser = context.acquireSAXParser();
+                        parser.parse(
                                 new CloseShieldInputStream(stream),
                                 new OfflineContentHandler(
                                         new XPSPageContentHandler(xhtml, embeddedImages)
@@ -235,6 +245,8 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
                         );
                     } catch (TikaException | IOException e) {
                         throw new SAXException(e);
+                    } finally {
+                        context.releaseParser(parser);
                     }
                 }
 

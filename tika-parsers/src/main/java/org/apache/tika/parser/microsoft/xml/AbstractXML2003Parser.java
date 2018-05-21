@@ -40,6 +40,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import javax.xml.parsers.SAXParser;
+
 
 public abstract class AbstractXML2003Parser extends AbstractParser {
 
@@ -94,8 +96,10 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
         xhtml.startDocument();
 
         TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
+        SAXParser parser = null;
         try {
-            context.getSAXParser().parse(
+            parser = context.acquireSAXParser();
+            parser.parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context))));
@@ -103,6 +107,7 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
         } finally {
+            context.releaseParser(parser);
             xhtml.endDocument();
         }
     }
