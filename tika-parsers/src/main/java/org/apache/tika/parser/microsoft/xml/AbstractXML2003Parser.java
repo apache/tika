@@ -107,6 +107,8 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
         } finally {
+            //make sure to release the parser before doing
+            //something that could cause an exception!
             context.releaseParser(parser);
             xhtml.endDocument();
         }
