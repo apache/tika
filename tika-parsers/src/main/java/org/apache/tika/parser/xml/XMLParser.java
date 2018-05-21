@@ -37,6 +37,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.SAXParser;
+
 /**
  * XML parser.
  */
@@ -68,8 +70,10 @@ public class XMLParser extends AbstractParser {
         xhtml.startElement("p");
 
         TaggedContentHandler tagged = new TaggedContentHandler(handler);
+        SAXParser parser = null;
         try {
-            context.getSAXParser().parse(
+            parser = context.acquireSAXParser();
+            parser.parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             getContentHandler(tagged, metadata, context))));
@@ -77,6 +81,7 @@ public class XMLParser extends AbstractParser {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
         } finally {
+            context.releaseParser(parser);
             xhtml.endElement("p");
             xhtml.endDocument();
         }

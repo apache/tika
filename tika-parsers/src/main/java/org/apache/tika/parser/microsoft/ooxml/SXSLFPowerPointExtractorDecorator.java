@@ -49,6 +49,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
+
 /**
  * SAX/Streaming pptx extractior
  */
@@ -158,14 +160,18 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             if (commentAuthorsPart == null) {
                 continue;
             }
+            SAXParser parser = null;
             try (InputStream stream = commentAuthorsPart.getInputStream()) {
-                context.getSAXParser().parse(
+                parser = context.acquireSAXParser();
+                parser.parse(
                         new CloseShieldInputStream(stream),
                         new OfflineContentHandler(new XSLFCommentAuthorHandler()));
 
             } catch (TikaException | SAXException | IOException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         ExceptionUtils.getStackTrace(e));
+            } finally {
+                context.releaseParser(parser);
             }
         }
 
@@ -176,8 +182,10 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
 //        Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         xhtml.startElement("div", "class", "slide-content");
+        SAXParser parser = null;
         try (InputStream stream = slidePart.getInputStream()) {
-            context.getSAXParser().parse(
+            parser = context.acquireSAXParser();
+            parser.parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
@@ -186,6 +194,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         } catch (TikaException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
+        } finally {
+            context.releaseParser(parser);
         }
 
         xhtml.endElement("div");

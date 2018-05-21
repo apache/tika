@@ -47,6 +47,8 @@ import org.apache.tika.utils.ExceptionUtils;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.SAXParser;
+
 /**
  * This is an experimental, alternative extractor for docx files.
  * This streams the main document content rather than loading the
@@ -187,8 +189,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                             XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
         Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart, true, metadata);
+        SAXParser parser = null;
         try (InputStream stream = packagePart.getInputStream()) {
-            context.getSAXParser().parse(
+            parser = context.acquireSAXParser();
+            parser.parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
@@ -197,7 +201,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         } catch (TikaException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
-
+        } finally {
+            context.releaseParser(parser);
         }
 
     }

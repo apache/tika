@@ -596,11 +596,15 @@ public class OpenDocumentContentParser extends AbstractParser {
         DefaultHandler dh = new OpenDocumentElementMappingContentHandler(handler, MAPPINGS);
 
 
-        SAXParser parser = context.getSAXParser();
-        parser.parse(
-                new CloseShieldInputStream(stream),
-                new OfflineContentHandler(
-                        new NSNormalizerContentHandler(dh)));
+        SAXParser parser = context.acquireSAXParser();
+        try {
+            parser.parse(
+                    new CloseShieldInputStream(stream),
+                    new OfflineContentHandler(
+                            new NSNormalizerContentHandler(dh)));
+        } finally {
+            context.releaseParser(parser);
+        }
     }
 
 }

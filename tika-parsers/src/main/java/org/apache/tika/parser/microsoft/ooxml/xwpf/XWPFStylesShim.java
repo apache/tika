@@ -31,6 +31,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
+
 /**
  * For Tika, all we need (so far) is a mapping between styleId and a style's name.
  *
@@ -58,8 +60,14 @@ public class XWPFStylesShim {
     }
 
     private void onDocumentLoad(ParseContext parseContext, InputStream stream) throws TikaException, IOException, SAXException {
-        parseContext.getSAXParser().parse(stream,
-                new OfflineContentHandler(new StylesStripper()));
+        SAXParser parser = null;
+        try {
+            parser = parseContext.acquireSAXParser();
+            parser.parse(stream,
+                    new OfflineContentHandler(new StylesStripper()));
+        } finally {
+            parseContext.releaseParser(parser);
+        }
     }
 
     /**

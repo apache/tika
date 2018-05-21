@@ -42,6 +42,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
+
 public class NetworkParser extends AbstractParser {
 
     private final URI uri;
@@ -124,8 +126,10 @@ public class NetworkParser extends AbstractParser {
 
             TaggedContentHandler tagged = new TaggedContentHandler(
                     new OfflineContentHandler(handler));
+            SAXParser parser = null;
             try {
-                context.getSAXParser().parse(
+                parser = context.acquireSAXParser();
+                parser.parse(
                         stream, new TeeContentHandler(
                                 tagged, new MetaHandler(metadata)));
             } catch (SAXException e) {
@@ -136,6 +140,7 @@ public class NetworkParser extends AbstractParser {
                 throw new TikaException(
                         "Unable to read network parser output", e);
             } finally {
+                context.releaseParser(parser);
                 try {
                     thread.join(1000);
                 } catch (InterruptedException e) {

@@ -68,6 +68,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import javax.xml.parsers.SAXParser;
+
 /**
  * Base class for all Tika OOXML extractors.
  * <p/>
@@ -515,13 +517,17 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 PackageRelationship relatedPartPackageRelationship = relatedPartPRC.getRelationship(i);
                 try {
                     PackagePart relatedPartPart = parentPart.getRelatedPart(relatedPartPackageRelationship);
+                    SAXParser parser = null;
                     try (InputStream stream = relatedPartPart.getInputStream()) {
-                        context.getSAXParser().parse(stream,
+                        parser = context.acquireSAXParser();
+                        parser.parse(stream,
                                 new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)));
 
                     } catch (IOException|TikaException e) {
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
+                    } finally {
+                        context.releaseParser(parser);
                     }
 
                 } catch (InvalidFormatException e) {

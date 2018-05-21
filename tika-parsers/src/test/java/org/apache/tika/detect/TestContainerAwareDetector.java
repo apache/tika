@@ -31,6 +31,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -38,6 +39,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -47,6 +49,12 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
     private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
     private final Detector detector = new DefaultDetector(mimeTypes);
+
+    @After
+    public void tearDown() throws TikaException {
+        //make sure to reset pool size because it is being randomly resized during the tests
+        XMLReaderUtils.setPoolSize(10);
+    }
 
     private void assertTypeByData(String file, String type) throws Exception {
        assertTypeByNameAndData(file, null, type);
@@ -455,7 +463,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         };
         int numThreads = 1;
         XMLReaderUtils.setPoolSize(numThreads);
-        testDetector(detector, numThreads, 20, filter, numThreads*2);
+        testDetector(detector, numThreads, 20, filter, numThreads * 2);
     }
 
     @Test
