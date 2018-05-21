@@ -52,6 +52,7 @@ public class ParseContext implements Serializable {
     /** Serial version UID. */
     private static final long serialVersionUID = -5921436862145826534L;
 
+    private final XMLReaderUtils xmlReaderUtils = new XMLReaderUtils();
     /** Map of objects in this context */
     private final Map<String, Object> context = new HashMap<String, Object>();
 
@@ -135,6 +136,38 @@ public class ParseContext implements Serializable {
         } else {
             return XMLReaderUtils.getSAXParser();
         }
+    }
+
+    /**
+     * Returns the SAX parser specified in this parsing context. If a parser
+     * is not explicitly specified, then one is acquired from the pool.
+     * <p>
+     * Make sure to {@link #releaseParser(SAXParser)} in
+     * a <code>finally</code> block every time you call this.
+     * </p>
+     *
+     * @return SAXParser
+     * @throws TikaException
+     */
+    public SAXParser acquireSAXParser() throws TikaException {
+        if (context.containsKey(SAXParser.class)) {
+            return get(SAXParser.class);
+        }
+        return xmlReaderUtils.acquireSAXParser();
+    }
+
+    /**
+     * If the context already has a SAXParser, this is a no-op.
+     * Otherwise, this returns the parser to the pool
+     *
+     * @param parser
+     * @throws TikaException
+     */
+    public void releaseParser(SAXParser parser) throws TikaException {
+        if (context.containsKey(SAXParser.class)) {
+            return;
+        }
+        xmlReaderUtils.releaseParser(parser);
     }
 
     /**

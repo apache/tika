@@ -113,6 +113,6 @@ public class TestParsers extends MultiThreadedTikaTest {
     @Ignore("ignore for regular builds; run occasionally")
     public void testAllMultiThreaded() throws Exception {
         //this runs against all files in /test-documents
-        testMultiThreaded(10, 100, null);
+        //testMultiThreaded(10, 100, null);
     }
 }
