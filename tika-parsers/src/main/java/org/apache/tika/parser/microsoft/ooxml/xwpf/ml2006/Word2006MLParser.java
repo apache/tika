@@ -67,6 +67,8 @@ public class Word2006MLParser extends AbstractOfficeParser {
         } catch (SAXException e) {
             throw new TikaException("XML parse error", e);
         } finally {
+            //make sure to release the parser before doing
+            //something that could cause an exception!
             context.releaseParser(parser);
             xhtml.endDocument();
         }

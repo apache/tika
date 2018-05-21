@@ -304,9 +304,13 @@ public class XMLReaderUtils implements Serializable {
             }
             waiting++;
             if (waiting > 3000) {
+                //freshen the pool.  Something went very wrong...
+                setPoolSize(POOL_SIZE);
                 //better to get an exception than have permahang by a bug in one of our parsers
-                throw new TikaException("Waited more than 5 minutes for a SAXParser; this could indicate SAXParser leakage.  " +
-                        "Please report this to the Tika team dev@tika.apache.org");
+                throw new TikaException("Waited more than 5 minutes for a SAXParser; " +
+                        "This could indicate that a parser has not correctly released its SAXParser. " +
+                        "Please report this to the Tika team: dev@tika.apache.org");
+
             }
         }
     }
