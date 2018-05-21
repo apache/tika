@@ -1,3 +1,13 @@
+Release 1.19 ???
+
+
+   * Use a pool for SAXParsers rather than creating a new one for every parse.
+     For better performance, set XMLReaderUtils.setPoolSize() to the
+     number of threads you're using with Tika (TIKA-2645.
+
+   * Add the RecursiveParserWrapperHandler to improve the RecursiveParserWrapper
+     API slightly (TIKA-2644).
+
 Release 1.18 - 4/20/2018
 
    * Upgrade Jackson to 2.9.5 (TIKA-2634).
