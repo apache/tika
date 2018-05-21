@@ -33,7 +33,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.tika.exception.TikaException;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -99,7 +103,22 @@ import org.xml.sax.helpers.DefaultHandler;
  * @see <a href="https://freedesktop.org/wiki/Specifications/shared-mime-info-spec/">https://freedesktop.org/wiki/Specifications/shared-mime-info-spec/</a>
  */
 public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
-    protected final MimeTypes types;
+    /**
+     * Parser pool size
+     */
+    private static int POOL_SIZE = 10;
+
+    private static final ReentrantReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+
+    private static ArrayBlockingQueue<SAXParser> SAX_PARSERS = new ArrayBlockingQueue<>(POOL_SIZE);
+
+    static {
+        try {
+            setPoolSize(POOL_SIZE);
+        } catch (TikaException e) {
+            throw new RuntimeException("problem initializing SAXParser pool", e);
+        }
+    }    protected final MimeTypes types;
 
     /** Current type */
     protected MimeType type = null;
@@ -113,23 +132,24 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
     }
 
     public void read(InputStream stream) throws IOException, MimeTypeException {
+        SAXParser parser = null;
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(false);
-            factory.setFeature(
-                    XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            SAXParser parser = factory.newSAXParser();
+
+            parser = acquireSAXParser();
             parser.parse(stream, this);
-        } catch (ParserConfigurationException e) {
+        } catch (TikaException e) {
             throw new MimeTypeException("Unable to create an XML parser", e);
         } catch (SAXException e) {
             throw new MimeTypeException("Invalid type configuration", e);
+        } finally {
+            releaseParser(parser);
         }
     }
 
     public void read(Document document) throws MimeTypeException {
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             Transformer transformer = factory.newTransformer();
             transformer.transform(new DOMSource(document), new SAXResult(this));
         } catch (TransformerException e) {
@@ -291,5 +311,84 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         }
 
     }
+    /**
+     * Acquire a SAXParser from the pool; create one if it
+     * doesn't exist.  Make sure to {@link #releaseParser(SAXParser)} in
+     * a <code>finally</code> block every time you call this.
+     *
+     * @return a SAXParser
+     * @throws TikaException
+     */
+    public static SAXParser acquireSAXParser()
+            throws TikaException {
+        while (true) {
+            SAXParser parser = null;
+            try {
+                READ_WRITE_LOCK.readLock().lock();
+                parser = SAX_PARSERS.poll(10, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                throw new TikaException("interrupted while waiting for SAXParser", e);
+            } finally {
+                READ_WRITE_LOCK.readLock().unlock();
 
+            }
+            if (parser != null) {
+                return parser;
+            }
+        }
+    }
+
+    /**
+     * Return parser to the pool for reuse
+     *
+     * @param parser parser to return
+     */
+    public static void releaseParser(SAXParser parser) {
+        try {
+            parser.reset();
+        } catch (UnsupportedOperationException e) {
+            //ignore
+        }
+        try {
+            READ_WRITE_LOCK.readLock().lock();
+            //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
+            // this parser will not be added and will then be gc'd
+            SAX_PARSERS.offer(parser);
+        } finally {
+            READ_WRITE_LOCK.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the pool size for cached XML parsers.
+     *
+     * @param poolSize
+     */
+    public static void setPoolSize(int poolSize) throws TikaException {
+        try {
+            //stop the world with a write lock
+            //parsers that are currently in use will be offered, but not
+            //accepted and will be gc'd
+            READ_WRITE_LOCK.writeLock().lock();
+            SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
+            for (int i = 0; i < poolSize; i++) {
+                SAX_PARSERS.offer(newSAXParser());
+            }
+            POOL_SIZE = poolSize;
+        } finally {
+            READ_WRITE_LOCK.writeLock().unlock();
+        }
+    }
+
+    private static SAXParser newSAXParser() throws TikaException {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setNamespaceAware(false);
+        try {
+            factory.setFeature(
+                    XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            return factory.newSAXParser();
+        } catch (ParserConfigurationException|SAXException e) {
+            throw new TikaException("prooblem creating SAX parser factory", e);
+        }
+    }
 }

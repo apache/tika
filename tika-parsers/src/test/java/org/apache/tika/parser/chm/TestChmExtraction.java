@@ -214,7 +214,11 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
 
     @Test
     public void testMultiThreaded() throws Exception {
-        testMultiThreaded(10, 10, new FileFilter() {
+        ParseContext[] parseContexts = new ParseContext[10];
+        for (int i = 0; i < parseContexts.length; i++) {
+            parseContexts[i] = new ParseContext();
+        }
+        testMultiThreaded(parseContexts, 10, 10, new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
                         if (pathname.getName().toLowerCase(Locale.ENGLISH).endsWith(".chm")) {

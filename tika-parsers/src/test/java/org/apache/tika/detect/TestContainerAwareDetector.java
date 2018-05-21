@@ -21,11 +21,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.tika.MultiThreadedTikaTest;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -33,12 +37,13 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Test;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
  */
-public class TestContainerAwareDetector {
+public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
     private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
     private final Detector detector = new DefaultDetector(mimeTypes);
@@ -435,5 +440,36 @@ public class TestContainerAwareDetector {
                     detector.detect(xls, m));
         }
    }
+
+    @Test
+    public void testXMLMultiThreaded() throws Exception {
+        Detector detector = new Tika().getDetector();
+        FileFilter filter = new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                if (pathname.getName().endsWith(".xml")) {
+                    return true;
+                }
+                return false;
+            }
+        };
+        int numThreads = 1;
+        XMLReaderUtils.setPoolSize(numThreads);
+        testDetector(detector, numThreads, 20, filter, numThreads*2);
+    }
+
+    @Test
+    public void testAllMultithreaded() throws Exception {
+        Detector detector = new Tika().getDetector();
+        FileFilter filter = new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                    return true;
+            }
+        };
+        int numThreads = 20;
+        XMLReaderUtils.setPoolSize(numThreads);
+        testDetector(detector, numThreads, 50, filter, numThreads*3);
+    }
 
 }

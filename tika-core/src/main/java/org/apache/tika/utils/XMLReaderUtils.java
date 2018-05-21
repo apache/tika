@@ -38,9 +38,12 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -49,8 +52,32 @@ import java.util.logging.Logger;
  * to use the {@link org.apache.tika.sax.OfflineContentHandler} to guard against
  * XML External Entity attacks.
  */
-public class XMLReaderUtils {
+public class XMLReaderUtils implements Serializable {
+
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = 6110455808615143122L;
+
     private static final Logger LOG = Logger.getLogger(XMLReaderUtils.class.getName());
+
+    /**
+     * Parser pool size
+     */
+    private static int POOL_SIZE = 10;
+
+    private static final ReentrantReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+
+    private static ArrayBlockingQueue<SAXParser> SAX_PARSERS = new ArrayBlockingQueue<>(POOL_SIZE);
+
+    static {
+        try {
+            setPoolSize(POOL_SIZE);
+        } catch (TikaException e) {
+            throw new RuntimeException("problem initializing SAXParser pool", e);
+        }
+    }
+
 
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
@@ -72,10 +99,10 @@ public class XMLReaderUtils {
      * is not explicitly specified, then one is created using the specified
      * or the default SAX parser.
      *
-     * @see #getSAXParser()
-     * @since Apache Tika 1.13
      * @return XMLReader
      * @throws TikaException
+     * @see #getSAXParser()
+     * @since Apache Tika 1.13
      */
     public static XMLReader getXMLReader() throws TikaException {
         XMLReader reader;
@@ -96,12 +123,11 @@ public class XMLReaderUtils {
      * Make sure to wrap your handler in the {@link org.apache.tika.sax.OfflineContentHandler} to
      * prevent XML External Entity attacks
      * </p>
-
      *
-     * @see #getSAXParserFactory()
-     * @since Apache Tika 0.8
      * @return SAX parser
      * @throws TikaException if a SAX parser could not be created
+     * @see #getSAXParserFactory()
+     * @since Apache Tika 0.8
      */
     public static SAXParser getSAXParser() throws TikaException {
         try {
@@ -124,8 +150,8 @@ public class XMLReaderUtils {
      * prevent XML External Entity attacks
      * </p>
      *
-     * @since Apache Tika 0.8
      * @return SAX parser factory
+     * @since Apache Tika 0.8
      */
     public static SAXParserFactory getSAXParserFactory() {
         SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -154,8 +180,8 @@ public class XMLReaderUtils {
      * configured to be namespace-aware and to apply reasonable security
      * features.
      *
-     * @since Apache Tika 1.13
      * @return DOM parser factory
+     * @since Apache Tika 1.13
      */
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
@@ -179,8 +205,8 @@ public class XMLReaderUtils {
      * configured to apply an {@link #IGNORING_SAX_ENTITY_RESOLVER},
      * and it sets the ErrorHandler to <code>null</code>.
      *
-     * @since Apache Tika 1.13
      * @return DOM Builder
+     * @since Apache Tika 1.13
      */
     public static DocumentBuilder getDocumentBuilder() throws TikaException {
         try {
@@ -201,8 +227,8 @@ public class XMLReaderUtils {
      * configured to be namespace-aware and to apply reasonable security
      * using the {@link #IGNORING_STAX_ENTITY_RESOLVER}.
      *
-     * @since Apache Tika 1.13
      * @return StAX input factory
+     * @since Apache Tika 1.13
      */
     public static XMLInputFactory getXMLInputFactory() {
         XMLInputFactory factory = XMLInputFactory.newFactory();
@@ -218,9 +244,9 @@ public class XMLReaderUtils {
         try {
             documentBuilderFactory.setFeature(feature, enabled);
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "SAX Feature unsupported: "+feature, e);
+            LOG.log(Level.WARNING, "SAX Feature unsupported: " + feature, e);
         } catch (AbstractMethodError ame) {
-            LOG.log(Level.WARNING, "Cannot set SAX feature because outdated XML parser in classpath: "+ feature, ame);
+            LOG.log(Level.WARNING, "Cannot set SAX feature because outdated XML parser in classpath: " + feature, ame);
         }
     }
 
@@ -234,13 +260,13 @@ public class XMLReaderUtils {
 
     /**
      * Returns a new transformer
-     * 
+     * <p>
      * The transformer instance is configured to to use
      * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      *
-     * @since Apache Tika 1.17
      * @return Transformer
      * @throws TikaException when the transformer can not be created
+     * @since Apache Tika 1.17
      */
     public static Transformer getTransformer() throws TikaException {
         try {
@@ -249,7 +275,78 @@ public class XMLReaderUtils {
             return transformerFactory.newTransformer();
         } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
-        }        
+        }
     }
 
+    /**
+     * Acquire a SAXParser from the pool; create one if it
+     * doesn't exist.  Make sure to {@link #releaseParser(SAXParser)} in
+     * a <code>finally</code> block every time you call this.
+     *
+     * @return a SAXParser
+     * @throws TikaException
+     */
+    public static SAXParser acquireSAXParser()
+            throws TikaException {
+        while (true) {
+            SAXParser parser = null;
+            try {
+                READ_WRITE_LOCK.readLock().lock();
+                parser = SAX_PARSERS.poll(10, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                throw new TikaException("interrupted while waiting for SAXParser", e);
+            } finally {
+                READ_WRITE_LOCK.readLock().unlock();
+
+            }
+            if (parser != null) {
+                return parser;
+            }
+        }
+    }
+
+    /**
+     * Return parser to the pool for reuse
+     *
+     * @param parser parser to return
+     */
+    public static void releaseParser(SAXParser parser) {
+        try {
+            parser.reset();
+        } catch (UnsupportedOperationException e) {
+            //ignore
+        }
+        try {
+            READ_WRITE_LOCK.readLock().lock();
+            //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
+            // this parser will not be added and will then be gc'd
+            boolean success = SAX_PARSERS.offer(parser);
+        } finally {
+            READ_WRITE_LOCK.readLock().unlock();
+        }
+    }
+
+    /**
+     * Set the pool size for cached XML parsers.
+     *
+     * @param poolSize
+     */
+    public static void setPoolSize(int poolSize) throws TikaException {
+        try {
+            //stop the world with a write lock.
+            //parsers that are currently in use will be offered, but not
+            //accepted and will be gc'd
+            READ_WRITE_LOCK.writeLock().lock();
+            if (SAX_PARSERS.size() == poolSize) {
+                return;
+            }
+            SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
+            for (int i = 0; i < poolSize; i++) {
+                SAX_PARSERS.offer(getSAXParser());
+            }
+            POOL_SIZE = poolSize;
+        } finally {
+            READ_WRITE_LOCK.writeLock().unlock();
+        }
+    }
 }

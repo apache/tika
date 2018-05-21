@@ -19,15 +19,15 @@ package org.apache.tika.detect;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.SAXParserFactory;
+import javax.xml.parsers.SAXParser;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -47,22 +47,15 @@ public class XmlRootExtractor {
      */
     public QName extractRootElement(InputStream stream) {
         ExtractorHandler handler = new ExtractorHandler();
+        SAXParser parser = null;
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            try {
-                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (SAXNotRecognizedException e) {
-                // TIKA-271 and TIKA-1000: Some XML parsers do not support the secure-processing
-                // feature, even though it's required by JAXP in Java 5. Ignoring
-                // the exception is fine here, deployments without this feature
-                // are inherently vulnerable to XML denial-of-service attacks.
-            }
-            factory.newSAXParser().parse(
+            parser = XMLReaderUtils.acquireSAXParser();
+            parser.parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(handler));
         } catch (Exception ignore) {
+        } finally {
+                XMLReaderUtils.releaseParser(parser);
         }
         return handler.rootElement;
     }
