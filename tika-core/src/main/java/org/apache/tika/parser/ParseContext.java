@@ -23,14 +23,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLResolver;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
-import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +35,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.
@@ -121,7 +117,9 @@ public class ParseContext implements Serializable {
     /**
      * Returns the SAX parser specified in this parsing context. If a parser
      * is not explicitly specified, then one is created using the specified
-     * or the default SAX parser factory.
+     * or the default SAX parser factory. Consider using
+     * {@link XMLReaderUtils#parseSAX(InputStream, DefaultHandler, ParseContext)}
+     * for more efficient reuse of SAXParsers.
      *
      * @see #getSAXParserFactory()
      * @since Apache Tika 0.8
@@ -135,39 +133,6 @@ public class ParseContext implements Serializable {
         } else {
             return XMLReaderUtils.getSAXParser();
         }
-    }
-
-    /**
-     * Returns the SAX parser specified in this parsing context. If a parser
-     * is not explicitly specified, then one is acquired from the pool.
-     * <p>
-     * Make sure to {@link #releaseParser(SAXParser)} as the
-     * first call in a <code>finally</code> block every time
-     * you call this!
-     * </p>
-     *
-     * @return SAXParser
-     * @throws TikaException
-     */
-    public SAXParser acquireSAXParser() throws TikaException {
-        if (context.containsKey(SAXParser.class)) {
-            return get(SAXParser.class);
-        }
-        return XMLReaderUtils.acquireSAXParser();
-    }
-
-    /**
-     * If the context already has a SAXParser, this is a no-op.
-     * Otherwise, this returns the parser to the pool
-     *
-     * @param parser
-     * @throws TikaException
-     */
-    public void releaseParser(SAXParser parser) {
-        if (context.containsKey(SAXParser.class)) {
-            return;
-        }
-        XMLReaderUtils.releaseParser(parser);
     }
 
     /**
@@ -228,6 +193,8 @@ public class ParseContext implements Serializable {
      * instance is created and returned. The builder instance is
      * configured to apply an {@link XMLReaderUtils#IGNORING_SAX_ENTITY_RESOLVER},
      * and it sets the ErrorHandler to <code>null</code>.
+     * Consider using {@link XMLReaderUtils#buildDOM(InputStream, ParseContext)}
+     * instead for more efficient reuse of document builders.
      *
      * @since Apache Tika 1.13
      * @return DOM Builder

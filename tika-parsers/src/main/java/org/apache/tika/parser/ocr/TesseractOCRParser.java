@@ -76,6 +76,7 @@ import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.parser.jpeg.JpegParser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -594,13 +595,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         }
 
         xhtml.startElement("div", "class", "ocr");
-        SAXParser parser = null;
-        try {
-            parser = parseContext.acquireSAXParser();
-            parser.parse(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)));
-        } finally {
-            parseContext.releaseParser(parser);
-        }
+        XMLReaderUtils.parseSAX(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)), parseContext);
         xhtml.endElement("div");
 
     }

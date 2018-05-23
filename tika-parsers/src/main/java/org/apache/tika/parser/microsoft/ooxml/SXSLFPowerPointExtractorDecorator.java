@@ -44,6 +44,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -160,18 +161,15 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             if (commentAuthorsPart == null) {
                 continue;
             }
-            SAXParser parser = null;
             try (InputStream stream = commentAuthorsPart.getInputStream()) {
-                parser = context.acquireSAXParser();
-                parser.parse(
+                XMLReaderUtils.parseSAX(
                         new CloseShieldInputStream(stream),
-                        new OfflineContentHandler(new XSLFCommentAuthorHandler()));
+                        new OfflineContentHandler(new XSLFCommentAuthorHandler()),
+                        context);
 
             } catch (TikaException | SAXException | IOException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         ExceptionUtils.getStackTrace(e));
-            } finally {
-                context.releaseParser(parser);
             }
         }
 
@@ -182,20 +180,17 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
 //        Map<String, String> hyperlinks = loadHyperlinkRelationships(packagePart);
         xhtml.startElement("div", "class", "slide-content");
-        SAXParser parser = null;
         try (InputStream stream = slidePart.getInputStream()) {
-            parser = context.acquireSAXParser();
-            parser.parse(
+            XMLReaderUtils.parseSAX(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
-                                    new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))));
+                                    new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))),
+                    context);
 
-        } catch (TikaException e) {
+        } catch (TikaException|IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
-        } finally {
-            context.releaseParser(parser);
         }
 
         xhtml.endElement("div");

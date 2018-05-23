@@ -24,6 +24,7 @@ import javax.xml.parsers.SAXParser;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
@@ -37,6 +38,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * @since Apache Tika 0.4
  */
 public class XmlRootExtractor {
+    private static final ParseContext EMPTY_CONTEXT = new ParseContext();
 
     public QName extractRootElement(byte[] data) {
         return extractRootElement(new ByteArrayInputStream(data));
@@ -47,15 +49,11 @@ public class XmlRootExtractor {
      */
     public QName extractRootElement(InputStream stream) {
         ExtractorHandler handler = new ExtractorHandler();
-        SAXParser parser = null;
         try {
-            parser = XMLReaderUtils.acquireSAXParser();
-            parser.parse(
+            XMLReaderUtils.parseSAX(
                     new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(handler));
+                    new OfflineContentHandler(handler), EMPTY_CONTEXT);
         } catch (Exception ignore) {
-        } finally {
-                XMLReaderUtils.releaseParser(parser);
         }
         return handler.rootElement;
     }

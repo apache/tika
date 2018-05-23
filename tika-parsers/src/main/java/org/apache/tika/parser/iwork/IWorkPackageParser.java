@@ -16,17 +16,6 @@
  */
 package org.apache.tika.parser.iwork;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.xml.namespace.QName;
-import javax.xml.parsers.SAXParser;
-
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -40,8 +29,18 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import javax.xml.namespace.QName;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * A parser for the IWork container files. This includes *.key, *.pages and *.numbers files.
@@ -203,19 +202,13 @@ public class IWorkPackageParser extends AbstractParser {
 
                metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
                xhtml.startDocument();
-               if (contentHandler != null) {
-                   SAXParser parser = null;
-                   try {
-                       parser = context.acquireSAXParser();
-
-                       parser.parse(
-                               new CloseShieldInputStream(entryStream),
-                               new OfflineContentHandler(contentHandler)
-                       );
-                   } finally {
-                       context.releaseParser(parser);
-                   }
-               }
+                if (contentHandler != null) {
+                    XMLReaderUtils.parseSAX(
+                            new CloseShieldInputStream(entryStream),
+                            new OfflineContentHandler(contentHandler),
+                            context
+                    );
+                }
                xhtml.endDocument();
             }
             

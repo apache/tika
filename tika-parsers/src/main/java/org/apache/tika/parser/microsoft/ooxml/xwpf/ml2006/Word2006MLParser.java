@@ -31,6 +31,7 @@ import org.apache.tika.parser.microsoft.AbstractOfficeParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -57,21 +58,15 @@ public class Word2006MLParser extends AbstractOfficeParser {
                 new XHTMLContentHandler(handler, metadata);
 
         xhtml.startDocument();
-        SAXParser parser = null;
         try {
-            parser = context.acquireSAXParser();
-            parser.parse(
+            XMLReaderUtils.parseSAX(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
-                            new Word2006MLDocHandler(xhtml, metadata, context))));
+                            new Word2006MLDocHandler(xhtml, metadata, context))),
+                    context);
         } catch (SAXException e) {
             throw new TikaException("XML parse error", e);
-        } finally {
-            //make sure to release the parser before doing
-            //something that could cause an exception!
-            context.releaseParser(parser);
-            xhtml.endDocument();
         }
+            xhtml.endDocument();
     }
-
 }

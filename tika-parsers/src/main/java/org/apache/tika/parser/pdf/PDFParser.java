@@ -69,6 +69,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.ErrorHandler;
@@ -739,9 +740,7 @@ public class PDFParser extends AbstractParser implements Initializable {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                 return null;
             }
-            DocumentBuilder documentBuilder = context.getDocumentBuilder();
-            documentBuilder.setErrorHandler((ErrorHandler)null);
-            return documentBuilder.parse(is);
+            return XMLReaderUtils.buildDOM(is, context);
         } catch (IOException|SAXException|TikaException e) {
             EmbeddedDocumentUtil.recordException(e, metadata);
         } finally {

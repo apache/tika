@@ -16,12 +16,6 @@
  */
 package org.apache.tika.parser.epub;
 
-import javax.xml.parsers.SAXParser;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Set;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,8 +23,14 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Parser for EPUB OPS <code>*.html</code> files.
@@ -48,16 +48,9 @@ public class EpubContentParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        SAXParser parser = null;
-        try {
-            parser = context.acquireSAXParser();
-
-            parser.parse(
-                    new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(handler));
-        } finally {
-            context.releaseParser(parser);
-        }
+        XMLReaderUtils.parseSAX(
+                new CloseShieldInputStream(stream),
+                new OfflineContentHandler(handler), context);
     }
 
 }

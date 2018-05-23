@@ -43,7 +43,8 @@ import org.xml.sax.SAXException;
 
 public class JempboxExtractor {
 
-
+    //TODO: change signature to require parsecontext from parse
+    private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static volatile int MAX_EVENT_HISTORY_IN_XMPMM = 1024;
 
     // The XMP spec says it must be unicode, but for most file formats it specifies "must be encoded in UTF-8"
@@ -67,7 +68,7 @@ public class JempboxExtractor {
         try (InputStream decoded =
                              new ByteArrayInputStream(xmpraw.toByteArray())
         ) {
-            Document dom = XMLReaderUtils.getDocumentBuilder().parse(decoded);
+            Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);
             }

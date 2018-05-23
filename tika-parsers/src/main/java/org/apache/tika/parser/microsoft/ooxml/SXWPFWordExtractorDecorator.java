@@ -44,6 +44,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 
@@ -189,20 +190,17 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                             XWPFListManager listManager, XHTMLContentHandler xhtml) throws IOException, SAXException {
 
         Map<String, String> linkedRelationships = loadLinkedRelationships(packagePart, true, metadata);
-        SAXParser parser = null;
         try (InputStream stream = packagePart.getInputStream()) {
-            parser = context.acquireSAXParser();
-            parser.parse(
+            XMLReaderUtils.parseSAX(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
-                                            config), linkedRelationships, config.getIncludeShapeBasedContent(), config.getConcatenatePhoneticRuns()))));
-        } catch (TikaException e) {
+                                            config), linkedRelationships, config.getIncludeShapeBasedContent(), config.getConcatenatePhoneticRuns()))),
+                    context);
+        } catch (TikaException|IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
-        } finally {
-            context.releaseParser(parser);
         }
 
     }

@@ -27,6 +27,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -60,14 +61,8 @@ public class XWPFStylesShim {
     }
 
     private void onDocumentLoad(ParseContext parseContext, InputStream stream) throws TikaException, IOException, SAXException {
-        SAXParser parser = null;
-        try {
-            parser = parseContext.acquireSAXParser();
-            parser.parse(stream,
-                    new OfflineContentHandler(new StylesStripper()));
-        } finally {
-            parseContext.releaseParser(parser);
-        }
+            XMLReaderUtils.parseSAX(stream,
+                    new OfflineContentHandler(new StylesStripper()), parseContext);
     }
 
     /**

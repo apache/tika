@@ -60,6 +60,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTHyperlink;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTNonVisualDrawingProps;
@@ -195,14 +196,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         //consider adding this back to POI
-        SAXParser parser = null;
         try (InputStream wbData = xssfReader.getWorkbookData()) {
-            parser = parseContext.acquireSAXParser();
-            parser.parse(wbData, new OfflineContentHandler(new AbsPathExtractorHandler()));
+            XMLReaderUtils.parseSAX(wbData, new OfflineContentHandler(new AbsPathExtractorHandler()), parseContext);
         } catch (InvalidFormatException|TikaException e) {
             //swallow
-        } finally {
-            parseContext.releaseParser(parser);
         }
     }
 
@@ -337,17 +334,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             ReadOnlySharedStringsTable strings,
             InputStream sheetInputStream)
             throws IOException, SAXException {
-        InputSource sheetSource = new InputSource(sheetInputStream);
-        SAXParser parser = null;
         try {
-            parser = parseContext.acquireSAXParser();
 
-            XMLReader sheetParser = parser.getXMLReader();
             XSSFSheetInterestingPartsCapturer handler =
                     new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
                             styles, comments, strings, sheetContentsExtractor, formatter, false));
-            sheetParser.setContentHandler(handler);
-            sheetParser.parse(sheetSource);
+            XMLReaderUtils.parseSAX(sheetInputStream, handler, parseContext);
             sheetInputStream.close();
 
             if (handler.hasProtection) {
@@ -355,8 +347,6 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         } catch (TikaException e) {
             throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
-        } finally {
-            parseContext.releaseParser(parser);
         }
     }
 
@@ -498,7 +488,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      * Captures information on interesting tags, whilst
      * delegating the main work to the formatting handler
      */
-    protected static class XSSFSheetInterestingPartsCapturer implements ContentHandler {
+    protected static class XSSFSheetInterestingPartsCapturer extends DefaultHandler {
         private ContentHandler delegate;
         private boolean hasProtection = false;
 

@@ -63,6 +63,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -517,19 +518,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 PackageRelationship relatedPartPackageRelationship = relatedPartPRC.getRelationship(i);
                 try {
                     PackagePart relatedPartPart = parentPart.getRelatedPart(relatedPartPackageRelationship);
-                    SAXParser parser = null;
                     try (InputStream stream = relatedPartPart.getInputStream()) {
-                        parser = context.acquireSAXParser();
-                        parser.parse(stream,
-                                new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)));
+                        XMLReaderUtils.parseSAX(stream,
+                                new OfflineContentHandler(new EmbeddedContentHandler(contentHandler)), context);
 
                     } catch (IOException|TikaException e) {
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
-                    } finally {
-                        context.releaseParser(parser);
                     }
-
                 } catch (InvalidFormatException e) {
                     parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
