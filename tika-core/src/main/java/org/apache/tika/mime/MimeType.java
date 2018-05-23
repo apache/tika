@@ -111,6 +111,12 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     private List<String> extensions = null;
 
     /**
+     * Whether this mime-type is used for server-side scripts,
+     * and thus cannot reliably be used for filename-based type detection
+     */
+    private boolean isInterpreted = false;
+
+    /**
      * Creates a media type with the give name and containing media type
      * registry. The name is expected to be valid and normalized to lower
      * case. This constructor should only be called by
@@ -300,6 +306,17 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
 
     public boolean matches(byte[] data) {
         return matchesMagic(data);
+    }
+
+    /**
+     * whether the type is used as a server-side scripting technology
+     */
+    boolean isInterpreted() {
+        return isInterpreted;
+    }
+
+    void setInterpreted(boolean interpreted) {
+        isInterpreted = interpreted;
     }
 
     /**

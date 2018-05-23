@@ -16,22 +16,20 @@
  */
 package org.apache.tika.mime;
 
-import static java.nio.charset.StandardCharsets.UTF_16BE;
-import static java.nio.charset.StandardCharsets.UTF_16LE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.junit.Before;
-import org.junit.Test;
+import static java.nio.charset.StandardCharsets.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class MimeDetectionTest {
 
@@ -80,6 +78,21 @@ public class MimeDetectionTest {
         
         //test GCMD Directory Interchange Format (.dif) TIKA-1561
         testFile("application/dif+xml", "brwNIMS_2014.dif");
+    }
+
+    @Test
+    public void testDetectionWithoutContent() throws IOException {
+        testUrlWithoutContent("text/html", "test.html");
+        testUrlWithoutContent("text/html", "http://test.com/test.html");
+        testUrlWithoutContent("text/plain", "http://test.com/test.txt");
+
+        // In case the url contains a filename referencing a server-side scripting language,
+        // it gives us no clue concerning the actual mime type of the response
+        testUrlWithoutContent("application/octet-stream", "http://test.com/test.php");
+        testUrlWithoutContent("application/octet-stream", "http://test.com/test.cgi");
+        testUrlWithoutContent("application/octet-stream", "http://test.com/test.jsp");
+        // But in case the protocol is not http or https, the script is probably not interpreted
+        testUrlWithoutContent("text/x-php", "ftp://test.com/test.php");
     }
 
     @Test
@@ -134,6 +147,13 @@ public class MimeDetectionTest {
     private void testUrlOnly(String expected, String url) throws IOException{
 	InputStream in = new URL(url).openStream();
         testStream(expected, url, in);
+    }
+
+    private void testUrlWithoutContent(String expected, String url) throws IOException {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, url);
+        String mime = this.mimeTypes.detect(null, metadata).toString();
+        assertEquals(url + " is not properly detected using only resource name", expected, mime);
     }
 
     private void testUrl(String expected, String url, String file) throws IOException{

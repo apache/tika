@@ -5987,13 +5987,13 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="text/asp">
+  <mime-type type="text/asp" interpreted="true">
     <_comment>Active Server Page</_comment>
     <glob pattern="*.asp"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="text/aspdotnet">
+  <mime-type type="text/aspdotnet" interpreted="true">
     <_comment>ASP .NET</_comment>
     <glob pattern="*.aspx"/>
     <sub-class-of type="text/plain"/>
@@ -6414,7 +6414,7 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="text/x-cgi">
+  <mime-type type="text/x-cgi" interpreted="true">
     <_comment>CGI script</_comment>
     <glob pattern="*.cgi"/>
     <sub-class-of type="text/plain"/>
@@ -6468,7 +6468,7 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="text/x-coldfusion">
+  <mime-type type="text/x-coldfusion" interpreted="true">
     <_comment>ColdFusion source code</_comment>
     <glob pattern="*.cfm"/>
     <glob pattern="*.cfml"/>
@@ -6584,7 +6584,7 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="text/x-jsp">
+  <mime-type type="text/x-jsp" interpreted="true">
     <_comment>Java Server Page</_comment>
     <alias type="application/x-httpd-jsp"/>
     <sub-class-of type="text/plain"/>
@@ -6712,7 +6712,7 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="text/x-php">
+  <mime-type type="text/x-php" interpreted="true">
     <_comment>PHP script</_comment>
     <magic priority="50">
       <match value="&lt;?php" type="string" offset="0"/>

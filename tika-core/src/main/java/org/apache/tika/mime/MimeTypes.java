@@ -502,10 +502,13 @@ public final class MimeTypes implements Detector, Serializable {
         String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (resourceName != null) {
             String name = null;
+            boolean isHttp = false;
 
             // Deal with a URI or a path name in as the resource  name
             try {
                 URI uri = new URI(resourceName);
+                String scheme = uri.getScheme();
+                isHttp = scheme != null && scheme.startsWith("http"); // http or https
                 String path = uri.getPath();
                 if (path != null) {
                     int slash = path.lastIndexOf('/');
@@ -519,11 +522,14 @@ public final class MimeTypes implements Detector, Serializable {
 
             if (name != null) {
                 MimeType hint = getMimeType(name);
-                
-                // If we have some types based on mime magic, try to specialise
-                //  and/or select the type based on that
-                // Otherwise, use the type identified from the name
-                possibleTypes = applyHint(possibleTypes, hint);
+
+                // For server-side scripting languages, we cannot rely on the filename to detect the mime type
+                if (!(isHttp && hint.isInterpreted())) {
+                    // If we have some types based on mime magic, try to specialise
+                    //  and/or select the type based on that
+                    // Otherwise, use the type identified from the name
+                    possibleTypes = applyHint(possibleTypes, hint);
+                }
             }
         }
 
