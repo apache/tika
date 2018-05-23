@@ -18,12 +18,15 @@
 package org.apache.tika.utils;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
+import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -39,6 +42,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -66,15 +70,18 @@ public class XMLReaderUtils implements Serializable {
      */
     private static int POOL_SIZE = 10;
 
-    private static final ReentrantReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+    //TODO: figure out if the rw lock is any better than a simple lock
+    private static final ReentrantReadWriteLock SAX_READ_WRITE_LOCK = new ReentrantReadWriteLock();
+    private static final ReentrantReadWriteLock DOM_READ_WRITE_LOCK = new ReentrantReadWriteLock();
 
     private static ArrayBlockingQueue<SAXParser> SAX_PARSERS = new ArrayBlockingQueue<>(POOL_SIZE);
+    private static ArrayBlockingQueue<DocumentBuilder> DOM_BUILDERS = new ArrayBlockingQueue<>(POOL_SIZE);
 
     static {
         try {
             setPoolSize(POOL_SIZE);
         } catch (TikaException e) {
-            throw new RuntimeException("problem initializing SAXParser pool", e);
+            throw new RuntimeException("problem initializing SAXParser and DOMBuilder pools", e);
         }
     }
 
@@ -279,25 +286,139 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Acquire a SAXParser from the pool; create one if it
-     * doesn't exist.  Make sure to {@link #releaseParser(SAXParser)} in
+     * This checks context for a user specified {@link DocumentBuilder}.
+     * If one is not found, this reuses a DocumentBuilder from the pool.
+     *
+     * @since Apache Tika 1.19
+     * @param is InputStream to parse
+     * @param context context to use
+     * @return a document
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public static Document buildDOM(InputStream is, ParseContext context) throws TikaException, IOException, SAXException {
+        DocumentBuilder builderFromContext = context.get(DocumentBuilder.class);
+        DocumentBuilder builder = (builderFromContext == null) ? acquireDOMBuilder() : builderFromContext;
+
+        try {
+            return builder.parse(is);
+        } finally {
+            if (builderFromContext == null) {
+                releaseDOMBuilder(builder);
+            }
+        }
+    }
+
+    /**
+     * This checks context for a user specified {@link SAXParser}.
+     * If one is not found, this reuses a SAXParser from the pool.
+     *
+     * @since Apache Tika 1.19
+     * @param is InputStream to parse
+     * @param contentHandler handler to use
+     * @param context context to use
+     * @return
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public static void parseSAX(InputStream is, DefaultHandler contentHandler, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        SAXParser contextParser = context.get(SAXParser.class);
+        SAXParser parser = (contextParser == null) ? acquireSAXParser() : contextParser;
+        try {
+            parser.parse(is, contentHandler);
+        } finally {
+            if (contextParser == null) {
+                releaseParser(parser);
+            }
+        }
+    }
+
+    /**
+     * Acquire a SAXParser from the pool.  Make sure to
+     * {@link #releaseParser(SAXParser)} in
      * a <code>finally</code> block every time you call this.
      *
      * @return a SAXParser
      * @throws TikaException
      */
-    public static SAXParser acquireSAXParser()
+    private static DocumentBuilder acquireDOMBuilder()
+            throws TikaException {
+        int waiting = 0;
+        while (true) {
+            DocumentBuilder builder = null;
+            try {
+                DOM_READ_WRITE_LOCK.readLock().lock();
+                builder = DOM_BUILDERS.poll(100, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                throw new TikaException("interrupted while waiting for DOMBuilder", e);
+            } finally {
+                DOM_READ_WRITE_LOCK.readLock().unlock();
+            }
+            if (builder != null) {
+                return builder;
+            }
+            waiting++;
+            if (waiting > 3000) {
+                //freshen the pool.  Something went very wrong...
+                setPoolSize(POOL_SIZE);
+                //better to get an exception than have permahang by a bug in one of our parsers
+                throw new TikaException("Waited more than 5 minutes for a DocumentBuilder; " +
+                        "This could indicate that a parser has not correctly released its DocumentBuilder. " +
+                        "Please report this to the Tika team: dev@tika.apache.org");
+
+            }
+        }
+    }
+
+    /**
+     * Return parser to the pool for reuse.
+     *
+     * @param builder builder to return
+     */
+    private static void releaseDOMBuilder(DocumentBuilder builder) {
+        try {
+            builder.reset();
+        } catch (UnsupportedOperationException e) {
+            //ignore
+        }
+        try {
+            DOM_READ_WRITE_LOCK.readLock().lock();
+            //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
+            // this parser will not be added and will then be gc'd
+            boolean success = DOM_BUILDERS.offer(builder);
+            if (! success) {
+                LOG.warning("DocumentBuilder not taken back into pool.  If you haven't resized the pool, this could " +
+                        "be a sign that there are more calls to 'acquire' than to 'release'");
+            }
+        } finally {
+            DOM_READ_WRITE_LOCK.readLock().unlock();
+        }
+    }
+
+
+    /**
+     * Acquire a SAXParser from the pool.  Make sure to
+     * {@link #releaseParser(SAXParser)} in
+     * a <code>finally</code> block every time you call this.
+     *
+     * @return a SAXParser
+     * @throws TikaException
+     */
+    private static SAXParser acquireSAXParser()
             throws TikaException {
         int waiting = 0;
         while (true) {
             SAXParser parser = null;
             try {
-                READ_WRITE_LOCK.readLock().lock();
+                SAX_READ_WRITE_LOCK.readLock().lock();
                 parser = SAX_PARSERS.poll(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 throw new TikaException("interrupted while waiting for SAXParser", e);
             } finally {
-                READ_WRITE_LOCK.readLock().unlock();
+                SAX_READ_WRITE_LOCK.readLock().unlock();
             }
             if (parser != null) {
                 return parser;
@@ -320,14 +441,14 @@ public class XMLReaderUtils implements Serializable {
      *
      * @param parser parser to return
      */
-    public static void releaseParser(SAXParser parser) {
+    private static void releaseParser(SAXParser parser) {
         try {
             parser.reset();
         } catch (UnsupportedOperationException e) {
             //ignore
         }
         try {
-            READ_WRITE_LOCK.readLock().lock();
+            SAX_READ_WRITE_LOCK.readLock().lock();
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = SAX_PARSERS.offer(parser);
@@ -336,31 +457,46 @@ public class XMLReaderUtils implements Serializable {
                         "be a sign that there are more calls to 'acquire' than to 'release'");
             }
         } finally {
-            READ_WRITE_LOCK.readLock().unlock();
+            SAX_READ_WRITE_LOCK.readLock().unlock();
         }
     }
 
     /**
      * Set the pool size for cached XML parsers.
      *
+     * @since Apache Tika 1.19
      * @param poolSize
      */
     public static void setPoolSize(int poolSize) throws TikaException {
         try {
             //stop the world with a write lock.
-            //parsers that are currently in use will be offered, but not
-            //accepted and will be gc'd
-            READ_WRITE_LOCK.writeLock().lock();
-            if (SAX_PARSERS.size() == poolSize) {
-                return;
+            //parsers that are currently in use will be offered later (once the lock is released),
+            //but not accepted and will be gc'd.  We have to do this locking and
+            //the read locking in case one thread resizes the pool when the
+            //parsers have already started.  We could have an NPE on SAX_PARSERS
+            //if we didn't lock.
+            SAX_READ_WRITE_LOCK.writeLock().lock();
+            if (SAX_PARSERS.size() != poolSize) {
+                SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
+                for (int i = 0; i < poolSize; i++) {
+                    SAX_PARSERS.offer(getSAXParser());
+                }
             }
-            SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
-            for (int i = 0; i < poolSize; i++) {
-                SAX_PARSERS.offer(getSAXParser());
-            }
-            POOL_SIZE = poolSize;
         } finally {
-            READ_WRITE_LOCK.writeLock().unlock();
+            SAX_READ_WRITE_LOCK.writeLock().unlock();
         }
+        try {
+            DOM_READ_WRITE_LOCK.writeLock().lock();
+
+            if (DOM_BUILDERS.size() != poolSize) {
+                DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
+                for (int i = 0; i < poolSize; i++) {
+                    DOM_BUILDERS.offer(getDocumentBuilder());
+                }
+            }
+        } finally {
+            DOM_READ_WRITE_LOCK.writeLock().unlock();
+        }
+        POOL_SIZE = poolSize;
     }
 }

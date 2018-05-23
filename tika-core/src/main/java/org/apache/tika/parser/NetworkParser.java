@@ -37,6 +37,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -126,12 +127,10 @@ public class NetworkParser extends AbstractParser {
 
             TaggedContentHandler tagged = new TaggedContentHandler(
                     new OfflineContentHandler(handler));
-            SAXParser parser = null;
             try {
-                parser = context.acquireSAXParser();
-                parser.parse(
+                XMLReaderUtils.parseSAX(
                         stream, new TeeContentHandler(
-                                tagged, new MetaHandler(metadata)));
+                                tagged, new MetaHandler(metadata)), context);
             } catch (SAXException e) {
                 tagged.throwIfCauseOf(e);
                 throw new TikaException(
@@ -140,7 +139,6 @@ public class NetworkParser extends AbstractParser {
                 throw new TikaException(
                         "Unable to read network parser output", e);
             } finally {
-                context.releaseParser(parser);
                 try {
                     thread.join(1000);
                 } catch (InterruptedException e) {

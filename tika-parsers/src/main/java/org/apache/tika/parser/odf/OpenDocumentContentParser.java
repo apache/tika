@@ -16,19 +16,6 @@
  */
 package org.apache.tika.parser.odf;
 
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
-
-import javax.xml.namespace.QName;
-import javax.xml.parsers.SAXParser;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -39,11 +26,24 @@ import org.apache.tika.sax.ElementMappingContentHandler;
 import org.apache.tika.sax.ElementMappingContentHandler.TargetElement;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.namespace.QName;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
  * Parser for ODF <code>content.xml</code> files.
@@ -596,15 +596,11 @@ public class OpenDocumentContentParser extends AbstractParser {
         DefaultHandler dh = new OpenDocumentElementMappingContentHandler(handler, MAPPINGS);
 
 
-        SAXParser parser = context.acquireSAXParser();
-        try {
-            parser.parse(
-                    new CloseShieldInputStream(stream),
-                    new OfflineContentHandler(
-                            new NSNormalizerContentHandler(dh)));
-        } finally {
-            context.releaseParser(parser);
-        }
+        XMLReaderUtils.parseSAX(
+                new CloseShieldInputStream(stream),
+                new OfflineContentHandler(
+                        new NSNormalizerContentHandler(dh)),
+                context);
     }
 
 }

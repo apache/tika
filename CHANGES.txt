@@ -4,9 +4,11 @@ Release 2.0.0 - ???
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
    Other changes
-   * Use a pool for SAXParsers rather than creating a new one for every parse.
+
+   * Use a pool for SAXParsers and DOMBuilders rather than creating
+     a new parser/builder for every parse.
      For better performance, set XMLReaderUtils.setPoolSize() to the
-     number of threads you're using with Tika (TIKA-2645.
+     number of threads you're using with Tika (TIKA-2645).
 
    * Add the RecursiveParserWrapperHandler to improve the RecursiveParserWrapper
      API slightly (TIKA-2644).

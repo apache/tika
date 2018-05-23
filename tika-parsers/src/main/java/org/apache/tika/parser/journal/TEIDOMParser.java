@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -40,9 +41,9 @@ public class TEIDOMParser {
 
     public Metadata parse(String source, ParseContext parseContext) throws TikaException, SAXException, IOException {
 
-        Document root = parseContext.getDocumentBuilder().parse(
-                new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8))
-        );
+        Document root = XMLReaderUtils.buildDOM(
+                new ByteArrayInputStream(source.getBytes(StandardCharsets.UTF_8)), parseContext);
+
         Metadata metadata = new Metadata();
         createGrobidMetadata(source, root.getDocumentElement(), metadata);
         return metadata;

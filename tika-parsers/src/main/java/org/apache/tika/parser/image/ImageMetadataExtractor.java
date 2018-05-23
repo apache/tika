@@ -57,6 +57,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
@@ -70,7 +71,8 @@ import org.xml.sax.SAXException;
  * As of 2.8.0 the library supports webp.
  */
 public class ImageMetadataExtractor {
-
+    //TODO: add this to the signatures from the actual parse
+    private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######"; // 6 dp seems to be reasonable
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
@@ -183,7 +185,7 @@ public class ImageMetadataExtractor {
         try (InputStream decoded =
                      new ByteArrayInputStream(xmpData)
         ) {
-            Document dom = XMLReaderUtils.getDocumentBuilder().parse(decoded);
+            Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
             if (dom != null) {
                 xmp = new XMPMetadata(dom);
             }

@@ -319,7 +319,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
      * @return a SAXParser
      * @throws TikaException
      */
-    public static SAXParser acquireSAXParser()
+    private static SAXParser acquireSAXParser()
             throws TikaException {
         while (true) {
             SAXParser parser = null;
@@ -343,7 +343,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
      *
      * @param parser parser to return
      */
-    public static void releaseParser(SAXParser parser) {
+    private static void releaseParser(SAXParser parser) {
         try {
             parser.reset();
         } catch (UnsupportedOperationException e) {

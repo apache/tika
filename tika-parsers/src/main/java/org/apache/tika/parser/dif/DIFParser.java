@@ -33,6 +33,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -63,20 +64,15 @@ public class DIFParser extends AbstractParser {
 		xhtml.startDocument();
 		xhtml.startElement("p");
 		TaggedContentHandler tagged = new TaggedContentHandler(handler);
-		SAXParser parser = null;
 		try {
-			parser = context.acquireSAXParser();
-			parser.parse(
+			XMLReaderUtils.parseSAX(
 					new CloseShieldInputStream(stream),
 					new OfflineContentHandler(new EmbeddedContentHandler(
-							getContentHandler(tagged, metadata, context))));
+							getContentHandler(tagged, metadata, context))), context);
 		} catch (SAXException e) {
 			tagged.throwIfCauseOf(e);
 			throw new TikaException("XML parse error", e);
 		} finally {
-			//make sure to release the parser before doing
-			//something that could cause an exception!
-			context.releaseParser(parser);
 			xhtml.endElement("p");
 			xhtml.endDocument();
 		}
