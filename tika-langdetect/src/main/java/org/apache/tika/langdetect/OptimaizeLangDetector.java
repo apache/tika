@@ -30,6 +30,8 @@ import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageNames;
 import org.apache.tika.language.detect.LanguageResult;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.optimaize.langdetect.DetectedLanguage;
 import com.optimaize.langdetect.LanguageDetectorBuilder;
 import com.optimaize.langdetect.i18n.LdLocale;
@@ -44,6 +46,27 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
  */
 public class OptimaizeLangDetector extends LanguageDetector {
 
+	private static final List<LanguageProfile> DEFAULT_LANGUAGE_PROFILES;
+	private static final ImmutableSet<String> DEFAULT_LANGUAGES;
+	private static final com.optimaize.langdetect.LanguageDetector DEFAULT_DETECTOR;
+
+
+	static {
+		try {
+			DEFAULT_LANGUAGE_PROFILES = ImmutableList.copyOf(new LanguageProfileReader().readAllBuiltIn());
+
+			ImmutableSet.Builder<String> builder = new ImmutableSet.Builder<>();
+			for (LanguageProfile profile : DEFAULT_LANGUAGE_PROFILES) {
+				builder.add(makeLanguageName(profile.getLocale()));
+			}
+			DEFAULT_LANGUAGES = builder.build();
+
+			DEFAULT_DETECTOR = createDetector(DEFAULT_LANGUAGE_PROFILES, null);
+		} catch (IOException e) {
+			throw new RuntimeException("can't initialize OptimaizeLangDetector");
+		}
+	}
+
 	private static final int MAX_CHARS_FOR_DETECTION = 20000;
 	private static final int MAX_CHARS_FOR_SHORT_DETECTION = 200;
 	
@@ -51,7 +74,7 @@ public class OptimaizeLangDetector extends LanguageDetector {
 	private CharArrayWriter writer;
 	private Set<String> languages;
 	private Map<String, Float> languageProbabilities;
-	
+
 	public OptimaizeLangDetector() {
 		super();
 		
@@ -59,24 +82,23 @@ public class OptimaizeLangDetector extends LanguageDetector {
 	}
 	
 	@Override
-	public LanguageDetector loadModels() throws IOException {
-		List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAllBuiltIn();
-		
+	public LanguageDetector loadModels() {
 		// FUTURE when the "language-detector" project supports short profiles, check if
 		// isShortText() returns true and switch to those.
-		
-		languages = new HashSet<>();
-		for (LanguageProfile profile : languageProfiles) {
-			languages.add(makeLanguageName(profile.getLocale()));
+
+		languages = DEFAULT_LANGUAGES;
+
+		if (languageProbabilities != null) {
+			detector = createDetector(DEFAULT_LANGUAGE_PROFILES, languageProbabilities);
+		} else {
+			detector = DEFAULT_DETECTOR;
 		}
-		
-		detector = createDetector(languageProfiles);
-		
+
 		return this;
 
 	}
 
-	private String makeLanguageName(LdLocale locale) {
+	private static String makeLanguageName(LdLocale locale) {
 		return LanguageNames.makeName(locale.getLanguage(), locale.getScript().orNull(), locale.getRegion().orNull());
 	}
 
@@ -98,12 +120,12 @@ public class OptimaizeLangDetector extends LanguageDetector {
 			}
 		}
 		
-		detector = createDetector(new LanguageProfileReader().readBuiltIn(locales));
+		detector = createDetector(new LanguageProfileReader().readBuiltIn(locales), languageProbabilities);
 		
 		return this;
 	}
 
-	private com.optimaize.langdetect.LanguageDetector createDetector(List<LanguageProfile> languageProfiles) {
+	private static com.optimaize.langdetect.LanguageDetector createDetector(List<LanguageProfile> languageProfiles, Map<String, Float> languageProbabilities) {
 		// FUTURE currently the short text algorithm doesn't normalize probabilities until the end, which
 		// means you can often get 0 probabilities. So we pick a very short length for this limit.
 		LanguageDetectorBuilder builder = LanguageDetectorBuilder.create(NgramExtractors.standard())
