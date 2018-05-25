@@ -463,7 +463,7 @@ public class IptcAnpaParser implements Parser {
                while ((val_next != LT) && (val_next != CR) && (val_next != LF)) {   // less than delimiter (\x3c) and not EOL
                   bdy_heading += (char)(val_next & 0xff);  // convert the byte to an unsigned int
                   val_next =  (read < value.length) ? value[read++] : 0x00;
-                  if (read > value.length) { break; }  // shouldn't ever hit this, but save a NPE
+                  if (read >= value.length) { break; }  // shouldn't ever hit this, but save a NPE
                }
                if (val_next == LT) {
                   // hit the delimiter, carry on
@@ -508,7 +508,7 @@ public class IptcAnpaParser implements Parser {
                while ((val_next != LT) && (val_next != CT) && (val_next != CR) && (val_next != LF)) {   // less than delimiter (\x3c), or carat (\x5e) and not EOL
                   bdy_title += (char)(val_next & 0xff);  // convert the byte to an unsigned int
                   val_next =  (read < value.length) ? value[read++] : 0x00;
-                  if (read > value.length) { break; }  // shouldn't ever hit this, but save a NPE
+                  if (read >= value.length) { break; }  // shouldn't ever hit this, but save a NPE
                }
 
                if (val_next == CT) {      //  start of a new section , when first didn't finish cleanly
@@ -575,7 +575,7 @@ public class IptcAnpaParser implements Parser {
                   // less than delimiter (\x3c), maybe also badly formed with just new line
                   tmp_line += (char)(val_next & 0xff);  // convert the byte to an unsigned int
                   val_next =  (read < value.length) ? value[read++] : 0x00;
-                  if (read > value.length) { break; }  // shouldn't ever hit this, but save a NPE
+                  if (read >= value.length) { break; }  // shouldn't ever hit this, but save a NPE
                }
 
                if (val_next == CT) {      //  start of a new section , when first didn't finish cleanly
@@ -674,7 +674,7 @@ public class IptcAnpaParser implements Parser {
                   // read until the train runs out of tracks
                   bdy_body += (char)(val_next & 0xff);  // convert the byte to an unsigned int
                   val_next =  (read < value.length) ? value[read++] : 0x00;
-                  if (read > value.length) { break; }  // shouldn't ever hit this, but save a NPE
+                  if (read >= value.length) { break; }  // shouldn't ever hit this, but save a NPE
                }
 
             }
@@ -713,14 +713,14 @@ public class IptcAnpaParser implements Parser {
             ftr_source += (char)(val_next & 0xff);  // convert the byte to an unsigned int
             val_next =  (read < value.length) ? value[read] : 0x00;  // attempt to read until end of stream
             read++;
-            if (read > value.length) { break; }  // shouldn't ever hit this, but save a NPE
+            if (read >= value.length) { break; }  // shouldn't ever hit this, but save a NPE
          }
 
          while ((val_next != LT) && (val_next != CR) && (val_next != LF) && (val_next != 0))  {  // get as much timedate as possible
             // this is an american format, so arrives as mm-dd-yy HHiizzz
             ftr_datetime += (char)(val_next & 0xff);  // convert the byte to an unsigned int
             val_next =  (read < value.length) ? value[read++] : 0x00;  // skip the new lines
-            if (read > value.length) { break; }  // shouldn't ever hit this, but save a NPE
+            if (read >= value.length) { break; }  // shouldn't ever hit this, but save a NPE
          }
          if (val_next == LT) {
             // hit the delimiter, carry on
