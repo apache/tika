@@ -1238,11 +1238,14 @@ public class PDFParserTest extends TikaTest {
             assertContains("Needle", xmlResult.xml);
             if (! strategy.equals(PDFParserConfig.OCR_STRATEGY.NO_OCR)) {
                 // Tesseract may see the t in haystack as a ! some times...
-                String div = "<div class=\"ocr\">pdf_hays";
-                if (xmlResult.xml.contains(div+"!ack")) {
-                   assertContains(div+"!ack", xmlResult.xml);
+                //or it might see dehayslack...
+                //TODO: figure out how to make this test less hacky
+                String div = "<div class=\"ocr\">";
+                if (xmlResult.xml.contains(div+"pdf_hays!ack")) {
+                } else if (xmlResult.xml.contains(div+"pdf_haystack")) {
+                } else if (xmlResult.xml.contains(div+"dehayslack")) {
                 } else {
-                   assertContains(div+"tack", xmlResult.xml);
+                    fail("couldn't find acceptable variants of haystack");
                 }
             } else {
                 assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
