@@ -1233,7 +1233,12 @@ public class PDFParserTest extends TikaTest {
             context.set(Parser.class, new AutoDetectParser());
             //make sure everything works with regular xml _and_ with recursive
             XMLResult xmlResult = getXML("testPDFEmbeddingAndEmbedded.docx", context);
-            assertContains("pdf_haystack", xmlResult.xml);
+            //can get dehaystack depending on version of tesseract and/or preprocessing
+            if (xmlResult.xml.contains("pdf_haystack") || xmlResult.xml.contains("dehaystack")) {
+                //great
+            } else {
+                fail("couldn't find pdf_haystack or its variants");
+            }
             assertContains("Haystack", xmlResult.xml);
             assertContains("Needle", xmlResult.xml);
             if (! strategy.equals(PDFParserConfig.OCR_STRATEGY.NO_OCR)) {
