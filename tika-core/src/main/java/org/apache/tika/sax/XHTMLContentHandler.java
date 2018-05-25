@@ -138,7 +138,12 @@ public class XHTMLContentHandler extends SafeContentHandler {
             
             // Call directly, so we don't go through our startElement(), which will
             // ignore these elements.
-            super.startElement(XHTML, "html", "html", EMPTY_ATTRIBUTES);
+            AttributesImpl htmlAttrs = new AttributesImpl();
+            String lang = metadata.get(Metadata.CONTENT_LANGUAGE);
+            if (lang != null) {
+                htmlAttrs.addAttribute("", "lang", "lang", "CDATA", lang);
+            }
+            super.startElement(XHTML, "html", "html", htmlAttrs);
             newline();
             super.startElement(XHTML, "head", "head", EMPTY_ATTRIBUTES);
             newline();
