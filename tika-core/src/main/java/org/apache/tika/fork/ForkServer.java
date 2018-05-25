@@ -31,6 +31,8 @@ import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParserFactory;
+import org.apache.tika.parser.ParserFactoryFactory;
 
 class ForkServer implements Runnable, Checksum {
 
@@ -117,11 +119,26 @@ class ForkServer implements Runnable, Checksum {
             output.writeByte(READY);
             output.flush();
 
-            ClassLoader loader = (ClassLoader) readObject(
+            final ClassLoader loader;
+            Object parser = null;
+            Object firstObject = readObject(
                     ForkServer.class.getClassLoader());
-            Thread.currentThread().setContextClassLoader(loader);
 
-            Object object = readObject(loader);
+            //legacy behavior
+            if (firstObject instanceof ClassLoader) {
+                loader = (ClassLoader) firstObject;
+                Thread.currentThread().setContextClassLoader(loader);
+                //parser from parent process
+                parser = readObject(loader);
+            } else if (firstObject instanceof ParserFactoryFactory) {
+                //the user has submitted a parser factory
+                loader = ForkServer.class.getClassLoader();
+                ParserFactory parserFactory = ((ParserFactoryFactory) firstObject).build();
+                parser = parserFactory.build();
+            } else {
+                throw new IllegalStateException("Was expecting ClassLoader or ParserFactoryFactory, not"+firstObject.getClass());
+            }
+
             while (true) {
                 int request = input.read();
                 if (request == -1) {
@@ -129,7 +146,7 @@ class ForkServer implements Runnable, Checksum {
                 } else if (request == PING) {
                     output.writeByte(PING);
                 } else if (request == CALL) {
-                    call(loader, object);
+                    call(loader, parser);
                 } else {
                     throw new IllegalStateException("Unexpected request");
                 }
@@ -187,7 +204,6 @@ class ForkServer implements Runnable, Checksum {
      * is expected to be preceded by a size integer, that is used for reading
      * the entire serialization into a memory before deserializing it.
      *
-     * @param input input stream from which the serialized object is read
      * @param loader class loader to be used for loading referenced classes
      * @throws IOException if the object could not be deserialized
      * @throws ClassNotFoundException if a referenced class is not found

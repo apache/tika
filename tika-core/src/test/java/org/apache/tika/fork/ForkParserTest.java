@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.concurrent.Semaphore;
 
 import org.apache.tika.exception.TikaException;
@@ -234,5 +235,12 @@ public class ForkParserTest {
         } finally {
             parser.close();
         }
+    }
+
+    @Test
+    public void testForkParserWithTikaBinPath() throws Exception {
+        ClassLoader loader = this.getClass().getClassLoader();
+
+        System.out.println("FORKPARSERTEST: " + Paths.get(".").toAbsolutePath() + " : "+System.getProperty("java.classpath"));
     }
 }

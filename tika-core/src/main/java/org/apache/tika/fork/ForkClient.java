@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -33,6 +34,8 @@ import java.util.zip.ZipEntry;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.parser.ParserFactoryFactory;
+import org.apache.tika.utils.ProcessUtils;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
@@ -50,6 +53,44 @@ class ForkClient {
     private final DataInputStream input;
 
     private final InputStream error;
+
+    public ForkClient(Path tikaDir, ParserFactoryFactory parserFactoryFactory, List<String> java, long serverPulseMillis) throws IOException, TikaException {
+        jar = null;
+        loader = null;
+        boolean ok = false;
+        ProcessBuilder builder = new ProcessBuilder();
+        List<String> command = new ArrayList<>();
+        command.addAll(java);
+        command.add("-cp");
+        String dirString = tikaDir.toAbsolutePath().toString();
+        if (!dirString.endsWith("/")) {
+            dirString += "/*";
+        } else {
+            dirString += "/";
+        }
+        dirString = ProcessUtils.escapeCommandLine(dirString);
+        command.add(dirString);
+        command.add("org.apache.tika.fork.ForkServer");
+        command.add(Long.toString(serverPulseMillis));
+        builder.command(command);
+        try {
+            this.process = builder.start();
+
+            this.output = new DataOutputStream(process.getOutputStream());
+            this.input = new DataInputStream(process.getInputStream());
+            this.error = process.getErrorStream();
+
+            waitForStartBeacon();
+
+            sendObject(parserFactoryFactory, resources);
+
+            ok = true;
+        } finally {
+            if (!ok) {
+                close();
+            }
+        }
+    }
 
     public ForkClient(ClassLoader loader, Object object, List<String> java, long serverPulseMillis)
             throws IOException, TikaException {

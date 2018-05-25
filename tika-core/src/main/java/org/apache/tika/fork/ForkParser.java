@@ -18,6 +18,7 @@ package org.apache.tika.fork;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +34,8 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserFactory;
+import org.apache.tika.parser.ParserFactoryFactory;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -42,9 +45,14 @@ public class ForkParser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = -4962742892274663950L;
 
+    //these are used by the legacy usage
     private final ClassLoader loader;
-
     private final Parser parser;
+
+    //these are used when the server builds a parser via a directory
+    //of jars, not via legacy bootstrap etc.
+    private final Path tikaBin;
+    private final ParserFactoryFactory parserFactoryFactory;
 
     /** Java command line */
     private List<String> java = Arrays.asList("java", "-Xmx32m");
@@ -58,6 +66,13 @@ public class ForkParser extends AbstractParser {
 
     private long serverPulseMillis = 5000;
 
+    public ForkParser(Path tikaBin, ParserFactoryFactory factoryFactory) {
+        loader = null;
+        parser = null;
+        this.tikaBin = tikaBin;
+        this.parserFactoryFactory = factoryFactory;
+    }
+
     /**
      * @param loader The ClassLoader to use 
      * @param parser the parser to delegate to. This one cannot be another ForkParser
@@ -66,6 +81,8 @@ public class ForkParser extends AbstractParser {
         if (parser instanceof ForkParser) {
             throw new IllegalArgumentException("The underlying parser of a ForkParser should not be a ForkParser, but a specific implementation.");
         }
+        this.tikaBin = null;
+        this.parserFactoryFactory = null;
         this.loader = loader;
         this.parser = parser;
     }
@@ -214,7 +231,7 @@ public class ForkParser extends AbstractParser {
 
             // Create a new process if there's room in the pool
             if (client == null && currentlyInUse < poolSize) {
-                client = new ForkClient(loader, parser, java, serverPulseMillis);
+                client = newClient();
             }
 
             // Ping the process, and get rid of it if it's inactive
@@ -235,6 +252,18 @@ public class ForkParser extends AbstractParser {
                 }
             }
         }
+    }
+
+    private ForkClient newClient() throws IOException, TikaException {
+        if (loader == null && parser == null && tikaBin != null && parserFactoryFactory != null) {
+            return new ForkClient(tikaBin, parserFactoryFactory, java, serverPulseMillis);
+        } else if (loader != null && parser != null && tikaBin == null && parserFactoryFactory == null) {
+           return new ForkClient(loader, parser, java, serverPulseMillis);
+        } else {
+            throw new IllegalStateException("Either a) loader and parser must be not null " +
+                    "or b) tikaBin and parserFactoryFactory must not be null");
+        }
+
     }
 
     private synchronized void releaseClient(ForkClient client, boolean alive) {
