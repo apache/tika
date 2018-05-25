@@ -236,11 +236,4 @@ public class ForkParserTest {
             parser.close();
         }
     }
-
-    @Test
-    public void testForkParserWithTikaBinPath() throws Exception {
-        ClassLoader loader = this.getClass().getClassLoader();
-
-        System.out.println("FORKPARSERTEST: " + Paths.get(".").toAbsolutePath() + " : "+System.getProperty("java.classpath"));
-    }
 }
