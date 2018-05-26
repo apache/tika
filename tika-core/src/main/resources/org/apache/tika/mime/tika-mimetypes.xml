@@ -1561,9 +1561,69 @@
   <mime-type type="application/vnd.llamagraphics.life-balance.exchange+xml">
     <glob pattern="*.lbe"/>
   </mime-type>
+  
   <mime-type type="application/vnd.lotus-1-2-3">
+    <alias type="application/x-123"/>
+    <_comment>Lotus 1-2-3</_comment>
+    <!-- <glob pattern="*.wks"/> - conflicts with application/vnd.ms-works -->
+    <glob pattern="*.wk1"/>
+    <glob pattern="*.wk2"/>
+    <glob pattern="*.wk3"/>
+    <glob pattern="*.wk4"/>
     <glob pattern="*.123"/>
   </mime-type>
+  
+  <mime-type type="application/vnd.lotus-1-2-3;version=1">
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <_comment>Lotus 1-2-3, version 1</_comment>
+    <magic priority="50">
+      <match value="0x000002000404" type="string" offset="0">
+      <!-- <glob pattern="*.wks"/> - conflicts with application/vnd.ms-works -->
+      </match>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/vnd.lotus-1-2-3;version=2">
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <_comment>Lotus 1-2-3, version 2</_comment>
+    <magic priority="50">
+      <match value="0x00000200060406000800" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wk1"/>
+    <glob pattern="*.wk2"/>
+  </mime-type>
+   
+  <mime-type type="application/vnd.lotus-1-2-3;version=3">
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <_comment>Lotus 1-2-3, version 3</_comment>
+    <magic priority="50">
+      <match value="0x00001A0000100400" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wk3"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.lotus-1-2-3;version=4">
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <_comment>Lotus 1-2-3, version 4-5</_comment>
+    <magic priority="50">
+      <match value="0x00001A0002100400" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wk4"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.lotus-1-2-3;version=97+9.x">
+    <sub-class-of type="application/vnd.lotus-1-2-3"/>
+    <_comment>Lotus 1-2-3, version 97/9.x</_comment>
+    <magic priority="50">
+      <match value="0x00001A0003100400" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.123"/>
+  </mime-type>
+
   <mime-type type="application/vnd.lotus-approach">
     <glob pattern="*.apr"/>
   </mime-type>
@@ -2728,6 +2788,14 @@
 
   </mime-type>
   <!-- TODO: figure out how to identify earlier versions -->
+  <mime-type type="application/vnd.wordperfect;version=4.2">
+    <sub-class-of type="application/vnd.wordperfect"/>
+    <magic priority="50">
+      <match value="0xCB0A01" type="string" offset="0">
+        <match value="0xCB" type="string" offset="5"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/vnd.wordperfect;version=5.0">
     <sub-class-of type="application/vnd.wordperfect"/>
     <magic priority="50">
@@ -2861,13 +2929,6 @@
      <glob pattern="*.icb"/>
      <glob pattern="*.vda"/>
      <!-- <glob pattern="*.vst"/> --> <!-- conflicting with application/vnd.visio-->
-  </mime-type>
-
-  <mime-type type="application/x-123">
-    <magic priority="50">
-      <match value="0x00001a00" type="big32" offset="0" />
-      <match value="0x00000200" type="big32" offset="0" />
-    </magic>
   </mime-type>
 
   <mime-type type="application/x-abiword">
@@ -3971,11 +4032,64 @@
     </_comment>
     <!-- qp2 and wb3 are currently detected by POIFSContainerDetector
         TODO: add detection for wb2 and wb1 -->
+    <glob pattern="*.wq1"/>
+    <glob pattern="*.wq2"/>
+    <glob pattern="*.wkq"/>
     <glob pattern="*.qpw"/>
     <glob pattern="*.wb1"/>
     <glob pattern="*.wb2"/>
     <glob pattern="*.wb3"/>
   </mime-type>
+
+  <mime-type type="application/x-quattro-pro;version=1-4">
+    <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for DOS, version 1-4</_comment>
+    <magic priority="50">
+      <match value="0x000002002051" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wq1"/>
+    <glob pattern="*.wkq"/>
+  </mime-type>
+
+  <mime-type type="application/x-quattro-pro;version=5">
+    <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for DOS, version 5</_comment>
+    <magic priority="50">
+      <match value="0x000002002151" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wq2"/>
+    <glob pattern="*.wkq"/>
+  </mime-type>
+  
+  <!-- First Quattro Pro for Windows had major version number 1, which
+  was followed by 5. This is confusing, perhaps adding "win" qualifier to version
+  field could clear this up (but it's quite ugly as well)   -->
+  
+  <mime-type type="application/x-quattro-pro;version=1+5">
+    <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for Windows, version 1, 5</_comment>
+    <magic priority="50">
+      <match value="0x000002000110" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wb1"/>
+  </mime-type>
+
+  <mime-type type="application/x-quattro-pro;version=6">
+    <sub-class-of type="application/x-quattro-pro"/>
+    <_comment>Quattro Pro for Windows, version 6</_comment>
+    <magic priority="50">
+      <match value="0x000002000210" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.wb2"/>
+  </mime-type>
+  
+  <!-- Quattro Pro for Windows 7-8 (wb3) and and 9 (qpw) files are
+       currently detected by POIFSContainerDetector
+  -->
 
   <mime-type type="application/xquery">
     <_comment>XQuery source code</_comment>

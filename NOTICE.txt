@@ -15,3 +15,7 @@ Tika-parsers component uses CDDL/LGPL dual-licensed dependency: jhighlight (http
 OpenCSV: Copyright 2005 Bytecode Pty Ltd. Licensed under the Apache License, Version 2.0
 
 IPTC Photo Metadata descriptions Copyright 2010 International Press Telecommunications Council.
+
+Tika-mimetypes.xml includes mimetype definitions that were adapted from the PRONOM Technical Registry
+by The National Archives (http://www.nationalarchives.gov.uk/PRONOM/Default.aspx). PRONOM is published
+under the Open Government License 3.0 (http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
