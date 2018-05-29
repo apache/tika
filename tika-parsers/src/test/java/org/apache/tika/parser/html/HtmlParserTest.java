@@ -874,6 +874,25 @@ public class HtmlParserTest extends TikaTest {
     }
 
     /**
+     * Test case for Tika-2100
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-2100">TIKA-2100</a>
+     */
+    @Test
+    public void testHtmlLanguage() throws Exception {
+        final String html = "<html lang=\"fr\"></html>";
+
+        StringWriter sw = new StringWriter();
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(html.getBytes(UTF_8)),
+                makeHtmlTransformer(sw), metadata, new ParseContext());
+
+        assertEquals("fr", metadata.get(Metadata.CONTENT_LANGUAGE));
+        assertTrue("Missing HTML lang attribute",
+                Pattern.matches("(?s)<html[^>]* lang=\"fr\".*", sw.toString()));
+    }
+
+    /**
      * Test case for TIKA-961
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-961">TIKA-961</a>
