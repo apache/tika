@@ -1,5 +1,3 @@
-package org.apache.tika.parser;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,7 +15,12 @@ package org.apache.tika.parser;
  * limitations under the License.
  */
 
+package org.apache.tika.fork;
+
+
+
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParserFactory;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
