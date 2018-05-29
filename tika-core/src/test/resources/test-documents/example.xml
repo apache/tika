@@ -28,7 +28,7 @@
     <metadata action="add" name="dc:creator">Nikolai Lobachevsky</metadata>
     <!-- element is the name of the sax event to write, p=paragraph
         if the element is not specified, the default is <p> -->
-    <write element="p">hello world!</write>
+    <write element="p">hello world! the quick brown fox jumped over the lazy dog</write>
     <!-- write something to System.out -->
     <print_out>writing to System.out</print_out>
     <!-- write something to System.err -->

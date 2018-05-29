@@ -19,6 +19,7 @@ package org.apache.tika.parser;
 
 
 import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Map;
@@ -31,6 +32,6 @@ public abstract class ParserFactory {
         this.args = args;
     }
 
-    public abstract Parser build() throws IOException, TikaException;
+    public abstract Parser build() throws IOException, SAXException, TikaException;
 
 }

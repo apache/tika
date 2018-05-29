@@ -18,50 +18,36 @@ package org.apache.tika.fork;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.AutoDetectParserFactory;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
-import org.apache.tika.parser.ParserFactoryFactory;
-import org.apache.tika.parser.mock.MockParser;
-import org.apache.tika.parser.mock.MockParserFactory;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ToHTMLContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Semaphore;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -76,6 +62,7 @@ public class ForkParserTikaBinTest extends TikaTest {
     public static void bootstrapJar() throws Exception {
         JAR_DIR = Files.createTempDirectory("tika-fork-tikabin-");
         JAR_FILE = JAR_DIR.resolve(JAR_FILE_NAME);
+
         try (JarOutputStream jarOs = new JarOutputStream(Files.newOutputStream(JAR_FILE))) {
             ClassLoader loader = ForkServer.class.getClassLoader();
             for (Class<?> klass : getClasses("org.apache.tika")) {
@@ -85,35 +72,121 @@ public class ForkParserTikaBinTest extends TikaTest {
                     IOUtils.copy(input, jarOs);
                 }
             }
+            try (InputStream input = ForkParserTikaBinTest.class.getResourceAsStream("/org/apache/tika/config/TIKA-2653-vowel-parser-ae.xml")) {
+                jarOs.putNextEntry(new JarEntry("org/apache/tika/parser/TIKA-2653-vowel-parser-ae.xml"));
+                IOUtils.copy(input, jarOs);
+            }
+            try (InputStream input = ForkParserTikaBinTest.class.getResourceAsStream("/org/apache/tika/mime/tika-mimetypes.xml")) {
+                jarOs.putNextEntry(new JarEntry("org/apache/tika/mime/tika-mimetypes.xml"));
+                IOUtils.copy(input, jarOs);
+            }
+            try (InputStream input = ForkParserTikaBinTest.class.getResourceAsStream("/org/apache/tika/mime/custom-mimetypes.xml")) {
+                jarOs.putNextEntry(new JarEntry("org/apache/tika/mime/custom-mimetypes.xml"));
+                IOUtils.copy(input, jarOs);
+            }
+
+            jarOs.putNextEntry(new JarEntry("META-INF/services/org.apache.tika.parser.Parser"));
+            jarOs.write("org.apache.tika.parser.mock.VowelParser\n".getBytes(StandardCharsets.UTF_8));
+
+        }
+
+        Path tikaConfigVowelParser = JAR_DIR.resolve("TIKA_2653-iou.xml");
+        try (InputStream is = ForkServer.class.getResourceAsStream("/org/apache/tika/config/TIKA-2653-vowel-parser-iou.xml");
+             OutputStream os = Files.newOutputStream(tikaConfigVowelParser)) {
+            IOUtils.copy(is, os);
         }
     }
 
 
     @AfterClass
     public static void tearDown() throws Exception {
+
+        Files.delete(JAR_DIR.resolve("TIKA_2653-iou.xml"));
         Files.delete(JAR_FILE);
         Files.delete(JAR_DIR);
     }
 
     @Test
-    public void testHelloWorld() throws Exception {
-        ParserFactoryFactory pff = new ParserFactoryFactory("org.apache.tika.parser.mock.MockParserFactory",
+    public void testExplicitParserFactory() throws Exception {
+        XMLResult xmlResult = getXML(new ParserFactoryFactory("org.apache.tika.parser.mock.MockParserFactory",
+                Collections.EMPTY_MAP));
+        assertContains("hello world!", xmlResult.xml);
+        assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+    }
+
+    @Test
+    public void testVowelParserAsDefault() throws Exception {
+        ParserFactoryFactory pff = new ParserFactoryFactory(
+                "org.apache.tika.parser.AutoDetectParserFactory",
                 Collections.EMPTY_MAP);
+        XMLResult xmlResult = getXML(pff);
+        assertContains("eooeuiooueoeeao", xmlResult.xml);
+        assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+    }
+
+    @Test
+    public void testVowelParserInClassPath() throws Exception {
+        Map<String, String> args = new HashMap<>();
+        args.put(AutoDetectParserFactory.TIKA_CONFIG_PATH, "TIKA-2653-vowel-parser-ae.xml");
+        ParserFactoryFactory pff = new ParserFactoryFactory(
+                "org.apache.tika.parser.AutoDetectParserFactory",
+                args);
+        XMLResult xmlResult = getXML(pff);
+        assertContains("eeeeea", xmlResult.xml);
+        assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+    }
+
+    @Test
+    public void testVowelParserFromDirectory() throws Exception {
+        Map<String, String> args = new HashMap<>();
+        args.put(AutoDetectParserFactory.TIKA_CONFIG_PATH, JAR_DIR.resolve("TIKA_2653-iou.xml").toAbsolutePath().toString());
+        ParserFactoryFactory pff = new ParserFactoryFactory(
+                "org.apache.tika.parser.AutoDetectParserFactory",
+                args);
+        XMLResult xmlResult = getXML(pff);
+        assertContains("oouioouoo", xmlResult.xml);
+        assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+    }
+
+    @Test
+    public void testPFFWithClassLoaderFromParentProcess() throws Exception {
+        //The UpperCasingContentHandler is not sent to the bootstrap test jar file in @BeforeClass.
+        //this tests that the content handler was loaded from the parent process.
+
+        ParserFactoryFactory pff = new ParserFactoryFactory(
+                "org.apache.tika.parser.AutoDetectParserFactory",
+                Collections.EMPTY_MAP);
+        XMLResult xmlResult = getXML(pff, this.getClass().getClassLoader(), new UpperCasingContentHandler());
+        assertContains("EOOEUIOOUEOEEAO", xmlResult.xml);
+        assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+
+    }
+
+    private XMLResult getXML(ParserFactoryFactory pff) throws TikaException, SAXException, IOException {
+        return getXML(pff, null, null);
+    }
+
+    private XMLResult getXML(ParserFactoryFactory pff, ClassLoader classloader, ContentHandler contentHandler) throws TikaException, SAXException, IOException {
+
         List<String> java = new ArrayList<>();
         java.add("java");
-        ForkParser parser = new ForkParser(JAR_DIR, pff);
+        ForkParser parser = null;
+        if (classloader != null) {
+            parser = new ForkParser(JAR_DIR, pff, classloader);
+        } else {
+            parser = new ForkParser(JAR_DIR, pff);
+        }
         parser.setJavaCommand(java);
         parser.setServerPulseMillis(10000);
 
-        ContentHandler contentHandler = new ToHTMLContentHandler();
+        ContentHandler handler = (contentHandler == null) ? new ToXMLContentHandler() : contentHandler;
         Metadata m = new Metadata();
         try (InputStream is = getClass().getResourceAsStream("/test-documents/example.xml")) {
-            parser.parse(is,contentHandler, m, new ParseContext());
+            parser.parse(is, handler, m, new ParseContext());
         } finally {
             parser.close();
         }
-        assertContains("hello world!", contentHandler.toString());
-        assertEquals("Nikolai Lobachevsky", m.get(TikaCoreProperties.CREATOR));
+        return new XMLResult(handler.toString(), m);
     }
 
     private static List<Class> getClasses(String packageName)
@@ -145,7 +218,10 @@ public class ForkParserTikaBinTest extends TikaTest {
                 assert !file.getName().contains(".");
                 classes.addAll(findClasses(file, packageName + "." + file.getName()));
             } else if (file.getName().endsWith(".class")) {
-                classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+                if (! file.getName().contains("TypeDetectionBenchmark") &&
+                        !file.getName().contains("UpperCasingContentHandler")) {
+                    classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+                }
             }
         }
         return classes;

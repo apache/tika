@@ -34,8 +34,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
-import org.apache.tika.parser.ParserFactoryFactory;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -66,11 +64,34 @@ public class ForkParser extends AbstractParser {
 
     private long serverPulseMillis = 5000;
 
+    /**
+     * If you have a directory with, say, tike-app.jar and you want the child process/server to build a parser
+     * and run it from that -- so that you can keep all of those dependencies out of your client code, use
+     * this initializer.
+     *
+     * @param tikaBin directory containing the tika-app.jar or similar -- full jar including tika-core and all
+     *                desired parsers and dependencies
+     * @param factoryFactory
+     */
     public ForkParser(Path tikaBin, ParserFactoryFactory factoryFactory) {
         loader = null;
         parser = null;
         this.tikaBin = tikaBin;
         this.parserFactoryFactory = factoryFactory;
+    }
+
+    /**
+     * <b>EXPERT</b>
+     * @param tikaBin directory containing the tika-app.jar or similar -- full jar including tika-core and all
+     *                desired parsers and dependencies
+     * @param parserFactoryFactory -- the factory to use to generate the parser factory in the child process/server
+     * @param classLoader to use for all classes besides the parser in the child process/server
+     */
+    public ForkParser(Path tikaBin, ParserFactoryFactory parserFactoryFactory, ClassLoader classLoader) {
+        parser = null;
+        loader = classLoader;
+        this.tikaBin = tikaBin;
+        this.parserFactoryFactory = parserFactoryFactory;
     }
 
     /**
@@ -142,7 +163,8 @@ public class ForkParser extends AbstractParser {
 
     /**
      * Sets the command used to start the forked server process.
-     * The arguments "-jar" and "/path/to/bootstrap.jar" are
+     * The arguments "-jar" and "/path/to/bootstrap.jar"
+     * or "-cp" and "/path/to/tika_bin" are
      * appended to the given command when starting the process.
      * The default setting is {"java", "-Xmx32m"}.
      * <p/>
@@ -255,13 +277,16 @@ public class ForkParser extends AbstractParser {
     }
 
     private ForkClient newClient() throws IOException, TikaException {
+
         if (loader == null && parser == null && tikaBin != null && parserFactoryFactory != null) {
             return new ForkClient(tikaBin, parserFactoryFactory, java, serverPulseMillis);
         } else if (loader != null && parser != null && tikaBin == null && parserFactoryFactory == null) {
            return new ForkClient(loader, parser, java, serverPulseMillis);
+        } else if (loader != null && parser == null && tikaBin != null && parserFactoryFactory != null) {
+            return new ForkClient(tikaBin, parserFactoryFactory, loader, java, serverPulseMillis);
         } else {
-            throw new IllegalStateException("Either a) loader and parser must be not null " +
-                    "or b) tikaBin and parserFactoryFactory must not be null");
+            //TODO: make this more useful
+            throw new IllegalStateException("Unexpected combination of state items");
         }
 
     }

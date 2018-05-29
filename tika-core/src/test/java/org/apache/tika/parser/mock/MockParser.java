@@ -256,7 +256,7 @@ public class MockParser extends AbstractParser {
         }
     }
 
-    private void write(Node action, XHTMLContentHandler xhtml) throws SAXException {
+    protected void write(Node action, XHTMLContentHandler xhtml) throws SAXException {
         NamedNodeMap attrs = action.getAttributes();
         Node eNode = attrs.getNamedItem("element");
         String elementType = "p";
