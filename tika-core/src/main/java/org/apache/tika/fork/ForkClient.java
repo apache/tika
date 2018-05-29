@@ -200,7 +200,8 @@ class ForkClient {
             } else if (type == -1) {
                 throw new IOException("EOF while waiting for start beacon");
             } else {
-                throw new IOException("Unexpected byte while waiting for start beacon: "+type);
+                //can't do this because of ForkParserIntegrationTest#testAttachingADebuggerOnTheForkedParserShouldWork
+//                throw new IOException("Unexpected byte while waiting for start beacon: "+type);
             }
         }
     }
