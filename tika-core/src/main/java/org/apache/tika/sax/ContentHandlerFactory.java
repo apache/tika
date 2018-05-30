@@ -20,13 +20,14 @@ package org.apache.tika.sax;
 import org.xml.sax.ContentHandler;
 
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 /**
  * Interface to allow easier injection of code for getting a new ContentHandler
  */
-public interface ContentHandlerFactory {
+public interface ContentHandlerFactory extends Serializable {
     public ContentHandler getNewContentHandler();
     /**
      * @deprecated use {@link #getNewContentHandler(OutputStream, Charset)}
