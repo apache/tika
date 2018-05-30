@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
@@ -65,6 +66,7 @@ class ForkClient {
             command.add(jar.getPath());
             command.add(Long.toString(serverPulseMillis));
             builder.command(command);
+            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             this.process = builder.start();
 
             this.output = new DataOutputStream(process.getOutputStream());
@@ -140,6 +142,9 @@ class ForkClient {
         if (object instanceof InputStream) {
             resources.add(new InputStreamResource((InputStream) object));
             object = new InputStreamProxy(n);
+        } else if (object instanceof AbstractRecursiveParserWrapperHandler) {
+            resources.add(new RecursiveMetadataContentHandlerResource((AbstractRecursiveParserWrapperHandler) object));
+            object = new RecursiveMetadataContentHandlerProxy(n, ((AbstractRecursiveParserWrapperHandler)object).getContentHandlerFactory());
         } else if (object instanceof ContentHandler) {
             resources.add(new ContentHandlerResource((ContentHandler) object));
             object = new ContentHandlerProxy(n);

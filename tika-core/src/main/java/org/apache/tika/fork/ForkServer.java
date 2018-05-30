@@ -153,7 +153,6 @@ class ForkServer implements Runnable, Checksum {
             output.write(DONE);
         } catch (InvocationTargetException e) {
             output.write(ERROR);
-            
             // Try to send the underlying Exception itself
             Throwable toSend = e.getCause();
             try {

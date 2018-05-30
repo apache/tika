@@ -16,6 +16,7 @@
  */
 package org.apache.tika.fork;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -26,13 +27,19 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.mock.MockParser;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -218,4 +225,90 @@ public class ForkParserTest {
         }
     }
 
+
+    @Test
+    public void testRecursiveParserWrapper() throws Exception {
+        Parser parser = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
+        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        try (InputStream is = getClass().getResourceAsStream("basic_embedded.xml")) {
+            fork.parse(is, handler, metadata, context);
+        } finally {
+            fork.close();
+        }
+        List<Metadata> metadataList = handler.getMetadataList();
+        Metadata m0 = metadataList.get(0);
+        assertEquals("Nikolai Lobachevsky", m0.get(Metadata.CREATOR));
+        assertContains("main_content", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("embed1.xml", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+
+        Metadata m1 = metadataList.get(1);
+        assertEquals("embeddedAuthor", m1.get(Metadata.CREATOR));
+        assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+    }
+
+    @Test
+    public void testRPWWithEmbeddedNPE() throws Exception {
+        Parser parser = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
+        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        try (InputStream is = getClass().getResourceAsStream("embedded_with_npe.xml")) {
+            fork.parse(is, handler, metadata, context);
+        } finally {
+            fork.close();
+        }
+        List<Metadata> metadataList = handler.getMetadataList();
+        Metadata m0 = metadataList.get(0);
+        assertEquals("Nikolai Lobachevsky", m0.get(Metadata.CREATOR));
+        assertContains("main_content", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("embed1.xml", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+
+        Metadata m1 = metadataList.get(1);
+        assertEquals("embeddedAuthor", m1.get(Metadata.CREATOR));
+        assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+        assertContains("another null pointer exception", m1.get(RecursiveParserWrapperHandler.EMBEDDED_EXCEPTION));
+    }
+
+    @Test
+    public void testRPWWithMainDocNPE() throws Exception {
+        Parser parser = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
+        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        try (InputStream is = getClass().getResourceAsStream("embedded_then_npe.xml")) {
+            fork.parse(is, handler, metadata, context);
+            fail();
+        } catch (TikaException e) {
+            assertTrue(e.getCause() instanceof NullPointerException);
+            assertContains("another", e.getCause().getMessage());
+        } finally {
+            fork.close();
+        }
+        List<Metadata> metadataList = handler.getMetadataList();
+        Metadata m0 = metadataList.get(0);
+        assertEquals("Nikolai Lobachevsky", m0.get(Metadata.CREATOR));
+        assertContains("main_content", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("embed1.xml", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+
+        Metadata m1 = metadataList.get(1);
+        assertEquals("embeddedAuthor", m1.get(Metadata.CREATOR));
+        assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+    }
 }
