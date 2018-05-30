@@ -740,7 +740,7 @@ public class HtmlParserTest extends TikaTest {
         String content = sw.toString();
 
         // Should have <html>, <head>, <title>, <body> elements
-        assertTrue(Pattern.matches("(?s).*<html xmlns=\"http://www.w3.org/1999/xhtml\">.*</html>.*$", content));
+        assertTrue(Pattern.matches("(?s).*<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\">.*</html>.*$", content));
         assertTrue(Pattern.matches("(?s).*<head>.*</head>.*$", content));
         assertTrue(Pattern.matches("(?s).*<title>Title</title>.*$", content));
         assertTrue(Pattern.matches("(?s).*<body>.*</body>.*$", content));
