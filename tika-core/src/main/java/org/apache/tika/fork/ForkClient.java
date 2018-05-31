@@ -35,6 +35,8 @@ import java.util.zip.ZipEntry;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
@@ -167,8 +169,8 @@ class ForkClient {
             command.add("-jar");
             command.add(jar.getPath());
             command.add(Long.toString(serverPulseMillis));
-            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             builder.command(command);
+            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             this.process = builder.start();
 
             this.output = new DataOutputStream(process.getOutputStream());
@@ -249,7 +251,11 @@ class ForkClient {
         if (object instanceof InputStream) {
             resources.add(new InputStreamResource((InputStream) object));
             object = new InputStreamProxy(n);
-        } else if (object instanceof ContentHandler) {
+        } else if (object instanceof RecursiveParserWrapperHandler) {
+            resources.add(new RecursiveMetadataContentHandlerResource((RecursiveParserWrapperHandler) object));
+            object = new RecursiveMetadataContentHandlerProxy(n, ((RecursiveParserWrapperHandler)object).getContentHandlerFactory());
+        } else if (object instanceof ContentHandler
+                && ! (object instanceof AbstractRecursiveParserWrapperHandler)) {
             resources.add(new ContentHandlerResource((ContentHandler) object));
             object = new ContentHandlerProxy(n);
         } else if (object instanceof ClassLoader) {

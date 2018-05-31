@@ -740,7 +740,7 @@ public class HtmlParserTest extends TikaTest {
         String content = sw.toString();
 
         // Should have <html>, <head>, <title>, <body> elements
-        assertTrue(Pattern.matches("(?s).*<html xmlns=\"http://www.w3.org/1999/xhtml\">.*</html>.*$", content));
+        assertTrue(Pattern.matches("(?s).*<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\">.*</html>.*$", content));
         assertTrue(Pattern.matches("(?s).*<head>.*</head>.*$", content));
         assertTrue(Pattern.matches("(?s).*<title>Title</title>.*$", content));
         assertTrue(Pattern.matches("(?s).*<body>.*</body>.*$", content));
@@ -871,6 +871,25 @@ public class HtmlParserTest extends TikaTest {
         String result = handler.toString();
 
         assertTrue(Pattern.matches("\tone\n\n", result));
+    }
+
+    /**
+     * Test case for Tika-2100
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-2100">TIKA-2100</a>
+     */
+    @Test
+    public void testHtmlLanguage() throws Exception {
+        final String html = "<html lang=\"fr\"></html>";
+
+        StringWriter sw = new StringWriter();
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(html.getBytes(UTF_8)),
+                makeHtmlTransformer(sw), metadata, new ParseContext());
+
+        assertEquals("fr", metadata.get(Metadata.CONTENT_LANGUAGE));
+        assertTrue("Missing HTML lang attribute",
+                Pattern.matches("(?s)<html[^>]* lang=\"fr\".*", sw.toString()));
     }
 
     /**

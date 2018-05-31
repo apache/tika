@@ -34,6 +34,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -194,6 +195,45 @@ public class ForkParser extends AbstractParser {
         return parser.getSupportedTypes(context);
     }
 
+    /**
+     *
+     * This sends the objects to the server for parsing, and the server via
+     * the proxies acts on the handler as if it were updating it directly.
+     * <p>
+     * If using a RecursiveParserWrapper, there are two options:
+     * </p>
+     * <p>
+     *     <ol>
+     *         <li>Send in a class that extends {@link org.apache.tika.sax.RecursiveParserWrapperHandler},
+     *              and the server will proxy back the data as best it can[0].</li>
+     *         <li>Send in a class that extends {@link AbstractRecursiveParserWrapperHandler}
+     *              and the server will act on the class but not proxy back the data.  This
+     *              can be used, for example, if all you want to do is write to disc, extend
+     *              {@link AbstractRecursiveParserWrapperHandler} to write to disc when
+     *              {@link AbstractRecursiveParserWrapperHandler#endDocument(ContentHandler, Metadata)}
+     *              is called, and the server will take care of the writing via the handler.</li>
+     *     </ol>
+     * </p>
+     * <p>
+     *     <b>NOTE:</b>[0] &quot;the server will proxy back the data as best it can&quot;.  If the handler
+     *     implements Serializable and is actually serializable, the server will send it and the
+     *     {@link Metadata} back upon {@link org.apache.tika.sax.RecursiveParserWrapperHandler#endEmbeddedDocument(ContentHandler, Metadata)}
+     *     or {@link org.apache.tika.sax.RecursiveParserWrapperHandler#endEmbeddedDocument(ContentHandler, Metadata)}.
+     *     If the handler does not implement {@link java.io.Serializable} or if there is a
+     *     {@link java.io.NotSerializableException} thrown during serialization, the server will
+     *     call {@link ContentHandler#toString()} on the ContentHandler and set that value with the
+     *     {@link org.apache.tika.sax.RecursiveParserWrapperHandler#TIKA_CONTENT} key and then
+     *     serialize and proxy that data back.
+     * </p>
+     *
+     * @param stream the document stream (input)
+     * @param handler handler for the XHTML SAX events (output)
+     * @param metadata document metadata (input and output)
+     * @param context parse context
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     */
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
@@ -207,8 +247,10 @@ public class ForkParser extends AbstractParser {
         boolean alive = false;
         ForkClient client = acquireClient();
         try {
-            ContentHandler tee = new TeeContentHandler(
+            ContentHandler tee = (handler instanceof AbstractRecursiveParserWrapperHandler) ? handler :
+                    new TeeContentHandler(
                     handler, new MetadataContentHandler(metadata));
+
             t = client.call("parse", stream, tee, metadata, context);
             alive = true;
         } catch (TikaException te) {
