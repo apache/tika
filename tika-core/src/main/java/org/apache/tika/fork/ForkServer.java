@@ -34,9 +34,6 @@ import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParserFactory;
-import org.apache.tika.parser.ParserFactoryFactory;
 
 class ForkServer implements Runnable, Checksum {
 
