@@ -55,6 +55,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -241,7 +242,24 @@ public class ForkParserTest extends TikaTest {
         }
     }
 
-
+    @Test
+    @Ignore("fix this diff btwn master and 1_x")
+    public void testPackageCanBeAccessed() throws Exception {
+        ForkParser parser = new ForkParser(
+                ForkParserTest.class.getClassLoader(),
+                new ForkTestParser.ForkTestParserAccessingPackage());
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler output = new BodyContentHandler();
+            InputStream stream = new ByteArrayInputStream(new byte[0]);
+            ParseContext context = new ParseContext();
+            parser.parse(stream, output, metadata, context);
+            assertEquals("Hello, World!", output.toString().trim());
+            assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
+        } finally {
+            parser.close();
+        }
+    }
     @Test
     public void testRecursiveParserWrapper() throws Exception {
         Parser parser = new AutoDetectParser();

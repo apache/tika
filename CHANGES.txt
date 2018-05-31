@@ -1,5 +1,14 @@
 Release 1.19 ???
 
+
+   * Make the RecursiveParserWrapper work with the ForkParser (TIKA-2655).
+
+   * Allow the ForkParser to specify a directory containing tika-app.jar
+     for use by the ForkServer.  This allows users to keep most of the
+     parser dependencies out of their code; and it allows for an easy
+     addition of optional jars for Parser dependencies,
+     such as the xerial sqlite jar (TIKA-2653).
+
    * Use a pool for SAXParsers and DOMBuilders rather than creating
      a new parser/builder for every parse.
      For better performance, set XMLReaderUtils.setPoolSize() to the
