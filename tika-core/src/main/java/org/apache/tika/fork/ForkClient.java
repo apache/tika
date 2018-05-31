@@ -169,8 +169,8 @@ class ForkClient {
             command.add("-jar");
             command.add(jar.getPath());
             command.add(Long.toString(serverPulseMillis));
-            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             builder.command(command);
+            builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             this.process = builder.start();
 
             this.output = new DataOutputStream(process.getOutputStream());

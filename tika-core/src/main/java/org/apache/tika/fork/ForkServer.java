@@ -34,7 +34,6 @@ import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
 
-
 class ForkServer implements Runnable, Checksum {
 
     public static final byte ERROR = -1;

@@ -243,7 +243,6 @@ public class ForkParserTest extends TikaTest {
     }
 
     @Test
-    @Ignore("fix this diff btwn master and 1_x")
     public void testPackageCanBeAccessed() throws Exception {
         ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
