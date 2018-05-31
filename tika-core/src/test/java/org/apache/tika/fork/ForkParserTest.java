@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -243,12 +244,12 @@ public class ForkParserTest {
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);
-        assertEquals("Nikolai Lobachevsky", m0.get(Metadata.CREATOR));
+        assertEquals("Nikolai Lobachevsky", m0.get(DublinCore.CREATOR));
         assertContains("main_content", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertContains("embed1.xml", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
 
         Metadata m1 = metadataList.get(1);
-        assertEquals("embeddedAuthor", m1.get(Metadata.CREATOR));
+        assertEquals("embeddedAuthor", m1.get(DublinCore.CREATOR));
         assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
     }
@@ -270,12 +271,12 @@ public class ForkParserTest {
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);
-        assertEquals("Nikolai Lobachevsky", m0.get(Metadata.CREATOR));
+        assertEquals("Nikolai Lobachevsky", m0.get(DublinCore.CREATOR));
         assertContains("main_content", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertContains("embed1.xml", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
 
         Metadata m1 = metadataList.get(1);
-        assertEquals("embeddedAuthor", m1.get(Metadata.CREATOR));
+        assertEquals("embeddedAuthor", m1.get(DublinCore.CREATOR));
         assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
         assertContains("another null pointer exception", m1.get(RecursiveParserWrapperHandler.EMBEDDED_EXCEPTION));
@@ -302,12 +303,12 @@ public class ForkParserTest {
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);
-        assertEquals("Nikolai Lobachevsky", m0.get(Metadata.CREATOR));
+        assertEquals("Nikolai Lobachevsky", m0.get(DublinCore.CREATOR));
         assertContains("main_content", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertContains("embed1.xml", m0.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
 
         Metadata m1 = metadataList.get(1);
-        assertEquals("embeddedAuthor", m1.get(Metadata.CREATOR));
+        assertEquals("embeddedAuthor", m1.get(DublinCore.CREATOR));
         assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
     }
