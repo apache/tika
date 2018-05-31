@@ -18,6 +18,7 @@ package org.apache.tika.fork;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -27,13 +28,14 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Arrays;
 
 class RecursiveMetadataContentHandlerResource implements ForkResource {
 
     private static final ContentHandler DEFAULT_HANDLER = new DefaultHandler();
     private final AbstractRecursiveParserWrapperHandler handler;
 
-    public RecursiveMetadataContentHandlerResource(AbstractRecursiveParserWrapperHandler handler) {
+    public RecursiveMetadataContentHandlerResource(RecursiveParserWrapperHandler handler) {
         this.handler = handler;
     }
 
@@ -49,61 +51,37 @@ class RecursiveMetadataContentHandlerResource implements ForkResource {
 
     private void internalProcess(DataInputStream input)
             throws IOException, SAXException {
-        int type = input.readByte();
-        if (type == RecursiveMetadataContentHandlerProxy.EMBEDDED_DOCUMENT) {
-            Metadata metadata = null;
-            try {
-                metadata = (Metadata)ForkObjectInputStream.readObject(input, this.getClass().getClassLoader());
-            } catch (ClassNotFoundException e) {
-                throw new IOException(e);
-            }
-            byte isComplete = input.readByte();
-            if (isComplete != RecursiveMetadataContentHandlerProxy.COMPLETE) {
-                throw new IOException("Expected the 'complete' signal, but got: "+isComplete);
-            }
-            handler.endEmbeddedDocument(DEFAULT_HANDLER, metadata);
-        } else if (type == RecursiveMetadataContentHandlerProxy.MAIN_DOCUMENT) {
-            Metadata metadata = null;
-            try {
-                metadata = (Metadata)ForkObjectInputStream.readObject(input, this.getClass().getClassLoader());
-            } catch (ClassNotFoundException e) {
-                throw new IOException(e);
-            }
-            byte isComplete = input.readByte();
-            if (isComplete != RecursiveMetadataContentHandlerProxy.COMPLETE) {
-                throw new IOException("Expected the 'complete' signal, but got: "+isComplete);
-            }
-            handler.endDocument(DEFAULT_HANDLER, metadata);
+        byte embeddedOrMain = input.readByte();
+        byte handlerAndMetadataOrMetadataOnly = input.readByte();
+
+        ContentHandler localContentHandler = DEFAULT_HANDLER;
+        if (handlerAndMetadataOrMetadataOnly == RecursiveMetadataContentHandlerProxy.HANDLER_AND_METADATA) {
+            localContentHandler = (ContentHandler)readObject(input);
+        } else if (handlerAndMetadataOrMetadataOnly != RecursiveMetadataContentHandlerProxy.METADATA_ONLY) {
+            throw new IllegalArgumentException("Expected HANDLER_AND_METADATA or METADATA_ONLY, but got:"
+                    +handlerAndMetadataOrMetadataOnly);
+        }
+
+        Metadata metadata = (Metadata) readObject(input);
+        if (embeddedOrMain == RecursiveMetadataContentHandlerProxy.EMBEDDED_DOCUMENT) {
+            handler.endEmbeddedDocument(localContentHandler, metadata);
+        } else if (embeddedOrMain == RecursiveMetadataContentHandlerProxy.MAIN_DOCUMENT) {
+            handler.endDocument(localContentHandler, metadata);
         } else {
-            throw new IllegalArgumentException("I regret that I don't understand: "+type);
+            throw new IllegalArgumentException("Expected either 0x01 or 0x02, but got: "+embeddedOrMain);
+        }
+        byte isComplete = input.readByte();
+        if (isComplete != RecursiveMetadataContentHandlerProxy.COMPLETE) {
+            throw new IOException("Expected the 'complete' signal, but got: "+isComplete);
         }
     }
 
-    private Metadata deserializeMetadata(DataInputStream dataInputStream) throws IOException {
-        int length = dataInputStream.readInt();
-        byte[] data = new byte[length];
-        dataInputStream.readFully(data);
+    private Object readObject(DataInputStream inputStream) throws IOException {
+        try {
+            return ForkObjectInputStream.readObject(inputStream, this.getClass().getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
 
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-        Object obj = null;
-        try {
-            obj = ois.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new IOException(e);
-        }
-        return (Metadata) obj;
-    }
-    private ContentHandler deserializeContentHandler(DataInputStream dataInputStream) throws IOException {
-        int length = dataInputStream.readInt();
-        byte[] data = new byte[length];
-        dataInputStream.readFully(data);
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data));
-        Object obj = null;
-        try {
-            obj = ois.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new IOException(e);
-        }
-        return (ContentHandler)obj;
     }
 }

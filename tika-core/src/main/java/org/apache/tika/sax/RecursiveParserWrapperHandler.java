@@ -39,7 +39,7 @@ import java.util.List;
  */
 public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrapperHandler {
 
-    private final List<Metadata> metadataList = new LinkedList<>();
+    protected final List<Metadata> metadataList = new LinkedList<>();
 
     /**
      * Create a handler with no limit on the number of embedded resources
@@ -104,7 +104,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
         return metadataList;
     }
 
-    private void addContent(ContentHandler handler, Metadata metadata) {
+    void addContent(ContentHandler handler, Metadata metadata) {
 
         if (handler.getClass().equals(DefaultHandler.class)){
             //no-op: we can't rely on just testing for

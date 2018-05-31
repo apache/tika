@@ -216,6 +216,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
         context.set(Parser.class, decorator);
         ContentHandler localHandler = parserState.recursiveParserWrapperHandler.getNewContentHandler();
         long started = System.currentTimeMillis();
+        parserState.recursiveParserWrapperHandler.startDocument();
         try {
             getWrappedParser().parse(stream, localHandler, metadata, context);
         } catch (SAXException e) {
@@ -228,6 +229,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
             long elapsedMillis = System.currentTimeMillis() - started;
             metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);
+            parserState.recursiveParserWrapperHandler.endDocument();
+
         }
     }
 

@@ -34,6 +34,7 @@ import java.util.zip.ZipEntry;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
@@ -142,10 +143,11 @@ class ForkClient {
         if (object instanceof InputStream) {
             resources.add(new InputStreamResource((InputStream) object));
             object = new InputStreamProxy(n);
-        } else if (object instanceof AbstractRecursiveParserWrapperHandler) {
-            resources.add(new RecursiveMetadataContentHandlerResource((AbstractRecursiveParserWrapperHandler) object));
-            object = new RecursiveMetadataContentHandlerProxy(n, ((AbstractRecursiveParserWrapperHandler)object).getContentHandlerFactory());
-        } else if (object instanceof ContentHandler) {
+        } else if (object instanceof RecursiveParserWrapperHandler) {
+            resources.add(new RecursiveMetadataContentHandlerResource((RecursiveParserWrapperHandler) object));
+            object = new RecursiveMetadataContentHandlerProxy(n, ((RecursiveParserWrapperHandler)object).getContentHandlerFactory());
+        } else if (object instanceof ContentHandler
+                && ! (object instanceof AbstractRecursiveParserWrapperHandler)) {
             resources.add(new ContentHandlerResource((ContentHandler) object));
             object = new ContentHandlerProxy(n);
         } else if (object instanceof ClassLoader) {
