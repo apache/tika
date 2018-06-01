@@ -5678,6 +5678,9 @@
 
   <mime-type type="image/x-raw-olympus">
     <_comment>Olympus raw image</_comment>
+    <magic priority="50">
+      <match offset="0" type="string" value="\x49\x49\x52\x4F"/>
+    </magic>
     <glob pattern="*.orf"/>
   </mime-type>
 
