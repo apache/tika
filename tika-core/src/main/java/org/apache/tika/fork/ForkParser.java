@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -57,13 +58,19 @@ public class ForkParser extends AbstractParser {
     private List<String> java = Arrays.asList("java", "-Xmx32m");
 
     /** Process pool size */
+    @Field
     private int poolSize = 5;
 
     private int currentlyInUse = 0;
 
     private final Queue<ForkClient> pool = new LinkedList<>();
 
-    private long serverPulseMillis = 5000;
+    @Field
+    private long serverPulseMillis = 1000;
+    @Field
+    private long serverParseTimeoutMillis = 60000;
+    @Field
+    private long serverWaitTimeoutMillis = 60000;
 
     /**
      * If you have a directory with, say, tike-app.jar and you want the child process/server to build a parser
@@ -319,13 +326,13 @@ public class ForkParser extends AbstractParser {
     }
 
     private ForkClient newClient() throws IOException, TikaException {
-
+        TimeoutLimits timeoutLimits = new TimeoutLimits(serverPulseMillis, serverParseTimeoutMillis, serverWaitTimeoutMillis);
         if (loader == null && parser == null && tikaBin != null && parserFactoryFactory != null) {
-            return new ForkClient(tikaBin, parserFactoryFactory, java, serverPulseMillis);
+            return new ForkClient(tikaBin, parserFactoryFactory, java, timeoutLimits);
         } else if (loader != null && parser != null && tikaBin == null && parserFactoryFactory == null) {
-           return new ForkClient(loader, parser, java, serverPulseMillis);
+           return new ForkClient(loader, parser, java, timeoutLimits);
         } else if (loader != null && parser == null && tikaBin != null && parserFactoryFactory != null) {
-            return new ForkClient(tikaBin, parserFactoryFactory, loader, java, serverPulseMillis);
+            return new ForkClient(tikaBin, parserFactoryFactory, loader, java, timeoutLimits);
         } else {
             //TODO: make this more useful
             throw new IllegalStateException("Unexpected combination of state items");
@@ -345,14 +352,35 @@ public class ForkParser extends AbstractParser {
 
     /**
      * The amount of time in milliseconds that the server
-     * should wait for any input or output.  If it receives no
-     * input or output in this amount of time, it will shutdown.
+     * should wait before checking to see if the parse has timed out
+     * or if the wait has timed out
      * The default is 5 seconds.
      *
      * @param serverPulseMillis milliseconds to sleep before checking if there has been any activity
      */
     public void setServerPulseMillis(long serverPulseMillis) {
         this.serverPulseMillis = serverPulseMillis;
+    }
+
+    /**
+     * The maximum amount of time allowed for the server to try to parse a file.
+     * If more than this time elapses, the server shuts down, and the ForkParser
+     * throws an exception.
+     *
+     * @param serverParseTimeoutMillis
+     */
+    public void setServerParseTimeoutMillis(long serverParseTimeoutMillis) {
+        this.serverParseTimeoutMillis = serverParseTimeoutMillis;
+    }
+
+    /**
+     * The maximum amount of time allowed for the server to wait for a new request to parse
+     * a file.  The server will shutdown after this amount of time, and a new server will have
+     * to be started by a new client.
+     * @param serverWaitTimeoutMillis
+     */
+    public void setServerWaitTimeoutMillis(long serverWaitTimeoutMillis) {
+        this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
     }
 
 }

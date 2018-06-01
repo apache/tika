@@ -7,6 +7,9 @@ Release 2.0.0 - ???
 
 Release 1.19 ???
 
+   * Add absolute timeout to ForkParser rather than testing
+     for active (TIKA-2656).
+
    * Make the RecursiveParserWrapper work with the ForkParser (TIKA-2655).
 
    * Allow the ForkParser to specify a directory containing tika-app.jar
