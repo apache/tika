@@ -1,10 +1,3 @@
-Release 2.0.0 - ???
-   BREAKING CHANGES in 2.0.0
-
-   * Remove deprecated Metadata keys/properties (TIKA-1974).
-
-   Other changes
-
 Release 1.19 ???
 
    * Add absolute timeout to ForkParser rather than testing
