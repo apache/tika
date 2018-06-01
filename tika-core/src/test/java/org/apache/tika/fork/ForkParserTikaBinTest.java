@@ -54,6 +54,9 @@ public class ForkParserTikaBinTest extends TikaTest {
     private static final String JAR_FILE_NAME = "mock-tika-app.jar";
     private static Path JAR_FILE;
 
+    @SuppressWarnings("unchecked")
+    private static final Map<String, String> EMPTY_MAP = Collections.EMPTY_MAP;
+
     @BeforeClass
     public static void bootstrapJar() throws Exception {
         JAR_DIR = Files.createTempDirectory("tika-fork-tikabin-");
@@ -83,7 +86,6 @@ public class ForkParserTikaBinTest extends TikaTest {
 
             jarOs.putNextEntry(new JarEntry("META-INF/services/org.apache.tika.parser.Parser"));
             jarOs.write("org.apache.tika.parser.mock.VowelParser\n".getBytes(StandardCharsets.UTF_8));
-
         }
 
         Path tikaConfigVowelParser = JAR_DIR.resolve("TIKA_2653-iou.xml");
@@ -105,7 +107,7 @@ public class ForkParserTikaBinTest extends TikaTest {
     @Test
     public void testExplicitParserFactory() throws Exception {
         XMLResult xmlResult = getXML(new ParserFactoryFactory("org.apache.tika.parser.mock.MockParserFactory",
-                Collections.EMPTY_MAP));
+                EMPTY_MAP));
         assertContains("hello world!", xmlResult.xml);
         assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
     }
@@ -114,7 +116,7 @@ public class ForkParserTikaBinTest extends TikaTest {
     public void testVowelParserAsDefault() throws Exception {
         ParserFactoryFactory pff = new ParserFactoryFactory(
                 "org.apache.tika.parser.AutoDetectParserFactory",
-                Collections.EMPTY_MAP);
+                EMPTY_MAP);
         XMLResult xmlResult = getXML(pff);
         assertContains("eooeuiooueoeeao", xmlResult.xml);
         assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
@@ -151,7 +153,7 @@ public class ForkParserTikaBinTest extends TikaTest {
 
         ParserFactoryFactory pff = new ParserFactoryFactory(
                 "org.apache.tika.parser.AutoDetectParserFactory",
-                Collections.EMPTY_MAP);
+                EMPTY_MAP);
         XMLResult xmlResult = getXML(pff, this.getClass().getClassLoader(), new UpperCasingContentHandler());
         assertContains("EOOEUIOOUEOEEAO", xmlResult.xml);
         assertEquals("Nikolai Lobachevsky", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
@@ -188,15 +190,14 @@ public class ForkParserTikaBinTest extends TikaTest {
     private static List<Class> getClasses(String packageName)
             throws ClassNotFoundException, IOException {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        assert classLoader != null;
         String path = packageName.replace('.', '/');
         Enumeration<URL> resources = classLoader.getResources(path);
-        List<File> dirs = new ArrayList();
+        List<File> dirs = new ArrayList<>();
         while (resources.hasMoreElements()) {
             URL resource = resources.nextElement();
             dirs.add(new File(resource.getFile().replaceAll("%20", " ")));
         }
-        ArrayList classes = new ArrayList();
+        ArrayList<Class> classes = new ArrayList<>();
         for (File directory : dirs) {
             classes.addAll(findClasses(directory, packageName));
         }
@@ -204,16 +205,18 @@ public class ForkParserTikaBinTest extends TikaTest {
     }
 
     private static List<Class> findClasses(File dir, String packageName) throws ClassNotFoundException {
-        List<Class> classes = new ArrayList();
+        List<Class> classes = new ArrayList<>();
         if (!dir.exists()) {
             return classes;
         }
         File[] files = dir.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
-                assert !file.getName().contains(".");
                 classes.addAll(findClasses(file, packageName + "." + file.getName()));
             } else if (file.getName().endsWith(".class")) {
+                //exclude TypeDetectionBenchmark because it is not serializable
+                //exclude UpperCasingContentHandler because we want to test that
+                //we can serialize it from the parent process into the child process
                 if (! file.getName().contains("TypeDetectionBenchmark") &&
                         !file.getName().contains("UpperCasingContentHandler")) {
                     classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));

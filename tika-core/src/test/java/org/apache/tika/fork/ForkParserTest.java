@@ -207,9 +207,12 @@ public class ForkParserTest extends TikaTest {
     }
 
     @Test
-    public void testPulse() throws Exception {
-        //test default 5000 ms
+    public void testPulseAndTimeouts() throws Exception {
+
         ForkParser forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
+        forkParser.setServerPulseMillis(500);
+        forkParser.setServerParseTimeoutMillis(5000);
+        forkParser.setServerWaitTimeoutMillis(60000);
         String sleepCommand = "<mock>\n" +
                 "    <write element=\"p\">Hello, World!</write>\n" +
                 "    <hang millis=\"11000\" heavy=\"false\" interruptible=\"false\" />\n" +
@@ -227,6 +230,7 @@ public class ForkParserTest extends TikaTest {
         //test setting very short pulse (10 ms) and a parser that takes at least 1000 ms
         forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), new MockParser());
         forkParser.setServerPulseMillis(10);
+        forkParser.setServerParseTimeoutMillis(100);
         sleepCommand = "<mock>\n" +
                 "    <write element=\"p\">Hello, World!</write>\n" +
                 "    <hang millis=\"1000\" heavy=\"false\" interruptible=\"false\" />\n" +
@@ -269,7 +273,7 @@ public class ForkParserTest extends TikaTest {
         ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream is = getClass().getResourceAsStream("basic_embedded.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/basic_embedded.xml")) {
             fork.parse(is, handler, metadata, context);
         } finally {
             fork.close();
@@ -296,7 +300,7 @@ public class ForkParserTest extends TikaTest {
         ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream is = getClass().getResourceAsStream("embedded_with_npe.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/embedded_with_npe.xml")) {
             fork.parse(is, handler, metadata, context);
         } finally {
             fork.close();
@@ -324,7 +328,7 @@ public class ForkParserTest extends TikaTest {
         ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream is = getClass().getResourceAsStream("embedded_then_npe.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
             fork.parse(is, handler, metadata, context);
             fail();
         } catch (TikaException e) {
@@ -352,7 +356,7 @@ public class ForkParserTest extends TikaTest {
         Path target = Files.createTempFile("fork-to-file-handler-", ".txt");
         try {
             ForkParser forkParser = null;
-            try (InputStream is = this.getClass().getResourceAsStream("basic_embedded.xml")) {
+            try (InputStream is = this.getClass().getResourceAsStream("/test-documents/basic_embedded.xml")) {
                 RecursiveParserWrapper wrapper = new RecursiveParserWrapper(new AutoDetectParser());
                 ToFileHandler toFileHandler = new ToFileHandler(new SBContentHandlerFactory(), target.toFile());
                 forkParser = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
@@ -390,7 +394,7 @@ public class ForkParserTest extends TikaTest {
         ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream is = getClass().getResourceAsStream("basic_embedded.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/basic_embedded.xml")) {
             fork.parse(is, handler, metadata, context);
         } finally {
             fork.close();
@@ -420,7 +424,7 @@ public class ForkParserTest extends TikaTest {
         ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        try (InputStream is = getClass().getResourceAsStream("embedded_then_npe.xml")) {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
             fork.parse(is, handler, metadata, context);
             fail();
         } catch (TikaException e) {

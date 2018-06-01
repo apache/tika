@@ -1,5 +1,14 @@
+Release 2.0.0 - ???
+   BREAKING CHANGES in 2.0.0
+
+   * Remove deprecated Metadata keys/properties (TIKA-1974).
+
+   Other changes
+
 Release 1.19 ???
 
+   * Add absolute timeout to ForkParser rather than testing
+     for active (TIKA-2656).
 
    * Make the RecursiveParserWrapper work with the ForkParser (TIKA-2655).
 
@@ -12,7 +21,7 @@ Release 1.19 ???
    * Use a pool for SAXParsers and DOMBuilders rather than creating
      a new parser/builder for every parse.
      For better performance, set XMLReaderUtils.setPoolSize() to the
-     number of threads you're using with Tika (TIKA-2645.
+     number of threads you're using with Tika (TIKA-2645).
 
    * Add the RecursiveParserWrapperHandler to improve the RecursiveParserWrapper
      API slightly (TIKA-2644).
@@ -20,7 +29,7 @@ Release 1.19 ???
 
 Release 1.18 - 4/20/2018
 
-   * Upgrade Jackson to 2.9.5 (TIKA-2634).
+   * Upgrade jackson to 2.9.5 (TIKA-2634).
 
    * Add support for brotli (TIKA-2621).
 

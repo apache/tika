@@ -53,65 +53,21 @@ class ForkClient {
 
     private final DataInputStream input;
 
-    private final InputStream error;
-
-    public ForkClient(Path tikaDir, ParserFactoryFactory parserFactoryFactory, List<String> java, long serverPulseMillis) throws IOException, TikaException {
-        jar = null;
-        loader = null;
-        boolean ok = false;
-        ProcessBuilder builder = new ProcessBuilder();
-        List<String> command = new ArrayList<>();
-        command.addAll(java);
-        command.add("-cp");
-        String dirString = tikaDir.toAbsolutePath().toString();
-        if (!dirString.endsWith("/")) {
-            dirString += "/*";
-        } else {
-            dirString += "/";
-        }
-        dirString = ProcessUtils.escapeCommandLine(dirString);
-        command.add(dirString);
-        command.add("org.apache.tika.fork.ForkServer");
-        command.add(Long.toString(serverPulseMillis));
-        builder.command(command);
-        builder.redirectError(ProcessBuilder.Redirect.INHERIT);
-        try {
-            this.process = builder.start();
-
-            this.output = new DataOutputStream(process.getOutputStream());
-            this.input = new DataInputStream(process.getInputStream());
-            this.error = process.getErrorStream();
-
-            waitForStartBeacon();
-            output.writeByte(ForkServer.INIT_PARSER_FACTORY_FACTORY);
-            output.flush();
-            sendObject(parserFactoryFactory, resources);
-
-            waitForStartBeacon();
-
-            ok = true;
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        } finally {
-            if (!ok) {
-                close();
-            }
-        }
+    public ForkClient(Path tikaDir, ParserFactoryFactory parserFactoryFactory, List<String> java,
+                      TimeoutLimits timeoutLimits) throws IOException, TikaException {
+        this(tikaDir, parserFactoryFactory, null, java, timeoutLimits);
     }
-
     /**
      *
      * @param tikaDir directory containing jars from which to start the child server and load the Parser
      * @param parserFactoryFactory factory to send to child process to build parser upon arrival
      * @param classLoader class loader to use for non-parser resource (content-handler, etc.)
      * @param java java commandline to use for the commandline server
-     * @param serverPulseMillis how often to check if the server has been active
      * @throws IOException
      * @throws TikaException
      */
     public ForkClient(Path tikaDir, ParserFactoryFactory parserFactoryFactory, ClassLoader classLoader,
-                      List<String> java, long serverPulseMillis) throws IOException, TikaException {
+                      List<String> java, TimeoutLimits timeoutLimits) throws IOException, TikaException {
         jar = null;
         loader = null;
         boolean ok = false;
@@ -128,7 +84,9 @@ class ForkClient {
         dirString = ProcessUtils.escapeCommandLine(dirString);
         command.add(dirString);
         command.add("org.apache.tika.fork.ForkServer");
-        command.add(Long.toString(serverPulseMillis));
+        command.add(Long.toString(timeoutLimits.getPulseMS()));
+        command.add(Long.toString(timeoutLimits.getParseTimeoutMS()));
+        command.add(Long.toString(timeoutLimits.getWaitTimeoutMS()));
         builder.command(command);
         builder.redirectError(ProcessBuilder.Redirect.INHERIT);
         try {
@@ -136,13 +94,18 @@ class ForkClient {
 
             this.output = new DataOutputStream(process.getOutputStream());
             this.input = new DataInputStream(process.getInputStream());
-            this.error = process.getErrorStream();
 
             waitForStartBeacon();
-            output.writeByte(ForkServer.INIT_PARSER_FACTORY_FACTORY_LOADER);
+            if (classLoader != null) {
+                output.writeByte(ForkServer.INIT_PARSER_FACTORY_FACTORY_LOADER);
+            } else {
+                output.writeByte(ForkServer.INIT_PARSER_FACTORY_FACTORY);
+            }
             output.flush();
             sendObject(parserFactoryFactory, resources);
-            sendObject(classLoader, resources);
+            if (classLoader != null) {
+                sendObject(classLoader, resources);
+            }
             waitForStartBeacon();
             ok = true;
         } catch (Throwable t) {
@@ -156,7 +119,7 @@ class ForkClient {
     }
 
 
-    public ForkClient(ClassLoader loader, Object object, List<String> java, long serverPulseMillis)
+    public ForkClient(ClassLoader loader, Object object, List<String> java, TimeoutLimits timeoutLimits)
             throws IOException, TikaException {
         boolean ok = false;
         try {
@@ -168,14 +131,15 @@ class ForkClient {
             command.addAll(java);
             command.add("-jar");
             command.add(jar.getPath());
-            command.add(Long.toString(serverPulseMillis));
+            command.add(Long.toString(timeoutLimits.getPulseMS()));
+            command.add(Long.toString(timeoutLimits.getParseTimeoutMS()));
+            command.add(Long.toString(timeoutLimits.getWaitTimeoutMS()));
             builder.command(command);
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             this.process = builder.start();
 
             this.output = new DataOutputStream(process.getOutputStream());
             this.input = new DataInputStream(process.getInputStream());
-            this.error = process.getErrorStream();
 
             waitForStartBeacon();
             output.writeByte(ForkServer.INIT_LOADER_PARSER);
@@ -283,13 +247,10 @@ class ForkClient {
             if (input != null) {
                 input.close();
             }
-            if (error != null) {
-                error.close();
-            }
         } catch (IOException ignore) {
         }
         if (process != null) {
-            process.destroy();
+            process.destroyForcibly();
             try {
                 //TIKA-1933
                 process.waitFor();
