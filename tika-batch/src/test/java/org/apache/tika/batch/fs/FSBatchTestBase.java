@@ -39,12 +39,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.batch.ParallelFileProcessingResult;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
+import org.apache.tika.utils.ProcessUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -80,7 +82,8 @@ public abstract class FSBatchTestBase extends TikaTest {
         //see caveat in TikaCLITest's textExtract
 
         try {
-            deleteDirectory(outputRoot);
+
+            FileUtils.deleteDirectory(outputRoot.toFile());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -172,11 +175,8 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.add("-Xmx128m");
         commandLine.add("-cp");
         String cp = System.getProperty("java.class.path");
-        //need to test for " " on *nix, can't just add double quotes
-        //across platforms.
-        if (cp.contains(" ")){
-            cp = "\""+cp+"\"";
-        }
+        cp = ProcessUtils.escapeCommandLine(cp);
+
         commandLine.add(cp);
         commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
 
@@ -205,9 +205,8 @@ public abstract class FSBatchTestBase extends TikaTest {
         String cp = System.getProperty("java.class.path");
         //need to test for " " on *nix, can't just add double quotes
         //across platforms.
-        if (cp.contains(" ")){
-            cp = "\""+cp+"\"";
-        }
+        cp = ProcessUtils.escapeCommandLine(cp);
+
         commandLine.add(cp);
         commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
 
@@ -262,26 +261,6 @@ public abstract class FSBatchTestBase extends TikaTest {
             }
         }
         return sb.toString();
-    }
-
-    //TODO: move this into FileUtils
-    public static void deleteDirectory(Path dir) throws IOException {
-        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file,
-                                             BasicFileAttributes attrs) throws IOException {
-                Files.delete(file);
-                return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult postVisitDirectory(Path dir,
-                                                      IOException exc) throws IOException {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            }
-
-        });
     }
 
     /**

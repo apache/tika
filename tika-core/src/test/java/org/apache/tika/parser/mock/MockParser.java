@@ -68,7 +68,7 @@ public class MockParser extends AbstractParser {
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        Set<MediaType> types = new HashSet<MediaType>();
+        Set<MediaType> types = new HashSet<>();
         MediaType type = MediaType.application("mock+xml");
         types.add(type);
         return types;
@@ -78,6 +78,9 @@ public class MockParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
                       Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new TikaException("interrupted", new InterruptedException());
+        }
         Document doc = null;
         try {
             DocumentBuilder docBuilder = context.getDocumentBuilder();
@@ -121,6 +124,10 @@ public class MockParser extends AbstractParser {
             handleEmbedded(action, xhtml, context);
         } else if ("throwIllegalChars".equals(name)) {
             throwIllegalChars();
+        } else if ("system_exit".equals(name)) {
+            System.exit(1);
+        } else if ("thread_interrupt".equals(name)) {
+            Thread.currentThread().interrupt();
         } else {
             throw new IllegalArgumentException("Didn't recognize mock action: "+name);
         }
@@ -305,7 +312,7 @@ public class MockParser extends AbstractParser {
     }
 
     private void kabOOM() {
-        List<int[]> ints = new ArrayList<int[]>();
+        List<int[]> ints = new ArrayList<>();
 
         while (true) {
             int[] intArr = new int[32000];
@@ -316,16 +323,19 @@ public class MockParser extends AbstractParser {
     private void hangHeavy(long maxMillis, long pulseCheckMillis, boolean interruptible) {
         //do some heavy computation and occasionally check for
         //whether time has exceeded maxMillis (see TIKA-1132 for inspiration)
-        //or whether the thread was interrupted
+        //or whether the thread was interrupted.
+        //By creating a new Date in the inner loop, we're also intentionally
+        //triggering the gc most likely.
         long start = new Date().getTime();
-        int lastChecked = 0;
+        long lastChecked = start;
         while (true) {
             for (int i = 1; i < Integer.MAX_VALUE; i++) {
                 for (int j = 1; j < Integer.MAX_VALUE; j++) {
                     double div = (double) i / (double) j;
-                    lastChecked++;
-                    if (lastChecked > pulseCheckMillis) {
-                        lastChecked = 0;
+
+                    long elapsedSinceLastCheck = new Date().getTime()-lastChecked;
+                    if (elapsedSinceLastCheck > pulseCheckMillis) {
+                        lastChecked = new Date().getTime();
                         if (interruptible && Thread.currentThread().isInterrupted()) {
                             return;
                         }
