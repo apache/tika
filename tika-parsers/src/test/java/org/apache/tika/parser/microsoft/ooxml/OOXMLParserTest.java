@@ -1827,6 +1827,12 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 xlsx.get(Metadata.CONTENT_TYPE));
     }
+
+    @Test(expected = org.apache.tika.exception.TikaException.class)
+    public void testCorruptedZip() throws Exception {
+        //TIKA_2446
+        getRecursiveMetadata("testZIP_corrupted_oom.zip");
+    }
 }
 
 
