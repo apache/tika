@@ -23,8 +23,10 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
@@ -244,16 +246,22 @@ public class ZipContainerDetector implements Detector {
         //if (zip.getEntry("_rels/.rels") != null
         //  || zip.getEntry("[Content_Types].xml") != null) {
         // Use POI to open and investigate it for us
+        //Unfortunately, POI can throw a RuntimeException...so we
+        //have to catch that.
         OPCPackage pkg = null;
         try {
             pkg = OPCPackage.open(zipEntrySource);
-        } catch (InvalidFormatException e) {
+        } catch (SecurityException e) {
+            closeQuietly(zipEntrySource);
+            //TIKA-2571
+            throw e;
+        } catch (InvalidFormatException|RuntimeException e) {
             closeQuietly(zipEntrySource);
             return null;
         }
+
         MediaType type = null;
         try {
-
 
             // Is at an OOXML format?
             type = detectOfficeOpenXML(pkg);
