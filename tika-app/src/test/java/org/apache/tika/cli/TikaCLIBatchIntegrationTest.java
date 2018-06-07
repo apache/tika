@@ -208,42 +208,4 @@ public class TikaCLIBatchIntegrationTest {
                 Files.isRegularFile(path));
     }
 
-    @Test
-    public void oneOff() throws Exception {
-        Parser p = new AutoDetectParser();
-        RecursiveParserWrapper w = new RecursiveParserWrapper(p);
-        try (JsonStreamingSerializer writer = new JsonStreamingSerializer(new BufferedWriter(new OutputStreamWriter(
-                Files.newOutputStream(Paths.get("C:/data/tika_tmp.json")), StandardCharsets.UTF_8)))) {
-            ContentHandler contentHandler = new WriteoutRPWHandler(
-                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                    writer);
-            try (InputStream is = getClass().getResourceAsStream("/test-data/test_recursive_embedded.docx")) {
-                w.parse(is, contentHandler, new Metadata(), new ParseContext());
-            }
-        }
-    }
-
-    private class WriteoutRPWHandler extends AbstractRecursiveParserWrapperHandler {
-        private final JsonStreamingSerializer jsonWriter;
-
-        public WriteoutRPWHandler(ContentHandlerFactory contentHandlerFactory, JsonStreamingSerializer writer) {
-            super(contentHandlerFactory);
-            this.jsonWriter = writer;
-        }
-
-        @Override
-        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
-            metadata.add(RecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
-            try {
-                jsonWriter.add(metadata);
-            } catch (IOException e) {
-                throw new SAXException(e);
-            }
-        }
-
-        @Override
-        public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
-            endEmbeddedDocument(contentHandler, metadata);
-        }
-    }
 }
