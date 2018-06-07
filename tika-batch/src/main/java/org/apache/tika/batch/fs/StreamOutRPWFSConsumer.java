@@ -1,5 +1,3 @@
-package org.apache.tika.batch.fs;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,13 +15,9 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+package org.apache.tika.batch.fs;
+
+
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.batch.FileResource;
@@ -32,37 +26,40 @@ import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
-import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
- * This runs a RecursiveParserWrapper against an input file
- * and outputs the json metadata to an output file.
+ * This uses the {@link JsonStreamingSerializer} to write out a
+ * single metadata object at a time.
  */
-public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
+public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
 
     private final Parser parser;
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
     private String outputEncoding = "UTF-8";
 
-    /**
-     *
-     * @param queue
-     * @param parser -- must be RecursiveParserWrapper or a ForkParser that wraps a RecursiveParserWrapper
-     * @param contentHandlerFactory
-     * @param fsOSFactory
-     */
-    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
-                                            Parser parser,
-                                            ContentHandlerFactory contentHandlerFactory,
-                                            OutputStreamFactory fsOSFactory) {
+
+    public StreamOutRPWFSConsumer(ArrayBlockingQueue<FileResource> queue,
+                                  Parser parser,
+                                  ContentHandlerFactory contentHandlerFactory,
+                                  OutputStreamFactory fsOSFactory) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
@@ -92,33 +89,28 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
             return false;
         }
 
-        Throwable thrown = null;
-        List<Metadata> metadataList = null;
         Metadata containerMetadata = fileResource.getMetadata();
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory, -1);
+        JsonStreamingSerializer writer = new JsonStreamingSerializer(
+                new OutputStreamWriter(os, StandardCharsets.UTF_8));
+
+        WriteoutRPWHandler handler = new WriteoutRPWHandler(contentHandlerFactory, writer);
+        Throwable thrown = null;
         try {
             parse(fileResource.getResourceId(), parser, is, handler,
                     containerMetadata, context);
         } catch (Throwable t) {
             thrown = t;
         } finally {
-            metadataList = handler.getMetadataList();
-            IOUtils.closeQuietly(is);
+            try {
+                writer.close();
+            } catch (IOException e) {
+                //this is a stop the world kind of thing
+                LOG.error("{}", getXMLifiedLogMsg(IO_OS + "json", fileResource.getResourceId(), e));
+                throw new RuntimeException(e);
+            } finally {
+                IOUtils.closeQuietly(is);
+            }
         }
-
-        Writer writer = null;
-
-        try {
-            writer = new OutputStreamWriter(os, getOutputEncoding());
-            JsonMetadataList.toJson(metadataList, writer);
-        } catch (Exception e) {
-            //this is a stop the world kind of thing
-            LOG.error("{}", getXMLifiedLogMsg(IO_OS + "json", fileResource.getResourceId(), e));
-            throw new RuntimeException(e);
-        } finally {
-            flushAndClose(writer);
-        }
-
         if (thrown != null) {
             if (thrown instanceof Error) {
                 throw (Error) thrown;
@@ -128,7 +120,6 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
                 return false;
             }
         }
-
         return true;
     }
 
@@ -138,5 +129,33 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
 
     public void setOutputEncoding(String outputEncoding) {
         this.outputEncoding = outputEncoding;
+    }
+
+    //extend AbstractRPWH instead of RecursiveParserWrapperHandler so that
+    //if we use the ForkParser, the output will not have to be streamed
+    //back to the proxy, but can
+    //be written straight to disk.
+    private class WriteoutRPWHandler extends AbstractRecursiveParserWrapperHandler {
+        private final JsonStreamingSerializer jsonWriter;
+
+        public WriteoutRPWHandler(ContentHandlerFactory contentHandlerFactory, JsonStreamingSerializer writer) {
+            super(contentHandlerFactory);
+            this.jsonWriter = writer;
+        }
+
+        @Override
+        public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+            metadata.add(RecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
+            try {
+                jsonWriter.add(metadata);
+            } catch (IOException e) {
+                throw new SAXException(e);
+            }
+        }
+
+        @Override
+        public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
+            endEmbeddedDocument(contentHandler, metadata);
+        }
     }
 }

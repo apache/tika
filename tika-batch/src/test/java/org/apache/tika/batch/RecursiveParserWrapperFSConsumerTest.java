@@ -35,7 +35,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
@@ -72,7 +71,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         queue.add(new PoisonFileResource());
 
         MockOSFactory mockOSFactory = new MockOSFactory();
-        Parser p = new AutoDetectParserFactory().getParser(new TikaConfig());
+        Parser p = new RecursiveParserWrapper(new AutoDetectParserFactory().getParser(new TikaConfig()));
         RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
                 queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 mockOSFactory);
@@ -120,7 +119,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         queue.add(new PoisonFileResource());
 
         MockOSFactory mockOSFactory = new MockOSFactory();
-        Parser p = new AutoDetectParserFactory().getParser(new TikaConfig());
+        Parser p = new RecursiveParserWrapper(new AutoDetectParserFactory().getParser(new TikaConfig()));
         RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
                 queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 mockOSFactory);

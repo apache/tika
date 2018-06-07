@@ -63,6 +63,7 @@
                 description="output directory for output"/> <!-- do we want to make this mandatory -->
         <option opt="recursiveParserWrapper"
                 description="use the RecursiveParserWrapper or not (default = false)"/>
+        <option opt="streamOut" description="stream the output of the RecursiveParserWrapper (default = false)"/>
         <option opt="handleExisting" hasArg="true"
                 description="if an output file already exists, do you want to: overwrite, rename or skip"/>
         <option opt="basicHandlerType" hasArg="true"
@@ -77,6 +78,7 @@
                 description="regex that specifies which files to avoid processing"/>
         <option opt="reporterSleepMillis" hasArg="true"
                 description="millisecond between reports by the reporter"/>
+
     </commandline>
 
 
@@ -108,6 +110,8 @@
     <!--
         To wrap parser in RecursiveParserWrapper (tika-app's -J or tika-server's /rmeta),
         add attribute recursiveParserWrapper="true" to consumers element.
+        To stream the output of the RecursiveParserWrapper set "streamout" = true
+        in consumers element.
         -->
     <consumers builderClass="org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder"
                recursiveParserWrapper="false" consumersManagerMaxMillis="60000">
