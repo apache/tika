@@ -67,10 +67,15 @@ public class ForkParser extends AbstractParser {
 
     @Field
     private long serverPulseMillis = 1000;
+
     @Field
     private long serverParseTimeoutMillis = 60000;
+
     @Field
     private long serverWaitTimeoutMillis = 60000;
+
+    @Field
+    private int maxFilesProcessedPerClient = -1;
 
     /**
      * If you have a directory with, say, tike-app.jar and you want the child process/server to build a parser
@@ -337,13 +342,16 @@ public class ForkParser extends AbstractParser {
             //TODO: make this more useful
             throw new IllegalStateException("Unexpected combination of state items");
         }
-
     }
 
     private synchronized void releaseClient(ForkClient client, boolean alive) {
         currentlyInUse--;
         if (currentlyInUse + pool.size() < poolSize && alive) {
-            pool.offer(client);
+            if (maxFilesProcessedPerClient > 0 && client.getFilesProcessed() >= maxFilesProcessedPerClient) {
+                client.close();
+            } else {
+                pool.offer(client);
+            }
             notifyAll();
         } else {
             client.close();
@@ -381,6 +389,20 @@ public class ForkParser extends AbstractParser {
      */
     public void setServerWaitTimeoutMillis(long serverWaitTimeoutMillis) {
         this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
+    }
+
+    /**
+     * If there is a slowly building memory leak in one of the parsers,
+     * it is useful to set a limit on the number of files processed
+     * by a server before it is shutdown and restarted. Default value is -1.
+     *
+     * @param maxFilesProcessedPerClient maximum number of files that a server can handle
+     *                                 before the parser shuts down a client and creates
+     *                                 a new process. If set to -1, the server is never restarted
+     *                                 because of the number of files handled.
+     */
+    public void setMaxFilesProcessedPerServer(int maxFilesProcessedPerClient) {
+        this.maxFilesProcessedPerClient = maxFilesProcessedPerClient;
     }
 
 }

@@ -26,6 +26,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.MultiThreadedTikaTest;
@@ -468,15 +469,29 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testAllMultithreaded() throws Exception {
+
         Detector detector = new Tika().getDetector();
         FileFilter filter = new FileFilter() {
+            //TODO: create proper randomized framework that will record seed, etc...
+            private final Random random = new Random();
+            //increase this to the number of files for a true smoke test
+            //for now, randomly pick 20 files.
+            int toProcess = 20;
+            int processed = 0;
             @Override
             public boolean accept(File pathname) {
+                if (processed >= toProcess) {
+                    return false;
+                } else if (random.nextBoolean()) {
+                    processed++;
                     return true;
+                }
+                return false;
             }
         };
         int numThreads = 20;
         XMLReaderUtils.setPoolSize(numThreads);
+
         testDetector(detector, numThreads, 50, filter, numThreads*3);
     }
 

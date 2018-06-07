@@ -22,6 +22,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
@@ -29,6 +31,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
@@ -39,7 +43,9 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -48,7 +54,7 @@ import org.xml.sax.SAXException;
  * Test that the ForkParser correctly behaves when
  *  wired in to the regular Parsers and their test data
  */
-public class ForkParserIntegrationTest extends TikaTest {
+public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
     private Tika tika = new Tika(); // TODO Use TikaConfig instead, when it works
 
@@ -287,4 +293,42 @@ public class ForkParserIntegrationTest extends TikaTest {
             parser.close();
         }
     }
+
+    @Test
+    @Ignore("use for development/one off testing.  This is a beast and takes enormous resources and time")
+    public void smokeTest() throws Exception {
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(tika.getParser());
+        int numThreads = 5;
+        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
+                wrapper);
+        parser.setServerPulseMillis(500);
+        parser.setServerParseTimeoutMillis(1000);
+        parser.setPoolSize(numThreads);
+        ParseContext[] parseContexts = new ParseContext[numThreads];
+        for (int i = 0; i < numThreads; i++) {
+            parseContexts[i] = new ParseContext();
+        }
+        try {
+            super.testMultiThreaded(parser, parseContexts, numThreads, 5,
+                    new FileFilter() {
+                        @Override
+                        public boolean accept(File pathname) {
+                            if (pathname.getAbsolutePath().contains("mock")) {
+                                return true;
+                            } else {
+                                return false;
+                            }/*
+                            if (pathname.getName().contains("11_hang.rar") ||
+                                    pathname.getName().contains("radar_profiles_2009.mat") ||
+                                    pathname.getAbsolutePath().contains("mock")) {
+                                //return false;
+                            }
+                            return true;*/
+                        }
+                    });
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
 }
