@@ -26,6 +26,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -225,12 +226,17 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 throw e;
             }
             metadata.set(RecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
+        } catch (Throwable e) {
+            //try our best to record the problem in the metadata object
+            //then rethrow
+            String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime", stackTrace);
+            throw e;
         } finally {
             long elapsedMillis = System.currentTimeMillis() - started;
             metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);
             parserState.recursiveParserWrapperHandler.endDocument();
-
         }
     }
 
@@ -380,16 +386,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } finally {
                 context.set(Parser.class, preContextParser);
                 long elapsedMillis = System.currentTimeMillis() - started;
-                metadata.set(PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
+                metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
+                parserState.recursiveParserWrapperHandler.endEmbeddedDocument(localHandler, metadata);
             }
-            
-            //Because of recursion, we need
-            //to re-test to make sure that we limit the 
-            //number of stored resources
-            if (parserState.recursiveParserWrapperHandler.hasHitMaximumEmbeddedResources()) {
-                return;
-            }
-            parserState.recursiveParserWrapperHandler.endEmbeddedDocument(localHandler, metadata);
         }
     }
 

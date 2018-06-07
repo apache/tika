@@ -111,7 +111,7 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
      * @return whether this handler has hit the maximum embedded resources during the parse
      */
     public boolean hasHitMaximumEmbeddedResources() {
-        if (maxEmbeddedResources > -1 && embeddedResources > maxEmbeddedResources) {
+        if (maxEmbeddedResources > -1 && embeddedResources >= maxEmbeddedResources) {
             return true;
         }
         return false;

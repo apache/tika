@@ -28,6 +28,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.reflect.TypeToken;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 
 public class JsonMetadataList extends JsonMetadataBase {
     
@@ -69,6 +70,20 @@ public class JsonMetadataList extends JsonMetadataBase {
         } catch (com.google.gson.JsonParseException e){
             //covers both io and parse exceptions
             throw new TikaException(e.getMessage());
+        }
+        if (ms == null) {
+            return null;
+        }
+        //if the last object is the main document,
+        //as happens with the streaming serializer,
+        //flip it to be the first element.
+        if (ms.size() > 1) {
+            Metadata last = ms.get(ms.size()-1);
+            String embResourcePath = last.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
+            if (embResourcePath == null &&
+                    ms.get(0).get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH) != null) {
+                ms.add(0, ms.remove(ms.size()-1));
+            }
         }
         return ms;
     }
