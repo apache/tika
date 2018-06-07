@@ -28,6 +28,7 @@ import java.io.NotSerializableException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
@@ -40,6 +41,7 @@ import org.apache.tika.utils.ProcessUtils;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
+    private static AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
 
     private final List<ForkResource> resources = new ArrayList<>();
 
@@ -52,6 +54,11 @@ class ForkClient {
     private final DataOutputStream output;
 
     private final DataInputStream input;
+
+    //this is used for debugging/smoke testing
+    private final int id = CLIENT_COUNTER.incrementAndGet();
+
+    private volatile int filesProcessed = 0;
 
     public ForkClient(Path tikaDir, ParserFactoryFactory parserFactoryFactory, List<String> java,
                       TimeoutLimits timeoutLimits) throws IOException, TikaException {
@@ -192,6 +199,7 @@ class ForkClient {
 
     public synchronized Throwable call(String method, Object... args)
             throws IOException, TikaException {
+        filesProcessed++;
         List<ForkResource> r = new ArrayList<>(resources);
         output.writeByte(ForkServer.CALL);
         output.writeUTF(method);
@@ -199,6 +207,10 @@ class ForkClient {
             sendObject(args[i], r);
         }
         return waitForResponse(r);
+    }
+
+    public int getFilesProcessed() {
+        return filesProcessed;
     }
 
     /**
@@ -228,7 +240,7 @@ class ForkClient {
         }
 
         try {
-           ForkObjectInputStream.sendObject(object, output);
+            ForkObjectInputStream.sendObject(object, output);
         } catch(NotSerializableException nse) {
            // Build a more friendly error message for this
            throw new TikaException(
@@ -341,5 +353,9 @@ class ForkClient {
                 }
             }
         }
+    }
+
+    public int getId() {
+        return id;
     }
 }
