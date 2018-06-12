@@ -58,7 +58,7 @@ public class CommonTokenCountManager {
         Set<String> set = commonTokenMap.get(defaultLangCode);
         if (set == null) {
             LOG.warn("No common tokens for default language: '"+defaultLangCode+"'");
-            commonTokenMap.put(defaultLangCode, new HashSet<String>());
+            commonTokenMap.put(defaultLangCode, new HashSet<>());
         }
     }
 
@@ -129,8 +129,10 @@ public class CommonTokenCountManager {
 
 
             if (is == null) {
-                LOG.warn("Couldn't find common tokens file for: '" + langCode + "': " +
-                        p.toAbsolutePath());
+                String path = (p == null) ? "resource on class path: /common_tokens/"+langCode
+                        : p.toAbsolutePath().toString();
+                LOG.warn("Couldn't find common tokens file for: '" + langCode + "' tried here: " +
+                        path);
                 alreadyTriedToLoad.add(langCode);
                 return;
             }
