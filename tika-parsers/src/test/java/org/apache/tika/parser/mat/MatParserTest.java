@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -31,7 +32,7 @@ import org.junit.Test;
 /**
  * Test cases to exercise the {@link MatParser}.
  */
-public class MatParserTest {
+public class MatParserTest extends TikaTest {
     @Test
     public void testParser() throws Exception {
         AutoDetectParser parser = new AutoDetectParser();
@@ -39,7 +40,7 @@ public class MatParserTest {
         Metadata metadata = new Metadata();
         String path = "/test-documents/breidamerkurjokull_radar_profiles_2009.mat";
 
-        try (InputStream stream = MatParser.class.getResourceAsStream(path)) {
+        try (InputStream stream = getResourceAsStream(path)) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -69,7 +70,7 @@ public class MatParserTest {
         Metadata metadata = new Metadata();
         String path = "/test-documents/test_mat_text.mat";
 
-        try (InputStream stream = MatParser.class.getResourceAsStream(path)) {
+        try (InputStream stream = getResourceAsStream(path)) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 

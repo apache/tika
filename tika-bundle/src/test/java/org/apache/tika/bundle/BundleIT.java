@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -45,6 +46,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.fork.ForkParser;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -257,8 +259,7 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        try (InputStream stream =
-                     new FileInputStream("src/test/resources/test-documents.zip")) {
+        try (InputStream stream = TikaInputStream.get(Paths.get("src/test/resources/test-documents.zip"))) {
             parser.parse(stream, handler, new Metadata(), context);
         }
 
