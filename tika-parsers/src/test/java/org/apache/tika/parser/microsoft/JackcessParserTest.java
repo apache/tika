@@ -75,7 +75,8 @@ public class JackcessParserTest extends TikaTest {
             assertContains("<th>ShortTextField</th>", mainContent);
 
             //test date format
-            assertContains("6/24/15", mainContent);
+            //java 8 is 6/24/15 ...java 10 is 2015-06-24
+            assertTrue (mainContent.contains("6/24/15") || mainContent.contains("2015-06-24"));
 
             //test that markup is stripped
             assertContains("over the bold italic dog", mainContent);

@@ -271,10 +271,10 @@ public class OutlookParserTest extends TikaTest {
 
         // As the HTML version should have been processed, ensure
         //  we got some of the links
-        String content = sw.toString().replaceAll("<p>\\s+", "<p>");
+        String content = sw.toString().replaceAll("[\\r\\n\\t]+", " ").replaceAll(" +", " ");
         assertContains("<dd>New Outlook User</dd>", content);
         assertContains("designed <i>to help you", content);
-        assertContains("<p><a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>", content);
+        assertContains("<p> <a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>", content);
 
         // Link - check text around it, and the link itself
         assertContains("sign up for a free subscription", content);

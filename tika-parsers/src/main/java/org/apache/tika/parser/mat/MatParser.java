@@ -74,6 +74,7 @@ public class MatParser extends AbstractParser {
 
             //Extract information from header file
             MatFileReader mfr = new MatFileReader(tis.getFile()); //input .mat file
+
             MatFileHeader hdr = mfr.getMatFileHeader(); //.mat header information
 
             // Example header: "MATLAB 5.0 MAT-file, Platform: MACI64, Created on: Sun Mar  2 23:41:57 2014"

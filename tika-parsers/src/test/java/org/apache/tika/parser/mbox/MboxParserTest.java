@@ -43,10 +43,6 @@ public class MboxParserTest extends TikaTest {
     private TypeDetector typeDetector;
     private MboxParser mboxParser;
 
-    private static InputStream getStream(String name) {
-        return MboxParserTest.class.getClass().getResourceAsStream(name);
-    }
-
     @Before
     public void setUp() throws Exception {
         typeDetector = new TypeDetector();
@@ -63,7 +59,7 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getStream("/test-documents/simple.mbox")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/simple.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
@@ -89,7 +85,7 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getStream("/test-documents/headers.mbox")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/headers.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
@@ -112,7 +108,7 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getStream("/test-documents/multiline.mbox")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/multiline.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
@@ -127,7 +123,7 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getStream("/test-documents/quoted.mbox")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/quoted.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
@@ -140,7 +136,7 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = getStream("/test-documents/complex.mbox")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/complex.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
         }
 
@@ -163,7 +159,7 @@ public class MboxParserTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.set(Parser.class, new AutoDetectParser());
 
-        try (InputStream stream = getStream("/test-documents/single_mail.mbox")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/single_mail.mbox")) {
             mboxParser.parse(stream, handler, metadata, context);
         }
         
