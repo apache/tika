@@ -38,7 +38,6 @@ public class TaggedSAXException extends SAXException {
      */
     public TaggedSAXException(SAXException original, Object tag) {
         super(original.getMessage(), original);
-        initCause(original); // SAXException has it's own chaining mechanism!
         this.tag = tag;
     }
 
