@@ -78,17 +78,21 @@ def copyWithProgress(InputStream inStr, OutputStream outStr, long totalLength){
 def downloadFile(String urlStr, File file) {
     println "GET : $urlStr -> $file (Using proxy? ${proxy != null})"
     url = new URL(urlStr)
+    try {
+        urlConn = proxy ? url.openConnection(proxy) : url.openConnection()
+        contentLength = urlConn.getContentLengthLong()
 
-    urlConn =  proxy ? url.openConnection(proxy) : url.openConnection()
-    contentLength = urlConn.getContentLengthLong()
-
-    file.getParentFile().mkdirs()
-    inStream = urlConn.getInputStream()
-    outStream = new FileOutputStream(file)
-    copyWithProgress(inStream, outStream, contentLength)
-    outStream.close()
-    inStream.close()
-    println "Download Complete.."
+        file.getParentFile().mkdirs()
+        inStream = urlConn.getInputStream()
+        outStream = new FileOutputStream(file)
+        copyWithProgress(inStream, outStream, contentLength)
+        outStream.close()
+        inStream.close()
+        println "Download Complete.."
+    } catch (IOException e) {
+        println "Couldn't download $file at the moment.  Will skip tests that require that model/file for now."
+        e.printStackTrace()
+    }
 }
 
 def urlPrefix = "http://opennlp.sourceforge.net/models-1.5"
