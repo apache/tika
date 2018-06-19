@@ -24,11 +24,14 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
+import java.io.InputStream;
+
 public class DL4JVGG16NetTest {
 
     @Test
     public void recognise() throws Exception {
         TikaConfig config = null;
+        InputStream is = getClass().getResourceAsStream("dl4j-vgg16-config.xml");
         try {
             config = new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
         } catch (Exception e) {

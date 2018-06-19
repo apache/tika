@@ -28,10 +28,14 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.recognition.RecognisedObject;
 import org.datavec.image.loader.NativeImageLoader;
+import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.modelimport.keras.trainedmodels.TrainedModelHelper;
-import org.deeplearning4j.nn.modelimport.keras.trainedmodels.TrainedModels;
+import org.deeplearning4j.nn.modelimport.keras.KerasModelImport;
 import org.deeplearning4j.util.ModelSerializer;
+import org.deeplearning4j.zoo.PretrainedType;
+import org.deeplearning4j.zoo.ZooModel;
+import org.deeplearning4j.zoo.model.VGG16;
+import org.deeplearning4j.zoo.util.imagenet.ImageNetLabels;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
 import org.nd4j.linalg.dataset.api.preprocessor.VGG16ImagePreProcessor;
@@ -40,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.deeplearning4j.nn.modelimport.keras.trainedmodels.Utils.ImageNetLabels;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -58,7 +61,6 @@ public class DL4JVGG16Net implements ObjectRecogniser {
     private static final String BASE_DIR = ".dl4j" + File.separator + "trainedmodels";
     private static String MODEL_DIR = HOME_DIR + File.separator + BASE_DIR;
     private static String MODEL_DIR_PREPROCESSED = MODEL_DIR + File.separator + "tikaPreprocessed" + File.separator;
-    private static TrainedModelHelper MODEL_HELPER = new TrainedModelHelper(TrainedModels.VGG16);
 
     @Field
     private File modelFile = new File(MODEL_DIR_PREPROCESSED + File.separator + "vgg16.zip");
@@ -78,6 +80,7 @@ public class DL4JVGG16Net implements ObjectRecogniser {
     public Set<MediaType> getSupportedMimes() {
         return SUPPORTED_MIMES;
     }
+    private ImageNetLabels imageNetLabels;
 
     @Override
     public boolean isAvailable() {
@@ -99,14 +102,17 @@ public class DL4JVGG16Net implements ObjectRecogniser {
                 } else {
                     LOG.warn("Preprocessed Model doesn't exist at {}", locationToSave);
                     locationToSave.getParentFile().mkdirs();
-                    model = MODEL_HELPER.loadModel();
+                    ZooModel zooModel = VGG16.builder().build();
+                    model = (ComputationGraph)zooModel.initPretrained(PretrainedType.IMAGENET);
                     LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resources.");
                     ModelSerializer.writeModel(model, locationToSave, true);
                 }
             } else {
                 LOG.info("Weight graph model loaded via dl4j Helper functions");
-                model = MODEL_HELPER.loadModel();
+                ZooModel zooModel = VGG16.builder().build();
+                model = (ComputationGraph)zooModel.initPretrained(PretrainedType.IMAGENET);
             }
+            imageNetLabels = new ImageNetLabels();
             available = true;
         } catch (Exception e) {
             available = false;
@@ -126,8 +132,6 @@ public class DL4JVGG16Net implements ObjectRecogniser {
     }
     private List<RecognisedObject> predict(INDArray predictions)
     {
-        ArrayList<String> labels;
-        labels=ImageNetLabels.getLabels();
         List<RecognisedObject> objects = new ArrayList<>();
         int[] topNPredictions = new int[topN];
         float[] topNProb = new float[topN];
@@ -140,7 +144,7 @@ public class DL4JVGG16Net implements ObjectRecogniser {
                 topNPredictions[i] = Nd4j.argMax(currentBatch, 1).getInt(0, 0);
                 topNProb[i] = currentBatch.getFloat(batch, topNPredictions[i]);
                 currentBatch.putScalar(0, topNPredictions[i], 0);
-                outLabels[i]= labels.get(topNPredictions[i]);
+                outLabels[i]= imageNetLabels.getLabel(topNPredictions[i]);
                 objects.add(new RecognisedObject(outLabels[i], "eng", outLabels[i], topNProb[i]));
                 i++;
             }
