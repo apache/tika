@@ -26,6 +26,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
@@ -175,10 +176,13 @@ public class OpenDocumentParser extends AbstractParser {
 
     private void handleZipStream(ZipInputStream zipStream, Metadata metadata, ParseContext context, EndDocumentShieldingContentHandler handler) throws IOException, TikaException, SAXException {
         ZipEntry entry = zipStream.getNextEntry();
-        while (entry != null) {
+		if (entry == null) {
+			throw new IOException("No entries found in ZipInputStream");
+		}
+        do {
             handleZipEntry(entry, zipStream, metadata, context, handler);
             entry = zipStream.getNextEntry();
-        }
+        } while (entry != null);
     }
 
     private void handleZipFile(ZipFile zipFile, Metadata metadata,

@@ -19,6 +19,7 @@ package org.apache.tika.parser.odf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -404,6 +405,28 @@ public class ODFParserTest extends TikaTest {
     public void testEmbedded() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
         assertEquals(3, metadataList.size());
+    }
+
+    @Test(expected = IOException.class)
+    public void testInvalidFromStream() throws Exception {
+        try (InputStream is = this.getClass().getResource(
+                "/test-documents/testODTnotaZipFile.odt").openStream()) {
+            OpenDocumentParser parser = new OpenDocumentParser();
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            parser.parse(is, handler, metadata, new ParseContext());
+        }
+    }
+
+    @Test(expected = IOException.class)
+    public void testInvalidFromFile() throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(this.getClass().getResource(
+                "/test-documents/testODTnotaZipFile.odt"))) {
+            OpenDocumentParser parser = new OpenDocumentParser();
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            parser.parse(tis, handler, metadata, new ParseContext());
+        }
     }
 
     private ParseContext getNonRecursingParseContext() {
