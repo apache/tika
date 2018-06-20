@@ -25,8 +25,10 @@ import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -47,6 +49,8 @@ import org.junit.Test;
  *  update it to match the new state of the file! 
  */
 public class MimeTypesReaderTest {
+
+    static boolean stop = false;
 
     private MimeTypes mimeTypes;
     private List<Magic> magics;
@@ -278,5 +282,23 @@ public class MimeTypesReaderTest {
         mimeType = this.mimeTypes.getRegisteredMimeType(name);
         assertEquals(name, mimeType.toString());
         assertEquals(".ditamap", mimeType.getExtension());
+    }
+
+    @Test
+    public void testMultiThreaded() throws Exception {
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
+        Executors.newSingleThreadExecutor().execute(()-> {
+            try {
+                for (int i = 0; i < 500 && !stop; i++) {
+                    mimeTypes.forName("abc"+i+"/abc");
+                }
+            } catch (MimeTypeException e ) {
+                e.printStackTrace();
+            }}
+        );
+
+        for (int i = 0; i < 500 & !stop; i++) {
+            mimeTypes.getMediaTypeRegistry().getAliases(MediaType.APPLICATION_ZIP);
+        }
     }
 }

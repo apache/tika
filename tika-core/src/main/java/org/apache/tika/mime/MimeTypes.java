@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.namespace.QName;
 
@@ -102,8 +103,7 @@ public final class MimeTypes implements Detector, Serializable {
     private final MediaTypeRegistry registry = new MediaTypeRegistry();
 
     /** All the registered MimeTypes indexed on their canonical names */
-    private final Map<MediaType, MimeType> types =
-        new HashMap<MediaType, MimeType>();
+    private final Map<MediaType, MimeType> types = new HashMap<>();
 
     /** The patterns matcher */
     private Patterns patterns = new Patterns(registry);
@@ -425,7 +425,6 @@ public final class MimeTypes implements Detector, Serializable {
      *
      * @return the minimum length of data to provide.
      * @see #getMimeType(byte[])
-     * @see #getMimeType(String, byte[])
      */
     public int getMinLength() {
         // This needs to be reasonably large to be able to correctly detect
