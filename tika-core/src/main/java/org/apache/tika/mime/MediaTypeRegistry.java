@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Registry of known Internet media types.
@@ -46,7 +47,7 @@ public class MediaTypeRegistry implements Serializable {
      * as a mapping from the alias to the corresponding canonical type.
      */
     private final Map<MediaType, MediaType> registry =
-        new HashMap<MediaType, MediaType>();
+        new ConcurrentHashMap<>();
 
     /**
      * Known type inheritance relationships. The mapping is from a media type
@@ -74,7 +75,7 @@ public class MediaTypeRegistry implements Serializable {
      * @return known aliases
      */
     public SortedSet<MediaType> getAliases(MediaType type) {
-        SortedSet<MediaType> aliases = new TreeSet<MediaType>();
+        SortedSet<MediaType> aliases = new TreeSet<>();
         for (Map.Entry<MediaType, MediaType> entry : registry.entrySet()) {
             if (entry.getValue().equals(type) && !entry.getKey().equals(type)) {
                 aliases.add(entry.getKey());
