@@ -76,7 +76,7 @@ public class HtmlEncodingDetectorTest {
     @Ignore("until we do a full parse")
     public void insideSpecialTag() throws IOException {
         // Content inside <?, <!, and </ should be ignored
-        for (byte b : "?!/".getBytes())
+        for (byte b : "?!/".getBytes(StandardCharsets.US_ASCII))
             assertWindows1252(
                     "<" + (char) b + // start comment
                             "<meta charset='UTF-8'>" + // inside special tag
