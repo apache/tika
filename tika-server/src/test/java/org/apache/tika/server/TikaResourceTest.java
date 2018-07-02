@@ -258,6 +258,44 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals(500, response.getStatus());
     }
 
+    //TIKA-2669
+    @Test
+    public void testPDFConfig() throws Exception {
+
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream("testPDFTwoTextBoxes.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        responseMsg = responseMsg.replaceAll("[\r\n ]+", " ").trim();
+        assertEquals("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2",
+                responseMsg);
+
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"sortByPosition", "false")
+                .put(ClassLoader.getSystemResourceAsStream("testPDFTwoTextBoxes.pdf"));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        responseMsg = responseMsg.replaceAll("[\r\n ]+", " ").trim();
+        assertEquals("Left column line 1 Left column line 2 Right column line 1 Right column line 2", responseMsg);
+
+        //make sure that default reverts to initial config option
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/pdf")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream("testPDFTwoTextBoxes.pdf"));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        responseMsg = responseMsg.replaceAll("[\r\n ]+", " ").trim();
+        assertEquals("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2",
+                responseMsg);
+
+    }
+
+
     @Test
     public void testExtractTextAcceptPlainText() throws Exception {
         //TIKA-2384

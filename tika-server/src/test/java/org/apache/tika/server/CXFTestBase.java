@@ -80,8 +80,8 @@ public abstract class CXFTestBase {
     }
 
     @Before
-    public void setUp() {
-        this.tika = TikaConfig.getDefaultConfig();
+    public void setUp() throws Exception {
+        this.tika = new TikaConfig(getClass().getResourceAsStream("tika-config-for-server-tests.xml"));
         TikaResource.init(tika,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
                 new DefaultInputStreamFactory());
