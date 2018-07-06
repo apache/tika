@@ -469,6 +469,8 @@ public class TikaInputStream extends TaggedInputStream {
      */
     private Object openContainer;
 
+    private int consecutiveEOFs = 0;
+
     /**
      * Creates a TikaInputStream instance. This private constructor is used
      * by the static factory methods based on the available information.
@@ -673,6 +675,7 @@ public class TikaInputStream extends TaggedInputStream {
         super.reset();
         position = mark;
         mark = -1;
+        consecutiveEOFs = 0;
     }
 
     @Override
@@ -690,9 +693,15 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     @Override
-    protected void afterRead(int n) {
+    protected void afterRead(int n) throws IOException {
         if (n != -1) {
             position += n;
+        } else {
+            consecutiveEOFs++;
+            if (consecutiveEOFs > 1000) {
+                throw new IOException("Read too many -1 (EOFs); there could be an infinite loop." +
+                        "If you think your file is not corrupt, please open an issue on Tika's JIRA");
+            }
         }
     }
 
