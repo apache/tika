@@ -29,6 +29,8 @@ import org.apache.tika.config.Field;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -39,6 +41,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import javax.swing.text.AbstractDocument;
 
 /**
  * HTML parser. Uses TagSoup to turn the input document to HTML SAX events,
@@ -90,6 +94,27 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
+        TemporaryResources tmp = null;
+        try {
+            if (!TikaInputStream.isTikaInputStream(stream)) {
+                tmp = new TemporaryResources();
+                stream = TikaInputStream.get(stream, tmp);
+            }
+            //AutoDetectReader can throw exceptions during
+            //initialization.  If we just created a
+            //TemporaryResources, we need to make sure to close it.
+            parseImpl(stream, handler, metadata, context);
+        } finally {
+            if (tmp != null) {
+                tmp.close();
+            }
+        }
+
+    }
+
+
+    private void parseImpl(InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
         try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
                 metadata, getEncodingDetector(context))) {
