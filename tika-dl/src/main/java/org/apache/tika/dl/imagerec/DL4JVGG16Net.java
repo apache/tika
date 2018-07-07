@@ -28,9 +28,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.recognition.RecognisedObject;
 import org.datavec.image.loader.NativeImageLoader;
-import org.deeplearning4j.nn.api.Model;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.modelimport.keras.KerasModelImport;
 import org.deeplearning4j.util.ModelSerializer;
 import org.deeplearning4j.zoo.PretrainedType;
 import org.deeplearning4j.zoo.ZooModel;
@@ -57,22 +55,19 @@ public class DL4JVGG16Net implements ObjectRecogniser {
 
     private static final Logger LOG = LoggerFactory.getLogger(DL4JVGG16Net.class);
     public static final Set<MediaType> SUPPORTED_MIMES = Collections.singleton(MediaType.image("jpeg"));
-    private static final String HOME_DIR = System.getProperty("user.home");
-    private static final String BASE_DIR = ".dl4j" + File.separator + "trainedmodels";
-    private static String MODEL_DIR = HOME_DIR + File.separator + BASE_DIR;
-    private static String MODEL_DIR_PREPROCESSED = MODEL_DIR + File.separator + "tikaPreprocessed" + File.separator;
+    private static final String BASE_DIR = System.getProperty("user.home") + File.separator + ".tika-dl" +
+            File.separator + "models" + File.separator + "dl4j";
+    private static final String MODEL_DIR = BASE_DIR + File.separator + "vgg-16";
 
     @Field
-    private File modelFile = new File(MODEL_DIR_PREPROCESSED + File.separator + "vgg16.zip");
-
-    @Field
-    private File locationToSave = new File(MODEL_DIR + File.separator
-            + "tikaPreprocessed" + File.separator + "vgg16.zip");
+    private File cacheDir = new File(MODEL_DIR + File.separator + "vgg16.zip");
 
     @Field
     private boolean serialize = true;
+
     @Field
     private int topN;
+
     private NativeImageLoader imageLoader = new NativeImageLoader(224, 224, 3);
     private DataNormalization preProcessor = new VGG16ImagePreProcessor();
     private boolean available = false;
@@ -89,23 +84,23 @@ public class DL4JVGG16Net implements ObjectRecogniser {
 
     @Override
 	public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
-	//TODO: what do we want to check here?                                                                                                                                                                                                               
+	    //TODO: what do we want to check here?
     }
 
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
         try {
             if (serialize) {
-                if (locationToSave.exists()) {
-                    model = ModelSerializer.restoreComputationGraph(locationToSave);
-                    LOG.info("Preprocessed Model Loaded from {}", locationToSave);
+                if (cacheDir.exists()) {
+                    model = ModelSerializer.restoreComputationGraph(cacheDir);
+                    LOG.info("Preprocessed Model Loaded from {}", cacheDir);
                 } else {
-                    LOG.warn("Preprocessed Model doesn't exist at {}", locationToSave);
-                    locationToSave.getParentFile().mkdirs();
+                    LOG.warn("Preprocessed Model doesn't exist at {}", cacheDir);
+                    cacheDir.getParentFile().mkdirs();
                     ZooModel zooModel = VGG16.builder().build();
                     model = (ComputationGraph)zooModel.initPretrained(PretrainedType.IMAGENET);
                     LOG.info("Saving the Loaded model for future use. Saved models are more optimised to consume less resources.");
-                    ModelSerializer.writeModel(model, locationToSave, true);
+                    ModelSerializer.writeModel(model, cacheDir, true);
                 }
             } else {
                 LOG.info("Weight graph model loaded via dl4j Helper functions");

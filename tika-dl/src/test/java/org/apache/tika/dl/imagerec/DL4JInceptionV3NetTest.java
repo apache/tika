@@ -20,14 +20,11 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class DL4JInceptionV3NetTest {
 
-    @Ignore("until we can fix the layer configuration exception")
     @Test
     public void recognise() throws Exception {
         TikaConfig config = null;

@@ -46,9 +46,10 @@ import org.apache.tika.parser.recognition.ObjectRecogniser;
 import org.apache.tika.parser.recognition.RecognisedObject;
 import org.datavec.image.loader.NativeImageLoader;
 import org.deeplearning4j.nn.graph.ComputationGraph;
-import org.deeplearning4j.nn.modelimport.keras.KerasModelImport;
 import org.deeplearning4j.nn.modelimport.keras.exceptions.InvalidKerasConfigurationException;
 import org.deeplearning4j.nn.modelimport.keras.exceptions.UnsupportedKerasConfigurationException;
+import org.deeplearning4j.nn.modelimport.keras.KerasModel;
+import org.deeplearning4j.nn.modelimport.keras.utils.KerasModelBuilder;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -69,7 +70,6 @@ import org.xml.sax.SAXException;
  * for advances users who are interested in tweaking the settings, the following fields are configurable:
  * <ul>
  * <li>{@link #modelWeightsPath}</li>
- * <li>{@link #modelJsonPath}</li>
  * <li>{@link #labelFile}</li>
  * <li>{@link #labelLang}</li>
  * <li>{@link #cacheDir}</li>
@@ -91,16 +91,18 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     private static final Set<MediaType> MEDIA_TYPES
             = Collections.singleton(MediaType.image("jpeg"));
     private static final Logger LOG = LoggerFactory.getLogger(DL4JInceptionV3Net.class);
-    private static final String DEF_WEIGHTS_URL = "https://raw.githubusercontent.com/USCDataScience/dl4j-kerasimport-examples/98ec48b56a5b8fb7d54a2994ce9cb23bfefac821/dl4j-import-example/data/inception-model-weights.h5";
-    public static final String DEF_MODEL_JSON = "org/apache/tika/dl/imagerec/inceptionv3-model.json";
-    public static final String DEF_LABEL_MAPPING = "org/apache/tika/dl/imagerec/imagenet_incpetionv3_class_index.json";
+    private static final String DEF_WEIGHTS_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.1/inception_v3_keras_2.h5";
+    private static final String DEF_LABEL_MAPPING_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.1/imagenet_class_index.json";
+    private static final String BASE_DIR = System.getProperty("user.home") + File.separator + ".tika-dl" +
+            File.separator + "models" + File.separator + "keras";
+    private static final String MODEL_DIR = BASE_DIR + File.separator + "inception-v3";
 
     /**
      * Cache dir to be used for downloading the weights file.
      * This is used to download the model.
      */
     @Field
-    private File cacheDir = new File(".tmp-inception");
+    private File cacheDir = new File(MODEL_DIR);
 
     /**
      * Path to a HDF5 file that contains weights of the Keras network
@@ -112,21 +114,13 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     @Field
     private String modelWeightsPath = DEF_WEIGHTS_URL;
 
-    /**
-     * Path to a JSON file that contains network (graph) structure exported from Keras.
-     * <p>
-     * <br/>
-     * Default is retrieved from {@value DEF_MODEL_JSON}
-     */
-    @Field
-    private String modelJsonPath = DEF_MODEL_JSON;
     /***
      * Path to file that tells how to map node index to human readable label names
      * <br/>
-     * The default is retrieved from {@value DEF_LABEL_MAPPING}
+     * The default is retrieved from {@value DEF_LABEL_MAPPING_URL}
      */
     @Field
-    private String labelFile = DEF_LABEL_MAPPING;
+    private String labelFile = DEF_LABEL_MAPPING_URL;
 
     /**
      * Language name of the labels.
@@ -138,8 +132,10 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
 
     @Field
     private int imgHeight = 299;
+
     @Field
     private int imgWidth = 299;
+
     @Field
     private int imgChannels = 3;
     /***
@@ -169,10 +165,10 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
                     " Asking the classloader", path);
             URL url = getClass().getClassLoader().getResource(path);
             if (url == null) {
-                LOG.debug("Classloader does not knows the file {}", path);
+                LOG.debug("Classloader does not know the file {}", path);
                 file = null;
             } else {
-                LOG.debug("Class loader knows the file {}", path);
+                LOG.debug("Classloader knows the file {}", path);
                 try {
                     file = cachedDownload(cacheDir, url.toURI());
                 } catch (URISyntaxException | IOException e) {
@@ -192,7 +188,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
         return getClass().getClassLoader().getResourceAsStream(path);
     }
 
-    public static synchronized File cachedDownload(File cacheDir, URI uri)
+    private static synchronized File cachedDownload(File cacheDir, URI uri)
             throws IOException {
 
         if ("file".equals(uri.getScheme()) || uri.getScheme() == null) {
@@ -222,49 +218,52 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
         return cacheFile;
     }
 
-    @Override
-    public void initialize(Map<String, Param> params)
-            throws TikaConfigException {
-        //STEP 1: resolve weights file, download if necessary
-        if (modelWeightsPath.startsWith("http://") || modelWeightsPath.startsWith("https://")) {
-            LOG.debug("Config instructed to download the weights file, doing so.");
+    private String mayBeDownloadFile(String path) throws TikaConfigException{
+        String resolvedFilePath;
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+            LOG.debug("Config instructed to download the file, doing so.");
             try {
-                modelWeightsPath = cachedDownload(cacheDir, URI.create(modelWeightsPath)).getAbsolutePath();
+                resolvedFilePath = cachedDownload(cacheDir, URI.create(path)).getAbsolutePath();
             } catch (IOException e) {
                 throw new TikaConfigException(e.getMessage(), e);
             }
         } else {
-            File modelFile = retrieveFile(modelWeightsPath);
-            if (!modelFile.exists()) {
-                LOG.error("modelWeights does not exist at :: {}", modelWeightsPath);
-                return;
+            File file = retrieveFile(path);
+            if (!file.exists()) {
+                LOG.error("File does not exist at :: {}", path);
             }
-            modelWeightsPath = modelFile.getAbsolutePath();
+            resolvedFilePath = file.getAbsolutePath();
         }
+        return resolvedFilePath;
+    }
 
-        //STEP 2: resolve model JSON
-        File modelJsonFile = retrieveFile(modelJsonPath);
-        if (modelJsonFile == null || !modelJsonFile.exists()) {
-            LOG.error("Could not locate file {}", modelJsonPath);
-            return;
-        }
-        modelJsonPath = modelJsonFile.getAbsolutePath();
+    @Override
+    public void initialize(Map<String, Param> params)
+            throws TikaConfigException {
 
-        //STEP 3: Load labels map
-        try (InputStream stream = retrieveResource(labelFile)) {
+        //STEP 1: resolve weights file, download if necessary
+        modelWeightsPath = mayBeDownloadFile(modelWeightsPath);
+
+        //STEP 2: Load labels map
+        try (InputStream stream = retrieveResource(mayBeDownloadFile(labelFile))) {
             this.labelMap = loadClassIndex(stream);
         } catch (IOException | ParseException e) {
             LOG.error("Could not load labels map", e);
             return;
         }
 
-        //STEP 4: initialize the graph
+        //STEP 3: initialize the graph
         try {
             this.imageLoader = new NativeImageLoader(imgHeight, imgWidth, imgChannels);
             LOG.info("Going to load Inception network...");
             long st = System.currentTimeMillis();
-            this.graph = KerasModelImport.importKerasModelAndWeights(modelJsonPath,
-                    modelWeightsPath, false);
+
+            KerasModelBuilder builder = new KerasModel().modelBuilder().modelHdf5Filename(modelWeightsPath)
+                    .enforceTrainingConfig(false);
+            builder.inputShape(new int[]{299, 299, 3});
+            KerasModel model = builder.buildModel();
+            this.graph = model.getComputationGraph();
+
             long time = System.currentTimeMillis() - st;
             LOG.info("Loaded the Inception model. Time taken={}ms", time);
         } catch (IOException | InvalidKerasConfigurationException
