@@ -155,17 +155,26 @@ public class TikaResource {
 
     public static void fillParseContext(ParseContext parseContext, MultivaluedMap<String, String> httpHeaders,
                                         Parser embeddedParser) {
-        TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
-        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        //lazily initialize configs
+        //if a header is submitted, any params set in --tika-config tika-config.xml
+        //upon server startup will be ignored.
+        TesseractOCRConfig ocrConfig = null;
+        PDFParserConfig pdfParserConfig = null;
         for (String key : httpHeaders.keySet()) {
             if (StringUtils.startsWith(key, X_TIKA_OCR_HEADER_PREFIX)) {
+                ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
                 processHeaderConfig(httpHeaders, ocrConfig, key, X_TIKA_OCR_HEADER_PREFIX);
             } else if (StringUtils.startsWith(key, X_TIKA_PDF_HEADER_PREFIX)) {
+                pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
                 processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
             }
         }
-        parseContext.set(TesseractOCRConfig.class, ocrConfig);
-        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        if (ocrConfig != null) {
+            parseContext.set(TesseractOCRConfig.class, ocrConfig);
+        }
+        if (pdfParserConfig != null) {
+            parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        }
         if (embeddedParser != null) {
             parseContext.set(Parser.class, embeddedParser);
         }
