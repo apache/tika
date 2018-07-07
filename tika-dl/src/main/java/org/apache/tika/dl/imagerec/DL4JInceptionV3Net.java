@@ -91,8 +91,8 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
     private static final Set<MediaType> MEDIA_TYPES
             = Collections.singleton(MediaType.image("jpeg"));
     private static final Logger LOG = LoggerFactory.getLogger(DL4JInceptionV3Net.class);
-    private static final String DEF_WEIGHTS_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.1/inception_v3_keras_2.h5";
-    private static final String DEF_LABEL_MAPPING_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.1/imagenet_class_index.json";
+    private static final String DEF_WEIGHTS_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/inception_v3_keras_2.h5";
+    private static final String DEF_LABEL_MAPPING_URL = "https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/imagenet_class_index.json";
     private static final String BASE_DIR = System.getProperty("user.home") + File.separator + ".tika-dl" +
             File.separator + "models" + File.separator + "keras";
     private static final String MODEL_DIR = BASE_DIR + File.separator + "inception-v3";
