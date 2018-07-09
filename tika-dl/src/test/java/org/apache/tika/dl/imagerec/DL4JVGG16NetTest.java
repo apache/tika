@@ -20,15 +20,17 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
+
+import java.io.InputStream;
 
 public class DL4JVGG16NetTest {
 
     @Test
     public void recognise() throws Exception {
         TikaConfig config = null;
+        InputStream is = getClass().getResourceAsStream("dl4j-vgg16-config.xml");
         try {
             config = new TikaConfig(getClass().getResourceAsStream("dl4j-vgg16-config.xml"));
         } catch (Exception e) {
