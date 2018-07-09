@@ -42,11 +42,8 @@ import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Basic FileResourceConsumer that reads files from an input
- * directory and writes content to the output directory.
- * <p/>
- * This tries to catch most of the common exceptions, log them and
- * store them in the metadata list output.
+ * This runs a RecursiveParserWrapper against an input file
+ * and outputs the json metadata to an output file.
  */
 public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
 
@@ -55,34 +52,21 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
     private final OutputStreamFactory fsOSFactory;
     private String outputEncoding = "UTF-8";
 
-
     /**
-     * @deprecated use {@link RecursiveParserWrapperFSConsumer#RecursiveParserWrapperFSConsumer(ArrayBlockingQueue, Parser, ContentHandlerFactory, OutputStreamFactory)}
+     *
      * @param queue
-     * @param parserFactory
+     * @param parser -- must be RecursiveParserWrapper or a ForkParser that wraps a RecursiveParserWrapper
      * @param contentHandlerFactory
      * @param fsOSFactory
-     * @param config
      */
     public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
-                                            ParserFactory parserFactory,
-                                            ContentHandlerFactory contentHandlerFactory,
-                                            OutputStreamFactory fsOSFactory, TikaConfig config) {
-        super(queue);
-        this.contentHandlerFactory = contentHandlerFactory;
-        this.fsOSFactory = fsOSFactory;
-        Parser parserToWrap = parserFactory.getParser(config);
-        this.parser = new RecursiveParserWrapper(parserToWrap, contentHandlerFactory);
-    }
-
-    public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
-                                            Parser parserToWrap,
+                                            Parser parser,
                                             ContentHandlerFactory contentHandlerFactory,
                                             OutputStreamFactory fsOSFactory) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
-        this.parser = new RecursiveParserWrapper(parserToWrap, contentHandlerFactory);
+        this.parser = parser;
     }
 
     @Override
@@ -115,24 +99,10 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         try {
             parse(fileResource.getResourceId(), parser, is, handler,
                     containerMetadata, context);
-            metadataList = handler.getMetadataList();
         } catch (Throwable t) {
             thrown = t;
-            metadataList = handler.getMetadataList();
-            if (metadataList == null) {
-                metadataList = new LinkedList<>();
-            }
-            Metadata m = null;
-            if (metadataList.size() == 0) {
-                m = containerMetadata;
-            } else {
-                //take the top metadata item
-                m = metadataList.remove(0);
-            }
-            String stackTrace = ExceptionUtils.getFilteredStackTrace(t);
-            m.add(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime", stackTrace);
-            metadataList.add(0, m);
         } finally {
+            metadataList = handler.getMetadataList();
             IOUtils.closeQuietly(is);
         }
 
@@ -152,6 +122,8 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         if (thrown != null) {
             if (thrown instanceof Error) {
                 throw (Error) thrown;
+            } else if (thrown instanceof SecurityException) {
+                throw (SecurityException)thrown;
             } else {
                 return false;
             }

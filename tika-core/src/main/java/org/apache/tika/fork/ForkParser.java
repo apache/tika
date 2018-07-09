@@ -18,6 +18,7 @@ package org.apache.tika.fork;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -33,6 +35,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -42,21 +45,67 @@ public class ForkParser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = -4962742892274663950L;
 
+    //these are used by the legacy usage
     private final ClassLoader loader;
-
     private final Parser parser;
+
+    //these are used when the server builds a parser via a directory
+    //of jars, not via legacy bootstrap etc.
+    private final Path tikaBin;
+    private final ParserFactoryFactory parserFactoryFactory;
 
     /** Java command line */
     private List<String> java = Arrays.asList("java", "-Xmx32m");
 
     /** Process pool size */
+    @Field
     private int poolSize = 5;
 
     private int currentlyInUse = 0;
 
     private final Queue<ForkClient> pool = new LinkedList<>();
 
-    private long serverPulseMillis = 5000;
+    @Field
+    private long serverPulseMillis = 1000;
+
+    @Field
+    private long serverParseTimeoutMillis = 60000;
+
+    @Field
+    private long serverWaitTimeoutMillis = 60000;
+
+    @Field
+    private int maxFilesProcessedPerClient = -1;
+
+    /**
+     * If you have a directory with, say, tike-app.jar and you want the child process/server to build a parser
+     * and run it from that -- so that you can keep all of those dependencies out of your client code, use
+     * this initializer.
+     *
+     * @param tikaBin directory containing the tika-app.jar or similar -- full jar including tika-core and all
+     *                desired parsers and dependencies
+     * @param factoryFactory
+     */
+    public ForkParser(Path tikaBin, ParserFactoryFactory factoryFactory) {
+        loader = null;
+        parser = null;
+        this.tikaBin = tikaBin;
+        this.parserFactoryFactory = factoryFactory;
+    }
+
+    /**
+     * <b>EXPERT</b>
+     * @param tikaBin directory containing the tika-app.jar or similar -- full jar including tika-core and all
+     *                desired parsers and dependencies
+     * @param parserFactoryFactory -- the factory to use to generate the parser factory in the child process/server
+     * @param classLoader to use for all classes besides the parser in the child process/server
+     */
+    public ForkParser(Path tikaBin, ParserFactoryFactory parserFactoryFactory, ClassLoader classLoader) {
+        parser = null;
+        loader = classLoader;
+        this.tikaBin = tikaBin;
+        this.parserFactoryFactory = parserFactoryFactory;
+    }
 
     /**
      * @param loader The ClassLoader to use 
@@ -66,6 +115,8 @@ public class ForkParser extends AbstractParser {
         if (parser instanceof ForkParser) {
             throw new IllegalArgumentException("The underlying parser of a ForkParser should not be a ForkParser, but a specific implementation.");
         }
+        this.tikaBin = null;
+        this.parserFactoryFactory = null;
         this.loader = loader;
         this.parser = parser;
     }
@@ -125,7 +176,8 @@ public class ForkParser extends AbstractParser {
 
     /**
      * Sets the command used to start the forked server process.
-     * The arguments "-jar" and "/path/to/bootstrap.jar" are
+     * The arguments "-jar" and "/path/to/bootstrap.jar"
+     * or "-cp" and "/path/to/tika_bin" are
      * appended to the given command when starting the process.
      * The default setting is {"java", "-Xmx32m"}.
      * <p/>
@@ -155,6 +207,45 @@ public class ForkParser extends AbstractParser {
         return parser.getSupportedTypes(context);
     }
 
+    /**
+     *
+     * This sends the objects to the server for parsing, and the server via
+     * the proxies acts on the handler as if it were updating it directly.
+     * <p>
+     * If using a RecursiveParserWrapper, there are two options:
+     * </p>
+     * <p>
+     *     <ol>
+     *         <li>Send in a class that extends {@link org.apache.tika.sax.RecursiveParserWrapperHandler},
+     *              and the server will proxy back the data as best it can[0].</li>
+     *         <li>Send in a class that extends {@link AbstractRecursiveParserWrapperHandler}
+     *              and the server will act on the class but not proxy back the data.  This
+     *              can be used, for example, if all you want to do is write to disc, extend
+     *              {@link AbstractRecursiveParserWrapperHandler} to write to disc when
+     *              {@link AbstractRecursiveParserWrapperHandler#endDocument(ContentHandler, Metadata)}
+     *              is called, and the server will take care of the writing via the handler.</li>
+     *     </ol>
+     * </p>
+     * <p>
+     *     <b>NOTE:</b>[0] &quot;the server will proxy back the data as best it can&quot;.  If the handler
+     *     implements Serializable and is actually serializable, the server will send it and the
+     *     {@link Metadata} back upon {@link org.apache.tika.sax.RecursiveParserWrapperHandler#endEmbeddedDocument(ContentHandler, Metadata)}
+     *     or {@link org.apache.tika.sax.RecursiveParserWrapperHandler#endEmbeddedDocument(ContentHandler, Metadata)}.
+     *     If the handler does not implement {@link java.io.Serializable} or if there is a
+     *     {@link java.io.NotSerializableException} thrown during serialization, the server will
+     *     call {@link ContentHandler#toString()} on the ContentHandler and set that value with the
+     *     {@link org.apache.tika.sax.RecursiveParserWrapperHandler#TIKA_CONTENT} key and then
+     *     serialize and proxy that data back.
+     * </p>
+     *
+     * @param stream the document stream (input)
+     * @param handler handler for the XHTML SAX events (output)
+     * @param metadata document metadata (input and output)
+     * @param context parse context
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     */
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
@@ -168,8 +259,10 @@ public class ForkParser extends AbstractParser {
         boolean alive = false;
         ForkClient client = acquireClient();
         try {
-            ContentHandler tee = new TeeContentHandler(
+            ContentHandler tee = (handler instanceof AbstractRecursiveParserWrapperHandler) ? handler :
+                    new TeeContentHandler(
                     handler, new MetadataContentHandler(metadata));
+
             t = client.call("parse", stream, tee, metadata, context);
             alive = true;
         } catch (TikaException te) {
@@ -214,7 +307,7 @@ public class ForkParser extends AbstractParser {
 
             // Create a new process if there's room in the pool
             if (client == null && currentlyInUse < poolSize) {
-                client = new ForkClient(loader, parser, java, serverPulseMillis);
+                client = newClient();
             }
 
             // Ping the process, and get rid of it if it's inactive
@@ -237,10 +330,28 @@ public class ForkParser extends AbstractParser {
         }
     }
 
+    private ForkClient newClient() throws IOException, TikaException {
+        TimeoutLimits timeoutLimits = new TimeoutLimits(serverPulseMillis, serverParseTimeoutMillis, serverWaitTimeoutMillis);
+        if (loader == null && parser == null && tikaBin != null && parserFactoryFactory != null) {
+            return new ForkClient(tikaBin, parserFactoryFactory, java, timeoutLimits);
+        } else if (loader != null && parser != null && tikaBin == null && parserFactoryFactory == null) {
+           return new ForkClient(loader, parser, java, timeoutLimits);
+        } else if (loader != null && parser == null && tikaBin != null && parserFactoryFactory != null) {
+            return new ForkClient(tikaBin, parserFactoryFactory, loader, java, timeoutLimits);
+        } else {
+            //TODO: make this more useful
+            throw new IllegalStateException("Unexpected combination of state items");
+        }
+    }
+
     private synchronized void releaseClient(ForkClient client, boolean alive) {
         currentlyInUse--;
         if (currentlyInUse + pool.size() < poolSize && alive) {
-            pool.offer(client);
+            if (maxFilesProcessedPerClient > 0 && client.getFilesProcessed() >= maxFilesProcessedPerClient) {
+                client.close();
+            } else {
+                pool.offer(client);
+            }
             notifyAll();
         } else {
             client.close();
@@ -249,14 +360,49 @@ public class ForkParser extends AbstractParser {
 
     /**
      * The amount of time in milliseconds that the server
-     * should wait for any input or output.  If it receives no
-     * input or output in this amount of time, it will shutdown.
+     * should wait before checking to see if the parse has timed out
+     * or if the wait has timed out
      * The default is 5 seconds.
      *
      * @param serverPulseMillis milliseconds to sleep before checking if there has been any activity
      */
     public void setServerPulseMillis(long serverPulseMillis) {
         this.serverPulseMillis = serverPulseMillis;
+    }
+
+    /**
+     * The maximum amount of time allowed for the server to try to parse a file.
+     * If more than this time elapses, the server shuts down, and the ForkParser
+     * throws an exception.
+     *
+     * @param serverParseTimeoutMillis
+     */
+    public void setServerParseTimeoutMillis(long serverParseTimeoutMillis) {
+        this.serverParseTimeoutMillis = serverParseTimeoutMillis;
+    }
+
+    /**
+     * The maximum amount of time allowed for the server to wait for a new request to parse
+     * a file.  The server will shutdown after this amount of time, and a new server will have
+     * to be started by a new client.
+     * @param serverWaitTimeoutMillis
+     */
+    public void setServerWaitTimeoutMillis(long serverWaitTimeoutMillis) {
+        this.serverWaitTimeoutMillis = serverWaitTimeoutMillis;
+    }
+
+    /**
+     * If there is a slowly building memory leak in one of the parsers,
+     * it is useful to set a limit on the number of files processed
+     * by a server before it is shutdown and restarted. Default value is -1.
+     *
+     * @param maxFilesProcessedPerClient maximum number of files that a server can handle
+     *                                 before the parser shuts down a client and creates
+     *                                 a new process. If set to -1, the server is never restarted
+     *                                 because of the number of files handled.
+     */
+    public void setMaxFilesProcessedPerServer(int maxFilesProcessedPerClient) {
+        this.maxFilesProcessedPerClient = maxFilesProcessedPerClient;
     }
 
 }

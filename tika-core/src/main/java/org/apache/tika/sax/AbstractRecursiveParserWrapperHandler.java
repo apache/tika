@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 
 /**
@@ -32,7 +33,7 @@ import java.nio.charset.Charset;
  * It allows for finer-grained processing of embedded documents than in the legacy handlers.
  * Subclasses can choose how to process individual embedded documents.
  */
-public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler {
+public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler implements Serializable {
 
     public final static Property TIKA_CONTENT = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"content");
     public final static Property PARSE_TIME_MILLIS = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX + "parse_time_millis");
@@ -110,10 +111,13 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
      * @return whether this handler has hit the maximum embedded resources during the parse
      */
     public boolean hasHitMaximumEmbeddedResources() {
-        if (maxEmbeddedResources > -1 && embeddedResources > maxEmbeddedResources) {
+        if (maxEmbeddedResources > -1 && embeddedResources >= maxEmbeddedResources) {
             return true;
         }
         return false;
     }
 
+    public ContentHandlerFactory getContentHandlerFactory() {
+        return contentHandlerFactory;
+    }
 }

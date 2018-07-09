@@ -20,25 +20,41 @@ package org.apache.tika.cli;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.logging.Handler;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class TikaCLIBatchIntegrationTest {
 
@@ -114,6 +130,27 @@ public class TikaCLIBatchIntegrationTest {
     }
 
     @Test
+    public void testStreamingJsonRecursiveBatchIntegration() throws Exception {
+        String[] params = {"-i", testInputDirForCommandLine,
+                "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "10",
+                "-J", //recursive Json
+                "-t", //plain text in content
+                "-streamOut"
+        };
+        TikaCLI.main(params);
+
+        Path jsonFile = tempOutputDir.resolve("test_recursive_embedded.docx.json");
+        try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(12, metadataList.size());
+            assertTrue(metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).contains("human events"));
+            //test that the last written object has been bumped to the first by JsonMetadataList.fromJson()
+            assertNull( metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+        }
+    }
+
+    @Test
     public void testProcessLogFileConfig() throws Exception {
         String[] params = {"-i", testInputDirForCommandLine,
                 "-o", tempOutputDirForCommandLine,
@@ -170,6 +207,5 @@ public class TikaCLIBatchIntegrationTest {
         assertTrue("File doesn't exist: "+path.toAbsolutePath(),
                 Files.isRegularFile(path));
     }
-
 
 }

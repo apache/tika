@@ -63,6 +63,7 @@
                 description="output directory for output"/> <!-- do we want to make this mandatory -->
         <option opt="recursiveParserWrapper"
                 description="use the RecursiveParserWrapper or not (default = false)"/>
+        <option opt="streamOut" description="stream the output of the RecursiveParserWrapper (default = false)"/>
         <option opt="handleExisting" hasArg="true"
                 description="if an output file already exists, do you want to: overwrite, rename or skip"/>
         <option opt="basicHandlerType" hasArg="true"

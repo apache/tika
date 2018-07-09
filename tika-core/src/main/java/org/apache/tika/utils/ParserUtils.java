@@ -83,7 +83,7 @@ public class ParserUtils {
      *  {@link Exception} wasn't immediately thrown (eg when several different
      *  Parsers are used)
      */
-    public static void recordParserFailure(Parser parser, Exception failure, 
+    public static void recordParserFailure(Parser parser, Throwable failure,
                                            Metadata metadata) {
         String trace = ExceptionUtils.getStackTrace(failure);
         metadata.add(EMBEDDED_EXCEPTION, trace);

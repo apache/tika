@@ -19,8 +19,10 @@ package org.apache.tika.parser.chm;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
@@ -218,7 +220,9 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         for (int i = 0; i < parseContexts.length; i++) {
             parseContexts[i] = new ParseContext();
         }
-        testMultiThreaded(parseContexts, 10, 10, new FileFilter() {
+        Parser p = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
+        testMultiThreaded(wrapper, parseContexts, 10, 10, new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
                         if (pathname.getName().toLowerCase(Locale.ENGLISH).endsWith(".chm")) {

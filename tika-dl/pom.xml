@@ -36,7 +36,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>0.8.0</dl4j.version> 
+    <dl4j.version>0.8.0</dl4j.version>
     <dl4j.model.version>0.8.0-2</dl4j.model.version>
   </properties>
 

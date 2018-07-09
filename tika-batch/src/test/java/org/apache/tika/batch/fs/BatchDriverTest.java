@@ -206,5 +206,46 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(0, driver.getNumRestarts());
     }
 
+    @Test(timeout = 60000)
+    public void testSystemExit() throws Exception {
+        Path outputDir = getNewOutputDir("system-exit");
+        Map<String, String> args = new HashMap<>();
+        args.put("-numConsumers", "1");
+
+        String[] commandLine = getDefaultCommandLineArgsArr("system_exit", outputDir, args);
+        BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", commandLine);
+        driver.execute();
+        assertEquals(6, countChildren(outputDir));
+        assertTrue(driver.getNumRestarts() > 1);
+        for (int i = 0; i < 3; i++) {
+            assertEquals("problem with "+i, 0, Files.size(outputDir.resolve("test"+i+"_system_exit.xml.xml")));
+        }
+        //sys exit may prevent test3 from running successfully
+        for (int i = 5; i < 6; i++) {
+            assertContains("first test file",
+                    readFileToString(outputDir.resolve("test"+i+"_ok.xml.xml"), UTF_8));
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testThreadInterrupt() throws Exception {
+        Path outputDir = getNewOutputDir("thread-interrupt");
+        Map<String, String> args = new HashMap<>();
+        args.put("-numConsumers", "1");
+
+        String[] commandLine = getDefaultCommandLineArgsArr("thread_interrupt", outputDir, args);
+        BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", commandLine);
+        driver.execute();
+        assertEquals(6, countChildren(outputDir));
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals("problem with "+i, 0, Files.size(outputDir.resolve("test"+i+"_thread_interrupt.xml.xml")));
+        }
+        //sys exit may prevent test3 from running successfully
+        for (int i = 5; i < 6; i++) {
+            assertContains("first test file",
+                    readFileToString(outputDir.resolve("test"+i+"_ok.xml.xml"), UTF_8));
+        }
+    }
 
 }

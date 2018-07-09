@@ -20,6 +20,7 @@ package org.apache.tika.parser.rtf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -238,7 +239,7 @@ final class TextExtractor {
 
     // Used when we decode bytes -> chars using CharsetDecoder:
     private final char[] outputArray = new char[128];
-    private final CharBuffer outputBuffer = CharBuffer.wrap(outputArray);
+    private final Buffer outputCharBuffer = CharBuffer.wrap(outputArray);
     // Holds the font table from this RTF doc, mapping
     // the font number (from \fN control word) to the
     // corresponding charset:
@@ -262,7 +263,7 @@ final class TextExtractor {
     // for text output:
     private byte[] pendingBytes = new byte[16];
     private int pendingByteCount;
-    private ByteBuffer pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
+    private Buffer pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
     // Holds pending chars for text output
     private char[] pendingChars = new char[10];
     private int pendingCharCount;
@@ -663,16 +664,16 @@ final class TextExtractor {
             final CharsetDecoder decoder = getDecoder();
             pendingByteBuffer.limit(pendingByteCount);
             assert pendingByteBuffer.position() == 0;
-            assert outputBuffer.position() == 0;
+            assert outputCharBuffer.position() == 0;
 
             while (true) {
                 // We pass true for endOfInput because, when
                 // we are called, we should have seen a
                 // complete sequence of characters for this
                 // charset:
-                final CoderResult result = decoder.decode(pendingByteBuffer, outputBuffer, true);
+                final CoderResult result = decoder.decode((ByteBuffer)pendingByteBuffer, (CharBuffer) outputCharBuffer, true);
 
-                final int pos = outputBuffer.position();
+                final int pos = outputCharBuffer.position();
                 if (pos > 0) {
                     if (inHeader || fieldState == 1) {
                         pendingBuffer.append(outputArray, 0, pos);
@@ -680,7 +681,7 @@ final class TextExtractor {
                         lazyStartParagraph();
                         out.characters(outputArray, 0, pos);
                     }
-                    outputBuffer.position(0);
+                    outputCharBuffer.position(0);
                 }
 
                 if (result == CoderResult.UNDERFLOW) {
@@ -689,9 +690,9 @@ final class TextExtractor {
             }
 
             while (true) {
-                final CoderResult result = decoder.flush(outputBuffer);
+                final CoderResult result = decoder.flush((CharBuffer) outputCharBuffer);
 
-                final int pos = outputBuffer.position();
+                final int pos = outputCharBuffer.position();
                 if (pos > 0) {
                     if (inHeader || fieldState == 1) {
                         pendingBuffer.append(outputArray, 0, pos);
@@ -699,7 +700,7 @@ final class TextExtractor {
                         lazyStartParagraph();
                         out.characters(outputArray, 0, pos);
                     }
-                    outputBuffer.position(0);
+                    outputCharBuffer.position(0);
                 }
 
                 if (result == CoderResult.UNDERFLOW) {

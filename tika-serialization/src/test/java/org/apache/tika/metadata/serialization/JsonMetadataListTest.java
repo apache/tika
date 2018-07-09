@@ -21,12 +21,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 
 public class JsonMetadataListTest {
@@ -57,6 +60,16 @@ public class JsonMetadataListTest {
         JsonMetadataList.toJson(metadataList, writer);
         List<Metadata> deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
         assertEquals(metadataList, deserialized);
+
+        //now test streaming serializer
+        writer = new StringWriter();
+        try(JsonStreamingSerializer streamingSerializer = new JsonStreamingSerializer(writer)) {
+            streamingSerializer.add(m1);
+            streamingSerializer.add(m2);
+        }
+        deserialized = JsonMetadataList.fromJson(new StringReader(writer.toString()));
+        assertEquals(metadataList, deserialized);
+
     }
 
     @Test
@@ -119,5 +132,38 @@ public class JsonMetadataListTest {
         writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
         assertTrue(writer.toString().startsWith("[{\"tika:content\":\"this is the content\",\"zk1\":[\"v1\",\"v2\","));
+    }
+
+    @Test
+    public void testSwitchingOrderOfMainDoc() throws Exception {
+        Metadata m1 = new Metadata();
+        m1.add("k1", "v1");
+        m1.add("k1", "v2");
+        m1.add("k1", "v3");
+        m1.add("k1", "v4");
+        m1.add("k1", "v4");
+        m1.add("k2", "v1");
+        m1.add(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/embedded-1");
+
+        Metadata m2 = new Metadata();
+        m2.add("k3", "v1");
+        m2.add("k3", "v2");
+        m2.add("k3", "v3");
+        m2.add("k3", "v4");
+        m2.add("k3", "v4");
+        m2.add("k4", "v1");
+
+        List<Metadata> truth = new ArrayList<>();
+        truth.add(m2);
+        truth.add(m1);
+        StringWriter stringWriter = new StringWriter();
+        try(JsonStreamingSerializer serializer = new JsonStreamingSerializer(stringWriter)) {
+            serializer.add(m1);
+            serializer.add(m2);
+        }
+        Reader reader = new StringReader(stringWriter.toString());
+        List<Metadata> deserialized = JsonMetadataList.fromJson(reader);
+        assertEquals(truth, deserialized);
+
     }
 }

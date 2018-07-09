@@ -83,7 +83,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
 
 
     private static final Pattern HTTP_META_PATTERN = Pattern.compile(
-            "(?is)<\\s*meta\\s+([^<>]+)"
+            "(?is)<\\s*meta(?:/|\\s+)([^<>]+)"
     );
 
     //this should match both the older:
@@ -97,7 +97,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
     //For a more general "not" matcher, try:
     //("(?is)charset\\s*=\\s*['\\\"]?\\s*([^<>\\s'\\\";]+)")
     private static final Pattern FLEXIBLE_CHARSET_ATTR_PATTERN = Pattern.compile(
-            ("(?is)charset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)")
+            ("(?is)\\bcharset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)")
     );
 
     private static final Charset ASCII = Charset.forName("US-ASCII");
@@ -154,6 +154,10 @@ public class HtmlEncodingDetector implements EncodingDetector {
                 if (CHARSETS_UNSUPPORTED_BY_IANA.contains(candCharset.toLowerCase(Locale.US))) {
                     continue;
                 }
+                if ("x-user-defined".equalsIgnoreCase(candCharset)) {
+                    candCharset = "windows-1252";
+                }
+
                 if (CharsetUtils.isSupported(candCharset)) {
                     try {
                         return CharsetUtils.forName(candCharset);

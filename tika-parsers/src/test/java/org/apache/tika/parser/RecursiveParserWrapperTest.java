@@ -151,7 +151,7 @@ public class RecursiveParserWrapperTest {
         list = wrapper.getMetadata();
 
         //add 1 for outer container file
-        assertEquals(maxEmbedded, list.size());
+        assertEquals(maxEmbedded+1, list.size());
 
         limitReached = list.get(0).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
         assertEquals("true", limitReached);
@@ -205,9 +205,8 @@ public class RecursiveParserWrapperTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1), maxEmbedded);
         wrapper.parse(stream, handler, metadata, context);
         list = handler.getMetadataList();
-
         //add 1 for outer container file
-        assertEquals(maxEmbedded, list.size());
+        assertEquals(maxEmbedded+1, list.size());
 
         limitReached = list.get(0).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
         assertEquals("true", limitReached);
@@ -282,7 +281,7 @@ public class RecursiveParserWrapperTest {
 
         //Composite parser swallows caught TikaExceptions, IOExceptions and SAXExceptions
         //and just doesn't bother to report that there was an exception.
-        assertEquals(12, list.size());
+        assertEquals(13, list.size());
     }
 
     @Test

@@ -40,8 +40,10 @@ import org.apache.tika.batch.fs.FSConsumersManager;
 import org.apache.tika.batch.fs.FSOutputStreamFactory;
 import org.apache.tika.batch.fs.FSUtil;
 import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
+import org.apache.tika.batch.fs.StreamOutRPWFSConsumer;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.util.ClassLoaderUtil;
@@ -65,6 +67,17 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             Node recursiveParserWrapperNode = node.getAttributes().getNamedItem("recursiveParserWrapper");
             if (recursiveParserWrapperNode != null) {
                 recursiveParserWrapper = PropsUtil.getBoolean(recursiveParserWrapperNode.getNodeValue(), recursiveParserWrapper);
+            }
+        }
+
+        boolean streamOut = false;
+        String streamOutString = runtimeAttributes.get("streamOut");
+        if (streamOutString != null){
+            streamOut = PropsUtil.getBoolean(streamOutString, streamOut);
+        } else {
+            Node streamOutNode = node.getAttributes().getNamedItem("streamout");
+            if (streamOutNode != null) {
+                streamOut = PropsUtil.getBoolean(streamOutNode.getNodeValue(), streamOut);
             }
         }
 
@@ -132,9 +145,16 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
                 contentHandlerFactory, recursiveParserWrapper);
         Parser parser = parserFactory.getParser(config);
         if (recursiveParserWrapper) {
+            parser = new RecursiveParserWrapper(parser);
             for (int i = 0; i < numConsumers; i++) {
-                FileResourceConsumer c = new RecursiveParserWrapperFSConsumer(queue,
-                        parser, contentHandlerFactory, outputStreamFactory);
+                FileResourceConsumer c = null;
+                if (streamOut){
+                    c = new StreamOutRPWFSConsumer(queue,
+                            parser, contentHandlerFactory, outputStreamFactory);
+                } else {
+                    c = new RecursiveParserWrapperFSConsumer(queue,
+                            parser, contentHandlerFactory, outputStreamFactory);
+                }
                 consumers.add(c);
             }
         } else {

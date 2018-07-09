@@ -16,19 +16,6 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Pattern;
-
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -36,12 +23,15 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
+import org.apache.poi.openxml4j.util.ZipEntrySource;
+import org.apache.poi.openxml4j.util.ZipFileZipEntrySource;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -51,6 +41,18 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -172,7 +174,6 @@ public class ZipContainerDetector implements Detector {
             if (type != null) {
                 return type;
             }
-
             ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
             try {
                 type = detectOpenDocument(zip);
@@ -234,36 +235,67 @@ public class ZipContainerDetector implements Detector {
     }
 
     private static MediaType detectOPCBased(TikaInputStream stream) {
-        try {
-//            if (zip.getEntry("_rels/.rels") != null
-  //                  || zip.getEntry("[Content_Types].xml") != null) {
-                // Use POI to open and investigate it for us
-                OPCPackage pkg = OPCPackage.open(stream.getFile().getPath(), PackageAccess.READ);
-                stream.setOpenContainer(pkg);
 
-                // Is at an OOXML format?
-                MediaType type = detectOfficeOpenXML(pkg);
-                if (type != null) return type;
-                
-                // Is it XPS format?
-                type = detectXPSOPC(pkg);
-                if (type != null) return type;
-                
-                // Is it an AutoCAD format?
-                type = detectAutoCADOPC(pkg);
-                if (type != null) return type;
-                
-                // We don't know what it is, sorry
-                return null;
+        ZipEntrySource zipEntrySource = null;
+        try {
+            zipEntrySource = new ZipFileZipEntrySource(new java.util.zip.ZipFile(stream.getFile()));
         } catch (IOException e) {
             return null;
+        }
+
+        //if (zip.getEntry("_rels/.rels") != null
+        //  || zip.getEntry("[Content_Types].xml") != null) {
+        // Use POI to open and investigate it for us
+        //Unfortunately, POI can throw a RuntimeException...so we
+        //have to catch that.
+        OPCPackage pkg = null;
+        try {
+            pkg = OPCPackage.open(zipEntrySource);
         } catch (SecurityException e) {
+            closeQuietly(zipEntrySource);
+            //TIKA-2571
+            throw e;
+        } catch (InvalidFormatException|RuntimeException e) {
+            closeQuietly(zipEntrySource);
+            return null;
+        }
+
+        MediaType type = null;
+        try {
+
+            // Is at an OOXML format?
+            type = detectOfficeOpenXML(pkg);
+            if (type == null) {
+                // Is it XPS format?
+                type = detectXPSOPC(pkg);
+            }
+            if (type == null) {
+                // Is it an AutoCAD format?
+                type = detectAutoCADOPC(pkg);
+            }
+
+        } catch (SecurityException e) {
+            closeQuietly(zipEntrySource);
             //TIKA-2571
             throw e;
         } catch (RuntimeException e) {
+            closeQuietly(zipEntrySource);
             return null;
-        } catch (InvalidFormatException e) {
-            return null;
+        }
+        //only set the open container if we made it here
+        stream.setOpenContainer(pkg);
+        // We don't know what it is, sorry
+        return type;
+    }
+
+    private static void closeQuietly(ZipEntrySource zipEntrySource) {
+        if (zipEntrySource == null) {
+            return;
+        }
+        try {
+            zipEntrySource.close();
+        } catch (IOException e) {
+            //swallow
         }
     }
     /**

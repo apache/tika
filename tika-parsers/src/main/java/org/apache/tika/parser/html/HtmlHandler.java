@@ -119,6 +119,9 @@ class HtmlHandler extends TextContentHandler {
             String uri, String local, String name, Attributes atts)
             throws SAXException {
 
+        if ("HTML".equals(name) && atts.getValue("lang") != null) {
+            metadata.set(Metadata.CONTENT_LANGUAGE, atts.getValue("lang"));
+        }
         if ("SCRIPT".equals(name)) {
             scriptLevel++;
         }
