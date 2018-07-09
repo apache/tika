@@ -217,7 +217,8 @@
         <exclusion>
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
-        </exclusion>      </exclusions>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.nd4j</groupId>
@@ -244,11 +245,6 @@
           <artifactId>joda-time</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.bytedeco</groupId>
-      <artifactId>javacpp</artifactId>
-      <version>1.4.1</version>
     </dependency>
     <dependency>
         <groupId>org.apache.commons</groupId>

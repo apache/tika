@@ -452,6 +452,12 @@
           <groupId>org.jdom</groupId>
           <artifactId>jdom2</artifactId>
         </exclusion>
+        <!--TIKA 2672 exclude jna to resolve the dependency convergence with tika-dl's
+        deeplearning4j-nn:1.0.0-SNAPSHOT-->
+        <exclusion>
+          <groupId>net.java.dev.jna</groupId>
+          <artifactId>jna</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -473,6 +479,14 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!--TIKA 2672 include a later version of jna as a direct dependency to resolve dependency convergence with tika-dl's
+    deeplearning4j-nn:1.0.0-SNAPSHOT -->
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>4.3.0</version>
+    </dependency>
+
     <!-- grib's current jsoup is vulnerable to xss
          exclude and import a more modern version TIKA-2561-->
     <dependency>
