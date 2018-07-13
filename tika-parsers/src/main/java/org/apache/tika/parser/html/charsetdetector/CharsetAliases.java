@@ -34,7 +34,7 @@ import java.util.Map;
  */
 final class CharsetAliases {
 
-    private static Map<String, Charset> charsetsByLabel = null;
+    private static final Map<String, Charset> charsetsByLabel = new HashMap<>();
 
     private CharsetAliases() {
     }
@@ -45,10 +45,9 @@ final class CharsetAliases {
      */
     static Charset getCharsetByLabel(String label) {
         if (label == null) return null;
-        if (charsetsByLabel == null) {
+        synchronized (charsetsByLabel) {
             // Lazy initialization
-            charsetsByLabel = new HashMap<>();
-            addAll();
+            if (charsetsByLabel.isEmpty()) addAll();
         }
         label = label.trim().toLowerCase(Locale.US);
         return charsetsByLabel.get(label);
