@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.config.TikaConfig;
@@ -82,6 +83,11 @@ public class ExtractEmbeddedFiles {
                 //make sure to select only the file name (not any directory paths
                 //that might be included in the name) and make sure
                 //to normalize the name
+                name = name.replaceAll("\u0000", " ");
+                int prefix = FilenameUtils.getPrefixLength(name);
+                if (prefix > -1) {
+                    name = name.substring(prefix);
+                }
                 name = FilenameUtils.normalize(FilenameUtils.getName(name));
             }
 
@@ -96,9 +102,11 @@ public class ExtractEmbeddedFiles {
                     e.printStackTrace();
                 }
             }
-            //should add check to make sure that you aren't overwriting a file
+
             Path outputFile = outputDir.resolve(name);
-            //do a better job than this of checking
+            if (Files.exists(outputFile)) {
+                outputFile = outputDir.resolve(UUID.randomUUID().toString()+"-"+name);
+            }
             Files.createDirectories(outputFile.getParent());
             Files.copy(stream, outputFile);
         }

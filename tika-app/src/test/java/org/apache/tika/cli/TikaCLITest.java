@@ -17,15 +17,25 @@
 package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.After;
 import org.junit.Before;
@@ -245,39 +255,74 @@ public class TikaCLITest {
     }
 
     @Test
-    public void testExtract() throws Exception {
+    public void testExtractSimple() throws Exception {
+        String[] expectedChildren = new String[]{
+                "MBD002B040A.cdx",
+                "file4.png",
+                "MBD002B0FA6_file5.bin",
+                "MBD00262FE3.txt",
+                "file0.emf"
+        };
+        testExtract("/coffee.xls", expectedChildren, 8);
+    }
+
+    @Test
+    public void testExtractAbsolute() throws Exception {
+        String[] expectedChildren = new String[] {
+                "dangerous/dont/touch.pl",
+        };
+        testExtract("testZip_absolutePath.zip", expectedChildren, 2);
+    }
+
+    @Test
+    public void testExtractRelative() throws Exception {
+        String[] expectedChildren = new String[] {
+                "touch.pl",
+        };
+        testExtract("testZip_relative.zip", expectedChildren);
+    }
+
+    @Test
+    public void testExtractOverlapping() throws Exception {
+        //there should be two files, one with a prepended uuid-f1.txt
+        String[] expectedChildren = new String[] {
+                "f1.txt",
+        };
+        testExtract("testZip_overlappingNames.zip", expectedChildren, 2);
+    }
+
+    @Test
+    public void testExtract0x00() throws Exception {
+        String[] expectedChildren = new String[] {
+                "dang erous.pl",
+        };
+        testExtract("testZip_zeroByte.zip", expectedChildren);
+    }
+
+    private void testExtract(String targetFile, String[] expectedChildrenFileNames) throws Exception {
+        testExtract(targetFile, expectedChildrenFileNames, expectedChildrenFileNames.length);
+    }
+    private void testExtract(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
         File tempFile = File.createTempFile("tika-test-", "");
         tempFile.delete();
-        tempFile.mkdir(); // not really good method for production usage, but ok for tests
-        // google guava library has better solution
+        tempFile.mkdir();
 
         try {
-            String[] params = {"--extract-dir="+tempFile.getAbsolutePath(),"-z", resourcePrefix + "/coffee.xls"};
+            String[] params = {"--extract-dir=" + tempFile.getAbsolutePath(), "-z", resourcePrefix + "/"+targetFile};
 
             TikaCLI.main(params);
 
             StringBuffer allFiles = new StringBuffer();
+            assertEquals(expectedLength, tempFile.list().length);
             for (String f : tempFile.list()) {
+
                 if (allFiles.length() > 0) allFiles.append(" : ");
                 allFiles.append(f);
             }
 
-            // ChemDraw file
-            File expectedCDX = new File(tempFile, "MBD002B040A.cdx");
-            // Image of the ChemDraw molecule
-            File expectedIMG = new File(tempFile, "file4.png");
-            // OLE10Native
-            File expectedOLE10 = new File(tempFile, "MBD002B0FA6_file5.bin");
-            // Something that really isnt a text file... Not sure what it is???
-            File expected262FE3 = new File(tempFile, "MBD00262FE3.txt");
-            // Image of one of the embedded resources
-            File expectedEMF = new File(tempFile, "file0.emf");
-
-            assertExtracted(expectedCDX, allFiles.toString());
-            assertExtracted(expectedIMG, allFiles.toString());
-            assertExtracted(expectedOLE10, allFiles.toString());
-            assertExtracted(expected262FE3, allFiles.toString());
-            assertExtracted(expectedEMF, allFiles.toString());
+            for (String expectedChildName : expectedChildrenFileNames) {
+                assertExtracted(new File(tempFile, expectedChildName), allFiles.toString());
+            }
         } finally {
             FileUtils.deleteDirectory(tempFile);
         }
@@ -510,5 +555,63 @@ public class TikaCLITest {
         assertFalse(content.contains("org.apache.tika.parser.executable.Executable"));
     }
 
+    @Test
+    public void testFileNameNormalization() throws Exception {
+        File z = new File("C:/data/testZip_zeroByte.zip");
+        OutputStream os = new FileOutputStream(z);
+        ZipOutputStream outputStream = new ZipOutputStream(os);
+        ZipEntry zipEntry = new ZipEntry("dang\u0000erous.pl");
+        outputStream.putNextEntry(zipEntry);
+        byte[] bytes = "hello world1".getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0,bytes.length);
+        outputStream.closeEntry();
+        outputStream.flush();
+        outputStream.close();
 
+        z = new File("C:/data/testZip_absolutePath.zip");
+        os = new FileOutputStream(z);
+        outputStream = new ZipOutputStream(os);
+        zipEntry = new ZipEntry("C:/dangerous/dont/touch.pl");
+        outputStream.putNextEntry(zipEntry);
+        bytes = "hello world2".getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0,bytes.length);
+        outputStream.closeEntry();
+        zipEntry = new ZipEntry("/dangerous/dont/touch.pl");
+        outputStream.putNextEntry(zipEntry);
+        bytes = "hello world3".getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0,bytes.length);
+        outputStream.closeEntry();
+
+        outputStream.flush();
+        outputStream.close();
+
+        z = new File("C:/data/testZip_relative.zip");
+        os = new FileOutputStream(z);
+        outputStream = new ZipOutputStream(os);
+        zipEntry = new ZipEntry("../../../dangerous/dont/touch.pl");
+        outputStream.putNextEntry(zipEntry);
+        bytes = "hello world3".getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0,bytes.length);
+        outputStream.closeEntry();
+        outputStream.flush();
+        outputStream.close();
+
+        z = new File("C:/data/testZip_overlappingNames.zip");
+        os = new FileOutputStream(z);
+        outputStream = new ZipOutputStream(os);
+        zipEntry = new ZipEntry("f1.txt");
+        outputStream.putNextEntry(zipEntry);
+        bytes = "hello world4".getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0,bytes.length);
+        outputStream.closeEntry();
+
+        zipEntry = new ZipEntry("../../../f1.txt");
+        outputStream.putNextEntry(zipEntry);
+        bytes = "hello world5".getBytes(StandardCharsets.UTF_8);
+        outputStream.write(bytes, 0,bytes.length);
+        outputStream.closeEntry();
+
+        outputStream.flush();
+        outputStream.close();
+    }
 }
