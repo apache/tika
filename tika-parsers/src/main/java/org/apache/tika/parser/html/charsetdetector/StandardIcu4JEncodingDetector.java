@@ -33,6 +33,8 @@ import java.nio.charset.StandardCharsets;
  * This detector is stateless and a single instance can be used several times for different streams.
  */
 public class StandardIcu4JEncodingDetector implements EncodingDetector {
+    public static EncodingDetector STANDARD_ICU4J_ENCODING_DETECTOR = new StandardIcu4JEncodingDetector();
+
     public Charset detect(InputStream input, Metadata metadata) throws IOException {
         CharsetDetector detector = new CharsetDetector();
         detector.enableInputFilter(true); // enabling input filtering (stripping of HTML tags)

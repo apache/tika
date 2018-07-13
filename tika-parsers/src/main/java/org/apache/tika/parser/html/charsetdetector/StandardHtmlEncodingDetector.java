@@ -17,7 +17,7 @@
 package org.apache.tika.parser.html.charsetdetector;
 
 import org.apache.commons.io.input.BoundedInputStream;
-import org.apache.tika.detect.CompositeEncodingDetector;
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import static java.util.Arrays.asList;
 import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getCharsetByLabel;
 
 /**
@@ -49,21 +48,12 @@ import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getChar
  *     );
  * }</pre>
  * <p>
- * This detector is stateless, and the same instance can be used on several different input streams.
  */
 public final class StandardHtmlEncodingDetector implements EncodingDetector {
-
-    /**
-     * A composite encoding detector chaining a {@link StandardHtmlEncodingDetector}
-     * (that may return null) and a {@link StandardIcu4JEncodingDetector} (that always return a value)
-     * This full thus always returns an encoding, and still works very well with data coming
-     * from the web.
-     */
-    public static final EncodingDetector FULL_DETECTOR = new CompositeEncodingDetector(asList(
-            new StandardHtmlEncodingDetector(),
-            new StandardIcu4JEncodingDetector()
-    ));
     private static final int META_TAG_BUFFER_SIZE = 8192;
+
+    @Field
+    private int markLimit = META_TAG_BUFFER_SIZE;
 
     /**
      * Extracts a charset from a Content-Type HTTP header.
@@ -81,9 +71,10 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
 
     @Override
     public Charset detect(InputStream input, Metadata metadata) throws IOException {
-        input.mark(META_TAG_BUFFER_SIZE);
+        int limit = getMarkLimit();
+        input.mark(limit);
         // Never read more than the first META_TAG_BUFFER_SIZE bytes
-        InputStream limitedStream = new BoundedInputStream(input, META_TAG_BUFFER_SIZE);
+        InputStream limitedStream = new BoundedInputStream(input, limit);
         PreScanner preScanner = new PreScanner(limitedStream);
 
         // The order of priority for detection is:
@@ -96,5 +87,18 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
 
         input.reset();
         return detectedCharset;
+    }
+
+    public int getMarkLimit() {
+        return markLimit;
+    }
+
+    /**
+     * How far into the stream to read for charset detection.
+     * Default is 8192.
+     */
+    @Field
+    public void setMarkLimit(int markLimit) {
+        this.markLimit = markLimit;
     }
 }
