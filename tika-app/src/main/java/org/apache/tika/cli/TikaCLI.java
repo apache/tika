@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -441,7 +442,13 @@ public class TikaCLI {
         } else if (arg.equals("-d") || arg.equals("--detect")) {
             type = DETECT;
         } else if (arg.startsWith("--extract-dir=")) {
-            extractDir = new File(arg.substring("--extract-dir=".length()));
+            String dirPath = arg.substring("--extract-dir=".length());
+            //if the user accidentally doesn't include
+            //a directory, set the directory to the cwd
+            if (dirPath.length() == 0) {
+                dirPath = ".";
+            }
+            extractDir = new File(dirPath);
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             extractInlineImagesFromPDFs();
             type = NO_OUTPUT;
@@ -1027,31 +1034,20 @@ public class TikaCLI {
         }
 
         public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
-            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
-            if (name == null) {
-                name = "file" + count++;
-            }
             if (! inputStream.markSupported()) {
                 inputStream = TikaInputStream.get(inputStream);
             }
             MediaType contentType = detector.detect(inputStream, metadata);
 
-            if (name.indexOf('.')==-1 && contentType!=null) {
-                try {
-                    name += config.getMimeRepository().forName(
-                            contentType.toString()).getExtension();
-                } catch (MimeTypeException e) {
-                    e.printStackTrace();
-                }
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+            File outputFile = null;
+            if (name == null) {
+                name = "file" + count++;
             }
+            outputFile = getOutputFile(name, metadata, contentType);
 
-            String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-            if (relID != null && !name.startsWith(relID)) {
-                name = relID + "_" + name;
-            }
 
-            File outputFile = new File(extractDir, FilenameUtils.normalize(name));
             File parent = outputFile.getParentFile();
             if (!parent.exists()) {
                 if (!parent.mkdirs()) {
@@ -1086,6 +1082,58 @@ public class TikaCLI {
                 );
                 LOG.warn(msg, e);
             }
+        }
+
+        private File getOutputFile(String name, Metadata metadata, MediaType contentType) {
+            String ext = getExtension(contentType);
+            if (name.indexOf('.')==-1 && contentType!=null) {
+                name += ext;
+            }
+
+            String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
+            if (relID != null && !name.startsWith(relID)) {
+                name = relID + "_" + name;
+            }
+            //defensively do this so that we don't get an exception
+            //from FilenameUtils.normalize
+            name = name.replaceAll("\u0000", " ");
+            String normalizedName = FilenameUtils.normalize(name);
+
+            if (normalizedName == null) {
+                normalizedName = FilenameUtils.getName(name);
+            }
+
+            if (normalizedName == null) {
+                normalizedName = "file"+count++ +ext;
+            }
+            //strip off initial C:/ or ~/ or /
+            int prefixLength = FilenameUtils.getPrefixLength(normalizedName);
+            if (prefixLength > -1) {
+                normalizedName = normalizedName.substring(prefixLength);
+            }
+            File outputFile = new File(extractDir, normalizedName);
+            //if file already exists, prepend uuid
+            if (outputFile.exists()) {
+                String fileName = FilenameUtils.getName(normalizedName);
+                outputFile = new File(extractDir, UUID.randomUUID().toString()+"-"+fileName);
+            }
+            return outputFile;
+        }
+
+        private String getExtension(MediaType contentType) {
+            try {
+                String ext = config.getMimeRepository().forName(
+                        contentType.toString()).getExtension();
+                if (ext == null) {
+                    return ".bin";
+                } else {
+                    return ext;
+                }
+            } catch (MimeTypeException e) {
+                e.printStackTrace();
+            }
+            return ".bin";
+
         }
 
         protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
