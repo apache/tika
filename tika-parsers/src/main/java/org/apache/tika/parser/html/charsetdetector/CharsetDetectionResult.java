@@ -18,7 +18,10 @@ package org.apache.tika.parser.html.charsetdetector;
 
 import java.nio.charset.Charset;
 
-import static java.nio.charset.StandardCharsets.*;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 
 /**
  * A detection may either not find a charset, find an invalid charset, or find a valid charset
