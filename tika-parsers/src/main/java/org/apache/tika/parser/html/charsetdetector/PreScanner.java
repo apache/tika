@@ -244,7 +244,7 @@ class PreScanner {
 
     private void skipUntil(byte... expected) throws IOException {
         while (!expect(expected)) {
-            if (stream.skip(1) == 0) return;
+            if (stream.read() == -1) return;
         }
     }
 
