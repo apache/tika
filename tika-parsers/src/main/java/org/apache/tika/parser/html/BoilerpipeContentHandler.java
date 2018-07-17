@@ -17,7 +17,11 @@
 package org.apache.tika.parser.html;
 
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import com.google.common.collect.Sets;
 import de.l3s.boilerpipe.BoilerpipeExtractor;
@@ -239,14 +243,14 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                             if (isValidCharacterRun ||
                                     (chars.length == 1 && whitelistCharSet.contains(chars[0]))) {
                                 delegate.characters(chars, 0, chars.length);
+                            }
 
-                                // https://issues.apache.org/jira/browse/TIKA-961
-                                if (isValidCharacterRun && i == element.getCharacters().size() - 1
-                                        && !Character.isWhitespace(chars[chars.length - 1])) {
-                                    // Only add whitespace for certain elements
-                                    if (XHTMLContentHandler.ENDLINE.contains(element.getLocalName())) {
-                                        delegate.ignorableWhitespace(NL, 0, NL.length);
-                                    }
+                            // https://issues.apache.org/jira/browse/TIKA-961
+                            if (isValidCharacterRun && i == element.getCharacters().size() - 1
+                                    && !Character.isWhitespace(chars[chars.length - 1])) {
+                                // Only add whitespace for certain elements
+                                if (XHTMLContentHandler.ENDLINE.contains(element.getLocalName())) {
+                                    delegate.ignorableWhitespace(NL, 0, NL.length);
                                 }
                             }
                         }
