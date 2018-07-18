@@ -25,7 +25,9 @@ Release 1.19 ???
 
    * Add the RecursiveParserWrapperHandler to improve the RecursiveParserWrapper
      API slightly (TIKA-2644).
-
+     
+   * Improve output from Boilerpipe extracted text, by adding in missing
+     whitespace and removing inappropriate new-lines (TIKA-2683).
 
 Release 1.18 - 4/20/2018
 
