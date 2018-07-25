@@ -404,16 +404,28 @@
   <mime-type type="application/mbox">
     <!-- MBOX files start with "From [sender] [date]" -->
     <!-- To avoid false matches, check for other headers after that -->
+
     <magic priority="70">
       <match value="From " type="string" offset="0">
-         <match value="\nFrom: " type="string" offset="32:256"/>
-         <match value="\nDate: " type="string" offset="32:256"/>
-         <match value="\nSubject: " type="string" offset="32:256"/>
-         <match value="\nDelivered-To: " type="string" offset="32:256"/>
-         <match value="\nReceived: by " type="string" offset="32:256"/>
-         <match value="\nReceived: via " type="string" offset="32:256"/>
-         <match value="\nReceived: from " type="string" offset="32:256"/>
-         <match value="\nMime-Version: " type="string" offset="32:256"/>
+        <match value="\nFrom: " type="string" offset="32:256"/>
+        <match value="\nDate: " type="string" offset="32:256"/>
+        <match value="\nSubject: " type="string" offset="32:256"/>
+        <match value="\nDelivered-To: " type="string" offset="32:256"/>
+        <match value="\nReceived: by " type="string" offset="32:256"/>
+        <match value="\nReceived: via " type="string" offset="32:256"/>
+        <match value="\nReceived: from " type="string" offset="32:256"/>
+        <match value="\nMime-Version: " type="string" offset="32:256"/>
+
+        <match value="\nX-" type="stringignorecase" offset="32:256">
+          <match value="\nFrom: " type="string" offset="32:8192"/>
+          <match value="\nDate: " type="string" offset="32:8192"/>
+          <match value="\nSubject: " type="string" offset="32:8192"/>
+          <match value="\nDelivered-To: " type="string" offset="32:8192"/>
+          <match value="\nReceived: by " type="string" offset="32:8192"/>
+          <match value="\nReceived: via " type="string" offset="32:8192"/>
+          <match value="\nReceived: from " type="string" offset="32:8192"/>
+          <match value="\nMime-Version: " type="string" offset="32:8192"/>
+        </match>
       </match>
     </magic>
     <glob pattern="*.mbox"/>
