@@ -752,14 +752,14 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>jbig2-imageio</artifactId>
-      <version>3.0.0</version>
+      <version>3.0.1</version>
     </dependency>
 
     <!-- jai-imageio-core is allowed since LEGAL-304 -->
     <dependency>
       <groupId>com.github.jai-imageio</groupId>
       <artifactId>jai-imageio-core</artifactId>
-      <version>1.3.1</version>
+      <version>1.4.0</version>
     </dependency>
     <!-- For legal reasons (incompatible license), jai-imageio-jpeg2000 is to be used
      only in the tests and may not be distributed. See also LEGAL-195 -->
