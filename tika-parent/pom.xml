@@ -313,6 +313,7 @@
     <slf4j.version>1.7.24</slf4j.version>
     <jackson.version>2.9.5</jackson.version>
     <jaxb.version>2.3.0</jaxb.version>
+    <mockito.version>2.20.0</mockito.version>
   </properties>
 
   <build>
