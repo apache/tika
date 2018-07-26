@@ -28,13 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.server.HTMLHelper;
-import org.eclipse.jetty.util.ajax.JSON;
 
 /**
  * <p>Provides details of all the {@link Parser}s registered with
@@ -44,6 +45,7 @@ import org.eclipse.jetty.util.ajax.JSON;
 @Path("/parsers")
 public class TikaParsers {
     private static final ParseContext EMPTY_PC = new ParseContext();
+    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
     private HTMLHelper html;
 
     public TikaParsers() {
@@ -127,7 +129,8 @@ public class TikaParsers {
     protected String getParsersJSON(boolean withMimeTypes) {
         Map<String, Object> details = new HashMap<String, Object>();
         parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, details);
-        return JSON.toString(details);
+
+        return GSON.toJson(details);
     }
 
     private void parserAsMap(ParserDetails p, boolean withMimeTypes, Map<String, Object> details) {

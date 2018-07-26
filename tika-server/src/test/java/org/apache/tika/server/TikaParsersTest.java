@@ -23,8 +23,11 @@ import static org.junit.Assert.assertTrue;
 import javax.ws.rs.core.Response;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -32,11 +35,13 @@ import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.parser.pkg.PackageParser;
 import org.apache.tika.server.resource.TikaParsers;
-import org.eclipse.jetty.util.ajax.JSON;
 import org.gagravarr.tika.OpusParser;
 import org.junit.Test;
 
 public class TikaParsersTest extends CXFTestBase {
+
+    private static final Gson GSON = new GsonBuilder().create();
+
     private static final String PARSERS_SUMMARY_PATH = "/parsers";
     private static final String PARSERS_DETAILS_PATH = "/parsers/details";
 
@@ -132,7 +137,8 @@ public class TikaParsersTest extends CXFTestBase {
                     .get();
 
             String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-            Map<String, Map<String, Object>> json = (Map<String, Map<String, Object>>) JSON.parse(jsonStr);
+            Map<String, Map<String, Object>> json = (Map<String, Map<String, Object>>)
+                    GSON.fromJson(jsonStr, Map.class);
 
             // Should have a nested structure
             assertEquals(true, json.containsKey("name"));
@@ -142,8 +148,8 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(Boolean.TRUE, json.get("composite"));
 
             // At least 20 child parsers which aren't composite, except for CompositeExternalParser
-            Object[] children = (Object[]) (Object) json.get("children");
-            assertTrue(children.length >= 2);
+            List<Object> children = (List)json.get("children");
+            assertTrue(children.size() >= 2);
             boolean hasOpus = false, hasOOXML = false, hasZip = false;
             int nonComposite = 0;
             int composite = 0;
@@ -152,11 +158,11 @@ public class TikaParsersTest extends CXFTestBase {
                 assertEquals(true, child.containsKey("name"));
                 assertEquals(true, child.containsKey("composite"));
 
-                Object[] grandChildrenArr = (Object[]) child.get("children");
+                List<Object> grandChildrenArr = (List) child.get("children");
                 if (grandChildrenArr == null) {
                     continue;
                 }
-                assertTrue(grandChildrenArr.length > 50);
+                assertTrue(grandChildrenArr.size() > 50);
                 for (Object grandChildO : grandChildrenArr) {
                     Map<String, Object> grandChildren = (Map<String, Object>) grandChildO;
 
