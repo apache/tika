@@ -144,6 +144,7 @@
         <configuration>
           <instructions>
             <_runsystempackages>com.sun.xml.bind.marshaller, com.sun.xml.internal.bind.marshaller</_runsystempackages>
+            <_noee>true</_noee>
             <Bundle-Activator>
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>

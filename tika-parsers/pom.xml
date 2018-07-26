@@ -37,12 +37,12 @@
   <properties>
     <poi.version>3.17</poi.version>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.10</codec.version>
+    <codec.version>1.11</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.8</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
     <brotli.version>0.1.2</brotli.version>
-    <mime4j.version>0.8.1</mime4j.version>
+    <mime4j.version>0.8.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.11</pdfbox.version>
     <jempbox.version>1.8.15</jempbox.version>
@@ -116,7 +116,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>2.1.10</version>
+      <version>2.1.12</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -245,6 +245,12 @@
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
       <version>${poi.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
@@ -274,17 +280,17 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>5.0.4</version>
+      <version>6.2</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.mp4parser</groupId>
       <artifactId>isoparser</artifactId>
-      <version>1.1.18</version>
+      <version>1.1.22</version>
     </dependency>
     <dependency>
       <groupId>com.drewnoakes</groupId>
       <artifactId>metadata-extractor</artifactId>
-      <version>2.10.1</version>
+      <version>2.11.0</version>
     </dependency>
     <dependency>
       <groupId>de.l3s.boilerpipe</groupId>
@@ -315,7 +321,13 @@
     <dependency>
       <groupId>org.codelibs</groupId>
       <artifactId>jhighlight</artifactId>
-      <version>1.0.2</version>
+      <version>1.0.3</version>
+      <exclusions>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- can't upgrade to java-libpst 0.9.3 because it requires Java 8
          and is buggy with OST TIKA-2415 -->
@@ -327,7 +339,7 @@
     <dependency>
       <groupId>com.github.junrar</groupId>
       <artifactId>junrar</artifactId>
-      <version>1.0.1</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -369,7 +381,7 @@
     <dependency>
       <groupId>org.apache.opennlp</groupId>
       <artifactId>opennlp-tools</artifactId>
-      <version>1.8.4</version>
+      <version>1.9.0</version>
     </dependency>
 
     <dependency>
@@ -492,7 +504,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.11.2</version>
+      <version>1.11.3</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
@@ -550,6 +562,10 @@
           <groupId>commons-logging</groupId>
           <artifactId>commons-logging</artifactId>
         </exclusion>
+          <exclusion>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+          </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -562,7 +578,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
-      <version>1.0</version>
+      <version>1.5</version>
     </dependency>
 
     <dependency>
