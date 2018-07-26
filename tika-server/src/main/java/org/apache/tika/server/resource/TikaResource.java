@@ -17,10 +17,36 @@
 
 package org.apache.tika.server.resource;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.lang.StringUtils;
+import org.apache.cxf.attachment.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ExpandedTitleContentHandler;
+import org.apache.tika.sax.RichTextContentHandler;
+import org.apache.tika.server.InputStreamFactory;
+import org.apache.tika.server.TikaServerParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
-import javax.mail.internet.ContentDisposition;
-import javax.mail.internet.ParseException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -51,34 +77,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.poi.extractor.ExtractorFactory;
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.apache.tika.sax.RichTextContentHandler;
-import org.apache.tika.server.InputStreamFactory;
-import org.apache.tika.server.TikaServerParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Path("/tika")
 public class TikaResource {
@@ -133,19 +132,14 @@ public class TikaResource {
 
         String disposition = httpHeaders.getFirst("Content-Disposition");
         if (disposition != null) {
-            try {
-                ContentDisposition c = new ContentDisposition(disposition);
+            ContentDisposition c = new ContentDisposition(disposition);
 
-                // only support "attachment" dispositions
-                if ("attachment".equals(c.getDisposition())) {
-                    String fn = c.getParameter("filename");
-                    if (fn != null) {
-                        return fn;
-                    }
+            // only support "attachment" dispositions
+            if ("attachment".equals(c.getType())) {
+                String fn = c.getParameter("filename");
+                if (fn != null) {
+                    return fn;
                 }
-            } catch (ParseException e) {
-                // not a valid content-disposition field
-                LOG.warn("Parse exception {} determining content disposition", e.getMessage(), e);
             }
         }
 

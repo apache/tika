@@ -23,8 +23,12 @@ import static org.junit.Assert.assertTrue;
 import javax.ws.rs.core.Response;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -32,11 +36,14 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
 import org.apache.tika.server.resource.TikaDetectors;
-import org.eclipse.jetty.util.ajax.JSON;
 import org.gagravarr.tika.OggDetector;
 import org.junit.Test;
 
 public class TikaDetectorsTest extends CXFTestBase {
+
+    private static final Gson GSON = new GsonBuilder().create();
+
+
     private static final String DETECTORS_PATH = "/detectors";
 
     @Override
@@ -100,7 +107,7 @@ public class TikaDetectorsTest extends CXFTestBase {
                 .get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Object> json = (Map<String, Object>) JSON.parse(jsonStr);
+        Map<String, Object> json = (Map<String, Object>) GSON.fromJson(jsonStr, Map.class);
 
         // Should have a nested structure
         assertTrue(json.containsKey("name"));
@@ -110,8 +117,8 @@ public class TikaDetectorsTest extends CXFTestBase {
         assertEquals(Boolean.TRUE, json.get("composite"));
 
         // At least 4 child detectors, none of them composite
-        Object[] children = (Object[]) json.get("children");
-        assertTrue(children.length >= 4);
+        List<Object> children = (List) json.get("children");
+        assertTrue(children.size() >= 4);
         boolean hasOgg = false, hasPOIFS = false, hasZIP = false, hasMime = false;
         for (Object o : children) {
             Map<String, Object> d = (Map<String, Object>) o;
@@ -139,4 +146,5 @@ public class TikaDetectorsTest extends CXFTestBase {
         assertTrue(hasZIP);
         assertTrue(hasMime);
     }
+
 }

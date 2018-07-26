@@ -23,16 +23,21 @@ import static org.junit.Assert.assertTrue;
 import javax.ws.rs.core.Response;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.server.resource.TikaMimeTypes;
-import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Test;
 
 public class TikaMimeTypesTest extends CXFTestBase {
+
+    private static final Gson GSON = new GsonBuilder().create();
+
     private static final String MIMETYPES_PATH = "/mime-types";
 
     @Override
@@ -97,7 +102,8 @@ public class TikaMimeTypesTest extends CXFTestBase {
                 .get();
 
         String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
-        Map<String, Map<String, Object>> json = (Map<String, Map<String, Object>>) JSON.parse(jsonStr);
+        Map<String, Map<String, Object>> json = (Map<String, Map<String, Object>>)
+                GSON.fromJson(jsonStr, Map.class);
 
         assertEquals(true, json.containsKey("text/plain"));
         assertEquals(true, json.containsKey("application/xml"));
@@ -106,10 +112,11 @@ public class TikaMimeTypesTest extends CXFTestBase {
 
         Map<String, Object> bmp = json.get("image/bmp");
         assertEquals(true, bmp.containsKey("alias"));
-        Object[] aliases = (Object[]) bmp.get("alias");
-        assertEquals(2, aliases.length);
-        assertEquals("image/x-bmp", aliases[0]);
-        assertEquals("image/x-ms-bmp", aliases[1]);
+        List<Object> aliases = (List) bmp.get("alias");
+        assertEquals(2, aliases.size());
+
+        assertEquals("image/x-bmp", aliases.get(0));
+        assertEquals("image/x-ms-bmp", aliases.get(1));
 
         String whichParser = bmp.get("parser").toString();
         assertTrue("Which parser", whichParser.equals("org.apache.tika.parser.ocr.TesseractOCRParser") ||
