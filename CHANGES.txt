@@ -19,6 +19,18 @@ Release 1.19 ???
    * Add the RecursiveParserWrapperHandler to improve the RecursiveParserWrapper
      API slightly (TIKA-2644).
 
+   * Support for SAS7BDAT data files (TIKA-2462)
+
+   * Handle .epub files using .htm rather than .html extensions for the
+     embedded contents (TIKA-1288)
+
+   * Mime magic for ACES Images (TIKA-2628) and DPX Images (TIKA-2629)
+
+   * For sparse XLSX and XLSB files, always output missing cells to
+     the left of filled ones (matching XLS), and optionally output
+     missing rows on all 3 formats if requested via the
+     OfficeParserContext (TIKA-2479)
+
 
 Release 1.18 - 4/20/2018
 
@@ -88,17 +100,6 @@ Release 1.18 - 4/20/2018
    * Added local Docker image build using dockerfile-maven-plugin to allow
      images to be built from source (TIKA-1518).
 
-   * Support for SAS7BDAT data files (TIKA-2462)
-
-   * Handle .epub files using .htm rather than .html extensions for the
-     embedded contents (TIKA-1288)
-
-   * Mime magic for ACES Images (TIKA-2628) and DPX Images (TIKA-2629)
-
-   * For sparse XLSX and XLSB files, always output missing cells to
-     the left of filled ones (matching XLS), and optionally output
-     missing rows on all 3 formats if requested via the
-     OfficeParserContext (TIKA-2479)
 
 Release 1.17 - 12/8/2017
 
