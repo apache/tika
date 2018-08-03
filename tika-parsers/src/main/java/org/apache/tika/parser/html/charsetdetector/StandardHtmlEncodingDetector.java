@@ -36,7 +36,7 @@ import static org.apache.tika.parser.html.charsetdetector.CharsetAliases.getChar
  * https://html.spec.whatwg.org/multipage/parsing.html#the-input-byte-stream
  * <p>
  * If a resource was fetched over HTTP, then HTTP headers should be added to tika metadata
- * when using {@link #detect}, especially {@link Metadata.CONTENT_TYPE}, as it may contain charset information.
+ * when using {@link #detect}, especially {@link Metadata#CONTENT_TYPE}, as it may contain charset information.
  * <p>
  * This encoding detector may return null if no encoding is detected.
  * It is meant to be used inside a {@link org.apache.tika.detect.CompositeDetector}.

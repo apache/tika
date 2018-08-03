@@ -85,9 +85,11 @@ class PreScanner {
     }
 
     Charset scan() {
-        while (processAtLeastOneByte())
-            if (detectedCharset.isFound())
+        while (processAtLeastOneByte()) {
+            if (detectedCharset.isFound()) {
                 return detectedCharset.getCharset();
+            }
+        }
         return null;
     }
 
