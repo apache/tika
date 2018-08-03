@@ -70,10 +70,8 @@ import org.openxmlformats.schemas.drawingml.x2006.spreadsheetDrawing.CTShape;
 import org.openxmlformats.schemas.drawingml.x2006.spreadsheetDrawing.CTShapeNonVisual;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
@@ -230,7 +228,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
 
-    private void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
+    protected void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
         try {
             for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
                 xhtml.startElement("a", "href", rel.getTargetURI().toString());
@@ -251,7 +249,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void processShapes(List<XSSFShape> shapes, XHTMLContentHandler xhtml) throws SAXException {
+    protected void processShapes(List<XSSFShape> shapes, XHTMLContentHandler xhtml) throws SAXException {
         if (shapes == null) {
             return;
         }
