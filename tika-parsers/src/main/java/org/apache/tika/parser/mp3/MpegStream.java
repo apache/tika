@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.mp3;
 
+import org.apache.poi.util.IOUtils;
+
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
@@ -157,7 +160,12 @@ class MpegStream extends PushbackInputStream
     {
         if (currentHeader != null)
         {
-            skipStream(in, currentHeader.getLength() - HEADER_SIZE);
+            long toSkip = currentHeader.getLength() - HEADER_SIZE;
+            long skipped = IOUtils.skipFully(in, toSkip);
+            if (skipped < toSkip) {
+                throw new EOFException("EOF: tried to skip "+toSkip +
+                        " but could only skip "+skipped);
+            }
             currentHeader = null;
             return true;
         }
@@ -266,28 +274,6 @@ class MpegStream extends PushbackInputStream
         unread(field.toArray());
     }
 
-    /**
-     * Skips the given number of bytes from the specified input stream.
-     * 
-     * @param in the input stream
-     * @param count the number of bytes to skip
-     * @throws IOException if an IO error occurs
-     */
-    private static void skipStream(InputStream in, long count)
-            throws IOException
-    {
-        long size = count;
-        long skipped = 0;
-        while (size > 0 && skipped >= 0)
-        {
-            skipped = in.skip(size);
-            if (skipped != -1)
-            {
-                size -= skipped;
-            }
-        }
-    }
-    
     /**
      * Calculates the bit rate based on the given parameters.
      * 
@@ -428,7 +414,7 @@ class MpegStream extends PushbackInputStream
          * index. E.g. ''from'' = 0, ''to'' = 3 will return the value of the
          * first 4 bits.
          * 
-         * @param the from index
+         * @param from index
          * @param to the to index
          * @return the value of this group of bits
          */
