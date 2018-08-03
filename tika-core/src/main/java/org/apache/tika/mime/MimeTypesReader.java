@@ -169,8 +169,11 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         if (type == null) {
             if (MIME_TYPE_TAG.equals(qName)) {
                 String name = attributes.getValue(MIME_TYPE_TYPE_ATTR);
+                String interpretedAttr = attributes.getValue(INTERPRETED_ATTR);
+                boolean interpreted = "true".equals(interpretedAttr);
                 try {
                     type = types.forName(name);
+                    type.setInterpreted(interpreted);
                 } catch (MimeTypeException e) {
                     handleMimeError(name, e, qName, attributes);
                 }
