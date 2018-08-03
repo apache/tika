@@ -34,7 +34,7 @@ public class WMFParserTest extends TikaTest {
 
     @Test
     public void testTextExtractionShiftJISencoding() throws Exception {
-        testTextExtraction("thumbnail_1.wmf", 0, "普林斯");
+        testTextExtraction("testWMF_charset.wmf", 0, "普林斯");
     }
 
     private void testTextExtraction(String fileName, int metaDataItemIndex, String expectedText) throws Exception {
