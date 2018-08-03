@@ -27,6 +27,8 @@ public interface MimeTypesReaderMetKeys {
 
     String MIME_TYPE_TYPE_ATTR = "type";
 
+    String INTERPRETED_ATTR = "interpreted";
+
     String ACRONYM_TAG = "acronym";
 
     String COMMENT_TAG = "_comment";

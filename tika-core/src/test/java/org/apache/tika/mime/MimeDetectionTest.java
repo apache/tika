@@ -83,6 +83,21 @@ public class MimeDetectionTest {
     }
 
     @Test
+    public void testDetectionWithoutContent() throws IOException {
+        testUrlWithoutContent("text/html", "test.html");
+        testUrlWithoutContent("text/html", "http://test.com/test.html");
+        testUrlWithoutContent("text/plain", "http://test.com/test.txt");
+
+        // In case the url contains a filename referencing a server-side scripting language,
+        // it gives us no clue concerning the actual mime type of the response
+        testUrlWithoutContent("application/octet-stream", "http://test.com/test.php");
+        testUrlWithoutContent("application/octet-stream", "http://test.com/test.cgi");
+        testUrlWithoutContent("application/octet-stream", "http://test.com/test.jsp");
+        // But in case the protocol is not http or https, the script is probably not interpreted
+        testUrlWithoutContent("text/x-php", "ftp://test.com/test.php");
+    }
+
+    @Test
     public void testByteOrderMark() throws Exception {
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
                 new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)),
@@ -134,6 +149,13 @@ public class MimeDetectionTest {
     private void testUrlOnly(String expected, String url) throws IOException{
 	InputStream in = new URL(url).openStream();
         testStream(expected, url, in);
+    }
+
+    private void testUrlWithoutContent(String expected, String url) throws IOException {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, url);
+        String mime = this.mimeTypes.detect(null, metadata).toString();
+        assertEquals(url + " is not properly detected using only resource name", expected, mime);
     }
 
     private void testUrl(String expected, String url, String file) throws IOException{

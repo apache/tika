@@ -16,7 +16,7 @@
   limitations under the License.
 -->
 <mime-info>
-  <mime-type type="another/world-file">
+  <mime-type type="another/world-file" interpreted="true">
      <hello>kittens</hello>
      <glob pattern="*.hello.world" /> <!-- Will collide with 'hello/world-file'  -->
      <sub-class-of type="hello/world" />
