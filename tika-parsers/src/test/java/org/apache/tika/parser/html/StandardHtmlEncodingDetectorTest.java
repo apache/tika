@@ -19,17 +19,23 @@ package org.apache.tika.parser.html;
 
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
+import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-public class StrictHtmlEncodingDetectorTest {
+public class StandardHtmlEncodingDetectorTest {
     private Metadata metadata = new Metadata();
 
     @Before
@@ -39,6 +45,11 @@ public class StrictHtmlEncodingDetectorTest {
 
     @Test
     public void basic() throws IOException {
+        assertWindows1252("<meta charset=WINDOWS-1252>");
+    }
+
+    @Test
+    public void quoted() throws IOException {
         assertWindows1252("<meta charset='WINDOWS-1252'>");
     }
 
@@ -49,6 +60,22 @@ public class StrictHtmlEncodingDetectorTest {
     }
 
     @Test
+    public void duplicateAttribute() throws IOException {
+        assertWindows1252("<meta charset='WINDOWS-1252' charset='UTF-8'>");
+    }
+
+    @Test
+    public void invalidThenValid() throws IOException {
+        assertCharset("<meta charset=blah>" +
+                "<meta charset=WINDOWS-1252>", null);
+    }
+
+    @Test
+    public void spacesInAttributes() throws IOException {
+        assertWindows1252("<meta charset\u000C=  \t  WINDOWS-1252>");
+    }
+
+    @Test
     public void httpEquiv() throws IOException {
         assertWindows1252("<meta " +
                 "http-equiv='content-type' " +
@@ -56,6 +83,11 @@ public class StrictHtmlEncodingDetectorTest {
         assertWindows1252("<meta " +
                 "content=' charset  =  WINDOWS-1252' " + // The charset may be anywhere in the content attribute
                 "http-equiv='content-type' >");
+    }
+
+    @Test
+    public void emptyAttributeEnd() throws IOException {
+        assertWindows1252("<meta charset=WINDOWS-1252 a>");
     }
 
     @Test
@@ -72,19 +104,50 @@ public class StrictHtmlEncodingDetectorTest {
     }
 
     @Test
-    public void verBadHtml() throws IOException {
+    public void veryBadHtml() throws IOException {
         // check that the parser is not confused by garbage before the declaration
         assertWindows1252("<< l \" == / '=x\n >" +
                 "<!--> " +
                 "< <x'/ <=> " +
                 "<meta/>" +
+                "<meta>" +
                 "<a x/>" +
                 "<meta charset='WINDOWS-1252'>");
     }
 
     @Test
+    public void specialTag() throws IOException {
+        // special tags cannot have arguments, any '>' ends them
+        assertWindows1252("<? x='><meta charset='WINDOWS-1252'>");
+    }
+
+    @Test
+    public void longHtml() throws IOException {
+        StringBuilder sb = new StringBuilder("<!doctype html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "<title>Hello world</title>\n");
+        String repeated = "<meta x='y' />\n";
+        String charsetMeta = "<meta charset='windows-1252'>";
+
+        while (sb.length() + repeated.length() + charsetMeta.length() < 1024) sb.append(repeated);
+
+        sb.append(charsetMeta);
+
+        assertWindows1252(sb.toString());
+    }
+
+    @Test
+    public void tooLong() throws IOException {
+        // Create a string with 1Mb of '\0' followed by a meta
+        String padded = new String(new byte[1000000]) + "<meta charset='windows-1252'>";
+        // Only the first bytes should be prescanned, so the algorithm should stop before the meta tag
+        assertCharset(padded, null);
+    }
+
+    @Test
     public void incompleteMeta() throws IOException {
-        assertWindows1252("<meta charset='WINDOWS-1252'"); // missing '>' at the end
+        assertCharset("<meta charset='WINDOWS-1252'", null); // missing '>' at the end
     }
 
     @Test
@@ -107,6 +170,13 @@ public class StrictHtmlEncodingDetectorTest {
     public void xUserDefined() throws IOException {
         // According to the specification 'If charset is x-user-defined, then set charset to windows-1252.'
         assertWindows1252("<meta charset='x-user-defined'>");
+    }
+
+    @Test
+    public void replacement() throws IOException {
+        // Several dangerous charsets should are aliases of 'replacement' in the spec
+        String inString = "<meta charset='iso-2022-cn'>";
+        assertCharset(new ByteArrayInputStream(inString.getBytes()), new ReplacementCharset());
     }
 
     @Test
@@ -226,8 +296,8 @@ public class StrictHtmlEncodingDetectorTest {
     }
 
     @Test
-    public void withUserProvidedCharset() throws IOException {
-        metadata.set(Metadata.CONTENT_ENCODING, "ISO-8859-1");
+    public void withCharsetInContentType() throws IOException {
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; Charset=ISO-8859-1");
         // ISO-8859-1 is an alias for WINDOWS-1252, even if it's set at the transport layer level
         assertWindows1252("");
         assertWindows1252("<meta charset='UTF-8'>");
@@ -262,6 +332,18 @@ public class StrictHtmlEncodingDetectorTest {
         assertCharset(throwAfter("<!doctype html><html attr='x"), null);
     }
 
+    @Test
+    public void streamReset() throws IOException {
+        // The stream should be reset after detection
+        byte[] inBytes = {0,1,2,3,4};
+        byte[] outBytes = new byte[5];
+        InputStream inStream = new ByteArrayInputStream(inBytes);
+        detectCharset(inStream);
+        // The stream should still be readable from the beginning after detection
+        inStream.read(outBytes);
+        assertArrayEquals(inBytes, outBytes);
+    }
+
     private void assertWindows1252(String html) throws IOException {
         assertCharset(html, Charset.forName("WINDOWS-1252"));
     }
@@ -283,7 +365,7 @@ public class StrictHtmlEncodingDetectorTest {
     }
 
     private Charset detectCharset(InputStream inStream) throws IOException {
-        return new StrictHtmlEncodingDetector().detect(inStream, metadata);
+        return new StandardHtmlEncodingDetector().detect(inStream, metadata);
     }
 
     private InputStream throwAfter(String html) {
@@ -295,6 +377,6 @@ public class StrictHtmlEncodingDetectorTest {
                 throw new IOException("test exception");
             }
         };
-        return new SequenceInputStream(contentsInStream, errorThrowing);
+        return new BufferedInputStream(new SequenceInputStream(contentsInStream, errorThrowing));
     }
 }
