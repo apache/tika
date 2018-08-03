@@ -64,8 +64,8 @@ public class WMFParser extends AbstractParser {
             HwmfPicture picture = new HwmfPicture(stream);
             //TODO: make x/y info public in POI so that we can use it here
             //to determine when to keep two text parts on the same line
+            Charset charset = LocaleUtil.CHARSET_1252;
             for (HwmfRecord record : picture.getRecords()) {
-                Charset charset = LocaleUtil.CHARSET_1252;
                 //this is pure hackery for specifying the font
                 //TODO: do what Graphics does by maintaining the stack, etc.!
                 //This fix should be done within POI

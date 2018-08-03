@@ -29,14 +29,20 @@ public class WMFParserTest extends TikaTest {
 
     @Test
     public void testTextExtractionWindows() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testXLSX_Thumbnail.xlsx");
-        Metadata wmfMetadata = metadataList.get(1);
-        assertEquals("image/wmf", wmfMetadata.get(Metadata.CONTENT_TYPE));
-        assertContains("This file contains an embedded thumbnail",
-                wmfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        testTextExtraction("testXLSX_Thumbnail.xlsx", 1, "This file contains an embedded thumbnail");
     }
 
-    //TODO fix wmf text extraction in "testRTFEmbeddedFiles.rtf"
-    //Chinese is garbled.
+    @Test
+    public void testTextExtractionShiftJISencoding() throws Exception {
+        testTextExtraction("testWMF_charset.wmf", 0, "普林斯");
+    }
+
+    private void testTextExtraction(String fileName, int metaDataItemIndex, String expectedText) throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata(fileName);
+        Metadata wmfMetadata = metadataList.get(metaDataItemIndex);
+
+        assertEquals("image/wmf", wmfMetadata.get(Metadata.CONTENT_TYPE));
+        assertContains(expectedText, wmfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+    }
 }
 
