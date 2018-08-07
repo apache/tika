@@ -71,10 +71,10 @@ public class TesseractOCRConfig implements Serializable {
     private String pageSegMode = "1";
 
     // Minimum file size to submit file to ocr.
-    private int minFileSizeToOcr = 0;
+    private long minFileSizeToOcr = 0;
 
     // Maximum file size to submit file to ocr.
-    private int maxFileSizeToOcr = Integer.MAX_VALUE;
+    private long maxFileSizeToOcr = Integer.MAX_VALUE;
 
     // Maximum time (seconds) to wait for the ocring process termination
     private int timeout = 120;
@@ -322,9 +322,9 @@ public class TesseractOCRConfig implements Serializable {
         return preserveInterwordSpacing;
     }
     /**
-     * @see #setMinFileSizeToOcr(int minFileSizeToOcr)
+     * @see #setMinFileSizeToOcr(long minFileSizeToOcr)
      */
-    public int getMinFileSizeToOcr() {
+    public long getMinFileSizeToOcr() {
         return minFileSizeToOcr;
     }
 
@@ -332,14 +332,14 @@ public class TesseractOCRConfig implements Serializable {
      * Set minimum file size to submit file to ocr.
      * Default is 0.
      */
-    public void setMinFileSizeToOcr(int minFileSizeToOcr) {
+    public void setMinFileSizeToOcr(long minFileSizeToOcr) {
         this.minFileSizeToOcr = minFileSizeToOcr;
     }
 
     /**
-     * @see #setMaxFileSizeToOcr(int maxFileSizeToOcr)
+     * @see #setMaxFileSizeToOcr(long maxFileSizeToOcr)
      */
-    public int getMaxFileSizeToOcr() {
+    public long getMaxFileSizeToOcr() {
         return maxFileSizeToOcr;
     }
 
@@ -347,7 +347,7 @@ public class TesseractOCRConfig implements Serializable {
      * Set maximum file size to submit file to ocr.
      * Default is Integer.MAX_VALUE.
      */
-    public void setMaxFileSizeToOcr(int maxFileSizeToOcr) {
+    public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
         this.maxFileSizeToOcr = maxFileSizeToOcr;
     }
 
@@ -621,6 +621,28 @@ public class TesseractOCRConfig implements Serializable {
                     property), ex);
         }
     }
+
+    /**
+     * Get property from the properties file passed in.
+     *
+     * @param properties     properties file to read from.
+     * @param property       the property to fetch.
+     * @param defaultMissing default parameter to use.
+     * @return the value.
+     */
+    private long getProp(Properties properties, String property, long defaultMissing) {
+        String p = properties.getProperty(property);
+        if (p == null || p.isEmpty()) {
+            return defaultMissing;
+        }
+        try {
+            return Integer.parseInt(p);
+        } catch (Throwable ex) {
+            throw new RuntimeException(String.format(Locale.ROOT, "Cannot parse TesseractOCRConfig variable %s, invalid integer value",
+                    property), ex);
+        }
+    }
+
 
     /**
      * Get property from the properties file passed in.
