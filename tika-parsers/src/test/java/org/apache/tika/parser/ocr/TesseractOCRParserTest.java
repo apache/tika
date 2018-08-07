@@ -18,6 +18,7 @@ package org.apache.tika.parser.ocr;
 
 import static org.apache.tika.parser.ocr.TesseractOCRParser.getTesseractProg;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -26,10 +27,13 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -302,5 +306,34 @@ public class TesseractOCRParserTest extends TikaTest {
             String ocr = getText(getResourceAsStream("/test-documents/testRotated.png"), new AutoDetectParser(), parseContext);
             assertContains("Its had resolving otherwise she contented therefore", ocr);
         }
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        TikaConfig config = new TikaConfig(getResourceAsStream("/org/apache/tika/config/TIKA-2705-tesseract.xml"));
+        Parser p = config.getParser();
+        Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+        assertNotNull(tesseractOCRParser);
+
+        TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser)tesseractOCRParser).getDefaultConfig();
+        assertEquals(241, tesseractOCRConfig.getTimeout());
+        assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
+        assertEquals("ceb", tesseractOCRConfig.getLanguage());
+        assertEquals(false, tesseractOCRConfig.getApplyRotation());
+        assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
+    }
+
+    private Parser findParser(Parser parser, Class clazz) {
+        if (parser instanceof CompositeParser) {
+            for (Parser child : ((CompositeParser)parser).getAllComponentParsers()) {
+                Parser found = findParser(child, clazz);
+                if (found != null) {
+                    return found;
+                }
+            }
+        } else if (clazz.isInstance(parser)) {
+            return parser;
+        }
+        return null;
     }
 }
