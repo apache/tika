@@ -21,7 +21,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.extractor.POITextExtractor;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;

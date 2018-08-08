@@ -115,7 +115,7 @@ public class BatchDriverTest extends FSBatchTestBase {
                 readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
     }
 
-    @Test(timeout = 30000)
+    @Test(timeout = 60000)
     public void allHeavyHangsTestWithStarvedCrawler() throws Exception {
         //this tests that if all consumers are hung and the crawler is
         //waiting to add to the queue, there isn't deadlock.  The BatchProcess should

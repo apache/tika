@@ -679,12 +679,11 @@ public class OOXMLParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                metadata.get(Metadata.KEYWORDS));
+                metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", content);
         // TODO: Remove subject in Tika 2.0
-        assertEquals("Subject is here",
-                metadata.get(Metadata.SUBJECT));
+
         assertEquals("Subject is here",
                 metadata.get(OfficeOpenXMLCore.SUBJECT));
 
@@ -750,12 +749,9 @@ public class OOXMLParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", xml);
         assertEquals("Keyword1 Keyword2",
-                metadata.get(Metadata.KEYWORDS));
+                metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", xml);
-        // TODO: Remove subject in Tika 2.0
-        assertEquals("Subject is here",
-                metadata.get(Metadata.SUBJECT));
         assertEquals("Subject is here",
                 metadata.get(OfficeOpenXMLCore.SUBJECT));
 
@@ -859,7 +855,6 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("2011-08-22T14:24:38Z", metadata.get(Metadata.LAST_MODIFIED));
         assertEquals("2011-08-22T14:24:38Z", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("2011-08-22T14:24:38Z", metadata.get(Metadata.DATE));
-        assertEquals("Microsoft Excel", metadata.get(Metadata.APPLICATION_NAME));
         assertEquals("Microsoft Excel", metadata.get(OfficeOpenXMLExtended.APPLICATION));
         assertEquals("true", metadata.get("custom:myCustomBoolean"));
         assertEquals("3", metadata.get("custom:myCustomNumber"));
@@ -890,16 +885,14 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals("2011-07-29T16:52:00Z", metadata.get(Metadata.CREATION_DATE));
         assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("2012-01-03T22:14:00Z", metadata.get(Metadata.DATE));
-        assertEquals("Microsoft Office Word", metadata.get(Metadata.APPLICATION_NAME));
         assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
         assertEquals("1", metadata.get(Office.PAGE_COUNT));
         assertEquals("2", metadata.get(Office.WORD_COUNT));
         assertEquals("My Title", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("My Keyword", metadata.get(TikaCoreProperties.KEYWORDS));
-        assertEquals("Normal.dotm", metadata.get(Metadata.TEMPLATE));
+        assertEquals("My Keyword", metadata.get(Office.KEYWORDS));
         assertEquals("Normal.dotm", metadata.get(OfficeOpenXMLExtended.TEMPLATE));
         // TODO: Remove subject in Tika 2.0
-        assertEquals("My subject", metadata.get(Metadata.SUBJECT));
+//        assertEquals("My subject", metadata.get(Metadata.SUBJECT));
         assertEquals("My subject", metadata.get(OfficeOpenXMLCore.SUBJECT));
         assertEquals("EDF-DIT", metadata.get(TikaCoreProperties.PUBLISHER));
         assertEquals("true", metadata.get("custom:myCustomBoolean"));

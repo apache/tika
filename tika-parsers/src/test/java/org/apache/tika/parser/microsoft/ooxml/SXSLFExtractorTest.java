@@ -337,12 +337,10 @@ public class SXSLFExtractorTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", xml);
         assertEquals("Keyword1 Keyword2",
-                metadata.get(Metadata.KEYWORDS));
+                metadata.get(Office.KEYWORDS));
 
         assertContains("Subject is here", xml);
-        // TODO: Remove subject in Tika 2.0
-        assertEquals("Subject is here",
-                metadata.get(Metadata.SUBJECT));
+
         assertEquals("Subject is here",
                 metadata.get(OfficeOpenXMLCore.SUBJECT));
 

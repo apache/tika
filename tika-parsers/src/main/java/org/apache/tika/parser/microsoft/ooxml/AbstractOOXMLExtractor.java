@@ -25,13 +25,13 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.extractor.POITextExtractor;
+import org.apache.poi.ooxml.POIXMLDocument;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -41,8 +41,6 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.DocumentEntry;
-import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
@@ -68,8 +66,6 @@ import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import javax.xml.parsers.SAXParser;
 
 /**
  * Base class for all Tika OOXML extractors.
@@ -119,7 +115,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getDocument()
      */
     public POIXMLDocument getDocument() {
-        return extractor.getDocument();
+        return (POIXMLDocument)extractor.getDocument();
     }
 
     /**

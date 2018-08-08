@@ -19,7 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
 import org.apache.tika.parser.ParseContext;

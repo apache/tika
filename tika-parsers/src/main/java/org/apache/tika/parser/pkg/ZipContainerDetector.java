@@ -238,7 +238,7 @@ public class ZipContainerDetector implements Detector {
 
         ZipEntrySource zipEntrySource = null;
         try {
-            zipEntrySource = new ZipFileZipEntrySource(new java.util.zip.ZipFile(stream.getFile()));
+            zipEntrySource = new ZipFileZipEntrySource(new ZipFile(stream.getFile()));
         } catch (IOException e) {
             return null;
         }

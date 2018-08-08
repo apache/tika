@@ -53,7 +53,6 @@ import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.util.CodePageUtil;
-import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -74,7 +73,6 @@ import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.bouncycastle.cms.Recipient;
 import org.xml.sax.SAXException;
 
 /**
@@ -149,7 +147,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             msg.setReturnNullOnMissingChunk(true);
 
             try {
-                metadata.set(Office.MAPI_MESSAGE_CLASS, getMessageClass(msg.getMessageClass()));
+                metadata.set(Office.MAPI_MESSAGE_CLASS, msg.getMessageClassEnum().name());
             } catch (ChunkNotFoundException e){}
 
             // If the message contains strings that aren't stored
@@ -485,7 +483,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         metadata.add(property, chunks.get(0).toString());
     }
 
-    //TODO: replace this with getMessageClassEnum when we upgrade POI
+    //Still needed by PSTParser
     public static String getMessageClass(String messageClass){
         if (messageClass == null || messageClass.trim().length() == 0) {
             return "UNSPECIFIED";

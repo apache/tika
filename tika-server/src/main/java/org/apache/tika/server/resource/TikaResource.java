@@ -20,7 +20,7 @@ package org.apache.tika.server.resource;
 import org.apache.commons.lang.StringUtils;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;

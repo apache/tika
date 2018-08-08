@@ -21,18 +21,22 @@ import java.io.InputStream;
 import java.util.Locale;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.POIXMLTextExtractor;
-import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.poi.extractor.POITextExtractor;
+import org.apache.poi.ooxml.POIXMLDocument;
+import org.apache.poi.ooxml.extractor.ExtractorFactory;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.sl.extractor.SlideShowExtractor;
 import org.apache.poi.util.LocaleUtil;
+import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xslf.usermodel.XSLFSlideShow;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -103,15 +107,15 @@ public class OOXMLExtractorFactory {
             if (config.getUseSAXDocxExtractor()) {
                 poiExtractor = trySXWPF(pkg);
             }
-            if (poiExtractor == null && config.getUseSAXPptxExtractor()) {
-                poiExtractor = trySXSLF(pkg);
+            if (poiExtractor == null) {
+                poiExtractor = tryXSLF(pkg, config.getUseSAXPptxExtractor());
             }
             if (type.equals(OOXMLParser.XPS)) {
                 poiExtractor = new XPSTextExtractor(pkg);
             }
 
             if (poiExtractor == null) {
-                poiExtractor = ExtractorFactory.createExtractor(pkg);
+                poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(pkg);
             }
 
             POIXMLDocument document = poiExtractor.getDocument();
@@ -190,7 +194,7 @@ public class OOXMLExtractorFactory {
         return null;
     }
 
-    private static POIXMLTextExtractor trySXSLF(OPCPackage pkg) throws XmlException, OpenXML4JException, IOException {
+    private static POIXMLTextExtractor tryXSLF(OPCPackage pkg, boolean eventBased) throws XmlException, OpenXML4JException, IOException {
 
         PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType("http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
         if (packageRelationshipCollection.size() == 0) {
@@ -208,12 +212,20 @@ public class OOXMLExtractorFactory {
         for (int i = 0; i < xslfRelations.length; i++) {
             XSLFRelation xslfRelation = xslfRelations[i];
             if (xslfRelation.getContentType().equals(targetContentType)) {
-                return new XSLFEventBasedPowerPointExtractor(pkg);
+                if (eventBased) {
+                    return new XSLFEventBasedPowerPointExtractor(pkg);
+                } else {
+                    return new XSLFPowerPointExtractor(new XSLFSlideShow(pkg));
+                }
             }
         }
 
         if (XSLFRelation.THEME_MANAGER.getContentType().equals(targetContentType)) {
-            return new XSLFEventBasedPowerPointExtractor(pkg);
+            if (eventBased) {
+                return new XSLFEventBasedPowerPointExtractor(pkg);
+            } else {
+                return new XSLFPowerPointExtractor(new XSLFSlideShow(pkg));
+            }
         }
         return null;
     }
