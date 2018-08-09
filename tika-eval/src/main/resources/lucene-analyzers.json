@@ -3,23 +3,23 @@
     "general": {
       "charfilters": [
         {
-          "factory": "oala.charfilter.MappingCharFilterFactory",
+          "factory": "mapping",
           "params": {
             "mapping": "/lucene-char-mapping.txt"
           }
         }
       ],
       "tokenizer": {
-        "factory": "oala.standard.UAX29URLEmailTokenizerFactory",
+        "factory": "uax29urlemail",
         "params": {}
       },
       "tokenfilters": [
         {
-          "factory": "oala.icu.ICUFoldingFilterFactory",
+          "factory": "icufolding",
           "params": {}
         },
         {
-          "factory": "oala.cjk.CJKBigramFilterFactory",
+          "factory": "cjkbigram",
           "params": {
             "outputUnigrams": "false"
           }
@@ -30,20 +30,20 @@
       "_comment" : "Use this analyzer for counting common tokens in a corpus.",
       "_comment" : "This isn't used by tika-eval during profiling or comparing",
       "tokenizer": {
-        "factory": "oala.standard.UAX29URLEmailTokenizerFactory",
+        "factory": "uax29urlemail",
         "params": {}
       },
       "tokenfilters": [
         {
-          "factory": "oala.icu.ICUFoldingFilterFactory",
+          "factory": "icufolding",
           "params": {}
         },
         {
-          "factory": "org.apache.tika.eval.tokens.AlphaIdeographFilterFactory",
+          "factory": "alphaideograph",
           "params": {}
         },
         {
-          "factory": "oala.pattern.PatternReplaceFilterFactory",
+          "factory": "patternreplace",
           "params": {
             "pattern": "^[\\w+\\.]{1,30}@(?:\\w+\\.){1,10}\\w+$",
             "replacement": "___email___",
@@ -51,7 +51,7 @@
           }
         },
         {
-          "factory": "oala.pattern.PatternReplaceFilterFactory",
+          "factory": "patternreplace",
           "params": {
             "pattern": "^(?:(?:ftp|https?):\\/\\/)?(?:\\w+\\.){1,10}\\w+$",
             "replacement": "___url___",
@@ -59,13 +59,13 @@
           }
         },
         {
-          "factory": "oala.cjk.CJKBigramFilterFactory",
+          "factory": "cjkbigram",
           "params": {
             "outputUnigrams": "false"
           }
         },
         {
-          "factory": "org.apache.tika.eval.tokens.CJKBigramAwareLengthFilterFactory",
+          "factory": "cjkbigramawarelength",
           "params": {
             "min": 4,
             "max": 20
