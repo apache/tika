@@ -17,8 +17,8 @@
 
 package org.apache.tika.example;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -28,12 +28,14 @@ import java.util.TimeZone;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.TopScoreDocCollector;
-import org.apache.lucene.store.SimpleFSDirectory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.BytesRef;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 
@@ -49,23 +51,24 @@ public class RecentFiles {
     private SimpleDateFormat rssDateFormat = new SimpleDateFormat(
             "E, dd MMM yyyy HH:mm:ss z", Locale.getDefault());
 
-    public String generateRSS(File indexFile) throws CorruptIndexException,
+    public String generateRSS(Path indexFile) throws CorruptIndexException,
             IOException {
         StringBuffer output = new StringBuffer();
         output.append(getRSSHeaders());
         IndexSearcher searcher = null;
         try {
-            reader = IndexReader.open(new SimpleFSDirectory(indexFile));
+            reader = DirectoryReader.open(FSDirectory.open(indexFile));
             searcher = new IndexSearcher(reader);
             GregorianCalendar gc = new java.util.GregorianCalendar(TimeZone.getDefault(), Locale.getDefault());
             gc.setTime(new Date());
             String nowDateTime = ISO8601.format(gc);
             gc.add(java.util.GregorianCalendar.MINUTE, -5);
             String fiveMinsAgo = ISO8601.format(gc);
-            TermRangeQuery query = new TermRangeQuery(Metadata.DATE.toString(),
-                    fiveMinsAgo, nowDateTime, true, true);
-            TopScoreDocCollector collector = TopScoreDocCollector.create(20,
-                    true);
+            TermRangeQuery query = new TermRangeQuery(
+                    Metadata.DATE.toString(),
+                    new BytesRef(fiveMinsAgo), new BytesRef(nowDateTime),
+                    true, true);
+            TopScoreDocCollector collector = TopScoreDocCollector.create(20);
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
             for (int i = 0; i < hits.length; i++) {
@@ -75,7 +78,6 @@ public class RecentFiles {
 
         } finally {
             if (reader != null) reader.close();
-            if (searcher != null) searcher.close();
         }
 
         output.append(getRSSFooters());

@@ -19,9 +19,9 @@ package org.apache.tika.eval.tokens;
 import java.io.IOException;
 import java.util.Map;
 
+import org.apache.lucene.analysis.FilteringTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.util.FilteringTokenFilter;
 import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
