@@ -36,7 +36,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>1.0.0-SNAPSHOT</dl4j.version>
+    <dl4j.version>1.0.0-beta2</dl4j.version>
   </properties>
 
   <dependencies>
@@ -346,14 +346,4 @@
 
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <id>oss-sonatype</id>
-      <name>oss-sonatype</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>
