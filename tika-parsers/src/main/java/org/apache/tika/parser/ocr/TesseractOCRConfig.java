@@ -55,7 +55,8 @@ public class TesseractOCRConfig implements Serializable {
 
     public enum OUTPUT_TYPE {
         TXT,
-        HOCR
+        HOCR,
+        OSD
     }
 
     // Path to tesseract installation folder, if not on system path.
@@ -270,6 +271,10 @@ public class TesseractOCRConfig implements Serializable {
             throw new IllegalArgumentException("Invalid page segmentation mode");
         }
         this.pageSegMode = pageSegMode;
+        // 0 = Orientation and Script Detection only
+        if ("0".equals(pageSegMode)) {
+            setOutputType(OUTPUT_TYPE.OSD);
+        }
     }
 
     /**
@@ -368,7 +373,7 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Set output type from ocr process.  Default is "txt", but can be "hocr".
+     * Set output type from ocr process.  Default is "txt", but can be "hocr" or "osd".
      * Default value is {@link OUTPUT_TYPE#TXT}.
      */
     public void setOutputType(OUTPUT_TYPE outputType) {
@@ -384,8 +389,10 @@ public class TesseractOCRConfig implements Serializable {
             setOutputType(OUTPUT_TYPE.TXT);
         } else if ("hocr".equals(lc)) {
             setOutputType(OUTPUT_TYPE.HOCR);
+        } else if ("osd".equals(lc)) {
+            setOutputType(OUTPUT_TYPE.OSD);
         } else {
-            throw new IllegalArgumentException("outputType must be either 'txt' or 'hocr'");
+            throw new IllegalArgumentException("outputType must be either 'txt', 'hocr', or 'osd'");
         }
 
 

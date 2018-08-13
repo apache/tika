@@ -435,6 +435,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 }
 
                 // Tesseract appends the output type (.txt or .hocr) to output file name
+                // Tesseract also outputs an Orientation and Script detection (.osd) file if enabled
                 tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() + "." +
                         config.getOutputType().toString().toLowerCase(Locale.US));
 
