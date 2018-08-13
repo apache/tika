@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -141,16 +140,32 @@ public class TesseractOCRParserTest extends TikaTest {
         String[] nonOCRContains = new String[0];
         String contents = runOCR(resource, nonOCRContains, 2,
                 BasicContentHandlerFactory.HANDLER_TYPE.XML,
-                TesseractOCRConfig.OUTPUT_TYPE.HOCR);
+                TesseractOCRConfig.OUTPUT_TYPE.HOCR, 1);
 
         assertContains("<span class=\"ocrx_word\" id=\"word_1_1\"", contents);
         assertContains("Happy</span>", contents);
 
     }
 
+    @Test
+    public void testOCROutputsOSD() throws Exception {
+        assumeTrue(canRun());
+
+        String resource = "/test-documents/testOCR_osd.jpg";
+
+        String[] nonOCRContains = new String[0];
+        String contents = runOCR(resource, nonOCRContains, 1,
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                TesseractOCRConfig.OUTPUT_TYPE.OSD, 0);
+
+        assertContains("Orientation in degrees: 0", contents);
+        assertContains("Rotate: 0", contents);
+        assertContains("Script: Latin", contents);
+    }
+
     private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
     	String contents = runOCR(resource, nonOCRContains, numMetadatas,
-                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT, 1);
         if (canRun()) {
         	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
         		assertTrue(contents.toString().contains("Apache"));
@@ -161,10 +176,11 @@ public class TesseractOCRParserTest extends TikaTest {
     }
     
     private String runOCR(String resource, String[] nonOCRContains, int numMetadatas,
-                          BasicContentHandlerFactory.HANDLER_TYPE handlerType,
-                          TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
+            BasicContentHandlerFactory.HANDLER_TYPE handlerType,
+            TesseractOCRConfig.OUTPUT_TYPE outputType, int pageSegMode) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setOutputType(outputType);
+        config.setPageSegMode(Integer.toString(pageSegMode));
         
         Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),
                 new BasicContentHandlerFactory(
@@ -192,10 +208,12 @@ public class TesseractOCRParserTest extends TikaTest {
         for (String needle : nonOCRContains) {
             assertContains(needle, contents.toString());
         }
-        assertTrue(metadataList.get(0).names().length > 10);
-        assertTrue(metadataList.get(1).names().length > 10);
-        //test at least one value
-        assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+        if(numMetadatas >= 2) {
+            assertTrue(metadataList.get(0).names().length > 10);
+            assertTrue(metadataList.get(1).names().length > 10);
+            //test at least one value
+            assertEquals("deflate", metadataList.get(1).get("Compression CompressionTypeName"));
+        }
         
         return contents.toString();
     }
