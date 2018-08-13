@@ -274,6 +274,7 @@ public class TesseractOCRConfig implements Serializable {
         // 0 = Orientation and Script Detection only
         if ("0".equals(pageSegMode)) {
             setOutputType(OUTPUT_TYPE.OSD);
+            setLanguage("osd");
         }
     }
 
