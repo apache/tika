@@ -260,7 +260,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
 
             KerasModelBuilder builder = new KerasModel().modelBuilder().modelHdf5Filename(modelWeightsPath)
                     .enforceTrainingConfig(false);
-            builder.inputShape(new int[]{299, 299, 3});
+            builder.inputShape(new int[]{imgHeight, imgWidth, 3});
             KerasModel model = builder.buildModel();
             this.graph = model.getComputationGraph();
 
