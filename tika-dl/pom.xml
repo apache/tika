@@ -36,8 +36,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>0.8.0</dl4j.version>
-    <dl4j.model.version>0.8.0-2</dl4j.model.version>
+    <dl4j.version>1.0.0-beta2</dl4j.version>
   </properties>
 
   <dependencies>
@@ -51,6 +50,18 @@
           <groupId>joda-time</groupId>
           <artifactId>joda-time</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-compress</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -60,35 +71,24 @@
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
-      <artifactId>deeplearning4j-keras</artifactId>
-      <version>${dl4j.model.version}</version>
-      <!-- exclude this because of non-ASF friendly "do no evil" license.
-        Because this relies on tika-parsers, that should have ted-dunning's drop-in
-      -->
+      <artifactId>deeplearning4j-zoo</artifactId>
+      <version>${dl4j.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.json</groupId>
-          <artifactId>json</artifactId>
+          <groupId>org.deeplearning4j</groupId>
+          <artifactId>deeplearning4j-nn</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>jackson</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.deeplearning4j</groupId>
-          <artifactId>deeplearning4j-modelimport</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-compress</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-math3</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -100,12 +100,20 @@
     <dependency>
       <groupId>org.deeplearning4j</groupId>
       <artifactId>deeplearning4j-modelimport</artifactId>
-      <version>${dl4j.model.version}</version>
+      <version>${dl4j.version}</version>
       <exclusions>
-         <exclusion>
-            <groupId>org.deeplearning4j</groupId>
-            <artifactId>deeplearning4j-keras</artifactId>
-         </exclusion>
+        <exclusion>
+          <groupId>org.deeplearning4j</groupId>
+          <artifactId>deeplearning4j-keras</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>jackson</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.bytedeco</groupId>
           <artifactId>javacpp</artifactId>
@@ -117,10 +125,53 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.deeplearning4j</groupId>
+      <artifactId>deeplearning4j-nn</artifactId>
+      <version>${dl4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>jackson</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-compress</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-math3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.datavec</groupId>
+          <artifactId>datavec-data-image</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.datavec</groupId>
       <artifactId>datavec-data-image</artifactId>
       <version>${dl4j.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-api</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
@@ -144,10 +195,77 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>org.datavec</groupId>
+      <artifactId>datavec-api</artifactId>
+      <version>${dl4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-compress</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-codec</groupId>
+          <artifactId>commons-codec</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>jackson</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-io</groupId>
+          <artifactId>commons-io</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>commons-lang</groupId>
+          <artifactId>commons-lang</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.objenesis</groupId>
+      <artifactId>objenesis</artifactId>
+      <version>2.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.nd4j</groupId>
+      <artifactId>nd4j-api</artifactId>
+      <version>${dl4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.objenesis</groupId>
+          <artifactId>objenesis</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-math3</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.nd4j</groupId>
       <artifactId>nd4j-native-platform</artifactId>
       <version>${dl4j.version}</version>
       <exclusions>
+        <exclusion>
+          <groupId>org.nd4j</groupId>
+          <artifactId>nd4j-api</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>org.bytedeco</groupId>
           <artifactId>javacpp</artifactId>
@@ -155,14 +273,40 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.bytedeco</groupId>
-      <artifactId>javacpp</artifactId>
-      <version>1.3.2</version>
+      <groupId>org.nd4j</groupId>
+      <artifactId>jackson</artifactId>
+      <version>${dl4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>joda-time</groupId>
+          <artifactId>joda-time</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-compress</artifactId>
-        <version>${commons.compress.version}</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>${commons.compress.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.16.22</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>20.0</version>
+    </dependency>
+    <dependency>
+      <groupId>joda-time</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.9.2</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.6</version>
     </dependency>
   </dependencies>
 
@@ -197,22 +341,9 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
-          <excludes>
-            <exclude>src/main/resources/org/apache/tika/dl/imagerec/*.json</exclude>
-          </excludes>
         </configuration>
       </plugin>
 
     </plugins>
   </build>
-  <repositories>
-    <repository>
-      <id>oss-sonatype</id>
-      <name>oss-sonatype</name>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>

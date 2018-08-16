@@ -24,7 +24,8 @@
     <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
       <mime>image/jpeg</mime>
       <params>
-        <param name="modelWeightsPath" type="string">https://raw.githubusercontent.com/USCDataScience/dl4j-kerasimport-examples/98ec48b56a5b8fb7d54a2994ce9cb23bfefac821/dl4j-import-example/data/inception-model-weights.h5</param>
+        <param name="modelWeightsPath" type="string">https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/inception_v3_keras_2.h5</param>
+        <param name="labelFile" type="string">https://github.com/USCDataScience/tika-dockers/releases/download/v0.2/imagenet_class_index.json</param>
         <param name="topN" type="int">10</param>
         <param name="minConfidence" type="double">0.015</param>
         <param name="class" type="string">org.apache.tika.dl.imagerec.DL4JInceptionV3Net</param>

@@ -23,9 +23,8 @@ import java.io.InputStream;
 import java.util.Date;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.DublinCore;
@@ -54,7 +53,7 @@ public class MetadataAwareLuceneIndexer {
             for (String key : met.names()) {
                 String[] values = met.getValues(key);
                 for (String val : values) {
-                    document.add(new Field(key, val, Store.YES, Index.ANALYZED));
+                    document.add(new TextField(key, val, Store.YES));
                 }
                 writer.addDocument(document);
             }
@@ -79,7 +78,7 @@ public class MetadataAwareLuceneIndexer {
             for (String key : met.names()) {
                 String[] values = met.getValues(key);
                 for (String val : values) {
-                    document.add(new Field(key, val, Store.YES, Index.ANALYZED));
+                    document.add(new TextField(key, val, Store.YES));
                 }
                 writer.addDocument(document);
             }
