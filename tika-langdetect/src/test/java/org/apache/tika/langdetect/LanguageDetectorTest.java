@@ -66,12 +66,9 @@ public abstract class LanguageDetectorTest {
     }
 
     protected void writeTo(String language, Writer writer, int limit) throws IOException {
-        InputStream stream = LanguageDetectorTest.class.getResourceAsStream("/language-tests/" + language + ".test");
-        
-        try {
+        try (InputStream stream = LanguageDetectorTest.class
+                .getResourceAsStream("/language-tests/" + language + ".test")) {
         	copyAtMost(new InputStreamReader(stream, UTF_8), writer, limit);
-        } finally {
-            stream.close();
         }
     }
 

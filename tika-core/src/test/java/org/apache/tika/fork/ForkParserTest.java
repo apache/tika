@@ -66,10 +66,7 @@ public class ForkParserTest extends TikaTest {
 
     @Test
     public void testHelloWorld() throws Exception {
-        ForkParser parser = new ForkParser(
-                ForkParserTest.class.getClassLoader(),
-                new ForkTestParser());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
             Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
             InputStream stream = new ByteArrayInputStream(new byte[0]);
@@ -77,17 +74,12 @@ public class ForkParserTest extends TikaTest {
             parser.parse(stream, output, metadata, context);
             assertEquals("Hello, World!", output.toString().trim());
             assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
-        } finally {
-            parser.close();
         }
     }
 
     @Test
     public void testSerialParsing() throws Exception {
-        ForkParser parser = new ForkParser(
-                ForkParserTest.class.getClassLoader(),
-                new ForkTestParser());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
             ParseContext context = new ParseContext();
             for (int i = 0; i < 10; i++) {
                 ContentHandler output = new BodyContentHandler();
@@ -95,17 +87,12 @@ public class ForkParserTest extends TikaTest {
                 parser.parse(stream, output, new Metadata(), context);
                 assertEquals("Hello, World!", output.toString().trim());
             }
-        } finally {
-            parser.close();
         }
     }
 
     @Test
     public void testParallelParsing() throws Exception {
-        final ForkParser parser = new ForkParser(
-                ForkParserTest.class.getClassLoader(),
-                new ForkTestParser());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
             final ParseContext context = new ParseContext();
 
             Thread[] threads = new Thread[10];
@@ -131,17 +118,12 @@ public class ForkParserTest extends TikaTest {
                 threads[i].join();
                 assertEquals("Hello, World!", output[i].toString().trim());
             }
-        } finally {
-            parser.close();
         }
     }
 
     @Test
     public void testPoolSizeReached() throws Exception {
-        final ForkParser parser = new ForkParser(
-                ForkParserTest.class.getClassLoader(),
-                new ForkTestParser());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(), new ForkTestParser())) {
             final Semaphore barrier = new Semaphore(0);
 
             Thread[] threads = new Thread[parser.getPoolSize()];
@@ -202,8 +184,6 @@ public class ForkParserTest extends TikaTest {
 
             blocked.join();
             assertEquals("Hello, World!", o.toString().trim());
-        } finally {
-            parser.close();
         }
     }
 
@@ -249,10 +229,8 @@ public class ForkParserTest extends TikaTest {
 
     @Test
     public void testPackageCanBeAccessed() throws Exception {
-        ForkParser parser = new ForkParser(
-                ForkParserTest.class.getClassLoader(),
-                new ForkTestParser.ForkTestParserAccessingPackage());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserTest.class.getClassLoader(),
+                new ForkTestParser.ForkTestParserAccessingPackage())) {
             Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
             InputStream stream = new ByteArrayInputStream(new byte[0]);
@@ -260,8 +238,6 @@ public class ForkParserTest extends TikaTest {
             parser.parse(stream, output, metadata, context);
             assertEquals("Hello, World!", output.toString().trim());
             assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
-        } finally {
-            parser.close();
         }
     }
 
