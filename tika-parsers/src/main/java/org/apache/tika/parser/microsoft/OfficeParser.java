@@ -313,8 +313,8 @@ public class OfficeParser extends AbstractOfficeParser {
      * @throws IOException on IOException if it occurs during the extraction of the embedded doc
      * @throws SAXException on SAXException for writing to xhtml
      */
-    public static void extractMacros(NPOIFSFileSystem fs, ContentHandler xhtml, EmbeddedDocumentExtractor
-            embeddedDocumentExtractor)  throws IOException, SAXException {
+    public static void extractMacros(NPOIFSFileSystem fs, ContentHandler xhtml,
+                                     EmbeddedDocumentExtractor embeddedDocumentExtractor)  throws IOException, SAXException {
 
         VBAMacroReader reader = null;
         Map<String, String> macros = null;
@@ -322,7 +322,18 @@ public class OfficeParser extends AbstractOfficeParser {
             reader = new VBAMacroReader(fs);
             macros = reader.readMacros();
         } catch (Exception e) {
-            //swallow
+            if (e instanceof SecurityException) {
+                throw e;
+            }
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+            m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
+            EmbeddedDocumentUtil.recordException(e, m);
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+                embeddedDocumentExtractor.parseEmbedded(
+                        //pass in space character so that we don't trigger a zero-byte exception
+                        new ByteArrayInputStream(new byte[]{'\u0020'}), xhtml, m, true);
+            }
             return;
         }
         for (Map.Entry<String, String> e : macros.entrySet()) {

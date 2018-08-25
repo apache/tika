@@ -899,7 +899,11 @@ public class TestMimeTypes {
         
         // MBOX
         assertTypeDetection("headers.mbox", "application/mbox");
-        
+
+        // MBOX
+        assertTypeDetection("testMBOX_lengthy_x-headers.mbox", "application/mbox");
+
+
         // Thunderbird
         assertTypeDetection("testThunderbirdEml.eml", "message/rfc822");
 

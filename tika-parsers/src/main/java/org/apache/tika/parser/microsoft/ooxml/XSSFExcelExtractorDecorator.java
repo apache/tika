@@ -16,14 +16,16 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import javax.xml.parsers.SAXParser;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.hssf.extractor.ExcelExtractor;
@@ -68,10 +70,8 @@ import org.openxmlformats.schemas.drawingml.x2006.spreadsheetDrawing.CTShape;
 import org.openxmlformats.schemas.drawingml.x2006.spreadsheetDrawing.CTShapeNonVisual;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
@@ -228,7 +228,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
 
-    private void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
+    protected void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml) throws SAXException {
         try {
             for (PackageRelationship rel : sheetPart.getRelationshipsByType(XSSFRelation.SHEET_HYPERLINKS.getRelation())) {
                 xhtml.startElement("a", "href", rel.getTargetURI().toString());
@@ -249,10 +249,16 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void processShapes(List<XSSFShape> shapes, XHTMLContentHandler xhtml) throws SAXException {
+    protected void processShapes(List<XSSFShape> shapes, XHTMLContentHandler xhtml) throws SAXException {
         if (shapes == null) {
             return;
         }
+        //We don't currently have an obvious way to get drawings
+        //directly from sheetIter. Therefore, we grab the shapes and process those.
+        //To get the diagrams and charts, we need to get the parent drawing for each
+        //shape, and we need to make sure that we only process each parent shape once!
+        //SEE TIKA-2703 TODO: add unit test
+        Set<String> seenParentDrawings = new HashSet<>();
         for (XSSFShape shape : shapes) {
             if (shape instanceof XSSFSimpleShape) {
                 String sText = ((XSSFSimpleShape) shape).getText();
@@ -261,30 +267,34 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 }
                 extractHyperLinksFromShape(((XSSFSimpleShape)shape).getCTShape(), xhtml);
             }
-            XSSFDrawing drawing = shape.getDrawing();
-            if (drawing != null) {
-                //dump diagram data
-                handleGeneralTextContainingPart(
-                        AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
-                        "diagram-data",
-                        drawing.getPackagePart(),
-                        metadata,
-                        new OOXMLWordAndPowerPointTextHandler(
-                                new OOXMLTikaBodyPartHandler(xhtml),
-                                new HashMap<String, String>()//empty
-                        )
-                );
-                //dump chart data
-                handleGeneralTextContainingPart(
-                        XSSFRelation.CHART.getRelation(),
-                        "chart",
-                        drawing.getPackagePart(),
-                        metadata,
-                        new OOXMLWordAndPowerPointTextHandler(
-                                new OOXMLTikaBodyPartHandler(xhtml),
-                                new HashMap<String, String>()//empty
-                        )
-                );
+
+            XSSFDrawing parentDrawing = shape.getDrawing();
+            if (parentDrawing != null) {
+                if (! seenParentDrawings.contains(parentDrawing.getPackagePart().getPartName().toString())) {
+                    //dump diagram data
+                    handleGeneralTextContainingPart(
+                            AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                            "diagram-data",
+                            parentDrawing.getPackagePart(),
+                            metadata,
+                            new OOXMLWordAndPowerPointTextHandler(
+                                    new OOXMLTikaBodyPartHandler(xhtml),
+                                    new HashMap<String, String>()//empty
+                            )
+                    );
+                    //dump chart data
+                    handleGeneralTextContainingPart(
+                            XSSFRelation.CHART.getRelation(),
+                            "chart",
+                            parentDrawing.getPackagePart(),
+                            metadata,
+                            new OOXMLWordAndPowerPointTextHandler(
+                                    new OOXMLTikaBodyPartHandler(xhtml),
+                                    new HashMap<String, String>()//empty
+                            )
+                    );
+                }
+                seenParentDrawings.add(parentDrawing.getPackagePart().getPartName().toString());
             }
         }
     }

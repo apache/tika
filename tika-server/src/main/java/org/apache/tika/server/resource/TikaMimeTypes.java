@@ -26,12 +26,13 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.server.HTMLHelper;
-import org.eclipse.jetty.util.ajax.JSON;
 
 /**
  * <p>Provides details of all the mimetypes known to Apache Tika,
@@ -39,6 +40,9 @@ import org.eclipse.jetty.util.ajax.JSON;
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
+
+    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+
     private HTMLHelper html;
 
     public TikaMimeTypes() {
@@ -96,9 +100,9 @@ public class TikaMimeTypes {
         for (MediaTypeDetails type : getMediaTypes()) {
             Map<String, Object> typeDets = new HashMap<String, Object>();
 
-            typeDets.put("alias", type.aliases);
+            typeDets.put("alias", copyToStringArray(type.aliases));
             if (type.supertype != null) {
-                typeDets.put("supertype", type.supertype);
+                typeDets.put("supertype", type.supertype.toString());
             }
             if (type.parser != null) {
                 typeDets.put("parser", type.parser);
@@ -107,7 +111,15 @@ public class TikaMimeTypes {
             details.put(type.type.toString(), typeDets);
         }
 
-        return JSON.toString(details);
+        return GSON.toJson(details);
+    }
+
+    private static String[] copyToStringArray(MediaType[] aliases) {
+        String[] strings = new String[aliases.length];
+        for (int i = 0; i < aliases.length; i++) {
+            strings[i] = aliases[i].toString();
+        }
+        return strings;
     }
 
     @GET

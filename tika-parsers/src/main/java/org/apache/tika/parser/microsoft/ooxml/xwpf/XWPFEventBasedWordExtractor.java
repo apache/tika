@@ -32,6 +32,7 @@ import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -62,7 +63,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
     private POIXMLProperties properties;
 
     public XWPFEventBasedWordExtractor(String path) throws XmlException, OpenXML4JException, IOException {
-        this(OPCPackage.open(path));
+        this(OPCPackage.open(path, PackageAccess.READ));
     }
 
     public XWPFEventBasedWordExtractor(OPCPackage container) throws XmlException, OpenXML4JException, IOException {

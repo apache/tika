@@ -16,10 +16,42 @@
  */
 package org.apache.tika.parser.ocr;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.tika.config.Field;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.InitializableProblemHandler;
+import org.apache.tika.config.Param;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.image.ImageParser;
+import org.apache.tika.parser.image.TiffParser;
+import org.apache.tika.parser.jpeg.JpegParser;
+import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.imageio.ImageIO;
-import javax.xml.parsers.SAXParser;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -50,39 +82,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.tika.config.Initializable;
-import org.apache.tika.config.InitializableProblemHandler;
-import org.apache.tika.config.Param;
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.parser.image.ImageParser;
-import org.apache.tika.parser.image.TiffParser;
-import org.apache.tika.parser.jpeg.JpegParser;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * TesseractOCRParser powered by tesseract-ocr engine. To enable this parser,
@@ -106,13 +106,14 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
 
     private static final long serialVersionUID = -8167538283213097265L;
-    private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(new MediaType[]{
                     MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
                     MediaType.image("bmp"), MediaType.image("gif"), MediaType.image("jp2"),
                     MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
             })));
+    private final TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
+
     private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<>();
     private static Map<String,Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
 
@@ -120,7 +121,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         // If Tesseract is installed, offer our supported image types
-        TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+        TesseractOCRConfig config = context.get(TesseractOCRConfig.class, defaultConfig);
         if (hasTesseract(config)) {
             return SUPPORTED_TYPES;
         }
@@ -258,7 +259,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
-        TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+        TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, defaultConfig);
         // If Tesseract is not on the path with the current config, do not try to run OCR
         // getSupportedTypes shouldn't have listed us as handling it, so this should only
         //  occur if someone directly calls this parser, not via DefaultParser or similar
@@ -471,7 +472,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         //by sending in a bogus tesseract path via a custom TesseractOCRConfig.
         //TODO: figure out how to solve that.
         if (! hasWarned()) {
-            if (hasTesseract(DEFAULT_CONFIG)) {
+            if (hasTesseract(defaultConfig)) {
                 problemHandler.handleInitializableProblem(this.getClass().getName(),
                         "Tesseract OCR is installed and will be automatically applied to image files unless\n" +
                                 "you've excluded the TesseractOCRParser from the default parser.\n"+
@@ -695,6 +696,90 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
     protected void warn() {
         HAS_WARNED = true;
+    }
+
+    @Field
+    public void setTesseractPath(String tesseractPath) {
+        defaultConfig.setTesseractPath(tesseractPath);
+    }
+
+    @Field
+    public void setTessdataPath(String tessdataPath) {
+        defaultConfig.setTessdataPath(tessdataPath);
+    }
+
+    @Field
+    public void setLanguage(String language) {
+        defaultConfig.setLanguage(language);
+    }
+
+    @Field
+    public void setPageSegMode(String pageSegMode) {
+        defaultConfig.setPageSegMode(pageSegMode);
+    }
+
+    @Field
+    public void setMinFileSizeToOcr(long minFileSizeToOcr) {
+        defaultConfig.setMinFileSizeToOcr(minFileSizeToOcr);
+    }
+
+    @Field
+    public void setTimeout(int timeout) {
+        defaultConfig.setTimeout(timeout);
+    }
+
+    @Field
+    public void setOutputType(String outputType) {
+        defaultConfig.setOutputType(outputType);
+    }
+
+    @Field
+    public void setPreserveInterwordSpacing(boolean preserveInterwordSpacing) {
+        defaultConfig.setPreserveInterwordSpacing(preserveInterwordSpacing);
+    }
+
+    @Field
+    public void setEnableImageProcessing(int enableImageProcessing) {
+        defaultConfig.setEnableImageProcessing(enableImageProcessing);
+    }
+
+    @Field
+    public void setImageMagickPath(String imageMagickPath) {
+        defaultConfig.setImageMagickPath(imageMagickPath);
+    }
+
+    @Field
+    public void setDensity(int density) {
+        defaultConfig.setDensity(density);
+    }
+
+    @Field
+    public void setDepth(int depth) {
+        defaultConfig.setDepth(depth);
+    }
+
+    @Field
+    public void setColorspace(String colorspace) {
+        defaultConfig.setColorspace(colorspace);
+    }
+
+    @Field
+    public void setFilter(String filter) {
+        defaultConfig.setFilter(filter);
+    }
+
+    @Field
+    public void setResize(int resize) {
+        defaultConfig.setResize(resize);
+    }
+
+    @Field
+    public void setApplyRotation(boolean applyRotation) {
+        defaultConfig.setApplyRotation(applyRotation);
+    }
+
+    public TesseractOCRConfig getDefaultConfig() {
+        return defaultConfig;
     }
 }
 

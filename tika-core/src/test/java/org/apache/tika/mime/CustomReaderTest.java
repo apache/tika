@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -89,6 +90,7 @@ public class CustomReaderTest {
     assertEquals(1, reader.ignorePatterns.size());
     assertEquals(another.toString()+">>*"+hello.getExtension(), 
         reader.ignorePatterns.get(0));
+    assertTrue("Server-side script type not detected", another.isInterpreted());
     
     //System.out.println( mimeTypes.getMediaTypeRegistry().getTypes() );
   }

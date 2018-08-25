@@ -325,10 +325,9 @@ public class TikaResourceTest extends CXFTestBase {
                    .accept("text/plain")
                    .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
                   "tesseractPath",
-
                           "C://tmp//hello.bat\u0000")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
 
         response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/pdf")
@@ -349,7 +348,7 @@ public class TikaResourceTest extends CXFTestBase {
                                 "trustedPageSeparator",
                         "\u0010")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
 
     }
 

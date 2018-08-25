@@ -19,16 +19,15 @@ package org.apache.tika.example;
 
 import java.io.File;
 import java.io.Reader;
+import java.nio.file.Paths;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.store.SimpleFSDirectory;
-import org.apache.lucene.util.Version;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.tika.Tika;
 
 @SuppressWarnings("deprecation")
@@ -43,10 +42,10 @@ public class LuceneIndexerExtended {
     }
 
     public static void main(String[] args) throws Exception {
-        try (IndexWriter writer = new IndexWriter(
-                new SimpleFSDirectory(new File(args[0])),
-                new StandardAnalyzer(Version.LUCENE_30),
-                MaxFieldLength.UNLIMITED)) {
+        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(new StandardAnalyzer());
+        try (IndexWriter writer =
+                     new IndexWriter(FSDirectory.open(Paths.get(args[0])),
+                indexWriterConfig)) {
             LuceneIndexer indexer = new LuceneIndexer(new Tika(), writer);
             for (int i = 1; i < args.length; i++) {
                 indexer.indexDocument(new File(args[i]));
@@ -57,8 +56,8 @@ public class LuceneIndexerExtended {
     public void indexDocument(File file) throws Exception {
         try (Reader fulltext = tika.parse(file)) {
             Document document = new Document();
-            document.add(new Field("filename", file.getName(), Store.YES, Index.ANALYZED));
-            document.add(new Field("fulltext", fulltext));
+            document.add(new TextField("filename", file.getName(), Store.YES));
+            document.add(new TextField("fulltext", fulltext));
             writer.addDocument(document);
         }
     }

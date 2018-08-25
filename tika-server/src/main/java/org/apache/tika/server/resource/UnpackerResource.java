@@ -37,8 +37,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -220,7 +222,7 @@ public class UnpackerResource {
                 }
             }
 
-            final String finalName = name;
+            final String finalName = getFinalName(name, zout);
 
             if (data.length > 0) {
                 zout.put(finalName, data);
@@ -241,6 +243,28 @@ public class UnpackerResource {
                     }
                 }
             }
+        }
+
+        private String getFinalName(String name, Map<String, byte[]> zout) {
+            name = name.replaceAll("\u0000", " ");
+            String normalizedName = FilenameUtils.normalize(name);
+
+            if (normalizedName == null) {
+                normalizedName = FilenameUtils.getName(name);
+            }
+
+            if (normalizedName == null) {
+                normalizedName = count.toString();
+            }
+            //strip off initial C:/ or ~/ or /
+            int prefixLength = FilenameUtils.getPrefixLength(normalizedName);
+            if (prefixLength > -1) {
+                normalizedName = normalizedName.substring(prefixLength);
+            }
+            if (zout.containsKey(normalizedName)) {
+                return UUID.randomUUID().toString()+"-"+normalizedName;
+            }
+            return normalizedName;
         }
 
         protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)

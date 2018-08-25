@@ -24,10 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.server.HTMLHelper;
-import org.eclipse.jetty.util.ajax.JSON;
 
 /**
  * <p>Provides details of all the {@link Detector}s registered with
@@ -35,6 +36,9 @@ import org.eclipse.jetty.util.ajax.JSON;
  */
 @Path("/detectors")
 public class TikaDetectors {
+    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+
+
     private HTMLHelper html;
 
     public TikaDetectors() {
@@ -76,7 +80,7 @@ public class TikaDetectors {
     public String getDetectorsJSON() {
         Map<String, Object> details = new HashMap<String, Object>();
         detectorAsMap(TikaResource.getConfig().getDetector(), details);
-        return JSON.toString(details);
+        return GSON.toJson(details);
     }
 
     private void detectorAsMap(Detector d, Map<String, Object> details) {
