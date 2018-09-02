@@ -18,14 +18,10 @@
   -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.recognition.ObjectRecognitionParser">
-            <mime>image/jpeg</mime>
+        <parser class="org.apache.tika.dl.text.sentencoder.TFUniSentEncoder">
+            <mime>text/plain</mime>
             <params>
-                <param name="topN" type="int">3</param>
-                <param name="minConfidence" type="double">0.015</param>
-                <param name="class" type="string">org.apache.tika.dl.imagerec.DL4JVGG16Net</param>
-                <param name="modelType" type="string">VGG16</param>
-                <param name="serialize" type="bool">true</param>
+                <param name="modelURL" type="string">https://www.dropbox.com/s/brls43rgzoqtee4/uni-sent-encoder.zip?dl=1</param>
             </params>
         </parser>
     </parsers>

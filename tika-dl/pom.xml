@@ -37,6 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dl4j.version>1.0.0-beta2</dl4j.version>
+    <tf.version>1.10.0</tf.version>
   </properties>
 
   <dependencies>
@@ -68,6 +69,18 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scijava</groupId>
+      <artifactId>scijava-common</artifactId>
+      <version>2.75.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.tensorflow</groupId>
+      <artifactId>tensorflow</artifactId>
+      <version>${tf.version}</version>
     </dependency>
     <dependency>
       <groupId>org.deeplearning4j</groupId>
