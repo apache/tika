@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -72,7 +71,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -268,14 +266,14 @@ public class PDFParser extends AbstractParser implements Initializable {
         addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
         addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
-            // TODO Remove these in Tika 2.0
-        addMetadata(metadata, "created", info.getCreationDate());
-        addMetadata(metadata, PDF.DOC_INFO_CREATED, info.getCreationDate());
-        addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
+        // TODO Remove these in Tika 2.0
+        Calendar created = info.getCreationDate();
+        addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
+        addMetadata(metadata, TikaCoreProperties.CREATED, created);
         Calendar modified = info.getModificationDate();
         addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
         addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
-        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, info.getModificationDate());
+        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, modified);
 
         // All remaining metadata is custom
         // Copy this over as-is
@@ -489,7 +487,7 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     private void addMetadata(Metadata metadata, Property property, Calendar value) {
         if (value != null) {
-            metadata.set(property, value.getTime());
+            metadata.set(property, value);
         }
     }
 
