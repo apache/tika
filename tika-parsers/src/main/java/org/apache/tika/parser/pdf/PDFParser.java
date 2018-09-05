@@ -485,11 +485,6 @@ public class PDFParser extends AbstractParser implements Initializable {
         return value;
     }
 
-    private void addMetadata(Metadata metadata, String name, Calendar value) {
-        if (value != null) {
-            metadata.set(name, value.getTime().toString());
-        }
-    }
 
     private void addMetadata(Metadata metadata, Property property, Calendar value) {
         if (value != null) {
