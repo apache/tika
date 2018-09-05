@@ -45,7 +45,7 @@ import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
 import org.apache.poi.hslf.usermodel.HSLFTextRun;
 import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.sl.usermodel.Comment;
 import org.apache.poi.sl.usermodel.SimpleShape;
 import org.apache.tika.exception.TikaException;
@@ -68,7 +68,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parse(
-            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml);
     }
@@ -270,9 +270,9 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         long persistId = vbaAtom.getPersistIdRef();
         for (HSLFObjectData objData : ppt.getEmbeddedObjects()) {
             if (objData.getExOleObjStg().getPersistId() == persistId) {
-                try (NPOIFSFileSystem npoifsFileSystem = new NPOIFSFileSystem(objData.getInputStream())) {
+                try (POIFSFileSystem poifsFileSystem = new POIFSFileSystem(objData.getInputStream())) {
                     try {
-                        OfficeParser.extractMacros(npoifsFileSystem, xhtml,
+                        OfficeParser.extractMacros(poifsFileSystem, xhtml,
                                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
                     } catch (IOException|SAXException inner) {
                         EmbeddedDocumentUtil.recordException(inner, parentMetadata);
@@ -494,18 +494,18 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         }
                         if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
                                 || mediaType.equals("application/x-tika-msoffice")) {
-                            NPOIFSFileSystem npoifs = null;
+                            POIFSFileSystem poifs = null;
 
                             try {
-                                npoifs = new NPOIFSFileSystem(new CloseShieldInputStream(stream));
+                                poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
                             } catch (RuntimeException e) {
                                 throw new IOExceptionWithCause(e);
                             }
                             try {
-                                handleEmbeddedOfficeDoc(npoifs.getRoot(), objID, xhtml);
+                                handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);
                             } finally {
-                                if (npoifs != null) {
-                                    npoifs.close();
+                                if (poifs != null) {
+                                    poifs.close();
                                 }
                             }
                         } else {

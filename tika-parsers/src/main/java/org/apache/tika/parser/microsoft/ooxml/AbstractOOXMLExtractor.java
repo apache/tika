@@ -41,7 +41,6 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.openxml4j.opc.internal.FileHelper;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -418,9 +417,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
         if (officeParserConfig.getExtractMacros()) {
             try (InputStream is = macroPart.getInputStream()) {
-                try (NPOIFSFileSystem npoifs = new NPOIFSFileSystem(is)) {
+                try (POIFSFileSystem poifs = new POIFSFileSystem(is)) {
                     //Macro reading exceptions are already swallowed here
-                    OfficeParser.extractMacros(npoifs, handler, embeddedExtractor);
+                    OfficeParser.extractMacros(poifs, handler, embeddedExtractor);
                 }
             } catch (IOException e) {
                 throw new TikaException("Broken OOXML file", e);

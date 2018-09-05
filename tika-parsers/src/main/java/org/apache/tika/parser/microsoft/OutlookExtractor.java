@@ -51,7 +51,7 @@ import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.CodePageUtil;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -126,7 +126,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     private final boolean extractAllAlternatives;
 
-    public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
+    public OutlookExtractor(POIFSFileSystem filesystem, ParseContext context) throws TikaException {
         this(filesystem.getRoot(), context);
     }
 

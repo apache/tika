@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Random;
 
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -43,7 +43,7 @@ import org.junit.After;
 import org.junit.Test;
 
 /**
- * Junit test class for {@link ContainerAwareDetector}
+ * Junit test class for {@link org.apache.tika.parser.microsoft.POIFSContainerDetector}
  */
 public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
@@ -184,7 +184,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
             assertEquals(
                     MediaType.parse("application/vnd.ms-powerpoint"),
                     detector.detect(stream, new Metadata()));
-            assertTrue(stream.getOpenContainer() instanceof NPOIFSFileSystem);
+            assertTrue(stream.getOpenContainer() instanceof POIFSFileSystem);
         }
     }
 

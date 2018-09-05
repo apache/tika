@@ -65,6 +65,7 @@ public class JackcessParserTest extends TikaTest {
                 IOUtils.closeQuietly(is);
             }
             List<Metadata> list = handler.getMetadataList();
+            debug(list);
             assertEquals(4, list.size());
             String mainContent = list.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
 

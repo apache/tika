@@ -41,7 +41,7 @@ import com.healthmarketscience.jackcess.Row;
 import com.healthmarketscience.jackcess.Table;
 import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.IOUtils;
@@ -302,8 +302,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
     }
 
+
     private void handleOLE(Row row, String cName, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
-        OleBlob blob = row.getBlob(cName);
+        OleBlob blob = getBlob(row, cName);
         //lifted shamelessly from Jackcess's OleBlobTest
         if (blob == null)
             return;
@@ -367,9 +368,21 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
     }
 
+    /*
+       Temporary work around until POI 4.0.0 is released and jackcess upgrades
+       This is copy/pasted from jackcess
+    */
+    private OleBlob getBlob(Row row, String cName) {
+        byte[] bytes = row.getBytes(cName);
+        if (bytes == null) {
+            return null;
+        }
+        return JackcessOleUtil.parseBlob(bytes);
+    }
+
     private void handleCompoundContent(OleBlob.CompoundContent cc, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
         InputStream is = null;
-        NPOIFSFileSystem nfs = null;
+        POIFSFileSystem fileSystem = null;
         try {
             try {
                 is = cc.getStream();
@@ -379,18 +392,18 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             }
 
             try {
-                nfs = new NPOIFSFileSystem(is);
+                fileSystem = new POIFSFileSystem(is);
             } catch (Exception e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 return;
             }
 
-            handleEmbeddedOfficeDoc(nfs.getRoot(), xhtml);
+            handleEmbeddedOfficeDoc(fileSystem.getRoot(), xhtml);
 
         } finally {
-            if (nfs != null) {
+            if (fileSystem != null) {
                 try {
-                    nfs.close();
+                    fileSystem.close();
                 } catch (IOException e) {
                     //swallow
                 }
@@ -414,5 +427,6 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
         return shortDateTimeFormatter.format(d);
     }
+
 }
 

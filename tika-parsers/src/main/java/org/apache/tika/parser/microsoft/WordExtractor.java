@@ -49,7 +49,7 @@ import org.apache.poi.hwpf.usermodel.TableRow;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -145,7 +145,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parse(
-            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml);
     }
@@ -661,7 +661,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parseWord6(
-            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parseWord6(filesystem.getRoot(), xhtml);
     }
