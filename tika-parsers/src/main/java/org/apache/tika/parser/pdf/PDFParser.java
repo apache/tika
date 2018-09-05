@@ -270,11 +270,12 @@ public class PDFParser extends AbstractParser implements Initializable {
         addMetadata(metadata, OfficeOpenXMLCore.SUBJECT, info.getSubject());
 
         addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
-        addMetadata(metadata, PDF.DOC_INFO_CREATED, info.getCreationDate());
-        addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
+        Calendar created = info.getCreationDate();
+        addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
+        addMetadata(metadata, TikaCoreProperties.CREATED, created);
         Calendar modified = info.getModificationDate();
         addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
-        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, info.getModificationDate());
+        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, modified);
 
         // All remaining metadata is custom
         // Copy this over as-is
@@ -488,7 +489,7 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     private void addMetadata(Metadata metadata, Property property, Calendar value) {
         if (value != null) {
-            metadata.set(property, value.getTime());
+            metadata.set(property, value);
         }
     }
 
