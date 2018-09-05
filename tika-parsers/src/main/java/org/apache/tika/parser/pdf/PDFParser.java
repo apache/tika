@@ -103,6 +103,8 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     private static volatile boolean HAS_WARNED = false;
     private static final Object[] LOCK = new Object[0];
+    //the old "created" metadata.  This will go away in Tika 2.0
+    private static final Property DEPRECATED_CREATED = Property.externalDate("created");
 
     /**
      * Metadata key for giving the document password to the parser.
@@ -268,6 +270,7 @@ public class PDFParser extends AbstractParser implements Initializable {
         addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
         // TODO Remove these in Tika 2.0
         Calendar created = info.getCreationDate();
+        addMetadata(metadata, DEPRECATED_CREATED, created);
         addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
         addMetadata(metadata, TikaCoreProperties.CREATED, created);
         Calendar modified = info.getModificationDate();
