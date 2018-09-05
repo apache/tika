@@ -48,6 +48,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.DateUtils;
 import org.opengis.metadata.Identifier;
 import org.opengis.metadata.citation.Citation;
 import org.opengis.metadata.citation.CitationDate;
@@ -227,9 +228,11 @@ public class GeographicInformationParser extends AbstractParser{
                 metadata.add("IdentificationInfoCitationTitle ",i.getCitation().getTitle().toString());
 
             ArrayList<CitationDate> dateArrayList= (ArrayList<CitationDate>) i.getCitation().getDates();
-            for (CitationDate d:dateArrayList){
-                if(d.getDateType()!=null)
-                    metadata.add("CitationDate ",d.getDateType().name()+"-->"+d.getDate());
+            for (CitationDate d:dateArrayList) {
+                if (d.getDateType()!=null) {
+                    String date = DateUtils.formatDate(d.getDate());
+                    metadata.add("CitationDate ",d.getDateType().name()+"-->"+date);
+                }
             }
             ArrayList<ResponsibleParty> responsiblePartyArrayList= (ArrayList<ResponsibleParty>) i.getCitation().getCitedResponsibleParties();
             for(ResponsibleParty r:responsiblePartyArrayList){
@@ -282,9 +285,11 @@ public class GeographicInformationParser extends AbstractParser{
                     metadata.add("ThesaurusNameAlternativeTitle "+j,k.getThesaurusName().getAlternateTitles().toString());
 
                 ArrayList<CitationDate>citationDates= (ArrayList<CitationDate>) k.getThesaurusName().getDates();
-                for(CitationDate cd:citationDates) {
-                   if(cd.getDateType()!=null)
-                        metadata.add("ThesaurusNameDate ",cd.getDateType().name() +"-->" + cd.getDate());
+                for (CitationDate cd:citationDates) {
+                   if (cd.getDateType()!=null) {
+                       String date = DateUtils.formatDate(cd.getDate());
+                       metadata.add("ThesaurusNameDate ",cd.getDateType().name() +"-->" + date);
+                   }
                 }
             }
             ArrayList<DefaultLegalConstraints> constraintList= (ArrayList<DefaultLegalConstraints>) i.getResourceConstraints();
@@ -315,9 +320,11 @@ public class GeographicInformationParser extends AbstractParser{
                         for(InternationalString s:((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority().getAlternateTitles()) {
                             metadata.add("GeographicIdentifierAuthorityAlternativeTitle ",s.toString());
                         }
-                        for(CitationDate cd:((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority().getDates()){
-                            if(cd.getDateType()!=null && cd.getDate()!=null)
-                                metadata.add("GeographicIdentifierAuthorityDate ",cd.getDateType().name()+" "+cd.getDate().toString());
+                        for (CitationDate cd:((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority().getDates()){
+                            if (cd.getDateType()!=null && cd.getDate()!=null) {
+                                String date = DateUtils.formatDate(cd.getDate());
+                                metadata.add("GeographicIdentifierAuthorityDate ",cd.getDateType().name()+" "+date);
+                            }
                         }
                     }
                 }
@@ -363,8 +370,10 @@ public class GeographicInformationParser extends AbstractParser{
     private void getMetaDataDateInfo(Metadata metadata, DefaultMetadata defaultMetaData){
         ArrayList<CitationDate> citationDateList= (ArrayList<CitationDate>) defaultMetaData.getDateInfo();
         for(CitationDate c:citationDateList){
-            if(c.getDateType()!=null)
-                metadata.add("DateInfo ",c.getDateType().name()+" "+c.getDate());
+            if(c.getDateType()!=null) {
+                String date = DateUtils.formatDate(c.getDate());
+                metadata.add("DateInfo ",c.getDateType().name()+" "+date);
+            }
         }
     }
 
