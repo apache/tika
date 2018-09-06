@@ -17,10 +17,11 @@
 
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.ooxml.POIXMLDocument;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -29,19 +30,16 @@ import org.apache.poi.openxml4j.util.ZipEntrySource;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.AbstractOOXMLExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.SAXParser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -49,7 +47,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
 
 public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
 
@@ -249,10 +246,10 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     private static InputStream getZipStream(String zipPath, ZipPackage zipPackage) throws IOException, TikaException {
         String targPath = (zipPath.length() > 1 && zipPath.startsWith("/") ? zipPath.substring(1) : zipPath);
         ZipEntrySource zipEntrySource = zipPackage.getZipArchive();
-        Enumeration<? extends ZipEntry> zipEntryEnumeration = zipEntrySource.getEntries();
-        ZipEntry zipEntry = null;
+        Enumeration<? extends ZipArchiveEntry> zipEntryEnumeration = zipEntrySource.getEntries();
+        ZipArchiveEntry zipEntry = null;
         while (zipEntryEnumeration.hasMoreElements()) {
-            ZipEntry ze = zipEntryEnumeration.nextElement();
+            ZipArchiveEntry ze = zipEntryEnumeration.nextElement();
             if (ze.getName().equals(targPath)) {
                 zipEntry = ze;
                 break;

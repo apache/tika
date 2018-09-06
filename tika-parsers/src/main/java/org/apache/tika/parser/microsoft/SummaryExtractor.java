@@ -32,7 +32,7 @@ import org.apache.poi.hpsf.UnexpectedPropertySetTypeException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -62,7 +62,7 @@ public class SummaryExtractor {
         this.metadata = metadata;
     }
 
-    public void parseSummaries(NPOIFSFileSystem filesystem)
+    public void parseSummaries(POIFSFileSystem filesystem)
             throws IOException, TikaException {
         parseSummaries(filesystem.getRoot());
     }
@@ -93,8 +93,6 @@ public class SummaryExtractor {
             // no property stream, just skip it
         } catch (UnexpectedPropertySetTypeException e) {
             throw new TikaException("Unexpected HPSF document", e);
-        } catch (MarkUnsupportedException e) {
-            throw new TikaException("Invalid DocumentInputStream", e);
         } catch (Exception e) {
             LOG.warn("Ignoring unexpected exception while parsing summary entry {}", entryName, e);
         }

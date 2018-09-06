@@ -36,7 +36,6 @@ import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.poifs.macros.VBAMacroReader;
 import org.apache.poi.util.IOUtils;
@@ -105,23 +104,23 @@ public class OfficeParser extends AbstractOfficeParser {
 
         final DirectoryNode root;
         TikaInputStream tstream = TikaInputStream.cast(stream);
-        NPOIFSFileSystem mustCloseFs = null;
+        POIFSFileSystem mustCloseFs = null;
         try {
             if (tstream == null) {
-                mustCloseFs = new NPOIFSFileSystem(new CloseShieldInputStream(stream));
+                mustCloseFs = new POIFSFileSystem(new CloseShieldInputStream(stream));
                 root = mustCloseFs.getRoot();
             } else {
                 final Object container = tstream.getOpenContainer();
-                if (container instanceof NPOIFSFileSystem) {
-                    root = ((NPOIFSFileSystem) container).getRoot();
+                if (container instanceof POIFSFileSystem) {
+                    root = ((POIFSFileSystem) container).getRoot();
                 } else if (container instanceof DirectoryNode) {
                     root = (DirectoryNode) container;
                 } else {
-                    NPOIFSFileSystem fs = null;
+                    POIFSFileSystem fs = null;
                     if (tstream.hasFile()) {
-                        fs = new NPOIFSFileSystem(tstream.getFile(), true);
+                        fs = new POIFSFileSystem(tstream.getFile(), true);
                     } else {
-                        fs = new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+                        fs = new POIFSFileSystem(new CloseShieldInputStream(tstream));
                     }
                     //tstream will close the fs, no need to close this below
                     tstream.setOpenContainer(fs);
@@ -274,10 +273,6 @@ public class OfficeParser extends AbstractOfficeParser {
             return detectType(fs.getRoot());
         }
 
-        public static POIFSDocumentType detectType(NPOIFSFileSystem fs) {
-            return detectType(fs.getRoot());
-        }
-
         public static POIFSDocumentType detectType(DirectoryEntry node) {
             Set<String> names = new HashSet<String>();
             for (Entry entry : node) {
@@ -313,7 +308,7 @@ public class OfficeParser extends AbstractOfficeParser {
      * @throws IOException on IOException if it occurs during the extraction of the embedded doc
      * @throws SAXException on SAXException for writing to xhtml
      */
-    public static void extractMacros(NPOIFSFileSystem fs, ContentHandler xhtml,
+    public static void extractMacros(POIFSFileSystem fs, ContentHandler xhtml,
                                      EmbeddedDocumentExtractor embeddedDocumentExtractor)  throws IOException, SAXException {
 
         VBAMacroReader reader = null;

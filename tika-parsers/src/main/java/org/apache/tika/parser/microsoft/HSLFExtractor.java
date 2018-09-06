@@ -24,9 +24,7 @@ import java.util.List;
 
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
-import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
-import org.apache.poi.hslf.model.OLEShape;
 import org.apache.poi.hslf.record.DocInfoListContainer;
 import org.apache.poi.hslf.record.RecordTypes;
 import org.apache.poi.hslf.record.VBAInfoAtom;
@@ -35,6 +33,7 @@ import org.apache.poi.hslf.usermodel.HSLFGroupShape;
 import org.apache.poi.hslf.usermodel.HSLFMasterSheet;
 import org.apache.poi.hslf.usermodel.HSLFNotes;
 import org.apache.poi.hslf.usermodel.HSLFObjectData;
+import org.apache.poi.hslf.usermodel.HSLFObjectShape;
 import org.apache.poi.hslf.usermodel.HSLFPictureData;
 import org.apache.poi.hslf.usermodel.HSLFShape;
 import org.apache.poi.hslf.usermodel.HSLFSlide;
@@ -46,7 +45,9 @@ import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
 import org.apache.poi.hslf.usermodel.HSLFTextRun;
 import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.sl.usermodel.Comment;
+import org.apache.poi.sl.usermodel.SimpleShape;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -67,7 +68,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parse(
-            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml);
     }
@@ -269,9 +270,9 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         long persistId = vbaAtom.getPersistIdRef();
         for (HSLFObjectData objData : ppt.getEmbeddedObjects()) {
             if (objData.getExOleObjStg().getPersistId() == persistId) {
-                try (NPOIFSFileSystem npoifsFileSystem = new NPOIFSFileSystem(objData.getData())) {
+                try (POIFSFileSystem poifsFileSystem = new POIFSFileSystem(objData.getInputStream())) {
                     try {
-                        OfficeParser.extractMacros(npoifsFileSystem, xhtml,
+                        OfficeParser.extractMacros(poifsFileSystem, xhtml,
                                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
                     } catch (IOException|SAXException inner) {
                         EmbeddedDocumentUtil.recordException(inner, parentMetadata);
@@ -295,7 +296,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
         xhtml.startElement("div", "class", "slide-master-content");
         for (HSLFShape shape : shapes) {
-            if (shape != null && !HSLFMasterSheet.isPlaceholder(shape)) {
+            if (shape != null && ! isPlaceholder(shape)) {
                 if (shape instanceof HSLFTextShape) {
                     HSLFTextShape tsh = (HSLFTextShape) shape;
                     String text = tsh.getText();
@@ -306,6 +307,10 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
         }
         xhtml.endElement("div");
+    }
+
+    private boolean isPlaceholder(HSLFShape shape) {
+        return shape instanceof SimpleShape && ((SimpleShape)shape).isPlaceholder();
     }
 
     private void extractTableText(XHTMLContentHandler xhtml, HSLFTable shape) throws SAXException {
@@ -449,8 +454,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
 
         for (HSLFShape shape : shapes) {
-            if (shape instanceof OLEShape) {
-                OLEShape oleShape = (OLEShape) shape;
+            if (shape instanceof HSLFObjectShape) {
+                HSLFObjectShape oleShape = (HSLFObjectShape) shape;
                 HSLFObjectData data = null;
                 try {
                     data = oleShape.getObjectData();
@@ -474,14 +479,14 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     xhtml.endElement("div");
                     InputStream dataStream = null;
                     try {
-                        dataStream = data.getData();
+                        dataStream = data.getInputStream();
                     } catch (Exception e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                         continue;
                     }
                     try (TikaInputStream stream = TikaInputStream.get(dataStream)) {
                         String mediaType = null;
-                        if ("Excel.Chart.8".equals(oleShape.getProgID())) {
+                        if ("Excel.Chart.8".equals(oleShape.getProgId())) {
                             mediaType = "application/vnd.ms-excel";
                         } else {
                             MediaType mt = getTikaConfig().getDetector().detect(stream, new Metadata());
@@ -489,18 +494,18 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         }
                         if (mediaType.equals("application/x-tika-msoffice-embedded; format=comp_obj")
                                 || mediaType.equals("application/x-tika-msoffice")) {
-                            NPOIFSFileSystem npoifs = null;
+                            POIFSFileSystem poifs = null;
 
                             try {
-                                npoifs = new NPOIFSFileSystem(new CloseShieldInputStream(stream));
+                                poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
                             } catch (RuntimeException e) {
                                 throw new IOExceptionWithCause(e);
                             }
                             try {
-                                handleEmbeddedOfficeDoc(npoifs.getRoot(), objID, xhtml);
+                                handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);
                             } finally {
-                                if (npoifs != null) {
-                                    npoifs.close();
+                                if (poifs != null) {
+                                    poifs.close();
                                 }
                             }
                         } else {

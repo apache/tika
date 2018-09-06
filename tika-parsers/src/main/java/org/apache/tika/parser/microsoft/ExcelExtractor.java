@@ -64,7 +64,7 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -139,7 +139,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
      *                     or writing the extracted content
      */
     protected void parse(
-            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml,
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
         parse(filesystem.getRoot(), xhtml, locale);
     }
@@ -273,7 +273,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * @throws IOException  on any IO errors.
          * @throws SAXException on any SAX parsing errors.
          */
-        public void processFile(NPOIFSFileSystem filesystem, boolean listenForAllRecords)
+        public void processFile(POIFSFileSystem filesystem, boolean listenForAllRecords)
                 throws IOException, SAXException, TikaException {
             processFile(filesystem.getRoot(), listenForAllRecords);
         }

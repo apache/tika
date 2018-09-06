@@ -32,7 +32,8 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.FileMagic;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.util.IOUtils;
@@ -115,7 +116,7 @@ class RTFObjDataParser {
             ByteArrayInputStream embIs = new ByteArrayInputStream(embObjBytes);
             boolean hasPoifs = false;
             try {
-                hasPoifs = NPOIFSFileSystem.hasPOIFSHeader(embIs);
+                hasPoifs = hasPOIFSHeader(embIs);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                 return embObjBytes;
@@ -139,7 +140,7 @@ class RTFObjDataParser {
             throws IOException {
 
         byte[] ret = null;
-        try (NPOIFSFileSystem fs = new NPOIFSFileSystem(is)) {
+        try (POIFSFileSystem fs = new POIFSFileSystem(is)) {
 
             DirectoryNode root = fs.getRoot();
 
@@ -327,6 +328,10 @@ class RTFObjDataParser {
 
         return new byte[(int) len];
 
+    }
+
+    private static boolean hasPOIFSHeader(InputStream is) throws IOException {
+        return FileMagic.valueOf(is) == FileMagic.OLE2;
     }
 }
 

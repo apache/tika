@@ -36,7 +36,7 @@
     <properties>
         <cli.version>1.4</cli.version> <!--sync version with tika-server or move to parent? -->
         <lucene.version>7.4.0</lucene.version>
-        <poi.version>3.17</poi.version>
+        <poi.version>4.0.0</poi.version>
     </properties>
 
     <dependencies>

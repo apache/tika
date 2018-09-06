@@ -16,13 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.math.BigDecimal;
-import java.util.Date;
-
-import org.apache.poi.POIXMLProperties.CoreProperties;
-import org.apache.poi.POIXMLProperties.CustomProperties;
-import org.apache.poi.POIXMLProperties.ExtendedProperties;
-import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.ooxml.POIXMLProperties;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
@@ -41,6 +36,10 @@ import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
+
+import java.math.BigDecimal;
+import java.util.Date;
+import java.util.Optional;
 
 /**
  * OOXML metadata extractor.
@@ -70,7 +69,7 @@ public class MetadataExtractor {
         }
     }
 
-    private void extractMetadata(CoreProperties properties, Metadata metadata) {
+    private void extractMetadata(POIXMLProperties.CoreProperties properties, Metadata metadata) {
         PackagePropertiesPart propsHolder = properties
                 .getUnderlyingProperties();
 
@@ -105,7 +104,7 @@ public class MetadataExtractor {
 
     }
 
-    private void extractMetadata(ExtendedProperties properties,
+    private void extractMetadata(POIXMLProperties.ExtendedProperties properties,
                                  Metadata metadata) {
         CTProperties propsHolder = properties.getUnderlyingProperties();
 
@@ -145,7 +144,7 @@ public class MetadataExtractor {
         setProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES, propsHolder.getCharactersWithSpaces());
     }
 
-    private void extractMetadata(CustomProperties properties,
+    private void extractMetadata(POIXMLProperties.CustomProperties properties,
                                  Metadata metadata) {
         org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperties
                 props = properties.getUnderlyingProperties();
@@ -229,31 +228,34 @@ public class MetadataExtractor {
         }
     }
 
-    private <T> void setProperty(Metadata metadata, Property property, Nullable<T> nullableValue) {
-        T value = nullableValue.getValue();
-        if (value != null) {
-            if (value instanceof Date) {
-                metadata.set(property, (Date) value);
-            } else if (value instanceof String) {
-                metadata.set(property, (String) value);
-            } else if (value instanceof Integer) {
-                metadata.set(property, (Integer) value);
-            } else if (value instanceof Double) {
-                metadata.set(property, (Double) value);
-            }
+    private <T> void setProperty(Metadata metadata, Property property, Optional<T> optionalValue) {
+        if (!optionalValue.isPresent()) {
+            return;
+        }
+        T value = optionalValue.get();
+        if (value instanceof Date) {
+            metadata.set(property, (Date) value);
+        } else if (value instanceof String) {
+            metadata.set(property, (String) value);
+        } else if (value instanceof Integer) {
+            metadata.set(property, (Integer) value);
+        } else if (value instanceof Double) {
+            metadata.set(property, (Double) value);
         }
     }
 
-    private <T> void addProperty(Metadata metadata, Property property, Nullable<T> nullableValue) {
-        T value = nullableValue.getValue();
-        if (value != null) {
-            if (value instanceof String) {
-                metadata.add(property, (String) value);
-            } else {
-                throw new IllegalArgumentException("Can't add property of class: "+nullableValue.getClass());
-            }
+    private <T> void addProperty(Metadata metadata, Property property, Optional<T> optionalValue) {
+        if (!optionalValue.isPresent()) {
+            return;
+        }
+        T value = optionalValue.get();
+        if (value instanceof String) {
+            metadata.add(property, (String) value);
+        } else {
+            throw new IllegalArgumentException("Can't add property of class: " + optionalValue.getClass());
         }
     }
+
     private void setProperty(Metadata metadata, String name, Nullable<?> value) {
         if (value.getValue() != null) {
             setProperty(metadata, name, value.getValue().toString());
@@ -284,11 +286,11 @@ public class MetadataExtractor {
         }
     }
 
-    private void addMultiProperty(Metadata metadata, Property property, Nullable<String> value) {
-        if (value == null) {
+    private void addMultiProperty(Metadata metadata, Property property, Optional<String> value) {
+        if (!value.isPresent()) {
             return;
         }
-        SummaryExtractor.addMulti(metadata, property, value.getValue());
+        SummaryExtractor.addMulti(metadata, property, value.get());
     }
 
 }
