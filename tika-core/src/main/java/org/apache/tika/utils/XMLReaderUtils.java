@@ -46,6 +46,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Method;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -72,6 +73,25 @@ public class XMLReaderUtils implements Serializable {
     private static int POOL_SIZE = 10;
 
     private static long LAST_LOG = -1;
+
+    private static final String JAXP_ENTITY_EXPANSION_LIMIT_KEY = "jdk.xml.entityExpansionLimit";
+    private static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
+
+    private static int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
+
+    private static int determineMaxEntityExpansions() {
+        Properties properties = System.getProperties();
+        if (properties != null && properties.containsKey(JAXP_ENTITY_EXPANSION_LIMIT_KEY)) {
+            try {
+                return Integer.parseInt(properties.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY));
+            } catch (NumberFormatException e) {
+                LOG.log(Level.WARNING, "Couldn't parse an integer for the entity expansion limit:"+
+                        properties.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY)+
+                        "; backing off to default: "+DEFAULT_MAX_ENTITY_EXPANSIONS);
+            }
+        }
+        return DEFAULT_MAX_ENTITY_EXPANSIONS;
+    }
 
     //TODO: figure out if the rw lock is any better than a simple lock
     private static final ReentrantReadWriteLock SAX_READ_WRITE_LOCK = new ReentrantReadWriteLock();
@@ -103,6 +123,19 @@ public class XMLReaderUtils implements Serializable {
                     return "";
                 }
             };
+
+    /**
+     * Set the maximum number of entity expansions allowable in SAX/DOM/StAX parsing.
+     * <b>NOTE:</b>A value less than or equal to zero indicates no limit.
+     * This will override the system property {@link #JAXP_ENTITY_EXPANSION_LIMIT_KEY}
+     * and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value for pa
+     *
+     * @param maxEntityExpansions -- maximum number of allowable entity expansions
+     * @since Apache Tika 1.19
+     */
+    public static void setMaxEntityExpansions(int maxEntityExpansions) {
+        MAX_ENTITY_EXPANSIONS = maxEntityExpansions;
+    }
 
     /**
      * Returns the XMLReader specified in this parsing context. If a reader
@@ -517,7 +550,7 @@ public class XMLReaderUtils implements Serializable {
             try {
                 Object mgr = Class.forName(securityManagerClassName).newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-                setLimit.invoke(mgr, 4096);
+                setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
                 factory.setAttribute("http://apache.org/xml/properties/security-manager", mgr);
                 // Stop once one can be setup without error
                 return;
@@ -534,7 +567,7 @@ public class XMLReaderUtils implements Serializable {
 
         // separate old version of Xerces not found => use the builtin way of setting the property
         try {
-            factory.setAttribute("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit", 4096);
+            factory.setAttribute("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit", MAX_ENTITY_EXPANSIONS);
         } catch (IllegalArgumentException e) {     // NOSONAR - also catch things like NoClassDefError here
             // throttle the log somewhat as it can spam the log otherwise
             if(System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
@@ -554,7 +587,7 @@ public class XMLReaderUtils implements Serializable {
             try {
                 Object mgr = Class.forName(securityManagerClassName).newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-                setLimit.invoke(mgr, 4096);
+                setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
                 parser.setProperty("http://apache.org/xml/properties/security-manager", mgr);
                 // Stop once one can be setup without error
                 return;
@@ -571,7 +604,7 @@ public class XMLReaderUtils implements Serializable {
 
         // separate old version of Xerces not found => use the builtin way of setting the property
         try {
-            parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit", 4096);
+            parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit", MAX_ENTITY_EXPANSIONS);
         } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
             // throttle the log somewhat as it can spam the log otherwise
             if(System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
@@ -583,7 +616,7 @@ public class XMLReaderUtils implements Serializable {
 
     private static void trySetStaxSecurityManager(XMLInputFactory inputFactory) {
         try {
-            inputFactory.setProperty("com.ctc.wstx.maxEntityCount", 4096);
+            inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
         } catch (IllegalArgumentException e) {
             // throttle the log somewhat as it can spam the log otherwise
             if(System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {

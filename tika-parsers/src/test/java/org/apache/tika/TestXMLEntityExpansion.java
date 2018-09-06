@@ -26,17 +26,14 @@ import org.xml.sax.SAXParseException;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
-import static org.apache.tika.XMLTestBase.injectXML;
-import static org.apache.tika.XMLTestBase.parse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests to confirm defenses against entity expansion attacks.
  */
 @Ignore("initial draft, needs more work")
-public class TestXMLEntityExpansion
-{
+public class TestXMLEntityExpansion extends XMLTestBase {
+
     private static final byte[] ENTITY_EXPANSION_BOMB = new String(
             "<!DOCTYPE kaboom [ " +
                     "<!ENTITY a \"1234567890\" > " +
@@ -61,13 +58,28 @@ public class TestXMLEntityExpansion
                     "]> " +
                     "<kaboom>&s;</kaboom>").getBytes(StandardCharsets.UTF_8);
 
-    //a truly vulnerable parser, say xerces2, doesn't oom, it thrashes with gc.
     //Set a reasonable amount of time as the timeout
+    //Make sure that the test apparatus actually works.
     @Test(timeout = 20000)
-    public void testInjectedXML() throws Exception {
+    public void testVulnerableParser() throws Exception {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
-        parse("injected", new ByteArrayInputStream(injected), new XMLTestBase.VulnerableSAXParser());
+
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    parse("injected", new ByteArrayInputStream(injected), new XMLTestBase.VulnerableSAXParser());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
+        thread.start();
+        Thread.sleep(10000);
+        assertTrue(thread.isAlive());
+        thread.interrupt();
+
     }
 
     @Test(timeout = 20000)//
