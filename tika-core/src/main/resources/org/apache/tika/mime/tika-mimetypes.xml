@@ -5796,9 +5796,28 @@
     </magic>
     <glob pattern="*.eml"/>
     <glob pattern="*.mime"/>
+    <sub-class-of type="text/x-tika-text-based-message"/>
+  </mime-type>
+
+  <!-- TODO See TIKA-2723 for discussions on the mime type hierarchy -->
+  <!--  and best parser structure for these email-like formats -->
+  <mime-type type="multipart/related">
+    <acronym>MHTML</acronym>
+    <_comment>MIME Encapsulation of Aggregate HTML Documents</_comment>
+    <tika:link>http://tools.ietf.org/html/rfc2557</tika:link>
+    <alias type="application/x-mimearchive"/>
+    <alias type="message/rfc2557"/>
+    <!-- higher priority than message/rfc822 -->
+    <magic priority="60">
+      <match value="From: \x3cSaved by Windows Internet Explorer 8\x3e" type="stringignorecase" offset="0"/>
+      <match value="From: \x22Saved by Internet Explorer 11\x22" type="stringignorecase" offset="0"/>
+      <match value="MIME-Version: 1.0" type="string" offset="0">
+        <match value="\nContent-Type: multipart/related" type="string" offset="16:512"/>
+      </match>
+    </magic>
     <glob pattern="*.mht"/>
     <glob pattern="*.mhtml"/>
-    <sub-class-of type="text/x-tika-text-based-message"/>
+    <sub-class-of type="message/rfc822"/>
   </mime-type>
 
   <mime-type type="message/s-http"/>
@@ -5900,7 +5919,6 @@
   <mime-type type="multipart/header-set"/>
   <mime-type type="multipart/mixed"/>
   <mime-type type="multipart/parallel"/>
-  <mime-type type="multipart/related"/>
   <mime-type type="multipart/report"/>
   <mime-type type="multipart/signed"/>
   <mime-type type="multipart/voice-message"/>
