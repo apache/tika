@@ -33,7 +33,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -385,7 +385,7 @@ public class POIFSContainerDetector implements Detector {
         File file = stream.getFile();
 
         try {
-            NPOIFSFileSystem fs = new NPOIFSFileSystem(file, true);
+            POIFSFileSystem fs = new POIFSFileSystem(file, true);
 
             // Optimize a possible later parsing process by keeping
             // a reference to the already opened POI file system
@@ -423,8 +423,8 @@ public class POIFSContainerDetector implements Detector {
         Set<String> names = null;
         if (tis != null) {
             Object container = tis.getOpenContainer();
-            if (container instanceof NPOIFSFileSystem) {
-                names = getTopLevelNames(((NPOIFSFileSystem) container).getRoot());
+            if (container instanceof POIFSFileSystem) {
+                names = getTopLevelNames(((POIFSFileSystem) container).getRoot());
             } else if (container instanceof DirectoryNode) {
                 names = getTopLevelNames((DirectoryNode) container);
             }
@@ -454,8 +454,8 @@ public class POIFSContainerDetector implements Detector {
         // Detect based on the names (as available)
         if (tis != null &&
                 tis.getOpenContainer() != null &&
-                tis.getOpenContainer() instanceof NPOIFSFileSystem) {
-            return detect(names, ((NPOIFSFileSystem) tis.getOpenContainer()).getRoot());
+                tis.getOpenContainer() instanceof POIFSFileSystem) {
+            return detect(names, ((POIFSFileSystem) tis.getOpenContainer()).getRoot());
         } else {
             return detect(names, null);
         }

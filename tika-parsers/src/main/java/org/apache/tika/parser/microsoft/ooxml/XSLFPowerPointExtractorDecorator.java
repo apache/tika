@@ -30,9 +30,11 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
+import org.apache.poi.sl.extractor.SlideShowExtractor;
 import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFComment;
 import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
 import org.apache.poi.xslf.usermodel.XSLFComments;
 import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
@@ -59,8 +61,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
-import org.openxmlformats.schemas.presentationml.x2006.main.CTComment;
-import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthor;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTPicture;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdList;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
@@ -136,23 +136,21 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
 
             // comments (if present)
-            XSLFComments comments = slide.getComments();
+            List<XSLFComment> comments = slide.getComments();
             if (comments != null) {
                 StringBuilder authorStringBuilder = new StringBuilder();
-                for (int i = 0; i < comments.getNumberOfComments(); i++) {
+                for (int i = 0; i < comments.size(); i++) {
                     authorStringBuilder.setLength(0);
-                    CTComment comment = comments.getCommentAt(i);
+                    XSLFComment comment = comments.get(i);
                     xhtml.startElement("p", "class", "slide-comment");
-                    CTCommentAuthor cta = commentAuthors.getAuthorById(comment.getAuthorId());
-                    if (cta != null) {
-                        if (cta.getName() != null) {
-                            authorStringBuilder.append(cta.getName());
+                        if (comment.getAuthor() != null) {
+                            authorStringBuilder.append(comment.getAuthor());
                         }
-                        if (cta.getInitials() != null) {
+                        if (comment.getAuthorInitials() != null) {
                             if (authorStringBuilder.length() > 0) {
                                 authorStringBuilder.append(" ");
                             }
-                            authorStringBuilder.append("("+cta.getInitials()+")");
+                            authorStringBuilder.append("("+comment.getAuthorInitials()+")");
                         }
                         if (comment.getText() != null && authorStringBuilder.length() > 0) {
                             authorStringBuilder.append(" - ");
@@ -162,7 +160,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                             xhtml.characters(authorStringBuilder.toString());
                             xhtml.endElement("b");
                         }
-                    }
+
                     xhtml.characters(comment.getText());
                     xhtml.endElement("p");
                 }

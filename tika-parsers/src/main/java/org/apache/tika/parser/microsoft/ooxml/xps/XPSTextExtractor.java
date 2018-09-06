@@ -17,9 +17,10 @@
 
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
-import org.apache.poi.POIXMLDocument;
-import org.apache.poi.POIXMLProperties;
-import org.apache.poi.POIXMLTextExtractor;
+
+import org.apache.poi.ooxml.POIXMLDocument;
+import org.apache.poi.ooxml.POIXMLProperties;
+import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.xmlbeans.XmlException;

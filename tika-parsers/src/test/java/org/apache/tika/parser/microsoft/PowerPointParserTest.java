@@ -137,7 +137,7 @@ public class PowerPointParserTest extends TikaTest {
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
 
-        //TIKA-1171
+        //TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
     }
 
@@ -161,7 +161,7 @@ public class PowerPointParserTest extends TikaTest {
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
 
-        //TIKA-1171
+        //TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
     }
 
@@ -180,7 +180,7 @@ public class PowerPointParserTest extends TikaTest {
 
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
-        //TIKA-1171
+        //TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
     }
 
