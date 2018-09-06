@@ -5,6 +5,9 @@ Release 2.0.0 - ???
 
    Other changes
 
+   * Mime magic improvements for Olympus RAW (TIKA-2658), interpreted
+     server-side languages via HTTP (TIKA-2648), MHTML (TIKA-2723)
+
 Release 1.19 ???
 
    * Add absolute timeout to ForkParser rather than testing
