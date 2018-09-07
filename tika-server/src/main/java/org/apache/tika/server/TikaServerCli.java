@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -62,6 +63,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TikaServerCli {
+
+
+    //used in spawn-child mode
+    private static final long PULSE_MILLIS = 100;
+    private static final int DEFAULT_MAX_FILES = -1;
+    private static final long DEFAULT_TIME_OUT_MS = 60000;
+    private static final long DEFAULT_PULSE_MS = 500;
+    private static Thread SHUTDOWN_HOOK = null;
+
+
     public static final int DEFAULT_PORT = 9998;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20*1024*1024;
     public static final String DEFAULT_HOST = "localhost";
@@ -88,14 +99,114 @@ public class TikaServerCli {
         options.addOption("?", "help", false, "this help message");
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
         options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
-
+        options.addOption("spawnChild", false, "whether or not to spawn a child process for robustness");
+        options.addOption("maxFiles", false, "shutdown server after this many files -- use only in 'spawnChild' mode");
         return options;
     }
 
     public static void main(String[] args) {
         LOG.info("Starting {} server", new Tika());
-
         try {
+            execute(args);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOG.error("Can't start", e);
+            System.exit(-1);
+        }
+    }
+
+    private static void execute(String[] args) throws Exception {
+        boolean spawnChild = false;
+        for (int i = 0; i < args.length; i++) {
+            if ("-spawnChild".equals(args[i]) || "--spawnChild".equals(args[i])) {
+                spawnChild = true;
+                break;
+            }
+        }
+        if (spawnChild) {
+            spawnChild(args);
+        } else {
+            executeLegacy(args);
+        }
+    }
+
+    private static void spawnChild(String[] args) throws Exception {
+        Process child = start(args);
+        try {
+            while (true) {
+                Thread.sleep(PULSE_MILLIS);
+
+                int exitValue = Integer.MAX_VALUE;
+                try {
+                    exitValue = child.exitValue();
+                } catch (IllegalThreadStateException e) {
+                    //process is still running
+                }
+                if (exitValue != Integer.MAX_VALUE) {
+                    if (exitValue != ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN.getShutdownCode()) {
+                        LOG.warn("child exited with code ({}) -- restarting, now", Integer.toString(exitValue));
+                        child.destroyForcibly();
+                        child = start(args);
+                    }
+                }
+            }
+        } catch (InterruptedException e) {
+            //interrupted...shutting down
+        } finally {
+            child.destroyForcibly();
+        }
+    }
+
+    private static Process start(String[] args) throws IOException {
+        ProcessBuilder builder = new ProcessBuilder();
+        builder.inheritIO();
+        List<String> argList = new ArrayList<>();
+        List<String> jvmArgs = extractJVMArgs(args);
+        List<String> childArgs = extractArgs(args);
+        argList.add("java");
+            if (! jvmArgs.contains("-cp") && ! jvmArgs.contains("--classpath")) {
+                String cp = System.getProperty("java.class.path");
+                jvmArgs.add("-cp");
+                jvmArgs.add(cp);
+            }
+        argList.addAll(jvmArgs);
+        argList.add("org.apache.tika.server.TikaServerCli");
+        argList.addAll(childArgs);
+
+        builder.command(argList);
+
+        Process process = builder.start();
+
+        if (SHUTDOWN_HOOK != null) {
+            Runtime.getRuntime().removeShutdownHook(SHUTDOWN_HOOK);
+        }
+        SHUTDOWN_HOOK = new Thread(() -> process.destroy());
+        Runtime.getRuntime().addShutdownHook(SHUTDOWN_HOOK);
+        return process;
+    }
+
+    private static List<String> extractArgs(String[] args) {
+        List<String> argList = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("-J") || args[i].equals("-spawnChild") || args[i].equals("--spawnChild")) {
+                continue;
+            }
+            argList.add(args[i]);
+        }
+        return argList;
+    }
+
+    private static List<String> extractJVMArgs(String[] args) {
+        List<String> jvmArgs = new ArrayList<>();
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].startsWith("-J")) {
+                jvmArgs.add("-"+args[i].substring(2));
+            }
+        }
+        return jvmArgs;
+    }
+
+    private static void executeLegacy(String[] args) throws Exception {
             Options options = getOptions();
 
             CommandLineParser cliParser = new GnuParser();
@@ -196,6 +307,21 @@ public class TikaServerCli {
                 inputStreamFactory = new DefaultInputStreamFactory();
             }
 
+            int maxFiles = DEFAULT_MAX_FILES;
+            if (line.hasOption("maxFiles")) {
+                maxFiles = Integer.parseInt(line.getOptionValue("maxFiles"));
+            }
+
+            long timeoutMS = DEFAULT_TIME_OUT_MS;
+            if (line.hasOption("timeoutMS")) {
+                timeoutMS = Long.parseLong(line.getOptionValue("timeoutMS"));
+            }
+            long pulseMS = DEFAULT_PULSE_MS;
+            if (line.hasOption("pulseMS")) {
+                pulseMS = Long.parseLong(line.getOptionValue("pulseMS"));
+            }
+            ServerStatus serverStatus = new ServerStatus(maxFiles);
+            new Thread(new ServerStatusWatcher(serverStatus, timeoutMS, pulseMS)).start();
             TikaResource.init(tika, digester, inputStreamFactory);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
@@ -241,9 +367,5 @@ public class TikaServerCli {
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
             sf.create();
             LOG.info("Started Apache Tika server at {}", url);
-        } catch (Exception ex) {
-            LOG.error("Can't start", ex);
-            System.exit(-1);
-        }
     }
 }
