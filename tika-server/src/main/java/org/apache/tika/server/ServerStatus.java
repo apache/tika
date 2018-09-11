@@ -16,53 +16,72 @@
  */
 package org.apache.tika.server;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerStatus {
 
-    enum STATUS {
-        OPEN(0),
+    enum DIRECTIVES {
+        PING((byte)0),
+        PING_ACTIVE_SERVER_TASKS((byte)1),
+        SHUTDOWN((byte)2);
+
+        private final byte b;
+        DIRECTIVES(byte b) {
+            this.b = b;
+        }
+        byte getByte() { return b;}
+    }
+
+    public enum STATUS {
+        OPERATING(0),
         HIT_MAX(1),
         TIMEOUT(2),
         ERROR(3),
-        PARENT_REQUESTED_SHUTDOWN(4);
+        PARENT_REQUESTED_SHUTDOWN(4),
+        PARENT_EXCEPTION(5);
 
         private final int shutdownCode;
+
+        static STATUS lookup(int i) {
+            STATUS[] values = STATUS.values();
+            if (i < 0 || i >= values.length) {
+                throw new ArrayIndexOutOfBoundsException(i +
+                        " is not acceptable for an array of length "+values.length);
+            }
+            return STATUS.values()[i];
+        }
+
         STATUS(int shutdownCode) {
             this.shutdownCode = shutdownCode;
         }
         int getShutdownCode() {
             return shutdownCode;
         }
+        byte getByte() { return (byte) shutdownCode;}
+
     }
-    enum TASK {
+    public enum TASK {
         PARSE,
-        UNZIP,
         DETECT,
-        METADATA
+        TRANSLATE
     };
+    private static final Logger LOG = LoggerFactory.getLogger(ServerStatus.class);
 
-    private final int maxFilesToProcess;
-    private AtomicInteger counter = new AtomicInteger(0);
-    private Map<Integer, TaskStatus> tasks = new HashMap<>();
+    private AtomicLong counter = new AtomicLong(0);
+    private Map<Long, TaskStatus> tasks = new HashMap<>();
 
-    private STATUS status = STATUS.OPEN;
-    public ServerStatus(int maxFilesToProcess) {
-        this.maxFilesToProcess = maxFilesToProcess;
-    }
-    public synchronized int start(TASK task, String fileName) throws FileCountExceededException {
-        int i = counter.incrementAndGet();
-        if (i == Integer.MAX_VALUE ||
-                (maxFilesToProcess > 0 && i >= maxFilesToProcess)) {
-            setStatus(STATUS.HIT_MAX);
-            throw new FileCountExceededException();
-        }
-        tasks.put(i, new TaskStatus(task, Instant.now(), fileName));
-        return i;
+    private STATUS status = STATUS.OPERATING;
+
+    public synchronized long start(TASK task, String fileName) {
+        long taskId = counter.incrementAndGet();
+        tasks.put(taskId, new TaskStatus(task, Instant.now(), fileName));
+        return taskId;
     }
 
     /**
@@ -71,7 +90,7 @@ public class ServerStatus {
      * @param taskId
      * @throws IllegalArgumentException if there is no task by that taskId in the collection
      */
-    public synchronized void complete(int taskId) throws IllegalArgumentException {
+    public synchronized void complete(long taskId) throws IllegalArgumentException {
         TaskStatus status = tasks.remove(taskId);
         if (status == null) {
             throw new IllegalArgumentException("TaskId is not in map:"+taskId);
@@ -86,13 +105,18 @@ public class ServerStatus {
         return status;
     }
 
-    public synchronized Map<Integer, TaskStatus> getTasks() {
-        Map<Integer, TaskStatus> ret = new HashMap<>();
+    public synchronized Map<Long, TaskStatus> getTasks() {
+        Map<Long, TaskStatus> ret = new HashMap<>();
         ret.putAll(tasks);
         return ret;
     }
 
-    public synchronized int getFilesProcessed() {
+    public synchronized long getFilesProcessed() {
         return counter.get();
     }
+
+    public synchronized boolean isOperating() {
+        return status == STATUS.OPERATING;
+    }
+
 }

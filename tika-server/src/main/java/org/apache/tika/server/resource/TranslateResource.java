@@ -29,6 +29,8 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.LoadErrorHandler;
@@ -37,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
+import org.apache.tika.server.ServerStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,10 +51,12 @@ public class TranslateResource {
 
 	private static final Logger LOG = LoggerFactory.getLogger(TranslateResource.class);
 
-	public TranslateResource() {
+	private final ServerStatus serverStatus;
+	public TranslateResource(ServerStatus serverStatus) {
 		this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader(),
 				LoadErrorHandler.WARN);
 		this.defaultTranslator = TikaResource.getConfig().getTranslator();
+		this.serverStatus = serverStatus;
 	}
 
 	@PUT
@@ -94,8 +99,16 @@ public class TranslateResource {
 			translate = this.defaultTranslator;
 			LOG.info("Using default translator");
 		}
-
-		return translate.translate(content, sLang, dLang);
+        TikaResource.checkIsOperating();
+		long taskId = serverStatus.start(ServerStatus.TASK.TRANSLATE, null);
+		try {
+			return translate.translate(content, sLang, dLang);
+		} catch (OutOfMemoryError e) {
+		    serverStatus.setStatus(ServerStatus.STATUS.ERROR);
+		    throw e;
+        } finally {
+			serverStatus.complete(taskId);
+		}
 	}
 
 	private Translator byClassName(String className) {

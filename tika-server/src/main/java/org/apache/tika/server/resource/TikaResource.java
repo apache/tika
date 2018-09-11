@@ -41,6 +41,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.server.InputStreamFactory;
+import org.apache.tika.server.ServerStatus;
 import org.apache.tika.server.TikaServerParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,12 +94,13 @@ public class TikaResource {
     private static TikaConfig tikaConfig;
     private static DigestingParser.Digester digester = null;
     private static InputStreamFactory inputStreamFactory = null;
-
+    private static ServerStatus SERVER_STATUS = null;
     public static void init(TikaConfig config, DigestingParser.Digester digestr,
-                            InputStreamFactory iSF) {
+                            InputStreamFactory iSF, ServerStatus serverStatus) {
         tikaConfig = config;
         digester = digestr;
         inputStreamFactory = iSF;
+        SERVER_STATUS = serverStatus;
     }
 
     static {
@@ -383,6 +385,11 @@ public class TikaResource {
      */
     public static void parse(Parser parser, Logger logger, String path, InputStream inputStream,
                              ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
+
+        checkIsOperating();
+
+        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE,
+                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -393,8 +400,19 @@ public class TikaResource {
         } catch (Exception e) {
             logger.warn("{}: Text extraction failed", path, e);
             throw new TikaServerParseException(e);
+        } catch (OutOfMemoryError e) {
+            SERVER_STATUS.setStatus(ServerStatus.STATUS.ERROR);
+            throw e;
         } finally {
+            SERVER_STATUS.complete(taskId);
             inputStream.close();
+        }
+    }
+
+    public static void checkIsOperating() {
+        //check that server is not in shutdown mode
+        if (! SERVER_STATUS.isOperating()) {
+            throw new WebApplicationException(Response.Status.SERVICE_UNAVAILABLE);
         }
     }
 
@@ -409,6 +427,7 @@ public class TikaResource {
     @GET
     @Produces("text/plain")
     public String getMessage() {
+        checkIsOperating();
         return GREETING;
     }
 
