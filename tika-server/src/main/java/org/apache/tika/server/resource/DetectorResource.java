@@ -21,8 +21,10 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,13 +33,18 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.server.ServerStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Path("/detect")
 public class DetectorResource {
     private static final Logger LOG = LoggerFactory.getLogger(DetectorResource.class);
+    private final ServerStatus serverStatus;
 
+    public DetectorResource(ServerStatus serverStatus) {
+        this.serverStatus = serverStatus;
+    }
     @PUT
     @Path("stream")
     @Consumes("*/*")
@@ -50,11 +57,18 @@ public class DetectorResource {
                 .getRequestHeaders());
         LOG.info("Detecting media type for Filename: {}", filename);
         met.add(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+        TikaResource.checkIsOperating();
+        long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
         try {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {}", e.getMessage(), e);
             return MediaType.OCTET_STREAM.toString();
+        } catch (OutOfMemoryError e) {
+            serverStatus.setStatus(ServerStatus.STATUS.ERROR);
+            throw e;
+        } finally {
+            serverStatus.complete(taskId);
         }
     }
 }

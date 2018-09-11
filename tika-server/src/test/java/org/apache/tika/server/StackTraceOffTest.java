@@ -65,7 +65,7 @@ public class StackTraceOffTest extends CXFTestBase {
         List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
         rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
         rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(new ServerStatus())));
         rCoreProviders.add(new SingletonResourceProvider(new TikaResource()));
         rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource()));
         sf.setResourceProviders(rCoreProviders);

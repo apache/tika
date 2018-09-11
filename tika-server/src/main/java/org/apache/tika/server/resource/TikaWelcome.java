@@ -24,6 +24,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -135,6 +137,8 @@ public class TikaWelcome {
     @GET
     @Produces("text/html")
     public String getWelcomeHTML() {
+        TikaResource.checkIsOperating();
+
         StringBuffer h = new StringBuffer();
         String tikaVersion = tika.toString();
 
@@ -190,6 +194,7 @@ public class TikaWelcome {
     @GET
     @Produces("text/plain")
     public String getWelcomePlain() {
+        TikaResource.checkIsOperating();
         StringBuffer text = new StringBuffer();
 
         text.append(tika.toString());

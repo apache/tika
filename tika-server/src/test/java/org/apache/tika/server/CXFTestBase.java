@@ -84,7 +84,7 @@ public abstract class CXFTestBase {
         this.tika = new TikaConfig(getClass().getResourceAsStream("tika-config-for-server-tests.xml"));
         TikaResource.init(tika,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
-                new DefaultInputStreamFactory());
+                new DefaultInputStreamFactory(), new ServerStatus());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         setUpResources(sf);
         setUpProviders(sf);

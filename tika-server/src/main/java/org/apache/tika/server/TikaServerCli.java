@@ -17,7 +17,7 @@
 
 package org.apache.tika.server;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -66,11 +66,7 @@ public class TikaServerCli {
 
 
     //used in spawn-child mode
-    private static final long PULSE_MILLIS = 100;
-    private static final int DEFAULT_MAX_FILES = -1;
-    private static final long DEFAULT_TIME_OUT_MS = 60000;
-    private static final long DEFAULT_PULSE_MS = 500;
-    private static Thread SHUTDOWN_HOOK = null;
+    private static final long DEFAULT_MAX_FILES = 100000;
 
 
     public static final int DEFAULT_PORT = 9998;
@@ -86,6 +82,10 @@ public class TikaServerCli {
             "drive or a webpage from your intranet.  See CVE-2015-3271.\n"+
             "Please make sure you know what you are doing.";
 
+    private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
+            Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
+            "pingTimeoutMillis", "pingPulseMillis", "maxFiles"});
+
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("C", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
@@ -100,7 +100,14 @@ public class TikaServerCli {
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
         options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
         options.addOption("spawnChild", false, "whether or not to spawn a child process for robustness");
-        options.addOption("maxFiles", false, "shutdown server after this many files -- use only in 'spawnChild' mode");
+        options.addOption("taskTimeoutMillis", true, "Only in spawn child mode: how long to wait for a task (e.g. parse) to finish");
+        options.addOption("taskPulseMillis", true, "Only in spawn child mode: how often to check if a task has timed out.");
+        options.addOption("pingTimeoutMillis", true, "Only in spawn child mode: how long to wait to wait for a ping and/or ping response.");
+        options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
+
+        options.addOption("maxFiles", false, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
+        options.addOption("child", false, "this process is a child process -- EXPERT -- " +
+                "should normally only be invoked by parent process");
         return options;
     }
 
@@ -116,106 +123,45 @@ public class TikaServerCli {
     }
 
     private static void execute(String[] args) throws Exception {
-        boolean spawnChild = false;
-        for (int i = 0; i < args.length; i++) {
-            if ("-spawnChild".equals(args[i]) || "--spawnChild".equals(args[i])) {
-                spawnChild = true;
-                break;
-            }
-        }
-        if (spawnChild) {
-            spawnChild(args);
+        Options options = getOptions();
+
+        CommandLineParser cliParser = new GnuParser();
+
+        //need to strip out -J (child jvm opts) from this parse
+        //they'll be processed correctly in args in the watch dog
+        //and they won't be needed in legacy.
+        CommandLine line = cliParser.parse(options, stripChildArgs(args));
+        if (line.hasOption("spawnChild")) {
+            TikaServerWatchDog watchDog = new TikaServerWatchDog();
+            watchDog.execute(args, configureServerTimeouts(line));
         } else {
-            executeLegacy(args);
-        }
-    }
-
-    private static void spawnChild(String[] args) throws Exception {
-        Process child = start(args);
-        try {
-            while (true) {
-                Thread.sleep(PULSE_MILLIS);
-
-                int exitValue = Integer.MAX_VALUE;
-                try {
-                    exitValue = child.exitValue();
-                } catch (IllegalThreadStateException e) {
-                    //process is still running
-                }
-                if (exitValue != Integer.MAX_VALUE) {
-                    if (exitValue != ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN.getShutdownCode()) {
-                        LOG.warn("child exited with code ({}) -- restarting, now", Integer.toString(exitValue));
-                        child.destroyForcibly();
-                        child = start(args);
+            if (! line.hasOption("child")) {
+                //make sure the user didn't misunderstand the options
+                for (String childOnly : ONLY_IN_SPAWN_CHILD_MODE) {
+                    if (line.hasOption(childOnly)) {
+                        System.err.println("The option '" + childOnly +
+                                "' can only be used with '-spawnChild'");
+                        usage(options);
                     }
                 }
             }
-        } catch (InterruptedException e) {
-            //interrupted...shutting down
-        } finally {
-            child.destroyForcibly();
+            executeLegacy(line, options);
         }
     }
 
-    private static Process start(String[] args) throws IOException {
-        ProcessBuilder builder = new ProcessBuilder();
-        builder.inheritIO();
-        List<String> argList = new ArrayList<>();
-        List<String> jvmArgs = extractJVMArgs(args);
-        List<String> childArgs = extractArgs(args);
-        argList.add("java");
-            if (! jvmArgs.contains("-cp") && ! jvmArgs.contains("--classpath")) {
-                String cp = System.getProperty("java.class.path");
-                jvmArgs.add("-cp");
-                jvmArgs.add(cp);
-            }
-        argList.addAll(jvmArgs);
-        argList.add("org.apache.tika.server.TikaServerCli");
-        argList.addAll(childArgs);
-
-        builder.command(argList);
-
-        Process process = builder.start();
-
-        if (SHUTDOWN_HOOK != null) {
-            Runtime.getRuntime().removeShutdownHook(SHUTDOWN_HOOK);
-        }
-        SHUTDOWN_HOOK = new Thread(() -> process.destroy());
-        Runtime.getRuntime().addShutdownHook(SHUTDOWN_HOOK);
-        return process;
-    }
-
-    private static List<String> extractArgs(String[] args) {
-        List<String> argList = new ArrayList<>();
+    private static String[] stripChildArgs(String[] args) {
+        List<String> ret = new ArrayList<>();
         for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("-J") || args[i].equals("-spawnChild") || args[i].equals("--spawnChild")) {
-                continue;
-            }
-            argList.add(args[i]);
-        }
-        return argList;
-    }
-
-    private static List<String> extractJVMArgs(String[] args) {
-        List<String> jvmArgs = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].startsWith("-J")) {
-                jvmArgs.add("-"+args[i].substring(2));
+            if (! args[i].startsWith("-J")) {
+                ret.add(args[i]);
             }
         }
-        return jvmArgs;
+        return ret.toArray(new String[ret.size()]);
     }
 
-    private static void executeLegacy(String[] args) throws Exception {
-            Options options = getOptions();
-
-            CommandLineParser cliParser = new GnuParser();
-            CommandLine line = cliParser.parse(options, args);
-
+    private static void executeLegacy(CommandLine line, Options options) throws Exception {
             if (line.hasOption("help")) {
-                HelpFormatter helpFormatter = new HelpFormatter();
-                helpFormatter.printHelp("tikaserver", options);
-                System.exit(-1);
+                usage(options);
             }
 
             String host = DEFAULT_HOST;
@@ -307,30 +253,31 @@ public class TikaServerCli {
                 inputStreamFactory = new DefaultInputStreamFactory();
             }
 
-            int maxFiles = DEFAULT_MAX_FILES;
-            if (line.hasOption("maxFiles")) {
-                maxFiles = Integer.parseInt(line.getOptionValue("maxFiles"));
-            }
+            ServerStatus serverStatus = new ServerStatus();
+            //if this is a child process
+            if (line.hasOption("child")) {
+                long maxFiles = DEFAULT_MAX_FILES;
+                if (line.hasOption("maxFiles")) {
+                    maxFiles = Long.parseLong(line.getOptionValue("maxFiles"));
+                }
 
-            long timeoutMS = DEFAULT_TIME_OUT_MS;
-            if (line.hasOption("timeoutMS")) {
-                timeoutMS = Long.parseLong(line.getOptionValue("timeoutMS"));
+                ServerTimeouts serverTimeouts = configureServerTimeouts(line);
+                Thread serverThread =
+                new Thread(new ServerStatusWatcher(serverStatus, System.in,
+                        System.out, maxFiles, serverTimeouts));
+                serverThread.start();
+                System.setIn(new ByteArrayInputStream(new byte[0]));
+                System.setOut(System.err);
             }
-            long pulseMS = DEFAULT_PULSE_MS;
-            if (line.hasOption("pulseMS")) {
-                pulseMS = Long.parseLong(line.getOptionValue("pulseMS"));
-            }
-            ServerStatus serverStatus = new ServerStatus(maxFiles);
-            new Thread(new ServerStatusWatcher(serverStatus, timeoutMS, pulseMS)).start();
-            TikaResource.init(tika, digester, inputStreamFactory);
+            TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
             List<ResourceProvider> rCoreProviders = new ArrayList<>();
             rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
             rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-            rCoreProviders.add(new SingletonResourceProvider(new DetectorResource()));
+            rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
             rCoreProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            rCoreProviders.add(new SingletonResourceProvider(new TranslateResource()));
+            rCoreProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
             rCoreProviders.add(new SingletonResourceProvider(new TikaResource()));
             rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
@@ -368,4 +315,38 @@ public class TikaServerCli {
             sf.create();
             LOG.info("Started Apache Tika server at {}", url);
     }
+
+    private static void usage(Options options) {
+        HelpFormatter helpFormatter = new HelpFormatter();
+        helpFormatter.printHelp("tikaserver", options);
+        System.exit(-1);
+    }
+
+    private static ServerTimeouts configureServerTimeouts(CommandLine line) {
+        ServerTimeouts serverTimeouts = new ServerTimeouts();
+        /*TODO -- add these in
+        if (line.hasOption("childProcessStartupMillis")) {
+            serverTimeouts.setChildProcessStartupMillis(
+                    Long.parseLong(line.getOptionValue("childProcessStartupMillis")));
+        }
+        if (line.hasOption("childProcessShutdownMillis")) {
+            serverTimeouts.setChildProcessShutdownMillis(
+                    Long.parseLong(line.getOptionValue("childProcesShutdownMillis")));
+        }*/
+        if (line.hasOption("taskTimeoutMillis")) {
+            serverTimeouts.setTaskTimeoutMillis(
+                    Long.parseLong(line.getOptionValue("taskTimeoutMillis")));
+        }
+        if (line.hasOption("pingTimeoutMillis")) {
+            serverTimeouts.setPingTimeoutMillis(
+                    Long.parseLong(line.getOptionValue("pingTimeoutMillis")));
+        }
+        if (line.hasOption("pingPulseMillis")) {
+            serverTimeouts.setPingPulseMillis(
+                    Long.parseLong(line.getOptionValue("pingPulseMillis")));
+        }
+
+        return serverTimeouts;
+    }
+
 }
