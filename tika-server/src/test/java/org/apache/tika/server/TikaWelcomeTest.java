@@ -45,7 +45,7 @@ public class TikaWelcomeTest extends CXFTestBase {
         List<ResourceProvider> rpsCore =
 	    new ArrayList<ResourceProvider>();
 	rpsCore.add(new SingletonResourceProvider(new TikaVersion()));
-	rpsCore.add(new SingletonResourceProvider(new DetectorResource()));
+	rpsCore.add(new SingletonResourceProvider(new DetectorResource(new ServerStatus())));
 	rpsCore.add(new SingletonResourceProvider(new MetadataResource()));
         List<ResourceProvider> all = new ArrayList<ResourceProvider>(rpsCore);
         all.add(new SingletonResourceProvider(new TikaWelcome(rpsCore)));

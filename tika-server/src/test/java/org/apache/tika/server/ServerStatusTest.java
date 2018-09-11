@@ -33,18 +33,18 @@ public class ServerStatusTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testBadId() throws Exception {
-        ServerStatus status = new ServerStatus(-1);
+        ServerStatus status = new ServerStatus();
         status.complete(2);
     }
 
     @Test(timeout = 60000)
     public void testBasicMultiThreading() throws Exception {
         //make sure that synchronization is basically working
-        int numThreads = 100;
-        int filesToProcess = 100;
-        ExecutorService service = Executors.newFixedThreadPool(100);
+        int numThreads = 10;
+        int filesToProcess = 20;
+        ExecutorService service = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(service);
-        ServerStatus serverStatus = new ServerStatus(-1);
+        ServerStatus serverStatus = new ServerStatus();
         for (int i = 0; i < numThreads; i++) {
             completionService.submit(new MockTask(serverStatus, filesToProcess));
         }
@@ -78,15 +78,15 @@ public class ServerStatusTest {
             int processed = 0;
             for (int i = 0; i < filesToProcess; i++) {
                 sleepRandom(200);
-                int taskId = serverStatus.start(ServerStatus.TASK.PARSE, null);
+                long taskId = serverStatus.start(ServerStatus.TASK.PARSE, null);
                 sleepRandom(100);
                 serverStatus.complete(taskId);
                 processed++;
                 serverStatus.getStatus();
                 sleepRandom(10);
-                serverStatus.setStatus(ServerStatus.STATUS.OPEN);
+                serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
                 sleepRandom(20);
-                Map<Integer, TaskStatus> tasks = serverStatus.getTasks();
+                Map<Long, TaskStatus> tasks = serverStatus.getTasks();
                 assertNotNull(tasks);
             }
             return processed;
