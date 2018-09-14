@@ -388,8 +388,7 @@ public class TikaResource {
 
         checkIsOperating();
 
-        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE,
-                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE, path);
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -401,6 +400,7 @@ public class TikaResource {
             logger.warn("{}: Text extraction failed", path, e);
             throw new TikaServerParseException(e);
         } catch (OutOfMemoryError e) {
+            logger.error("{}: OOM", path, e);
             SERVER_STATUS.setStatus(ServerStatus.STATUS.ERROR);
             throw e;
         } finally {

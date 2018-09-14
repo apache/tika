@@ -65,6 +65,7 @@ public class DetectorResource {
             LOG.warn("Unable to detect MIME type for file. Reason: {}", e.getMessage(), e);
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
+            LOG.error("{}: OOM", filename, e);
             serverStatus.setStatus(ServerStatus.STATUS.ERROR);
             throw e;
         } finally {

@@ -104,7 +104,8 @@ public class TranslateResource {
 		try {
 			return translate.translate(content, sLang, dLang);
 		} catch (OutOfMemoryError e) {
-		    serverStatus.setStatus(ServerStatus.STATUS.ERROR);
+            LOG.error("OOM", e);
+            serverStatus.setStatus(ServerStatus.STATUS.ERROR);
 		    throw e;
         } finally {
 			serverStatus.complete(taskId);
