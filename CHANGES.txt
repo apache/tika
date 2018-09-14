@@ -8,7 +8,30 @@ Release 2.0.0 - ???
    * Mime magic improvements for Olympus RAW (TIKA-2658), interpreted
      server-side languages via HTTP (TIKA-2648), MHTML (TIKA-2723)
 
-Release 1.19 ???
+Release 1.19 - 9/14/2018
+
+   * Require Java 8 (TIKA-2679).
+
+   * Enable building with Java 11 (TIKA-2668)
+
+   * Add an option to make tika-server robust against infinite loops,
+     OOMs, and memory leaks (TIKA-2725).
+
+   * Allow configuration of the Tesseract parser via the standard
+     tika-config.xml options (TIKA-2705).
+
+   * Improve handling of empty cells across table-based
+     formats (TIKA-2479).
+
+   * Add a Standards compliant HTML encoding detector
+     via Gerard Bouchar (TIKA-2673).
+
+   * Improved XML parsing -- limited default entity expansions to 20.
+     To raise this limit, add -Djdk.xml.entityExpansionLimit=XXX to
+     your commandline.
+
+   * Mime magic improvements for Olympus RAW (TIKA-2658), interpreted
+     server-side languages via HTTP (TIKA-2648), MHTML (TIKA-2723)
 
    * Add absolute timeout to ForkParser rather than testing
      for active (TIKA-2656).
@@ -28,9 +51,24 @@ Release 1.19 ???
 
    * Add the RecursiveParserWrapperHandler to improve the RecursiveParserWrapper
      API slightly (TIKA-2644).
-     
-   * Improve output from Boilerpipe extracted text, by adding in missing
-     whitespace and removing inappropriate new-lines (TIKA-2683).
+
+   * Upgraded to Commons-Compress 1.18 (TIKA-2707).
+
+   * Upgraded to Apache POI 4.0.0 (TIKA-2552).
+
+   * Upgraded to Apache PDFBox 2.0.11 (TIKA-2681).
+
+   * Upgraded to deeplearning4j 1.0.0-beta2 (TIKA-2672).
+
+   * Upgraded jmatio to 1.4 (TIKA-2667)
+
+   * Upgraded Apache Lucene to 7.4.0 in tika-eval and tika-examples (TIKA-2695).
+
+   * Upgraded junrar to 1.0.1 (TIKA-2664).
+
+   * Numerous other upgrades (TIKA-2692).
+
+   * Excluded Spring as a transitive dependency (TIKA-2721).
 
 Release 1.18 - 4/20/2018
 
