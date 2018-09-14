@@ -31,7 +31,16 @@ import java.util.concurrent.TimeUnit;
 
 public class TikaServerWatchDog {
 
+    private enum CHILD_STATUS {
+        INITIALIZING,
+        RUNNING,
+        SHUTTING_DOWN
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerWatchDog.class);
+
+    private Object[] childStatusLock = new Object[0];
+    private volatile CHILD_STATUS childStatus = CHILD_STATUS.INITIALIZING;
     private volatile Instant lastPing = null;
     private ChildProcess childProcess = null;
     int restarts = 0;
@@ -46,12 +55,10 @@ public class TikaServerWatchDog {
             public void run() {
                 while (true) {
                     long tmpLastPing = -1L;
-                    try {
-                        //TODO: clean this up with synchronization/locking
-                        //to avoid potential NPE
-                        tmpLastPing = lastPing.toEpochMilli();
-                    } catch (NullPointerException e) {
-
+                    synchronized (childStatusLock) {
+                        if (childStatus == CHILD_STATUS.RUNNING) {
+                            tmpLastPing = lastPing.toEpochMilli();
+                        }
                     }
                     if (tmpLastPing > 0) {
                         long elapsed = Duration.between(Instant.ofEpochMilli(tmpLastPing), Instant.now()).toMillis();
@@ -78,24 +85,33 @@ public class TikaServerWatchDog {
         pingTimer.start();
         try {
             childProcess = new ChildProcess(args);
-
+            setChildStatus(CHILD_STATUS.RUNNING);
             while (true) {
 
                 if (!childProcess.ping()) {
+                    setChildStatus(CHILD_STATUS.INITIALIZING);
                     lastPing = null;
                     childProcess.close();
                     LOG.info("About to restart the child process");
                     childProcess = new ChildProcess(args);
                     LOG.info("Successfully restarted child process -- {} restarts so far)", ++restarts);
+                    setChildStatus(CHILD_STATUS.RUNNING);
                 }
                 Thread.sleep(serverTimeouts.getPingPulseMillis());
             }
         } catch (InterruptedException e) {
             //interrupted...shutting down
         } finally {
+            setChildStatus(CHILD_STATUS.SHUTTING_DOWN);
             if (childProcess != null) {
                 childProcess.close();
             }
+        }
+    }
+
+    private void setChildStatus(CHILD_STATUS status) {
+        synchronized (childStatusLock) {
+            childStatus = status;
         }
     }
 
@@ -139,6 +155,7 @@ public class TikaServerWatchDog {
                 throw new IOException("bad status from child process: "+
                         ServerStatus.STATUS.lookup(status));
             }
+            lastPing = Instant.now();
         }
 
         public boolean ping() {
