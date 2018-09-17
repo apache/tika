@@ -330,7 +330,7 @@
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
         <!-- if this version contains commons-io 2.6, remove hard-coded commons-io version below -->
-        <version>2.5</version>
+        <version>2.6</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
           <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
