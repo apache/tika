@@ -49,8 +49,6 @@ import org.xml.sax.helpers.DefaultHandler;
  * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
 public class WordMLParser extends AbstractXML2003Parser {
-
-
     //map between wordml and xhtml entities
     private static final Map<String, String> WORDML_TO_XHTML;
     static {
@@ -72,8 +70,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
 
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-wordml");
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE); //immutable
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE); //immutable
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
