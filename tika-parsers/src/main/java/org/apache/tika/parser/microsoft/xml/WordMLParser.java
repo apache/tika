@@ -46,7 +46,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * Parses wordml 2003 format word files.  These are single xml files
  * that predate ooxml.
  *
- * @see {@url https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats}
+ * See <a href="https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats">https://en.wikipedia.org/wiki/Microsoft_Office_XML_formats</a>
  */
 public class WordMLParser extends AbstractXML2003Parser {
 

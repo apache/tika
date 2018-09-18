@@ -297,7 +297,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
      * Loads the class to
      *
      * @param stream label index stream
-     * @return Map of integer -> label name
+     * @return Map of integer -&gt; label name
      * @throws IOException    when the stream breaks unexpectedly
      * @throws ParseException when the input doesn't contain a valid JSON map
      */

@@ -69,10 +69,9 @@ public abstract class ConsumersManager {
     }
 
     /**
-     * {@see #getConsumersManagerMaxMillis()}
-     *
      * @param consumersManagerMaxMillis maximum number of milliseconds
      *                                  to allow for init() or shutdown()
+     * @see #getConsumersManagerMaxMillis()
      */
     public void setConsumersManagerMaxMillis(long consumersManagerMaxMillis) {
         this.consumersManagerMaxMillis = consumersManagerMaxMillis;

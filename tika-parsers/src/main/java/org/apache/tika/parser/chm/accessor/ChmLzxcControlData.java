@@ -32,11 +32,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * $8000-byte blocks 0010: DWORD The window size in $8000-byte blocks 0014:
  * DWORD unknown (sometimes 2, sometimes 1, sometimes 0) 0018: DWORD 0 (unknown)
  * 001C: DWORD 0 (unknown)
- * 
- * {@link http
- * ://translated.by/you/microsoft-s-html-help-chm-format-incomplete/original
- * /?page=2 }
- * 
  */
 public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     private static final long serialVersionUID = -7897854774939631565L;
@@ -91,7 +86,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     /**
      * Sets a place holder
      * 
-     * @param current_place
+     * @param currentPlace
      */
     private void setCurrentPlace(int currentPlace) {
         this.currentPlace = currentPlace;
@@ -181,7 +176,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     /**
      * Sets a window size
      * 
-     * @param window_size
+     * @param windowSize
      */
     protected void setWindowSize(long windowSize) {
         this.windowSize = windowSize;
@@ -199,7 +194,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     /**
      * Sets windows per reset
      * 
-     * @param windows_per_reset
+     * @param windowsPerReset
      */
     protected void setWindowsPerReset(long windowsPerReset) {
         this.windowsPerReset = windowsPerReset;

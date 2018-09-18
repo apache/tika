@@ -35,15 +35,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * ENCINT: directory listing chunk which starts with name Encoded Integers aka
  * ENCINT An ENCINT is a variable-length integer. The high bit of each byte
  * indicates "continued to the next byte". Bytes are stored most significant to
- * least significant. So, for example, $EA $15 is (((0xEA&0x7F)<<7)|0x15) =
+ * least significant. So, for example, $EA $15 is (((0xEA&amp;0x7F)&lt;&lt;7)|0x15) =
  * 0x3515.
  * 
  * <p>
  * Note: This class is not in use
- * 
- * {@link http://translated.by/you/microsoft-s-html-help-chm-format-incomplete/original/?show-translation-form=1 }
- * 
- * 
  */
 public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     private static final long serialVersionUID = -2092282339894303701L;

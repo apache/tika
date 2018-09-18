@@ -39,7 +39,7 @@ public class AccessChecker implements Serializable {
      * will not perform any checking and will always return without
      * throwing an exception.
      * <p/>
-     * This constructor is available to allow for Tika's legacy ( <= v1.7) behavior.
+     * This constructor is available to allow for Tika's legacy (&lt;= v1.7) behavior.
      */
     public AccessChecker() {
         needToCheck = false;

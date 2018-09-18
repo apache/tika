@@ -195,7 +195,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
     }
 
     /**
-     * Maximum number of files to add.  If {@link #maxFilesToAdd} < 0 (default),
+     * Maximum number of files to add.  If {@link #maxFilesToAdd} &lt; 0 (default),
      * then this crawler will add all documents.
      *
      * @param maxFilesToAdd maximum number of files to add to the queue
@@ -209,7 +209,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
      * Maximum number of files to consider.  A file is considered
      * whether or not the DocumentSelector selects a document.
      * <p/>
-     * If {@link #maxFilesToConsider} < 0 (default), then this crawler
+     * If {@link #maxFilesToConsider} &lt; 0 (default), then this crawler
      * will add all documents.
      *
      * @param maxFilesToConsider maximum number of files to consider adding to the queue
@@ -260,8 +260,6 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
      * adding poison.  Do this only if you've already called another mechanism
      * to request that consumers shut down.  This prevents a potential deadlock issue
      * where the crawler is trying to add to the queue, but it is full.
-     *
-     * @return
      */
     public void shutDownNoPoison() {
         this.shutDownNoPoison = true;

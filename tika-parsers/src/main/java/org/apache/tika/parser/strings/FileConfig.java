@@ -48,8 +48,7 @@ public class FileConfig implements Serializable {
 	/**
 	 * Sets the "file" installation folder.
 	 * 
-	 * @param path
-	 *            the "file" installation folder.
+	 * @param filePath the "file" installation folder.
 	 */
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;

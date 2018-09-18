@@ -111,7 +111,7 @@ public class OpenNLPNERecogniser implements NERecogniser {
 
     /**
      * Creates a chain of Named Entity recognisers
-     * @param models map of entityType -> model path
+     * @param models map of entityType -&gt; model path
      * NOTE: the model path should be known to class loader.
      */
     public OpenNLPNERecogniser(Map<String, String> models){

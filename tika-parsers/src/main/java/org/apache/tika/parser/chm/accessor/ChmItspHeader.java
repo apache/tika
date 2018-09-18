@@ -38,11 +38,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * 0034: GUID {5D02926A-212E-11D0-9DF9-00A0C922E6EC} 0044: DWORD $54 (This is
  * the length again) 0048: DWORD -1 (unknown) 004C: DWORD -1 (unknown) 0050:
  * DWORD -1 (unknown)
- * 
- * {@link http
- * ://translated.by/you/microsoft-s-html-help-chm-format-incomplete/original
- * /?show-translation-form=1}
- * 
  */
 public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     // TODO: refactor all unmarshals

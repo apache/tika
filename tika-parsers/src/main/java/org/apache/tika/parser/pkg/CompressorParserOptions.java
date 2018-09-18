@@ -20,7 +20,7 @@ import org.apache.tika.metadata.Metadata;
 
 /**
  * Interface for setting options for the {@link CompressorParser} by passing
- * via the {@link ParseContext}.
+ * via the {@link org.apache.tika.parser.ParseContext}.
  */
 public interface CompressorParserOptions {
 

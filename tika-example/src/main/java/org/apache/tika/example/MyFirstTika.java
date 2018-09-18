@@ -41,7 +41,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Demonstrates how to call the different components within Tika: its
  * {@link Detector} framework (aka MIME identification and repository), its
- * {@link Parser} interface, its {@link LanguageIdentifier} and other goodies.
+ * {@link Parser} interface, its {@link org.apache.tika.language.LanguageIdentifier} and other goodies.
  * <p>
  * It also shows the "easy way" via {@link AutoDetectParser}
  */

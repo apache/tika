@@ -208,7 +208,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     /**
-     * Add a LimitTokenCountFilterFactory if > -1
+     * Add a LimitTokenCountFilterFactory if &gt; -1
      *
      * @param maxTokens
      */

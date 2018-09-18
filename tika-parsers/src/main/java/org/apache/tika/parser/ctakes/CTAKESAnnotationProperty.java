@@ -19,7 +19,7 @@ package org.apache.tika.parser.ctakes;
 import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
 
 /**
- * This enumeration includes the properties that an {@see IdentifiedAnnotation} object can provide.
+ * This enumeration includes the properties that an {@link IdentifiedAnnotation} object can provide.
  *
  */
 public enum CTAKESAnnotationProperty {

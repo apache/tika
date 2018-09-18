@@ -36,7 +36,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * This example demonstrates how to interrupt document parsing if
  * some condition is met.
  * <p>
- * {@link InterruptingContentHandler} throws special exception as soon as
+ * {@link InterruptableParsingExample.InterruptingContentHandler} throws special exception as soon as
  * find {@code query} string in parsed file.
  *
  * See also http://stackoverflow.com/questions/31939851
