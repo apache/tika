@@ -34,8 +34,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *  This is a contract for object recognisers used by {@link ObjectRecognitionParser}
- *  @see {@link TensorflowImageRecParser} for an example
+ * This is a contract for object recognisers used by {@link ObjectRecognitionParser}
+ * @see TensorflowImageRecParser
  */
 public interface ObjectRecogniser  extends Initializable {
 

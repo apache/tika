@@ -52,7 +52,7 @@ public interface NERecogniser {
     /**
      * call for name recognition action from text
      * @param text text with possibly contains names
-     * @return map of entityType -> set of names
+     * @return map of entityType -&gt; set of names
      */
     Map<String, Set<String>> recognise(String text);
 }

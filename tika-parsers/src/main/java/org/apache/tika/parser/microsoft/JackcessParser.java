@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Parser that handles Microsoft Access files via
- * <a href="http://jackcess.sourceforge.net/>Jackcess</a>
+ * <a href="http://jackcess.sourceforge.net/">Jackcess</a>
  * <p>
  * Many, many thanks to LexisNexis®/Health Market Science (HMS), Brian O'Neill,
  * and James Ahlborn for relicensing Jackcess to Apache v2.0!

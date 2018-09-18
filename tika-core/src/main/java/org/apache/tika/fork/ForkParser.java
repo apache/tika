@@ -191,8 +191,8 @@ public class ForkParser extends AbstractParser {
     /**
      * Sets the command used to start the forked server process.
      * The given command line is split on whitespace and the arguments
-2    * "-jar" and "/path/to/bootstrap.jar" are appended to it when starting
-2    * the process. The default setting is "java -Xmx32m".
+     * "-jar" and "/path/to/bootstrap.jar" are appended to it when starting
+     * the process. The default setting is "java -Xmx32m".
      *
      * @param java java command line
      * @deprecated since 1.8
@@ -212,7 +212,7 @@ public class ForkParser extends AbstractParser {
      * This sends the objects to the server for parsing, and the server via
      * the proxies acts on the handler as if it were updating it directly.
      * <p>
-     * If using a RecursiveParserWrapper, there are two options:
+     * If using a {@link org.apache.tika.parser.RecursiveParserWrapper}, there are two options:
      * </p>
      * <p>
      *     <ol>

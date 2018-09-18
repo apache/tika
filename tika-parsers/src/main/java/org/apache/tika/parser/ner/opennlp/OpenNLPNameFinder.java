@@ -97,7 +97,7 @@ public class OpenNLPNameFinder implements NERecogniser {
     /**
      * finds names from given array of tokens
      * @param tokens the tokens array
-     * @return map of EntityType -> set of entity names
+     * @return map of EntityType -&gt; set of entity names
      */
     public Map<String, Set<String>> findNames(String[] tokens) {
         Span[] nameSpans = nameFinder.find(tokens);

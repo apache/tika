@@ -32,7 +32,7 @@ import org.xml.sax.ContentHandler;
  * Tries multiple parsers in turn, until one succeeds.
  * 
  * Can optionally keep Metadata from failed parsers when
- *  trying the next one, depending on the {@link MetadataPolicy}
+ *  trying the next one, depending on the {@link AbstractMultipleParser.MetadataPolicy}
  *  chosen.
  *
  * @since Apache Tika 1.18

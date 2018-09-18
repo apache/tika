@@ -58,16 +58,15 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
 	private JCas jcas = null;
 
 	/**
-	 * Creates a new {@see CTAKESContentHandler} for the given {@see
-	 * ContentHandler} and Metadata objects.
+	 * Creates a new {@link CTAKESContentHandler} for the given {@link ContentHandler} and Metadata objects.
 	 * 
 	 * @param handler
-	 *            the {@see ContentHandler} object to be decorated.
+	 *            the {@link ContentHandler} object to be decorated.
 	 * @param metadata
-	 *            the {@see Metadata} object that will be populated using
+	 *            the {@link Metadata} object that will be populated using
 	 *            biomedical information extracted by cTAKES.
 	 * @param config
-	 *            the {@see CTAKESConfig} object used to configure the handler.
+	 *            the {@link CTAKESConfig} object used to configure the handler.
 	 */
 	public CTAKESContentHandler(ContentHandler handler, Metadata metadata,
 			CTAKESConfig config) {
@@ -78,13 +77,13 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
 	}
 
 	/**
-	 * Creates a new {@see CTAKESContentHandler} for the given {@see
+	 * Creates a new {@link CTAKESContentHandler} for the given {@link
 	 * ContentHandler} and Metadata objects.
 	 * 
 	 * @param handler
-	 *            the {@see ContentHandler} object to be decorated.
+	 *            the {@link ContentHandler} object to be decorated.
 	 * @param metadata
-	 *            the {@see Metadata} object that will be populated using
+	 *            the {@link Metadata} object that will be populated using
 	 *            biomedical information extracted by cTAKES.
 	 */
 	public CTAKESContentHandler(ContentHandler handler, Metadata metadata) {
@@ -168,7 +167,7 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
 	/**
 	 * Returns metadata that includes cTAKES annotations.
 	 * 
-	 * @return {@Metadata} object that includes cTAKES annotations.
+	 * @return {@link Metadata} object that includes cTAKES annotations.
 	 */
 	public Metadata getMetadata() {
 		return metadata;

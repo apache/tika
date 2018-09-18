@@ -38,7 +38,7 @@ import org.xml.sax.SAXException;
 
 /**
  * This class provides methods to extract biomedical information from plain text
- * using {@see CTAKESContentHandler} that relies on Apache cTAKES.
+ * using {@link CTAKESContentHandler} that relies on Apache cTAKES.
  * 
  * <p>
  * Apache cTAKES is built on top of <a href="https://uima.apache.org/">Apache
@@ -152,7 +152,7 @@ public class CTAKESUtils {
 	 * @param prettyPrint
 	 *            {@code true} to do pretty printing of output.
 	 * @param stream
-	 *            {@see OutputStream} object used to print out information
+	 *            {@link OutputStream} object used to print out information
 	 *            extracted by using cTAKES.
 	 * @throws SAXException
 	 *             if there was a SAX exception.
@@ -176,9 +176,9 @@ public class CTAKESUtils {
 	 * Returns the annotation value based on the given annotation type.
 	 * 
 	 * @param annotation
-	 *            {@see IdentifiedAnnotation} object.
+	 *            {@link IdentifiedAnnotation} object.
 	 * @param property
-	 *            {@see CTAKESAnnotationProperty} enum used to identify the
+	 *            {@link CTAKESAnnotationProperty} enum used to identify the
 	 *            annotation type.
 	 * @return the annotation value.
 	 */

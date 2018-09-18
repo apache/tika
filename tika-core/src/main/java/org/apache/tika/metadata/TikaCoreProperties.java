@@ -208,7 +208,7 @@ public interface TikaCoreProperties {
      Property DESCRIPTION = DublinCore.DESCRIPTION;
      
     /**
-     * @see DublinCore#SUBJECT; should include both subject and keywords
+     * {@link DublinCore#SUBJECT}; should include both subject and keywords
      *  if a document format has both.  See also {@link Office#KEYWORDS}
      *  and {@link OfficeOpenXMLCore#SUBJECT}.
      */
@@ -278,7 +278,7 @@ public interface TikaCoreProperties {
             });
 
     /**
-     * See {@link #EMBEDDED_RESOURCE_TYPE}
+     * Embedded resource type property
      */
      Property EMBEDDED_RESOURCE_TYPE =
             Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,

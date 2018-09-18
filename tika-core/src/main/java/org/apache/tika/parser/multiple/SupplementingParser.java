@@ -31,7 +31,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Runs the input stream through all available parsers,
  *  merging the metadata from them based on the
- *  {@link MetadataPolicy} chosen.
+ *  {@link AbstractMultipleParser.MetadataPolicy} chosen.
  *  
  * Warning - currently only one Parser should output
  *  any Content to the {@link ContentHandler}, the rest

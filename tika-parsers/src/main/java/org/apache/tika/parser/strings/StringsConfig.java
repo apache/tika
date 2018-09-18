@@ -115,7 +115,7 @@ public class StringsConfig implements Serializable {
 	/**
 	 * Returns the character encoding of the strings that are to be found.
 	 * 
-	 * @return {@see StringsEncoding} enum that represents the character
+	 * @return {@link StringsEncoding} enum that represents the character
 	 *         encoding of the strings that are to be found.
 	 */
 	public StringsEncoding getEncoding() {
@@ -163,7 +163,7 @@ public class StringsConfig implements Serializable {
 	 * Sets the character encoding of the strings that are to be found.
 	 * 
 	 * @param encoding
-	 *            {@see StringsEncoding} enum that represents the character
+	 *            {@link StringsEncoding} enum that represents the character
 	 *            encoding of the strings that are to be found.
 	 */
 	public void setEncoding(StringsEncoding encoding) {

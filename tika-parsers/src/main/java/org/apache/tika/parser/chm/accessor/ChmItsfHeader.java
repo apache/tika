@@ -35,11 +35,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * beginning of file 0008: QWORD Length of section Following the header section
  * table is 8 bytes of additional header data. In Version 2 files, this data is
  * not there and the content section starts immediately after the directory.
- * 
- * {@link http
- * ://translated.by/you/microsoft-s-html-help-chm-format-incomplete/original
- * /?show-translation-form=1}
- * 
  */
 /* structure of ITSF headers */
 public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {

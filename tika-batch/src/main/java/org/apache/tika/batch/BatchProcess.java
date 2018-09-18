@@ -530,7 +530,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
      * memory leaks, it is sometimes beneficial to shutdown (and restart) the
      * process periodically.
      * <p/>
-     * If the value is < 0, the process will run until completion, interruption or exception.
+     * If the value is &lt; 0, the process will run until completion, interruption or exception.
      *
      * @param maxAliveTimeSeconds maximum amount of time in seconds to remain alive
      */
