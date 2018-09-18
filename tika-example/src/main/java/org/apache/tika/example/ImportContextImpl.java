@@ -51,8 +51,6 @@ public class ImportContextImpl implements ImportContext {
     private InputContext inputCtx;
     private boolean completed;
 
-    private final Detector detector;
-
     private final MediaType type;
 
     /**
@@ -79,7 +77,6 @@ public class ImportContextImpl implements ImportContext {
         this.inputCtx = ctx;
         this.ioListener = (ioListener != null) ? ioListener
                 : new DefaultIOListener(LOG);
-        this.detector = detector;
 
         Metadata metadata = new Metadata();
         if (ctx != null && ctx.getContentType() != null) {
@@ -108,13 +105,6 @@ public class ImportContextImpl implements ImportContext {
      */
     public Item getImportRoot() {
         return importRoot;
-    }
-
-    /**
-     * @see ImportContext#getDetector()
-     */
-    public Detector getDetector() {
-        return detector;
     }
 
     /**
