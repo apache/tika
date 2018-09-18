@@ -98,7 +98,7 @@ public class MITIENERecogniser implements NERecogniser {
     /**
      * recognises names of entities in the text
      * @param text text which possibly contains names
-     * @return map of entity type -> set of names
+     * @return map of entity type -&gt; set of names
      */
     public Map<String, Set<String>> recognise(String text) {
         Map<String, Set<String>> names = new HashMap<>();

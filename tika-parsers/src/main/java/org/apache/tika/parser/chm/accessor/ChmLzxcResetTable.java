@@ -28,11 +28,6 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
  * LZXC reset table For ensuring a decompression. Reads the block named
  * "::DataSpace/Storage/<SectionName>/Transform/{7FC28940-9D31-11D0-9B27-00A0C91E9C7C}/InstanceData/ResetTable"
  * .
- * 
- * {@link http
- * ://translated.by/you/microsoft-s-html-help-chm-format-incomplete/original
- * /?page=2 }
- * 
  */
 public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
     private static final long serialVersionUID = -8209574429411707460L;

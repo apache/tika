@@ -56,7 +56,7 @@ public class LinkContentHandler extends DefaultHandler {
     /**
      * Default constructor
      *
-     * @boolean collapseWhitespaceInAnchor
+     * @param collapseWhitespaceInAnchor
      */
     public LinkContentHandler(boolean collapseWhitespaceInAnchor) {
       super();

@@ -107,7 +107,7 @@ public class ExternalEmbedder implements Embedder {
 
     /**
      * Gets the command to be run. This can include either of
-     * {@link #INPUT_FILE_TOKEN} or {@link #OUTPUT_FILE_TOKEN} if the command
+     * {@link ExternalParser#INPUT_FILE_TOKEN} or {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
      * needs filenames.
      *
      * @return
@@ -118,7 +118,7 @@ public class ExternalEmbedder implements Embedder {
 
     /**
      * Sets the command to be run. This can include either of
-     * {@link #INPUT_FILE_TOKEN} or {@link #OUTPUT_FILE_TOKEN} if the command
+     * {@link ExternalParser#INPUT_FILE_TOKEN} or {@link ExternalParser#OUTPUT_FILE_TOKEN} if the command
      * needs filenames.
      *
      * @see Runtime#exec(String[])

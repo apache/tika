@@ -145,7 +145,7 @@ public class LanguageIdentifier {
      * Tries to judge whether the identification is certain enough
      * to be trusted.
      * WARNING: Will never return true for small amount of input texts. 
-     * @return <code>true</code> if the distance is smaller then {@value #CERTAINTY_LIMIT}, <code>false</code> otherwise
+     * @return <code>true</code> if the distance is smaller then {@value LanguageIdentifier#CERTAINTY_LIMIT}, <code>false</code> otherwise
      */
     public boolean isReasonablyCertain() {
         return distance < CERTAINTY_LIMIT;

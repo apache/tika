@@ -34,7 +34,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * (-1 if this is the last listing chunk) 0014: Directory listing entries (to
  * quickref area) Sorted by filename; the sort is case-insensitive The quickref
  * area is written backwards from the end of the chunk. One quickref entry
- * exists for every n entries in the file, where n is calculated as 1 + (1 <<
+ * exists for every n entries in the file, where n is calculated as 1 + (1 &lt;&lt;
  * quickref density). So for density = 2, n = 5 Chunklen-0002: WORD Number of
  * entries in the chunk Chunklen-0004: WORD Offset of entry n from entry 0
  * Chunklen-0008: WORD Offset of entry 2n from entry 0 Chunklen-000C: WORD
@@ -47,13 +47,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * in the directory: user data and format related files. The files which are
  * format-related have names which begin with '::', the user data files have
  * names which begin with "/".
- * 
- * {@link http
- * ://translated.by/you/microsoft-s-html-help-chm-format-incomplete/original
- * /?show-translation-form=1 }
- * 
- * @author olegt
- * 
  */
 public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private static final long serialVersionUID = -6139486487475923593L;

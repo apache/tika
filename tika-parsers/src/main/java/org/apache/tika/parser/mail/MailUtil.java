@@ -100,8 +100,8 @@ public class MailUtil {
 
     /**
      * If the chunk looks like it contains an email
-     * @param chunk
-     * @return
+     * @param chunk to analyse
+     * @return {@code true} if chunk looks like it contains an email
      */
     public static boolean containsEmail(String chunk) {
         if (chunk == null) {

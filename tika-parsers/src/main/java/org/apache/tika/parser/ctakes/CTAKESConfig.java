@@ -25,7 +25,7 @@ import java.util.Properties;
 import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 
 /**
- * Configuration for {@see CTAKESContentHandler}.
+ * Configuration for {@link CTAKESContentHandler}.
  * 
  * This class allows to enable cTAKES and set its parameters.
  */
@@ -77,7 +77,7 @@ public class CTAKESConfig implements Serializable {
 
     /**
      * Loads properties from InputStream and then tries to close InputStream.
-     * @param stream {@see InputStream} object used to read properties.
+     * @param stream {@link InputStream} object used to read properties.
      */
     public CTAKESConfig(InputStream stream) {
         init(stream);
@@ -153,8 +153,8 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns an {@see OutputStream} object used write the CAS.
-     * @return {@see OutputStream} object used write the CAS.
+     * Returns an {@link OutputStream} object used write the CAS.
+     * @return {@link OutputStream} object used write the CAS.
      */
     public OutputStream getOutputStream() {
         return stream;
@@ -203,15 +203,15 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Returns an array of {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     * @return an array of {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * Returns an array of {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * @return an array of {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
      */
     public CTAKESAnnotationProperty[] getAnnotationProps() {
         return annotationProps;
     }
 
     /**
-     * Returns a string containing a comma-separated list of {@see CTAKESAnnotationProperty} names that will be included into cTAKES metadata.
+     * Returns a string containing a comma-separated list of {@link CTAKESAnnotationProperty} names that will be included into cTAKES metadata.
      * @return
      */
     public String getAnnotationPropsAsString() {
@@ -260,7 +260,7 @@ public class CTAKESConfig implements Serializable {
 
     /**
      * Enables the formatted output for serializer.
-     * @param prettyPrint {@true} to enable formatted output, {@code false} otherwise.
+     * @param prettyPrint {@code true} to enable formatted output, {@code false} otherwise.
      */
     public void setPrettyPrint(boolean prettyPrint) {
         this.prettyPrint = prettyPrint;
@@ -275,8 +275,8 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Sets the {@see OutputStream} object used to write the CAS.
-     * @param stream the {@see OutputStream} object used to write the CAS.
+     * Sets the {@link OutputStream} object used to write the CAS.
+     * @param stream the {@link OutputStream} object used to write the CAS.
      */
     public void setOutputStream(OutputStream stream) {
         this.stream = stream;
@@ -284,7 +284,7 @@ public class CTAKESConfig implements Serializable {
 
     /**
      * Enables CAS serialization.
-     * @param serialize {@true} to enable CAS serialization, {@code false} otherwise.
+     * @param serialize {@code true} to enable CAS serialization, {@code false} otherwise.
      */
     public void setSerialize(boolean serialize) {
         this.serialize = serialize;
@@ -292,7 +292,7 @@ public class CTAKESConfig implements Serializable {
 
     /**
      * Enables content text analysis using cTAKES.
-     * @param text {@true} to enable content text analysis, {@code false} otherwise.
+     * @param text {@code true} to enable content text analysis, {@code false} otherwise.
      */
     public void setText(boolean text) {
         this.text = text;
@@ -307,16 +307,16 @@ public class CTAKESConfig implements Serializable {
     }
 
     /**
-     * Sets the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     * @param annotationProps the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * Sets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
      */
     public void setAnnotationProps(CTAKESAnnotationProperty[] annotationProps) {
         this.annotationProps = annotationProps;
     }
 
     /**
-     * ets the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
-     * @param annotationProps the {@see CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * ets the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
+     * @param annotationProps the {@link CTAKESAnnotationProperty}'s that will be included into cTAKES metadata.
      */
     public void setAnnotationProps(String[] annotationProps) {
         CTAKESAnnotationProperty[] properties = new CTAKESAnnotationProperty[annotationProps.length];

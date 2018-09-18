@@ -30,8 +30,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * CTAKESParser decorates a {@see Parser} and leverages on 
- * {@see CTAKESContentHandler} to extract biomedical information from 
+ * CTAKESParser decorates a {@link Parser} and leverages on
+ * {@link CTAKESContentHandler} to extract biomedical information from
  * clinical text using Apache cTAKES.
  * <p>It is normally called by supplying an instance to 
  *  {@link AutoDetectParser}, such as:

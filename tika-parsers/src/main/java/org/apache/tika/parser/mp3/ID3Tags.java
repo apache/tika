@@ -32,7 +32,7 @@ public interface ID3Tags {
     /**
      * List of predefined genres.
      *
-     * @see http://www.id3.org/id3v2-00
+     * See <a href="http://www.id3.org/id3v2-00">http://www.id3.org/id3v2-00</a>
      */
     String[] GENRES = new String[] {
         /*  0 */ "Blues",

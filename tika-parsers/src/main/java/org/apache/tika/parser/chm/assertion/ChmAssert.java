@@ -86,7 +86,7 @@ public class ChmAssert {
      * Checks validity of ChmAccessor parameters
      * 
      * @param data
-     * @param chmItsfHeader
+     * @param chmAccessor
      * @param count
      * @throws ChmParsingException 
      */
@@ -110,7 +110,7 @@ public class ChmAssert {
     /**
      * Checks if ChmAccessor is not null In case of null throws exception
      * 
-     * @param ChmAccessor
+     * @param chmAccessor
      * @throws ChmParsingException 
      */
     public static final void assertChmAccessorNotNull(ChmAccessor<?> chmAccessor) throws ChmParsingException {
@@ -156,7 +156,7 @@ public class ChmAssert {
     }
 
     /**
-     * Checks if int param is greater than zero In case param <=0 throws an
+     * Checks if int param is greater than zero In case param &lt;= 0 throws an
      * exception
      * 
      * @param param
