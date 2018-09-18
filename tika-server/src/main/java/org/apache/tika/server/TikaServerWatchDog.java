@@ -128,11 +128,20 @@ public class TikaServerWatchDog {
 
     private static List<String> extractJVMArgs(String[] args) {
         List<String> jvmArgs = new ArrayList<>();
+        boolean foundHeadlessOption = false;
         for (int i = 0; i < args.length; i++) {
             if (args[i].startsWith("-J")) {
                 jvmArgs.add("-"+args[i].substring(2));
             }
+            if (args[i].contains("java.awt.headless")) {
+                foundHeadlessOption = true;
+            }
         }
+        //if user has already specified headless...don't modify
+        if (! foundHeadlessOption) {
+            jvmArgs.add("-Djava.awt.headless=true");
+        }
+
         return jvmArgs;
     }
 
