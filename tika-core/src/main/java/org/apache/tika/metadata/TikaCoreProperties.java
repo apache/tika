@@ -280,9 +280,9 @@ public interface TikaCoreProperties {
     /**
      * Embedded resource type property
      */
-     Property EMBEDDED_RESOURCE_TYPE =
-            Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
-                    new String[]{EmbeddedResourceType.ATTACHMENT.toString(), EmbeddedResourceType.INLINE.toString()});
+     Property EMBEDDED_RESOURCE_TYPE = Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
+                                                                     EmbeddedResourceType.ATTACHMENT.toString(),
+                                                                     EmbeddedResourceType.INLINE.toString());
 
     
 }
