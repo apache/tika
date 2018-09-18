@@ -48,9 +48,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
     final static String WORKSHEET = "worksheet";
 
     private static final MediaType MEDIA_TYPE = MediaType.application("vnd.ms-spreadsheetml");
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MEDIA_TYPE)));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

@@ -212,7 +212,7 @@ public interface ID3Tags {
      * Represents a comments in ID3 (especially ID3 v2), where are 
      *  made up of several parts
      */
-    public static class ID3Comment {
+    class ID3Comment {
         private String language;
         private String description;
         private String text;

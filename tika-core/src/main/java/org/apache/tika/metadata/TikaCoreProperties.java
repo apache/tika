@@ -91,6 +91,7 @@ public interface TikaCoreProperties {
     Property TIKA_META_EXCEPTION_EMBEDDED_STREAM =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"embedded_stream_exception");
 
+    String EMBEDDED_RESOURCE_TYPE_KEY = "embeddedResourceType";
 
     /**
      * Some file formats can store information about their original
@@ -327,9 +328,9 @@ public interface TikaCoreProperties {
     /**
      * Embedded resource type property
      */
-    public static final Property EMBEDDED_RESOURCE_TYPE =
-            Property.internalClosedChoise(TikaMetadataKeys.EMBEDDED_RESOURCE_TYPE,
-                    new String[]{EmbeddedResourceType.ATTACHMENT.toString(), EmbeddedResourceType.INLINE.toString()});
+    Property EMBEDDED_RESOURCE_TYPE = Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
+            EmbeddedResourceType.ATTACHMENT.toString(),
+            EmbeddedResourceType.INLINE.toString());
 
-    
+
 }
