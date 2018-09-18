@@ -212,7 +212,7 @@ public class ForkParser extends AbstractParser {
      * This sends the objects to the server for parsing, and the server via
      * the proxies acts on the handler as if it were updating it directly.
      * <p>
-     * If using a {@link org.apache.tika.parser.RecursiveParserWrapper}, there are two options:
+     * If using a RecursiveParserWrapper, there are two options:
      * </p>
      * <p>
      *     <ol>

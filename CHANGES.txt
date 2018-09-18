@@ -1,6 +1,4 @@
-Release 1.20 ???
-
-Release 1.19 9/18/2018
+Release 1.19 - 9/14/2018
 
    * Require Java 8 (TIKA-2679).
 
