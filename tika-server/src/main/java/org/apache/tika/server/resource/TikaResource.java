@@ -389,7 +389,7 @@ public class TikaResource {
         checkIsOperating();
 
         long taskId = SERVER_STATUS.start(ServerStatus.TASK.PARSE,
-                metadata.get(Metadata.RESOURCE_NAME_KEY));
+                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
