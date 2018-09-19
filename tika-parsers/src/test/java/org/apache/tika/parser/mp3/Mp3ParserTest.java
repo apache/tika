@@ -248,7 +248,38 @@ public class Mp3ParserTest {
        assertEquals("1", metadata.get("channels"));
        checkDuration(metadata, 2);
    }
-    
+    /**
+     * Tests that a file with the last frame slightly
+     * truncated does not cause an EOF and does
+     * not lead to an infinite loop.
+     */
+    @Test
+    public void testMp3ParsingID3i18nTruncated() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3i18n_truncated.mp3")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        }
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Test Artist \u2468\u2460", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
+        assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
+
+        assertEquals(
+                "Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment",
+                metadata.get(XMPDM.LOG_COMMENT)
+        );
+
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("1", metadata.get("channels"));
+        checkDuration(metadata, 2);
+    }
     
     /**
      * Tests that a file with both lyrics and
