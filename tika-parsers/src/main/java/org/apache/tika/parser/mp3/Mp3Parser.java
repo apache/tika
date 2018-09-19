@@ -194,15 +194,18 @@ public class Mp3Parser extends AbstractParser {
         // Now iterate over all audio frames in the file
         AudioFrame frame = mpegStream.nextFrame();
         float duration = 0;
-        while (frame != null)
+        boolean skipped = true;
+        while (frame != null && skipped)
         {
             duration += frame.getDuration();
             if (firstAudio == null)
             {
                 firstAudio = frame;
             }
-            mpegStream.skipFrame();
-            frame = mpegStream.nextFrame();
+            skipped = mpegStream.skipFrame();
+            if (skipped) {
+                frame = mpegStream.nextFrame();
+            }
         }
 
        // ID3v1 tags live at the end of the file

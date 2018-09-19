@@ -150,10 +150,10 @@ class MpegStream extends PushbackInputStream
      * Skips the current MPEG frame. This method can be called after a valid
      * MPEG header has been retrieved using {@code nextFrame()}. In this case
      * the underlying stream is advanced to the end of the associated MPEG
-     * frame. Otherwise, this method has no effect. The return value indicates
-     * whether a frame could be skipped.
+     * frame or until the EOF is reached. The return value indicates
+     * whether the full frame could be skipped.
      * 
-     * @return <b>true</b> if a frame could be skipped, <b>false</b> otherwise
+     * @return <b>true</b> if a frame could be skipped, <b>false</b> otherwise, perhaps EOF?
      * @throws IOException if an IO error occurs
      */
     public boolean skipFrame() throws IOException
@@ -162,11 +162,10 @@ class MpegStream extends PushbackInputStream
         {
             long toSkip = currentHeader.getLength() - HEADER_SIZE;
             long skipped = IOUtils.skipFully(in, toSkip);
-            if (skipped < toSkip) {
-                throw new EOFException("EOF: tried to skip "+toSkip +
-                        " but could only skip "+skipped);
-            }
             currentHeader = null;
+            if (skipped < toSkip) {
+                return false;
+            }
             return true;
         }
         return false;
