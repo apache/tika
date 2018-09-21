@@ -80,14 +80,13 @@ public class XMLReaderUtils implements Serializable {
     private static int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
 
     private static int determineMaxEntityExpansions() {
-        Properties properties = System.getProperties();
-        if (properties != null && properties.containsKey(JAXP_ENTITY_EXPANSION_LIMIT_KEY)) {
+        String expansionLimit = System.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY);
+        if (expansionLimit != null) {
             try {
-                return Integer.parseInt(properties.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY));
+                return Integer.parseInt(expansionLimit);
             } catch (NumberFormatException e) {
-                LOG.log(Level.WARNING, "Couldn't parse an integer for the entity expansion limit:"+
-                        properties.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY)+
-                        "; backing off to default: "+DEFAULT_MAX_ENTITY_EXPANSIONS);
+                LOG.log(Level.WARNING, "Couldn't parse an integer for the entity expansion limit:" + expansionLimit +
+                        "; backing off to default: " + DEFAULT_MAX_ENTITY_EXPANSIONS);
             }
         }
         return DEFAULT_MAX_ENTITY_EXPANSIONS;
