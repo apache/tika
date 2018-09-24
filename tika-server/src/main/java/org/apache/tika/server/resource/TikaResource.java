@@ -87,7 +87,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Path("/tika")
 public class TikaResource {
 
-    private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_\\.A-Z0-9 ]+$");
+    private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_+\\.A-Z0-9 ]+$");
 
     public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
