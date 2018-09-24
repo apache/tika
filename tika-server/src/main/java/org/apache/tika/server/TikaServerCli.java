@@ -117,7 +117,7 @@ public class TikaServerCli {
             execute(args);
         } catch (Exception e) {
             e.printStackTrace();
-            LOG.error("Can't start", e);
+            LOG.error("Can't start: ", e);
             System.exit(-1);
         }
     }
