@@ -17,12 +17,14 @@
 
 package org.apache.tika.server;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -161,8 +163,21 @@ public class TikaServerWatchDog {
             this.toChild = new DataOutputStream(process.getOutputStream());
             byte status = fromChild.readByte();
             if (status != ServerStatus.STATUS.OPERATING.getByte()) {
-                throw new IOException("bad status from child process: "+
-                        ServerStatus.STATUS.lookup(status));
+                try {
+                    ServerStatus.STATUS currStatus = ServerStatus.STATUS.lookup(status);
+                    throw new IOException("bad status from child process: "+
+                             currStatus);
+                } catch (ArrayIndexOutOfBoundsException e) {
+                    //swallow
+                }
+                int len = process.getInputStream().available();
+                byte[] msg = new byte[len+1];
+                msg[0] = status;
+                process.getInputStream().read(msg, 1, len);
+
+                throw new IOException(
+                        "Unrecognized status code; message:\n"+new String(msg, StandardCharsets.UTF_8));
+
             }
             lastPing = Instant.now();
         }

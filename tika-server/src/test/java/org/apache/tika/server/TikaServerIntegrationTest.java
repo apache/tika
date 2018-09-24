@@ -18,19 +18,22 @@ package org.apache.tika.server;
 
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.TikaTest;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.security.Permission;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
@@ -50,6 +53,43 @@ public class TikaServerIntegrationTest extends TikaTest {
 
     protected static final String endPoint =
             "http://localhost:" + INTEGRATION_TEST_PORT;
+
+    private SecurityManager existingSecurityManager = null;
+
+    private static class MyExitException extends RuntimeException {
+        private final int status;
+        MyExitException(int status) {
+            this.status = status;
+        }
+
+        public int getStatus() {
+            return status;
+        }
+    }
+    @Before
+    public void setUp() throws Exception {
+        SecurityManager existingSecurityManager = System.getSecurityManager();
+        System.setSecurityManager(new SecurityManager() {
+            @Override
+            public void checkExit(int status) {
+                super.checkExit(status);
+                throw new MyExitException(status);
+            }
+            @Override
+            public void checkPermission(Permission perm) {
+                // all ok
+            }
+            @Override
+            public void checkPermission(Permission perm, Object context) {
+                // all ok
+            }
+        });
+    }
+
+    @After
+    public void tearDown() {
+        System.setSecurityManager(existingSecurityManager);
+    }
 
     @Test
     public void testBasic() throws Exception {
@@ -93,18 +133,26 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-JXmx512m",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-spawnChild", "-JXmx256m",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-pingPulseMillis", "100"
                         });
             }
         };
         serverThread.start();
         awaitServerStartup();
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_OOM));
+
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
         //give some time for the server to crash/kill itself
         Thread.sleep(2000);
         awaitServerStartup();
@@ -186,11 +234,16 @@ public class TikaServerIntegrationTest extends TikaTest {
         };
         serverThread.start();
         awaitServerStartup();
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_HEAVY_HANG_SHORT));
+        } catch (Exception e) {
+            //potential exception depending on timing
+        }
         awaitServerStartup();
 
         response = WebClient
@@ -253,6 +306,30 @@ public class TikaServerIntegrationTest extends TikaTest {
 
     }
 
+    @Test
+    public void testBadJVMArgs() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild", "-JXms20m", "-JXmx10m",
+                                "-p", INTEGRATION_TEST_PORT
+                        });
+            }
+        };
+        serverThread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                i.set(((MyExitException) e).getStatus());
+            }
+        });
+        serverThread.start();
+        serverThread.join(30000);
+
+        assertEquals(-1, i.get());
+    }
     private void awaitServerStartup() throws Exception {
 
         Instant started = Instant.now();
@@ -268,7 +345,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                 }
             } catch (javax.ws.rs.ProcessingException e) {
             }
-            Thread.sleep(1000);
+            Thread.sleep(100);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
 
