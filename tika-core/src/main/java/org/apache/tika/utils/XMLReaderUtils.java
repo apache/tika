@@ -19,6 +19,7 @@ package org.apache.tika.utils;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
@@ -46,7 +47,8 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.lang.reflect.Method;
-import java.util.Properties;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -55,7 +57,7 @@ import java.util.logging.Logger;
 
 /**
  * Utility functions for reading XML.  If you are doing SAX parsing, make sure
- * to use the {@link org.apache.tika.sax.OfflineContentHandler} to guard against
+ * to use the {@link OfflineContentHandler} to guard against
  * XML External Entity attacks.
  */
 public class XMLReaderUtils implements Serializable {
@@ -68,16 +70,22 @@ public class XMLReaderUtils implements Serializable {
     private static final Logger LOG = Logger.getLogger(XMLReaderUtils.class.getName());
 
     /**
+     * Default size for the pool of SAX Parsers
+     * and the pool of DOM builders
+     */
+    public static final int DEFAULT_POOL_SIZE = 10;
+
+    /**
      * Parser pool size
      */
-    private static int POOL_SIZE = 10;
+    private static int POOL_SIZE = DEFAULT_POOL_SIZE;
 
     private static long LAST_LOG = -1;
 
     private static final String JAXP_ENTITY_EXPANSION_LIMIT_KEY = "jdk.xml.entityExpansionLimit";
-    private static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
+    public static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
 
-    private static int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
+    private static volatile int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
 
     private static int determineMaxEntityExpansions() {
         String expansionLimit = System.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY);
@@ -127,8 +135,12 @@ public class XMLReaderUtils implements Serializable {
      * Set the maximum number of entity expansions allowable in SAX/DOM/StAX parsing.
      * <b>NOTE:</b>A value less than or equal to zero indicates no limit.
      * This will override the system property {@link #JAXP_ENTITY_EXPANSION_LIMIT_KEY}
-     * and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value for pa
-     *
+     * and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value for allowable entity expansions
+     *<p>
+     *<b>NOTE:</b> To trigger a rebuild of the pool of parsers with this setting,
+     * the client must call {@link #setPoolSize(int)} to rebuild the SAX and DOM parsers
+     * with this setting.
+     *</p>
      * @param maxEntityExpansions -- maximum number of allowable entity expansions
      * @since Apache Tika 1.19
      */
@@ -162,7 +174,7 @@ public class XMLReaderUtils implements Serializable {
      * is not explicitly specified, then one is created using the specified
      * or the default SAX parser factory.
      * <p>
-     * Make sure to wrap your handler in the {@link org.apache.tika.sax.OfflineContentHandler} to
+     * Make sure to wrap your handler in the {@link OfflineContentHandler} to
      * prevent XML External Entity attacks
      * </p>
      *
@@ -190,7 +202,7 @@ public class XMLReaderUtils implements Serializable {
      * configured to be namespace-aware, not validating, and to use
      * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
      * <p>
-     * Make sure to wrap your handler in the {@link org.apache.tika.sax.OfflineContentHandler} to
+     * Make sure to wrap your handler in the {@link OfflineContentHandler} to
      * prevent XML External Entity attacks
      * </p>
      *
@@ -350,6 +362,60 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
+     * Builds a Document with a DocumentBuilder from the pool
+     *
+     * @since Apache Tika 1.19.1
+     * @param path path to parse
+     * @return a document
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public static Document buildDOM(Path path) throws TikaException, IOException, SAXException {
+        try (InputStream is = Files.newInputStream(path)){
+            return buildDOM(is);
+        }
+    }
+
+    /**
+     * Builds a Document with a DocumentBuilder from the pool
+     *
+     * @since Apache Tika 1.19.1
+     * @param uriString uriString to process
+     * @return a document
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public static Document buildDOM(String uriString) throws TikaException, IOException, SAXException {
+        DocumentBuilder builder = acquireDOMBuilder();
+        try {
+            return builder.parse(uriString);
+        } finally {
+            releaseDOMBuilder(builder);
+        }
+    }
+
+    /**
+     * Builds a Document with a DocumentBuilder from the pool
+     *
+     * @since Apache Tika 1.19.1
+     *
+     * @return a document
+     * @throws TikaException
+     * @throws IOException
+     * @throws SAXException
+     */
+    public static Document buildDOM(InputStream is) throws TikaException, IOException, SAXException {
+        DocumentBuilder builder = acquireDOMBuilder();
+        try {
+            return builder.parse(is);
+        } finally {
+            releaseDOMBuilder(builder);
+        }
+    }
+
+    /**
      * This checks context for a user specified {@link SAXParser}.
      * If one is not found, this reuses a SAXParser from the pool.
      *
@@ -501,7 +567,9 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Set the pool size for cached XML parsers.
+     * Set the pool size for cached XML parsers.  This has a side
+     * effect of locking the pool, and rebuilding the pool from
+     * scratch with the most recent settings, such as {@link #MAX_ENTITY_EXPANSIONS}
      *
      * @since Apache Tika 1.19
      * @param poolSize
@@ -515,23 +583,21 @@ public class XMLReaderUtils implements Serializable {
             //parsers have already started.  We could have an NPE on SAX_PARSERS
             //if we didn't lock.
             SAX_READ_WRITE_LOCK.writeLock().lock();
-            if (SAX_PARSERS.size() != poolSize) {
-                SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
-                for (int i = 0; i < poolSize; i++) {
-                    SAX_PARSERS.offer(getSAXParser());
-                }
+            SAX_PARSERS.clear();
+            SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
+            for (int i = 0; i < poolSize; i++) {
+                SAX_PARSERS.offer(getSAXParser());
             }
+
         } finally {
             SAX_READ_WRITE_LOCK.writeLock().unlock();
         }
         try {
             DOM_READ_WRITE_LOCK.writeLock().lock();
-
-            if (DOM_BUILDERS.size() != poolSize) {
-                DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
-                for (int i = 0; i < poolSize; i++) {
-                    DOM_BUILDERS.offer(getDocumentBuilder());
-                }
+            DOM_BUILDERS.clear();
+            DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
+            for (int i = 0; i < poolSize; i++) {
+                DOM_BUILDERS.offer(getDocumentBuilder());
             }
         } finally {
             DOM_READ_WRITE_LOCK.writeLock().unlock();
@@ -623,5 +689,13 @@ public class XMLReaderUtils implements Serializable {
                 LAST_LOG = System.currentTimeMillis();
             }
         }
+    }
+
+    public static int getPoolSize() {
+        return POOL_SIZE;
+    }
+
+    public static int getMaxEntityExpansions() {
+        return MAX_ENTITY_EXPANSIONS;
     }
 }

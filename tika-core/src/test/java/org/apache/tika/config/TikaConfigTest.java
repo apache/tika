@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -30,6 +31,10 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeDetectionTest;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
@@ -38,6 +43,7 @@ import org.apache.tika.parser.ErrorParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.FallbackParser;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -310,4 +316,37 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         FallbackParser fbp = (FallbackParser)((ParserDecorator)p).getWrappedParser();
         assertEquals("DISCARD_ALL", fbp.getMetadataPolicy().toString());
     }
+
+    @Test
+    public void testXMLReaderUtils() throws Exception {
+        //pool size may have been reset already by an
+        //earlier test.  Can't test for default here.
+        assertEquals(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS, XMLReaderUtils.getMaxEntityExpansions());
+        //make sure that detection on this file actually works with
+        //default expansions
+        assertEquals("application/rdf+xml", detect("test-difficult-rdf1.xml", TikaConfig.getDefaultConfig()).toString());
+
+        TikaConfig tikaConfig = getConfig("TIKA-2732-xmlreaderutils.xml");
+        try {
+            assertEquals(33, XMLReaderUtils.getPoolSize());
+            assertEquals(5, XMLReaderUtils.getMaxEntityExpansions());
+            //make sure that there's actually a change in behavior
+            assertEquals("text/plain", detect("test-difficult-rdf1.xml", tikaConfig).toString());
+        } finally {
+            XMLReaderUtils.setMaxEntityExpansions(XMLReaderUtils.DEFAULT_MAX_ENTITY_EXPANSIONS);
+            XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
+        }
+    }
+
+    private MediaType detect(String testFileName, TikaConfig tikaConfig) throws Exception {
+        try (InputStream is = MimeDetectionTest.class.getResourceAsStream(testFileName)) {
+            return tikaConfig.getDetector().detect(is, new Metadata());
+        }
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void testXMLReaderUtilsException() throws Exception {
+        getConfig("TIKA-2732-xmlreaderutils-exc.xml");
+    }
+
 }
