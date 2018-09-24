@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -76,17 +77,23 @@ public class TestCorruptedFiles extends TikaTest {
     /**
      *  per 10,000 bytes, how many should be corrupted
      */
-    private static final int PER_10000_CORRUPTED = 10;
+    private static final int PER_10000_CORRUPTED = 100;
 
     /**
      * per 10,000 iterations, how many should be truncated instead of corrupted
      */
-    private static final double PER_10000_TRUNCATED = 0;
+    private static final double PER_10000_TRUNCATED = 10;
+
+    /**
+     * per 10,000 iterations, how many should have random bytes concatenated
+     */
+    private static final double PER_10000_AUGMENTED = 10;
+
 
     /**
      * how much time to allow for the parse
      */
-    private static final int MAX_ALLOWABLE_TIME_MILLIS = 60000;
+    private static final int MAX_ALLOWABLE_TIME_MILLIS = 20000;
 
     /**
      * how many times to corrupt and then try to parse the file
@@ -114,12 +121,30 @@ public class TestCorruptedFiles extends TikaTest {
     }
 
     @Test
+    public void testExtension() throws Throwable {
+        Random r = new Random();
+        for (File f : getResourceAsFile("/test-documents").listFiles()) {
+            if (! f.isDirectory()) {
+                System.out.println("testing: "+f);
+                long seed = r.nextLong();
+                for (int i = 0; i < NUM_ITERATIONS; i++) {
+                    try {
+                        testSingleFile(getBytes(f.getName()), new Random(seed));
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        fail("error "+f.getName()+ " seed: "+seed + " : "+CORRUPTED);
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     public void testSingle() throws Exception {
-        String fileName = "testEXCEL_embeddedPDF_windows.xls";
-        debug(getRecursiveMetadata("testEXCEL_embeddedPDF_windows.xls"));
-        long seed = 0;
+        String fileName = "test.hdf";
+        long seed = 7850890625037579255l;
         try {
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < NUM_ITERATIONS; i++) {
                 seed = randomSeedGenerator.nextLong();
                 FAILED = true;
                 long start = new Date().getTime();
@@ -128,7 +153,7 @@ public class TestCorruptedFiles extends TikaTest {
             }
         } catch (Throwable t) {
             t.printStackTrace();
-            fail("error "+fileName + " seed: "+seed);
+            fail("error "+fileName + " seed: "+seed + " : "+CORRUPTED);
         }
     }
 
@@ -137,7 +162,7 @@ public class TestCorruptedFiles extends TikaTest {
         String fileName = "testEXCEL_embeddedPDF_windows.xls";
         Map<String, byte[]> embedded = extract(getBytes(fileName));
         long seed = 0;
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < NUM_ITERATIONS; i++) {
             for (Map.Entry<String, byte[]> e : embedded.entrySet()) {
                 seed = randomSeedGenerator.nextLong();
                 try{
@@ -172,13 +197,13 @@ public class TestCorruptedFiles extends TikaTest {
         executorCompletionService.submit(new ParseTask(bytes, random));
         Future<Boolean> future = executorCompletionService.poll(MAX_ALLOWABLE_TIME_MILLIS, TimeUnit.MILLISECONDS);
         if (future == null) {
-            throw new TimeoutException("timed out");
+            throw new TimeoutException("timed out: "+CORRUPTED);
         }
 
         //if the exception isn't caught, it will be thrown here
         Boolean result = future.get(1, TimeUnit.SECONDS);
         if (result == null) {
-            throw new TimeoutException("timed out");
+            throw new TimeoutException("timed out: " + CORRUPTED);
         }
     }
 
@@ -219,6 +244,14 @@ public class TestCorruptedFiles extends TikaTest {
             int truncatedLength = random.nextInt(bytes.length-1);
             byte[] corrupted = new byte[truncatedLength];
             System.arraycopy(bytes, 0, corrupted, 0, truncatedLength);
+            return corrupted;
+        } else if (random.nextInt(10000) <= PER_10000_AUGMENTED) {
+            int len = random.nextInt(10000);
+            byte[] corrupted = new byte[bytes.length+len];
+            System.arraycopy(bytes, 0, corrupted, 0, bytes.length);
+            for (int i = bytes.length; i < corrupted.length; i++) {
+                corrupted[i] = (byte) random.nextInt(255);
+            }
             return corrupted;
         } else {
             byte[] corrupted = new byte[bytes.length];
