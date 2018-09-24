@@ -125,21 +125,21 @@ public class TikaConfig {
 
     public TikaConfig(Path path)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(path.toFile()));
+        this(XMLReaderUtils.buildDOM(path));
     }
     public TikaConfig(Path path, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(path.toFile()), loader);
+        this(XMLReaderUtils.buildDOM(path), loader);
     }
 
     public TikaConfig(File file)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(file));
+        this(XMLReaderUtils.buildDOM(file.toPath()));
     }
 
     public TikaConfig(File file, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(file), loader);
+        this(XMLReaderUtils.buildDOM(file.toPath()), loader);
     }
 
     public TikaConfig(URL url)
@@ -148,16 +148,16 @@ public class TikaConfig {
     }
     public TikaConfig(URL url, ClassLoader loader)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(url.toString()).getDocumentElement(), loader);
+        this(XMLReaderUtils.buildDOM(url.toString()).getDocumentElement(), loader);
     }
     public TikaConfig(URL url, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(url.toString()).getDocumentElement(), loader);
+        this(XMLReaderUtils.buildDOM(url.toString()).getDocumentElement(), loader);
     }
 
     public TikaConfig(InputStream stream)
             throws TikaException, IOException, SAXException {
-        this(XMLReaderUtils.getDocumentBuilder().parse(stream));
+        this(XMLReaderUtils.buildDOM(stream));
     }
 
     public TikaConfig(Document document) throws TikaException, IOException {
@@ -182,6 +182,7 @@ public class TikaConfig {
         TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
         ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
         EncodingDetectorXmlLoader encodingDetectorXmlLoader = new EncodingDetectorXmlLoader();
+        updateXMLReaderUtils(element);
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.encodingDetector = encodingDetectorXmlLoader.loadOverall(element, mimeTypes, loader);
@@ -253,7 +254,8 @@ public class TikaConfig {
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
-                Element element = XMLReaderUtils.getDocumentBuilder().parse(stream).getDocumentElement();
+                Element element = XMLReaderUtils.buildDOM(stream).getDocumentElement();
+                updateXMLReaderUtils(element);
                 serviceLoader = serviceLoaderFromDomElement(element, tmpServiceLoader.getLoader());
                 DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
                 EncodingDetectorXmlLoader encodingDetectorLoader = new EncodingDetectorXmlLoader();
@@ -276,6 +278,25 @@ public class TikaConfig {
             }
         }
         TIMES_INSTANTIATED.incrementAndGet();
+    }
+
+    private void updateXMLReaderUtils(Element element) throws TikaException {
+
+        Element child = getChild(element, "xml-reader-utils");
+        if (child == null) {
+            return;
+        }
+        String attr = child.getAttribute("maxEntityExpansions");
+        if (attr != null) {
+            XMLReaderUtils.setMaxEntityExpansions(Integer.parseInt(attr));
+        }
+
+        //make sure to call this after set entity expansions
+        attr = child.getAttribute("poolSize");
+        if (attr != null) {
+            XMLReaderUtils.setPoolSize(Integer.parseInt(attr));
+        }
+
     }
 
     private static InputStream getConfigInputStream(String config, ServiceLoader serviceLoader)
