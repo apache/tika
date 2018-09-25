@@ -168,6 +168,7 @@ public class ForkParserTikaBinTest extends TikaTest {
 
         List<String> java = new ArrayList<>();
         java.add("java");
+        java.add("-Djava.awt.headless=true");
         ForkParser parser = null;
         if (classloader != null) {
             parser = new ForkParser(JAR_DIR, pff, classloader);

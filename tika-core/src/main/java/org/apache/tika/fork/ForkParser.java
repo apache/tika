@@ -55,7 +55,7 @@ public class ForkParser extends AbstractParser {
     private final ParserFactoryFactory parserFactoryFactory;
 
     /** Java command line */
-    private List<String> java = Arrays.asList("java", "-Xmx32m");
+    private List<String> java = Arrays.asList("java", "-Xmx32m", "-Djava.awt.headless=true");
 
     /** Process pool size */
     @Field
