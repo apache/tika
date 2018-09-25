@@ -18,20 +18,25 @@ package org.apache.tika;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.SAXParseException;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.SAXParserFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests to confirm defenses against entity expansion attacks.
  */
-@Ignore("initial draft, needs more work")
+
 public class TestXMLEntityExpansion extends XMLTestBase {
 
     private static final byte[] ENTITY_EXPANSION_BOMB = new String(
@@ -60,6 +65,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
 
     //Set a reasonable amount of time as the timeout
     //Make sure that the test apparatus actually works.
+    @Ignore
     @Test(timeout = 20000)
     public void testVulnerableParser() throws Exception {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
@@ -69,7 +75,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
             @Override
             public void run() {
                 try {
-                    parse("injected", new ByteArrayInputStream(injected), new XMLTestBase.VulnerableSAXParser());
+                    parse("injected", new ByteArrayInputStream(injected), new XMLTestBase.VulnerableSAXParser(), new ParseContext());
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -82,17 +88,53 @@ public class TestXMLEntityExpansion extends XMLTestBase {
 
     }
 
-    @Test(timeout = 20000)//
+    @Test(timeout = 30000)//
     public void testProtectedXML() throws Exception {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
-        test("injected", injected, new AutoDetectParser());
+        Parser p = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+            test("default", injected, p, context);
+        }
+        context.set(SAXParserFactory.class, XMLReaderUtils.getSAXParserFactory());
+        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+            test("default sax", injected, p, context);
+        }
+        String provider =
+                "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";
+        // create a new SAXParserFactory
+        SAXParserFactory factory = null;
+        try {
+            factory = SAXParserFactory.newInstance(provider, null);
+        } catch (Exception e) {
+            return;
+        }
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        context.set(SAXParserFactory.class, factory);
+        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+            test("built-in SAX", injected, p, context);
+        }
     }
 
-    private static void test(String testFileName, byte[] bytes, Parser parser) throws Exception {
+    @Test
+    public void testDOM() throws Exception {
+        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
+        byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
+        for (int i = 0; i < XMLReaderUtils.getPoolSize()*6; i++) {
+            try {
+                XMLReaderUtils.buildDOM(new ByteArrayInputStream(injected));
+                fail("should never parse!");
+            } catch (SAXParseException e) {
+                assertTrue(e.getMessage() != null && e.getMessage().contains("entity expansions"));
+            }
+        }
+    }
+
+    private static void test(String testFileName, byte[] bytes, Parser parser, ParseContext context) throws Exception {
         boolean ex = false;
         try {
-            parse(testFileName, new ByteArrayInputStream(bytes), parser);
+            parse(testFileName, new ByteArrayInputStream(bytes), parser, context);
         } catch (SAXParseException e) {
             if (e.getMessage() == null ||
                     ! e.getMessage().contains("entity expansions")) {
