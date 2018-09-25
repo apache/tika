@@ -24,9 +24,11 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.ToHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -45,7 +47,6 @@ import static org.junit.Assert.fail;
  * It does not test for XXE prevention in files that may contain xml
  * files, such as PDFs and other XMP-containing files.
  */
-@Ignore
 public class TestXXEInXML extends XMLTestBase {
     //TODO: figure out how to test XFA and xmp in PDFs
 
@@ -53,9 +54,12 @@ public class TestXXEInXML extends XMLTestBase {
             "<!DOCTYPE roottag PUBLIC \"-//OXML/XXE/EN\" \"file:///couldnt_possibly_exist\">".getBytes(StandardCharsets.UTF_8);
 
     @Test
+    @Ignore("ignore vulnerable tests")
     public void testConfirmVulnerable() throws Exception {
         try {
-            parse("testXXE.xml", getResourceAsStream("/test-documents/testXXE.xml"), new VulnerableSAXParser());
+            parse("testXXE.xml",
+                    getResourceAsStream("/test-documents/testXXE.xml"),
+                    new VulnerableSAXParser(), new ParseContext());
             fail("should have failed!!!");
         } catch (FileNotFoundException e) {
 
@@ -64,7 +68,8 @@ public class TestXXEInXML extends XMLTestBase {
 
     @Test
     public void testXML() throws Exception {
-        parse("testXXE.xml", getResourceAsStream("/test-documents/testXXE.xml"), new AutoDetectParser());
+        parse("testXXE.xml", getResourceAsStream("/test-documents/testXXE.xml"),
+                new AutoDetectParser(), new ParseContext());
     }
 
     @Test
@@ -72,7 +77,9 @@ public class TestXXEInXML extends XMLTestBase {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, XXE);
         try {
-            parse("injected", new ByteArrayInputStream(injected), new VulnerableSAXParser());
+            parse("injected",
+                    new ByteArrayInputStream(injected),
+                    new VulnerableSAXParser(), new ParseContext());
             fail("injected should have triggered xxe");
         } catch (FileNotFoundException e) {
 
@@ -85,14 +92,16 @@ public class TestXXEInXML extends XMLTestBase {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         IOUtils.copy(is, bos);
         byte[] injected = injectXML(bos.toByteArray(), XXE);
-        parse("testWORD_2003ml.xml", new ByteArrayInputStream(injected), new AutoDetectParser());
+        parse("testWORD_2003ml.xml",
+                new ByteArrayInputStream(injected), new AutoDetectParser(), new ParseContext());
         is.close();
 
         is = getResourceAsStream("/test-documents/testWORD_2006ml.xml");
         bos = new ByteArrayOutputStream();
         IOUtils.copy(is, bos);
         injected = injectXML(bos.toByteArray(), XXE);
-        parse("testWORD_2006ml.xml", new ByteArrayInputStream(injected), new AutoDetectParser());
+        parse("testWORD_2006ml.xml", new ByteArrayInputStream(injected),
+                new AutoDetectParser(), new ParseContext());
     }
 
     @Test
@@ -156,6 +165,15 @@ public class TestXXEInXML extends XMLTestBase {
         }
     }
 
+    @Test
+    public void testDOM() throws Exception {
+        byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
+        byte[] injected = injectXML(bytes, XXE);
+        for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
+            //this shouldn't throw an exception
+            XMLReaderUtils.buildDOM(new ByteArrayInputStream(injected), new ParseContext());
+        }
+    }
     //use this to confirm that this works
     //by manually turning off the SafeContentHandler in SXWPFWordExtractorDecorator's
     //handlePart

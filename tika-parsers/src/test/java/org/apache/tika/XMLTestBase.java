@@ -147,7 +147,7 @@ public class XMLTestBase extends TikaTest {
 
         }
     }
-    static void parse(String testFileName, InputStream is, Parser parser) throws Exception {
-        parser.parse(is, new DefaultHandler(), new Metadata(), new ParseContext());
+    static void parse(String testFileName, InputStream is, Parser parser, ParseContext context) throws Exception {
+        parser.parse(is, new DefaultHandler(), new Metadata(), context);
     }
 }
