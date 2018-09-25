@@ -137,6 +137,17 @@ public class TikaCLITest {
     }
 
     /**
+     * Tests -f option of the cli
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testForkParser() throws Exception{
+        String[] params = {"-f", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString(UTF_8.name()).contains("finished off the cake"));
+    }
+    /**
      * Tests -m option of the cli
      * @throws Exception
      */

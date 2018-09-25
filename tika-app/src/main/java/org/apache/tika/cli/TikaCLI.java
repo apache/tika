@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Field;
@@ -704,11 +705,7 @@ public class TikaCLI {
         }
         detector = config.getDetector();
         context.set(Parser.class, parser);
-        context.set(PasswordProvider.class, new PasswordProvider() {
-            public String getPassword(Metadata metadata) {
-                return password;
-            }
-        });
+        context.set(PasswordProvider.class, new SimplePasswordProvider(password));
     }
 
     private void displayMetModels(){
@@ -1322,4 +1319,16 @@ public class TikaCLI {
     }
 
 
+    private static class SimplePasswordProvider
+            implements PasswordProvider, Serializable {
+        private final String password;
+        public SimplePasswordProvider(String password) {
+            this.password = password;
+        }
+
+        @Override
+        public String getPassword(Metadata metadata) {
+            return password;
+        }
+    }
 }
