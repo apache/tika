@@ -1,3 +1,9 @@
+Release 1.19.1 - 9/25/2018
+
+   * Fix regression in parser for MP3 files (TIKA-2730).
+
+   * Improve SAXParser robustness (TIKA-2727).
+
 Release 1.19 - 9/14/2018
 
    * Require Java 8 (TIKA-2679).
