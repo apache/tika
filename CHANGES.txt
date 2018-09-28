@@ -3,6 +3,8 @@ Release 2.0.0 - ???
 
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
+   * Updated Python Dependency Check for TesseractOCR (TIKA-2740).
+
    Other changes
 
    * Mime magic improvements for Olympus RAW (TIKA-2658), interpreted
