@@ -1,6 +1,8 @@
-Release 1.19.1 - 9/25/2018
+Release 1.19.1 - ???
 
    * Fix regression in parser for MP3 files (TIKA-2730).
+
+   * Updated Python Dependency Check for TesseractOCR (TIKA-2740).
 
    * Improve SAXParser robustness (TIKA-2727).
 
