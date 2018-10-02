@@ -6,6 +6,11 @@ Release 1.19.1 - ???
 
    * Improve SAXParser robustness (TIKA-2727).
 
+   * Remove dependency on slf4j-log4j12 by upgrading jmatio (TIKA-2742).
+
+   * Replace com.sun.xml.bind:jaxb-impl and jaxb-core with
+     org.glassfish.jaxb:jaxb-runtime and jaxb-core (TIKA-2743)
+
 Release 1.19 - 9/14/2018
 
    * Require Java 8 (TIKA-2679).
