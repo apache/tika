@@ -3,14 +3,22 @@ Release 2.0.0 - ???
 
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
-   * Updated Python Dependency Check for TesseractOCR (TIKA-2740).
-
    Other changes
 
-   * Mime magic improvements for Olympus RAW (TIKA-2658), interpreted
-     server-side languages via HTTP (TIKA-2648), MHTML (TIKA-2723)
+Release 1.19.1 - ???
 
-Release 1.19 9/18/2018
+   * Fix regression in parser for MP3 files (TIKA-2730).
+
+   * Updated Python Dependency Check for TesseractOCR (TIKA-2740).
+
+   * Improve SAXParser robustness (TIKA-2727).
+
+   * Remove dependency on slf4j-log4j12 by upgrading jmatio (TIKA-2742).
+
+   * Replace com.sun.xml.bind:jaxb-impl and jaxb-core with
+     org.glassfish.jaxb:jaxb-runtime and jaxb-core (TIKA-2743)
+
+Release 1.19 - 9/14/2018
 
    * Require Java 8 (TIKA-2679).
 
