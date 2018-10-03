@@ -105,7 +105,7 @@ public class TikaServerCli {
         options.addOption("pingTimeoutMillis", true, "Only in spawn child mode: how long to wait to wait for a ping and/or ping response.");
         options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
 
-        options.addOption("maxFiles", false, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
+        options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
         options.addOption("child", false, "this process is a child process -- EXPERT -- " +
                 "should normally only be invoked by parent process");
         return options;
