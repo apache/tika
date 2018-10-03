@@ -23,6 +23,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.core.Response;
@@ -351,4 +352,58 @@ public class TikaServerIntegrationTest extends TikaTest {
         }
 
     }
+
+    @Test
+    @Ignore("turn this into a real test")
+    public void testMaxFiles() throws Exception {
+        //this isn't a real regression test yet.
+        //Can watch logs for confirmation.
+        //TODO: convert to real test
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-maxFiles", "10",
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT
+                        });
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+        for (int i = 0; i < 100; i++) {
+            System.out.println("FILE # "+i);
+            boolean ex = false;
+            Response response = null;
+            try {
+                response = WebClient
+                        .create(endPoint + META_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader
+                                .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+            } catch (Exception e) {
+                ex = true;
+            }
+
+            if (ex || response.getStatus() != 200) {
+                System.out.println("restarting");
+                i--;
+                awaitServerStartup();
+                System.out.println("done awaiting");
+                continue;
+            }
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(12, metadataList.size());
+            assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+            assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+
+            //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
+        }
+        serverThread.interrupt();
+
+    }
+
+
 }
