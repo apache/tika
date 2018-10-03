@@ -99,6 +99,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
+                                "-maxFiles", "2000",
                                 "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT
                         });
