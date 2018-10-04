@@ -1,4 +1,4 @@
-Release 1.19.1 - ???
+Release 1.19.1 - 10/4/2018
 
    * Update PDFBox to 2.0.12, jempbox to 1.8.16
      and jbig2 to 3.0.2 (TIKA-2745).
