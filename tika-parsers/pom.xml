@@ -44,8 +44,8 @@
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.11</pdfbox.version>
-    <jempbox.version>1.8.15</jempbox.version>
+    <pdfbox.version>2.0.12</pdfbox.version>
+    <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>0.8</sis.version>
     <parso.version>2.0.9</parso.version>
@@ -783,7 +783,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>jbig2-imageio</artifactId>
-      <version>3.0.1</version>
+      <version>3.0.2</version>
     </dependency>
 
     <!-- jai-imageio-core is allowed since LEGAL-304 -->
