@@ -17,8 +17,6 @@
 package org.apache.tika.parser.microsoft;
 
 
-import org.apache.tika.config.Field;
-
 import java.io.Serializable;
 
 public class OfficeParserConfig implements Serializable {
@@ -30,6 +28,8 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeShapeBasedContent = true;
     private boolean includeHeadersAndFooters = true;
     private boolean includeMissingRows = false;
+    private boolean includeSlideNotes = true;
+    private boolean includeSlideMasterContent = true;
     private boolean concatenatePhoneticRuns = true;
 
     private boolean useSAXDocxExtractor = false;
@@ -205,6 +205,44 @@ public class OfficeParserConfig implements Serializable {
 
     public boolean getIncludeMissingRows() {
         return includeMissingRows;
+    }
+
+    public boolean getIncludeSlideNotes() {
+        return includeSlideNotes;
+    }
+
+    /**
+     * Whether or not to process slide notes content.  If set
+     * to <code>false</code>, the parser will skip the text content
+     * and all embedded objects from the slide notes in ppt and ppt[xm].
+     * The default is <code>true</code>.
+     *
+     * @param includeSlideNotes whether or not to process slide notes
+     * @since 1.19.1
+     */
+    public void setIncludeSlideNotes(boolean includeSlideNotes) {
+        this.includeSlideNotes = includeSlideNotes;
+    }
+
+    /**
+     * @since 1.19.1
+     * @return whether or not to process content in slide masters
+     */
+    public boolean getIncludeSlideMasterContent() {
+        return includeSlideMasterContent;
+    }
+
+    /**
+     * Whether or not to include contents from any of the three
+     * types of masters -- slide, notes, handout -- in a .ppt or ppt[xm] file.
+     * If set to <code>false</code>, the parser will not extract
+     * text or embedded objects from any of the masters.
+     *
+     * @since 1.19.1
+     * @param includeSlideMasterContent
+     */
+    public void setIncludeSlideMasterContent(boolean includeSlideMasterContent) {
+        this.includeSlideMasterContent = includeSlideMasterContent;
     }
 }
 

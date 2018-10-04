@@ -16,12 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
 import org.apache.poi.hslf.model.HeadersFooters;
@@ -40,16 +34,17 @@ import org.apache.poi.hslf.usermodel.HSLFSlide;
 import org.apache.poi.hslf.usermodel.HSLFSlideShow;
 import org.apache.poi.hslf.usermodel.HSLFTable;
 import org.apache.poi.hslf.usermodel.HSLFTableCell;
-import org.apache.poi.hslf.usermodel.HSLFTextBox;
 import org.apache.poi.hslf.usermodel.HSLFTextParagraph;
 import org.apache.poi.hslf.usermodel.HSLFTextRun;
 import org.apache.poi.hslf.usermodel.HSLFTextShape;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.sl.usermodel.Comment;
+import org.apache.poi.sl.usermodel.ShapeContainer;
 import org.apache.poi.sl.usermodel.SimpleShape;
-import org.apache.tika.exception.TikaException;
+import org.apache.poi.sl.usermodel.TextParagraph;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.IOExceptionWithCause;
@@ -60,6 +55,11 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
 
@@ -92,143 +92,169 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       /* Iterate over slides and extract text */
         for (HSLFSlide slide : _slides) {
             xhtml.startElement("div", "class", "slide");
+            HeadersFooters slideHeaderFooters =
+                    (officeParserConfig.getIncludeHeadersAndFooters()) ?
+                            slide.getHeadersFooters() : null;
 
-            // Slide header, if present
-            HeadersFooters hf = slide.getHeadersFooters();
-            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
-                xhtml.startElement("p", "class", "slide-header");
+            HeadersFooters notesHeadersFooters =
+                    (officeParserConfig.getIncludeHeadersAndFooters()) ?
+                            ss.getNotesHeadersFooters() : null;
 
-                xhtml.characters(hf.getHeaderText());
+            if (officeParserConfig.getIncludeHeadersAndFooters()) {
+                // Slide header, if present
+                if (slideHeaderFooters != null && slideHeaderFooters.isHeaderVisible() && slideHeaderFooters.getHeaderText() != null) {
+                    xhtml.startElement("p", "class", "slide-header");
 
-                xhtml.endElement("p");
+                    xhtml.characters(slideHeaderFooters.getHeaderText());
+
+                    xhtml.endElement("p");
+                }
             }
 
             // Slide master, if present
-            extractMaster(xhtml, slide.getMasterSheet());
-
-            // Slide text
-            {
-                xhtml.startElement("div", "class", "slide-content");
-
-                textRunsToText(xhtml, slide.getTextParagraphs());
-
-                xhtml.endElement("div");
+            if (officeParserConfig.getIncludeSlideMasterContent()) {
+                extractMaster(xhtml, slide.getMasterSheet());
             }
+            // Slide text
+            xhtml.startElement("div", "class", "slide-content");
+            textRunsToText(xhtml, slide.getTextParagraphs());
 
             // Table text
-            for (HSLFShape shape : slide.getShapes()) {
-                if (shape instanceof HSLFTable) {
-                    extractTableText(xhtml, (HSLFTable) shape);
-                }
-            }
-
-            extractGroupText(xhtml, slide.getShapes(), 0);
-
-            // Slide footer, if present
-            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
-                xhtml.startElement("p", "class", "slide-footer");
-
-                xhtml.characters(hf.getFooterText());
-
-                xhtml.endElement("p");
-            }
-
-            // Comments, if present
-            StringBuilder authorStringBuilder = new StringBuilder();
-            for (Comment comment : slide.getComments()) {
-                authorStringBuilder.setLength(0);
-                xhtml.startElement("p", "class", "slide-comment");
-
-                if (comment.getAuthor() != null) {
-                    authorStringBuilder.append(comment.getAuthor());
-                }
-                if (comment.getAuthorInitials() != null) {
-                    if (authorStringBuilder.length() > 0) {
-                        authorStringBuilder.append(" ");
+            List<HSLFShape> shapes = getShapes(slide);
+            if (shapes != null) {
+                for (HSLFShape shape : shapes) {
+                    if (shape instanceof HSLFTable) {
+                        extractTableText(xhtml, (HSLFTable) shape);
                     }
-                    authorStringBuilder.append("("+comment.getAuthorInitials()+")");
                 }
-                if (authorStringBuilder.length() > 0) {
-                    if (comment.getText() != null) {
-                        authorStringBuilder.append(" - ");
-                    }
-                    xhtml.startElement("b");
-                    xhtml.characters(authorStringBuilder.toString());
-                    xhtml.endElement("b");
-                }
-                if (comment.getText() != null) {
-                    xhtml.characters(comment.getText());
-                }
-                xhtml.endElement("p");
             }
+            extractGroupText(xhtml, slide, 0);
+            //end slide content
+            xhtml.endElement("div");
+
+            if (officeParserConfig.getIncludeHeadersAndFooters()) {
+                // Slide footer, if present
+                if (slideHeaderFooters != null && slideHeaderFooters.isFooterVisible() && slideHeaderFooters.getFooterText() != null) {
+                    xhtml.startElement("p", "class", "slide-footer");
+                    xhtml.characters(slideHeaderFooters.getFooterText());
+                    xhtml.endElement("p");
+                }
+            }
+            handleComments(slide, xhtml);
+            handleNotes(slide, notesHeadersFooters, xhtml);
 
             // Now any embedded resources
             handleSlideEmbeddedResources(slide, xhtml);
 
-           
-            // Find the Notes for this slide and extract inline
-            HSLFNotes notes = slide.getNotes();
-            if (notes != null) {
-                xhtml.startElement("div", "class", "slide-notes");
-
-                textRunsToText(xhtml, notes.getTextParagraphs());
-       
-                xhtml.endElement("div");
-            }
-            
-
             // Slide complete
             xhtml.endElement("div");
-        }
-
-        // All slides done
-        xhtml.endElement("div");
-
-      /* notes */
-        xhtml.startElement("div", "class", "slide-notes");
-        HashSet<Integer> seenNotes = new HashSet<>();
-        HeadersFooters hf = ss.getNotesHeadersFooters();
-
-        for (HSLFSlide slide : _slides) {
-            HSLFNotes notes = slide.getNotes();
-            if (notes == null) {
-                continue;
-            }
-            Integer id = notes._getSheetNumber();
-            if (seenNotes.contains(id)) {
-                continue;
-            }
-            seenNotes.add(id);
-
-            // Repeat the Notes header, if set
-            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
-                xhtml.startElement("p", "class", "slide-note-header");
-                xhtml.characters(hf.getHeaderText());
-                xhtml.endElement("p");
-            }
-
-            // Notes text
-            textRunsToText(xhtml, notes.getTextParagraphs());
-
-            // Repeat the notes footer, if set
-            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
-                xhtml.startElement("p", "class", "slide-note-footer");
-                xhtml.characters(hf.getFooterText());
-                xhtml.endElement("p");
-            }
         }
 
         handleSlideEmbeddedPictures(ss, xhtml);
         if (officeParserConfig.getExtractMacros()) {
             extractMacros(ss, xhtml);
         }
+        // All slides done
+        xhtml.endElement("div");
+    }
+
+    private void handleComments(HSLFSlide slide, XHTMLContentHandler xhtml) throws SAXException {
+        if (slide.getComments() == null || slide.getComments().size() == 0) {
+            return;
+        }
+        xhtml.startElement("div", "class", "slide-comments");
+
+        // Comments, if present
+        StringBuilder authorStringBuilder = new StringBuilder();
+        for (Comment comment : slide.getComments()) {
+            authorStringBuilder.setLength(0);
+            xhtml.startElement("p", "class", "slide-comment");
+
+            if (comment.getAuthor() != null) {
+                authorStringBuilder.append(comment.getAuthor());
+            }
+            if (comment.getAuthorInitials() != null) {
+                if (authorStringBuilder.length() > 0) {
+                    authorStringBuilder.append(" ");
+                }
+                authorStringBuilder.append("(" + comment.getAuthorInitials() + ")");
+            }
+            if (authorStringBuilder.length() > 0) {
+                if (comment.getText() != null) {
+                    authorStringBuilder.append(" - ");
+                }
+                xhtml.startElement("b");
+                xhtml.characters(authorStringBuilder.toString());
+                xhtml.endElement("b");
+            }
+            if (comment.getText() != null) {
+                xhtml.characters(comment.getText());
+            }
+            xhtml.endElement("p");
+        }
+        //end comments
+        xhtml.endElement("div");
+    }
+
+    private void handleNotes(HSLFSlide slide,
+                             HeadersFooters notesHeaderFooters, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
+
+        if (!officeParserConfig.getIncludeSlideNotes()) {
+            return;
+        }
+        // Find the Notes for this slide and extract inline
+        HSLFNotes notes = slide.getNotes();
+        if (notes == null) {
+            return;
+        }
+
+        xhtml.startElement("div", "class", "notes");
+
+        // Repeat the Notes header, if set
+        if (officeParserConfig.getIncludeHeadersAndFooters() &&
+                notesHeaderFooters != null &&
+                notesHeaderFooters.isHeaderVisible() &&
+                notesHeaderFooters.getHeaderText() != null) {
+            xhtml.startElement("p", "class", "slide-note-header");
+            xhtml.characters(notesHeaderFooters.getHeaderText());
+            xhtml.endElement("p");
+        }
+        xhtml.startElement("div", "class", "notes-content");
+        // Notes text
+        textRunsToText(xhtml, notes.getTextParagraphs());
+
+        List<HSLFShape> shapes = getShapes(notes);
+        if (shapes != null && shapes.size() > 0) {
+            // Table text
+            for (HSLFShape shape : shapes) {
+                if (shape instanceof HSLFTable) {
+                    extractTableText(xhtml, (HSLFTable) shape);
+                }
+            }
+        }
+        extractGroupText(xhtml, notes, 0);
+        //notes content
+        xhtml.endElement("div");
+
+        // Repeat the Notes footer, if set
+        if (officeParserConfig.getIncludeHeadersAndFooters() &&
+                notesHeaderFooters != null &&
+                notesHeaderFooters.isFooterVisible() &&
+                notesHeaderFooters.getFooterText() != null) {
+            xhtml.startElement("p", "class", "slide-note-footer");
+            xhtml.characters(notesHeaderFooters.getFooterText());
+            xhtml.endElement("p");
+        }
+        // Now any embedded resources
+        handleSlideEmbeddedResources(notes, xhtml);
+        //end notes
         xhtml.endElement("div");
     }
 
     //Extract any text that's within an HSLFTextShape that's a descendant of
     //an HSLFGroupShape.
-    private void extractGroupText(XHTMLContentHandler xhtml, List<HSLFShape> shapes, int depth) throws SAXException {
-
+    private void extractGroupText(XHTMLContentHandler xhtml, ShapeContainer shapeContainer, int depth) throws SAXException {
+        List<HSLFShape> shapes = getShapes(shapeContainer);
         if (shapes == null) {
             return;
         }
@@ -239,11 +265,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         //However, cells are considered grouped within the table, so ignore them.
         //I don't believe that cells can be inside a text box or other
         //grouped text containing object, so always ignore them.
+        //I also don't believe that a table can be grouped with a table.
+        //If these beliefs are wrong...must fix!
         List<List<HSLFTextParagraph>> paragraphList = new ArrayList<>();
         for (HSLFShape shape : shapes) {
             if (shape instanceof HSLFGroupShape) {
                 //work recursively, HSLFGroupShape can contain HSLFGroupShape
-                extractGroupText(xhtml, ((HSLFGroupShape)shape).getShapes(), depth+1);
+                extractGroupText(xhtml, ((HSLFGroupShape)shape), depth+1);
             } else if (shape instanceof HSLFTextShape
                     && ! (shape instanceof HSLFTableCell) && depth > 0) {
                 paragraphList.add(((HSLFTextShape)shape).getTextParagraphs());
@@ -289,7 +317,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         if (master == null) {
             return;
         }
-        List<HSLFShape> shapes = master.getShapes();
+        List<HSLFShape> shapes = getShapes(master);
         if (shapes == null || shapes.isEmpty()) {
             return;
         }
@@ -441,19 +469,14 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
     }
 
-    private void handleSlideEmbeddedResources(HSLFSlide slide, XHTMLContentHandler xhtml)
+    private void handleSlideEmbeddedResources(ShapeContainer shapeContainer, XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
-        List<HSLFShape> shapes;
-        try {
-            shapes = slide.getShapes();
-        } catch (NullPointerException e) {
-            // Sometimes HSLF hits problems
-            // Please open POI bugs for any you come across!
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+        List<HSLFShape> shapes = getShapes(shapeContainer);
+        if (shapes == null) {
             return;
         }
-
         for (HSLFShape shape : shapes) {
+            //handle ActiveXShape, movie shape?
             if (shape instanceof HSLFObjectShape) {
                 HSLFObjectShape oleShape = (HSLFObjectShape) shape;
                 HSLFObjectData data = null;
@@ -520,4 +543,17 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
         }
     }
+
+    //Can return null!
+    private List<HSLFShape> getShapes(ShapeContainer shapeContainer) {
+        try {
+            return shapeContainer.getShapes();
+        } catch (NullPointerException e) {
+            // Sometimes HSLF hits problems
+            // Please open POI bugs for any you come across!
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            return null;
+        }
+    }
+
 }

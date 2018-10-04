@@ -110,29 +110,32 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             extractContent(slide.getShapes(), false, xhtml, slideDesc);
             xhtml.endElement("div");
 
-            // slide layout which is the master sheet for this slide
-            xhtml.startElement("div", "class", "slide-master-content");
-            XSLFSlideLayout slideLayout = slide.getMasterSheet();
-            extractContent(slideLayout.getShapes(), true, xhtml, null);
-            xhtml.endElement("div");
-
-            // slide master which is the master sheet for all text layouts
-            XSLFSheet slideMaster = slideLayout.getMasterSheet();
-            extractContent(slideMaster.getShapes(), true, xhtml, null);
-
-            // notes (if present)
-            XSLFNotes slideNotes = slide.getNotes();
-            if (slideNotes != null) {
-                xhtml.startElement("div", "class", "slide-notes");
-
-                extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
-
-                // master sheet for this notes
-                XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
-                if (notesMaster != null) {
-                    extractContent(notesMaster.getShapes(), true, xhtml, null);
-                }
+            if (config.getIncludeSlideMasterContent()) {
+                // slide layout which is the master sheet for this slide
+                xhtml.startElement("div", "class", "slide-master-content");
+                XSLFSlideLayout slideLayout = slide.getMasterSheet();
+                extractContent(slideLayout.getShapes(), true, xhtml, null);
                 xhtml.endElement("div");
+
+                // slide master which is the master sheet for all text layouts
+                XSLFSheet slideMaster = slideLayout.getMasterSheet();
+                extractContent(slideMaster.getShapes(), true, xhtml, null);
+            }
+            if (config.getIncludeSlideNotes()) {
+                // notes (if present)
+                XSLFNotes slideNotes = slide.getNotes();
+                if (slideNotes != null) {
+                    xhtml.startElement("div", "class", "slide-notes");
+
+                    extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
+
+                    // master sheet for this notes
+                    XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
+                    if (notesMaster != null) {
+                        extractContent(notesMaster.getShapes(), true, xhtml, null);
+                    }
+                    xhtml.endElement("div");
+                }
             }
 
             // comments (if present)
@@ -193,6 +196,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml, String slideDesc)
             throws SAXException {
         for (XSLFShape sh : shapes) {
+
             if (sh instanceof XSLFTextShape) {
                 XSLFTextShape txt = (XSLFTextShape) sh;
                 Placeholder ph = txt.getTextType();
@@ -202,7 +206,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
                     xhtml.startElement("p");
-
+                    if (! config.getIncludeHeadersAndFooters() && p.isHeaderOrFooter()) {
+                        continue;
+                    }
                     for (XSLFTextRun run : p.getTextRuns()) {
                         //TODO: add check for targetmode=external into POI
                         //then check to confirm that the urls are actually

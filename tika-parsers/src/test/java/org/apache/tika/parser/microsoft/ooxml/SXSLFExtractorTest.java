@@ -369,6 +369,21 @@ public class SXSLFExtractorTest extends TikaTest {
                 getXML("testPPT_masterFooter.pptx", parseContext).xml);
     }
 
+    @Test
+    @Ignore("can't tell why this isn't working")
+    public void testTurningOffMasterContent() throws Exception {
+        //now test turning off master content
+
+        //the underlying xml has "Master footer" in
+        //the actual slide's xml, not just in the master slide.
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        config.setUseSAXPptxExtractor(true);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        String xml = getXML("testPPT_masterFooter.pptx", context).xml;
+        assertNotContained("Master footer", xml);
+    }
     /**
      * TIKA-712 Master Slide Text from PPT and PPTX files
      * should be extracted too
@@ -377,12 +392,32 @@ public class SXSLFExtractorTest extends TikaTest {
     public void testMasterText() throws Exception {
         assertContains("Text that I added to the master slide",
                 getXML("testPPT_masterText.pptx", parseContext).xml);
+
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        config.setUseSAXPptxExtractor(true);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+
+        assertNotContained("Text that I added",
+                getXML("testPPT_masterText.pptx", context).xml);
     }
 
     @Test
     public void testMasterText2() throws Exception {
         assertContains("Text that I added to the master slide",
                 getXML("testPPT_masterText2.pptx", parseContext).xml);
+
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        config.setUseSAXPptxExtractor(true);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+
+        assertNotContained("Text that I added",
+                getXML("testPPT_masterText2.pptx", context).xml);
     }
 
     @Test
