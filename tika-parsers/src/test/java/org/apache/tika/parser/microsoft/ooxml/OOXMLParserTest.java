@@ -770,6 +770,18 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    public void testSkipHeaderFooter() throws Exception {
+        //now test turning off header/footer
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeHeadersAndFooters(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        String xml = getXML("testPPT_various.pptx", context).xml;
+        assertNotContained("This is the header text", xml);
+
+    }
+
+    @Test
     public void testCommentPPTX() throws Exception {
         XMLResult r = getXML("testPPT_comment.pptx");
         assertContains("<p class=\"slide-comment\"><b>Allison, Timothy B. (ATB)", r.xml);
@@ -789,6 +801,21 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Master footer is here", content);
     }
 
+    @Test
+    @Ignore("can't tell why this isn't working")
+    public void testTurningOffMasterContent() throws Exception {
+        //now test turning off master content
+
+        //the underlying xml has "Master footer" in
+        //the actual slide's xml, not just in the master slide.
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        String xml = getXML("testPPT_masterFooter.pptx", context).xml;
+        assertNotContained("Master footer", xml);
+    }
+
     /**
      * TIKA-712 Master Slide Text from PPT and PPTX files
      * should be extracted too
@@ -805,6 +832,14 @@ public class OOXMLParserTest extends TikaTest {
 
         String content = handler.toString();
         assertContains("Text that I added to the master slide", content);
+
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        content = getXML("testPPT_masterText.pptx", context).xml;
+        assertNotContained("Text that I added", content);
     }
 
     @Test
@@ -819,6 +854,14 @@ public class OOXMLParserTest extends TikaTest {
 
         String content = handler.toString();
         assertContains("Text that I added to the master slide", content);
+
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        content = getXML("testPPT_masterText2.pptx", context).xml;
+        assertNotContained("Text that I added", content);
     }
 
     @Test

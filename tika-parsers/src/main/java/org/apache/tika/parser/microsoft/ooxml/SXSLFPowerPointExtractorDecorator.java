@@ -122,20 +122,22 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-        handleGeneralTextContainingPart(XSLFRelation.SLIDE_MASTER.getRelation(),
-                "slide-master",
-                mainDocument,
-                metadata,
-                new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
-                        new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())));
+        if (config.getIncludeSlideMasterContent()) {
+            handleGeneralTextContainingPart(XSLFRelation.SLIDE_MASTER.getRelation(),
+                    "slide-master",
+                    mainDocument,
+                    metadata,
+                    new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())));
 
-        handleGeneralTextContainingPart(HANDOUT_MASTER,
-                "slide-handout-master",
-                mainDocument,
-                metadata,
-                new OOXMLWordAndPowerPointTextHandler(
-                        new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())
-        );
+            handleGeneralTextContainingPart(HANDOUT_MASTER,
+                    "slide-handout-master",
+                    mainDocument,
+                    metadata,
+                    new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml), new HashMap<String, String>())
+            );
+        }
     }
 
     private void loadCommentAuthors() {
@@ -195,26 +197,29 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         xhtml.endElement("div");
 
+        if (config.getIncludeSlideMasterContent()) {
+            handleGeneralTextContainingPart(XSLFRelation.SLIDE_LAYOUT.getRelation(),
+                    "slide-master-content", slidePart,
+                    metadata,
+                    new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))
+            );
+        }
+        if (config.getIncludeSlideNotes()) {
+            handleGeneralTextContainingPart(XSLFRelation.NOTES.getRelation(),
+                    "slide-notes", slidePart,
+                    metadata,
+                    new OOXMLWordAndPowerPointTextHandler(
+                            new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
+            if (config.getIncludeSlideMasterContent()) {
+                handleGeneralTextContainingPart(XSLFRelation.NOTES_MASTER.getRelation(),
+                        "slide-notes-master", slidePart,
+                        metadata,
+                        new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
 
-        handleGeneralTextContainingPart(XSLFRelation.SLIDE_LAYOUT.getRelation(),
-                "slide-master-content", slidePart,
-                metadata,
-                new PlaceHolderSkipper(new OOXMLWordAndPowerPointTextHandler(
-                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))
-                );
-
-        handleGeneralTextContainingPart(XSLFRelation.NOTES.getRelation(),
-                "slide-notes", slidePart,
-                metadata,
-                new OOXMLWordAndPowerPointTextHandler(
-                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
-
-        handleGeneralTextContainingPart(XSLFRelation.NOTES_MASTER.getRelation(),
-                "slide-notes-master", slidePart,
-                metadata,
-                new OOXMLWordAndPowerPointTextHandler(
-                        new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
-
+            }
+        }
         handleGeneralTextContainingPart(XSLFRelation.COMMENTS.getRelation(),
                 null, slidePart,
                 metadata,

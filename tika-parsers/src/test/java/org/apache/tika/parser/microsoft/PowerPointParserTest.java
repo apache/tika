@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.ctakes.typesystem.type.syntax.O;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
@@ -126,6 +127,23 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     @Test
+    @Ignore("not sure why this isn't working")
+    public void testSkipHeaderFooter() throws Exception {
+        //now test turning off header/footer
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeHeadersAndFooters(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        String xml = getXML("testPPT_various.ppt", context).xml;
+        //"This is the header text" should show up as a notes header
+        //however, it is currently being extracted while we process notes
+        //as just a regular HSLFTextParagraph with a value of "false"
+        //for p.isHeaderOrFooter().
+        assertNotContained("This is the header text", xml);
+
+    }
+
+    @Test
     public void testMasterFooter() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -143,6 +161,18 @@ public class PowerPointParserTest extends TikaTest {
 
         //TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
+    }
+
+    @Test
+    @Ignore("not working")
+    public void testTurningOffMasterFooter() throws Exception {
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        assertNotContained("Master footer",
+                getXML("testPPT_masterFooter.ppt", context).xml);
     }
 
     /**
@@ -167,6 +197,15 @@ public class PowerPointParserTest extends TikaTest {
 
         //TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
+
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        content = getXML("testPPT_masterText.ppt", context).xml;
+        assertNotContained("Text that I added", content);
+
     }
 
     @Test
@@ -186,6 +225,15 @@ public class PowerPointParserTest extends TikaTest {
         assertEquals(-1, content.indexOf("Click to edit Master"));
         //TIKA-1171, POI-62591
         assertEquals(-1, content.indexOf("*"));
+
+        //now test turning off master content
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeSlideMasterContent(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        content = getXML("testPPT_masterText2.ppt", context).xml;
+        assertNotContained("Text that I added", content);
+
     }
 
     /**
