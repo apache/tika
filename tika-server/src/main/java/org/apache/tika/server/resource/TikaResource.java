@@ -409,6 +409,7 @@ public class TikaResource {
             logger.warn("{}: Text extraction failed", path, e);
             throw new TikaServerParseException(e);
         } catch (OutOfMemoryError e) {
+            logger.error("{}: OOM", path, e);
             SERVER_STATUS.setStatus(ServerStatus.STATUS.ERROR);
             throw e;
         } finally {
