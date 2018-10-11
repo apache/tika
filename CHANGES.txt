@@ -1,3 +1,7 @@
+Release 1.20 - ???
+
+
+
 Release 1.19.1 - 10/4/2018
 
    * Update PDFBox to 2.0.12, jempbox to 1.8.16
