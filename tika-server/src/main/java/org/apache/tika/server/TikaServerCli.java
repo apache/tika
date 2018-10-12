@@ -84,7 +84,7 @@ public class TikaServerCli {
 
     private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
             Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
-            "pingTimeoutMillis", "pingPulseMillis", "maxFiles"});
+            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome"});
 
     private static Options getOptions() {
         Options options = new Options();
@@ -106,6 +106,7 @@ public class TikaServerCli {
         options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
 
         options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
+        options.addOption("javaHome", true, "Override system property JAVA_HOME for calling java for the child process");
         options.addOption("child", false, "this process is a child process -- EXPERT -- " +
                 "should normally only be invoked by parent process");
         return options;

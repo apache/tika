@@ -33,7 +33,8 @@ public class ProcessUtils {
         }
         //need to test for " " on windows, can't just add double quotes
         //across platforms.
-        if (arg.contains(" ") && SystemUtils.IS_OS_WINDOWS) {
+        if (arg.contains(" ") && SystemUtils.IS_OS_WINDOWS &&
+                (!arg.startsWith("\"") && !arg.endsWith("\""))) {
             arg = "\"" + arg + "\"";
         }
         return arg;
