@@ -59,9 +59,11 @@ public class DetectorResource {
         try {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
-            LOG.warn("Unable to detect MIME type for file. Reason: {}", e.getMessage(), e);
+            LOG.warn("Unable to detect MIME type for file. Reason: {} ({})",
+                    e.getMessage(), filename, e);
             return MediaType.OCTET_STREAM.toString();
         } catch (OutOfMemoryError e) {
+            LOG.error("OOM while detecting: ({})", filename, e);
             serverStatus.setStatus(ServerStatus.STATUS.ERROR);
             throw e;
         } finally {
