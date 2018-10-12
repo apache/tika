@@ -1,6 +1,7 @@
 Release 1.20 - ???
 
-
+   * Use -javaHome or $JAVA_HOME (if they exist) when
+     spawning child in tika-server's -spawnChild mode.
 
 Release 1.19.1 - 10/4/2018
 

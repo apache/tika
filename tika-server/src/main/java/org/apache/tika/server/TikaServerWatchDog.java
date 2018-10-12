@@ -18,6 +18,8 @@
 package org.apache.tika.server;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,10 +27,14 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class TikaServerWatchDog {
@@ -123,11 +129,40 @@ public class TikaServerWatchDog {
             if (args[i].startsWith("-J") || args[i].equals("-spawnChild") || args[i].equals("--spawnChild")) {
                 continue;
             }
+            if (args[i].equals("-javaHome")) {
+                if (i == args.length-1) {
+                    throw new IllegalArgumentException("must specify a value for -javaHome");
+                }
+                i++;//skip argument value
+                continue;
+            }
+
             argList.add(args[i]);
         }
         return argList;
     }
 
+    private static String extractJavaPath(String[] args) {
+        String javaHome = null;
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-javaHome")) {
+                if (i == args.length-1) {
+                    throw new IllegalArgumentException("must specify a value for -javaHome");
+                }
+                javaHome = args[i+1];
+                break;
+            }
+        }
+        if (javaHome == null) {
+            javaHome = System.getenv("JAVA_HOME");
+        }
+        if (javaHome != null) {
+            Path jPath = Paths.get(javaHome).resolve("bin").resolve("java");
+            return ProcessUtils.escapeCommandLine(
+                    jPath.toAbsolutePath().toString());
+        }
+        return "java";
+    }
     private static List<String> extractJVMArgs(String[] args) {
         List<String> jvmArgs = new ArrayList<>();
         boolean foundHeadlessOption = false;
@@ -231,9 +266,11 @@ public class TikaServerWatchDog {
             ProcessBuilder builder = new ProcessBuilder();
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
             List<String> argList = new ArrayList<>();
+            String javaPath = extractJavaPath(args);
             List<String> jvmArgs = extractJVMArgs(args);
             List<String> childArgs = extractArgs(args);
-            argList.add("java");
+
+            argList.add(javaPath);
             if (! jvmArgs.contains("-cp") && ! jvmArgs.contains("--classpath")) {
                 String cp = System.getProperty("java.class.path");
                 jvmArgs.add("-cp");
@@ -243,7 +280,7 @@ public class TikaServerWatchDog {
             argList.add("org.apache.tika.server.TikaServerCli");
             argList.addAll(childArgs);
             argList.add("-child");
-
+            LOG.debug("child process commandline: " +argList.toString());
             builder.command(argList);
             Process process = builder.start();
             if (SHUTDOWN_HOOK != null) {
