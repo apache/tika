@@ -32,7 +32,7 @@ public class FeedParserTest {
     @Test
     public void testRSSParser() throws Exception {
         try (InputStream input = FeedParserTest.class.getResourceAsStream(
-                "/test-documents/rsstest.rss")) {
+                "/test-documents/rsstest_091.rss")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();

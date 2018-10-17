@@ -241,7 +241,7 @@ public class AutoDetectParserTest extends TikaTest {
 
     @Test
     public void testRss() throws Exception {
-        assertAutoDetect("/test-documents/rsstest.rss", "feed", RSS, "application/rss+xml", "Sample RSS File for Junit test");
+        assertAutoDetect("/test-documents/rsstest_091.rss", "feed", RSS, "application/rss+xml", "Sample RSS File for Junit test");
     }
     
     @Test
