@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.font;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.reflect.MethodUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;

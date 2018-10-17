@@ -104,9 +104,9 @@
       <version>1.2</version>
     </dependency>
     <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.6</version> <!-- should sync with Jackcess in tika-parsers -->
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons.lang3.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>

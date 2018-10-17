@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 import com.healthmarketscience.jackcess.DataType;
 import com.healthmarketscience.jackcess.util.OleBlob;
 import static com.healthmarketscience.jackcess.util.OleBlob.*;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.healthmarketscience.jackcess.impl.ByteUtil;
 import com.healthmarketscience.jackcess.impl.CustomToStringStyle;
@@ -561,17 +560,6 @@ class JackcessOleUtil {
                 return (int)off - 1;
             }
 
-            @Override
-            public String toString() {
-                ToStringBuilder sb = CustomToStringStyle.builder(this);
-                if(_content != null) {
-                    sb.append("content", _content);
-                } else {
-                    sb.append("bytes", _bytes);
-                    sb.append("content", "(uninitialized)");
-                }
-                return sb.toString();
-            }
         }
 
         static abstract class ContentImpl implements Content, Closeable
@@ -594,10 +582,6 @@ class JackcessOleUtil {
                 // base does nothing
             }
 
-            protected ToStringBuilder toString(ToStringBuilder sb) {
-                sb.append("type", getType());
-                return sb;
-            }
         }
 
         static abstract class EmbeddedContentImpl extends ContentImpl
@@ -623,15 +607,6 @@ class JackcessOleUtil {
 
             public void writeTo(OutputStream out) throws IOException {
                 out.write(getBytes(), _position, _length);
-            }
-
-            @Override
-            protected ToStringBuilder toString(ToStringBuilder sb) {
-                super.toString(sb);
-                if(_position >= 0) {
-                    sb.append("content", ByteBuffer.wrap(_blob._bytes, _position, _length));
-                }
-                return sb;
             }
         }
 
@@ -665,14 +640,6 @@ class JackcessOleUtil {
                 return _typeName;
             }
 
-            @Override
-            protected ToStringBuilder toString(ToStringBuilder sb) {
-                sb.append("prettyName", _prettyName)
-                        .append("className", _className)
-                        .append("typeName", _typeName);
-                super.toString(sb);
-                return sb;
-            }
         }
 
         private static final class LinkContentImpl
@@ -713,15 +680,6 @@ class JackcessOleUtil {
             public InputStream getLinkStream() throws IOException {
                 return new FileInputStream(getLinkPath());
             }
-
-            @Override
-            public String toString() {
-                return toString(CustomToStringStyle.builder(this))
-                        .append("fileName", _fileName)
-                        .append("linkPath", _linkPath)
-                        .append("filePath", _filePath)
-                        .toString();
-            }
         }
 
         private static final class SimplePackageContentImpl
@@ -760,14 +718,6 @@ class JackcessOleUtil {
                 return _localFilePath;
             }
 
-            @Override
-            public String toString() {
-                return toString(CustomToStringStyle.builder(this))
-                        .append("fileName", _fileName)
-                        .append("filePath", _filePath)
-                        .append("localFilePath", _localFilePath)
-                        .toString();
-            }
         }
 
         private static final class OtherContentImpl
@@ -785,11 +735,6 @@ class JackcessOleUtil {
                 return ContentType.OTHER;
             }
 
-            @Override
-            public String toString() {
-                return toString(CustomToStringStyle.builder(this))
-                        .toString();
-            }
         }
 
         private static final class UnknownContentImpl extends ContentImpl
@@ -802,12 +747,6 @@ class JackcessOleUtil {
                 return ContentType.UNKNOWN;
             }
 
-            @Override
-            public String toString() {
-                return toString(CustomToStringStyle.builder(this))
-                        .append("content", _blob._bytes)
-                        .toString();
-            }
         }
 
     }

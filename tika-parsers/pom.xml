@@ -96,6 +96,12 @@
       <version>1.1.1</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons.lang3.version}</version>
+    </dependency>
+
     <!-- Externally Maintained Parsers -->
     <dependency>
       <groupId>org.gagravarr</groupId>
@@ -111,7 +117,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>2.1.12</version>
+      <version>2.2.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>

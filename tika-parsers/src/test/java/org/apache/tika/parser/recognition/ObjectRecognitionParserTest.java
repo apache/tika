@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.recognition;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;

@@ -21,7 +21,6 @@ import com.healthmarketscience.jackcess.impl.ByteUtil;
 import com.healthmarketscience.jackcess.impl.CustomToStringStyle;
 import com.healthmarketscience.jackcess.util.MemFileChannel;
 import com.healthmarketscience.jackcess.util.OleBlob;
-import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -195,21 +194,7 @@ class JackcessCompoundOleUtil implements JackcessOleUtil.CompoundPackageFactory 
             super.close();
         }
 
-        @Override
-        public String toString() {
-            ToStringBuilder sb = toString(CustomToStringStyle.builder(this));
 
-            try {
-                sb.append("hasContentsEntry", hasContentsEntry());
-                sb.append("entries", getEntries(new ArrayList<Entry>(),
-                        getFileSystem().getRoot(),
-                        ENTRY_SEPARATOR));
-            } catch (IOException e) {
-                sb.append("entries", "<" + e + ">");
-            }
-
-            return sb.toString();
-        }
 
         private final class EntryImpl implements OleBlob.CompoundContent.Entry {
             private final String _name;
