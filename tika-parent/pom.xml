@@ -327,6 +327,18 @@
           <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
+      <!--
+        mvn versions:display-plugin-updates
+        mvn versions:display-dependency-updates
+      -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+          <generateBackupPoms>false</generateBackupPoms>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
