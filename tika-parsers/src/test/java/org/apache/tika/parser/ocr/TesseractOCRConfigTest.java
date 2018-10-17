@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.tika.TikaTest;
 import org.junit.Test;
 

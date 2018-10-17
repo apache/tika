@@ -18,7 +18,7 @@
 package org.apache.tika.cli;
 
 
-import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;

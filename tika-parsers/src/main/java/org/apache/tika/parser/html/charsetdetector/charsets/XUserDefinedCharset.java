@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.html.charsetdetector.charsets;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang3.NotImplementedException;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
