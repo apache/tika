@@ -89,7 +89,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 metadata.set(Metadata.CONTENT_ENCODING, charset.name());
                 xhtml = new XHTMLContentHandler(handler, metadata);
                 xhtml.startDocument();
-                readLines(reader);
+                readLines(reader, metadata);
                 xhtml.endDocument();
         } catch (IOException | TikaException e) {
           LOG.error("Error reading input data stream.", e);
@@ -97,25 +97,31 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     }
 
-    private void readLines(AutoDetectReader reader) throws IOException, SAXException {
-      // text contents of the xhtml
-      String line;
-      while ((line = reader.readLine()) != null) {
-          if (line.contains("{") && !line.endsWith("}") || line.startsWith(" ")) {
-              String completeField = parseMultiLineFieldValue(line);
-              if (completeField != null) {
-                  writeParagraph(completeField);
-              }
-          } else {
-              writeParagraph(line);
+    private void readLines(AutoDetectReader reader, Metadata metadata) throws IOException, SAXException {
+        // text contents of the xhtml
+        String line;
+        while ((line = reader.readLine()) != null) {
+            if (line.contains("{") && !line.endsWith("}") || line.startsWith(" ")) {
+                String completeField = parseMultiLineFieldValue(line);
+                if (completeField != null) {
+                    writeParagraphAndSetMetadata(completeField, metadata);
+                }
+            } else {
+                writeParagraphAndSetMetadata(line, metadata);
           }
-      }
+        }
     }
 
     /*
-     * Simple write a line to the XHTMLContentHandler
+     * Write a line to the XHTMLContentHandler and populate the key, value into the Metadata
      */
-    private void writeParagraph(String line) throws SAXException {
+    private void writeParagraphAndSetMetadata(String line, Metadata metadata) throws SAXException {
+        if(line.length() < 150) {
+            String[] keyValue = line.split("=");
+            if(keyValue.length != 1) {
+                metadata.set(keyValue[0].trim().replace(" ", "-"), keyValue[1].trim());
+            }
+        }
         xhtml.startElement("p");
         xhtml.characters(line);
         xhtml.endElement("p");
