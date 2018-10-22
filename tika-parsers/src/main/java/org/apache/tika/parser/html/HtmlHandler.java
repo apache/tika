@@ -179,7 +179,11 @@ class HtmlHandler extends TextContentHandler {
         title.setLength(0);
         String value = atts.getValue("src");
         if (value != null && value.startsWith("data:")) {
-            handleDataURIScheme(value);
+            //don't extract data if we're in a script
+            //and the user doesn't want to extract scripts
+            if ( scriptLevel == 0 || extractScripts) {
+                handleDataURIScheme(value);
+            }
         }
     }
 
