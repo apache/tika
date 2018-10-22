@@ -31,22 +31,28 @@ import org.xml.sax.ContentHandler;
 public class FeedParserTest {
     @Test
     public void testRSSParser() throws Exception {
-        try (InputStream input = FeedParserTest.class.getResourceAsStream(
-                "/test-documents/rsstest.rss")) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-
-            new FeedParser().parse(input, handler, metadata, context);
-
-            String content = handler.toString();
-            assertFalse(content == null);
-
-            assertEquals("Sample RSS File for Junit test",
-                    metadata.get(TikaCoreProperties.DESCRIPTION));
-            assertEquals("TestChannel", metadata.get(TikaCoreProperties.TITLE));
-
-            // TODO find a way of testing the paragraphs and anchors
+        // These RSS files should have basically the same contents,
+        //  represented in the various RSS format versions
+        for (String rssFile : new String[] {
+                "/test-documents/rsstest_091.rss",
+                "/test-documents/rsstest_20.rss"
+        }) {
+            try (InputStream input = FeedParserTest.class.getResourceAsStream(rssFile)) {
+                Metadata metadata = new Metadata();
+                ContentHandler handler = new BodyContentHandler();
+                ParseContext context = new ParseContext();
+    
+                new FeedParser().parse(input, handler, metadata, context);
+    
+                String content = handler.toString();
+                assertFalse(content == null);
+    
+                assertEquals("Sample RSS File for Junit test",
+                        metadata.get(TikaCoreProperties.DESCRIPTION));
+                assertEquals("TestChannel", metadata.get(TikaCoreProperties.TITLE));
+    
+                // TODO find a way of testing the paragraphs and anchors
+            }
         }
     }
 

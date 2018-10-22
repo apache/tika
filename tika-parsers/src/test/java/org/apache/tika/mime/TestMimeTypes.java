@@ -386,10 +386,13 @@ public class TestMimeTypes {
     
     @Test
     public void testFeedsDetection() throws Exception {
-        assertType("application/rss+xml",  "rsstest.rss");
+        assertType("application/rss+xml",  "rsstest_091.rss");
+        assertType("application/rss+xml",  "rsstest_20.rss");
         assertType("application/atom+xml", "testATOM.atom");
-        assertTypeByData("application/rss+xml",  "rsstest.rss");
-        assertTypeByName("application/rss+xml",  "rsstest.rss");
+        assertTypeByData("application/rss+xml",  "rsstest_091.rss");
+        assertTypeByName("application/rss+xml",  "rsstest_091.rss");
+        assertTypeByData("application/rss+xml",  "rsstest_20.rss");
+        assertTypeByName("application/rss+xml",  "rsstest_20.rss");
         assertTypeByData("application/atom+xml", "testATOM.atom");
         assertTypeByName("application/atom+xml", "testATOM.atom");
     }
