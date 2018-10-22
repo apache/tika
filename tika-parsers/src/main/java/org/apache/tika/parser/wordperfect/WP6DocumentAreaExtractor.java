@@ -30,8 +30,11 @@ import org.xml.sax.SAXException;
  * @author Pascal Essiembre
  */
 class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
-
-    /* 240-254 characters represent fixed-length multi-byte functions.  
+    private static final byte START_UNDO = 0;
+    private static final byte END_UNDO = 1;
+    private static final byte START_INSERT = 3;
+    private static final byte END_INSERT = 4;
+    /* 240-254 characters represent fixed-length multi-byte functions.
      * Those that are not handled explicitely in the code below should be
      * skipped according to their size (minus the first char if already read).
      */
@@ -52,11 +55,39 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
         252, 6,  // (Reserved)
         253, 8,  // (Reserved)
         254, 8,  // (Reserved)
-    });    
-    
+    });
+    private boolean includeDeletedContent = true;
+    private boolean inUndo = false;
+
+    public WP6DocumentAreaExtractor(boolean includeDeletedContent) {
+        super();
+        this.includeDeletedContent = includeDeletedContent;
+    }
+
     protected void extract(int c, WPInputStream in, StringBuilder out, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
-        if (c > 0 && c <= 32) {
+        //special handling for undo must come first
+
+        if (!includeDeletedContent) {
+            if (inUndo && c != 241) {
+                return;
+            }
+        }
+        //241 is the fixed length multi-byte marker for
+        //undo/insert.  The second byte determines
+        //what type of undo this is.  I don't understand
+        //what the third byte signifies.
+        if (c == 241) {
+            byte b = in.readWPByte();
+            if (b == START_UNDO) {
+                inUndo = true;
+            } else if (b == END_UNDO) {
+                inUndo = false;
+            }
+            // removing 2 from function length since first two chars already read
+            in.skipWPByte(FIXED_LENGTH_FUNCTION_SIZES.get(c) - 2);
+
+        } else if (c > 0 && c <= 32) {
             out.append(WP6Charsets.DEFAULT_EXTENDED_INTL_CHARS[c]);
         } else if (c >= 33 && c <= 126) {
             out.append((char) c);
@@ -64,7 +95,7 @@ class WP6DocumentAreaExtractor extends WPDocumentAreaExtractor {
             out.append(' ');      // Soft space
         } else if (c == 129) {
             out.append('\u00A0'); // Hard space
-        } else if (c == 129) {
+        } else if (c == 132) {
             out.append('-');      // Hard hyphen
         } else if (c == 135 || c == 137) {
             endParagraph(out, xhtml); // Dormant Hard return
