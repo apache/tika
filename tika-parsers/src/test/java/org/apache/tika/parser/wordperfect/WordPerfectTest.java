@@ -17,10 +17,15 @@
 package org.apache.tika.parser.wordperfect;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.Parser;
 import org.junit.Test;
+
+import java.io.InputStream;
 
 /**
  * Junit test class for the {@link WordPerfectParser}.
@@ -35,6 +40,7 @@ public class WordPerfectTest extends TikaTest {
                 r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("<p>AND FURTHER</p>", r.xml);
+        assertContains("test1-2", r.xml);
     }
 
     @Test
@@ -56,5 +62,21 @@ public class WordPerfectTest extends TikaTest {
         assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
         assertContains("<p>STUDY RESULTS: Existing condition", r.xml);
         assertContains("Seattle nonstop flights.</p>", r.xml);
+    }
+
+    @Test
+    public void testDeletedText() throws Exception {
+        String xml = getXML("testWordPerfect.wpd").xml;
+        assertContains("this was deleted.", xml);
+
+
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/wordperfect/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+
+        Parser p = tikaConfig.getParser();
+
+        xml = getXML("testWordPerfect.wpd", p).xml;
+        assertNotContained("this was deleted", xml);
     }
 }
