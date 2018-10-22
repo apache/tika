@@ -65,48 +65,70 @@ public class Mp3Parser extends AbstractParser {
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
 
         // Create handlers for the various kinds of ID3 tags
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
 
+        //process as much metadata as possible before
+        //writing to xhtml
+        if (audioAndTags.duration > 0) {
+            metadata.set(XMPDM.DURATION, audioAndTags.duration);
+        }
+
+        if (audioAndTags.audio != null) {
+            metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
+            metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
+            metadata.set("version", audioAndTags.audio.getVersion());
+
+            metadata.set(
+                    XMPDM.AUDIO_SAMPLE_RATE,
+                    Integer.toString(audioAndTags.audio.getSampleRate()));
+            if(audioAndTags.audio.getChannels() == 1) {
+                metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
+            } else if(audioAndTags.audio.getChannels() == 2) {
+                metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Stereo");
+            } else if(audioAndTags.audio.getChannels() == 5) {
+                metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "5.1");
+            } else if(audioAndTags.audio.getChannels() == 7) {
+                metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "7.1");
+            }
+        }
+
+        xhtml.startDocument();
         // Process tags metadata if the file has supported tags
+        List<String> comments = new ArrayList<>();
         if (audioAndTags.tags.length > 0) {
-           CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
+            CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
 
-           metadata.set(TikaCoreProperties.TITLE, tag.getTitle());
-           metadata.set(TikaCoreProperties.CREATOR, tag.getArtist());
-           metadata.set(XMPDM.ARTIST, tag.getArtist());
-           metadata.set(XMPDM.ALBUM_ARTIST, tag.getAlbumArtist());
-           metadata.set(XMPDM.COMPOSER, tag.getComposer());
-           metadata.set(XMPDM.ALBUM, tag.getAlbum());
-           metadata.set(XMPDM.COMPILATION, tag.getCompilation());
-           metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
-           metadata.set(XMPDM.GENRE, tag.getGenre());
+            metadata.set(TikaCoreProperties.TITLE, tag.getTitle());
+            metadata.set(TikaCoreProperties.CREATOR, tag.getArtist());
+            metadata.set(XMPDM.ARTIST, tag.getArtist());
+            metadata.set(XMPDM.ALBUM_ARTIST, tag.getAlbumArtist());
+            metadata.set(XMPDM.COMPOSER, tag.getComposer());
+            metadata.set(XMPDM.ALBUM, tag.getAlbum());
+            metadata.set(XMPDM.COMPILATION, tag.getCompilation());
+            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
+            metadata.set(XMPDM.GENRE, tag.getGenre());
 
-           List<String> comments = new ArrayList<String>();
-           for (ID3Comment comment : tag.getComments()) {
-              StringBuffer cmt = new StringBuffer();
-              if (comment.getLanguage() != null) {
-                 cmt.append(comment.getLanguage());
-                 cmt.append(" - ");
-              }
-              if (comment.getDescription() != null) {
-                 cmt.append(comment.getDescription());
-                 if (comment.getText() != null) {
-                    cmt.append("\n");
-                 }
-              }
-              if (comment.getText() != null) {
-                 cmt.append(comment.getText());
-              }
-              
-              comments.add(cmt.toString());
-              metadata.add(XMPDM.LOG_COMMENT.getName(), cmt.toString());
-           }
+            for (ID3Comment comment : tag.getComments()) {
+                StringBuffer cmt = new StringBuffer();
+                if (comment.getLanguage() != null) {
+                    cmt.append(comment.getLanguage());
+                    cmt.append(" - ");
+                }
+                if (comment.getDescription() != null) {
+                    cmt.append(comment.getDescription());
+                    if (comment.getText() != null) {
+                        cmt.append("\n");
+                    }
+                }
+                if (comment.getText() != null) {
+                    cmt.append(comment.getText());
+                }
 
-           xhtml.element("h1", tag.getTitle());
-           xhtml.element("p", tag.getArtist());
+                comments.add(cmt.toString());
+                metadata.add(XMPDM.LOG_COMMENT.getName(), cmt.toString());
+            }
 
             // ID3v1.1 Track addition
             StringBuilder sb = new StringBuilder();
@@ -119,36 +141,21 @@ public class Mp3Parser extends AbstractParser {
                 sb.append(", disc ").append(tag.getDisc());
                 metadata.set(XMPDM.DISC_NUMBER, tag.getDisc());
             }
+
+            xhtml.element("h1", tag.getTitle());
+            xhtml.element("p", tag.getArtist());
+
+
             xhtml.element("p", sb.toString());
-            
+
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
-            xhtml.element("p", String.valueOf(audioAndTags.duration));
-            for (String comment : comments) {
-               xhtml.element("p", comment);
-            }
         }
-        if (audioAndTags.duration > 0) {
-            metadata.set(XMPDM.DURATION, audioAndTags.duration);
+        xhtml.element("p", String.valueOf(audioAndTags.duration));
+        for (String comment : comments) {
+            xhtml.element("p", comment);
         }
-        if (audioAndTags.audio != null) {
-            metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
-            metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
-            metadata.set("version", audioAndTags.audio.getVersion());
-            
-            metadata.set(
-                    XMPDM.AUDIO_SAMPLE_RATE,
-                    Integer.toString(audioAndTags.audio.getSampleRate()));
-            if(audioAndTags.audio.getChannels() == 1) {
-               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
-            } else if(audioAndTags.audio.getChannels() == 2) {
-               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Stereo");
-            } else if(audioAndTags.audio.getChannels() == 5) {
-               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "5.1");
-            } else if(audioAndTags.audio.getChannels() == 7) {
-               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "7.1");
-            }
-        }
+
         if (audioAndTags.lyrics != null && audioAndTags.lyrics.hasLyrics()) {
            xhtml.startElement("p", "class", "lyrics");
            xhtml.characters(audioAndTags.lyrics.lyricsText);
