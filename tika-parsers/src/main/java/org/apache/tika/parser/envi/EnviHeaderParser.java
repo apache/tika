@@ -119,7 +119,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         if(line.length() < 150) {
             String[] keyValue = line.split("=");
             if(keyValue.length != 1) {
-                metadata.set(keyValue[0].trim().replace(" ", "-"), keyValue[1].trim());
+                metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
             }
         }
         xhtml.startElement("p");

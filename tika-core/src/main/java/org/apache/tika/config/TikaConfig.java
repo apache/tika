@@ -17,7 +17,6 @@
 package org.apache.tika.config;
 
 import javax.imageio.spi.ServiceRegistry;
-import javax.xml.parsers.DocumentBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,7 +59,6 @@ import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
