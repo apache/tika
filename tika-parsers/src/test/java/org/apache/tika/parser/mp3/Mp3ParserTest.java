@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -35,7 +36,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Test case for parsing mp3 files.
  */
-public class Mp3ParserTest {
+public class Mp3ParserTest extends TikaTest {
 
     /**
      * Checks the duration of an MP3 file.
@@ -133,6 +134,19 @@ public class Mp3ParserTest {
         checkDuration(metadata, 2);
     }
 
+    /**
+     * Test that metadata is added before xhtml content
+     * is written...so that more metadata shows up in the xhtml
+     */
+    @Test
+    public void testAddingToMetadataBeforeWriting() throws Exception {
+        String content = getXML("testMP3id3v1.mp3").xml;
+        assertContains("<meta name=\"xmpDM:audioSampleRate\" content=\"44100\"",
+                content);
+        assertContains("<meta name=\"xmpDM:duration\" content=\"2455",
+                content);
+        assertContains("meta name=\"xmpDM:audioChannelType\" content=\"Mono\"", content);
+    }
     /**
      * Test that with both id3v2 and id3v1, we prefer the
      *  details from id3v2

@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -58,7 +59,10 @@ public class WordPerfectParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     WP_5_0, WP_5_1, WP_6_x)));
-    
+
+    @Field
+    private boolean includeDeletedContent = true;
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -144,9 +148,21 @@ public class WordPerfectParser extends AbstractParser {
     private WPDocumentAreaExtractor getDocumentAreaExtractor(
             WPPrefixArea prefixArea) {
         if (prefixArea.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
-            return new WP6DocumentAreaExtractor();
+            return new WP6DocumentAreaExtractor(includeDeletedContent);
         }
         // we can safely assume v5 as exception would have been thrown
         return new WP5DocumentAreaExtractor();
+    }
+
+    /**
+     * Whether or not to include deleted content.  This currently
+     * only works with WP6.
+     * The default is <code>true</code>
+     *
+     * @param includeDeletedContent
+     */
+    @Field
+    public void setIncludeDeletedContent(boolean includeDeletedContent) {
+        this.includeDeletedContent = includeDeletedContent;
     }
 }

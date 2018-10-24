@@ -70,6 +70,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
@@ -1437,6 +1438,28 @@ public class HtmlParserTest extends TikaTest {
 
         assertContains("This is a sample text",
                 getXML("testHTML_charset_utf16le.html").xml);
+
+    }
+
+    @Test
+    public void testSkippingDataURIInScriptNode() throws Exception {
+        //TIKA-2759 skip data: uri element if inside a script
+        //default behavior
+        List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html");
+        assertEquals(1, metadataList.size());
+        assertNotContained("alert( 'Hello, world!' );",
+                metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+
+        //make sure to include it if a user wants scripts to be extracted
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html", p);
+        assertEquals(2, metadataList.size());
+        assertContains("alert( 'Hello, world!' );",
+                metadataList.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+
 
     }
 }
