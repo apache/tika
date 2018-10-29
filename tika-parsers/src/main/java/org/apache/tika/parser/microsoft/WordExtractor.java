@@ -528,8 +528,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                     url = text.substring(start, end);
                 }
 
-                xhtml.startElement("a", "href", url);
                 closeStyleElements(skipStyling, xhtml);
+                xhtml.startElement("a", "href", url);
                 for (CharacterRun cr : texts) {
                     handleCharacterRun(cr, skipStyling, xhtml);
                 }
