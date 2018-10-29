@@ -561,6 +561,15 @@ public class WordParserTest extends TikaTest {
     }
 
     @Test
+    public void testHyperlinkSurroundedByItalics() throws Exception {
+        //TIKA-2599
+        String xml = getXML("testWORD_italicsSurroundingHyperlink.doc").xml;
+        xml = xml.replaceAll("\\s+", " ");
+        assertContains("<body><p><i>Italic Test before link </i><a href=\"http://www.google.com\"><b><i>" +
+                "<u>hyperlink italics</u></i></b></a><i> Italic text after hyperlink</i></p>", xml);
+    }
+
+    @Test
     public void testMacros() throws  Exception {
 
         //test default is "don't extract macros"
