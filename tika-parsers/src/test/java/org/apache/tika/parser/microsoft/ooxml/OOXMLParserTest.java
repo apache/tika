@@ -194,6 +194,70 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     @Test
+    public void testExcelFormatsWithFormatsDisabled() throws Exception {
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setExtractFormattedValues(false);
+        context.set(OfficeParserConfig.class, officeParserConfig);
+
+        try (InputStream input = getTestDocument("testEXCEL-formats.xlsx")) {
+            parser.parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            String content = handler.toString();
+
+            // Number #,##0.00
+            assertContains("Number #,##0.00\t1599.99\t-1599.99", content);
+
+            // Currency $#,##0.00;[Red]($#,##0.00)
+            assertContains("Currency $#,##0.00;[Red]($#,##0.00)\t1599.99\t-1599.99", content);
+
+            // Scientific 0.00E+00
+            // poi <=3.8beta1 returns 1.98E08, newer versions return 1.98+E08
+            assertTrue(
+                    content.contains("Scientific 0.00E+00\t1.98356388E8\t-1.98356388E8") ||
+                            content.contains("Scientific 0.00E+00\t1.98356388E+08\t-1.98356388E+08"));
+
+            // Percentage
+            assertContains("Percentage (0.025)\t0.025\t0.025", content);
+
+            // Time Format: h:mm
+            assertContains("Time Format: h:mm AM/PM\t33966.260424618056\t33966.760424803244", content);
+
+            // Time Format: h:mm
+            assertContains("Time Format: h:mm\t33966.260424803244\t33966.760424803244", content);
+
+            // Date Format: m-d-y
+            assertContains("Date Format: m/d/yy\t40089.84792480324", content);
+
+            // Date Format: d-mmm-yy
+            assertContains("Date Format: d-mmm-yy\t39219.84792480324", content);
+
+            // Date Format: d-mmm-yy
+            assertContains("Date/Time Format\t39466.190980358806", content);
+
+            // Currency $#,##0.00;[Red]($#,##0.00)
+            assertContains("Currency $#,##0.00;[Red]($#,##0.00)\t1599.99\t-1599.99", content);
+
+            // Fraction (2.5): # ?/?
+            assertContains("Fraction (2.5)\t2.5", content);
+
+            // Custom date
+            assertContains("Custom Date:\t39219.18056369212", content);
+
+            // Custom number
+            assertContains("Custom Number:\t19.99", content);
+
+        }
+    }
+
+    @Test
     @Ignore("OOXML-Strict not currently supported by POI, see #57699")
     public void testExcelStrict() throws Exception {
         Metadata metadata = new Metadata();

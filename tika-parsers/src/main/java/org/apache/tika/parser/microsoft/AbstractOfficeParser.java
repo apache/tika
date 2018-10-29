@@ -74,6 +74,14 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         return defaultOfficeParserConfig.getExtractMacros();
     }
 
+    /**
+     * @see OfficeParserConfig#getExtractFormattedValues()
+     * @return whether or not to extract values according to their format or raw
+     */
+    public boolean getExtractFormattedValues() {
+        return defaultOfficeParserConfig.getExtractFormattedValues();
+    }
+
     @Field
     public void setIncludeDeletedContent(boolean includeDeletedConent) {
         defaultOfficeParserConfig.setIncludeDeletedContent(includeDeletedConent);
@@ -102,6 +110,11 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     @Field
     public void setExtractMacros(boolean extractMacros) {
         defaultOfficeParserConfig.setExtractMacros(extractMacros);
+    }
+
+    @Field
+    public void setExtractFormattedNumbers(boolean extractFormattedNumbers) {
+        defaultOfficeParserConfig.setExtractFormattedValues(extractFormattedNumbers);
     }
 
     @Field

@@ -16,17 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.awt.Point;
-import java.io.IOException;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
-
 import org.apache.poi.ddf.EscherBSERecord;
 import org.apache.poi.ddf.EscherBlipRecord;
 import org.apache.poi.ddf.EscherRecord;
@@ -35,36 +24,12 @@ import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
 import org.apache.poi.hssf.extractor.OldExcelExtractor;
-import org.apache.poi.hssf.record.BOFRecord;
-import org.apache.poi.hssf.record.BoundSheetRecord;
-import org.apache.poi.hssf.record.CellValueRecordInterface;
-import org.apache.poi.hssf.record.CountryRecord;
-import org.apache.poi.hssf.record.DateWindow1904Record;
-import org.apache.poi.hssf.record.DrawingGroupRecord;
-import org.apache.poi.hssf.record.EOFRecord;
-import org.apache.poi.hssf.record.ExtendedFormatRecord;
-import org.apache.poi.hssf.record.FooterRecord;
-import org.apache.poi.hssf.record.FormatRecord;
-import org.apache.poi.hssf.record.FormulaRecord;
-import org.apache.poi.hssf.record.HeaderRecord;
-import org.apache.poi.hssf.record.HyperlinkRecord;
-import org.apache.poi.hssf.record.LabelRecord;
-import org.apache.poi.hssf.record.LabelSSTRecord;
-import org.apache.poi.hssf.record.NumberRecord;
-import org.apache.poi.hssf.record.RKRecord;
-import org.apache.poi.hssf.record.Record;
-import org.apache.poi.hssf.record.SSTRecord;
-import org.apache.poi.hssf.record.StringRecord;
-import org.apache.poi.hssf.record.TextObjectRecord;
+import org.apache.poi.hssf.record.*;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
 import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
 import org.apache.poi.hssf.usermodel.HSSFPictureData;
-import org.apache.poi.poifs.filesystem.DirectoryEntry;
-import org.apache.poi.poifs.filesystem.DirectoryNode;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
-import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.*;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -72,6 +37,12 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import java.awt.*;
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.*;
+import java.util.List;
 
 /**
  * Excel parser implementation which uses POI's Event API
@@ -259,8 +230,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.handler = handler;
             this.extractor = extractor;
             this.format = NumberFormat.getInstance(locale);
-            this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
-            this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
+            this.formatListener = new TikaFormatTrackingHSSFListener(this, locale, officeParserConfig.getExtractFormattedValues());
+            this.tikaExcelDataFormatter = new TikaExcelDataFormatter(officeParserConfig, locale);
             this.officeParserConfig = officeParserConfig;
         }
 
@@ -435,7 +406,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                                 && unicode.getExtendedRst().getPhoneticText() != null
                                 && unicode.getExtendedRst().getPhoneticText().trim().length() > 0) ?
                                 unicode.getExtendedRst().getPhoneticText() : "";
-                        cellString = unicode.getString()+" "+phonetic;
+                        cellString = unicode.getString() + " " + phonetic;
                     } else {
                         cellString = unicode.getString();
                     }
@@ -486,14 +457,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     //  the continue records are in
                     drawingGroups.add((DrawingGroupRecord) record);
                     break;
-                    
+
                 case HeaderRecord.sid:
-                	if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                    if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
                         HeaderRecord headerRecord = (HeaderRecord) record;
                         addTextCell(record, headerRecord.getText());
                     }
                     break;
-                	
+
                 case FooterRecord.sid:
                     if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
                         FooterRecord footerRecord = (FooterRecord) record;
@@ -605,7 +576,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         handler.startElement("td");
                         currentRow++;
                     } while (officeParserConfig.getIncludeMissingRows() &&
-                             currentRow < entry.getKey().y);
+                            currentRow < entry.getKey().y);
                     currentRow = entry.getKey().y;
                     currentColumn = 0;
                 }
@@ -651,13 +622,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 findPictures(escherRecord.getChildRecords());
             }
         }
+
         private class TikaFormatTrackingHSSFListener extends FormatTrackingHSSFListener {
             //TIKA-2025 -- use this to preserve large numbers in "General" format
             //against the MS spec.
             final TikaExcelGeneralFormat generalFormat;
-            public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale) {
+            final boolean extractFormattedValues;
+
+            public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale, boolean extractFormattedValues) {
                 super(childListener, locale);
                 generalFormat = new TikaExcelGeneralFormat(locale);
+                this.extractFormattedValues = extractFormattedValues;
             }
 
             @Override
@@ -669,21 +644,24 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             @Override
             public String formatNumberDateCell(CellValueRecordInterface cell) {
                 String formatString = this.getFormatString(cell);
-                if (formatString != null && ! formatString.equals("General")) {
+                if (extractFormattedValues && formatString != null && !formatString.equals("General")) {
                     return super.formatNumberDateCell(cell);
                 }
 
                 double value;
-                if(cell instanceof NumberRecord) {
-                    value = ((NumberRecord)cell).getValue();
+                if (cell instanceof NumberRecord) {
+                    value = ((NumberRecord) cell).getValue();
                 } else {
-                    if(!(cell instanceof FormulaRecord)) {
+                    if (!(cell instanceof FormulaRecord)) {
                         throw new IllegalArgumentException("Unsupported CellValue Record passed in " + cell);
                     }
 
-                    value = ((FormulaRecord)cell).getValue();
+                    value = ((FormulaRecord) cell).getValue();
                 }
-                return generalFormat.format(value);
+                if(extractFormattedValues) {
+                    return generalFormat.format(value);
+                }
+                return String.valueOf(value);
             }
         }
     }
