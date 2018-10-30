@@ -285,9 +285,6 @@ public class ImageMetadataExtractor {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
                     String name = tag.getTagName();
-                    if (directory instanceof ExifDirectoryBase) {
-
-                    }
                     if (!MetadataFields.isMetadataField(name) && tag.getDescription() != null) {
                         String value = tag.getDescription().trim();
                         if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
