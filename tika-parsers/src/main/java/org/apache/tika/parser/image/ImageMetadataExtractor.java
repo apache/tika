@@ -41,6 +41,7 @@ import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
+import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
@@ -259,7 +260,11 @@ public class ImageMetadataExtractor {
                 throws MetadataException {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
-                    metadata.set(tag.getTagName(), tag.getDescription());
+                    if (directory instanceof ExifDirectoryBase) {
+                        metadata.set(directory.getName() + ":" + tag.getTagName(), tag.getDescription());
+                    } else {
+                        metadata.set(tag.getTagName(), tag.getDescription());
+                    }
                 }
             }
         }
@@ -280,6 +285,9 @@ public class ImageMetadataExtractor {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
                     String name = tag.getTagName();
+                    if (directory instanceof ExifDirectoryBase) {
+
+                    }
                     if (!MetadataFields.isMetadataField(name) && tag.getDescription() != null) {
                         String value = tag.getDescription().trim();
                         if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
@@ -287,7 +295,11 @@ public class ImageMetadataExtractor {
                         } else if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
                             value = Boolean.FALSE.toString();
                         }
-                        metadata.set(name, value);
+                        if (directory instanceof ExifDirectoryBase) {
+                            metadata.set(directory.getName() + ":" + name, value);
+                        } else {
+                            metadata.set(name, value);
+                        }
                     }
                 }
             }
@@ -494,6 +506,17 @@ public class ImageMetadataExtractor {
                 metadata.set(Metadata.IMAGE_LENGTH,
                         trimPixels(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)));
             }
+
+            // For Compressed Images read from ExifSubIFDDirectory
+            if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)) {
+                metadata.set(Metadata.IMAGE_WIDTH,
+                        trimPixels(directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)));
+            }
+            if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)) {
+                metadata.set(Metadata.IMAGE_LENGTH,
+                        trimPixels(directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT)));
+            }
+
         }
 
         /**
