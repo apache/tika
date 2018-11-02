@@ -40,12 +40,8 @@ public class CompressParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = TarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tar.Z");
-        try {
+        try (InputStream stream = TarParserTest.class.getResourceAsStream("/test-documents/test-documents.tar.Z")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-compress", metadata.get(Metadata.CONTENT_TYPE));
@@ -80,12 +76,8 @@ public class CompressParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.tar.Z");
-       try {
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream("/test-documents/test-documents.tar.Z")) {
            parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
        }
        
        // Should find a single entry, for the (compressed) tar file

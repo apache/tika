@@ -117,9 +117,8 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testAssembly2014SP0Parser() throws Exception {
-        InputStream input = SolidworksParserTest.class.getResourceAsStream(
-                "/test-documents/testsolidworksAssembly2014SP0.SLDASM");
-        try {
+        try (InputStream input = SolidworksParserTest.class
+                .getResourceAsStream("/test-documents/testsolidworksAssembly2014SP0.SLDASM")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -137,8 +136,6 @@ public class SolidworksParserTest extends TikaTest {
             assertEquals(null, metadata.get(TikaCoreProperties.SOURCE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("", metadata.get(TikaCoreProperties.SUBJECT));
-        } finally {
-            input.close();
         }    	
     }
 

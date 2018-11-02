@@ -63,11 +63,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testForkedTextParsing() throws Exception {
-        ForkParser parser = new ForkParser(
-                ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser());
-
-       try {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
           ContentHandler output = new BodyContentHandler();
           InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
                   "/test-documents/testTXT.txt");
@@ -77,8 +73,6 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
           String content = output.toString();
           assertContains("Test d'indexation", content);
           assertContains("http://www.apache.org", content);
-       } finally {
-          parser.close();
        }
     }
    
@@ -257,10 +251,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
      */
     @Test
     public void testForkedPDFParsing() throws Exception {
-        ForkParser parser = new ForkParser(
-                ForkParserIntegrationTest.class.getClassLoader(),
-                tika.getParser());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
                     "/test-documents/testPDF.pdf");
@@ -273,24 +264,18 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             assertContains("Tika - Content Analysis Toolkit", content);
             assertContains("incubator", content);
             assertContains("Apache Software Foundation", content);
-        } finally {
-            parser.close();
         }
     }
 
     @Test
     public void testForkedPackageParsing() throws Exception {
-        ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(),
-            tika.getParser());
-        try {
+        try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
                 "/test-documents/moby.zip");
             ParseContext context = new ParseContext();
             parser.parse(stream, output, new Metadata(), context);
             assertContains("Moby Dick", output.toString());
-        } finally {
-            parser.close();
         }
     }
 
