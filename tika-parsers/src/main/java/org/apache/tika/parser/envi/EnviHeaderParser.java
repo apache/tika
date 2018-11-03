@@ -116,10 +116,10 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
      * Write a line to the XHTMLContentHandler and populate the key, value into the Metadata
      */
     private void writeParagraphAndSetMetadata(String line, Metadata metadata) throws SAXException {
-        if(line.length() < 150) {
+        if(line.length() < 300) {
             String[] keyValue = line.split("=");
             if(keyValue.length != 1) {
-                if (keyValue[0].equals("map info")) {
+                if (keyValue[0].trim().equals("map info")) {
                     StringBuilder mapInfoValueStringBuilder = new StringBuilder();
                     String mapInfoValue = keyValue[1];
                     for (int i = 0; i < keyValue[1].length(); ++i) {
@@ -128,7 +128,12 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                         }
                     }
                     String[] mapInfoValues = mapInfoValueStringBuilder.toString().split(",");
-                    convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
+                    metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                    String [] latLonStringArray = convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
+                    String xhtmlLatLongLine = "lat/lon = { " + latLonStringArray[0] + ", " + latLonStringArray[1] + " }";
+                    xhtml.startElement("p");
+                    xhtml.characters(xhtmlLatLongLine);
+                    xhtml.endElement("p");
                 } else {
                     metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
                 }
@@ -140,11 +145,15 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     }
 
     // Conversion logic taken from https://stackoverflow.com/questions/343865/how-to-convert-from-utm-to-latlng-in-python-or-javascript/344083#344083
-    private void convertMapInfoValuesToLatLngAndSetMetadata(String[] mapInfoValues, Metadata metadata) {
+    private String [] convertMapInfoValuesToLatLngAndSetMetadata(String[] mapInfoValues, Metadata metadata) {
         // Based on the map info data, pixelEasting is at index 3 and pixelNorthing is at index 4
-        double pixelEasting = Double.valueOf(mapInfoValues[3]);
-        double pixelNorthing = Double.valueOf(mapInfoValues[4]);
-        int zone = Integer.parseInt(mapInfoValues[7]);
+        double pixelEasting = Double.valueOf(mapInfoValues[3].trim());
+        double pixelNorthing = Double.valueOf(mapInfoValues[4].trim());
+        int zone = 0;
+        if(!mapInfoValues[7].trim().isEmpty()){
+            zone = Integer.parseInt(mapInfoValues[7].trim());
+        }
+
         double a = 6378137.0;
         double e = 0.0818191910;
         double e1sq = 0.006739497;
@@ -182,7 +191,9 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         double zoneCM = (zone > 0) ? 6 * zone - 183.0 : 3.0;
         double latitude = 180.0 * (phi1 - fact1 * (fact2 + fact3 + fact4)) / Math.PI;
         double longitude = zoneCM - _a3;
-        metadata.set("envi.lat/lng" , latitude+","+longitude);
+        metadata.set("envi.lat/lon" , latitude + ", " + longitude);
+
+        return new String [] {Double.toString(latitude), Double.toString(longitude)};
     }
 
     /*
