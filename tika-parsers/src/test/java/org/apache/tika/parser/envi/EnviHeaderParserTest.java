@@ -73,25 +73,6 @@ public class EnviHeaderParserTest {
     }
 
     @Test
-    public void testParseGlobalMetadataToConvertMapInfo() throws Exception {
-
-        try (InputStream stream = EnviHeaderParser.class.getResourceAsStream(
-                "/test-documents/envi_test_header.hdr")) {
-            assertNotNull("Test ENVI file 'envi_test_header.hdr' not found", stream);
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-
-        // Check content of test file
-        String content = handler.toString();
-        assertContains("<body><p>ENVI</p>", content);
-        assertContains("<p>samples = 2400</p>", content);
-        assertContains("<p>lines   = 2400</p>", content);
-        assertContains("<p>map info = {Sinusoidal, 1.5000, 1.5000, -10007091.3643, 5559289.2856, 4.6331271653e+02, 4.6331271653e+02, , units=Meters}</p>", content);
-        assertContains("content=\"application/envi.hdr\"", content);
-        assertContains("projection info = {16, 6371007.2, 0.000000, 0.0, 0.0, Sinusoidal, units=Meters}", content);
-    }
-
-    @Test
     public void testParseGlobalMetadataMultiLineMetadataValues() throws Exception {
 
         Parser parser = new EnviHeaderParser();
