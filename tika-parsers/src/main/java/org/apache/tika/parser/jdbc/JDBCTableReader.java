@@ -62,10 +62,11 @@ class JDBCTableReader {
     ResultSet results = null;
     int rows = 0;
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
-    public JDBCTableReader(Connection connection, String tableName, ParseContext context) {
+    public JDBCTableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil) {
+        System.out.println("new table: "+tableName);
         this.connection = connection;
         this.tableName = tableName;
-        embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        this.embeddedDocumentUtil = embeddedDocumentUtil;
     }
 
     public boolean nextRow(ContentHandler handler, ParseContext context) throws IOException, SAXException {

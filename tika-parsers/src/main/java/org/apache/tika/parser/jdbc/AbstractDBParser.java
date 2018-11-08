@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOExceptionWithCause;
+import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -54,6 +56,7 @@ abstract class AbstractDBParser extends AbstractParser {
         connection = getConnection(stream, metadata, context);
         XHTMLContentHandler xHandler = null;
         List<String> tableNames = null;
+        EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         try {
             tableNames = getTableNames(connection, metadata, context);
         } catch (SQLException e) {
@@ -62,6 +65,11 @@ abstract class AbstractDBParser extends AbstractParser {
             } catch (SQLException sqlE) {
                 //swallow
             }
+            if (e.getClass().toString().contains("SQLiteException") && e.getMessage() != null
+                && (e.getMessage().contains("[SQLITE_ERROR]") || e.getMessage().contains("[SQLITE_CORRUPT]"))) {
+                throw new CorruptedFileException("Corrupt SQLITE", e);
+            }
+
             throw new IOExceptionWithCause(e);
         }
         for (String tableName : tableNames) {
@@ -73,7 +81,7 @@ abstract class AbstractDBParser extends AbstractParser {
 
         try {
             for (String tableName : tableNames) {
-                JDBCTableReader tableReader = getTableReader(connection, tableName, context);
+                JDBCTableReader tableReader = getTableReader(connection, tableName, embeddedDocumentUtil);
                 xHandler.startElement("table", "name", tableReader.getTableName());
                 xHandler.startElement("thead");
                 xHandler.startElement("tr");
@@ -180,8 +188,22 @@ abstract class AbstractDBParser extends AbstractParser {
      *
      * @param connection
      * @param tableName
+     * @return a reader
+     * @deprecated use {@link #getTableReader(Connection, String, EmbeddedDocumentUtil)}
+     */
+    @Deprecated
+    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext parseContext);
+
+    /**
+     * Given a connection and a table name, return the JDBCTableReader for this db.
+     *
+     * @param connection
+     * @param tableName
+     * @param embeddedDocumentUtil embedded doc util
      * @return
      */
-    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext parseContext);
+    abstract protected JDBCTableReader getTableReader(Connection connection,
+                                                      String tableName,
+                                                      EmbeddedDocumentUtil embeddedDocumentUtil);
 
 }
