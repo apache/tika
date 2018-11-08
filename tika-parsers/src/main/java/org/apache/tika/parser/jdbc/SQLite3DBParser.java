@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOExceptionWithCause;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -130,6 +131,11 @@ class SQLite3DBParser extends AbstractDBParser {
 
     @Override
     public JDBCTableReader getTableReader(Connection connection, String tableName, ParseContext context) {
-        return new SQLite3TableReader(connection, tableName, context);
+        return new SQLite3TableReader(connection, tableName, new EmbeddedDocumentUtil(context));
+    }
+
+    @Override
+    protected JDBCTableReader getTableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil) {
+        return new SQLite3TableReader(connection, tableName, embeddedDocumentUtil);
     }
 }

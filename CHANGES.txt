@@ -1,5 +1,10 @@
 Release 1.20 - ???
 
+
+   * Upgrade sqlite "provided" dependency to 3.25.2 (TIKA-2773).
+
+   * Remove duplication of notes in PPT slides (TIKA-2735)
+
    * Use -javaHome or $JAVA_HOME (if they exist) when
      spawning child in tika-server's -spawnChild mode.
 

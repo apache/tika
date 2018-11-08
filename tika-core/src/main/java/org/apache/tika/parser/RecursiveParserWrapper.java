@@ -17,6 +17,7 @@ package org.apache.tika.parser;
  * limitations under the License.
  */
 
+import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.metadata.Metadata;
@@ -147,7 +148,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
      * @param wrappedParser parser to wrap
      * @param catchEmbeddedExceptions whether or not to catch+record embedded exceptions.
      *                                If set to <code>false</code>, embedded exceptions will be thrown and
-     *                                the rest of the file will not be parsed
+     *                                the rest of the file will not be parsed. The following will not be ignored:
+     *                                  {@link CorruptedFileException}, {@link RuntimeException}
      */
     public RecursiveParserWrapper(Parser wrappedParser, boolean catchEmbeddedExceptions) {
         super(wrappedParser);
@@ -378,6 +380,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
                         throw e;
                     }
                 }
+            } catch(CorruptedFileException e) {
+                throw e;
             } catch (TikaException e) {
                 if (catchEmbeddedExceptions) {
                     ParserUtils.recordParserFailure(this, e, metadata);
