@@ -16,10 +16,6 @@
  */
 package org.apache.tika.parser.crypto;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Set;
-
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -37,12 +33,18 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Set;
+
 /**
  * Basic parser for PKCS7 data.
  */
 public class Pkcs7Parser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -7310531559075115044L;
 
     private static final MediaType PKCS7_MIME =
@@ -62,22 +64,32 @@ public class Pkcs7Parser extends AbstractParser {
         try {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
-            try (CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider,
-                    new CloseShieldInputStream(stream))) {
-                CMSTypedStream content = parser.getSignedContent();
-                if (content == null) {
-                    throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
-                }
-                try (InputStream input = content.getContentStream()) {
-                    Parser delegate =
-                            context.get(Parser.class, EmptyParser.INSTANCE);
-                    delegate.parse(input, handler, metadata, context);
+            CMSSignedDataParser parser = null;
+            CMSTypedStream content = null;
+            try {
+                parser = new CMSSignedDataParser(digestCalculatorProvider,
+                        new CloseShieldInputStream(stream));
+                content = parser.getSignedContent();
+            } catch (CMSException e) {
+                throw new TikaException("Unable to parse pkcs7 signed data", e);
+
+            } finally {
+                if (parser != null) {
+                    parser.close();
                 }
             }
+
+            if (content == null) {
+                throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
+            }
+            try (InputStream input = content.getContentStream()) {
+                Parser delegate =
+                        context.get(Parser.class, EmptyParser.INSTANCE);
+                delegate.parse(input, handler, metadata, context);
+            }
+
         } catch (OperatorCreationException e) {
             throw new TikaException("Unable to create DigestCalculatorProvider", e);
-        } catch (CMSException e) {
-            throw new TikaException("Unable to parse pkcs7 signed data", e);
         }
     }
 

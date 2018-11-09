@@ -16,6 +16,7 @@
  */
 package org.apache.tika.fork;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -40,7 +41,7 @@ import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class ForkParser extends AbstractParser {
+public class ForkParser extends AbstractParser implements Closeable {
 
     /** Serial version UID */
     private static final long serialVersionUID = -4962742892274663950L;

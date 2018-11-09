@@ -239,6 +239,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes />
         </configuration>

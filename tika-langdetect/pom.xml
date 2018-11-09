@@ -105,6 +105,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -123,6 +124,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/langdetect/*</exclude>
@@ -166,7 +168,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-scr-plugin</artifactId>
-                    <versionRange>[1.7.2,)</versionRange>
+                    <version>${maven.scr.version}</version>
                     <goals>
                       <goal>scr</goal>
                     </goals>
