@@ -62,25 +62,32 @@ public class Pkcs7Parser extends AbstractParser {
         try {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
-            CMSSignedDataParser parser =
-                    new CMSSignedDataParser(digestCalculatorProvider, new CloseShieldInputStream(stream));
+            CMSSignedDataParser parser = null;
+            CMSTypedStream content = null;
             try {
-                CMSTypedStream content = parser.getSignedContent();
-                if (content == null) {
-                    throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
-                }
-                try (InputStream input = content.getContentStream()) {
-                    Parser delegate =
-                            context.get(Parser.class, EmptyParser.INSTANCE);
-                    delegate.parse(input, handler, metadata, context);
-                }
+                parser = new CMSSignedDataParser(digestCalculatorProvider,
+                        new CloseShieldInputStream(stream));
+                content = parser.getSignedContent();
+            } catch (CMSException e) {
+                throw new TikaException("Unable to parse pkcs7 signed data", e);
+
             } finally {
-                parser.close();
+                if (parser != null) {
+                    parser.close();
+                }
             }
+
+            if (content == null) {
+                throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
+            }
+            try (InputStream input = content.getContentStream()) {
+                Parser delegate =
+                        context.get(Parser.class, EmptyParser.INSTANCE);
+                delegate.parse(input, handler, metadata, context);
+            }
+
         } catch (OperatorCreationException e) {
             throw new TikaException("Unable to create DigestCalculatorProvider", e);
-        } catch (CMSException e) {
-            throw new TikaException("Unable to parse pkcs7 signed data", e);
         }
     }
 

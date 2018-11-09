@@ -305,6 +305,18 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
+    <!-- plugin versions -->
+    <forbiddenapis.version>2.6</forbiddenapis.version>
+    <groovy.maven.version>2.1</groovy.maven.version>
+    <maven.antrun.version>1.8</maven.antrun.version>
+    <maven.assembly.version>3.1.0</maven.assembly.version>
+    <maven.bundle.version>4.1.0</maven.bundle.version>
+    <maven.failsafe.version>2.22.1</maven.failsafe.version>
+    <maven.javadoc.version>3.0.1</maven.javadoc.version>
+    <maven.scr.version>1.26.0</maven.scr.version>
+    <maven.surefire.version>2.22.1</maven.surefire.version>
+    <maven.shade.version>3.2.0</maven.shade.version>
+    <rat.version>0.12</rat.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <commons.compress.version>1.18</commons.compress.version>
     <commons.io.version>2.6</commons.io.version>
@@ -321,7 +333,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.2</version>
+        <version>3.8.0</version>
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
@@ -334,7 +346,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.5</version>
+        <version>2.7</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -342,7 +354,8 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <version>2.6</version>
+        <!-- if this version contains commons-io 2.6, remove hard-coded commons-io version below -->
+        <version>${forbiddenapis.version}</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
           <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
@@ -367,12 +380,12 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>${maven.bundle.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.18.1</version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
+        <version>${maven.surefire.version}</version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
           <argLine>-Xmx3072m -Duser.timezone=UTC</argLine>
         </configuration>
@@ -380,7 +393,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>${maven.shade.version}</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -397,13 +410,16 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.0.0-M1</version>
+        <version>3.0.0-M2</version>
         <executions>
           <execution>
             <id>enforce</id>
             <configuration>
               <rules>
-                <dependencyConvergence />
+                <dependencyConvergence/>
+                <requireMavenVersion>
+                  <version>3.5</version>
+                </requireMavenVersion>
               </rules>
             </configuration>
             <goals>
@@ -423,6 +439,7 @@
           <plugin>
             <groupId>org.apache.rat</groupId>
             <artifactId>apache-rat-plugin</artifactId>
+            <version>${rat.version}</version>
             <executions>
               <execution>
                 <phase>verify</phase>
@@ -461,8 +478,9 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven.javadoc.version}</version>
             <configuration>
-              <additionalparam>-Xdoclint:none</additionalparam>
+              <doclint>none</doclint>
             </configuration>
           </plugin>
         </plugins>

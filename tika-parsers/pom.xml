@@ -818,6 +818,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -836,6 +837,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
@@ -879,7 +881,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-scr-plugin</artifactId>
-                    <versionRange>[1.7.2,)</versionRange>
+                    <version>${maven.scr.version}</version>
                     <goals>
                       <goal>scr</goal>
                     </goals>
@@ -892,7 +894,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.codehaus.gmaven</groupId>
                     <artifactId>groovy-maven-plugin</artifactId>
-                    <versionRange>[2.0,)</versionRange>
+                    <version>${groovy.maven.version}</version>
                     <goals>
                       <goal>execute</goal>
                     </goals>
@@ -936,7 +938,7 @@
           <plugin>
             <groupId>org.codehaus.gmaven</groupId>
             <artifactId>groovy-maven-plugin</artifactId>
-            <version>2.0</version>
+            <version>${groovy.maven.version}</version>
             <dependencies>
               <dependency>
                 <groupId>org.apache.maven</groupId>

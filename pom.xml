@@ -38,11 +38,11 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
+    <module>tika-bundle</module>
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
     <module>tika-app</module>
-    <module>tika-bundle</module>
     <module>tika-server</module>
     <module>tika-translate</module>
     <module>tika-langdetect</module>
@@ -63,6 +63,7 @@
         <plugins>
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven.assembly.version}</version>
             <executions>
               <execution>
                 <id>src</id>
@@ -86,6 +87,7 @@
           </plugin>
           <plugin>
             <artifactId>maven-antrun-plugin</artifactId>
+            <version>${maven.antrun.version}</version>
             <executions>
               <execution>
                 <goals>
@@ -173,6 +175,7 @@ least three +1 Tika PMC votes are cast.
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>CHANGES.txt</exclude>

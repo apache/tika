@@ -41,7 +41,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <pax.exam.version>4.11.0</pax.exam.version>
+    <pax.exam.version>4.12.0</pax.exam.version>
   </properties>
 
   <dependencies>
@@ -140,6 +140,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -481,6 +482,7 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
+        <version>${forbiddenapis.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>
@@ -505,7 +507,7 @@
 
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.10</version>
+        <version>${maven.failsafe.version}</version>
         <executions>
           <execution>
             <goals>
@@ -525,6 +527,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/main/resources/META-INF/MANIFEST.MF</exclude>
