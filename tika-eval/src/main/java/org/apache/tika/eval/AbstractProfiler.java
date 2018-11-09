@@ -177,6 +177,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         super(fileQueue);
         this.writer = writer;
         langIder = new LanguageIDWrapper();
+        LanguageIDWrapper.setMaxTextLength(maxContentLengthForLangId);
         initAnalyzersAndTokenCounter(maxTokens);
     }
 
@@ -205,6 +206,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      */
     public void setMaxContentLengthForLangId(int maxContentLengthForLangId) {
         this.maxContentLengthForLangId = maxContentLengthForLangId;
+        LanguageIDWrapper.setMaxTextLength(maxContentLengthForLangId);
     }
 
     /**
