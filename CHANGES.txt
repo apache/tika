@@ -1,5 +1,6 @@
 Release 1.20 - ???
 
+   * Improve language id efficiency in tika-eval (TIKA-2777).
 
    * Upgrade sqlite "provided" dependency to 3.25.2 (TIKA-2773).
 
