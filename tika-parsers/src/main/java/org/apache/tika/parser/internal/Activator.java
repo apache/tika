@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.internal;
 
+import java.util.Hashtable;
 import java.util.Properties;
 
 import org.apache.tika.detect.DefaultDetector;
@@ -37,12 +38,12 @@ public class Activator implements BundleActivator {
         detectorService = context.registerService(
                 Detector.class.getName(),
                 new DefaultDetector(Activator.class.getClassLoader()),
-                new Properties());
+                new Hashtable<>());
         Parser parser = new DefaultParser(Activator.class.getClassLoader());
         parserService = context.registerService(
                 Parser.class.getName(),
                 parser,
-                new Properties());
+                new Hashtable<>());
     }
 
     @Override
