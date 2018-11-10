@@ -41,7 +41,8 @@ import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class ForkParser extends AbstractParser implements Closeable {
+public class ForkParser extends AbstractParser implements Closeable
+{
 
     /** Serial version UID */
     private static final long serialVersionUID = -4962742892274663950L;
