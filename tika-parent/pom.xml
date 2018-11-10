@@ -259,12 +259,12 @@
       <dependency>
         <groupId>biz.aQute</groupId>
         <artifactId>bndlib</artifactId>
-        <version>1.43.0</version>
+        <version>1.50.0</version>
       </dependency>
       <dependency>
         <groupId>org.apache.felix</groupId>
         <artifactId>org.apache.felix.scr.annotations</artifactId>
-        <version>1.6.0</version>
+        <version>1.12.0</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
@@ -322,11 +322,12 @@
     <commons.io.version>2.6</commons.io.version>
     <commons.lang3.version>3.8.1</commons.lang3.version>
     <gson.version>2.8.5</gson.version>
-    <cxf.version>3.2.6</cxf.version>
+    <osgi.core.version>6.0.0</osgi.core.version>
+    <cxf.version>3.2.7</cxf.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <jackson.version>2.9.6</jackson.version>
+    <jackson.version>2.9.7</jackson.version>
     <jaxb.version>2.3.0.1</jaxb.version>
-    <mockito.version>2.20.0</mockito.version>
+    <mockito.version>2.23.0</mockito.version>
   </properties>
 
   <build>

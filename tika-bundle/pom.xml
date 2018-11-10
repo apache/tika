@@ -41,7 +41,9 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <pax.exam.version>4.12.0</pax.exam.version>
+    <!-- some conflict with slf4j with 4.12.0
+        causes failure in testForkParser -->
+    <pax.exam.version>4.11.0</pax.exam.version>
   </properties>
 
   <dependencies>
@@ -123,7 +125,7 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>6.0.0</version>
+      <version>${osgi.core.version}</version>
       <scope>test</scope>
     </dependency>
 
