@@ -117,23 +117,20 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
      */
     private void writeParagraphAndSetMetadata(String line, Metadata metadata) throws SAXException {
         if(line.length() < 300) {
-            String[] keyValue = line.split("=");
+            String[] keyValue = line.split("=", 2);
             if(keyValue.length != 1) {
                 if (keyValue[0].trim().equals("map info")) {
-                    StringBuilder mapInfoValueStringBuilder = new StringBuilder();
-                    String mapInfoValue = keyValue[1];
-                    for (int i = 0; i < keyValue[1].length(); ++i) {
-                        if (mapInfoValue.charAt(i) != '{' || mapInfoValue.charAt(i) != '}' || mapInfoValue.charAt(i) != ' ') {
-                            mapInfoValueStringBuilder.append(mapInfoValue.charAt(i));
-                        }
+                    String[] mapInfoValues = parseMapInfoContents(keyValue[1]);
+                    if (mapInfoValues[0].equals("UTM")) {
+                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                        String [] latLonStringArray = convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
+                        String xhtmlLatLongLine = "lat/lon = { " + latLonStringArray[0] + ", " + latLonStringArray[1] + " }";
+                        xhtml.startElement("p");
+                        xhtml.characters(xhtmlLatLongLine);
+                        xhtml.endElement("p");
+                    } else {
+                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
                     }
-                    String[] mapInfoValues = mapInfoValueStringBuilder.toString().split(",");
-                    metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
-                    String [] latLonStringArray = convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
-                    String xhtmlLatLongLine = "lat/lon = { " + latLonStringArray[0] + ", " + latLonStringArray[1] + " }";
-                    xhtml.startElement("p");
-                    xhtml.characters(xhtmlLatLongLine);
-                    xhtml.endElement("p");
                 } else {
                     metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
                 }
@@ -142,6 +139,17 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         xhtml.startElement("p");
         xhtml.characters(line);
         xhtml.endElement("p");
+    }
+
+    private String[] parseMapInfoContents(String mapInfoValue) {
+        StringBuilder mapInfoValueStringBuilder = new StringBuilder();
+        for (int i = 0; i < mapInfoValue.length(); ++i) {
+            if (mapInfoValue.charAt(i) != '{' && mapInfoValue.charAt(i) != '}' && mapInfoValue.charAt(i) != ' ') {
+                mapInfoValueStringBuilder.append(mapInfoValue.charAt(i));
+            }
+        }
+        String[] mapInfoValues = mapInfoValueStringBuilder.toString().split(",");
+        return mapInfoValues;
     }
 
     // Conversion logic taken from https://stackoverflow.com/questions/343865/how-to-convert-from-utm-to-latlng-in-python-or-javascript/344083#344083
