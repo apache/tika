@@ -146,7 +146,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
             return;
         }
         int i = 0;
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         while (queue.offer(new PoisonFileResource(), 1L, TimeUnit.SECONDS)) {
             if (shutDownNoPoison) {
                 LOG.debug("quitting the poison loop because shutDownNoPoison is now true");
@@ -156,7 +156,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
                 LOG.debug("thread interrupted while trying to add poison");
                 return;
             }
-            long elapsed = new Date().getTime() - start;
+            long elapsed = System.currentTimeMillis() - start;
             if (maxConsecWaitInMillis > -1 && elapsed > maxConsecWaitInMillis) {
                 LOG.error("Crawler timed out while trying to add poison");
                 return;

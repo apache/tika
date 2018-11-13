@@ -1562,7 +1562,7 @@ public class OOXMLParserTest extends TikaTest {
     public void testBatch() throws Exception {
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setUseSAXDocxExtractor(true);
-        long started = new Date().getTime();
+        long started = System.currentTimeMillis();
         int ex = 0;
         for (int i = 0; i < 100; i++) {
             for (File f : getResourceAsFile("/test-documents").listFiles()) {
@@ -1582,7 +1582,7 @@ public class OOXMLParserTest extends TikaTest {
                 }
             }
         }
-        System.out.println("elapsed: "+(new Date().getTime()-started) + " with " + ex + " exceptions");
+        System.out.println("elapsed: "+(System.currentTimeMillis()-started) + " with " + ex + " exceptions");
     }
 
     @Test

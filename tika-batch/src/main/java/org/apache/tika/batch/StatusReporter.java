@@ -58,7 +58,7 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
     public StatusReporter(FileResourceCrawler crawler, ConsumersManager consumersManager) {
         this.consumersManager = consumersManager;
         this.crawler = crawler;
-        start = new Date().getTime();
+        start = System.currentTimeMillis();
     }
 
     /**
@@ -82,11 +82,11 @@ public class StatusReporter implements Callable<IFileProcessorFutureResult> {
                 Thread.sleep(sleepMillis);
                 int cnt = getRoughCountConsumed();
                 int exceptions = getRoughCountExceptions();
-                long elapsed = new Date().getTime() - start;
+                long elapsed = System.currentTimeMillis() - start;
                 double elapsedSecs = (double) elapsed / (double) 1000;
                 int avg = (elapsedSecs > 5 || cnt > 100) ? (int) ((double) cnt / elapsedSecs) : -1;
 
-                String elapsedString = DurationFormatUtils.formatMillis(new Date().getTime() - start);
+                String elapsedString = DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
                 String docsPerSec = avg > -1 ? String.format(Locale.ROOT,
                         " (%s docs per sec)",
                         numberFormat.format(avg)) : "";

@@ -211,8 +211,8 @@ public class TikaEvalCLITest extends TikaTest {
         pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process process = pb.start();
-        long started = new Date().getTime();
-        long elapsed = new Date().getTime()-started;
+        long started = System.currentTimeMillis();
+        long elapsed = System.currentTimeMillis()-started;
         int exitValue = Integer.MIN_VALUE;
         while (elapsed < maxMillis && exitValue == Integer.MIN_VALUE) {
             try {
@@ -220,7 +220,7 @@ public class TikaEvalCLITest extends TikaTest {
             } catch (IllegalThreadStateException e) {
 
             }
-            elapsed = new Date().getTime()-started;
+            elapsed = System.currentTimeMillis()-started;
         }
         if (exitValue == Integer.MIN_VALUE) {
             process.destroy();

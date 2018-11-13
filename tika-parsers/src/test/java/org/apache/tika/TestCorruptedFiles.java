@@ -147,7 +147,6 @@ public class TestCorruptedFiles extends TikaTest {
             for (int i = 0; i < NUM_ITERATIONS; i++) {
                 seed = randomSeedGenerator.nextLong();
                 FAILED = true;
-                long start = new Date().getTime();
                 testSingleFile(getBytes(fileName), new Random(seed));
                 FAILED = false;
             }
