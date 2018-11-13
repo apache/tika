@@ -1265,6 +1265,16 @@ public class OOXMLParserTest extends TikaTest {
         //assertContains("add a list here", xml);
     }
 
+
+    @Test
+    public void testDOCXHeadingNumbering() throws Exception {
+        String xml = getXML("test-docx-HeadingNumbering.docx").xml;
+        assertContains("1.  Test Heading", xml);
+        assertContains("1. Testing", xml);
+        assertContains("2. <a name=\"_GoBack\" />Test test", xml);
+
+    }
+
     @Test
     public void testDOCXOverrideParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_override_list_numbering.docx").xml;
