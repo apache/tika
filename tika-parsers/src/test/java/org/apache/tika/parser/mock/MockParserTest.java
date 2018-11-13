@@ -103,11 +103,11 @@ public class MockParserTest extends TikaTest {
 
     @Test
     public void testSleep() throws Exception {
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         Metadata m = new Metadata();
         String content = getXML("sleep.xml", m).xml;
         assertMockParser(m);
-        long elapsed = new Date().getTime()-start;
+        long elapsed = System.currentTimeMillis()-start;
         //should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
         assertTrue("not enough time has not elapsed: "+elapsed, enoughTimeHasElapsed);
@@ -116,12 +116,12 @@ public class MockParserTest extends TikaTest {
 
     @Test
     public void testHeavyHang() throws Exception {
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         Metadata m = new Metadata();
 
         String content = getXML("heavy_hang.xml", m).xml;
         assertMockParser(m);
-        long elapsed = new Date().getTime()-start;
+        long elapsed = System.currentTimeMillis()-start;
         //should sleep for at least 3000
         boolean enoughTimeHasElapsed = elapsed > 2000;
         assertTrue("not enough time has elapsed: "+elapsed, enoughTimeHasElapsed);
@@ -154,7 +154,7 @@ public class MockParserTest extends TikaTest {
         ParserRunnable r = new ParserRunnable("sleep_interruptible.xml");
         Thread t = new Thread(r);
         t.start();
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -168,7 +168,7 @@ public class MockParserTest extends TikaTest {
         } catch (InterruptedException e) {
             //swallow
         }
-        long elapsed = new Date().getTime()-start;
+        long elapsed = System.currentTimeMillis()-start;
         boolean shortEnough = elapsed < 2000;//the xml file specifies 3000
         assertTrue("elapsed (" + elapsed + " millis) was not short enough", shortEnough);
     }
@@ -178,7 +178,7 @@ public class MockParserTest extends TikaTest {
         ParserRunnable r = new ParserRunnable("sleep_not_interruptible.xml");
         Thread t = new Thread(r);
         t.start();
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         try {
             //make sure that the thread has actually started
             Thread.sleep(1000);
@@ -191,7 +191,7 @@ public class MockParserTest extends TikaTest {
         } catch (InterruptedException e) {
             //swallow
         }
-        long elapsed = new Date().getTime()-start;
+        long elapsed = System.currentTimeMillis()-start;
         boolean longEnough = elapsed >= 3000;//the xml file specifies 3000, this sleeps 1000
         assertTrue("elapsed ("+elapsed+" millis) was not long enough", longEnough);
     }

@@ -171,7 +171,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         TikaVisitor v = new TikaVisitor();
         if (fileList != null) {
             TikaVisitor tikaVisitor = new TikaVisitor();
@@ -195,7 +195,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             Files.walkFileTree(inputRoot, v);
         }
         int processed = v.getProcessed();
-        double elapsedSecs = ((double)new Date().getTime()-(double)start)/(double)1000;
+        double elapsedSecs = ((double)System.currentTimeMillis()-(double)start)/(double)1000;
         LOG.info("Finished processing {} files in {} seconds.", processed, elapsedSecs);
         return processed;
     }
@@ -211,7 +211,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     }
 
     public static void main(String[] args) {
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         if (args.length < 6) {
             System.err.println(StrawManTikaAppDriver.usage());
         }
@@ -253,7 +253,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 LOG.error(e.getMessage(), e);
             }
         }
-        double elapsedSeconds = (double)(new Date().getTime() - start) / (double)1000;
+        double elapsedSeconds = (double)(System.currentTimeMillis() - start) / (double)1000;
         LOG.info("Processed {} in {} seconds", totalFilesProcessed, elapsedSeconds);
         ex.shutdownNow();
     }

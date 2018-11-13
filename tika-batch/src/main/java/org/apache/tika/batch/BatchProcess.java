@@ -173,7 +173,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         State state = new State();
         LOG.info("BatchProcess starting up");
 
-        state.start = new Date().getTime();
+        state.start = System.currentTimeMillis();
         completionService.submit(interrupter);
         completionService.submit(fileResourceCrawler);
         completionService.submit(reporter);
@@ -335,7 +335,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             LOG.warn("A parser was still working on >{}< for {} milliseconds after it started. This exceeds the maxTimeoutMillis parameter",
                     fs.getResourceId(), fs.getElapsedMillis());
         }
-        double elapsed = ((double) new Date().getTime() - (double) state.start) / 1000.0;
+        double elapsed = ((double)System.currentTimeMillis() - (double) state.start) / 1000.0;
         int processed = 0;
         int numExceptions = 0;
         for (FileResourceConsumer c : consumersManager.getConsumers()) {
@@ -419,7 +419,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         if (causeForTermination == CAUSE_FOR_TERMINATION.COMPLETED_NORMALLY) {
             return;
         }
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         while (countActiveConsumers() > 0) {
             try {
                 Thread.sleep(500);
@@ -427,7 +427,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                 LOG.warn("Thread interrupted while trying to politelyAwaitTermination");
                 return;
             }
-            long elapsed = new Date().getTime()-start;
+            long elapsed = System.currentTimeMillis()-start;
             if (pauseOnEarlyTerminationMillis > -1 &&
                     elapsed > pauseOnEarlyTerminationMillis) {
                 LOG.warn("Waited after an early termination for {}ms, but there was at least one active consumer", elapsed);
@@ -482,7 +482,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         if (maxAliveTimeSeconds < 0) {
             return false;
         }
-        double elapsedSeconds = (double) (new Date().getTime() - started) / (double) 1000;
+        double elapsedSeconds = (double) (System.currentTimeMillis() - started) / (double) 1000;
         return elapsedSeconds > (double) maxAliveTimeSeconds;
     }
 

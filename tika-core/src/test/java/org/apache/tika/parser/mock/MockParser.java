@@ -350,7 +350,7 @@ public class MockParser extends AbstractParser {
     }
 
     private void sleep(long maxMillis, boolean isInterruptible) {
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         long millisRemaining = maxMillis;
         while (true) {
             try {
@@ -360,7 +360,7 @@ public class MockParser extends AbstractParser {
                     return;
                 }
             }
-            long elapsed = new Date().getTime()-start;
+            long elapsed = System.currentTimeMillis()-start;
             millisRemaining = maxMillis - elapsed;
             if (millisRemaining <= 0) {
                 break;
