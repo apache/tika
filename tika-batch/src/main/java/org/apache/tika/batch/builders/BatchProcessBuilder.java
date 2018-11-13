@@ -133,7 +133,7 @@ public class BatchProcessBuilder {
 
         reporter = buildReporter(crawler, consumersManager, keyNodes.get("reporter"), runtimeAttributes);
 
-        interrupter = buildInterrupter(keyNodes.get("interrupter"), runtimeAttributes);
+        interrupter = buildInterrupter(keyNodes.get("interrupter"), pauseOnEarlyTerminationMillis, runtimeAttributes);
 
         BatchProcess proc = new BatchProcess(
                 crawler, consumersManager, reporter, interrupter);
@@ -153,7 +153,7 @@ public class BatchProcessBuilder {
         return proc;
     }
 
-    private Interrupter buildInterrupter(Node node, Map<String, String> runtimeAttributes) {
+    private Interrupter buildInterrupter(Node node, long pauseOnEarlyTermination, Map<String, String> runtimeAttributes) {
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         String className = attrs.get("builderClass");
         if (className == null) {
@@ -161,7 +161,7 @@ public class BatchProcessBuilder {
         }
         InterrupterBuilder builder = ClassLoaderUtil.buildClass(InterrupterBuilder.class, className);
 
-        return builder.build(node, runtimeAttributes);
+        return builder.build(node, pauseOnEarlyTermination, runtimeAttributes);
 
     }
 

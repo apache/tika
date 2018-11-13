@@ -230,7 +230,7 @@ public class BatchProcessDriverCLI {
     private void stop() {
         if (process != null) {
             LOG.trace("destroying a non-null process");
-            process.destroy();
+            process.destroyForcibly();
         }
 
         receivedRestartMsg = false;
