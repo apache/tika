@@ -26,7 +26,7 @@ import org.w3c.dom.Node;
  */
 public class InterrupterBuilder {
 
-    public Interrupter build(Node n, Map<String, String> commandlineArguments) {
-        return new Interrupter();
+    public Interrupter build(Node n, long pauseOnEarlyTermination, Map<String, String> commandlineArguments) {
+        return new Interrupter(pauseOnEarlyTermination);
     }
 }
