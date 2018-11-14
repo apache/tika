@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -190,6 +191,12 @@ public class TikaResourceTest extends CXFTestBase {
         assertContains("<meta name=\"X-TIKA:digest:MD5\" content=\"f8be45c34e8919eedba48cc8d207fbf0\"/>",
                 responseMsg);
 
+    }
+
+    @Test
+    public void testJAXBAndActivationDependency() {
+        //TIKA-2778
+        AttachmentUtil.getCommandMap();
     }
 
     @Test

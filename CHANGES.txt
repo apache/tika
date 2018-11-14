@@ -1,5 +1,7 @@
 Release 1.20 - ???
 
+   * Upgrade jaxb-runtime and javax.activation (TIKA-2778).
+
    * tika-app in batch mode now requires an interrupt or
      kill signal to the parent process to stop the parent
      and the child processes (TIKA-2780).
