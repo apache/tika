@@ -256,9 +256,10 @@ public class TikaServerCli {
                 inputStreamFactory = new DefaultInputStreamFactory();
             }
 
-            ServerStatus serverStatus = new ServerStatus();
+            ServerStatus serverStatus;
             //if this is a child process
             if (line.hasOption("child")) {
+                serverStatus = new ServerStatus();
                 //redirect!!!
                 PrintStream out = System.out;
                 InputStream in = System.in;
@@ -277,6 +278,8 @@ public class TikaServerCli {
                         out, maxFiles, serverTimeouts));
 
                 serverThread.start();
+            } else {
+                serverStatus = new ServerStatus(true);
             }
             TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();

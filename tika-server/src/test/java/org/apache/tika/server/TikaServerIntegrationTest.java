@@ -125,24 +125,49 @@ public class TikaServerIntegrationTest extends TikaTest {
             }
         };
         serverThread.start();
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+
+
+    }
+
+    @Test
+    public void testOOMInLegacyMode() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-p", INTEGRATION_TEST_PORT,
+                        });
+            }
+        };
+        serverThread.start();
         awaitServerStartup();
 
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
+        //give some time for the server to crash/kill itself
+        Thread.sleep(2000);
 
-        //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -175,20 +200,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         }
         //give some time for the server to crash/kill itself
         Thread.sleep(2000);
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -218,24 +234,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         }
         //give some time for the server to crash/kill itself
         Thread.sleep(2000);
-
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -264,22 +267,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         } catch (Exception e) {
             //potential exception depending on timing
         }
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -308,22 +300,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         } catch (Exception e) {
             //catchable exception when server shuts down.
         }
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -367,29 +348,22 @@ public class TikaServerIntegrationTest extends TikaTest {
             }
         };
         serverThread.start();
-        awaitServerStartup();
+        try {
+            awaitServerStartup();
 
-        Response response = WebClient
+            Response response = WebClient
                 .create(endPoint + META_PATH)
                 .accept("application/json")
                 .put(ClassLoader
                         .getSystemResourceAsStream(TEST_STDOUT_STDERR));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-        assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-        serverThread.interrupt();
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(1, metadataList.size());
+            assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -421,18 +395,13 @@ public class TikaServerIntegrationTest extends TikaTest {
         assertEquals(1, metadataList.size());
         assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
 
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-        serverThread.interrupt();
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
+
     private void awaitServerStartup() throws Exception {
 
         Instant started = Instant.now();
@@ -506,5 +475,17 @@ public class TikaServerIntegrationTest extends TikaTest {
 
     }
 
-
+    private void testBaseline() throws Exception {
+        awaitServerStartup();
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+    }
 }
