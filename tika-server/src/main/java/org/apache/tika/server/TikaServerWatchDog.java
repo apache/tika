@@ -21,6 +21,7 @@ import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -49,9 +50,10 @@ public class TikaServerWatchDog {
     private volatile CHILD_STATUS childStatus = CHILD_STATUS.INITIALIZING;
     private volatile Instant lastPing = null;
     private ChildProcess childProcess = null;
-    int restarts = 0;
+
 
     public void execute(String[] args, ServerTimeouts serverTimeouts) throws Exception {
+        LOG.info("server watch dog is starting up");
         //if the child thread is in stop-the-world mode, and isn't
         //responding to the ping, this thread checks to make sure
         //that the parent ping is sent and received often enough
@@ -92,6 +94,7 @@ public class TikaServerWatchDog {
         try {
             childProcess = new ChildProcess(args);
             setChildStatus(CHILD_STATUS.RUNNING);
+            int restarts = 0;
             while (true) {
 
                 if (!childProcess.ping()) {
@@ -102,6 +105,11 @@ public class TikaServerWatchDog {
                     childProcess = new ChildProcess(args);
                     LOG.info("Successfully restarted child process -- {} restarts so far)", ++restarts);
                     setChildStatus(CHILD_STATUS.RUNNING);
+                    restarts++;
+                    if (serverTimeouts.getMaxRestarts() > -1 && restarts >= serverTimeouts.getMaxRestarts()) {
+                        LOG.warn("hit max restarts: "+restarts+". Stopping now");
+                        break;
+                    }
                 }
                 Thread.sleep(serverTimeouts.getPingPulseMillis());
             }
@@ -194,7 +202,22 @@ public class TikaServerWatchDog {
 
             this.fromChild = new DataInputStream(process.getInputStream());
             this.toChild = new DataOutputStream(process.getOutputStream());
-            byte status = fromChild.readByte();
+            //if logger's debug=true, there can be a bunch of stuff that
+            //was written to the process's inputstream _before_
+            //we did the redirect.
+            //These bytes need to be read from fromChild before the child has actually
+            //started...allow 64,000 bytes...completely arbitrary.
+            //this is admittedly hacky...If the logger writes 0, we'd
+            //interpret that as "OPERATING"...need to figure out
+            //better way to siphon statically written bytes before
+            //we do the redirect of streams.
+            int maxStartBytes = 64000;
+            int status = fromChild.readByte();
+            int read = 0;
+            while (status > -1 && read < maxStartBytes && status != ServerStatus.STATUS.OPERATING.getByte()) {
+                status = fromChild.readByte();
+                read++;
+            }
             if (status != ServerStatus.STATUS.OPERATING.getByte()) {
                 try {
                     ServerStatus.STATUS currStatus = ServerStatus.STATUS.lookup(status);
@@ -205,7 +228,7 @@ public class TikaServerWatchDog {
                 }
                 int len = process.getInputStream().available();
                 byte[] msg = new byte[len+1];
-                msg[0] = status;
+                msg[0] = (byte)status;
                 process.getInputStream().read(msg, 1, len);
 
                 throw new IOException(

@@ -52,6 +52,8 @@ public class ServerTimeouts {
      */
     public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 120000;
 
+    private int maxRestarts = -1;
+
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
 
     private long pingTimeoutMillis = DEFAULT_PING_TIMEOUT_MILLIS;
@@ -102,5 +104,13 @@ public class ServerTimeouts {
      */
     public void setPingPulseMillis(long pingPulseMillis) {
         this.pingPulseMillis = pingPulseMillis;
+    }
+
+    public int getMaxRestarts() {
+        return maxRestarts;
+    }
+
+    public void setMaxRestarts(int maxRestarts) {
+        this.maxRestarts = maxRestarts;
     }
 }

@@ -22,7 +22,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -30,6 +32,9 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.Permission;
 import java.time.Duration;
 import java.time.Instant;
@@ -46,6 +51,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     private static final String TEST_SYSTEM_EXIT = "mock/system_exit.xml";
     private static final String TEST_HEAVY_HANG = "mock/heavy_hang_30000.xml";
     private static final String TEST_HEAVY_HANG_SHORT = "mock/heavy_hang_100.xml";
+    private static final String TEST_STDOUT_STDERR = "mock/testStdOutErr.xml";
     private static final String META_PATH = "/rmeta";
 
     //running into conflicts on 9998 with the CXFTestBase tests
@@ -56,6 +62,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             "http://localhost:" + INTEGRATION_TEST_PORT;
 
     private SecurityManager existingSecurityManager = null;
+    private static Path LOG_FILE;
 
     private static class MyExitException extends RuntimeException {
         private final int status;
@@ -67,6 +74,12 @@ public class TikaServerIntegrationTest extends TikaTest {
             return status;
         }
     }
+    @BeforeClass
+    public static void staticSetup() throws Exception {
+        LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
+        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_child.xml"), LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
+    }
+
     @Before
     public void setUp() throws Exception {
         SecurityManager existingSecurityManager = System.getSecurityManager();
@@ -87,8 +100,13 @@ public class TikaServerIntegrationTest extends TikaTest {
         });
     }
 
+    @AfterClass
+    public static void staticTearDown() throws Exception {
+        Files.delete(LOG_FILE);
+    }
+
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         System.setSecurityManager(existingSecurityManager);
     }
 
@@ -331,6 +349,89 @@ public class TikaServerIntegrationTest extends TikaTest {
         serverThread.join(30000);
 
         assertEquals(-1, i.get());
+    }
+
+    @Test
+    public void testStdErrOutBasic() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-pingPulseMillis", "100"
+                        });
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+        serverThread.interrupt();
+    }
+
+    @Test
+    public void testStdErrOutLogging() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-pingPulseMillis", "100", "-maxRestarts", "0",
+                                "-JDlog4j.configuration=file:"+ LOG_FILE.toAbsolutePath()
+                        });
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+        serverThread.interrupt();
     }
     private void awaitServerStartup() throws Exception {
 
