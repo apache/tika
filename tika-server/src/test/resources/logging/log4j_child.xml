@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration debug="true">
+    <appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Pattern to output the caller's file name and line number -->
+            <!--<param name="ConversionPattern" value="%5p [%t] (%F:%L) - %m%n"/>-->
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+    </appender>
+    <appender name="stderr" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.err"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Pattern to output the caller's file name and line number -->
+            <!--<param name="ConversionPattern" value="%5p [%t] (%F:%L) - %m%n"/>-->
+            <param name="ConversionPattern" value="%m%n"/>
+        </layout>
+    </appender>
+    <logger name="org.apache.tika" additivity="true">
+        <level value="debug"/>
+        <appender-ref ref="stdout"/>
+    </logger>
+    <logger name="org.apache.tika" additivity="true">
+        <level value="debug"/>
+        <appender-ref ref="stderr"/>
+    </logger>
+
+</log4j:configuration>

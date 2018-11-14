@@ -18,6 +18,8 @@
 package org.apache.tika.server;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -84,7 +86,7 @@ public class TikaServerCli {
 
     private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
             Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
-            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome"});
+            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts"});
 
     private static Options getOptions() {
         Options options = new Options();
@@ -104,7 +106,7 @@ public class TikaServerCli {
         options.addOption("taskPulseMillis", true, "Only in spawn child mode: how often to check if a task has timed out.");
         options.addOption("pingTimeoutMillis", true, "Only in spawn child mode: how long to wait to wait for a ping and/or ping response.");
         options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
-
+        options.addOption("maxRestarts", true, "Only in spawn child mode: how many times to restart child process, default is -1 (always restart)");
         options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
         options.addOption("javaHome", true, "Override system property JAVA_HOME for calling java for the child process");
         options.addOption("child", false, "this process is a child process -- EXPERT -- " +
@@ -257,18 +259,24 @@ public class TikaServerCli {
             ServerStatus serverStatus = new ServerStatus();
             //if this is a child process
             if (line.hasOption("child")) {
+                //redirect!!!
+                PrintStream out = System.out;
+                InputStream in = System.in;
+                System.setIn(new ByteArrayInputStream(new byte[0]));
+                System.setOut(System.err);
+
                 long maxFiles = DEFAULT_MAX_FILES;
                 if (line.hasOption("maxFiles")) {
                     maxFiles = Long.parseLong(line.getOptionValue("maxFiles"));
                 }
 
                 ServerTimeouts serverTimeouts = configureServerTimeouts(line);
+
                 Thread serverThread =
-                new Thread(new ServerStatusWatcher(serverStatus, System.in,
-                        System.out, maxFiles, serverTimeouts));
+                new Thread(new ServerStatusWatcher(serverStatus, in,
+                        out, maxFiles, serverTimeouts));
+
                 serverThread.start();
-                System.setIn(new ByteArrayInputStream(new byte[0]));
-                System.setOut(System.err);
             }
             TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
@@ -345,6 +353,10 @@ public class TikaServerCli {
         if (line.hasOption("pingPulseMillis")) {
             serverTimeouts.setPingPulseMillis(
                     Long.parseLong(line.getOptionValue("pingPulseMillis")));
+        }
+
+        if (line.hasOption("maxRestarts")) {
+            serverTimeouts.setMaxRestarts(Integer.parseInt(line.getOptionValue("maxRestarts")));
         }
 
         return serverTimeouts;
