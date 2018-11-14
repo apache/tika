@@ -7,6 +7,9 @@ Release 2.0.0 - ???
 
 Release 1.20 - ???
 
+   * tika-server in legacy mode (not -spawnChild) should
+     not return 503 after an OutOfMemoryException (TIKA-2776).
+
    * Upgrade jaxb-runtime and javax.activation (TIKA-2778).
 
    * tika-app in batch mode now requires an interrupt or
