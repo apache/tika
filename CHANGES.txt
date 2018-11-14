@@ -1,7 +1,8 @@
 Release 1.20 - ???
 
-   * tika-server in legacy mode (not -spawnChild) should
-     not return 503 after an OutOfMemoryException (TIKA-2776).
+   * Fix bug in tika-server when run in legacy mode (not -spawnChild)
+     that caused it to return 503 on documents submitted after
+     it hit an OutOfMemoryError (TIKA-2776).
 
    * Upgrade jaxb-runtime and javax.activation (TIKA-2778).
 
