@@ -24,11 +24,14 @@ import javax.xml.parsers.DocumentBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -64,8 +67,15 @@ import org.xml.sax.SAXException;
 
 public class MockParser extends AbstractParser {
 
-    private static final long serialVersionUID = 1L;
 
+    private static final long serialVersionUID = 1L;
+    private static PrintStream ORIG_STDERR;
+    private static PrintStream ORIG_STDOUT;
+    static {
+        ORIG_STDERR = System.err;
+        ORIG_STDOUT = System.out;
+    }
+    private final Random random = new Random();
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         Set<MediaType> types = new HashSet<>();
@@ -183,16 +193,43 @@ public class MockParser extends AbstractParser {
         return extractor;
     }
 
-    private void print(Node action, String name) {
+    private void print(Node action, String name) throws IOException {
         String content = action.getTextContent();
-        if ("print_out".equals(name)) {
-            System.out.println(content);
-        } else if ("print_err".equals(name)) {
-            System.err.println(content);
+        boolean isStatic = (action.getAttributes().getNamedItem("static") == null) ? false : true;
+        Node rand = action.getAttributes().getNamedItem("random");
+        int randLength = -1;
+        if (rand != null) {
+            randLength = Integer.parseInt(rand.getNodeValue());
+        }
+        byte[] contentBytes = getBytes(content, randLength);
+        if (isStatic) {
+            if ("print_out".equals(name)) {
+                ORIG_STDOUT.write(contentBytes);
+            } else if ("print_err".equals(name)) {
+                ORIG_STDERR.write(contentBytes);
+            } else {
+                throw new IllegalArgumentException("must be print_out or print_err");
+            }
         } else {
-            throw new IllegalArgumentException("must be print_out or print_err");
+            if ("print_out".equals(name)) {
+                System.out.write(contentBytes);
+            } else if ("print_err".equals(name)) {
+                System.err.write(contentBytes);
+            } else {
+                throw new IllegalArgumentException("must be print_out or print_err");
+            }
         }
     }
+
+    private byte[] getBytes(String content, int randLength) {
+        if (randLength < 0) {
+            return content.getBytes(StandardCharsets.UTF_8);
+        }
+        byte[] bytes = new byte[randLength];
+        random.nextBytes(bytes);
+        return bytes;
+    }
+
     private void hang(Node action) {
         boolean interruptible = true;
         boolean heavy = false;

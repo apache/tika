@@ -52,6 +52,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     private static final String TEST_HEAVY_HANG = "mock/heavy_hang_30000.xml";
     private static final String TEST_HEAVY_HANG_SHORT = "mock/heavy_hang_100.xml";
     private static final String TEST_STDOUT_STDERR = "mock/testStdOutErr.xml";
+    private static final String TEST_STATIC_STDOUT_STDERR = "mock/testStaticStdOutErr.xml";
     private static final String META_PATH = "/rmeta";
 
     //running into conflicts on 9998 with the CXFTestBase tests
@@ -365,6 +366,42 @@ public class TikaServerIntegrationTest extends TikaTest {
             serverThread.interrupt();
         }
     }
+
+    @Test
+    @Ignore("TIKA-2784")
+    public void testStaticStdErrOutBasic() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-pingPulseMillis", "100"
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            awaitServerStartup();
+
+            Response response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_STATIC_STDOUT_STDERR));
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(1, metadataList.size());
+            assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
 
     @Test
     public void testStdErrOutLogging() throws Exception {
