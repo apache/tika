@@ -19,7 +19,7 @@ package org.apache.tika.server;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -86,7 +86,8 @@ public class TikaServerCli {
 
     private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
             Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
-            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts"});
+            "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
+            "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix"});
 
     private static Options getOptions() {
         Options options = new Options();
@@ -106,11 +107,16 @@ public class TikaServerCli {
         options.addOption("taskPulseMillis", true, "Only in spawn child mode: how often to check if a task has timed out.");
         options.addOption("pingTimeoutMillis", true, "Only in spawn child mode: how long to wait to wait for a ping and/or ping response.");
         options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
+        options.addOption("maxChildStartupMillis", true, "Only in spawn child mode: Maximum number of millis to wait for the child process to startup.");
         options.addOption("maxRestarts", true, "Only in spawn child mode: how many times to restart child process, default is -1 (always restart)");
         options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
-        options.addOption("javaHome", true, "Override system property JAVA_HOME for calling java for the child process");
-        options.addOption("child", false, "this process is a child process -- EXPERT -- " +
-                "should normally only be invoked by parent process");
+        options.addOption("javaHome", true, "Only in spawn child mode: override system property JAVA_HOME for calling java for the child process");
+        options.addOption("child", false, "Only in spawn child mode: this process is a child process -- do not use this! " +
+                "Should only be invoked by parent process");
+        options.addOption("childStatusFile", true, "Only in spawn child mode: temporary file used as mmap to communicate " +
+                "with parent process -- do not use this! Should only be invoked by parent process.");
+        options.addOption("tmpFilePrefix", true, "Only in spawn child mode: prefix for temp file - for debugging only");
+
         return options;
     }
 
@@ -261,7 +267,6 @@ public class TikaServerCli {
             if (line.hasOption("child")) {
                 serverStatus = new ServerStatus();
                 //redirect!!!
-                PrintStream out = System.out;
                 InputStream in = System.in;
                 System.setIn(new ByteArrayInputStream(new byte[0]));
                 System.setOut(System.err);
@@ -272,10 +277,10 @@ public class TikaServerCli {
                 }
 
                 ServerTimeouts serverTimeouts = configureServerTimeouts(line);
-
+                String childStatusFile = line.getOptionValue("childStatusFile");
                 Thread serverThread =
                 new Thread(new ServerStatusWatcher(serverStatus, in,
-                        out, maxFiles, serverTimeouts));
+                        Paths.get(childStatusFile), maxFiles, serverTimeouts));
 
                 serverThread.start();
             } else {
@@ -360,6 +365,11 @@ public class TikaServerCli {
 
         if (line.hasOption("maxRestarts")) {
             serverTimeouts.setMaxRestarts(Integer.parseInt(line.getOptionValue("maxRestarts")));
+        }
+
+        if (line.hasOption("maxChildStartupMillis")) {
+            serverTimeouts.setMaxChildStartupMillis(
+                    Long.parseLong(line.getOptionValue("maxChildStartupMillis")));
         }
 
         return serverTimeouts;

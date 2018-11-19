@@ -7,6 +7,9 @@ Release 2.0.0 - ???
 
 Release 1.20 - ???
 
+   * Switch child to parent communication to a shared memory-mapped
+     file in tika-server's -spawnChild mode.
+
    * Fix bug in tika-server when run in legacy mode (not -spawnChild)
      that caused it to return 503 on documents submitted after
      it hit an OutOfMemoryError (TIKA-2776).
