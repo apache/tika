@@ -21,9 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -33,39 +36,38 @@ public class ServerStatusWatcher implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(ServerStatusWatcher.class);
     private final ServerStatus serverStatus;
     private final DataInputStream fromParent;
-    private final DataOutputStream toParent;
     private final long maxFiles;
     private final ServerTimeouts serverTimeouts;
+    private final FileChannel childStatusChannel;
+    private final MappedByteBuffer toParent;
 
 
     private volatile Instant lastPing = null;
 
     public ServerStatusWatcher(ServerStatus serverStatus,
-                               InputStream inputStream, OutputStream outputStream,
+                               InputStream inputStream, Path childStatusFile,
                                long maxFiles,
-                               ServerTimeouts serverTimeouts) {
+                               ServerTimeouts serverTimeouts) throws IOException {
         this.serverStatus = serverStatus;
         this.maxFiles = maxFiles;
         this.serverTimeouts = serverTimeouts;
-
+        this.childStatusChannel = FileChannel.open(childStatusFile,
+                StandardOpenOption.DSYNC, StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE, StandardOpenOption.READ,
+                StandardOpenOption.DELETE_ON_CLOSE);
+        this.toParent= childStatusChannel.map(FileChannel.MapMode.READ_WRITE,
+                0, 16);//8 for timestamp long, 4 for status int, 4 for numactivetasks int
+        serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
+        writeStatus();
         this.fromParent = new DataInputStream(inputStream);
-        this.toParent = new DataOutputStream(outputStream);
         Thread statusWatcher = new Thread(new StatusWatcher());
         statusWatcher.setDaemon(true);
         statusWatcher.start();
+
     }
 
     @Override
     public void run() {
-        //let parent know child is alive
-        try {
-            toParent.writeByte(ServerStatus.STATUS.OPERATING.getByte());
-            toParent.flush();
-        } catch (Exception e) {
-            LOG.warn("Exception writing startup ping to parent", e);
-            serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
-            shutdown(ServerStatus.STATUS.PARENT_EXCEPTION);
-        }
 
         byte directive = (byte)-1;
         while (true) {
@@ -83,8 +85,7 @@ public class ServerStatusWatcher implements Runnable {
                     checkForTaskTimeouts();
                 }
                 try {
-                    toParent.writeByte(serverStatus.getStatus().getByte());
-                    toParent.flush();
+                    writeStatus();
                 } catch (Exception e) {
                     LOG.warn("Exception writing to parent", e);
                     serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
@@ -94,9 +95,9 @@ public class ServerStatusWatcher implements Runnable {
                 LOG.info("Parent requested shutdown");
                 serverStatus.setStatus(ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN);
                 shutdown(ServerStatus.STATUS.PARENT_REQUESTED_SHUTDOWN);
-            } else if (directive == ServerStatus.DIRECTIVES.PING_ACTIVE_SERVER_TASKS.getByte()) {              try {
-                    toParent.writeInt(serverStatus.getTasks().size());
-                    toParent.flush();
+            } else if (directive == ServerStatus.DIRECTIVES.PING_ACTIVE_SERVER_TASKS.getByte()) {
+                try {
+                    writeStatus();
                 } catch (Exception e) {
                     LOG.warn("Exception writing to parent", e);
                     serverStatus.setStatus(ServerStatus.STATUS.PARENT_EXCEPTION);
@@ -104,6 +105,12 @@ public class ServerStatusWatcher implements Runnable {
                 }
             }
         }
+    }
+
+    private void writeStatus() throws IllegalArgumentException {
+        toParent.putLong(0, Instant.now().toEpochMilli());
+        toParent.putInt(8, serverStatus.getStatus().getInt());
+        toParent.putInt(12, serverStatus.getTasks().size());
     }
 
     private void checkForHitMaxFiles() {
@@ -134,7 +141,17 @@ public class ServerStatusWatcher implements Runnable {
     }
 
     private void shutdown(ServerStatus.STATUS status) {
-        LOG.info("Shutting down child process with status: " +status.name());
+
+        toParent.putLong(0, Instant.now().toEpochMilli());
+        toParent.putInt(8, serverStatus.getStatus().getInt());
+        toParent.putInt(12, 0);
+        toParent.force();
+        try {
+            childStatusChannel.close();
+        } catch (IOException e) {
+            LOG.warn("problem closing status channel", e);
+        }
+        LOG.info("Shutting down child process with status: {}", status.name());
         System.exit(status.getShutdownCode());
     }
 

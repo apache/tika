@@ -17,23 +17,23 @@
 
 package org.apache.tika.server;
 
+import org.apache.tika.io.MappedBufferCleaner;
 import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class TikaServerWatchDog {
@@ -45,6 +45,7 @@ public class TikaServerWatchDog {
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerWatchDog.class);
+    private static final String DEFAULT_CHILD_STATUS_FILE_PREFIX = "tika-server-child-process-mmap-";
 
     private Object[] childStatusLock = new Object[0];
     private volatile CHILD_STATUS childStatus = CHILD_STATUS.INITIALIZING;
@@ -54,10 +55,49 @@ public class TikaServerWatchDog {
 
     public void execute(String[] args, ServerTimeouts serverTimeouts) throws Exception {
         LOG.info("server watch dog is starting up");
+        startPingTimer(serverTimeouts);
+
+        try {
+            childProcess = new ChildProcess(args, serverTimeouts);
+            setChildStatus(CHILD_STATUS.RUNNING);
+            int restarts = 0;
+            while (true) {
+                if (!childProcess.ping()) {
+                    LOG.debug("bad ping, initializing");
+                    setChildStatus(CHILD_STATUS.INITIALIZING);
+                    lastPing = null;
+                    childProcess.close();
+                    LOG.debug("About to restart the child process");
+                    childProcess = new ChildProcess(args, serverTimeouts);
+                    LOG.info("Successfully restarted child process -- {} restarts so far)", restarts);
+                    setChildStatus(CHILD_STATUS.RUNNING);
+                    restarts++;
+                    if (serverTimeouts.getMaxRestarts() > -1 && restarts >= serverTimeouts.getMaxRestarts()) {
+                        LOG.warn("hit max restarts: "+restarts+". Stopping now");
+                        break;
+                    }
+                }
+                Thread.sleep(serverTimeouts.getPingPulseMillis());
+            }
+        } catch (InterruptedException e) {
+            //interrupted...shutting down
+        } finally {
+            setChildStatus(CHILD_STATUS.SHUTTING_DOWN);
+            LOG.debug("about to shutdown");
+            if (childProcess != null) {
+                LOG.info("about to shutdown process");
+                childProcess.close();
+            }
+        }
+    }
+
+    private void startPingTimer(ServerTimeouts serverTimeouts) {
         //if the child thread is in stop-the-world mode, and isn't
-        //responding to the ping, this thread checks to make sure
-        //that the parent ping is sent and received often enough
-        //If it isn't, this force destroys the child process.
+        //reading the ping, this thread checks to make sure
+        //that the parent ping is sent often enough.
+        //The write() in ping() could block.
+        //If there isn't a successful ping often enough,
+        //this force destroys the child process.
         Thread pingTimer = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -74,10 +114,13 @@ public class TikaServerWatchDog {
                             Process processToDestroy = null;
                             try {
                                 processToDestroy = childProcess.process;
+                                LOG.warn("{} ms have elapsed since last successful ping. Destroying child now",
+                                        elapsed);
+                                destroyChildForcibly(processToDestroy);
+                                childProcess.close();
                             } catch (NullPointerException e) {
                                 //ignore
                             }
-                            destroyChildForcibly(processToDestroy);
                         }
                     }
                     try {
@@ -91,36 +134,7 @@ public class TikaServerWatchDog {
         );
         pingTimer.setDaemon(true);
         pingTimer.start();
-        try {
-            childProcess = new ChildProcess(args);
-            setChildStatus(CHILD_STATUS.RUNNING);
-            int restarts = 0;
-            while (true) {
 
-                if (!childProcess.ping()) {
-                    setChildStatus(CHILD_STATUS.INITIALIZING);
-                    lastPing = null;
-                    childProcess.close();
-                    LOG.info("About to restart the child process");
-                    childProcess = new ChildProcess(args);
-                    LOG.info("Successfully restarted child process -- {} restarts so far)", ++restarts);
-                    setChildStatus(CHILD_STATUS.RUNNING);
-                    restarts++;
-                    if (serverTimeouts.getMaxRestarts() > -1 && restarts >= serverTimeouts.getMaxRestarts()) {
-                        LOG.warn("hit max restarts: "+restarts+". Stopping now");
-                        break;
-                    }
-                }
-                Thread.sleep(serverTimeouts.getPingPulseMillis());
-            }
-        } catch (InterruptedException e) {
-            //interrupted...shutting down
-        } finally {
-            setChildStatus(CHILD_STATUS.SHUTTING_DOWN);
-            if (childProcess != null) {
-                childProcess.close();
-            }
-        }
     }
 
     private void setChildStatus(CHILD_STATUS status) {
@@ -191,55 +205,70 @@ public class TikaServerWatchDog {
     private class ChildProcess {
         private Thread SHUTDOWN_HOOK = null;
 
-        Process process;
-        DataInputStream fromChild;
-        DataOutputStream toChild;
-
-
-
-        private ChildProcess(String[] args) throws Exception {
-            this.process = startProcess(args);
-
-            this.fromChild = new DataInputStream(process.getInputStream());
-            this.toChild = new DataOutputStream(process.getOutputStream());
-            //if logger's debug=true, there can be a bunch of stuff that
-            //was written to the process's inputstream _before_
-            //we did the redirect.
-            //These bytes need to be read from fromChild before the child has actually
-            //started...allow 64,000 bytes...completely arbitrary.
-            //this is admittedly hacky...If the logger writes 0, we'd
-            //interpret that as "OPERATING"...need to figure out
-            //better way to siphon statically written bytes before
-            //we do the redirect of streams.
-            int maxStartBytes = 64000;
-            int status = fromChild.readByte();
-            int read = 0;
-            while (status > -1 && read < maxStartBytes && status != ServerStatus.STATUS.OPERATING.getByte()) {
-                status = fromChild.readByte();
-                read++;
-            }
-            if (status != ServerStatus.STATUS.OPERATING.getByte()) {
-                try {
-                    ServerStatus.STATUS currStatus = ServerStatus.STATUS.lookup(status);
-                    throw new IOException("bad status from child process: "+
-                             currStatus);
-                } catch (ArrayIndexOutOfBoundsException e) {
-                    //swallow
+        private final Process process;
+        private final FileChannel fromChildChannel;
+        private final MappedByteBuffer fromChild;
+        private final DataOutputStream toChild;
+        private final ServerTimeouts serverTimeouts;
+        private final Path childStatusFile;
+        private ChildProcess(String[] args, ServerTimeouts serverTimeouts) throws Exception {
+            String prefix = DEFAULT_CHILD_STATUS_FILE_PREFIX;
+            for (int i = 0; i < args.length; i++) {
+                if (args[i].equals("-tmpFilePrefix")) {
+                    prefix = args[i+1];
                 }
-                int len = process.getInputStream().available();
-                byte[] msg = new byte[len+1];
-                msg[0] = (byte)status;
-                process.getInputStream().read(msg, 1, len);
+            }
 
-                throw new IOException(
-                        "Unrecognized status code; message:\n"+new String(msg, StandardCharsets.UTF_8));
+            this.childStatusFile = Files.createTempFile(prefix, "");
+            this.serverTimeouts = serverTimeouts;
+            this.process = startProcess(args, childStatusFile);
 
+            //wait for file to be written/initialized by child process
+            Instant start = Instant.now();
+            long elapsed = Duration.between(start, Instant.now()).toMillis();
+            while (Files.size(childStatusFile) < 12
+                    && elapsed < serverTimeouts.getMaxChildStartupMillis()) {
+                if (!process.isAlive()) {
+                    close();
+                    throw new RuntimeException("Failed to start child process");
+                }
+                Thread.sleep(50);
+                elapsed = Duration.between(start, Instant.now()).toMillis();
+            }
+
+            if (elapsed > serverTimeouts.getMaxChildStartupMillis()) {
+                close();
+                throw new RuntimeException("Child process failed to start after "+elapsed + " (ms)");
+            }
+            this.fromChildChannel = FileChannel.open(childStatusFile,
+                    StandardOpenOption.READ,
+                    StandardOpenOption.DELETE_ON_CLOSE);
+            this.fromChild = fromChildChannel.map(
+                    FileChannel.MapMode.READ_ONLY, 0, 12);
+
+            this.toChild = new DataOutputStream(process.getOutputStream());
+            elapsed = Duration.between(start, Instant.now()).toMillis();
+            //wait for child process to write something to the file
+            while (elapsed < serverTimeouts.getMaxChildStartupMillis()) {
+                int status = fromChild.getInt(8);
+                if (status == ServerStatus.STATUS.OPERATING.getInt()) {
+                    break;
+                }
+                Thread.sleep(50);
+                elapsed = Duration.between(start, Instant.now()).toMillis();
+            }
+            if (elapsed > serverTimeouts.getMaxChildStartupMillis()) {
+                close();
+                throw new RuntimeException("Child process failed to start after "+elapsed + " (ms)");
             }
             lastPing = Instant.now();
         }
 
         public boolean ping() {
-            lastPing = Instant.now();
+            if (!process.isAlive()) {
+                LOG.debug("process is not alive");
+                return false;
+            }
             try {
                 toChild.writeByte(ServerStatus.DIRECTIVES.PING.getByte());
                 toChild.flush();
@@ -247,49 +276,94 @@ public class TikaServerWatchDog {
                 LOG.warn("Exception pinging child process", e);
                 return false;
             }
+            long lastUpdate = -1;
+            int status = -1;
             try {
-                byte status = fromChild.readByte();
-                if (status != ServerStatus.STATUS.OPERATING.getByte()) {
-                    LOG.warn("Received status from child: {}",
-                            ServerStatus.STATUS.lookup(status));
-                    return false;
-                }
-            } catch (Exception e) {
+                lastUpdate = fromChild.getLong(0);
+                status = fromChild.getInt(8);
+            } catch (IndexOutOfBoundsException e) {
+                //something went wrong with the tmp file
                 LOG.warn("Exception receiving status from child", e);
                 return false;
             }
+
+            if (status != ServerStatus.STATUS.OPERATING.getInt()) {
+                LOG.warn("Received non-operating status from child: {}",
+                        ServerStatus.STATUS.lookup(status));
+                return false;
+            }
+
+            long elapsedSinceLastUpdate =
+                    Duration.between(Instant.ofEpochMilli(lastUpdate), Instant.now()).toMillis();
+            LOG.trace("last update: {}, elapsed:{}, status:{}", lastUpdate, elapsedSinceLastUpdate, status);
+
+            if (elapsedSinceLastUpdate >
+                    serverTimeouts.getPingTimeoutMillis()) {
+                //child hasn't written a status update in a longer time than allowed
+                LOG.warn("Child's last update exceeded ping timeout: {} (ms) with status {}",
+                        elapsedSinceLastUpdate, status);
+                return false;
+            }
+
+            lastPing = Instant.now();
             return true;
         }
 
         private void close() {
+
             try {
-                toChild.writeByte(ServerStatus.DIRECTIVES.SHUTDOWN.getByte());
-                toChild.flush();
-            } catch (Exception e) {
-                LOG.warn("Exception asking child to shutdown", e);
-            }
-            //TODO: add a gracefully timed shutdown routine
-            try {
-                fromChild.close();
-            } catch (Exception e) {
-                LOG.warn("Problem shutting down reader from child", e);
+                if (toChild != null) {
+                    toChild.writeByte(ServerStatus.DIRECTIVES.SHUTDOWN.getByte());
+                    toChild.flush();
+                }
+            } catch (IOException e) {
+                LOG.debug("Exception asking child to shutdown", e);
             }
 
             try {
-                toChild.close();
-            } catch (Exception e) {
-                LOG.warn("Problem shutting down writer to child", e);
+                if (toChild != null) {
+                    toChild.close();
+                }
+            } catch (IOException e) {
+                LOG.debug("Problem shutting down writer to child", e);
             }
             destroyChildForcibly(process);
+            try {
+                MappedBufferCleaner.freeBuffer(fromChild);
+            } catch (IOException e) {
+                LOG.warn("problem freeing buffer");
+            }
+            try {
+                if (fromChildChannel != null) {
+                    fromChildChannel.close();
+                }
+            } catch (IOException e) {
+                LOG.debug("Problem closing child channel", e);
+            }
+            if (childStatusFile != null) {
+                try {
+                    if (Files.isRegularFile(childStatusFile)) {
+                        Files.delete(childStatusFile);
+                    }
+                } catch (IOException e) {
+                    LOG.warn("problem deleting child status file", e);
+                }
+            }
+
         }
 
-        private Process startProcess(String[] args) throws IOException {
+        private Process startProcess(String[] args, Path childStatusFile) throws IOException {
+
             ProcessBuilder builder = new ProcessBuilder();
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
             List<String> argList = new ArrayList<>();
             String javaPath = extractJavaPath(args);
             List<String> jvmArgs = extractJVMArgs(args);
             List<String> childArgs = extractArgs(args);
+
+            childArgs.add("-childStatusFile");
+            childArgs.add(ProcessUtils.escapeCommandLine(childStatusFile.toAbsolutePath().toString()));
 
             argList.add(javaPath);
             if (! jvmArgs.contains("-cp") && ! jvmArgs.contains("--classpath")) {
@@ -304,10 +378,11 @@ public class TikaServerWatchDog {
             LOG.debug("child process commandline: " +argList.toString());
             builder.command(argList);
             Process process = builder.start();
+
             if (SHUTDOWN_HOOK != null) {
                 Runtime.getRuntime().removeShutdownHook(SHUTDOWN_HOOK);
             }
-            SHUTDOWN_HOOK = new Thread(() -> process.destroyForcibly());
+            SHUTDOWN_HOOK = new Thread(() -> this.close());
             Runtime.getRuntime().addShutdownHook(SHUTDOWN_HOOK);
 
             return process;
@@ -323,7 +398,6 @@ public class TikaServerWatchDog {
                         "Shutting down the parent.");
                 System.exit(1);
             }
-
         } catch (InterruptedException e) {
             //swallow
         }

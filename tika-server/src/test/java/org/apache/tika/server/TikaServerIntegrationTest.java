@@ -39,6 +39,7 @@ import java.security.Permission;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -83,7 +84,7 @@ public class TikaServerIntegrationTest extends TikaTest {
 
     @Before
     public void setUp() throws Exception {
-        SecurityManager existingSecurityManager = System.getSecurityManager();
+        existingSecurityManager = System.getSecurityManager();
         System.setSecurityManager(new SecurityManager() {
             @Override
             public void checkExit(int status) {
@@ -121,7 +122,8 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-maxFiles", "2000",
                                 "-spawnChild",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "basic-"
                         });
             }
         };
@@ -131,8 +133,6 @@ public class TikaServerIntegrationTest extends TikaTest {
         } finally {
             serverThread.interrupt();
         }
-
-
     }
 
     @Test
@@ -143,7 +143,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-p", INTEGRATION_TEST_PORT,
+                                "-p", INTEGRATION_TEST_PORT
                         });
             }
         };
@@ -181,7 +181,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild", "-JXmx256m",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-pingPulseMillis", "100"
+                                "-pingPulseMillis", "100",
+                                "-tmpFilePrefix", "tika-server-oom"
+
                         });
             }
         };
@@ -217,7 +219,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "tika-server-systemexit"
+
                         });
             }
         };
@@ -252,7 +256,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild", "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "500"
+                                "-pingPulseMillis", "500",
+                                "-tmpFilePrefix", "tika-server-timeoutok"
+
                         });
             }
         };
@@ -285,7 +291,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild", "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "500"
+                                "-pingPulseMillis", "500",
+                                "-tmpFilePrefix", "tika-server-timeout"
+
                         });
             }
         };
@@ -317,7 +325,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild", "-JXms20m", "-JXmx10m",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "tika-server-badargs"
+
                         });
             }
         };
@@ -344,7 +354,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                                 "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "100"
+                                "-pingPulseMillis", "100",
+                                "-tmpFilePrefix", "tika-server-stderr"
+
                         });
             }
         };
@@ -368,7 +380,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
 
     @Test
-    @Ignore("TIKA-2784")
+    @Ignore("This works, but prints too much junk to the console.  Figure out how to gobble/redirect.")
     public void testStaticStdErrOutBasic() throws Exception {
         final AtomicInteger i = new AtomicInteger();
         Thread serverThread = new Thread() {
@@ -415,7 +427,8 @@ public class TikaServerIntegrationTest extends TikaTest {
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100", "-maxRestarts", "0",
-                                "-JDlog4j.configuration=file:"+ LOG_FILE.toAbsolutePath()
+                                "-JDlog4j.configuration=file:"+ LOG_FILE.toAbsolutePath(),
+                                "-tmpFilePrefix", "tika-server-stderrlogging"
                         });
             }
         };
@@ -464,7 +477,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     @Ignore("turn this into a real test")
     public void testMaxFiles() throws Exception {
         //this isn't a real regression test yet.
-        //Can watch logs for confirmation.
+        //Can watch logs at least for confirmation of behavior
         //TODO: convert to real test
         Thread serverThread = new Thread() {
             @Override
@@ -473,22 +486,33 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-maxFiles", "10",
                                 "-spawnChild",
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-p", INTEGRATION_TEST_PORT
                         });
             }
         };
         serverThread.start();
         awaitServerStartup();
+        Random r = new Random();
         for (int i = 0; i < 100; i++) {
             System.out.println("FILE # "+i);
             boolean ex = false;
             Response response = null;
+            String file = TEST_RECURSIVE_DOC;
             try {
+                if (r.nextFloat() < 0.01) {
+                    file = TEST_SYSTEM_EXIT;
+                } else if (r.nextFloat() < 0.015) {
+                    file = TEST_OOM;
+                } else if (r.nextFloat() < 0.02) {
+                    file = TEST_HEAVY_HANG;
+                }
+                System.out.println("about to process: "+file);
                 response = WebClient
                         .create(endPoint + META_PATH)
                         .accept("application/json")
                         .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                                .getSystemResourceAsStream(file));
             } catch (Exception e) {
                 ex = true;
             }
@@ -500,12 +524,13 @@ public class TikaServerIntegrationTest extends TikaTest {
                 System.out.println("done awaiting");
                 continue;
             }
-            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-            assertEquals(12, metadataList.size());
-            assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-            assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
+            if (file.equals(TEST_RECURSIVE_DOC)) {
+                Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+                assertEquals(12, metadataList.size());
+                assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+                assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+            }
             //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
         }
         serverThread.interrupt();

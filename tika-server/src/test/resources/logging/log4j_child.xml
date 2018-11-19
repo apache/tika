@@ -17,12 +17,12 @@
             <param name="ConversionPattern" value="%m%n"/>
         </layout>
     </appender>
-    <logger name="org.apache.tika" additivity="true">
-        <level value="debug"/>
+    <logger name="org.apache" additivity="true">
+        <level value="info"/>
         <appender-ref ref="stdout"/>
     </logger>
-    <logger name="org.apache.tika" additivity="true">
-        <level value="debug"/>
+    <logger name="org.apache.cxf" additivity="true">
+        <level value="info"/>
         <appender-ref ref="stderr"/>
     </logger>
 
