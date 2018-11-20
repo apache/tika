@@ -16,6 +16,7 @@
  */
 package org.apache.tika.server;
 
+import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -27,6 +28,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
@@ -47,8 +50,10 @@ import static org.junit.Assert.assertEquals;
 
 public class TikaServerIntegrationTest extends TikaTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
+
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
-    private static final String TEST_OOM = "mock/real_oom.xml";
+    private static final String TEST_OOM = "mock/fake_oom.xml";
     private static final String TEST_SYSTEM_EXIT = "mock/system_exit.xml";
     private static final String TEST_HEAVY_HANG = "mock/heavy_hang_30000.xml";
     private static final String TEST_HEAVY_HANG_SHORT = "mock/heavy_hang_100.xml";
@@ -78,6 +83,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
     @BeforeClass
     public static void staticSetup() throws Exception {
+        LogUtils.setLoggerClass(NullWebClientLogger.class);
         LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
         Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_child.xml"), LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
     }
@@ -290,8 +296,8 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild", "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "500",
+                                "-taskTimeoutMillis", "5000", "-taskPulseMillis", "100",
+                                "-pingPulseMillis", "100",
                                 "-tmpFilePrefix", "tika-server-timeout"
 
                         });
@@ -465,8 +471,13 @@ public class TikaServerIntegrationTest extends TikaTest {
                 if (response.getStatus() == 200) {
                     return;
                 }
+                LOG.info("tika test client failed to connect to server with status: {}", response.getStatus());
+
             } catch (javax.ws.rs.ProcessingException e) {
+                LOG.info("tika test client failed to connect to server: {}", e.getMessage());
+                LOG.debug("tika test client failed to connect to server", e);
             }
+
             Thread.sleep(100);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }

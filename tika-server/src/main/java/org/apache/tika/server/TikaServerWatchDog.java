@@ -22,10 +22,15 @@ import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -356,7 +361,7 @@ public class TikaServerWatchDog {
 
             ProcessBuilder builder = new ProcessBuilder();
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
-            builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+
             List<String> argList = new ArrayList<>();
             String javaPath = extractJavaPath(args);
             List<String> jvmArgs = extractJVMArgs(args);
@@ -378,7 +383,9 @@ public class TikaServerWatchDog {
             LOG.debug("child process commandline: " +argList.toString());
             builder.command(argList);
             Process process = builder.start();
-
+            //redirect stdout to parent stderr to avoid error msgs
+            //from maven during build: Corrupted STDOUT by directly writing to native stream in forked
+            redirectIO(process.getInputStream(), System.err);
             if (SHUTDOWN_HOOK != null) {
                 Runtime.getRuntime().removeShutdownHook(SHUTDOWN_HOOK);
             }
@@ -387,6 +394,26 @@ public class TikaServerWatchDog {
 
             return process;
         }
+    }
+
+    private static void redirectIO(final InputStream src, final PrintStream targ) {
+        Thread gobbler = new Thread(new Runnable() {
+            public void run() {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(src, StandardCharsets.UTF_8));
+                String line = null;
+                try {
+                    line = reader.readLine();
+                    while (line != null) {
+                        targ.println(line);
+                        line = reader.readLine();
+                    }
+                } catch (IOException e) {
+                    //swallow
+                }
+            }
+        });
+        gobbler.setDaemon(true);
+        gobbler.start();
     }
 
     private static synchronized void destroyChildForcibly(Process process) {
