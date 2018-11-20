@@ -30,7 +30,6 @@ import org.junit.Test;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +41,7 @@ public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test.doc";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
+    private static final String TEST_OOM = "mock/fake_oom.xml";
 
     private static final String STREAM_CLOSED_FAULT = "java.io.IOException: Stream Closed";
 
@@ -395,5 +395,30 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         assertEquals(200, response.getStatus());
 
+    }
+
+    @Test
+    public void testOOMInLegacyMode() throws Exception {
+
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + TIKA_PATH)
+                    .accept("text/plain")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
+
+        response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+
+        assertContains("plundered our seas", responseMsg);
     }
 }
