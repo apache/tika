@@ -167,11 +167,19 @@ public class TikaServerIntegrationTest extends TikaTest {
             //oom may or may not cause an exception depending
             //on the timing
         }
-        //give some time for the server to crash/kill itself
-        Thread.sleep(2000);
 
         try {
-            testBaseline();
+            response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(12, metadataList.size());
+            assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+            assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+
         } finally {
             serverThread.interrupt();
         }
