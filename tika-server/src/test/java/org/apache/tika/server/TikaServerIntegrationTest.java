@@ -142,50 +142,6 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
 
     @Test
-    public void testOOMInLegacyMode() throws Exception {
-
-        Thread serverThread = new Thread() {
-            @Override
-            public void run() {
-                TikaServerCli.main(
-                        new String[]{
-                                "-p", INTEGRATION_TEST_PORT
-                        });
-            }
-        };
-        serverThread.start();
-        awaitServerStartup();
-
-        Response response = null;
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_OOM));
-        } catch (Exception e) {
-            //oom may or may not cause an exception depending
-            //on the timing
-        }
-
-        try {
-            response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .put(ClassLoader
-                            .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-            assertEquals(12, metadataList.size());
-            assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-            assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        } finally {
-            serverThread.interrupt();
-        }
-    }
-
-    @Test
     public void testOOM() throws Exception {
 
         Thread serverThread = new Thread() {
