@@ -63,7 +63,6 @@ class JDBCTableReader {
     int rows = 0;
     private final EmbeddedDocumentUtil embeddedDocumentUtil;
     public JDBCTableReader(Connection connection, String tableName, EmbeddedDocumentUtil embeddedDocumentUtil) {
-        System.out.println("new table: "+tableName);
         this.connection = connection;
         this.tableName = tableName;
         this.embeddedDocumentUtil = embeddedDocumentUtil;
