@@ -391,7 +391,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                     XMLConstants.FEATURE_SECURE_PROCESSING, true);
             return factory.newSAXParser();
         } catch (ParserConfigurationException|SAXException e) {
-            throw new TikaException("prooblem creating SAX parser factory", e);
+            throw new TikaException("problem creating SAX parser factory", e);
         }
     }
 }
