@@ -87,6 +87,13 @@ public class DWGParserTest {
     }
 
     @Test
+    public void testDWG2013Parser() throws Exception {
+        InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2013.dwg");
+        testParser(input);
+    }
+
+    @Test
     public void testDWGMechParser() throws Exception {
         String[] types = new String[] {
               "6", "2004", "2004DX", "2005", "2006",
