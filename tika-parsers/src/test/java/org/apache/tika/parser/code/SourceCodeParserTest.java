@@ -17,12 +17,16 @@
 package org.apache.tika.parser.code;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.ToTextContentHandler;
 import org.junit.Test;
+import org.xml.sax.ContentHandler;
 
 import java.io.ByteArrayInputStream;
 import java.util.Set;
@@ -91,11 +95,28 @@ public class SourceCodeParserTest extends TikaTest {
         assertTrue(strContent.indexOf("public class HelloWorld {") > 0);
     }
 
-  private Metadata createMetadata(String mimeType) {
-    Metadata metadata = new Metadata();
-    metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testFile");
-    metadata.add(Metadata.CONTENT_TYPE, mimeType);
-    return metadata;
-  }
+    @Test
+    public void testNoMarkupInToTextHandler() throws Exception {
+
+        Parser p = new AutoDetectParser();
+        ContentHandler contentHandler = new ToTextContentHandler();
+        ParseContext parseContext = new ParseContext();
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/testJAVA.java"))) {
+            p.parse(tis, contentHandler, createMetadata("text/x-java-source"),
+                    parseContext);
+        }
+        String strContent = contentHandler.toString();
+        assertContains("public class HelloWorld {", strContent);
+        assertNotContained("background-color", strContent);
+    }
+
+
+    private Metadata createMetadata(String mimeType) {
+        Metadata metadata = new Metadata();
+        metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testFile");
+        metadata.add(Metadata.CONTENT_TYPE, mimeType);
+        return metadata;
+    }
 
 }
