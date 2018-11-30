@@ -1,5 +1,8 @@
 Release 1.20 - ???
 
+   * Prevent content within <style/> and <script/> elements
+     to be written in the ToTextContentHandler (TIKA-2550).
+
    * Switch child to parent communication to a shared memory-mapped
      file in tika-server's -spawnChild mode.
 
