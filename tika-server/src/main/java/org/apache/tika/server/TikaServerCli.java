@@ -109,7 +109,8 @@ public class TikaServerCli {
         options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
         options.addOption("maxChildStartupMillis", true, "Only in spawn child mode: Maximum number of millis to wait for the child process to startup.");
         options.addOption("maxRestarts", true, "Only in spawn child mode: how many times to restart child process, default is -1 (always restart)");
-        options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files -- use only in 'spawnChild' mode");
+        options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files (to handle parsers that might introduce " +
+                "slowly building memory leaks); the default is "+DEFAULT_MAX_FILES +". Set to -1 to turn this off.");
         options.addOption("javaHome", true, "Only in spawn child mode: override system property JAVA_HOME for calling java for the child process");
         options.addOption("child", false, "Only in spawn child mode: this process is a child process -- do not use this! " +
                 "Should only be invoked by parent process");
