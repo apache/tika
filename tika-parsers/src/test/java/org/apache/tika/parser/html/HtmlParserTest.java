@@ -72,6 +72,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -1265,8 +1266,10 @@ public class HtmlParserTest extends TikaTest {
     public void testExtractScript() throws Exception {
         HtmlParser p = new HtmlParser();
         p.setExtractScripts(true);
+        //TIKA-2550 -- make absolutely sure that macros are still extracted
+        //with the ToTextHandler
         List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html",
-                p);
+                p, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         assertEquals(2, metadataList.size());
         assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertContains("cool",
