@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.mp4;
 
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -74,7 +73,7 @@ import java.util.Set;
 /**
  * Parser for the MP4 media container format, as well as the older
  *  QuickTime format that MP4 is based on.
- * 
+ *
  * This uses the MP4Parser project from http://code.google.com/p/mp4parser/
  *  to do the underlying parsing
  */
@@ -82,12 +81,12 @@ public class MP4Parser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = 84011216792285L;
     /** TODO Replace this with a 2dp Duration Property Converter */
-    private static final DecimalFormat DURATION_FORMAT = 
-            (DecimalFormat)NumberFormat.getNumberInstance(Locale.ROOT); 
+    private static final DecimalFormat DURATION_FORMAT =
+            (DecimalFormat)NumberFormat.getNumberInstance(Locale.ROOT);
     static {
         DURATION_FORMAT.applyPattern("0.0#");
     }
-    
+
     // Ensure this stays in Sync with the entries in tika-mimetypes.xml
     private static final Map<MediaType,List<String>> typesMap = new HashMap<MediaType, List<String>>();
     static {
@@ -102,7 +101,7 @@ public class MP4Parser extends AbstractParser {
              "mp41", "mp42"));
        typesMap.put(MediaType.video("x-m4v"), Arrays.asList(
              "M4V ", "M4VH", "M4VP"));
-       
+
        typesMap.put(MediaType.video("quicktime"), Collections.<String>emptyList());
        typesMap.put(MediaType.application("mp4"), Collections.<String>emptyList());
     }
@@ -167,7 +166,7 @@ public class MP4Parser extends AbstractParser {
             MovieHeaderBox mHeader = getOrNull(moov, MovieHeaderBox.class);
             if (mHeader != null) {
                 // Get the creation and modification dates
-                metadata.set(Metadata.CREATION_DATE, mHeader.getCreationTime());
+                metadata.set(TikaCoreProperties.CREATED, mHeader.getCreationTime());
                 metadata.set(TikaCoreProperties.MODIFIED, mHeader.getModificationTime());
 
                 // Get the duration
