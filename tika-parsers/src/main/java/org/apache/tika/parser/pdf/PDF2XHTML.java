@@ -16,6 +16,35 @@
  */
 package org.apache.tika.parser.pdf;
 
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSStream;
+import org.apache.pdfbox.filter.MissingImageReaderException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.PDResources;
+import org.apache.pdfbox.pdmodel.graphics.PDXObject;
+import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceGray;
+import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
+import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.text.TextPosition;
+import org.apache.pdfbox.tools.imageio.ImageIOUtil;
+import org.apache.pdfbox.util.Matrix;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.EmbeddedContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,32 +57,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.pdfbox.cos.COSBase;
-import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.cos.COSStream;
-import org.apache.pdfbox.filter.MissingImageReaderException;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDResources;
-import org.apache.pdfbox.pdmodel.graphics.PDXObject;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceGray;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
-import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.pdfbox.text.TextPosition;
-import org.apache.pdfbox.tools.imageio.ImageIOUtil;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.EmbeddedContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -111,7 +114,11 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content
             // handler.
-            pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
+            if (config.getDetectAngles()) {
+                pdf2XHTML = new AngleDetectingPDF2XHTML(document, handler, context, metadata, config);
+            } else {
+                pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
+            }
             config.configure(pdf2XHTML);
 
             pdf2XHTML.writeText(document, new Writer() {
@@ -140,6 +147,82 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
+    private static class AngleDetectingPDF2XHTML extends PDF2XHTML {
+
+        private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata, PDFParserConfig config) throws IOException {
+            super(document, handler, context, metadata, config);
+        }
+
+        @Override
+        protected void startPage(PDPage page) throws IOException {
+            //no-op
+        }
+
+        @Override
+        protected void endPage(PDPage page) throws IOException {
+            //no-op
+        }
+
+        @Override
+        public void processPage(PDPage page) throws IOException {
+            try {
+                super.startPage(page);
+                detectAnglesAndProcessPage(page);
+            } catch (IOException e) {
+                handleCatchableIOE(e);
+            } finally {
+                super.endPage(page);
+            }
+        }
+
+        private void detectAnglesAndProcessPage(PDPage page) throws IOException {
+            //copied and pasted from https://issues.apache.org/jira/secure/attachment/12947452/ExtractAngledText.java
+            //PDFBOX-4371
+            AngleCollector angleCollector = new AngleCollector(); // alternatively, reset angles
+            angleCollector.setStartPage(getCurrentPageNo());
+            angleCollector.setEndPage(getCurrentPageNo());
+            angleCollector.getText(document);
+
+            int rotation = page.getRotation();
+            page.setRotation(0);
+
+            for (Integer angle : angleCollector.getAngles()) {
+                if (angle == 0) {
+                    try {
+                        super.processPage(page);
+                    } catch (IOException e) {
+                        handleCatchableIOE(e);
+                    }
+                } else {
+                    // prepend a transformation
+                    try (PDPageContentStream cs = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.PREPEND, false)) {
+                        cs.transform(Matrix.getRotateInstance(-Math.toRadians(angle), 0, 0));
+                    }
+
+                    try {
+                        super.processPage(page);
+                    } catch (IOException e) {
+                        handleCatchableIOE(e);
+                    }
+
+                    // remove transformation
+                    COSArray contents = (COSArray) page.getCOSObject().getItem(COSName.CONTENTS);
+                    contents.remove(0);
+                }
+            }
+            page.setRotation(rotation);
+        }
+    }
+
+    @Override
+    protected void processTextPosition(TextPosition text) {
+        Matrix m = text.getTextMatrix();
+        m.concatenate(text.getFont().getFontMatrix());
+        int angle = (int) Math.round(Math.toDegrees(Math.atan2(m.getShearY(), m.getScaleY())));
+        if (angle == 0) {
+            super.processTextPosition(text);
+        }
+    }
 
     @Override
     public void processPage(PDPage page) throws IOException {
@@ -363,6 +446,31 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         } catch (SAXException e) {
             throw new IOException(
                     "Unable to write a newline character", e);
+        }
+    }
+
+    class AngleCollector extends PDFTextStripper {
+        Set<Integer> angles = new HashSet<>();
+
+        public Set<Integer> getAngles() {
+            return angles;
+        }
+
+        /**
+         * Instantiate a new PDFTextStripper object.
+         *
+         * @throws IOException If there is an error loading the properties.
+         */
+        AngleCollector() throws IOException {
+        }
+
+        @Override
+        protected void processTextPosition(TextPosition text) {
+            Matrix m = text.getTextMatrix();
+            m.concatenate(text.getFont().getFontMatrix());
+            int angle = (int) Math.round(Math.toDegrees(Math.atan2(m.getShearY(), m.getScaleY())));
+            angle = (angle + 360) % 360;
+            angles.add(angle);
         }
     }
 

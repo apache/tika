@@ -1372,6 +1372,20 @@ public class PDFParserTest extends TikaTest {
                 .metadata.get(TikaCoreProperties.LANGUAGE));
     }
 
+    @Test
+    public void testAngles() throws Exception {
+        PDFParserConfig pdfParserConfig = new PDFParserConfig();
+        pdfParserConfig.setDetectAngles(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        String xml = getXML("testPDF_angles.pdf", parseContext).xml;
+        //make sure there is only one page!
+        assertContainsCount("<div class=\"page\">", xml, 1);
+        assertContains("IN-DEMAND", xml);
+        assertContains("natural underground", xml);
+        assertContains("transport mined materials", xml);
+    }
+
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
