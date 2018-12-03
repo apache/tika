@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -74,7 +73,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 
 /**
