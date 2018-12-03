@@ -244,9 +244,13 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap) throws Exception {
+        return getRecursiveMetadata(filePath, parserToWrap, BasicContentHandlerFactory.HANDLER_TYPE.XML);
+    }
+
+    protected List<Metadata> getRecursiveMetadata(String filePath, Parser parserToWrap, BasicContentHandlerFactory.HANDLER_TYPE handlerType) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+                new BasicContentHandlerFactory(handlerType, -1));
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             wrapper.parse(is, handler, new Metadata(), new ParseContext());
         }
