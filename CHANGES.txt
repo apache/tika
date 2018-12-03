@@ -1,5 +1,8 @@
 Release 1.20 - ???
 
+   * Integrate/parameterize new angles handling in
+     PDFBox (TIKA-2779).
+
    * Upgrade to PDFBox 2.0.13 (TIKA-2788).
 
    * Prevent content within <style/> and <script/> elements

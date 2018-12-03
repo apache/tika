@@ -708,6 +708,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    void setDetectAngles(boolean detectAngles) {
+        defaultConfig.setDetectAngles(detectAngles);
+    }
+
+    @Field
     void setInitializableProblemHander(String name) {
         if ("ignore".equals(name)) {
             setInitializableProblemHandler(InitializableProblemHandler.IGNORE);

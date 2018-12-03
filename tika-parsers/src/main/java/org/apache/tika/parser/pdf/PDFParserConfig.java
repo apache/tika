@@ -139,6 +139,8 @@ public class PDFParserConfig implements Serializable {
 
     private boolean setKCMS = false;
 
+    private boolean detectAngles = false;
+
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
@@ -231,6 +233,7 @@ public class PDFParserConfig implements Serializable {
         }
 
         maxMainMemoryBytes = getIntProp(props.getProperty("maxMainMemoryBytes"), -1);
+        detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
     }
 
     /**
@@ -733,6 +736,14 @@ public class PDFParserConfig implements Serializable {
             sb.append(t.toString());
         }
         throw new IllegalArgumentException(sb.toString());
+    }
+
+    public void setDetectAngles(boolean detectAngles) {
+        this.detectAngles = detectAngles;
+    }
+
+    public boolean getDetectAngles() {
+        return detectAngles;
     }
 
     @Override
