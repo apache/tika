@@ -44,7 +44,7 @@
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.2</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.12</pdfbox.version>
+    <pdfbox.version>2.0.13</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>0.8</sis.version>
