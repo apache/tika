@@ -289,6 +289,7 @@
 
               org.apache.commons.math3.exception;resolution:=optional,
               org.apache.commons.math3.linear;resolution:=optional,
+              org.apache.commons.math3.stat.regression;resolution:=optional,
               org.apache.commons.vfs2;resolution:=optional,
               org.apache.commons.vfs2.provider;resolution:=optional,
               org.apache.commons.vfs2.util;resolution:=optional,
