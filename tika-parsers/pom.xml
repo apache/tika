@@ -35,7 +35,6 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>4.0.0</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.11</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
