@@ -147,83 +147,6 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
-    private static class AngleDetectingPDF2XHTML extends PDF2XHTML {
-
-        private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata, PDFParserConfig config) throws IOException {
-            super(document, handler, context, metadata, config);
-        }
-
-        @Override
-        protected void startPage(PDPage page) throws IOException {
-            //no-op
-        }
-
-        @Override
-        protected void endPage(PDPage page) throws IOException {
-            //no-op
-        }
-
-        @Override
-        public void processPage(PDPage page) throws IOException {
-            try {
-                super.startPage(page);
-                detectAnglesAndProcessPage(page);
-            } catch (IOException e) {
-                handleCatchableIOE(e);
-            } finally {
-                super.endPage(page);
-            }
-        }
-
-        private void detectAnglesAndProcessPage(PDPage page) throws IOException {
-            //copied and pasted from https://issues.apache.org/jira/secure/attachment/12947452/ExtractAngledText.java
-            //PDFBOX-4371
-            AngleCollector angleCollector = new AngleCollector(); // alternatively, reset angles
-            angleCollector.setStartPage(getCurrentPageNo());
-            angleCollector.setEndPage(getCurrentPageNo());
-            angleCollector.getText(document);
-
-            int rotation = page.getRotation();
-            page.setRotation(0);
-
-            for (Integer angle : angleCollector.getAngles()) {
-                if (angle == 0) {
-                    try {
-                        super.processPage(page);
-                    } catch (IOException e) {
-                        handleCatchableIOE(e);
-                    }
-                } else {
-                    // prepend a transformation
-                    try (PDPageContentStream cs = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.PREPEND, false)) {
-                        cs.transform(Matrix.getRotateInstance(-Math.toRadians(angle), 0, 0));
-                    }
-
-                    try {
-                        super.processPage(page);
-                    } catch (IOException e) {
-                        handleCatchableIOE(e);
-                    }
-
-                    // remove transformation
-                    COSArray contents = (COSArray) page.getCOSObject().getItem(COSName.CONTENTS);
-                    contents.remove(0);
-                }
-            }
-            page.setRotation(rotation);
-        }
-    }
-
-    @Override
-    protected void processTextPosition(TextPosition text) {
-        Matrix m = text.getTextMatrix();
-        m.concatenate(text.getFont().getFontMatrix());
-        int angle = (int) Math.round(Math.toDegrees(Math.atan2(m.getShearY(), m.getScaleY())));
-        if (angle == 0) {
-            super.processTextPosition(text);
-        }
-    }
-
     @Override
     public void processPage(PDPage page) throws IOException {
         try {
@@ -474,5 +397,81 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
+    private static class AngleDetectingPDF2XHTML extends PDF2XHTML {
+
+        private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata, PDFParserConfig config) throws IOException {
+            super(document, handler, context, metadata, config);
+        }
+
+        @Override
+        protected void startPage(PDPage page) throws IOException {
+            //no-op
+        }
+
+        @Override
+        protected void endPage(PDPage page) throws IOException {
+            //no-op
+        }
+
+        @Override
+        public void processPage(PDPage page) throws IOException {
+            try {
+                super.startPage(page);
+                detectAnglesAndProcessPage(page);
+            } catch (IOException e) {
+                handleCatchableIOE(e);
+            } finally {
+                super.endPage(page);
+            }
+        }
+
+        private void detectAnglesAndProcessPage(PDPage page) throws IOException {
+            //copied and pasted from https://issues.apache.org/jira/secure/attachment/12947452/ExtractAngledText.java
+            //PDFBOX-4371
+            AngleCollector angleCollector = new AngleCollector(); // alternatively, reset angles
+            angleCollector.setStartPage(getCurrentPageNo());
+            angleCollector.setEndPage(getCurrentPageNo());
+            angleCollector.getText(document);
+
+            int rotation = page.getRotation();
+            page.setRotation(0);
+
+            for (Integer angle : angleCollector.getAngles()) {
+                if (angle == 0) {
+                    try {
+                        super.processPage(page);
+                    } catch (IOException e) {
+                        handleCatchableIOE(e);
+                    }
+                } else {
+                    // prepend a transformation
+                    try (PDPageContentStream cs = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.PREPEND, false)) {
+                        cs.transform(Matrix.getRotateInstance(-Math.toRadians(angle), 0, 0));
+                    }
+
+                    try {
+                        super.processPage(page);
+                    } catch (IOException e) {
+                        handleCatchableIOE(e);
+                    }
+
+                    // remove transformation
+                    COSArray contents = (COSArray) page.getCOSObject().getItem(COSName.CONTENTS);
+                    contents.remove(0);
+                }
+            }
+            page.setRotation(rotation);
+        }
+
+        @Override
+        protected void processTextPosition(TextPosition text) {
+            Matrix m = text.getTextMatrix();
+            m.concatenate(text.getFont().getFontMatrix());
+            int angle = (int) Math.round(Math.toDegrees(Math.atan2(m.getShearY(), m.getScaleY())));
+            if (angle == 0) {
+                super.processTextPosition(text);
+            }
+        }
+    }
 }
 
