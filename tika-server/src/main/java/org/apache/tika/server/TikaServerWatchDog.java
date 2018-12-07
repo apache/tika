@@ -231,20 +231,31 @@ public class TikaServerWatchDog {
             //wait for file to be written/initialized by child process
             Instant start = Instant.now();
             long elapsed = Duration.between(start, Instant.now()).toMillis();
-            while (Files.size(childStatusFile) < 12
-                    && elapsed < serverTimeouts.getMaxChildStartupMillis()) {
-                if (!process.isAlive()) {
-                    close();
-                    throw new RuntimeException("Failed to start child process");
+            try {
+                while (process.isAlive() && Files.size(childStatusFile) < 12
+                        && elapsed < serverTimeouts.getMaxChildStartupMillis()) {
+                    Thread.sleep(50);
+                    elapsed = Duration.between(start, Instant.now()).toMillis();
                 }
-                Thread.sleep(50);
-                elapsed = Duration.between(start, Instant.now()).toMillis();
+            } catch (IOException e) {
+                //the childStatusFile can be deleted by the
+                //child process if it closes...this can lead to a NoSuchFileException
+                LOG.warn("failed to start child process", e);
             }
 
             if (elapsed > serverTimeouts.getMaxChildStartupMillis()) {
                 close();
                 throw new RuntimeException("Child process failed to start after "+elapsed + " (ms)");
             }
+            if (!process.isAlive()) {
+                close();
+                throw new RuntimeException("Failed to start child process -- child is not alive");
+            }
+            if (!Files.exists(childStatusFile)) {
+                close();
+                throw new RuntimeException("Failed to start child process -- child status file does not exist");
+            }
+
             this.fromChildChannel = FileChannel.open(childStatusFile,
                     StandardOpenOption.READ,
                     StandardOpenOption.DELETE_ON_CLOSE);
