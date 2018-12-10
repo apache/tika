@@ -23,8 +23,11 @@ import org.slf4j.LoggerFactory;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.MappedByteBuffer;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
@@ -38,31 +41,27 @@ public class ServerStatusWatcher implements Runnable {
     private final DataInputStream fromParent;
     private final long maxFiles;
     private final ServerTimeouts serverTimeouts;
-    private final FileChannel childStatusChannel;
-    private final MappedByteBuffer toParent;
+    private final Path childStatusPath;
+    private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
+
 
 
     private volatile Instant lastPing = null;
 
     public ServerStatusWatcher(ServerStatus serverStatus,
-                               InputStream inputStream, Path childStatusFile,
+                               InputStream inputStream, Path childStatusPath,
                                long maxFiles,
                                ServerTimeouts serverTimeouts) throws IOException {
         this.serverStatus = serverStatus;
         this.maxFiles = maxFiles;
         this.serverTimeouts = serverTimeouts;
-        this.childStatusChannel = FileChannel.open(childStatusFile,
-                StandardOpenOption.DSYNC, StandardOpenOption.CREATE,
-                StandardOpenOption.WRITE, StandardOpenOption.READ,
-                StandardOpenOption.DELETE_ON_CLOSE);
-        this.toParent= childStatusChannel.map(FileChannel.MapMode.READ_WRITE,
-                0, 16);//8 for timestamp long, 4 for status int, 4 for numactivetasks int
+        this.childStatusPath = childStatusPath;
         serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
-        writeStatus();
         this.fromParent = new DataInputStream(inputStream);
         Thread statusWatcher = new Thread(new StatusWatcher());
         statusWatcher.setDaemon(true);
         statusWatcher.start();
+        writeStatus();
 
     }
 
@@ -107,10 +106,28 @@ public class ServerStatusWatcher implements Runnable {
         }
     }
 
-    private void writeStatus() throws IllegalArgumentException {
-        toParent.putLong(0, Instant.now().toEpochMilli());
-        toParent.putInt(8, serverStatus.getStatus().getInt());
-        toParent.putInt(12, serverStatus.getTasks().size());
+    private void writeStatus() throws IOException {
+        Instant started = Instant.now();
+        long elapsed = Duration.between(started, Instant.now()).toMillis();
+        try (FileChannel channel = FileChannel.open(childStatusPath,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.WRITE)) {
+            while (elapsed < serverTimeouts.getPingTimeoutMillis()) {
+                try (FileLock lock = channel.tryLock()) {
+                    if (lock != null) {
+                        ((Buffer) statusBuffer).position(0);
+                        statusBuffer.putLong(0, Instant.now().toEpochMilli());
+                        statusBuffer.putInt(8, serverStatus.getStatus().getInt());
+                        statusBuffer.putInt(12, serverStatus.getTasks().size());
+                        channel.write(statusBuffer);
+                        channel.force(true);
+                        return;
+                    }
+                }
+                elapsed = Duration.between(started, Instant.now()).toMillis();
+            }
+        }
+        throw new FatalException("Couldn't write to status file after trying for " + elapsed + " millis.");
     }
 
     private void checkForHitMaxFiles() {
@@ -142,20 +159,27 @@ public class ServerStatusWatcher implements Runnable {
 
     private void shutdown(ServerStatus.STATUS status) {
 
-        toParent.putLong(0, Instant.now().toEpochMilli());
-        toParent.putInt(8, serverStatus.getStatus().getInt());
-        toParent.putInt(12, 0);
-        toParent.force();
         try {
-            childStatusChannel.close();
-        } catch (IOException e) {
-            LOG.warn("problem closing status channel", e);
+            writeStatus();
+        } catch (Exception e) {
+            LOG.warn("problem writing status before shutdown", e);
+        }
+
+        //if something went wrong with the parent,
+        //the child process should try to delete the tmp file
+        if (status == ServerStatus.STATUS.PARENT_EXCEPTION) {
+            try {
+                Files.delete(childStatusPath);
+            } catch (IOException e) {
+                //swallow
+            }
         }
         LOG.info("Shutting down child process with status: {}", status.name());
         System.exit(status.getShutdownCode());
     }
 
-    //This is an internal thread that pulses every 100MS
+
+    //This is an internal thread that pulses every ServerTimeouts#pingPulseMillis
     //within the child to see if the child should die.
     private class StatusWatcher implements Runnable {
 
@@ -182,6 +206,16 @@ public class ServerStatusWatcher implements Runnable {
                     return;
                 }
             }
+        }
+    }
+
+    private static class FatalException extends RuntimeException {
+        public FatalException() {
+            super();
+        }
+
+        public FatalException(String msg) {
+            super(msg);
         }
     }
 }

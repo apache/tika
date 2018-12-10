@@ -251,7 +251,7 @@ public class TikaServerIntegrationTest extends TikaTest {
         }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testTimeout() throws Exception {
 
         Thread serverThread = new Thread() {
@@ -260,7 +260,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild", "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "5000", "-taskPulseMillis", "100",
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "100",
                                 "-pingPulseMillis", "100",
                                 "-tmpFilePrefix", "tika-server-timeout"
 
@@ -426,12 +426,10 @@ public class TikaServerIntegrationTest extends TikaTest {
 
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
+        WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
         while (elapsed < 30000) {
             try {
-                Response response = WebClient
-                        .create(endPoint + "/tika")
-                        .accept("text/plain")
-                        .get();
+                Response response = client.get();
                 if (response.getStatus() == 200) {
                     return;
                 }

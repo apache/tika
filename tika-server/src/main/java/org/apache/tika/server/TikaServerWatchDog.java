@@ -28,8 +28,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +44,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 public class TikaServerWatchDog {
 
@@ -61,7 +68,6 @@ public class TikaServerWatchDog {
     public void execute(String[] args, ServerTimeouts serverTimeouts) throws Exception {
         LOG.info("server watch dog is starting up");
         startPingTimer(serverTimeouts);
-
         try {
             childProcess = new ChildProcess(args, serverTimeouts);
             setChildStatus(CHILD_STATUS.RUNNING);
@@ -211,11 +217,11 @@ public class TikaServerWatchDog {
         private Thread SHUTDOWN_HOOK = null;
 
         private final Process process;
-        private final FileChannel fromChildChannel;
-        private final MappedByteBuffer fromChild;
         private final DataOutputStream toChild;
         private final ServerTimeouts serverTimeouts;
         private final Path childStatusFile;
+        private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
+
         private ChildProcess(String[] args, ServerTimeouts serverTimeouts) throws Exception {
             String prefix = DEFAULT_CHILD_STATUS_FILE_PREFIX;
             for (int i = 0; i < args.length; i++) {
@@ -256,27 +262,7 @@ public class TikaServerWatchDog {
                 throw new RuntimeException("Failed to start child process -- child status file does not exist");
             }
 
-            this.fromChildChannel = FileChannel.open(childStatusFile,
-                    StandardOpenOption.READ,
-                    StandardOpenOption.DELETE_ON_CLOSE);
-            this.fromChild = fromChildChannel.map(
-                    FileChannel.MapMode.READ_ONLY, 0, 12);
-
             this.toChild = new DataOutputStream(process.getOutputStream());
-            elapsed = Duration.between(start, Instant.now()).toMillis();
-            //wait for child process to write something to the file
-            while (elapsed < serverTimeouts.getMaxChildStartupMillis()) {
-                int status = fromChild.getInt(8);
-                if (status == ServerStatus.STATUS.OPERATING.getInt()) {
-                    break;
-                }
-                Thread.sleep(50);
-                elapsed = Duration.between(start, Instant.now()).toMillis();
-            }
-            if (elapsed > serverTimeouts.getMaxChildStartupMillis()) {
-                close();
-                throw new RuntimeException("Child process failed to start after "+elapsed + " (ms)");
-            }
             lastPing = Instant.now();
         }
 
@@ -292,38 +278,62 @@ public class TikaServerWatchDog {
                 LOG.warn("Exception pinging child process", e);
                 return false;
             }
-            long lastUpdate = -1;
-            int status = -1;
+            ChildStatus childStatus = null;
             try {
-                lastUpdate = fromChild.getLong(0);
-                status = fromChild.getInt(8);
-            } catch (IndexOutOfBoundsException e) {
-                //something went wrong with the tmp file
-                LOG.warn("Exception receiving status from child", e);
+                childStatus = readStatus();
+            } catch (Exception e) {
+                LOG.warn("Exception reading status from child", e);
                 return false;
             }
 
-            if (status != ServerStatus.STATUS.OPERATING.getInt()) {
+            if (childStatus.status != ServerStatus.STATUS.OPERATING.getInt()) {
                 LOG.warn("Received non-operating status from child: {}",
-                        ServerStatus.STATUS.lookup(status));
+                        ServerStatus.STATUS.lookup(childStatus.status));
                 return false;
             }
 
             long elapsedSinceLastUpdate =
-                    Duration.between(Instant.ofEpochMilli(lastUpdate), Instant.now()).toMillis();
-            LOG.trace("last update: {}, elapsed:{}, status:{}", lastUpdate, elapsedSinceLastUpdate, status);
+                    Duration.between(Instant.ofEpochMilli(childStatus.timestamp), Instant.now()).toMillis();
+            LOG.debug("last update: {}, elapsed:{}, status:{}", childStatus.timestamp, elapsedSinceLastUpdate,
+                    childStatus.status);
 
             if (elapsedSinceLastUpdate >
                     serverTimeouts.getPingTimeoutMillis()) {
                 //child hasn't written a status update in a longer time than allowed
                 LOG.warn("Child's last update exceeded ping timeout: {} (ms) with status {}",
-                        elapsedSinceLastUpdate, status);
+                        elapsedSinceLastUpdate, childStatus.status);
                 return false;
             }
 
             lastPing = Instant.now();
             return true;
         }
+
+        private ChildStatus readStatus() throws Exception {
+            Instant started = Instant.now();
+            Long elapsed = Duration.between(started, Instant.now()).toMillis();
+            //only reading, but need to include write to allow for locking
+            try (FileChannel fc = FileChannel.open(childStatusFile, READ, WRITE)) {
+
+                while (elapsed < serverTimeouts.getPingTimeoutMillis()) {
+                    try (FileLock lock = fc.tryLock(0, 16, true)) {
+                        if (lock != null) {
+                            ((Buffer)statusBuffer).position(0);
+                            fc.read(statusBuffer);
+                            long timestamp = statusBuffer.getLong(0);
+                            int status = statusBuffer.getInt(8);
+                            int numTasks = statusBuffer.getInt(12);
+                            return new ChildStatus(timestamp, status, numTasks);
+                        }
+                    } catch (OverlappingFileLockException e) {
+                        //swallow
+                    }
+                    elapsed = Duration.between(started, Instant.now()).toMillis();
+                }
+            }
+            throw new RuntimeException("couldn't read from status file after "+elapsed +" millis");
+        }
+
 
         private void close() {
 
@@ -344,23 +354,13 @@ public class TikaServerWatchDog {
                 LOG.debug("Problem shutting down writer to child", e);
             }
             destroyChildForcibly(process);
-            try {
-                MappedBufferCleaner.freeBuffer(fromChild);
-            } catch (IOException e) {
-                LOG.warn("problem freeing buffer");
-            }
-            try {
-                if (fromChildChannel != null) {
-                    fromChildChannel.close();
-                }
-            } catch (IOException e) {
-                LOG.debug("Problem closing child channel", e);
-            }
+
             if (childStatusFile != null) {
                 try {
                     if (Files.isRegularFile(childStatusFile)) {
                         Files.delete(childStatusFile);
                     }
+                    LOG.debug("deleted "+childStatusFile);
                 } catch (IOException e) {
                     LOG.warn("problem deleting child status file", e);
                 }
@@ -438,6 +438,27 @@ public class TikaServerWatchDog {
             }
         } catch (InterruptedException e) {
             //swallow
+        }
+    }
+
+    private static class ChildStatus {
+        private final long timestamp;
+        private final int status;
+        private final int numTasks;
+
+        public ChildStatus(long timestamp, int status, int numTasks) {
+            this.timestamp = timestamp;
+            this.status = status;
+            this.numTasks = numTasks;
+        }
+
+        @Override
+        public String toString() {
+            return "ChildStatus{" +
+                    "timestamp=" + timestamp +
+                    ", status=" + status +
+                    ", numTasks=" + numTasks +
+                    '}';
         }
     }
 
