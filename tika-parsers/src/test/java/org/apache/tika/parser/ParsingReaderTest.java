@@ -101,4 +101,10 @@ public class ParsingReaderTest {
         }
     }
 
+    @Test
+    public void testZeroByte() throws Exception {
+        InputStream is = new ByteArrayInputStream(new byte[0]);
+        ParsingReader r = new ParsingReader(is);
+        assertEquals(-1, r.read());
+    }
 }
