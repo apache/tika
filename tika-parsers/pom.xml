@@ -292,14 +292,10 @@
       <version>7.0</version>
     </dependency>
     <dependency>
-      <!-- 1.9.37 was built with jdk9 and
-           causes: Method rewind()Ljava/nio/ByteBuffer;
-           does not exist in class java.nio.ByteBuffer -->
-      <groupId>org.mp4parser</groupId>
+      <groupId>com.googlecode.mp4parser</groupId>
       <artifactId>isoparser</artifactId>
-      <version>1.9.36</version>
+      <version>1.1.22</version>
     </dependency>
-
     <dependency>
       <groupId>com.drewnoakes</groupId>
       <artifactId>metadata-extractor</artifactId>
