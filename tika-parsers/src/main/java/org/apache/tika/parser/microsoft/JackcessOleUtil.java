@@ -37,7 +37,6 @@ import com.healthmarketscience.jackcess.util.OleBlob;
 import static com.healthmarketscience.jackcess.util.OleBlob.*;
 
 import com.healthmarketscience.jackcess.impl.ByteUtil;
-import com.healthmarketscience.jackcess.impl.CustomToStringStyle;
 import com.healthmarketscience.jackcess.impl.PageChannel;
 
 /**
