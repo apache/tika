@@ -45,8 +45,10 @@ public enum Cols {
     CONTENT_LENGTH,
     NUM_UNIQUE_TOKENS,
     NUM_TOKENS,
+    NUM_UNIQUE_ALPHABETIC_TOKENS,
     NUM_ALPHABETIC_TOKENS, //alphabetic or ideographic tokens
     COMMON_TOKENS_LANG, //which language was used for the common tokens metric?
+    NUM_UNIQUE_COMMON_TOKENS,
     NUM_COMMON_TOKENS,
     TOP_N_TOKENS,
     LANG_ID_1,

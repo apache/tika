@@ -389,12 +389,15 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             LOG.error("{}", e.getMessage(), e);
         }
         data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
+        data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
         data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
         TokenStatistics tokenStatistics = tokenCounter.getTokenStatistics(fieldName);
         data.put(Cols.NUM_UNIQUE_TOKENS,
                 Integer.toString(tokenStatistics.getTotalUniqueTokens()));
         data.put(Cols.NUM_TOKENS,
                 Integer.toString(tokenStatistics.getTotalTokens()));
+        data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS,
+                Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
         data.put(Cols.NUM_ALPHABETIC_TOKENS,
                 Integer.toString(commonTokenResult.getAlphabeticTokens()));
 
