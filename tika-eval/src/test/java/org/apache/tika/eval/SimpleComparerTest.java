@@ -96,7 +96,9 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals("70", row.get(Cols.CONTENT_LENGTH));
         assertEquals("10", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("14", row.get(Cols.NUM_TOKENS));
+        assertEquals("8", row.get(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS));
         assertEquals("12", row.get(Cols.NUM_ALPHABETIC_TOKENS));
+        assertEquals("3", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
         assertEquals("6", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("57", row.get(Cols.TOKEN_LENGTH_SUM));
         assertEquals("en", row.get(Cols.COMMON_TOKENS_LANG));
@@ -106,6 +108,7 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals("76", row.get(Cols.CONTENT_LENGTH));
         assertEquals("9", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("13", row.get(Cols.NUM_TOKENS));
+        assertEquals("3", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
         assertEquals("4", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("64", row.get(Cols.TOKEN_LENGTH_SUM));
         assertEquals("en", row.get(Cols.COMMON_TOKENS_LANG));

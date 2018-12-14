@@ -765,8 +765,8 @@
             limit 100000
         </sql>
     </report>
-    <report reportName="contentDiffsIgnoreExceptions"
-            reportFilename="content/content_diffs_ignore_exceptions.xlsx"
+    <report reportName="contentDiffsNoExceptions"
+            reportFilename="content/content_diffs_no_exceptions.xlsx"
             format="xlsx"
             includeSql="true">
 
