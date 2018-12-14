@@ -348,7 +348,7 @@
     <dependency>
       <groupId>com.github.junrar</groupId>
       <artifactId>junrar</artifactId>
-      <version>3.1.0</version>
+      <version>2.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
