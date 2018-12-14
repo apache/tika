@@ -46,6 +46,7 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
         List<TableInfo> tableInfosAandB = new ArrayList<>();
         tableInfosA.add(ExtractComparer.PROFILES_A);
         tableInfosA.add(ExtractComparer.EXCEPTION_TABLE_A);
+        tableInfosA.add(ExtractComparer.TAGS_TABLE_A);
         tableInfosA.add(ExtractComparer.CONTENTS_TABLE_A);
         tableInfosA.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
         tableInfosA.add(ExtractComparer.EMBEDDED_FILE_PATH_TABLE_A);
@@ -53,6 +54,7 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
         tableInfosB.add(ExtractComparer.PROFILES_B);
         tableInfosB.add(ExtractComparer.EXCEPTION_TABLE_B);
         tableInfosB.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
+        tableInfosB.add(ExtractComparer.TAGS_TABLE_B);
         tableInfosB.add(ExtractComparer.CONTENTS_TABLE_B);
         tableInfosB.add(ExtractComparer.EMBEDDED_FILE_PATH_TABLE_B);
 

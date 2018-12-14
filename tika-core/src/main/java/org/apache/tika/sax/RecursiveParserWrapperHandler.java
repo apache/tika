@@ -114,6 +114,7 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
             String content = handler.toString();
             if (content != null && content.trim().length() > 0 ) {
                 metadata.add(TIKA_CONTENT, content);
+                metadata.add(TIKA_CONTENT_HANDLER, handler.getClass().getSimpleName());
             }
         }
     }

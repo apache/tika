@@ -36,6 +36,10 @@ import java.nio.charset.Charset;
 public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler implements Serializable {
 
     public final static Property TIKA_CONTENT = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"content");
+    /**
+     * Simple class name of the content handler
+     */
+    public final static Property TIKA_CONTENT_HANDLER = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"content_handler");
     public final static Property PARSE_TIME_MILLIS = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX + "parse_time_millis");
     public final static Property WRITE_LIMIT_REACHED =
             Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
