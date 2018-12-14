@@ -38,7 +38,6 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class JackcessParserTest extends TikaTest {
 
@@ -66,7 +65,7 @@ public class JackcessParserTest extends TikaTest {
             }
             List<Metadata> list = handler.getMetadataList();
             assertEquals(4, list.size());
-            String mainContent = list.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+            String mainContent = list.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
 
             //make sure there's a thead and tbody
             assertContains("</thead><tbody>", mainContent);
@@ -86,7 +85,7 @@ public class JackcessParserTest extends TikaTest {
 
             //test embedded document handling
             assertContains("Test Document with embedded pdf",
-                    list.get(3).get(RecursiveParserWrapper.TIKA_CONTENT));
+                    list.get(3).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         }
     }
 
