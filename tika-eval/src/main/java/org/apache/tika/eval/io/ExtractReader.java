@@ -1,32 +1,3 @@
-package org.apache.tika.eval.io;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -43,6 +14,38 @@ import org.slf4j.LoggerFactory;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.eval.io;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class ExtractReader {
     private static final Logger LOG = LoggerFactory.getLogger(ExtractReader.class);
@@ -89,7 +92,7 @@ public class ExtractReader {
         }
 
         FileSuffixes fileSuffixes = parseSuffixes(extractFile.getFileName().toString());
-        if (fileSuffixes.txtOrJson == null) {
+        if (fileSuffixes.format == null) {
             throw new ExtractReaderException(ExtractReaderException.TYPE.INCORRECT_EXTRACT_FILE_SUFFIX);
         }
         if (! Files.isRegularFile(extractFile)) {
@@ -137,7 +140,7 @@ public class ExtractReader {
         }
 
         try {
-            if (fileSuffixes.txtOrJson.equals("json")) {
+            if (fileSuffixes.format == FileSuffixes.FORMAT.JSON) {
                 metadataList = JsonMetadataList.fromJson(reader);
                 if (alterMetadataList.equals(ALTER_METADATA_LIST.FIRST_ONLY) && metadataList.size() > 1) {
                     while (metadataList.size() > 1) {
@@ -180,6 +183,11 @@ public class ExtractReader {
         String content = IOUtils.toString(reader);
         Metadata m = new Metadata();
         m.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, content);
+        if (fileSuffixes.format == FileSuffixes.FORMAT.HTML) {
+            m.set(RecursiveParserWrapperHandler.TIKA_CONTENT_HANDLER, ToXMLContentHandler.class.getSimpleName());
+        } else if (fileSuffixes.format == FileSuffixes.FORMAT.TXT) {
+            m.set(RecursiveParserWrapperHandler.TIKA_CONTENT_HANDLER, ToTextContentHandler.class.getSimpleName());
+        }
         //Let's hope the file name has a suffix that can
         //be used to determine the mime.  Could be wrong or missing,
         //but better than nothing.
@@ -199,18 +207,37 @@ public class ExtractReader {
         if (fName == null) {
             return fileSuffixes;
         }
-        Matcher m = Pattern.compile("^(.*?)\\.(json|txt)(?:\\.(bz2|gz(?:ip)?|zip))?$").matcher(fName);
+        Matcher m = Pattern.compile("(?i)^(.*?)\\.(json|txt|x?html)(?:\\.(bz2|gz(?:ip)?|zip))?$").matcher(fName);
         if (m.find()) {
             fileSuffixes.originalFileName = m.group(1);
-            fileSuffixes.txtOrJson = m.group(2);
+            fileSuffixes.setFormat(m.group(2));
             fileSuffixes.compression = m.group(3);
         }
         return fileSuffixes;
     }
 
     private static class FileSuffixes {
+
+        enum FORMAT {
+            TXT,
+            HTML,
+            JSON
+        }
         String compression;
-        String txtOrJson;
+        FORMAT format;
         String originalFileName;
+
+        public void setFormat(String fmt) {
+            String lc = fmt.toLowerCase(Locale.ENGLISH);
+            if (lc.equals("json")) {
+                format = FORMAT.JSON;
+            } else if (lc.equals("txt")) {
+                format = FORMAT.TXT;
+            } else if (lc.contains("html")) {
+                format = FORMAT.HTML;
+            } else {
+                throw new IllegalArgumentException("extract must end in .json, .txt or .xhtml");
+            }
+        }
     }
 }

@@ -56,20 +56,24 @@ import org.apache.tika.eval.tokens.CommonTokenResult;
 import org.apache.tika.eval.tokens.TokenCounter;
 import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.eval.tokens.TokenStatistics;
+import org.apache.tika.eval.util.ContentTags;
+import org.apache.tika.eval.util.ContentTagParser;
 import org.apache.tika.eval.util.LanguageIDWrapper;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 
 public abstract class AbstractProfiler extends FileResourceConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractProfiler.class);
-
 
     private static final String[] EXTRACT_EXTENSIONS = {
             ".json",
@@ -103,14 +107,35 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
     public static final String TRUE = Boolean.toString(true);
     public static final String FALSE = Boolean.toString(false);
+    private static final String ZERO = "0";
 
 
     protected static final AtomicInteger ID = new AtomicInteger();
 
-    private final static String UNKNOWN_EXTENSION = "unk";
+    private static final String UNKNOWN_EXTENSION = "unk";
     //make this configurable
-    private final static String DIGEST_KEY = "X-TIKA:digest:MD5";
+    private static final String DIGEST_KEY = "X-TIKA:digest:MD5";
 
+    private static final Map<String, Cols> UC_TAGS_OF_INTEREST = initTags();
+
+    private static Map<String, Cols> initTags() {
+        //simplify this mess
+        Map<String, Cols> tmp = new HashMap<>();
+        tmp.put("A", Cols.TAGS_A);
+        tmp.put("DIV", Cols.TAGS_DIV);
+        tmp.put("I", Cols.TAGS_I);
+        tmp.put("IMG", Cols.TAGS_IMG);
+        tmp.put("LI", Cols.TAGS_LI);
+        tmp.put("OL", Cols.TAGS_OL);
+        tmp.put("P", Cols.TAGS_P);
+        tmp.put("TABLE", Cols.TAGS_TABLE);
+        tmp.put("TD", Cols.TAGS_TD);
+        tmp.put("TITLE", Cols.TAGS_TITLE);
+        tmp.put("TR", Cols.TAGS_TR);
+        tmp.put("U", Cols.TAGS_U);
+        tmp.put("UL", Cols.TAGS_UL);
+        return Collections.unmodifiableMap(tmp);
+    }
     private static CommonTokenCountManager commonTokenCountManager;
     private String lastExtractExtension = null;
 
@@ -230,7 +255,8 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
     }
 
-    protected void writeProfileData(EvalFilePaths fps, int i, Metadata m,
+    protected void writeProfileData(EvalFilePaths fps, int i,
+                                    ContentTags contentTags, Metadata m,
                                     String fileId, String containerId,
                                     List<Integer> numAttachments, TableInfo profileTable) {
 
@@ -275,7 +301,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.ELAPSED_TIME_MILLIS,
                 getTime(m));
 
-        String content = getContent(m);
+        String content = contentTags.getContent();
         if (content == null || content.trim().length() == 0) {
             data.put(Cols.HAS_CONTENT, FALSE);
         } else {
@@ -331,17 +357,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      * entered into the content table.
      *
      * @param fileId
-     * @param m
+     * @param contentTags
      * @param fieldName
      * @param contentsTable
      */
-    protected void writeContentData(String fileId, Metadata m,
+    protected void writeContentData(String fileId, ContentTags contentTags,
                                     String fieldName, TableInfo contentsTable) throws IOException {
-        if (m == null) {
+        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
             return;
         }
         Map<Cols, String> data = new HashMap<>();
-        String content = getContent(m, maxContentLength, data);
+        String content = truncateContent(contentTags, maxContentLength, data);
         if (content == null || content.trim().length() == 0) {
             return;
         }
@@ -350,7 +376,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
         data.put(Cols.ID, fileId);
         data.put(Cols.CONTENT_LENGTH, Integer.toString(content.length()));
-        langid(m, data);
+        langid(contentTags, data);
         String langid = data.get(Cols.LANG_ID_1);
         langid = (langid == null) ? "" : langid;
 
@@ -383,13 +409,43 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
         data.put(Cols.TOKEN_LENGTH_STD_DEV,
                 Double.toString(summStats.getStandardDeviation()));
-        unicodeBlocks(m, data);
+        unicodeBlocks(contentTags, data);
         try {
             writer.writeRow(contentsTable, data);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
+
+    void writeTagData(String fileId, ContentTags contentTags, TableInfo tagsTable) {
+        Map<String, Integer> tags = contentTags.getTags();
+        if (tags.size() == 0 && contentTags.getParseException() == false) {
+            return;
+        }
+        Map<Cols, String> data = new HashMap<>();
+        data.put(Cols.ID, fileId);
+
+        for (Map.Entry<String, Cols> e : UC_TAGS_OF_INTEREST.entrySet()) {
+            Integer count = tags.get(e.getKey());
+            if (count == null) {
+                data.put(e.getValue(), ZERO);
+            } else {
+                data.put(e.getValue(), Integer.toString(count));
+            }
+        }
+
+        if (contentTags.getParseException()) {
+            data.put(Cols.TAGS_PARSE_EXCEPTION, TRUE);
+        } else {
+            data.put(Cols.TAGS_PARSE_EXCEPTION, FALSE);
+        }
+        try {
+            writer.writeRow(tagsTable, data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     String getTime(Metadata m) {
         String elapsed = "-1";
@@ -459,14 +515,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     /**
      * Get the content and record in the data {@link Cols#CONTENT_TRUNCATED_AT_MAX_LEN} whether the string was truncated
      *
-     * @param metadata
+     * @param contentTags
      * @param maxLength
      * @param data
      * @return
      */
-    protected static String getContent(Metadata metadata, int maxLength, Map<Cols, String> data) {
+    protected static String truncateContent(ContentTags contentTags, int maxLength, Map<Cols, String> data) {
         data.put(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, "FALSE");
-        String c = getContent(metadata);
+        if (contentTags == null) {
+            return "";
+        }
+        String c = contentTags.getContent();
         if (maxLength > -1 && c.length() > maxLength) {
             c = c.substring(0, maxLength);
             data.put(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, "TRUE");
@@ -474,19 +533,15 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         return c;
 
     }
-    protected static String getContent(Metadata metadata) {
+    protected static ContentTags getContent(EvalFilePaths evalFilePaths, Metadata metadata) {
         if (metadata == null) {
-            return "";
+            return ContentTags.EMPTY_CONTENT_TAGS;
         }
-        String c = metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
-        if (c == null) {
-            return "";
-        }
-        return c;
+        return parseContentAndTags(evalFilePaths, metadata);
     }
 
-    void unicodeBlocks(Metadata metadata, Map<Cols, String> data) {
-        String content = getContent(metadata);
+    void unicodeBlocks(ContentTags contentTags, Map<Cols, String> data) {
+        String content = contentTags.getContent();
         if (content.length() < 200) {
             return;
         }
@@ -537,8 +592,8 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
 
-    void langid(Metadata metadata, Map<Cols, String> data) {
-        String content = getContent(metadata);
+    void langid(ContentTags contentTags, Map<Cols, String> data) {
+        String content = contentTags.getContent();
         if (content.length() < 50) {
             return;
         }
@@ -765,5 +820,38 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             sb.append(parts[i]);
         }
     }
+
+    private static ContentTags parseContentAndTags(EvalFilePaths evalFilePaths, Metadata metadata) {
+        String s = metadata.get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        if (s == null || s.length() == 0) {
+            return ContentTags.EMPTY_CONTENT_TAGS;
+        }
+
+        String handlerClass = metadata.get(RecursiveParserWrapperHandler.TIKA_CONTENT_HANDLER);
+        if (evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".html")) {
+            try {
+                return ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
+            } catch (IOException|SAXException e) {
+                LOG.warn("Problem parsing html in {}; backing off to treat string as text",
+                        evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
+
+                return new ContentTags(s, true);
+            }
+        } else if (
+                evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".xhtml") ||
+                (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
+            try {
+                return ContentTagParser.parseXML(s, UC_TAGS_OF_INTEREST.keySet());
+            } catch (TikaException|IOException|SAXException e) {
+                LOG.warn("Problem parsing xhtml in {}; backing off to treat string as text",
+                        evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
+
+                return new ContentTags(s, true);
+            }
+        }
+        return new ContentTags(s);
+    }
+
+
 }
 
