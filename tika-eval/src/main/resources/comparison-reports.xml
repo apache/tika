@@ -929,8 +929,8 @@
         </report>
     -->
 
-    <report reportName="Attachment Diffs"
-            reportFilename="attachments/attachment_diffs.xlsx"
+    <report reportName="Attachment Diffs no Exceptions"
+            reportFilename="attachments/attachment_diffs_no_exceptions.xlsx"
             format="xlsx"
             includeSql="true">
 
@@ -941,8 +941,7 @@
             mb.mime_string as MIME_STRING_B,
             pa.num_attachments as NUM_ATTACHMENTS_A,
             pb.num_attachments as NUM_ATTACHMENTS_B,
-            ea.parse_exception_id as EXCEPTION_ID_A,
-            eb.parse_exception_id as EXCEPTION_ID_B
+            pb.num_attachments-pa.num_attachments as NUM_ATTACHMENTS_DIFF_IN_B
             from profiles_a pa
             join profiles_b pb on pa.id= pb.id
             join containers c on pa.container_id=c.container_id
@@ -955,7 +954,38 @@
             eb.parse_exception_id is null
             and pa.num_attachments &lt;&gt; pb.num_attachments
             order by ma.mime_string, pb.num_attachments-pa.num_attachments
-            limit 1000;
+            limit 10000;
+        </sql>
+    </report>
+
+    <report reportName="Attachment Diffs with exceptions"
+            reportFilename="attachments/attachment_diffs_with_exceptions.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select file_path,
+            c.length as CONTAINER_LENGTH,
+            ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
+            pa.num_attachments as NUM_ATTACHMENTS_A,
+            pb.num_attachments as NUM_ATTACHMENTS_B,
+            pb.num_attachments-pa.num_attachments as NUM_ATTACHMENTS_DIFF_IN_B,
+            refea.parse_exception_description as PARSE_EXCEPTION_A,
+            refeb.parse_exception_description as PARSE_EXCEPTION_B
+            from profiles_a pa
+            join profiles_b pb on pa.id= pb.id
+            join containers c on pa.container_id=c.container_id
+            join mimes ma on pa.mime_id=ma.mime_id
+            join mimes mb on pb.mime_id=mb.mime_id
+            left join exceptions_a ea on ea.id=pa.id
+            left join exceptions_b eb on eb.id=pb.id
+            left join ref_parse_exception_types refea on ea.parse_exception_id=refea.parse_exception_id
+            left join ref_parse_exception_types refeb on eb.parse_exception_id=refeb.parse_exception_id
+            where pa.is_embedded=false
+            and pa.num_attachments &lt;&gt; pb.num_attachments
+            order by ma.mime_string, pb.num_attachments-pa.num_attachments
+            limit 10000;
         </sql>
     </report>
 
