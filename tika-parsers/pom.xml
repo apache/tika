@@ -485,7 +485,16 @@
           <groupId>net.java.dev.jna</groupId>
           <artifactId>jna</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>27.0.1-jre</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
@@ -541,6 +550,10 @@
         <exclusion>
           <groupId>org.jdom</groupId>
           <artifactId>jdom2</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
