@@ -5,10 +5,9 @@ Release 2.0.0 - ???
 
    Other changes
 
-Release 1.20 - ???
+Release 1.21 - ???
 
-   * Upgrade MP4Parser to newer dependency coordinates:
-     org.mp4parser:isoparser (TIKA-2792).
+Release 1.20 - 12/17/2018
 
    * Upgrade to POI 4.0.1 (TIKA-2751).
 
@@ -43,6 +42,9 @@ Release 1.20 - ???
 
    * Use -javaHome or $JAVA_HOME (if they exist) when
      spawning child in tika-server's -spawnChild mode.
+
+   * Fixed closing of styles around Hyperlinks in Word Parser
+     Contributed by Ronan O'Sullivan (TIKA-2599).
 
 Release 1.19.1 - 10/4/2018
 
