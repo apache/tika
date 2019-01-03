@@ -37,6 +37,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <dl4j.version>1.0.0-beta3</dl4j.version>
+    <twelvemonkeys.version>3.4.1</twelvemonkeys.version>
   </properties>
 
   <dependencies>
@@ -200,8 +201,45 @@
           <groupId>com.github.jai-imageio</groupId>
           <artifactId>jai-imageio-core</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-jpeg</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-tiff</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-psd</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-bmp</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-jpeg</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-psd</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-bmp</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+
     <dependency>
     <groupId>org.datavec</groupId>
       <artifactId>datavec-api</artifactId>

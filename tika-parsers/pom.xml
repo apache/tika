@@ -513,6 +513,10 @@
           <groupId>org.jdom</groupId>
           <artifactId>jdom2</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <!--TIKA 2672 include a later version of jna as a direct dependency to resolve dependency convergence with tika-dl's
@@ -529,6 +533,11 @@
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
       <version>1.11.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>3.6.1</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
@@ -554,6 +563,10 @@
         <exclusion>
           <groupId>com.google.guava</groupId>
           <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
