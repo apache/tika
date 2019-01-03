@@ -1,3 +1,7 @@
+Release 1.21 - ????
+
+   * Try to handle truncated OOXML files more robustly (TIKA-2765).
+
 Release 1.20 - 12/17/2018
 
    * Upgrade to POI 4.0.1 (TIKA-2751).

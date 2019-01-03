@@ -19,37 +19,48 @@ package org.apache.tika.parser.pkg;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.io.IOUtils;
-import org.apache.poi.UnsupportedFileFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.util.ZipEntrySource;
 import org.apache.poi.openxml4j.util.ZipFileZipEntrySource;
+import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
+import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -83,7 +94,43 @@ public class ZipContainerDetector implements Detector {
 
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
-    
+
+    private static final MediaType TIKA_OOXML = MediaType.application("x-tika-ooxml");
+    private static final MediaType DOCX =
+            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
+    private static final MediaType DOCM =
+            MediaType.application("vnd.ms-word.document.macroEnabled.12");
+    private static final MediaType DOTX =
+            MediaType.application("vnd.ms-word.document.macroEnabled.12");
+    private static final MediaType PPTX =
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
+    private static final MediaType PPTM =
+            MediaType.application("vnd.ms-powerpoint.presentation.macroEnabled.12");
+    private static final MediaType POTX =
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.template");
+    private static final MediaType XLSX =
+            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    private static final MediaType XLSM =
+            MediaType.application("vnd.ms-excel.sheet.macroEnabled.12");
+
+    private static final Set<String> OOXML_HINTS = fillSet(
+            "word/document.xml",
+            "_rels/.rels",
+            "[Content_Types].xml",
+            "ppt/presentation.xml",
+            "ppt/slides/slide1.xml",
+            "xl/workbook.xml",
+            "xl/sharedStrings.xml",
+            "xl/worksheets/sheet1.xml"
+    );
+
+    static Set<String> fillSet(String ... args) {
+        Set<String> tmp = new HashSet<>();
+        for (String arg : args) {
+            tmp.add(arg);
+        }
+        return Collections.unmodifiableSet(tmp);
+    }
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
 
@@ -240,7 +287,7 @@ public class ZipContainerDetector implements Detector {
         try {
             zipEntrySource = new ZipFileZipEntrySource(new ZipFile(stream.getFile()));
         } catch (IOException e) {
-            return null;
+            return tryStreamingDetection(stream);
         }
 
         //if (zip.getEntry("_rels/.rels") != null
@@ -486,4 +533,96 @@ public class ZipContainerDetector implements Detector {
         // If we get here, not all required entries were found
         return null;
     }
+
+    private static MediaType tryStreamingDetection(TikaInputStream stream) {
+        Set<String> entryNames = new HashSet<>();
+        try (InputStream is = new FileInputStream(stream.getFile())) {
+            ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(is);
+            ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
+            while (zae != null) {
+                if (zae.isDirectory()) {
+                    zae = zipArchiveInputStream.getNextZipEntry();
+                    continue;
+                }
+                entryNames.add(zae.getName());
+                //we could also parse _rel/.rels, but if
+                // there isn't a valid content_types, then POI
+                //will throw an exception...Better to backoff to PKG
+                //than correctly identify a truncated
+                if (zae.getName().equals("[Content_Types].xml")) {
+                    MediaType mt = parseContentTypes(zipArchiveInputStream);
+                    if (mt != null) {
+                        return mt;
+                    }
+                    return TIKA_OOXML;
+                }
+                zae = zipArchiveInputStream.getNextZipEntry();
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            //swallow
+        }
+        int hits = 0;
+        for (String s : OOXML_HINTS) {
+            if (entryNames.contains(s)) {
+                hits++;
+            }
+        }
+        if (hits > 2) {
+            return TIKA_OOXML;
+        }
+        return MediaType.APPLICATION_ZIP;
+    }
+
+    private static MediaType parseContentTypes(InputStream is) {
+        ContentTypeHandler contentTypeHandler = new ContentTypeHandler();
+        try {
+            XMLReaderUtils.parseSAX(is, contentTypeHandler, new ParseContext());
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+
+        }
+        return contentTypeHandler.mediaType;
+    }
+
+
+    private static class ContentTypeHandler extends DefaultHandler {
+        static Map<String, MediaType> CONTENT_TYPES = new ConcurrentHashMap<>();
+        static {
+            CONTENT_TYPES.put(XWPFRelation.DOCUMENT.getContentType(), DOCX);
+            CONTENT_TYPES.put(XWPFRelation.MACRO_DOCUMENT.getContentType(), DOCM);
+            CONTENT_TYPES.put(XWPFRelation.TEMPLATE.getContentType(), DOTX);
+
+            CONTENT_TYPES.put(XSSFRelation.WORKBOOK.getContentType(), XLSX);
+            CONTENT_TYPES.put(XSSFRelation.MACROS_WORKBOOK.getContentType(), XLSM);
+            CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML.getContentType(), PPTX);
+            CONTENT_TYPES.put(XSLFRelation.PRESENTATION_MACRO.getContentType(), PPTM);
+            CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML_TEMPLATE.getContentType(), POTX);
+        }
+
+        private MediaType mediaType = null;
+
+        @Override
+        public void startElement(String uri, String localName,
+                                 String name, Attributes attrs) throws SAXException {
+            for (int i = 0; i < attrs.getLength(); i++) {
+                String attrName = attrs.getLocalName(i);
+                if (attrName.equals("ContentType")) {
+                    String contentType = attrs.getValue(i);
+                    if (CONTENT_TYPES.containsKey(contentType)) {
+                        mediaType = CONTENT_TYPES.get(contentType);
+                        throw new StoppingEarlyException();
+                    }
+
+                }
+            }
+        }
+    }
+
+    private static class StoppingEarlyException extends SAXException {
+
+    }
+
 }

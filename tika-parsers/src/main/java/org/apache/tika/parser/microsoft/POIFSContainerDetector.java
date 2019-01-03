@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.mime.MediaType.OCTET_STREAM;
 import static org.apache.tika.mime.MediaType.application;
 
 import java.io.File;
@@ -440,7 +441,9 @@ public class POIFSContainerDetector implements Detector {
                         || input.read() != 0x1a || input.read() != 0xe1) {
                     return MediaType.OCTET_STREAM;
                 }
-            } finally {
+            } catch (IOException e) {
+                return MediaType.OCTET_STREAM;
+            } finally  {
                 input.reset();
             }
         }
