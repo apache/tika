@@ -21,9 +21,13 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.w3c.dom.Document;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -69,6 +73,40 @@ public class XMLReaderUtils implements Serializable {
     private static final Logger LOG = Logger.getLogger(XMLReaderUtils.class.getName());
 
     private static final String XERCES_SECURITY_MANAGER = "org.apache.xerces.util.SecurityManager";
+
+    private static final String XERCES_SECURITY_MANAGER_PROPERTY = "http://apache.org/xml/properties/security-manager";
+
+    private static final ContentHandler IGNORING_CONTENT_HANDLER = new DefaultHandler();
+
+    private static final DTDHandler IGNORING_DTD_HANDLER = new DTDHandler() {
+        @Override
+        public void notationDecl(String name, String publicId, String systemId) throws SAXException {
+
+        }
+
+        @Override
+        public void unparsedEntityDecl(String name, String publicId, String systemId, String notationName) throws SAXException {
+
+        }
+    };
+
+    private static final ErrorHandler IGNORING_ERROR_HANDLER = new ErrorHandler() {
+        @Override
+        public void warning(SAXParseException exception) throws SAXException {
+
+        }
+
+        @Override
+        public void error(SAXParseException exception) throws SAXException {
+
+        }
+
+        @Override
+        public void fatalError(SAXParseException exception) throws SAXException {
+
+        }
+    };
+
     /**
      * Default size for the pool of SAX Parsers
      * and the pool of DOM builders
@@ -566,12 +604,12 @@ public class XMLReaderUtils implements Serializable {
      * @param parser parser to return
      */
     private static void releaseParser(PoolSAXParser parser) {
+        parser.reset();
         //if this is a different generation, don't put it back
         //in the pool
         if (parser.getGeneration() != POOL_GENERATION.get()) {
             return;
         }
-        parser.reset();
         try {
             SAX_READ_WRITE_LOCK.readLock().lock();
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
@@ -603,6 +641,10 @@ public class XMLReaderUtils implements Serializable {
             //parsers have already started.  We could have an NPE on SAX_PARSERS
             //if we didn't lock.
             SAX_READ_WRITE_LOCK.writeLock().lock();
+            //free up any resources before emptying SAX_PARSERS
+            for (PoolSAXParser parser : SAX_PARSERS) {
+                parser.reset();
+            }
             SAX_PARSERS.clear();
             SAX_PARSERS = new ArrayBlockingQueue<>(poolSize);
             int generation = POOL_GENERATION.incrementAndGet();
@@ -613,7 +655,6 @@ public class XMLReaderUtils implements Serializable {
                     throw new TikaException("problem creating sax parser", e);
                 }
             }
-
         } finally {
             SAX_READ_WRITE_LOCK.writeLock().unlock();
         }
@@ -636,13 +677,13 @@ public class XMLReaderUtils implements Serializable {
         // Try built-in JVM one first, standalone if not
         for (String securityManagerClassName : new String[] {
                 //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                "org.apache.xerces.util.SecurityManager"
+                XERCES_SECURITY_MANAGER
         }) {
             try {
                 Object mgr = Class.forName(securityManagerClassName).newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-                factory.setAttribute("http://apache.org/xml/properties/security-manager", mgr);
+                factory.setAttribute(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
                 // Stop once one can be setup without error
                 return;
             } catch (ClassNotFoundException e) {
@@ -673,13 +714,14 @@ public class XMLReaderUtils implements Serializable {
         // Try built-in JVM one first, standalone if not
         for (String securityManagerClassName : new String[] {
                 //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                "org.apache.xerces.util.SecurityManager"
+                XERCES_SECURITY_MANAGER
         }) {
             try {
                 Object mgr = Class.forName(securityManagerClassName).newInstance();
                 Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
                 setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-                parser.setProperty("http://apache.org/xml/properties/security-manager", mgr);
+
+                parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
                 // Stop once one can be setup without error
                 return;
             } catch (ClassNotFoundException e) {
@@ -786,7 +828,7 @@ public class XMLReaderUtils implements Serializable {
             Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
             setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
 
-            parser.setProperty("http://apache.org/xml/properties/security-manager", mgr);
+            parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
             hasSecurityManager = true;
         } catch (SecurityException e) {
             //don't swallow security exceptions
@@ -838,6 +880,12 @@ public class XMLReaderUtils implements Serializable {
         @Override
         public void reset() {
             //don't do anything
+            try {
+                XMLReader reader = saxParser.getXMLReader();
+                clearReader(reader);
+            } catch (SAXException e) {
+
+            }
         }
     }
 
@@ -849,10 +897,17 @@ public class XMLReaderUtils implements Serializable {
         @Override
         void reset() {
             try {
-                Object object = saxParser.getProperty(XERCES_SECURITY_MANAGER);
+                Object object = saxParser.getProperty(XERCES_SECURITY_MANAGER_PROPERTY);
                 saxParser.reset();
-                saxParser.setProperty(XERCES_SECURITY_MANAGER, object);
+                saxParser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, object);
             } catch (SAXException e) {
+                LOG.log(Level.WARNING, "problem resetting sax parser", e);
+            }
+            try {
+                XMLReader reader = saxParser.getXMLReader();
+                clearReader(reader);
+            } catch (SAXException e) {
+
             }
         }
     }
@@ -865,6 +920,12 @@ public class XMLReaderUtils implements Serializable {
         @Override
         void reset() {
             saxParser.reset();
+            try {
+                XMLReader reader = saxParser.getXMLReader();
+                clearReader(reader);
+            } catch (SAXException e) {
+
+            }
         }
     }
 
@@ -882,7 +943,23 @@ public class XMLReaderUtils implements Serializable {
             } catch (UnsupportedOperationException e) {
 
             }
+            try {
+                XMLReader reader = saxParser.getXMLReader();
+                clearReader(reader);
+            } catch (SAXException e) {
+
+            }
             trySetXercesSecurityManager(saxParser);
         }
+    }
+
+    private static void clearReader(XMLReader reader) {
+        if (reader == null) {
+            return;
+        }
+        reader.setContentHandler(IGNORING_CONTENT_HANDLER);
+        reader.setDTDHandler(IGNORING_DTD_HANDLER);
+        reader.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
+        reader.setErrorHandler(IGNORING_ERROR_HANDLER);
     }
 }
