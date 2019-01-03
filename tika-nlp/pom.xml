@@ -65,6 +65,10 @@
           <artifactId>guava</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>jsr305</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>commons-lang</groupId>
           <artifactId>commons-lang</artifactId>
         </exclusion>
@@ -143,6 +147,10 @@
         <exclusion>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-math3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -245,6 +253,17 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <!-- dependencies in this module need to be cleaned up.
+          Until TIKA-2368 is resolved, report but ignore
+          vulnerabilities.
+        -->
+      <plugin>
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-plugin</artifactId>
+        <configuration>
+          <fail>false</fail>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
