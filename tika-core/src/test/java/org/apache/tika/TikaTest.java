@@ -211,6 +211,10 @@ public abstract class TikaTest {
       }
     }
 
+    protected List<Metadata> getRecursiveMetadata(String filePath, boolean suppressException) throws Exception {
+        return getRecursiveMetadata(filePath, new ParseContext(), new Metadata(), suppressException);
+    }
+
     protected List<Metadata> getRecursiveMetadata(String filePath) throws Exception {
         return getRecursiveMetadata(filePath, new ParseContext());
     }
@@ -220,18 +224,36 @@ public abstract class TikaTest {
     }
 
     protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context, Metadata metadata) throws Exception {
+        return getRecursiveMetadata(filePath, context, metadata, false);
+    }
+
+    protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context, Metadata metadata,
+                                                  boolean suppressException) throws Exception {
+        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
+            return getRecursiveMetadata(is, context, metadata, suppressException);
+        }
+    }
+
+    protected List<Metadata> getRecursiveMetadata(InputStream is, boolean suppressException) throws Exception {
+        return getRecursiveMetadata(is, new ParseContext(), new Metadata(), suppressException);
+    }
+    protected List<Metadata> getRecursiveMetadata(InputStream is, ParseContext context, Metadata metadata,
+                                                  boolean suppressException) throws Exception {
         Parser p = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
-
-        try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
+        try {
             wrapper.parse(is, handler, metadata, context);
+        } catch (Exception e) {
+            if (!suppressException) {
+                throw e;
+            }
         }
         return handler.getMetadataList();
     }
 
-    protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
+        protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
         Parser p = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
 

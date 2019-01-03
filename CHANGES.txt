@@ -5,7 +5,10 @@ Release 2.0.0 - ???
 
    Other changes
 
-Release 1.21 - ???
+
+Release 1.21 - ????
+
+   * Try to handle truncated OOXML files more robustly (TIKA-2765).
 
 Release 1.20 - 12/17/2018
 
