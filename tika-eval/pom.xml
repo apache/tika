@@ -56,6 +56,8 @@
             <version>3.6.1</version>
         </dependency>
 
+        <!-- check if exclusion from oss-index check
+            is necessary on next upgrade -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -250,6 +252,20 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.ossindex.maven</groupId>
+                <artifactId>ossindex-maven-plugin</artifactId>
+                <configuration>
+                    <!-- ignore this until 1.4.198 is available -->
+                    <excludeCoordinates>
+                        <exclude>
+                            <groupId>com.h2database</groupId>
+                            <artifactId>h2</artifactId>
+                            <version>1.4.197</version>
+                        </exclude>
+                    </excludeCoordinates>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
