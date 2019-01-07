@@ -1069,6 +1069,15 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("This text is inside of a text box in the footer of the document.", xml);
     }
 
+    //TIKA-2807
+    @Test
+    public void testSDTInTextBox() throws Exception {
+        String xml = getXML("testWORD_sdtInTextBox.docx").xml;
+        System.out.println(xml);
+        assertContains("rich-text-content-control_inside-text-box", xml);
+        assertContainsCount("inside-text", xml, 1);
+    }
+
     //TIKA-2346
     @Test
     public void testTurningOffTextBoxExtraction() throws Exception {

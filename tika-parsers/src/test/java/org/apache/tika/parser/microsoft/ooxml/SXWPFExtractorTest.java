@@ -869,5 +869,12 @@ public class SXWPFExtractorTest extends TikaTest {
         assertNotContained("unde ", txt);
     }
 
+    //TIKA-2807
+    @Test
+    public void testSDTInTextBox() throws Exception {
+        String xml = getXML("testWORD_sdtInTextBox.docx", parseContext).xml;
+        assertContains("rich-text-content-control_inside-text-box", xml);
+        assertContainsCount("inside-text", xml, 1);
+    }
 
 }

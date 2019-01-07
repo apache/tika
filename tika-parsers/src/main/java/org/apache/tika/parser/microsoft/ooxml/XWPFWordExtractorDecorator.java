@@ -328,9 +328,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.characters(footnameText + "\n");
         }
 
-        // Also extract any paragraphs embedded in text boxes:
+        // Also extract any paragraphs embedded in text boxes
+        //Note "w:txbxContent//"...must look for all descendant paragraphs
+        //not just the immediate children of txbxContent -- TIKA-2807
         if (config.getIncludeShapeBasedContent()) {
-            for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
+            for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent//w:p")) {
                 extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
             }
         }

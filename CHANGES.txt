@@ -1,4 +1,5 @@
 Release 1.21 - ????
+   * Extract text from SDT element within textboxes in .docx files (TIKA-2807).
 
    * Try to handle truncated OOXML files more robustly (TIKA-2765).
 
