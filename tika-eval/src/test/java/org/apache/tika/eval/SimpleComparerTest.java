@@ -346,6 +346,16 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals(1, tableInfosA.size());
         Map<Cols, String> tableInfoA = tableInfosA.get(0);
         assertEquals("true", tableInfoA.get(Cols.TAGS_PARSE_EXCEPTION));
+
+        //confirm that backoff to html parser worked
+        List<Map<Cols, String>> contentsA = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
+        assertEquals(1, contentsA.size());
+        Map<Cols, String> contentsARow1 = contentsA.get(0);
+        String topN = contentsARow1.get(Cols.TOP_N_TOKENS);
+        assertNotContained("content:", topN);
+        assertNotContained(" p: ", topN);
+        assertContains("apache: 12", topN);
+
     }
 
     @Test
