@@ -847,9 +847,16 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             try {
                 return ContentTagParser.parseXML(s, UC_TAGS_OF_INTEREST.keySet());
             } catch (TikaException|IOException|SAXException e) {
-                LOG.warn("Problem parsing xhtml in {}; backing off to treat string as text",
+                LOG.warn("Problem parsing xhtml in {}; backing off to html parser",
                         evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
-
+                try {
+                    ContentTags contentTags = ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
+                    contentTags.setParseException(true);
+                    return contentTags;
+                } catch (IOException|SAXException e2) {
+                    LOG.warn("Problem parsing html in {}; backing off to treat string as text",
+                            evalFilePaths.getExtractFile().toAbsolutePath().toString(), e2);
+                }
                 return new ContentTags(s, true);
             }
         }

@@ -24,7 +24,7 @@ public class ContentTags {
     public static final ContentTags EMPTY_CONTENT_TAGS = new ContentTags();
     final Map<String, Integer> tags;
     final String content;
-    final boolean parseException;
+    boolean parseException;
 
     private ContentTags() {
         this("", Collections.EMPTY_MAP, false);
@@ -59,5 +59,9 @@ public class ContentTags {
 
     public boolean getParseException() {
         return parseException;
+    }
+
+    public void setParseException(boolean parseException) {
+        this.parseException = parseException;
     }
 }
