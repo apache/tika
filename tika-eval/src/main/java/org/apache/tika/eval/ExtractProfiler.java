@@ -158,6 +158,7 @@ public class ExtractProfiler extends AbstractProfiler {
     public static TableInfo TAGS_TABLE = new TableInfo("tags",
             new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.TAGS_A, Types.INTEGER),
+            new ColInfo(Cols.TAGS_B, Types.INTEGER),
             new ColInfo(Cols.TAGS_DIV, Types.INTEGER),
             new ColInfo(Cols.TAGS_I, Types.INTEGER),
             new ColInfo(Cols.TAGS_IMG, Types.INTEGER),
