@@ -122,6 +122,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         //simplify this mess
         Map<String, Cols> tmp = new HashMap<>();
         tmp.put("A", Cols.TAGS_A);
+        tmp.put("B", Cols.TAGS_B);
         tmp.put("DIV", Cols.TAGS_DIV);
         tmp.put("I", Cols.TAGS_I);
         tmp.put("IMG", Cols.TAGS_IMG);
