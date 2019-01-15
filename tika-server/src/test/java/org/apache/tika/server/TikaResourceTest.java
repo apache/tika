@@ -233,7 +233,7 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(responseMsg.contains("Example text"));
     }
 
-    //TIKA-2638
+    //TIKA-2638 and TIKA-2816
     @Test
     public void testOCRLanguageConfig() throws Exception {
         if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
@@ -244,6 +244,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"OcrStrategy", "ocr_only")
                 .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"Language", "eng+fra")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MinFileSizeToOcr", "100000000")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());

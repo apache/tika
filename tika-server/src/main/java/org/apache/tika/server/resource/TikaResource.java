@@ -230,6 +230,10 @@ public class TikaResource {
                     clazz = boolean.class;
                 } else if (field.getType() == Boolean.class) {
                     clazz = Boolean.class;
+                } else if (field.getType() == long.class) {
+                    clazz = long.class;
+                } else if (field.getType() == Long.class) {
+                    clazz = Long.class;
                 }
             }
 
@@ -254,6 +258,8 @@ public class TikaResource {
                     m.invoke(object, Boolean.parseBoolean(val));
                 } else if (clazz == float.class || clazz == Float.class) {
                     m.invoke(object, Float.parseFloat(val));
+                } else if (clazz == long.class || clazz == Long.class) {
+                    m.invoke(object, Long.parseLong(val));
                 } else {
                     throw new IllegalArgumentException("setter must be String, int, float, double or boolean...for now");
                 }
