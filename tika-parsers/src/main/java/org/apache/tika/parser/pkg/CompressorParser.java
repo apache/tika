@@ -272,6 +272,8 @@ public class CompressorParser extends AbstractParser {
                     name = GzipUtils.getUncompressedFilename(name);
                 }
                 entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            } else if (cis instanceof GzipCompressorInputStream) {
+                entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, ((GzipCompressorInputStream) cis).getMetaData().getFilename());
             }
 
             // Use the delegate parser to parse the compressed document
