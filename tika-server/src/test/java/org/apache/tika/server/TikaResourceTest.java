@@ -244,7 +244,8 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"OcrStrategy", "ocr_only")
                 .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"Language", "eng+fra")
-                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MinFileSizeToOcr", "100000000")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MinFileSizeToOcr", "10")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MaxFileSizeToOcr", "1000000000")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
