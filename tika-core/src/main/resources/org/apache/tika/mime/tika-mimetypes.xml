@@ -320,7 +320,42 @@
     <glob pattern="*.war"/>
   </mime-type>
 
-  <mime-type type="application/x-tika-unix-dump"/>
+  <mime-type type="application/x-tika-unix-dump">
+    <_comment>Unix dump file</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/Dump_(program)</tika:link>
+  </mime-type>
+
+  <!-- Note that within the 'old' and 'new' dump formats below, further
+  subdivisions are possible, but not sure how to best report them (if at
+  all) -->
+
+  <mime-type type="application/x-tika-unix-dump-old">
+    <_comment>Unix dump file, old file system</_comment>
+    <sub-class-of type="application/x-tika-unix-dump" />
+    <magic priority="50">
+      <!-- big endian -->
+      <match value="0x0000EA6B" type="string" offset="24"/>
+      <!-- little endian -->
+      <match value="0x6BEA0000" type="string" offset="24"/>
+      <!-- 16-bit, assuming PDP-11 endianness -->
+    <match value="0x6BEA" type="string" offset="18"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-tika-unix-dump-new">
+    <_comment>Unix dump file, new file system</_comment>
+    <sub-class-of type="application/x-tika-unix-dump" />
+    <magic priority="50">
+      <!-- big endian -->
+      <match value="0x0000EA6C" type="string" offset="24"/>
+      <!-- little endian -->
+      <match value="0x6CEA0000" type="string" offset="24"/>
+      <!-- ufs2, big endian -->
+      <match value="0x19540119" type="string" offset="24"/>
+      <!-- ufs2, little endian -->
+      <match value="0x19015419" type="string" offset="24"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/java-serialized-object">
     <glob pattern="*.ser"/>
