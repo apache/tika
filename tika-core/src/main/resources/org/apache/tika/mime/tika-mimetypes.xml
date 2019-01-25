@@ -349,7 +349,9 @@
     <magic priority="50">
       <!-- big endian -->
       <match value="0x0000EA6C" type="string" offset="24"/>
-      <!-- little endian -->
+      <!-- little endian. Note that file(1) gives this lower priority
+      because of possible conflict with GNU message catalog, but this
+      format is currently not covered by Tika -->
       <match value="0x6CEA0000" type="string" offset="24"/>
       <!-- ufs2, big endian -->
       <match value="0x19540119" type="string" offset="24"/>
