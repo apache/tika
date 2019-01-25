@@ -1086,16 +1086,32 @@ public class TestMimeTypes {
     }
     
     @Test
-    public void testPKCSSignatures() throws Exception {
-        // PKCS7 Signed XML files
-        assertType("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
-        assertType("application/pkcs7-signature", "testPKCS17Sig-v2.xml.p7m");
-        assertType("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
-        assertType("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
-        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
-        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v2.xml.p7m");
-        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
-        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
+    public void testPKCS7() throws Exception {
+        // application/pkcs7-* media types
+        assertType("application/pkcs7-mime; smime-type=certs-only", "testPKCS7_certs_only_def.p7c");
+        assertType("application/pkcs7-mime; smime-type=certs-only", "testPKCS7_certs_only_ind.p7c");
+        assertType("application/pkcs7-mime; smime-type=compressed-data", "testPKCS7_compressed_def_long.p7z");
+        assertType("application/pkcs7-mime; smime-type=compressed-data", "testPKCS7_compressed_def_short.p7z");
+        assertType("application/pkcs7-mime; smime-type=compressed-data", "testPKCS7_compressed_ind.p7z");
+        assertType("application/pkcs7-mime; smime-type=enveloped-data", "testPKCS7_enveloped_def.p7m");
+        assertType("application/pkcs7-mime; smime-type=enveloped-data", "testPKCS7_enveloped_ind.p7m");
+        assertType("application/pkcs7-signature", "testPKCS7_signature_def.p7s");
+        assertType("application/pkcs7-signature", "testPKCS7_signature_ind.p7s");
+        assertType("application/pkcs7-mime; smime-type=signed-data", "testPKCS7_signed_data_def.p7m");
+        assertType("application/pkcs7-mime; smime-type=signed-data", "testPKCS7_signed_data_def.pem");
+        assertType("application/pkcs7-mime; smime-type=signed-data", "testPKCS7_signed_data_ind.p7m");
+        assertTypeByData("application/pkcs7-mime; smime-type=certs-only", "testPKCS7_certs_only_def.p7c");
+        assertTypeByData("application/pkcs7-mime; smime-type=certs-only", "testPKCS7_certs_only_ind.p7c");
+        assertTypeByData("application/pkcs7-mime; smime-type=compressed-data", "testPKCS7_compressed_def_long.p7z");
+        assertTypeByData("application/pkcs7-mime; smime-type=compressed-data", "testPKCS7_compressed_def_short.p7z");
+        assertTypeByData("application/pkcs7-mime; smime-type=compressed-data", "testPKCS7_compressed_ind.p7z");
+        assertTypeByData("application/pkcs7-mime; smime-type=enveloped-data", "testPKCS7_enveloped_def.p7m");
+        assertTypeByData("application/pkcs7-mime; smime-type=enveloped-data", "testPKCS7_enveloped_ind.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS7_signature_def.p7s");
+        assertTypeByData("application/pkcs7-signature", "testPKCS7_signature_ind.p7s");
+        assertTypeByData("application/pkcs7-mime; smime-type=signed-data", "testPKCS7_signed_data_def.p7m");
+        assertTypeByData("application/pkcs7-mime; smime-type=signed-data", "testPKCS7_signed_data_def.pem");
+        assertTypeByData("application/pkcs7-mime; smime-type=signed-data", "testPKCS7_signed_data_ind.p7m");
     }
 
     @Test

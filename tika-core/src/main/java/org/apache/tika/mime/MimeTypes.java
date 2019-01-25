@@ -36,6 +36,7 @@ import javax.xml.namespace.QName;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.Pkcs7Detector;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.metadata.Metadata;
@@ -240,6 +241,11 @@ public final class MimeTypes implements Detector, Serializable {
                         } else {
                             result.set(i, textMimeType);
                         }
+                    }
+                } else if ("application/pkcs7-mime".equals(matched.getName())) {
+                    MediaType type = new Pkcs7Detector().detect(data, new Metadata());
+                    if (!type.equals(MediaType.OCTET_STREAM)) {
+                        result.set(i, new MimeType(type));
                     }
                 }
             }
