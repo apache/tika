@@ -325,7 +325,8 @@
     <tika:link>https://en.wikipedia.org/wiki/Dump_(program)</tika:link>
   </mime-type>
 
-  <!-- Note that within the 'old' and 'new' dump formats below, further
+  <!-- Unix dump magic adapted from file(1) magic by Christos Zoulas
+  Note that within the 'old' and 'new' dump formats below, further
   subdivisions are possible, but not sure how to best report them (if at
   all) -->
 
