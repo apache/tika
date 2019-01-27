@@ -242,9 +242,9 @@ public final class MimeTypes implements Detector, Serializable {
                             result.set(i, textMimeType);
                         }
                     }
-                } else if ("application/pkcs7-mime".equals(matched.getName())) {
+                } else if (Pkcs7Detector.PKCS7_MIME.equals(matched.getType())) {
                     MediaType type = new Pkcs7Detector().detect(data, new Metadata());
-                    if (!type.equals(MediaType.OCTET_STREAM)) {
+                    if (!MediaType.OCTET_STREAM.equals(type)) {
                         result.set(i, new MimeType(type));
                     }
                 }
