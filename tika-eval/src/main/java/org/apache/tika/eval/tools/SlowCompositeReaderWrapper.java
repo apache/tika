@@ -1,0 +1,274 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.eval.tools;
+
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.lucene.index.*;
+import org.apache.lucene.index.MultiDocValues.MultiSortedDocValues;
+import org.apache.lucene.index.OrdinalMap;
+import org.apache.lucene.util.Bits;
+import org.apache.lucene.util.Version;
+
+
+/**
+ * copied verbatim from Solr
+ */
+final class SlowCompositeReaderWrapper extends LeafReader {
+
+    private final CompositeReader in;
+    private final Fields fields;
+    private final LeafMetaData metaData;
+
+    /** This method is sugar for getting an {@link LeafReader} from
+     * an IndexReader of any kind. If the reader is already atomic,
+     * it is returned unchanged, otherwise wrapped by this class.
+     */
+    public static LeafReader wrap(IndexReader reader) throws IOException {
+        if (reader instanceof CompositeReader) {
+            return new SlowCompositeReaderWrapper((CompositeReader) reader);
+        } else {
+            assert reader instanceof LeafReader;
+            return (LeafReader) reader;
+        }
+    }
+
+    SlowCompositeReaderWrapper(CompositeReader reader) throws IOException {
+        super();
+        in = reader;
+        fields = MultiFields.getFields(in);
+        in.registerParentReader(this);
+        if (reader.leaves().isEmpty()) {
+            metaData = new LeafMetaData(Version.LATEST.major, Version.LATEST, null);
+        } else {
+            Version minVersion = Version.LATEST;
+            for (LeafReaderContext leafReaderContext : reader.leaves()) {
+                Version leafVersion = leafReaderContext.reader().getMetaData().getMinVersion();
+                if (leafVersion == null) {
+                    minVersion = null;
+                    break;
+                } else if (minVersion.onOrAfter(leafVersion)) {
+                    minVersion = leafVersion;
+                }
+            }
+            metaData = new LeafMetaData(reader.leaves().get(0).reader().getMetaData().getCreatedVersionMajor(), minVersion, null);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "SlowCompositeReaderWrapper(" + in + ")";
+    }
+
+    @Override
+    public CacheHelper getReaderCacheHelper() {
+        return in.getReaderCacheHelper();
+    }
+
+    @Override
+    public CacheHelper getCoreCacheHelper() {
+        // TODO: this is trappy as the expectation is that core keys live for a long
+        // time, but here we need to bound it to the lifetime of the wrapped
+        // composite reader? Unfortunately some features seem to rely on this...
+        return in.getReaderCacheHelper();
+    }
+
+    @Override
+    public Terms terms(String field) throws IOException {
+        ensureOpen();
+        return fields.terms(field);
+    }
+
+    @Override
+    public NumericDocValues getNumericDocValues(String field) throws IOException {
+        ensureOpen();
+        return MultiDocValues.getNumericValues(in, field);
+    }
+
+    @Override
+    public BinaryDocValues getBinaryDocValues(String field) throws IOException {
+        ensureOpen();
+        return MultiDocValues.getBinaryValues(in, field);
+    }
+
+    @Override
+    public SortedNumericDocValues getSortedNumericDocValues(String field) throws IOException {
+        ensureOpen();
+        return MultiDocValues.getSortedNumericValues(in, field);
+    }
+
+    @Override
+    public SortedDocValues getSortedDocValues(String field) throws IOException {
+        ensureOpen();
+        OrdinalMap map = null;
+        synchronized (cachedOrdMaps) {
+            map = cachedOrdMaps.get(field);
+            if (map == null) {
+                // uncached, or not a multi dv
+                SortedDocValues dv = MultiDocValues.getSortedValues(in, field);
+                if (dv instanceof MultiSortedDocValues) {
+                    map = ((MultiSortedDocValues)dv).mapping;
+                    IndexReader.CacheHelper cacheHelper = getReaderCacheHelper();
+                    if (cacheHelper != null && map.owner == cacheHelper.getKey()) {
+                        cachedOrdMaps.put(field, map);
+                    }
+                }
+                return dv;
+            }
+        }
+        int size = in.leaves().size();
+        final SortedDocValues[] values = new SortedDocValues[size];
+        final int[] starts = new int[size+1];
+        long totalCost = 0;
+        for (int i = 0; i < size; i++) {
+            LeafReaderContext context = in.leaves().get(i);
+            final LeafReader reader = context.reader();
+            final FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(field);
+            if (fieldInfo != null && fieldInfo.getDocValuesType() != DocValuesType.SORTED) {
+                return null;
+            }
+            SortedDocValues v = reader.getSortedDocValues(field);
+            if (v == null) {
+                v = DocValues.emptySorted();
+            }
+            totalCost += v.cost();
+            values[i] = v;
+            starts[i] = context.docBase;
+        }
+        starts[size] = maxDoc();
+        return new MultiSortedDocValues(values, starts, map, totalCost);
+    }
+
+    @Override
+    public SortedSetDocValues getSortedSetDocValues(String field) throws IOException {
+        ensureOpen();
+        OrdinalMap map = null;
+        synchronized (cachedOrdMaps) {
+            map = cachedOrdMaps.get(field);
+            if (map == null) {
+                // uncached, or not a multi dv
+                SortedSetDocValues dv = MultiDocValues.getSortedSetValues(in, field);
+                if (dv instanceof MultiDocValues.MultiSortedSetDocValues) {
+                    map = ((MultiDocValues.MultiSortedSetDocValues)dv).mapping;
+                    IndexReader.CacheHelper cacheHelper = getReaderCacheHelper();
+                    if (cacheHelper != null && map.owner == cacheHelper.getKey()) {
+                        cachedOrdMaps.put(field, map);
+                    }
+                }
+                return dv;
+            }
+        }
+
+        assert map != null;
+        int size = in.leaves().size();
+        final SortedSetDocValues[] values = new SortedSetDocValues[size];
+        final int[] starts = new int[size+1];
+        long cost = 0;
+        for (int i = 0; i < size; i++) {
+            LeafReaderContext context = in.leaves().get(i);
+            final LeafReader reader = context.reader();
+            final FieldInfo fieldInfo = reader.getFieldInfos().fieldInfo(field);
+            if(fieldInfo != null && fieldInfo.getDocValuesType() != DocValuesType.SORTED_SET){
+                return null;
+            }
+            SortedSetDocValues v = reader.getSortedSetDocValues(field);
+            if (v == null) {
+                v = DocValues.emptySortedSet();
+            }
+            values[i] = v;
+            starts[i] = context.docBase;
+            cost += v.cost();
+        }
+        starts[size] = maxDoc();
+        return new MultiDocValues.MultiSortedSetDocValues(values, starts, map, cost);
+    }
+
+    // TODO: this could really be a weak map somewhere else on the coreCacheKey,
+    // but do we really need to optimize slow-wrapper any more?
+    final Map<String,OrdinalMap> cachedOrdMaps = new HashMap<>();
+
+    @Override
+    public NumericDocValues getNormValues(String field) throws IOException {
+        ensureOpen();
+        return MultiDocValues.getNormValues(in, field);
+    }
+
+    @Override
+    public Fields getTermVectors(int docID) throws IOException {
+        ensureOpen();
+        return in.getTermVectors(docID);
+    }
+
+    @Override
+    public int numDocs() {
+        // Don't call ensureOpen() here (it could affect performance)
+        return in.numDocs();
+    }
+
+    @Override
+    public int maxDoc() {
+        // Don't call ensureOpen() here (it could affect performance)
+        return in.maxDoc();
+    }
+
+    @Override
+    public void document(int docID, StoredFieldVisitor visitor) throws IOException {
+        ensureOpen();
+        in.document(docID, visitor);
+    }
+
+    @Override
+    public Bits getLiveDocs() {
+        ensureOpen();
+        return MultiFields.getLiveDocs(in);
+    }
+
+    @Override
+    public PointValues getPointValues(String field) {
+        ensureOpen();
+        return null;
+    }
+
+    @Override
+    public FieldInfos getFieldInfos() {
+        ensureOpen();
+        return MultiFields.getMergedFieldInfos(in);
+    }
+
+    @Override
+    protected void doClose() throws IOException {
+        // TODO: as this is a wrapper, should we really close the delegate?
+        in.close();
+    }
+
+    @Override
+    public void checkIntegrity() throws IOException {
+        ensureOpen();
+        for (LeafReaderContext ctx : in.leaves()) {
+            ctx.reader().checkIntegrity();
+        }
+    }
+
+    @Override
+    public LeafMetaData getMetaData() {
+        return metaData;
+    }
+}
+

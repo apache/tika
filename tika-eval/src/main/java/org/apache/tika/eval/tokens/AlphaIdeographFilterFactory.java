@@ -29,7 +29,7 @@ import org.apache.lucene.analysis.util.TokenFilterFactory;
  */
 public class AlphaIdeographFilterFactory extends TokenFilterFactory {
 
-
+    private static final int UNDERSCORE = (int)'_';
 
     public AlphaIdeographFilterFactory(Map<String, String> args) {
         super(args);
@@ -53,26 +53,29 @@ public class AlphaIdeographFilterFactory extends TokenFilterFactory {
 
         @Override
         protected boolean accept() throws IOException {
-            return isAlphabetic(termAtt.buffer());
+            return isAlphabetic(termAtt.buffer(), termAtt.length());
         }
     }
 
-    public static boolean isAlphabetic(char[] token) {
-        for (int i = 0; i < token.length; i++) {
+    public static boolean isAlphabetic(char[] token, int length) {
+        for (int i = 0; i < length; i++) {
             int cp = token[i];
             if (Character.isHighSurrogate(token[i])) {
-                if (i < token.length-1) {
+                if (i < length-1) {
                     cp = Character.toCodePoint(token[i], token[i + 1]);
                     i++;
                 }
             }
-
-            if (Character.isAlphabetic(cp) ||
-                    Character.isIdeographic(cp)) {
-                return true;
+            if (Character.isDigit(cp)) {
+                return false;
+            }
+            if (! Character.isAlphabetic(cp) &&
+                    ! Character.isIdeographic(cp) &&
+                    cp != UNDERSCORE) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
 }

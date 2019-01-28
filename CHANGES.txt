@@ -8,6 +8,8 @@ Release 2.0.0 - ???
 
 Release 1.21 - ????
 
+   * Update tika-eval's common tokens lists (TIKA-2822).
+
    * Handle bad tags in tika-eval more robustly (TIKA-2810).
 
    * Add reports for tags in tika-eval (TIKA-2809).
