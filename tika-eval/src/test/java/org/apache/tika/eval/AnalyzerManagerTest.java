@@ -59,13 +59,13 @@ public class AnalyzerManagerTest {
     public void testCommon() throws Exception {
         AnalyzerManager analyzerManager = AnalyzerManager.newInstance(100000);
         Analyzer common = analyzerManager.getCommonTokensAnalyzer();
-        TokenStream ts = common.tokenStream("f", "the 5,000.12 and dirty dog");
+        TokenStream ts = common.tokenStream("f", "the 5,000.12 5000 and dirty dog");
         ts.reset();
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
         Set<String> seen = new HashSet<>();
         while (ts.incrementToken()) {
             String t = termAtt.toString();
-            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray()) && t.contains("5")) {
+            if (AlphaIdeographFilterFactory.isAlphabetic(t.toCharArray(), t.length()) && t.contains("5")) {
                 fail("Shouldn't have found a numeric");
             }
             seen.add(termAtt.toString());

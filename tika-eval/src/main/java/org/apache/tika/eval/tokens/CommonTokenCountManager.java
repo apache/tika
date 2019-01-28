@@ -73,7 +73,7 @@ public class CommonTokenCountManager {
         for (Map.Entry<String, MutableInt> e : tokens.entrySet()) {
             String token = e.getKey();
             int count = e.getValue().intValue();
-            if (AlphaIdeographFilterFactory.isAlphabetic(token.toCharArray())) {
+            if (AlphaIdeographFilterFactory.isAlphabetic(token.toCharArray(), token.length())) {
                 numAlphabeticTokens += count;
                 numUniqueAlphabeticTokens++;
             }
