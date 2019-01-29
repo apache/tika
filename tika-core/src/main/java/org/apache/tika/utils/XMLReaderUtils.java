@@ -725,10 +725,8 @@ public class XMLReaderUtils implements Serializable {
                 // Stop once one can be setup without error
                 return;
             } catch (ClassNotFoundException e) {
-                e.printStackTrace();
                 // continue without log, this is expected in some setups
             } catch (Throwable e) {
-                e.printStackTrace();
                 // NOSONAR - also catch things like NoClassDefError here
                 // throttle the log somewhat as it can spam the log otherwise
                 if(System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
