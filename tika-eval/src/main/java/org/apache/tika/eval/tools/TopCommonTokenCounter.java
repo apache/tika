@@ -56,6 +56,9 @@ import org.apache.tika.eval.tokens.AnalyzerManager;
  *
  * The CommmonTokensAnalyzer intentionally drops tokens shorter than 4 characters,
  * but includes bigrams for cjk.
+ *
+ * It also has a white list for __email__ and __url__ and a black list
+ * for common html markup terms.
  */
 public class TopCommonTokenCounter {
     private static final String FIELD = "f";
@@ -67,6 +70,31 @@ public class TopCommonTokenCounter {
                     "___email___",
                     "___url___"
             }
+    ));
+
+    //words to ignore
+    //these are common 4 letter html markup words that we do
+    //not want to count in case of failed markup processing.
+    //see: https://issues.apache.org/jira/browse/TIKA-2267?focusedCommentId=15872055&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-15872055
+    static Set<String> BLACK_LIST = new HashSet<>(Arrays.asList(
+            "span",
+            "table",
+            "href",
+            "head",
+            "title",
+            "body",
+            "html",
+            "tagname",
+            "lang",
+            "style",
+            "script",
+            "strong",
+            "blockquote",
+            "form",
+            "iframe",
+            "section",
+            "colspan",
+            "rowspan"
     ));
 
     public static void main(String[] args) throws Exception {
@@ -127,7 +155,7 @@ public class TopCommonTokenCounter {
                     if (queue.top() == null || queue.size() < TOP_N ||
                             df >= queue.top().df) {
                         String t = bytesRef.utf8ToString();
-                        if (! WHITE_LIST.contains(t)) {
+                        if (! WHITE_LIST.contains(t) && ! BLACK_LIST.contains(t)) {
                             queue.insertWithOverflow(new TokenDFTF(t, df, tf));
                         }
 
