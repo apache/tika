@@ -315,8 +315,8 @@
     <maven.javadoc.version>3.0.1</maven.javadoc.version>
     <maven.scr.version>1.7.4</maven.scr.version>
     <maven.surefire.version>2.22.1</maven.surefire.version>
-    <maven.shade.version>3.2.0</maven.shade.version>
-    <rat.version>0.12</rat.version>
+    <maven.shade.version>3.2.1</maven.shade.version>
+    <rat.version>0.13</rat.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>4.0.1</poi.version>
     <commons.compress.version>1.18</commons.compress.version>
@@ -361,7 +361,7 @@
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
-        <version>3.0.2</version>
+        <version>3.0.4</version>
         <executions>
           <execution>
             <id>audit-dependencies</id>
@@ -439,7 +439,7 @@
               <rules>
                 <dependencyConvergence/>
                 <requireMavenVersion>
-                  <version>3.1</version>
+                  <version>3.3</version>
                 </requireMavenVersion>
               </rules>
             </configuration>
