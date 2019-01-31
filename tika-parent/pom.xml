@@ -330,7 +330,7 @@
     <jackson.version>2.9.8</jackson.version>
     <!-- when this is next upgraded, see if we can get rid of
          javax.activation dependency in tika-server -->
-    <jaxb.version>2.3.1</jaxb.version>
+    <jaxb.version>2.3.2</jaxb.version>
     <cli.version>1.4</cli.version>
     <lucene.version>7.6.0</lucene.version>
     <mockito.version>2.23.4</mockito.version>
