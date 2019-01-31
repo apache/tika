@@ -8,6 +8,8 @@ Release 2.0.0 - ???
 
 Release 1.21 - ????
 
+   * General upgrades: jackcess, opennlp, httpcomponents, zstd-jni, cxf (TIKA-2824)
+
    * Bundle xerces2 with tika-parsers (TIKA-2802).
 
    * Upgrade jaxb to 2.3.2 (TIKA-2819).
