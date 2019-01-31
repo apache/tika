@@ -191,23 +191,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-remote-resources-plugin</artifactId>
-                <version>1.5</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>bundle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <includes>
-                        <include>**/*.xml</include>
-                    </includes>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <version>${maven.bundle.version}</version>
