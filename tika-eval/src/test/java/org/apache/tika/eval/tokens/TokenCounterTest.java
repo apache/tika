@@ -84,7 +84,6 @@ public class TokenCounterTest {
         String s = "the http://www.cnn.com and blahdeblah@apache.org are in valuable www.sites.org 普林斯顿大学";
         tokenCounter.add(FIELD, s);
         Map<String, MutableInt> tokens = tokenCounter.getTokens(FIELD);
-        System.out.println(tokens);
         assertEquals(new MutableInt(2), tokens.get("___url___"));
         assertEquals(new MutableInt(1), tokens.get("___email___"));
     }
