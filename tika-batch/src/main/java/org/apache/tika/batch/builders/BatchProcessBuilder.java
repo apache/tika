@@ -131,10 +131,13 @@ public class BatchProcessBuilder {
         //build crawler
         crawler = buildCrawler(queue, keyNodes.get("crawler"), runtimeAttributes);
 
-        reporter = buildReporter(crawler, consumersManager, keyNodes.get("reporter"), runtimeAttributes);
+        if (keyNodes.containsKey(reporter)) {
+            reporter = buildReporter(crawler, consumersManager, keyNodes.get("reporter"), runtimeAttributes);
+        }
 
-        interrupter = buildInterrupter(keyNodes.get("interrupter"), pauseOnEarlyTerminationMillis, runtimeAttributes);
-
+        if (keyNodes.containsKey("interrupter")) {
+            interrupter = buildInterrupter(keyNodes.get("interrupter"), pauseOnEarlyTerminationMillis, runtimeAttributes);
+        }
         BatchProcess proc = new BatchProcess(
                 crawler, consumersManager, reporter, interrupter);
 

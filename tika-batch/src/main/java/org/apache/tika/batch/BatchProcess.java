@@ -139,7 +139,13 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         try {
             int numConsumers = consumersManager.getConsumers().size();
             // fileResourceCrawler, statusReporter, the Interrupter, timeoutChecker
-            int numNonConsumers = 4;
+            int numNonConsumers = 2;
+            if (interrupter != null) {
+                numNonConsumers++;
+            }
+            if (reporter != null) {
+                numNonConsumers++;
+            }
 
             ExecutorService ex = Executors.newFixedThreadPool(numConsumers
                     + numNonConsumers);
@@ -174,9 +180,13 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         LOG.info("BatchProcess starting up");
 
         state.start = System.currentTimeMillis();
-        completionService.submit(interrupter);
+        if (interrupter != null) {
+            completionService.submit(interrupter);
+        }
+        if (reporter != null) {
+            completionService.submit(reporter);
+        }
         completionService.submit(fileResourceCrawler);
-        completionService.submit(reporter);
         completionService.submit(timeoutChecker);
 
         for (FileResourceConsumer consumer : consumersManager.getConsumers()) {
@@ -237,7 +247,9 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         CompletionService<IFileProcessorFutureResult> completionService,
         TimeoutChecker timeoutChecker, State state) {
 
-        reporter.setIsShuttingDown(true);
+        if (reporter != null) {
+            reporter.setIsShuttingDown(true);
+        }
         int added = fileResourceCrawler.getAdded();
         int considered = fileResourceCrawler.getConsidered();
 
