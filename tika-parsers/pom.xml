@@ -260,7 +260,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess</artifactId>
-      <version>2.2.2</version>
+      <version>3.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
@@ -271,7 +271,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
-      <version>2.1.4</version>
+      <version>3.0.0</version>
       <exclusions>
         <exclusion>
           <groupId>org.bouncycastle</groupId>
@@ -494,6 +494,11 @@
           <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.jdom</groupId>
+      <artifactId>jdom2</artifactId>
+      <version>2.0.6</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -763,6 +768,7 @@
       <groupId>org.apache.uima</groupId>
       <artifactId>uimafit-core</artifactId>
       <version>2.4.0</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>org.apache.uima</groupId>
@@ -800,18 +806,13 @@
       <groupId>org.apache.uima</groupId>
       <artifactId>uimaj-core</artifactId>
       <version>3.0.1</version>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <groupId>javax.annotation</groupId>
           <artifactId>javax.annotation-api</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-
-    <dependency>
-      <groupId>org.jdom</groupId>
-      <artifactId>jdom2</artifactId>
-      <version>2.0.6</version>
     </dependency>
     <!--Jackson parse String to JSON-->
     <dependency>
