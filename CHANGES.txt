@@ -1,6 +1,6 @@
 Release 1.21 - ????
 
-   * General upgrades: jackcess, opennlp, httpcomponents, zstd-jni, cxf (TIKA-2824)
+   * General upgrades: jackcess, opennlp, httpcomponents, zstd-jni, cxf, Lucene (TIKA-2824)
 
    * Bundle xerces2 with tika-parsers (TIKA-2802).
 

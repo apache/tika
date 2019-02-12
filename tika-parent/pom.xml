@@ -332,7 +332,7 @@
          javax.activation dependency in tika-server -->
     <jaxb.version>2.3.2</jaxb.version>
     <cli.version>1.4</cli.version>
-    <lucene.version>7.6.0</lucene.version>
+    <lucene.version>7.7.0</lucene.version>
     <mockito.version>2.23.4</mockito.version>
   </properties>
 
