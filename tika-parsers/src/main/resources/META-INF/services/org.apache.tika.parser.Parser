@@ -19,6 +19,7 @@ org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
 org.apache.tika.parser.crypto.Pkcs7Parser
 org.apache.tika.parser.crypto.TSDParser
+org.apache.tika.parser.csv.CSVParser
 org.apache.tika.parser.dwg.DWGParser
 org.apache.tika.parser.epub.EpubParser
 org.apache.tika.parser.executable.ExecutableParser
