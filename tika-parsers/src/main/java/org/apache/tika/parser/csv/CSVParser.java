@@ -52,7 +52,7 @@ import org.xml.sax.SAXException;
 public class CSVParser extends AbstractParser {
     private static final String CSV_PREFIX = "csv";
     public static final Property DELIMITER = Property.externalText(
-            CSV_PREFIX+ TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"delimiter");
+            CSV_PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER+"delimiter");
 
     private static final String TD = "td";
     private static final String TR = "tr";
