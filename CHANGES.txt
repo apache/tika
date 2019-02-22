@@ -11,7 +11,7 @@ Release 1.21 - ????
    * Add a CSVParser.  CSV detection is currently based solely on filename
      and/or information conveyed via Metadata (TIKA-2826).
 
-   * General upgrades: jackcess, opennlp, httpcomponents, zstd-jni, cxf, Lucene (TIKA-2824)
+   * General upgrades: h2, jackcess, opennlp, httpcomponents, zstd-jni, cxf, Lucene (TIKA-2824)
 
    * Bundle xerces2 with tika-parsers (TIKA-2802).
 
