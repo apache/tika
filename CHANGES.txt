@@ -1,5 +1,9 @@
 Release 1.21 - ????
 
+   * Add CSV detection and replace TXTParser with TextAndCSVParser;
+     users can turn off CSV detection by excluding the TextAndCSVParser
+     and adding back the TXTParser via tika-config (TIKA-2833).
+
    * Add a CSVParser.  CSV detection is currently based solely on filename
      and/or information conveyed via Metadata (TIKA-2826).
 
