@@ -8,6 +8,8 @@ Release 2.0.0 - ???
 
 Release 1.21 - ????
 
+   * Upgrade PDFBox to 2.0.14 (TIKA-2834).
+
    * Add CSV detection and replace TXTParser with TextAndCSVParser;
      users can turn off CSV detection by excluding the TextAndCSVParser
      and adding back the TXTParser via tika-config (TIKA-2833).
