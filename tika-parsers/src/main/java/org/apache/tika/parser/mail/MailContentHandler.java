@@ -45,6 +45,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.csv.TextAndCSVParser;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.TXTParser;
@@ -586,6 +587,7 @@ class MailContentHandler implements ContentHandler {
     private void handleInlineBodyPart(BodyContents part) throws MimeException, IOException {
         String contentType = part.metadata.get(Metadata.CONTENT_TYPE);
         Parser parser = null;
+        boolean inlineText = false;
         if (MediaType.TEXT_HTML.toString().equalsIgnoreCase(contentType)) {
             parser =
                     EmbeddedDocumentUtil.tryToFindExistingLeafParser(HtmlParser.class, parseContext);
@@ -595,6 +597,10 @@ class MailContentHandler implements ContentHandler {
         } else if (MediaType.TEXT_PLAIN.toString().equalsIgnoreCase(contentType)) {
             parser =
                     EmbeddedDocumentUtil.tryToFindExistingLeafParser(TXTParser.class, parseContext);
+            if (parser == null) {
+                parser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(TextAndCSVParser.class, parseContext);
+                inlineText = true;
+            }
         }
 
 
@@ -607,10 +613,14 @@ class MailContentHandler implements ContentHandler {
 
             //parse inline
             try {
+                Metadata inlineMetadata = new Metadata();
+                if (inlineText) {
+                    inlineMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, MediaType.TEXT_PLAIN.toString());
+                }
                 parser.parse(
                         new ByteArrayInputStream(part.bytes),
                         new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                        new Metadata(), parseContext
+                        inlineMetadata, parseContext
                 );
             } catch (SAXException | TikaException e) {
                 throw new MimeException(e);
