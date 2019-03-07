@@ -16,9 +16,7 @@
  */
 package org.apache.tika.parser.csv;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -39,19 +37,34 @@ import org.apache.tika.config.Field;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+/**
+ * Unless the {@link TikaCoreProperties#CONTENT_TYPE_OVERRIDE} is set,
+ * this parser tries to assess whether the file is a text file, csv or tsv.
+ * If the detector detects regularity in column numbers and/or encapsulated cells,
+ * this parser will apply the {@link org.apache.commons.csv.CSVParser};
+ * otherwise, it will treat the contents as text.
+ * <p>
+ *     If there is a csv parse exception during detection, the parser sets
+ * the {@link Metadata#CONTENT_TYPE} to {@link MediaType#TEXT_PLAIN}
+ * and treats the file as {@link MediaType#TEXT_PLAIN}.
+ * </p>
+ * <p>
+ *     If there is a csv parse exception during the parse, the parser
+ *     writes what's left of the stream as if it were text and then throws
+ *     an exception.  As of this writing, the content that was buffered by the underlying
+ *     {@link org.apache.commons.csv.CSVParser} is lost.
+ * </p>
+ */
 public class TextAndCSVParser extends AbstractEncodingDetectorParser {
 
     private static final String CSV_PREFIX = "csv";
@@ -87,6 +100,22 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             STRING_TO_CHAR_DELIMITER_MAP.put(e.getValue(), e.getKey());
         }
     }
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                    CSV, TSV, MediaType.TEXT_PLAIN)));
+
+    private char[] delimiters = DEFAULT_DELIMITERS;
+
+    /**
+     * This is the mark limit in characters (not bytes) to
+     * read from the stream when classifying the stream as
+     * csv, tsv or txt.
+     */
+    @Field
+    private int markLimit = DEFAULT_MARK_LIMIT;
+
+
     public TextAndCSVParser() {
         super();
     }
@@ -94,14 +123,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     public TextAndCSVParser(EncodingDetector encodingDetector) {
         super(encodingDetector);
     }
-    private char[] delimiters = DEFAULT_DELIMITERS;
-
-    @Field
-    private int markLimit = DEFAULT_MARK_LIMIT;
-
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                    CSV, TSV, MediaType.TEXT_PLAIN)));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -126,16 +147,17 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             reader = new BufferedReader(new InputStreamReader(stream, params.getCharset()));
             charset = params.getCharset();
         }
+
+        updateMetadata(params, metadata);
+
         //if text or a non-csv/tsv category of text
         //treat this as text and be done
-        //TODO -- if it was detected already as a non-csv subtype of text
+        //TODO -- if it was detected as a non-csv subtype of text
         if (! params.getMediaType().getBaseType().equals(CSV) &&
             ! params.getMediaType().getBaseType().equals(TSV)) {
             handleText(reader, charset, handler, metadata);
             return;
         }
-
-        updateMetadata(params, metadata);
 
         CSVFormat csvFormat = CSVFormat.EXCEL.withDelimiter(params.getDelimiter());
         metadata.set(DELIMITER_PROPERTY, CHAR_TO_STRING_DELIMITER_MAP.get(csvFormat.getDelimiter()));
@@ -213,24 +235,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
 
     }
 
-    private void updateMetadata(CSVParams params, Metadata metadata) {
-        MediaType mediaType = (params.getDelimiter() == '\t') ? TSV : CSV;
-        Map<String, String> attrs = new HashMap<>();
-        attrs.put(CHARSET, params.getCharset().name());
-        if (params.getDelimiter() != null) {
-            if (CHAR_TO_STRING_DELIMITER_MAP.containsKey(params.getDelimiter())) {
-                attrs.put(DELIMITER, CHAR_TO_STRING_DELIMITER_MAP.get(params.getDelimiter()));
-            } else {
-                attrs.put(DELIMITER, Integer.toString((int)params.getDelimiter().charValue()));
-            }
-        }
-        MediaType type = new MediaType(mediaType, attrs);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
-        // deprecated, see TIKA-431
-        metadata.set(Metadata.CONTENT_ENCODING, params.getCharset().name());
-
-    }
-
     private Reader detect(CSVParams params, InputStream stream,
                         Metadata metadata, ParseContext context) throws IOException, TikaException {
         //if the file was already identified as not .txt, .csv or .tsv
@@ -263,12 +267,8 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                 (params.getMediaType() == null ||
                         isCSVOrTSV(params.getMediaType()))) {
 
-            CSVSniffer sniffer = new CSVSniffer(delimiters);
-            CSVResult result = sniffer.getBest(reader);
-            //we should require a higher confidence if the content-type
-            //is text/plain -- e.g. if the file name ends in .txt or
-            //the parent parser has an indication that this is txt
-            //(as in mail attachment headers)
+            CSVSniffer sniffer = new CSVSniffer(markLimit, delimiters);
+            CSVResult result = sniffer.getBest(reader, metadata);
             params.setMediaType(result.getMediaType());
             params.setDelimiter(result.getDelimiter());
         }
@@ -321,140 +321,38 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         }
         return false;
     }
-    private byte[] readFirstX(InputStream stream, int markLimit) throws IOException {
-        byte[] bytes = new byte[markLimit];
 
-        try {
-            stream.mark(markLimit);
-            int numRead = IOUtils.read(stream, bytes, 0, bytes.length);
-            if (numRead < markLimit) {
-                byte[] dest = new byte[numRead];
-                System.arraycopy(bytes, 0, dest, 0, numRead);
-                bytes = dest;
+    private void updateMetadata(CSVParams params, Metadata metadata) {
+        MediaType mediaType = null;
+        if (params.getMediaType().getBaseType().equals(MediaType.TEXT_PLAIN)) {
+            mediaType = MediaType.TEXT_PLAIN;
+        } else if (params.getDelimiter() != null) {
+            if (params.getDelimiter() == '\t') {
+                mediaType = TSV;
+            } else {
+                mediaType = CSV;
             }
-        } finally {
-            stream.reset();
+        } else {
+            if (metadata.get(Metadata.CONTENT_TYPE) != null) {
+                mediaType = MediaType.parse(
+                        metadata.get(Metadata.CONTENT_TYPE));
+            }
         }
-        return bytes;
+        Map<String, String> attrs = new HashMap<>();
+        if (params.getCharset() != null) {
+            attrs.put(CHARSET, params.getCharset().name());
+            // deprecated, see TIKA-431
+            metadata.set(Metadata.CONTENT_ENCODING, params.getCharset().name());
+        }
+        if (!mediaType.equals(MediaType.TEXT_PLAIN) && params.getDelimiter() != null) {
+            if (CHAR_TO_STRING_DELIMITER_MAP.containsKey(params.getDelimiter())) {
+                attrs.put(DELIMITER, CHAR_TO_STRING_DELIMITER_MAP.get(params.getDelimiter()));
+            } else {
+                attrs.put(DELIMITER, Integer.toString((int)params.getDelimiter().charValue()));
+            }
+        }
+        MediaType type = new MediaType(mediaType, attrs);
+        metadata.set(Metadata.CONTENT_TYPE, type.toString());
     }
-
-    private CSVFormat guessFormat(byte[] bytes, Charset charset, Metadata metadata) throws IOException {
-
-        String mediaTypeString = metadata.get(Metadata.CONTENT_TYPE);
-        char bestDelimiter = (mediaTypeString.endsWith("csv")) ? ',' : '\t';
-        CSVReadTestResult bestResult = null;
-
-        for (char c : DEFAULT_DELIMITERS) {
-
-            try (Reader reader = new InputStreamReader(new ByteArrayInputStream(bytes), charset)) {
-
-                CSVReadTestResult testResult = attemptCSVRead(c, bytes.length, reader);
-                if (bestResult == null || testResult.isBetterThan(bestResult)) {
-                    bestResult = testResult;
-                    bestDelimiter = c;
-                }
-            }
-        }
-        return CSVFormat.EXCEL.withDelimiter(bestDelimiter);
-    }
-
-    private CSVReadTestResult attemptCSVRead(char delimiter, int bytesTotal, Reader reader) throws IOException {
-
-        //maps <rowLength, numberOfRows>
-        Map<Integer, Integer> colCounts = new HashMap<>();
-        long lastCharacterPosition = -1L;
-        int rowCount = 0;
-        boolean illegalStateException = false;
-        try {
-            org.apache.commons.csv.CSVParser p = new org.apache.commons.csv.CSVParser(reader, CSVFormat.EXCEL.withDelimiter(delimiter));
-
-            for (CSVRecord row : p) {
-                int colCount = row.size();
-                lastCharacterPosition = row.getCharacterPosition();
-                Integer cnt = colCounts.get(colCount);
-                if (cnt == null) {
-                    cnt = 1;
-                } else {
-                    cnt++;
-                }
-                colCounts.put(colCount, cnt);
-                rowCount++;
-            }
-        } catch (IllegalStateException e) {
-            //this could be bad encapsulation -- invalid char between encapsulated token
-            //swallow while guessing
-            illegalStateException = true;
-        }
-
-        int mostCommonColCount = -1;
-        int totalCount = 0;
-        for (Integer count : colCounts.values()) {
-            if (count > mostCommonColCount) {
-                mostCommonColCount = count;
-            }
-            totalCount += count;
-        }
-        double percentMostCommonRowLength = -1.0f;
-        if (totalCount > 0) {
-            percentMostCommonRowLength = (double) mostCommonColCount / (double) totalCount;
-        }
-        return new CSVReadTestResult(bytesTotal, lastCharacterPosition, rowCount, percentMostCommonRowLength, illegalStateException);
-
-    }
-
-    private static class CSVReadTestResult {
-        private final int bytesTotal;
-        private final long bytesParsed;
-        private final int rowCount;
-        //the percentage of the rows that have the
-        //the most common row length -- maybe use stdev?
-        private final double percentMostCommonRowLength;
-        private final boolean illegalStateException;
-
-        public CSVReadTestResult(int bytesTotal, long bytesParsed, int rowCount,
-                                 double percentMostCommonRowLength, boolean illegalStateException) {
-            this.bytesTotal = bytesTotal;
-            this.bytesParsed = bytesParsed;
-            this.rowCount = rowCount;
-            this.percentMostCommonRowLength = percentMostCommonRowLength;
-            this.illegalStateException = illegalStateException;
-        }
-
-        public boolean isBetterThan(CSVReadTestResult bestResult) {
-            if (bestResult == null) {
-                return true;
-            }
-            if (illegalStateException && ! bestResult.illegalStateException) {
-                return false;
-            } else if (! illegalStateException && bestResult.illegalStateException) {
-                return true;
-            }
-            //if there are >= 3 rows in both, select the one with the better
-            //percentMostCommonRowLength
-            if (this.rowCount >= 3 && bestResult.rowCount >= 3) {
-                if (percentMostCommonRowLength > bestResult.percentMostCommonRowLength) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            //if there's a big difference between the number of bytes parsed,
-            //pick the one that allowed more parsed bytes
-            if (bytesTotal > 0 && Math.abs((bestResult.bytesParsed - bytesParsed) / bytesTotal) > 0.1f) {
-                if (bytesParsed > bestResult.bytesParsed) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-            //add other heuristics as necessary
-
-            //if there's no other information,
-            //default to not better = default
-            return false;
-        }
-    }
-
 
 }

@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -163,8 +164,23 @@ public class TextAndCSVParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
         XMLResult xmlResult = getXML(new ByteArrayInputStream(csv), PARSER, metadata);
         assertNull(xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
-        assertEquals("text/csv; charset=ISO-8859-1", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=ISO-8859-1", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("the,quick", xmlResult.xml);
+    }
+
+    @Test //TIKA-2836
+    public void testNonCSV() throws Exception {
+
+        byte[] bytes = ("testcsv\n" +
+                "testcsv testcsv;;; testcsv").getBytes(StandardCharsets.UTF_8);
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
+        XMLResult xmlResult = getXML(new ByteArrayInputStream(bytes), PARSER, metadata);
+        assertContains("text/plain", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
+        xmlResult = getXML(new ByteArrayInputStream(bytes), PARSER, metadata);
+        assertContains("text/plain", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -182,6 +198,14 @@ public class TextAndCSVParserTest extends TikaTest {
         assertMediaTypeEquals("csv", "ISO-8859-1","comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
     }
+
+    //TIKA-2047
+    @Test
+    public void testSubclassingMimeTypesRemain() throws Exception {
+        XMLResult r = getXML("testVCalendar.vcs");
+        assertEquals("text/x-vcalendar; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
+    }
+
 
     private void assertContainsIgnoreWhiteSpaceDiffs(String expected, String xml) {
         assertContains(expected, xml.replaceAll("[\r\n\t ]", " "));

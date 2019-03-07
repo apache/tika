@@ -89,6 +89,7 @@ public class CSVSnifferTest extends TikaTest {
     @Test
     public void testCSVMidCellQuoteException() throws Exception {
         List<CSVResult> results = sniff(DELIMITERS, CSV_MID_CELL_QUOTE_EXCEPTION, StandardCharsets.UTF_8);
+
         assertEquals(2, results.size());
     }
 
