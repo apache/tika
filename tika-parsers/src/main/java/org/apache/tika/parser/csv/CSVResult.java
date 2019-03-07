@@ -22,13 +22,13 @@ import org.apache.tika.mime.MediaType;
 
 public class CSVResult implements Comparable<CSVResult> {
 
-    static CSVResult TEXT = new CSVResult(1.0, MediaType.TEXT_PLAIN, '\n');
+    static CSVResult TEXT = new CSVResult(1.0, MediaType.TEXT_PLAIN, null);
 
     private final double confidence;
     private final MediaType mediaType;
-    private final char delimiter;
+    private final Character delimiter;
 
-    public CSVResult(double confidence, MediaType mediaType, char delimiter) {
+    public CSVResult(double confidence, MediaType mediaType, Character delimiter) {
         this.confidence = confidence;
         this.mediaType = mediaType;
         this.delimiter = delimiter;
@@ -38,6 +38,10 @@ public class CSVResult implements Comparable<CSVResult> {
         return mediaType;
     }
 
+    /**
+     *
+     * @return returns the delimiter or <code>null</code> if the mediatype=text/plain
+     */
     public Character getDelimiter() {
         return delimiter;
     }
@@ -58,13 +62,22 @@ public class CSVResult implements Comparable<CSVResult> {
         if (o == null || getClass() != o.getClass()) return false;
         CSVResult csvResult = (CSVResult) o;
         return Double.compare(csvResult.confidence, confidence) == 0 &&
-                delimiter == csvResult.delimiter &&
-                mediaType.equals(csvResult.mediaType);
+                mediaType.equals(csvResult.mediaType) &&
+                Objects.equals(delimiter, csvResult.delimiter);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(confidence, mediaType, delimiter);
+    }
+
+    @Override
+    public String toString() {
+        return "CSVResult{" +
+                "confidence=" + confidence +
+                ", mediaType=" + mediaType +
+                ", delimiter=" + delimiter +
+                '}';
     }
 
     public double getConfidence() {
