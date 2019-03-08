@@ -174,11 +174,11 @@ public class TextAndCSVParserTest extends TikaTest {
         byte[] bytes = ("testcsv\n" +
                 "testcsv testcsv;;; testcsv").getBytes(StandardCharsets.UTF_8);
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.csv");
         XMLResult xmlResult = getXML(new ByteArrayInputStream(bytes), PARSER, metadata);
         assertContains("text/plain", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
 
-        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.txt");
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.txt");
         xmlResult = getXML(new ByteArrayInputStream(bytes), PARSER, metadata);
         assertContains("text/plain", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
     }
