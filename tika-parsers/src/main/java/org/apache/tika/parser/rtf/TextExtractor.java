@@ -56,6 +56,7 @@ import org.xml.sax.SAXException;
 
 final class TextExtractor {
 
+    private static final char SPACE = ' ';
     private static final Charset ASCII = Charset.forName("US-ASCII");
     private static final Charset WINDOWS_1252 = getCharset("WINDOWS-1252");
     private static final Charset MAC_ROMAN = getCharset("MacRoman");
@@ -1124,7 +1125,6 @@ final class TextExtractor {
         }
 
         final boolean ignored = groupState.ignore;
-
         if (equals("pard")) {
             // Reset styles
             pushText();
@@ -1160,15 +1160,23 @@ final class TextExtractor {
             pushText();
             // Text inside a shape
             groupState.ignore = false;
+        } else if (equals("chatn")) {
+            addOutputChar(SPACE);
+            pushText();
+            // Annotation ID
+            groupState.ignore = false;
         } else if (equals("atnid")) {
+            addOutputChar(SPACE);
             pushText();
             // Annotation ID
             groupState.ignore = false;
         } else if (equals("atnauthor")) {
+            addOutputChar(SPACE);
             pushText();
             // Annotation author
             groupState.ignore = false;
         } else if (equals("annotation")) {
+            groupState.annotation = true;
             pushText();
             // Annotation
             groupState.ignore = false;
@@ -1366,7 +1374,9 @@ final class TextExtractor {
                 embObjHandler.handleCompletedObject();
             }
         }
-
+        if (groupState.annotation == true) {
+            addOutputChar(SPACE);
+        }
         if (groupState.object == true) {
             embObjHandler.setInObject(false);
         }

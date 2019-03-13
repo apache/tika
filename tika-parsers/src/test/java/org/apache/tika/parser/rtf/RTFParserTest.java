@@ -546,6 +546,12 @@ public class RTFParserTest extends TikaTest {
         assertNotContained("<b>Anna Smith", r.xml);
     }
 
+    @Test
+    public void testSpacingInAnnotations() throws Exception {
+        //TIKA-2838
+        assertContains("supercali ATB Allison, Timothy B.  This is a comment fragilistic",
+                getXML("testRTF_annotation_spacing.rtf").xml);
+    }
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
 
