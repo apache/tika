@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -348,14 +349,38 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void writeParagraphNumber(XWPFParagraph paragraph,
                                       XWPFListManager listManager,
                                       XHTMLContentHandler xhtml) throws SAXException {
-        if (paragraph.getNumIlvl() == null) {
-            return;
-        }
-        String number = listManager.getFormattedNumber(paragraph);
-        if (number != null) {
-            xhtml.characters(number);
+        if (paragraph.getNumIlvl() != null) {
+            String number = listManager.getFormattedNumber(paragraph);
+            if (number != null) {
+                xhtml.characters(number);
+                return;
+            }
         }
 
+        // some versions of word are weird and do not set numPr and instead set it on styles.
+        if (styles != null && styles.styleExist(paragraph.getStyleID())) {
+            XWPFStyle style = styles.getStyle(paragraph.getStyleID());
+            BigInteger numId = this.getNumIdFromStyle(style);
+            if (numId != null) {
+                // default ilevel to zero because its not defined on style.
+                String number = listManager.getFormattedNumber(numId, 0);
+                if (number != null) {
+                    xhtml.characters(number);
+                }
+            }
+
+        }
+
+
+    }
+
+    private BigInteger getNumIdFromStyle(XWPFStyle style) {
+        if (style.getCTStyle() != null && style.getCTStyle().getPPr() != null && style.getCTStyle().getPPr().getNumPr() != null && style.getCTStyle().getPPr().getNumPr().getNumId() != null) {
+            return style.getCTStyle().getPPr().getNumPr().getNumId().getVal();
+        } else if (style.getBasisStyleID() != null && styles.styleExist(style.getBasisStyleID())) {
+            return this.getNumIdFromStyle(styles.getStyle(style.getBasisStyleID()));
+        }
+        return null;
     }
 
     private TmpFormatting closeStyleTags(XHTMLContentHandler xhtml,
