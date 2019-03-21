@@ -21,6 +21,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.w3c.dom.Document;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;
@@ -766,6 +767,21 @@ public class XMLReaderUtils implements Serializable {
 
     public static int getMaxEntityExpansions() {
         return MAX_ENTITY_EXPANSIONS;
+    }
+
+    /**
+     *
+     * @param localName
+     * @param atts
+     * @return attribute value with that local name or <code>null</code> if not found
+     */
+    public static String getAttrValue(String localName, Attributes atts) {
+        for (int i = 0; i < atts.getLength(); i++) {
+            if (localName.equals(atts.getLocalName(i))) {
+                return atts.getValue(i);
+            }
+        }
+        return null;
     }
 
     private static class PoolDOMBuilder {

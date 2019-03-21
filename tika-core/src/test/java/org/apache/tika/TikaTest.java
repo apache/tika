@@ -21,7 +21,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -236,9 +238,18 @@ public abstract class TikaTest {
     protected List<Metadata> getRecursiveMetadata(InputStream is, boolean suppressException) throws Exception {
         return getRecursiveMetadata(is, new ParseContext(), new Metadata(), suppressException);
     }
+
+    protected List<Metadata> getRecursiveMetadata(InputStream is, Parser parser, boolean suppressException) throws Exception {
+        return getRecursiveMetadata(is, parser, new ParseContext(), new Metadata(), suppressException);
+    }
+
     protected List<Metadata> getRecursiveMetadata(InputStream is, ParseContext context, Metadata metadata,
                                                   boolean suppressException) throws Exception {
-        Parser p = new AutoDetectParser();
+        return getRecursiveMetadata(is, new AutoDetectParser(), context, metadata, suppressException);
+    }
+
+    protected List<Metadata> getRecursiveMetadata(InputStream is, Parser p, ParseContext context, Metadata metadata,
+                                                  boolean suppressException) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
@@ -252,7 +263,7 @@ public abstract class TikaTest {
         return handler.getMetadataList();
     }
 
-        protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
+    protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext context) throws Exception {
         Parser p = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
 
@@ -369,6 +380,19 @@ public abstract class TikaTest {
                 //swallow
             }
         }
+    }
+
+    public InputStream truncate(String testFileName, int truncatedLength) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (InputStream is = getResourceAsStream("/test-documents/"+testFileName)) {
+            IOUtils.copy(is, bos);
+        }
+        if (truncatedLength > bos.toByteArray().length) {
+            throw new EOFException("Can't truncate beyond file length");
+        }
+        byte[] truncated = new byte[truncatedLength];
+        System.arraycopy(bos.toByteArray(), 0, truncated, 0, truncatedLength);
+        return TikaInputStream.get(truncated);
     }
 
     public static void debug(List<Metadata> list) {
