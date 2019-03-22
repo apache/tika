@@ -52,6 +52,10 @@
     <bouncycastle.version>1.60</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
     <httpcomponents.version>4.5.7</httpcomponents.version>
+    <!-- used by cxf-rt-rs-client -->
+    <soap-api.version>1.4.0</soap-api.version>
+    <!-- used by jaxb-runtime and cxf-rt-rs-client -->
+    <stax-ex.version>1.8.1</stax-ex.version>
   </properties>
 
   <dependencies>
@@ -90,6 +94,10 @@
         <exclusion>
           <groupId>jakarta.activation</groupId>
           <artifactId>jakarta.activation-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.jvnet.staxex</groupId>
+          <artifactId>stax-ex</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -378,7 +386,27 @@
           <groupId>javax.annotation</groupId>
           <artifactId>javax.annotation-api</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>javax.xml.soap</groupId>
+          <artifactId>javax.xml.soap-api</artifactId>
+        </exclusion>
+        <!-- Used by cxf-rt-rs-client and jaxb-runtime (conflict) -->
+        <exclusion>
+          <groupId>org.jvnet.staxex</groupId>
+          <artifactId>stax-ex</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!-- Used by cxf-rt-rs-client but version 3.3.0 brings transitively 2 different versions (1.4.0 a,d 1.4.0-b01) -->
+    <dependency>
+      <groupId>javax.xml.soap</groupId>
+      <artifactId>javax.xml.soap-api</artifactId>
+      <version>${soap-api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jvnet.staxex</groupId>
+      <artifactId>stax-ex</artifactId>
+      <version>${stax-ex.version}</version>
     </dependency>
     <!-- TIKA-2021: Tesseract OCR Parser dependencies,
     used for executing image processing script -->
