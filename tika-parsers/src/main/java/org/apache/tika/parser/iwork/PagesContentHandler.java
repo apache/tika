@@ -180,7 +180,7 @@ class PagesContentHandler extends DefaultHandler {
               xhtml.characters(annotationText);
               xhtml.endElement("div");
            }
-        } else if ("sf:ghost-text".equals(qName)) {
+        } else if ("sf:ghost-text".equals(qName) || "sf:ghost-text-ref".equals(qName)) {
             ghostText = true;
         }
 
@@ -216,7 +216,7 @@ class PagesContentHandler extends DefaultHandler {
             annotations.end();
         } else if ("sf:annotation-field".equals(qName) && inPart == DocumentPart.PARSABLE_TEXT) {
             xhtml.endElement("div");
-        } else if ("sf:ghost-text".equals(qName)) {
+        } else if ("sf:ghost-text".equals(qName) || "sf:ghost-text-ref".equals(qName)) {
             ghostText = false;
         }
     }
