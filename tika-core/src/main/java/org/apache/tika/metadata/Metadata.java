@@ -408,6 +408,45 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     }
 
     /**
+     * Adds the integer value of the identified metadata property.
+     *
+     * @since Apache Tika 1.21
+     * @param property seq integer property definition
+     * @param value    property value
+     */
+    public void add(Property property, int value) {
+        if(property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
+            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
+        }
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
+        }
+        add(property, Integer.toString(value));
+    }
+
+    /**
+     * Gets the array of ints of the identified "seq" integer metadata property.
+     *
+     * @since Apache Tika 1.21
+     * @param property seq integer property definition
+     * @return array of ints
+     */
+    public int[] getIntValues(Property property) {
+        if(property.getPrimaryProperty().getPropertyType() != PropertyType.SEQ) {
+            throw new PropertyTypeException(PropertyType.SEQ, property.getPrimaryProperty().getPropertyType());
+        }
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
+        }
+        String[] vals = getValues(property);
+        int[] ret = new int[vals.length];
+        for (int i = 0; i < vals.length; i++) {
+            ret[i] = Integer.parseInt(vals[i]);
+        }
+        return ret;
+    }
+
+    /**
      * Sets the real or rational value of the identified metadata property.
      *
      * @since Apache Tika 0.8
