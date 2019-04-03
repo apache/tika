@@ -217,6 +217,11 @@ public abstract class TikaTest {
         return getRecursiveMetadata(filePath, new ParseContext(), new Metadata(), suppressException);
     }
 
+    protected List<Metadata> getRecursiveMetadata(String filePath, ParseContext parseContext, boolean suppressException) throws Exception {
+        return getRecursiveMetadata(filePath, parseContext, new Metadata(), suppressException);
+    }
+
+
     protected List<Metadata> getRecursiveMetadata(String filePath) throws Exception {
         return getRecursiveMetadata(filePath, new ParseContext());
     }

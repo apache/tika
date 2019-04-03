@@ -153,6 +153,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             super.processPage(page);
         } catch (IOException e) {
             handleCatchableIOE(e);
+            endPage(page);
         }
     }
 
@@ -169,7 +170,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         } catch (SAXException e) {
             throw new IOException("Unable to end a page", e);
         } catch (IOException e) {
-            exceptions.add(e);
+            handleCatchableIOE(e);
         }
     }
 

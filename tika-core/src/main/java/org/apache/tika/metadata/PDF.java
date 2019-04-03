@@ -70,4 +70,9 @@ public interface PDF {
      * in the document: on document open, before close, etc.
      */
     Property ACTION_TRIGGER = Property.internalText(PDF_PREFIX+"actionTrigger");
+
+    Property CHARACTERS_PER_PAGE = Property.internalIntegerSequence(PDF_PREFIX+"charsPerPage");
+
+    Property UNMAPPED_UNICODE_CHARS_PER_PAGE =
+            Property.internalIntegerSequence(PDF_PREFIX+"unmappedUnicodeCharsPerPage");
 }
