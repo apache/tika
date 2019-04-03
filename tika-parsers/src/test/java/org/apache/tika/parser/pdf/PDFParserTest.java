@@ -1386,6 +1386,14 @@ public class PDFParserTest extends TikaTest {
         assertContains("transport mined materials", xml);
     }
 
+    @Test
+    public void testFileInAnnotationExtractedIfNoContents() throws Exception {
+        //TIKA-2845
+        List<Metadata> contents = getRecursiveMetadata("testPDFFileEmbInAnnotation_noContents.pdf");
+        assertEquals(2, contents.size());
+        assertContains("This is a Excel", contents.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+    }
+
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test

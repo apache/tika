@@ -46,6 +46,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
@@ -147,7 +148,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
 
-    private int pageIndex = 0;
+    //zero-based pageIndex
+    int pageIndex = 0;
+    int startPage = -1;//private in PDFTextStripper...must have own copy because we override processpages
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config) throws IOException {
@@ -428,8 +431,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to end a page", e);
         } catch (IOException e) {
             exceptions.add(e);
-        } finally {
-            pageIndex++;
         }
     }
 
@@ -785,4 +786,62 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         return null;
     }
+
+    /**
+     * we need to override this because we are overriding {@link #processPages(PDPageTree)}
+     * @return
+     */
+    @Override
+    public int getCurrentPageNo() {
+        return pageIndex+1;
+    }
+
+    /**
+     * See TIKA-2845 for why we need to override this.
+     *
+     * @param pages
+     * @throws IOException
+     */
+    @Override
+    protected void processPages(PDPageTree pages) throws IOException {
+        //we currently need this hack because we aren't able to increment
+        //the private currentPageNo in PDFTextStripper,
+        //and PDFTextStripper's processPage relies on that variable
+        //being >= startPage when deciding whether or not to process a page
+        // See:
+        // if (currentPageNo >= startPage && currentPageNo <= endPage
+        //                && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
+        //                && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber))
+        //        {
+        super.setStartPage(-1);
+        for (PDPage page : pages) {
+            if (getCurrentPageNo() >= getStartPage()
+                    && getCurrentPageNo() <= getEndPage()) {
+                processPage(page);
+            }
+            pageIndex++;
+        }
+    }
+
+    @Override
+    public void setStartBookmark(PDOutlineItem pdOutlineItem) {
+        throw new UnsupportedOperationException("We don't currently support this -- See PDFTextStripper's processPages() for how to implement this.");
+    }
+
+    @Override
+    public void setEndBookmark(PDOutlineItem pdOutlineItem) {
+        throw new UnsupportedOperationException("We don't currently support this -- See PDFTextStripper's processPages() for how to implement this.");
+    }
+
+    @Override
+    public void setStartPage(int startPage) {
+        this.startPage = startPage;
+    }
+
+    @Override
+    public int getStartPage() {
+        return startPage;
+    }
+
+
 }
