@@ -1317,7 +1317,8 @@
             where pa.num_pages is not null
             and pb.num_pages is not null
             and pa.num_pages &lt;&gt; pb.num_pages
-            order by DIFF_NUM_PAGES_IN_B asc;
+            order by DIFF_NUM_PAGES_IN_B asc
+            limit 10000;
         </sql>
     </report>
 
@@ -1423,7 +1424,7 @@
             eb.parse_exception_id is null
             and pa.num_attachments &lt;&gt; pb.num_attachments
             order by ma.mime_string, pb.num_attachments-pa.num_attachments
-            limit 10000;
+            limit 100000;
         </sql>
     </report>
 
@@ -1454,7 +1455,7 @@
             where pa.is_embedded=false
             and pa.num_attachments &lt;&gt; pb.num_attachments
             order by ma.mime_string, pb.num_attachments-pa.num_attachments
-            limit 10000;
+            limit 100000;
         </sql>
     </report>
 
@@ -1485,6 +1486,7 @@
             and pa.num_metadata_values &lt;&gt; pb.num_metadata_values
             order by ma.mime_string,
             pb.num_metadata_values-pa.num_metadata_values
+            limit 100000
         </sql>
     </report>
     <report reportName="Tag Count Diffs By Mime"
@@ -1524,6 +1526,7 @@
             tags_by_mime tbm
             join mimes ma on tbm.mime_id_a=ma.mime_id
             join mimes mb on tbm.mime_id_b=mb.mime_id
+            limit 100000
         </sql>
 
     </report>
@@ -1572,7 +1575,8 @@
             order by m.mime_string
             limit 20000
         </sql>
-    </report>    <after>
+    </report>
+    <after>
         <sql>drop table if exists md5_multiples_tmp_a</sql>
         <sql>drop table if exists md5_multiples_tmp_b</sql>
     </after>
