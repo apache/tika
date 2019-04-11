@@ -1459,6 +1459,96 @@
         </sql>
     </report>
 
+    <report reportName="Files missing in B by Mime"
+            reportFilename="attachments/all_files_missing_in_B_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as cnt
+            from profiles_a pa
+            left join profiles_b pb on pa.id=pb.id
+            join mimes m on pa.mime_id=m.mime_id
+            where pb.id is null
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Container files missing in B by Mime"
+            reportFilename="attachments/container_files_missing_in_B_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as cnt
+            from profiles_a pa
+            left join profiles_b pb on pa.id=pb.id
+            join mimes m on pa.mime_id=m.mime_id
+            where pb.id is null and pa.is_embedded=false
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Embedded files missing in B by Mime"
+            reportFilename="attachments/embedded_files_missing_in_B_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as cnt
+            from profiles_a pa
+            left join profiles_b pb on pa.id=pb.id
+            join mimes m on pa.mime_id=m.mime_id
+            where pb.id is null and pa.is_embedded=true
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="All files missing in A by Mime"
+            reportFilename="attachments/all_files_missing_in_A_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as cnt
+            from profiles_b pb
+            left join profiles_a pa on pb.id=pa.id
+            join mimes m on pb.mime_id=m.mime_id
+            where pa.id is null
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Container files missing in A by Mime"
+            reportFilename="attachments/container_files_missing_in_A_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as cnt
+            from profiles_b pb
+            left join profiles_a pa on pb.id=pa.id
+            join mimes m on pb.mime_id=m.mime_id
+            where pa.id is null and pb.is_embedded=false
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
+    <report reportName="Embedded files missing in A by Mime"
+            reportFilename="attachments/embedded_files_missing_in_A_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as cnt
+            from profiles_b pb
+            left join profiles_a pa on pb.id=pa.id
+            join mimes m on pb.mime_id=m.mime_id
+            where pa.id is null and pb.is_embedded=true
+            group by mime_string
+            order by cnt desc
+        </sql>
+    </report>
     <!-- metadata values -->
     <report reportName="Metadata Value Diffs"
             reportFilename="metadata/metadata_value_count_diffs.xlsx"
