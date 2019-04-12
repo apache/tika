@@ -578,14 +578,45 @@ public class TikaInputStream extends TaggedInputStream {
         return path != null;
     }
 
+
+    /**
+     * If the user created this TikaInputStream with a file,
+     * the original file will be returned.  If not, the entire stream
+     * will be spooled to a temporary file which will be deleted
+     * upon the close of this TikaInputStream
+     * @return
+     * @throws IOException
+     */
     public Path getPath() throws IOException {
+        return getPath(-1);
+    }
+
+    /**
+     *
+     * @param maxBytes if this is less than 0 and if an underlying file doesn't already exist,
+     *                 the full file will be spooled to disk
+     * @return the original path used in the initialization of this TikaInputStream,
+     * a temporary file if the stream was shorter than <code>maxBytes</code>, or <code>null</code>
+     * if the underlying stream was longer than maxBytes.
+     * @throws IOException
+     */
+    public Path getPath(int maxBytes) throws IOException {
         if (path == null) {
             if (position > 0) {
                 throw new IOException("Stream is already being read");
             } else {
-                // Spool the entire stream into a temporary file
                 path = tmp.createTempFile();
-                Files.copy(in, path, REPLACE_EXISTING);
+                if (maxBytes > -1) {
+                    try (InputStream lookAhead = new LookaheadInputStream(in, maxBytes)) {
+                        Files.copy(lookAhead, path, REPLACE_EXISTING);
+                        if (Files.size(path) >= maxBytes) {
+                            return null;
+                        }
+                    }
+                } else {
+                    // Spool the entire stream into a temporary file
+                    Files.copy(in, path, REPLACE_EXISTING);
+                }
 
                 // Create a new input stream and make sure it'll get closed
                 InputStream newStream = Files.newInputStream(path);

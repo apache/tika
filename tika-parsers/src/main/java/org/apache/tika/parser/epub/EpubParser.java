@@ -175,6 +175,12 @@ public class EpubParser extends AbstractParser {
         TemporaryResources temporaryResources = null;
         if (TikaInputStream.isTikaInputStream(stream)) {
             tis = TikaInputStream.cast(stream);
+            if (tis.getOpenContainer() instanceof ZipFile) {
+                bufferedParseZipFile(
+                        (ZipFile)tis.getOpenContainer(),
+                        bodyHandler, xhtml, metadata, context, true);
+                return;
+            }
         } else {
             temporaryResources = new TemporaryResources();
             tis = TikaInputStream.get(new CloseShieldInputStream(stream), temporaryResources);
@@ -192,7 +198,11 @@ public class EpubParser extends AbstractParser {
                 tis.close();
             }
         }
-        bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, true);
+        try {
+            bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context, true);
+        } finally {
+            zipFile.close();
+        }
     }
 
     private void trySalvage(Path brokenZip, ContentHandler bodyHandler,
