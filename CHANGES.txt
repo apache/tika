@@ -8,6 +8,13 @@ Release 2.0.0 - ???
 
 Release 1.21 - ????
 
+   * The ZipContainerDetector's default behavior was changed to run
+     streaming detection up to its markLimit.  Users can get the
+     legacy behavior (spool-to-file/rely-on-underlying-file-in-TikaInputStream)
+     by setting markLimit=-1. The POIFSContainerDetector requires an underlying file;
+     it will try to spool the file to disk; if the file's length is > markLimit,
+     it will not attempt detection; set markLimit to -1 for legacy behavior (TIKA-2849).
+
    * Upgrade PDFBox to 2.0.14 (TIKA-2834).
 
    * Add CSV detection and replace TXTParser with TextAndCSVParser;

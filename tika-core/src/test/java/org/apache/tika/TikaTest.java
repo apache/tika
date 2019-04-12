@@ -394,7 +394,7 @@ public abstract class TikaTest {
             IOUtils.copy(is, bos);
         }
         if (truncatedLength > bos.toByteArray().length) {
-            throw new EOFException("Can't truncate beyond file length");
+            throw new EOFException("Can't truncate beyond file length: "+bos.toByteArray().length);
         }
         byte[] truncated = new byte[truncatedLength];
         System.arraycopy(bos.toByteArray(), 0, truncated, 0, truncatedLength);
