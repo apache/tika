@@ -16,10 +16,22 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
+
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
@@ -31,39 +43,16 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.util.ZipEntrySource;
 import org.apache.poi.openxml4j.util.ZipFileZipEntrySource;
-import org.apache.poi.xslf.usermodel.XSLFRelation;
-import org.apache.poi.xssf.usermodel.XSSFRelation;
-import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.LookaheadInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -95,44 +84,14 @@ public class ZipContainerDetector implements Detector {
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
 
-    private static final MediaType TIKA_OOXML = MediaType.application("x-tika-ooxml");
-    private static final MediaType DOCX =
-            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
-    private static final MediaType DOCM =
-            MediaType.application("vnd.ms-word.document.macroEnabled.12");
-    private static final MediaType DOTX =
-            MediaType.application("vnd.ms-word.document.macroEnabled.12");
-    private static final MediaType PPTX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
-    private static final MediaType PPTM =
-            MediaType.application("vnd.ms-powerpoint.presentation.macroEnabled.12");
-    private static final MediaType POTX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.template");
-    private static final MediaType XLSX =
-            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    private static final MediaType XLSM =
-            MediaType.application("vnd.ms-excel.sheet.macroEnabled.12");
 
-    private static final Set<String> OOXML_HINTS = fillSet(
-            "word/document.xml",
-            "_rels/.rels",
-            "[Content_Types].xml",
-            "ppt/presentation.xml",
-            "ppt/slides/slide1.xml",
-            "xl/workbook.xml",
-            "xl/sharedStrings.xml",
-            "xl/worksheets/sheet1.xml"
-    );
-
-    static Set<String> fillSet(String ... args) {
-        Set<String> tmp = new HashSet<>();
-        for (String arg : args) {
-            tmp.add(arg);
-        }
-        return Collections.unmodifiableSet(tmp);
-    }
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
+
+    //this has to be > 100,000 to handle some of the iworks files
+    //in our unit tests
+    @Field
+    int markLimit = 16 * 1024 * 1024;
 
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
@@ -141,33 +100,53 @@ public class ZipContainerDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        TemporaryResources tmp = new TemporaryResources();
+        byte[] prefix = new byte[1024]; // enough for all known archive formats
+        input.mark(1024);
+        int length = -1;
         try {
-            TikaInputStream tis = TikaInputStream.get(input, tmp);
-
-            byte[] prefix = new byte[1024]; // enough for all known formats
-            int length = tis.peek(prefix);
-
-            MediaType type = detectArchiveFormat(prefix, length);
-
-            if (type == TIFF) {
-                return TIFF;
-            } else if (PackageParser.isZipArchive(type)
-                        && TikaInputStream.isTikaInputStream(input)) {
-                return detectZipFormat(tis);
-            } else if (!type.equals(MediaType.OCTET_STREAM)) {
-                return type;
-            } else {
-                return detectCompressorFormat(prefix, length);
-            }
+            length = IOUtils.read(input, prefix);
         } finally {
-            try {
-                tmp.dispose();
-            } catch (TikaException e) {
-                // ignore
+            input.reset();
+        }
+
+        MediaType type = detectArchiveFormat(prefix, length);
+
+        if (type == TIFF) {
+            return TIFF;
+        } else if (PackageParser.isZipArchive(type)) {
+
+            if (TikaInputStream.isTikaInputStream(input)) {
+                TikaInputStream tis = TikaInputStream.cast(input);
+                if (markLimit < 0) {
+                    tis.getFile();
+                }
+                if (tis.hasFile()) {
+                    return detectZipFormatOnFile(tis);
+                }
             }
+
+            try (LookaheadInputStream lookahead = new LookaheadInputStream(input, markLimit)) {
+                return StreamingZipContainerDetector.detect(lookahead);
+            }
+        } else if (!type.equals(MediaType.OCTET_STREAM)) {
+            return type;
+        } else {
+            return detectCompressorFormat(prefix, length);
         }
     }
+
+    /**
+     * If this is less than 0, the file will be spooled to disk,
+     * and detection will run on the full file.
+     * If this is greater than 0, the {@link StreamingZipContainerDetector}
+     * will be called only up to the markLimit.
+     *
+     * @param markLimit mark limit for streaming detection
+     */
+    public void setMarkLimit(int markLimit) {
+        this.markLimit = markLimit;
+    }
+
 
     private static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
@@ -211,17 +190,18 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectZipFormat(TikaInputStream tis) {
+    /**
+     * This will call TikaInputStream's getFile(). If there are no exceptions,
+     * it will place the ZipFile in TikaInputStream's openContainer and leave it
+     * open.
+     * @param tis
+     * @return
+     */
+    private static MediaType detectZipFormatOnFile(TikaInputStream tis) {
         try {
 
-            //try opc first because opening a package
-            //will not necessarily throw an exception for
-            //truncated files.
-            MediaType type = detectOPCBased(tis);
-            if (type != null) {
-                return type;
-            }
             ZipFile zip = new ZipFile(tis.getFile()); // TODO: hasFile()?
+            MediaType type = null;
             try {
                 type = detectOpenDocument(zip);
 
@@ -244,14 +224,17 @@ public class ZipContainerDetector implements Detector {
                     return type;
                 }
             } finally {
-                // TODO: shouldn't we record the open
-                // container so it can be later
-                // reused...?
-                // tis.setOpenContainer(zip);
-                try {
-                    zip.close();
-                } catch (IOException e) {
-                    // ignore
+                tis.setOpenContainer(zip);
+            }
+            //finally, test for opc based
+            //if it is not an opc based file, poi throws an exception
+            //and we close the zip
+            //if it is opc based, we put the pkg in TikaInputStream's open container
+            if (zip.getEntry("_rels/.rels") != null
+                    || zip.getEntry("[Content_Types].xml") != null) {
+                type = detectOPCBased(zip, tis);
+                if (type != null) {
+                    return type;
                 }
             }
         } catch (IOException e) {
@@ -281,57 +264,32 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectOPCBased(TikaInputStream stream) {
+    //If this is not an OPCBased file, POI throws an exception and we close the zipFile.
+    private static MediaType detectOPCBased(ZipFile zipFile, TikaInputStream stream) {
+        //as of 4.x, POI throws an exception for non-POI OPC file types
+        //unless we change POI, we can't rely on POI for non-POI files
+        ZipEntrySource zipEntrySource = new ZipFileZipEntrySource(zipFile);
 
-        ZipEntrySource zipEntrySource = null;
-        try {
-            zipEntrySource = new ZipFileZipEntrySource(new ZipFile(stream.getFile()));
-        } catch (IOException e) {
-            return tryStreamingDetection(stream);
-        }
-
-        //if (zip.getEntry("_rels/.rels") != null
-        //  || zip.getEntry("[Content_Types].xml") != null) {
         // Use POI to open and investigate it for us
         //Unfortunately, POI can throw a RuntimeException...so we
         //have to catch that.
         OPCPackage pkg = null;
+        MediaType type = null;
         try {
             pkg = OPCPackage.open(zipEntrySource);
+            type = detectOfficeOpenXML(pkg);
         } catch (SecurityException e) {
             closeQuietly(zipEntrySource);
+            IOUtils.closeQuietly(zipFile);
             //TIKA-2571
             throw e;
         } catch (InvalidFormatException|RuntimeException e) {
             closeQuietly(zipEntrySource);
-            return null;
-        }
-
-        MediaType type = null;
-        try {
-
-            // Is at an OOXML format?
-            type = detectOfficeOpenXML(pkg);
-            if (type == null) {
-                // Is it XPS format?
-                type = detectXPSOPC(pkg);
-            }
-            if (type == null) {
-                // Is it an AutoCAD format?
-                type = detectAutoCADOPC(pkg);
-            }
-
-        } catch (SecurityException e) {
-            closeQuietly(zipEntrySource);
-            //TIKA-2571
-            throw e;
-        } catch (RuntimeException e) {
-            closeQuietly(zipEntrySource);
+            IOUtils.closeQuietly(zipFile);
             return null;
         }
         //only set the open container if we made it here
         stream.setOpenContainer(pkg);
-        // We don't know what it is, sorry
         return type;
     }
 
@@ -360,7 +318,19 @@ public class ZipContainerDetector implements Detector {
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(VISIO_DOCUMENT);
         }
-        
+        if (core.size() == 0) {
+            core = pkg.getRelationshipsByType(XPS_DOCUMENT);
+            if (core.size() == 1) {
+                return MediaType.application("vnd.ms-xpsdocument");
+            }
+        }
+
+        if (core.size() == 0) {
+            core = pkg.getRelationshipsByType("http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
+            if (core.size() == 1) {
+                return MediaType.parse("model/vnd.dwfx+xps");
+            }
+        }
         // If we didn't find a single core document of any type, skip detection
         if (core.size() != 1) {
             // Invalid OOXML Package received
@@ -389,19 +359,7 @@ public class ZipContainerDetector implements Detector {
         // Build the MediaType object and return
         return MediaType.parse(docType);
     }
-    /**
-     * Detects Open XML Paper Specification (XPS)
-     */
-    public static MediaType detectXPSOPC(OPCPackage pkg) {
-        PackageRelationshipCollection xps = 
-                pkg.getRelationshipsByType("http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
-        if (xps.size() == 1) {
-            return MediaType.application("vnd.ms-xpsdocument");
-        } else {
-            // Non-XPS Package received
-            return null;
-        }
-    }
+
     /**
      * Detects AutoCAD formats that live in OPC packaging
      */
@@ -534,95 +492,5 @@ public class ZipContainerDetector implements Detector {
         return null;
     }
 
-    private static MediaType tryStreamingDetection(TikaInputStream stream) {
-        Set<String> entryNames = new HashSet<>();
-        try (InputStream is = new FileInputStream(stream.getFile())) {
-            ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(is);
-            ZipArchiveEntry zae = zipArchiveInputStream.getNextZipEntry();
-            while (zae != null) {
-                if (zae.isDirectory()) {
-                    zae = zipArchiveInputStream.getNextZipEntry();
-                    continue;
-                }
-                entryNames.add(zae.getName());
-                //we could also parse _rel/.rels, but if
-                // there isn't a valid content_types, then POI
-                //will throw an exception...Better to backoff to PKG
-                //than correctly identify a truncated
-                if (zae.getName().equals("[Content_Types].xml")) {
-                    MediaType mt = parseContentTypes(zipArchiveInputStream);
-                    if (mt != null) {
-                        return mt;
-                    }
-                    return TIKA_OOXML;
-                }
-                zae = zipArchiveInputStream.getNextZipEntry();
-            }
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            //swallow
-        }
-        int hits = 0;
-        for (String s : OOXML_HINTS) {
-            if (entryNames.contains(s)) {
-                hits++;
-            }
-        }
-        if (hits > 2) {
-            return TIKA_OOXML;
-        }
-        return MediaType.APPLICATION_ZIP;
-    }
-
-    private static MediaType parseContentTypes(InputStream is) {
-        ContentTypeHandler contentTypeHandler = new ContentTypeHandler();
-        try {
-            XMLReaderUtils.parseSAX(is, contentTypeHandler, new ParseContext());
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-
-        }
-        return contentTypeHandler.mediaType;
-    }
-
-
-    private static class ContentTypeHandler extends DefaultHandler {
-        static Map<String, MediaType> CONTENT_TYPES = new ConcurrentHashMap<>();
-        static {
-            CONTENT_TYPES.put(XWPFRelation.DOCUMENT.getContentType(), DOCX);
-            CONTENT_TYPES.put(XWPFRelation.MACRO_DOCUMENT.getContentType(), DOCM);
-            CONTENT_TYPES.put(XWPFRelation.TEMPLATE.getContentType(), DOTX);
-
-            CONTENT_TYPES.put(XSSFRelation.WORKBOOK.getContentType(), XLSX);
-            CONTENT_TYPES.put(XSSFRelation.MACROS_WORKBOOK.getContentType(), XLSM);
-            CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML.getContentType(), PPTX);
-            CONTENT_TYPES.put(XSLFRelation.PRESENTATION_MACRO.getContentType(), PPTM);
-            CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML_TEMPLATE.getContentType(), POTX);
-        }
-
-        private MediaType mediaType = null;
-
-        @Override
-        public void startElement(String uri, String localName,
-                                 String name, Attributes attrs) throws SAXException {
-            for (int i = 0; i < attrs.getLength(); i++) {
-                String attrName = attrs.getLocalName(i);
-                if (attrName.equals("ContentType")) {
-                    String contentType = attrs.getValue(i);
-                    if (CONTENT_TYPES.containsKey(contentType)) {
-                        mediaType = CONTENT_TYPES.get(contentType);
-                        throw new StoppingEarlyException();
-                    }
-
-                }
-            }
-        }
-    }
-
-    private static class StoppingEarlyException extends SAXException {
-
-    }
 
 }

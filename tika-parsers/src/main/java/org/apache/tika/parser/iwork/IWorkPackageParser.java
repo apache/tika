@@ -119,7 +119,7 @@ public class IWorkPackageParser extends AbstractParser {
           return detectType(zip);
        }
        
-       private static IWORKDocumentType detectType(InputStream stream) {
+       public static IWORKDocumentType detectType(InputStream stream) {
           QName qname = new XmlRootExtractor().extractRootElement(stream);
           if (qname != null) {
              String uri = qname.getNamespaceURI();
