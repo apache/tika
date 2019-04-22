@@ -608,7 +608,7 @@ public class OOXMLParserTest extends TikaTest {
 
         assertContains("<i>ita<strike>li</strike>c</i>", xml);
         assertContains("<i>ita<strike>l<u>i</u></strike>c</i>", xml);
-        assertContains("<i><u>unde</u><strike><u>r</u></strike><u>line</i></u>", xml);
+        assertContains("<i><u>unde<strike>r</strike>line</u></i>", xml);
 
         //confirm that spaces aren't added for <strike/> and </u>
         ContentHandler contentHandler = new BodyContentHandler();
