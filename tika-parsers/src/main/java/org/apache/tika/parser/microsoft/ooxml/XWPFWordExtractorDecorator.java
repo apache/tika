@@ -18,7 +18,9 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 
@@ -35,7 +37,6 @@ import org.apache.poi.xwpf.usermodel.IBodyElement;
 import org.apache.poi.xwpf.usermodel.ICell;
 import org.apache.poi.xwpf.usermodel.IRunElement;
 import org.apache.poi.xwpf.usermodel.ISDTContent;
-import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
@@ -54,6 +55,7 @@ import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.FormattingUtils;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -263,25 +265,25 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("a");
         }
 
-        TmpFormatting fmtg = new TmpFormatting(false, false, false, false);
+        Deque<FormattingUtils.Tag> formattingState = new ArrayDeque<>();
 
         //hyperlinks may or may not have hyperlink ids
         String lastHyperlinkId = null;
         boolean inHyperlink = false;
         // Do the iruns
         for (IRunElement run : paragraph.getIRuns()) {
-
             if (run instanceof XWPFHyperlinkRun) {
                 XWPFHyperlinkRun hyperlinkRun = (XWPFHyperlinkRun) run;
                 if (hyperlinkRun.getHyperlinkId() == null ||
                         !hyperlinkRun.getHyperlinkId().equals(lastHyperlinkId)) {
                     if (inHyperlink) {
                         //close out the old one
+                        FormattingUtils.closeStyleTags(xhtml, formattingState);
                         xhtml.endElement("a");
                         inHyperlink = false;
                     }
                     lastHyperlinkId = hyperlinkRun.getHyperlinkId();
-                    fmtg = closeStyleTags(xhtml, fmtg);
+                    FormattingUtils.closeStyleTags(xhtml, formattingState);
                     XWPFHyperlink link = hyperlinkRun.getHyperlink(document);
                     if (link != null && link.getURL() != null) {
                         xhtml.startElement("a", "href", link.getURL());
@@ -293,24 +295,22 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 }
             } else if (inHyperlink) {
                 //if this isn't a hyperlink, but the last one was
-                closeStyleTags(xhtml, fmtg);
+                FormattingUtils.closeStyleTags(xhtml, formattingState);
                 xhtml.endElement("a");
                 lastHyperlinkId = null;
                 inHyperlink = false;
             }
 
             if (run instanceof XWPFSDT) {
-                fmtg = closeStyleTags(xhtml, fmtg);
+                FormattingUtils.closeStyleTags(xhtml, formattingState);
                 processSDTRun((XWPFSDT) run, xhtml);
                 //for now, we're ignoring formatting in sdt
                 //if you hit an sdt reset to false
-                fmtg.setBold(false);
-                fmtg.setItalic(false);
             } else {
-                fmtg = processRun((XWPFRun) run, paragraph, xhtml, fmtg);
+                processRun((XWPFRun) run, paragraph, xhtml, formattingState);
             }
         }
-        closeStyleTags(xhtml, fmtg);
+        FormattingUtils.closeStyleTags(xhtml, formattingState);
         if (inHyperlink) {
             xhtml.endElement("a");
         }
@@ -358,92 +358,13 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    private TmpFormatting closeStyleTags(XHTMLContentHandler xhtml,
-                                         TmpFormatting fmtg) throws SAXException {
-        // Close any still open style tags
-        if (fmtg.isItalic()) {
-            xhtml.endElement("i");
-            fmtg.setItalic(false);
-        }
-        if (fmtg.isBold()) {
-            xhtml.endElement("b");
-            fmtg.setBold(false);
-        }
-        if (fmtg.isUnderline()) {
-        	xhtml.endElement("u");
-        	fmtg.setUnderline(false);
-        }
-        if (fmtg.isStrikeThrough()) {
-            xhtml.endElement("strike");
-            fmtg.setStrikeThrough(false);
-        }
-        return fmtg;
-    }
-
-    private TmpFormatting processRun(XWPFRun run, XWPFParagraph paragraph,
-                                     XHTMLContentHandler xhtml, TmpFormatting tfmtg)
+    private void processRun(XWPFRun run,
+                            XWPFParagraph paragraph,
+                            XHTMLContentHandler xhtml,
+                            Deque<FormattingUtils.Tag> formattingState)
             throws SAXException, XmlException, IOException {
-        // True if we are currently in the named style tag:
-        if (run.isBold() != tfmtg.isBold()) {
-            if (tfmtg.isStrikeThrough()) {
-                xhtml.endElement("strike");
-                tfmtg.setStrikeThrough(false);
-            }
-            if (tfmtg.isUnderline()) {
-                xhtml.endElement("u");
-                tfmtg.setUnderline(false);
-            }
-            if (tfmtg.isItalic()) {
-                xhtml.endElement("i");
-                tfmtg.setItalic(false);
-            }
-            if (run.isBold()) {
-                xhtml.startElement("b");
-            } else {
-                xhtml.endElement("b");
-            }
-            tfmtg.setBold(run.isBold());
-        }
-
-        if (run.isItalic() != tfmtg.isItalic()) {
-            if (tfmtg.isStrikeThrough()) {
-                xhtml.endElement("strike");
-                tfmtg.setStrikeThrough(false);
-            }
-            if (tfmtg.isUnderline()) {
-                xhtml.endElement("u");
-                tfmtg.setUnderline(false);
-            }
-            if (run.isItalic()) {
-                xhtml.startElement("i");
-            } else {
-                xhtml.endElement("i");
-            }
-            tfmtg.setItalic(run.isItalic());
-        }
-
-        if (run.isStrikeThrough() != tfmtg.isStrikeThrough()) {
-            if (tfmtg.isUnderline()) {
-                xhtml.endElement("u");
-                tfmtg.setUnderline(false);
-            }
-            if (run.isStrikeThrough()) {
-                xhtml.startElement("strike");
-            } else {
-                xhtml.endElement("strike");
-            }
-            tfmtg.setStrikeThrough(run.isStrikeThrough());
-        }
-
-        boolean isUnderline = run.getUnderline() != UnderlinePatterns.NONE;
-        if (isUnderline != tfmtg.isUnderline()) {
-            if (isUnderline) {
-                xhtml.startElement("u");
-            } else {
-                xhtml.endElement("u");
-            }
-            tfmtg.setUnderline(isUnderline);
-        }
+        // open/close required tags if run changes formatting
+        FormattingUtils.ensureFormattingState(xhtml, FormattingUtils.toTags(run), formattingState);
 
         if (config.getConcatenatePhoneticRuns()) {
             xhtml.characters(run.toString());
@@ -466,8 +387,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 }
             }
         }
-
-        return tfmtg;
     }
 
     private void processSDTRun(XWPFSDT run, XHTMLContentHandler xhtml)
@@ -571,55 +490,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-    }
-
-    private class TmpFormatting {
-        private boolean bold = false;
-        private boolean italic = false;
-        private boolean underline = false;
-        private boolean strikeThrough = false;
-
-
-        private TmpFormatting(boolean bold, boolean italic, boolean underline,
-                              boolean strikeThrough) {
-            this.bold = bold;
-            this.italic = italic;
-            this.underline = underline;
-            this.strikeThrough = strikeThrough;
-        }
-
-        public boolean isBold() {
-            return bold;
-        }
-
-        public void setBold(boolean bold) {
-            this.bold = bold;
-        }
-
-        public boolean isItalic() {
-            return italic;
-        }
-
-        public void setItalic(boolean italic) {
-            this.italic = italic;
-        }
-        
-
-        public boolean isUnderline() {
-            return underline;
-        }
-
-        public void setUnderline(boolean underline) {
-            this.underline = underline;
-        }
-
-        public boolean isStrikeThrough() {
-            return strikeThrough;
-        }
-
-        public void setStrikeThrough(boolean strikeThrough) {
-            this.strikeThrough = strikeThrough;
-        }
     }
 
 }
