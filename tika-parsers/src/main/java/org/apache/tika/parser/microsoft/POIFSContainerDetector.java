@@ -180,6 +180,19 @@ public class POIFSContainerDetector implements Detector {
     @Field
     private int markLimit = 16 * 1024 * 1024;
 
+    /**
+     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata)},
+     * and there is not an underlying file, this detector will spool up to {@link #markLimit}
+     * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
+     * this detector will open the file with POI and perform detection.
+     * If the spooled file is truncated, the detector will return {@link #OLE} (or
+     * {@link MediaType#OCTET_STREAM} if there's no OLE header).
+     *
+     * As of Tika 1.21, this detector respects the legacy behavior of not performing detection
+     * on a non-TikaInputStream.
+     *
+     * @param markLimit
+     */
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
     }
@@ -391,7 +404,9 @@ public class POIFSContainerDetector implements Detector {
     private Set<String> getTopLevelNames(TikaInputStream stream)
             throws IOException {
         // Force the document stream to a (possibly temporary) file
-        // so we don't modify the current position of the stream
+        // so we don't modify the current position of the stream.
+        //If the markLimit is < 0, this will spool the entire file
+        //to disk if there is not an underlying file.
         Path file = stream.getPath(markLimit);
 
         //if the stream was longer than markLimit, don't detect
