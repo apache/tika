@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.198</version>
+            <version>1.4.199</version>
         </dependency>
         <dependency>
             <groupId>com.optimaize.languagedetector</groupId>
@@ -78,7 +78,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>27.0.1-jre</version>
+            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -238,20 +238,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.ossindex.maven</groupId>
-                <artifactId>ossindex-maven-plugin</artifactId>
-                <configuration>
-                    <!-- ignore this until 1.4.198 is available -->
-                    <excludeCoordinates>
-                        <exclude>
-                            <groupId>com.h2database</groupId>
-                            <artifactId>h2</artifactId>
-                            <version>1.4.197</version>
-                        </exclude>
-                    </excludeCoordinates>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
