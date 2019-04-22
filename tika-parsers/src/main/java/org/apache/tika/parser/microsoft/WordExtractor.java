@@ -20,7 +20,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -79,11 +81,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         fixedParagraphStyles.put("HTML Preformatted", new TagAndStyle("pre", null));
     }
 
-    // True if we are currently in the named style tag:
-    private boolean curStrikeThrough;
-    private boolean curBold;
-    private boolean curItalic;
-    private boolean curUnderline;
+    private final Deque<FormattingUtils.Tag> formattingState = new ArrayDeque<>();
 
     private final Metadata metadata;
 
@@ -389,69 +387,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             return;
 
         if (!skipStyling) {
-            if (cr.isBold() != curBold) {
-                // Enforce nesting -- must close u, s and i tags
-                if (curUnderline) {
-                    xhtml.endElement("u");
-                    curUnderline = false;
-                }
-                if (curStrikeThrough) {
-                    xhtml.endElement("s");
-                    curStrikeThrough = false;
-                }
-                if (curItalic) {
-                    xhtml.endElement("i");
-                    curItalic = false;
-                }
-                if (cr.isBold()) {
-                    xhtml.startElement("b");
-                } else {
-                    xhtml.endElement("b");
-                }
-                curBold = cr.isBold();
-            }
-
-            if (cr.isItalic() != curItalic) {
-                // Enforce nesting -- must close u and s tag
-            	if (curUnderline) {
-            		xhtml.endElement("u");
-            		curUnderline = false;
-            	}
-                if (curStrikeThrough) {
-                    xhtml.endElement("s");
-                    curStrikeThrough = false;
-                }
-                if (cr.isItalic()) {
-                    xhtml.startElement("i");
-                } else {
-                    xhtml.endElement("i");
-                }
-                curItalic = cr.isItalic();
-            }
-
-            if (cr.isStrikeThrough() != curStrikeThrough) {
-                // Enforce nesting -- must close u tag
-                if (curUnderline) {
-                    xhtml.endElement("u");
-                    curUnderline = false;
-                }
-                if (cr.isStrikeThrough()) {
-                    xhtml.startElement("s");
-                } else {
-                    xhtml.endElement("s");
-                }
-                curStrikeThrough = cr.isStrikeThrough();
-            }
-            
-            boolean isUnderline = cr.getUnderlineCode() != 0;
-            if (isUnderline != curUnderline) {
-                if (isUnderline) {
-                    xhtml.startElement("u");
-                } else {
-                    xhtml.endElement("u");
-                }
-                curUnderline = isUnderline;
-            }
+            FormattingUtils.ensureFormattingState(xhtml, FormattingUtils.toTags(cr), formattingState);
         }
 
         // Clean up the text
@@ -562,22 +498,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         if (skipStyling) {
             return;
         }
-        if (curUnderline) {
-        	xhtml.endElement("u");
-        	curUnderline = false;
-        }
-        if (curStrikeThrough) {
-            xhtml.endElement("s");
-            curStrikeThrough = false;
-        }
-        if (curItalic) {
-            xhtml.endElement("i");
-            curItalic = false;
-        }
-        if (curBold) {
-            xhtml.endElement("b");
-            curBold = false;
-        }
+        FormattingUtils.closeStyleTags(xhtml, formattingState);
     }
 
     //temporary work around for TIKA-1512
