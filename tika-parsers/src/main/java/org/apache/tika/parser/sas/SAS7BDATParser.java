@@ -18,7 +18,10 @@ package org.apache.tika.parser.sas;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.Format;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -128,12 +131,15 @@ public class SAS7BDATParser extends AbstractParser {
         }
         xhtml.endElement("tr");
         xhtml.newline();
-        
+
+        //TODO: initialize this on the first row and then apply
+        Map<Integer, Format> formatMap = new HashMap<>();
+
         // Process each row in turn
         Object[] row = null;
         while ((row = sas.readNext()) != null) {
             xhtml.startElement("tr");
-            for (String val : DataWriterUtil.getRowValues(sas.getColumns(), row)) {
+            for (String val : DataWriterUtil.getRowValues(sas.getColumns(), row, formatMap)) {
                 // Use explicit start/end, rather than element, to 
                 //  ensure that empty cells still get output
                 xhtml.startElement("td");
