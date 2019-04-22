@@ -1,5 +1,6 @@
 package org.apache.tika.parser.microsoft;
 
+import org.apache.poi.wp.usermodel.CharacterRun;
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -50,7 +51,7 @@ public class FormattingUtils {
         ensureFormattingState(xhtml, EnumSet.noneOf(Tag.class), formattingState);
     }
 
-    public static EnumSet<Tag> toTags(XWPFRun run) {
+    public static EnumSet<Tag> toTags(CharacterRun run) {
         EnumSet<Tag> tags = EnumSet.noneOf(Tag.class);
         if (run.isBold()) {
             tags.add(Tag.B);
@@ -61,8 +62,16 @@ public class FormattingUtils {
         if (run.isStrikeThrough()) {
             tags.add(Tag.S);
         }
-        if (run.getUnderline() != UnderlinePatterns.NONE) {
-            tags.add(Tag.U);
+        if(run instanceof XWPFRun) {
+            XWPFRun xwpfRun = (XWPFRun) run;
+            if (xwpfRun.getUnderline() != UnderlinePatterns.NONE) {
+                tags.add(Tag.U);
+            }
+        } else if(run instanceof org.apache.poi.hwpf.usermodel.CharacterRun) {
+            org.apache.poi.hwpf.usermodel.CharacterRun hwpfRun = (org.apache.poi.hwpf.usermodel.CharacterRun) run;
+            if (hwpfRun.getUnderlineCode() != 0) {
+                tags.add(Tag.U);
+            }
         }
         return tags;
     }

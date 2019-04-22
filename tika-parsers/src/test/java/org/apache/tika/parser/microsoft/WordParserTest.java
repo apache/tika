@@ -211,7 +211,7 @@ public class WordParserTest extends TikaTest {
 
         assertTrue(xml.contains("<i>ita<s>li</s>c</i>"));
         assertTrue(xml.contains("<i>ita<s>l<u>i</u></s>c</i>"));
-        assertTrue(xml.contains("<i><u>unde</u><s><u>r</u></s><u>line</u></i>"));
+        assertTrue(xml.contains("<i><u>unde<s>r</s>line</u></i>"));
     }
 
 
@@ -556,7 +556,7 @@ public class WordParserTest extends TikaTest {
         //TIKA-1255
         String xml = getXML("testWORD_boldHyperlink.doc").xml;
         xml = xml.replaceAll("\\s+", " ");
-        assertContains("<a href=\"http://tika.apache.org/\"><u>hyper </u><b><u>link</u></b></a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><u>hyper <b>link</b></u></a>", xml);
         assertContains("<a href=\"http://tika.apache.org/\"><b><u>hyper</u></b><u> link</u></a>; bold" , xml);
     }
 
