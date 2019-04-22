@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -30,6 +31,7 @@ import org.junit.Test;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -422,5 +424,18 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
 
         assertContains("plundered our seas", responseMsg);
+    }
+
+    @Test
+    public void testUnicodePasswordProtected() throws Exception {
+        final String password = "    ";
+        final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream("testPassword4Spaces.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Just some text.", responseMsg);
     }
 }
