@@ -427,13 +427,28 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testUnicodePasswordProtected() throws Exception {
+    public void testUnicodePasswordProtectedSpaces() throws Exception {
+        //TIKA-2858
         final String password = "    ";
         final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
         Response response = WebClient.create(endPoint + TIKA_PATH)
                 .accept("text/plain")
                 .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
                 .put(ClassLoader.getSystemResourceAsStream("testPassword4Spaces.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Just some text.", responseMsg);
+    }
+
+    @Test
+    public void testUnicodePasswordProtectedUnicode() throws Exception {
+        //TIKA-2858
+        final String password = "  ! < > \" \\ \u20AC \u0153 \u00A4 \u0031\u2044\u0034 \u0031\u2044\u0032 \uD841\uDF0E \uD867\uDD98 \uD83D\uDE00  ";
+        final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream("testUnicodePassword.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertContains("Just some text.", responseMsg);
