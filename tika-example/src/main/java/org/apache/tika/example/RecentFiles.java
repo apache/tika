@@ -68,7 +68,7 @@ public class RecentFiles {
                     TikaCoreProperties.CREATED.getName(),
                     new BytesRef(fiveMinsAgo), new BytesRef(nowDateTime),
                     true, true);
-            TopScoreDocCollector collector = TopScoreDocCollector.create(20);
+            TopScoreDocCollector collector = TopScoreDocCollector.create(20,10000);
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
             for (int i = 0; i < hits.length; i++) {
