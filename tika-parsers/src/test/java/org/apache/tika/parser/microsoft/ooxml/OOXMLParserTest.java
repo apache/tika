@@ -605,18 +605,18 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<b>Bold</b>", xml);
         assertContains("<i>italic</i>", xml);
         assertContains("<u>underline</u>", xml);
-        assertContains("<strike>strikethrough</strike>", xml);
+        assertContains("<s>strikethrough</s>", xml);
     }
 
     @Test
     public void testTextDecorationNested() throws Exception {
         String xml = getXML("testWORD_various.docx").xml;
 
-        assertContains("<i>ita<strike>li</strike>c</i>", xml);
-        assertContains("<i>ita<strike>l<u>i</u></strike>c</i>", xml);
-        assertContains("<i><u>unde<strike>r</strike>line</u></i>", xml);
+        assertContains("<i>ita<s>li</s>c</i>", xml);
+        assertContains("<i>ita<s>l<u>i</u></s>c</i>", xml);
+        assertContains("<i><u>unde<s>r</s>line</u></i>", xml);
 
-        //confirm that spaces aren't added for <strike/> and </u>
+        //confirm that spaces aren't added for </s> and </u>
         ContentHandler contentHandler = new BodyContentHandler();
         try (InputStream is = getResourceAsStream("/test-documents/testWORD_various.docx")){
             new AutoDetectParser().parse(is, contentHandler, new Metadata(), new ParseContext());
