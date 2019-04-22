@@ -73,11 +73,7 @@ public class FormattingUtils {
         B, I, S, U;
 
         public String tagName() {
-            if (this == S) {
-                return "strike";
-            } else {
-                return name().toLowerCase(Locale.ROOT);
-            }
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 }
