@@ -17,10 +17,8 @@
 package org.apache.tika.config;
 
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -45,13 +43,12 @@ public interface InitializableProblemHandler {
     };
 
     /**
-     * Strategy that logs warnings of all problems using a {@link Logger}
+     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
      * created using the given class name.
      */
     InitializableProblemHandler INFO = new InitializableProblemHandler() {
         public void handleInitializableProblem(String classname, String message) {
-            Logger.getLogger(classname).log(
-                    Level.INFO, message);
+            LoggerFactory.getLogger(classname).info(message);
         }
         @Override
         public String toString() {
@@ -61,13 +58,12 @@ public interface InitializableProblemHandler {
 
 
     /**
-     * Strategy that logs warnings of all problems using a {@link Logger}
+     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
      * created using the given class name.
      */
     InitializableProblemHandler WARN = new InitializableProblemHandler() {
         public void handleInitializableProblem(String classname, String message) {
-            Logger.getLogger(classname).log(
-                    Level.WARNING, message);
+            LoggerFactory.getLogger(classname).warn(message);
         }
         @Override
         public String toString() {

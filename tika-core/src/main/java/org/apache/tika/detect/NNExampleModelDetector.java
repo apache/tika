@@ -25,10 +25,10 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.tika.mime.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -37,7 +37,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 
     private static final long serialVersionUID = 1L;
 
-    private static final Logger log = Logger.getLogger(NNExampleModelDetector.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(NNExampleModelDetector.class);
 
     public NNExampleModelDetector() {
         super();
@@ -124,9 +124,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
             builder.setNumOfOutputs(numOutputs);
             builder.setType(type);
         } catch (Exception e) {
-            if (log.isLoggable(Level.WARNING)) {
-                log.log(Level.WARNING, "Unable to parse the model configuration", e);
-            }
+            LOG.warn("Unable to parse the model configuration", e);
             throw new RuntimeException("Unable to parse the model configuration", e);
         }
     }
@@ -151,9 +149,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
             }
             builder.setParams(params);
         } catch (Exception e) {
-            if (log.isLoggable(Level.WARNING)) {
-                log.log(Level.WARNING, "Unable to parse the model configuration", e);
-            }
+            LOG.warn("Unable to parse the model configuration", e);
             throw new RuntimeException("Unable to parse the model configuration", e);
         }
     }

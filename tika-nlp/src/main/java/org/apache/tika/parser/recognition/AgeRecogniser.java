@@ -25,8 +25,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.Tika;
@@ -39,6 +37,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 
 import edu.usc.irds.agepredictor.authorage.AgePredicterLocal;
@@ -56,7 +56,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 
 	private static final long serialVersionUID = 1108439049093046832L;
 
-	private static final Logger LOG = Logger.getLogger(AgeRecogniser.class.getName());
+	private static final Logger LOG = LoggerFactory.getLogger(AgeRecogniser.class);
 
 	public static final String MD_KEY_ESTIMATED_AGE_RANGE = "Estimated-Author-Age-Range";
 	public static final String MD_KEY_ESTIMATED_AGE = "Estimated-Author-Age";
@@ -75,7 +75,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 			available = true;
 		} catch (Exception e) {
 			available = false;
-			LOG.log(Level.SEVERE, "Unable to initialize secondary parser");
+			LOG.error("Unable to initialize secondary parser", e);
 		}
 	}
 
@@ -116,7 +116,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 		
 		this.config = context.get(AgeRecogniserConfig.class, config);
 		if (!available) {
-			LOG.log(Level.SEVERE, "Parser Unavailable, check your configuration");
+			LOG.error("Parser Unavailable, check your configuration");
 			return;
 		}
 		
@@ -139,7 +139,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 			metadata.add(MD_KEY_ESTIMATED_AGE, Double.toString(predictAuthorAge) );
 			
 		} catch (Exception e) {
-			LOG.log(Level.SEVERE, "Age Predictor is not available. Please check wiki for detailed instructions", e);
+			LOG.error("Age Predictor is not available. Please check wiki for detailed instructions", e);
 			return;
 		}
 		

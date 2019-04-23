@@ -70,6 +70,8 @@ public class ForkParserTikaBinTest extends TikaTest {
             ClassLoader loader = ForkServer.class.getClassLoader();
             ClassPath classPath = ClassPath.from(loader);
 
+            addClasses(jarOs, classPath, ci -> ci.getPackageName().startsWith("org.slf4j"));
+            addClasses(jarOs, classPath, ci -> ci.getPackageName().startsWith("org.apache.log4j"));
             //exclude TypeDetectionBenchmark because it is not serializable
             //exclude UpperCasingContentHandler because we want to test that
             //we can serialize it from the parent process into the child process

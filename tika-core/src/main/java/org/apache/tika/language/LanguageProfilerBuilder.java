@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class runs a ngram analysis over submitted text, results might be used
@@ -52,9 +54,7 @@ import org.apache.tika.exception.TikaException;
  */
 @Deprecated
 public class LanguageProfilerBuilder {
-
-    // public static final Log LOG =
-    // LogFactory.getLog(LanguageProfilerBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LanguageProfilerBuilder.class);
 
     /** The minimum length allowed for a ngram. */
     final static int ABSOLUTE_MIN_NGRAM_LENGTH = 3; /* was 1 */
@@ -547,8 +547,7 @@ public class LanguageProfilerBuilder {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            // throw new TikaException("");
+            LOG.error("Some error: {}", e.getMessage(), e);
         }
     }
 
