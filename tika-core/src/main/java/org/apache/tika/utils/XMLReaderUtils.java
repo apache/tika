@@ -509,8 +509,8 @@ public class XMLReaderUtils implements Serializable {
         int waiting = 0;
         while (true) {
             PoolDOMBuilder builder = null;
+            DOM_READ_WRITE_LOCK.readLock().lock();
             try {
-                DOM_READ_WRITE_LOCK.readLock().lock();
                 builder = DOM_BUILDERS.poll(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 throw new TikaException("interrupted while waiting for DOMBuilder", e);
@@ -547,8 +547,8 @@ public class XMLReaderUtils implements Serializable {
         } catch (UnsupportedOperationException e) {
             //ignore
         }
+        DOM_READ_WRITE_LOCK.readLock().lock();
         try {
-            DOM_READ_WRITE_LOCK.readLock().lock();
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = DOM_BUILDERS.offer(builder);
@@ -575,8 +575,8 @@ public class XMLReaderUtils implements Serializable {
         int waiting = 0;
         while (true) {
             PoolSAXParser parser = null;
+            SAX_READ_WRITE_LOCK.readLock().lock();
             try {
-                SAX_READ_WRITE_LOCK.readLock().lock();
                 parser = SAX_PARSERS.poll(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 throw new TikaException("interrupted while waiting for SAXParser", e);
@@ -611,8 +611,8 @@ public class XMLReaderUtils implements Serializable {
         if (parser.getGeneration() != POOL_GENERATION.get()) {
             return;
         }
+        SAX_READ_WRITE_LOCK.readLock().lock();
         try {
-            SAX_READ_WRITE_LOCK.readLock().lock();
             //if there are extra parsers (e.g. after a reset of the pool to a smaller size),
             // this parser will not be added and will then be gc'd
             boolean success = SAX_PARSERS.offer(parser);
@@ -634,14 +634,14 @@ public class XMLReaderUtils implements Serializable {
      * @param poolSize
      */
     public static void setPoolSize(int poolSize) throws TikaException {
+        //stop the world with a write lock.
+        //parsers that are currently in use will be offered later (once the lock is released),
+        //but not accepted and will be gc'd.  We have to do this locking and
+        //the read locking in case one thread resizes the pool when the
+        //parsers have already started.  We could have an NPE on SAX_PARSERS
+        //if we didn't lock.
+        SAX_READ_WRITE_LOCK.writeLock().lock();
         try {
-            //stop the world with a write lock.
-            //parsers that are currently in use will be offered later (once the lock is released),
-            //but not accepted and will be gc'd.  We have to do this locking and
-            //the read locking in case one thread resizes the pool when the
-            //parsers have already started.  We could have an NPE on SAX_PARSERS
-            //if we didn't lock.
-            SAX_READ_WRITE_LOCK.writeLock().lock();
             //free up any resources before emptying SAX_PARSERS
             for (PoolSAXParser parser : SAX_PARSERS) {
                 parser.reset();
@@ -659,8 +659,9 @@ public class XMLReaderUtils implements Serializable {
         } finally {
             SAX_READ_WRITE_LOCK.writeLock().unlock();
         }
+
+        DOM_READ_WRITE_LOCK.writeLock().lock();
         try {
-            DOM_READ_WRITE_LOCK.writeLock().lock();
             DOM_BUILDERS.clear();
             DOM_BUILDERS = new ArrayBlockingQueue<>(poolSize);
             for (int i = 0; i < poolSize; i++) {
