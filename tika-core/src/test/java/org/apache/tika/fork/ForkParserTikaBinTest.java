@@ -16,6 +16,7 @@
  */
 package org.apache.tika.fork;
 
+import com.google.common.reflect.ClassPath;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -44,8 +45,11 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -64,13 +68,16 @@ public class ForkParserTikaBinTest extends TikaTest {
 
         try (JarOutputStream jarOs = new JarOutputStream(Files.newOutputStream(JAR_FILE))) {
             ClassLoader loader = ForkServer.class.getClassLoader();
-            for (Class<?> klass : getClasses("org.apache.tika")) {
-                String path = klass.getName().replace('.', '/') + ".class";
-                try (InputStream input = loader.getResourceAsStream(path)) {
-                    jarOs.putNextEntry(new JarEntry(path));
-                    IOUtils.copy(input, jarOs);
-                }
-            }
+            ClassPath classPath = ClassPath.from(loader);
+
+            //exclude TypeDetectionBenchmark because it is not serializable
+            //exclude UpperCasingContentHandler because we want to test that
+            //we can serialize it from the parent process into the child process
+            addClasses(jarOs, classPath, ci ->
+                    ci.getPackageName().startsWith("org.apache.tika")
+                            && (!ci.getName().contains("TypeDetectionBenchmark"))
+                            && (!ci.getName().contains("UpperCasingContentHandler")));
+
             try (InputStream input = ForkParserTikaBinTest.class.getResourceAsStream("/org/apache/tika/config/TIKA-2653-vowel-parser-ae.xml")) {
                 jarOs.putNextEntry(new JarEntry("org/apache/tika/parser/TIKA-2653-vowel-parser-ae.xml"));
                 IOUtils.copy(input, jarOs);
@@ -188,42 +195,14 @@ public class ForkParserTikaBinTest extends TikaTest {
         return new XMLResult(handler.toString(), m);
     }
 
-    private static List<Class> getClasses(String packageName)
-            throws ClassNotFoundException, IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        String path = packageName.replace('.', '/');
-        Enumeration<URL> resources = classLoader.getResources(path);
-        List<File> dirs = new ArrayList<>();
-        while (resources.hasMoreElements()) {
-            URL resource = resources.nextElement();
-            dirs.add(new File(resource.getFile().replaceAll("%20", " ")));
-        }
-        ArrayList<Class> classes = new ArrayList<>();
-        for (File directory : dirs) {
-            classes.addAll(findClasses(directory, packageName));
-        }
-        return classes;
-    }
-
-    private static List<Class> findClasses(File dir, String packageName) throws ClassNotFoundException {
-        List<Class> classes = new ArrayList<>();
-        if (!dir.exists()) {
-            return classes;
-        }
-        File[] files = dir.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                classes.addAll(findClasses(file, packageName + "." + file.getName()));
-            } else if (file.getName().endsWith(".class")) {
-                //exclude TypeDetectionBenchmark because it is not serializable
-                //exclude UpperCasingContentHandler because we want to test that
-                //we can serialize it from the parent process into the child process
-                if (! file.getName().contains("TypeDetectionBenchmark") &&
-                        !file.getName().contains("UpperCasingContentHandler")) {
-                    classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
-                }
+    private static void addClasses(JarOutputStream jarOs,
+                                   ClassPath classPath,
+                                   Predicate<ClassPath.ClassInfo> predicate) throws IOException {
+        for (ClassPath.ClassInfo classInfo : classPath.getAllClasses()) {
+            if (predicate.test(classInfo)) {
+                jarOs.putNextEntry(new JarEntry(classInfo.getResourceName()));
+                classInfo.asByteSource().copyTo(jarOs);
             }
         }
-        return classes;
     }
 }
