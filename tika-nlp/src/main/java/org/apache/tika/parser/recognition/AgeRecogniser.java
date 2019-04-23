@@ -120,9 +120,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 			return;
 		}
 		
-		/**
-		 * If content is not plain text use Tika to extract text out of content. 
-		 */
+		// If content is not plain text use Tika to extract text out of content.
 		Reader reader;
 		if (MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE))) {
 			reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
@@ -130,9 +128,7 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 			reader = secondaryParser.parse(inputStream);
 		}
 		
-		/**
-		 * Use Spark AgePredictor to get predicted Age
-		 */
+		// Use Spark AgePredictor to get predicted Age
 		try {
 			double predictAuthorAge = getAgePredictorClient().predictAge(IOUtils.toString(reader));
 			
@@ -142,7 +138,5 @@ public class AgeRecogniser extends AbstractParser implements Initializable {
 			LOG.error("Age Predictor is not available. Please check wiki for detailed instructions", e);
 			return;
 		}
-		
 	}
-
 }

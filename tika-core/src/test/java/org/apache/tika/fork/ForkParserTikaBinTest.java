@@ -58,8 +58,7 @@ public class ForkParserTikaBinTest extends TikaTest {
     private static final String JAR_FILE_NAME = "mock-tika-app.jar";
     private static Path JAR_FILE;
 
-    @SuppressWarnings("unchecked")
-    private static final Map<String, String> EMPTY_MAP = Collections.EMPTY_MAP;
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
     @BeforeClass
     public static void bootstrapJar() throws Exception {
@@ -107,7 +106,6 @@ public class ForkParserTikaBinTest extends TikaTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-
         Files.delete(JAR_DIR.resolve("TIKA_2653-iou.xml"));
         Files.delete(JAR_FILE);
         Files.delete(JAR_DIR);

@@ -921,7 +921,7 @@ public class XMLReaderUtils implements Serializable {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-
+                // ignored
             }
         }
     }
@@ -938,7 +938,7 @@ public class XMLReaderUtils implements Serializable {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-
+                // ignored
             }
         }
     }
@@ -955,13 +955,13 @@ public class XMLReaderUtils implements Serializable {
             try {
                 saxParser.reset();
             } catch (UnsupportedOperationException e) {
-
+                // ignored
             }
             try {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-
+                // ignored
             }
             trySetXercesSecurityManager(saxParser);
         }
