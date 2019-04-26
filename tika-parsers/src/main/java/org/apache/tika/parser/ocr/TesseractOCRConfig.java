@@ -55,7 +55,8 @@ public class TesseractOCRConfig implements Serializable {
 
     public enum OUTPUT_TYPE {
         TXT,
-        HOCR
+        HOCR,
+        PDF
     }
 
     // Path to tesseract installation folder, if not on system path.
@@ -384,8 +385,10 @@ public class TesseractOCRConfig implements Serializable {
             setOutputType(OUTPUT_TYPE.TXT);
         } else if ("hocr".equals(lc)) {
             setOutputType(OUTPUT_TYPE.HOCR);
+        } else if ("pdf".equals(lc)) {
+            setOutputType(OUTPUT_TYPE.PDF);
         } else {
-            throw new IllegalArgumentException("outputType must be either 'txt' or 'hocr'");
+            throw new IllegalArgumentException("outputType must be either 'txt' or 'hocr' or 'pdf'");
         }
 
 
