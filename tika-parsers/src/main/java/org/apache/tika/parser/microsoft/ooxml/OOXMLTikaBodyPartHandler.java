@@ -31,9 +31,9 @@ import org.xml.sax.helpers.AttributesImpl;
 
 public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
 
-    private final static String P = "p";
+    private static final String P = "p";
 
-    private final static char[] NEWLINE = new char[]{'\n'};
+    private static final char[] NEWLINE = new char[]{'\n'};
 
     private final XHTMLContentHandler xhtml;
     private final XWPFListManager listManager;

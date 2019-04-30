@@ -35,6 +35,12 @@
   <url>http://tika.apache.org/</url>
 
   <dependencies>
+    <!-- See https://issues.apache.org/jira/browse/TIKA-2566 for more info -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
@@ -57,6 +63,17 @@
     </dependency>
 
     <!-- Test dependencies -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

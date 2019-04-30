@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class runs a ngram analysis over submitted text, results might be used
@@ -52,9 +54,7 @@ import org.apache.tika.exception.TikaException;
  */
 @Deprecated
 public class LanguageProfilerBuilder {
-
-    // public static final Log LOG =
-    // LogFactory.getLog(LanguageProfilerBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LanguageProfilerBuilder.class);
 
     /** The minimum length allowed for a ngram. */
     final static int ABSOLUTE_MIN_NGRAM_LENGTH = 3; /* was 1 */
@@ -110,7 +110,7 @@ public class LanguageProfilerBuilder {
      */
     public LanguageProfilerBuilder(String name, int minlen, int maxlen) {
         // TODO: Compute the initial capacity using minlen and maxlen.
-        this.ngrams = new HashMap<CharSequence, NGramEntry>(4000);
+        this.ngrams = new HashMap<>(4000);
         this.minLength = minlen;
         this.maxLength = maxlen;
         this.name = name;
@@ -123,10 +123,7 @@ public class LanguageProfilerBuilder {
      * @since Tika 1.0
      */
     public LanguageProfilerBuilder(String name) {
-        this.ngrams = new HashMap<CharSequence, NGramEntry>(4000);
-        this.minLength = ABSOLUTE_MIN_NGRAM_LENGTH;
-        this.maxLength = ABSOLUTE_MAX_NGRAM_LENGTH;
-        this.name = name;
+        this(name, ABSOLUTE_MIN_NGRAM_LENGTH, ABSOLUTE_MAX_NGRAM_LENGTH);
     }
 
     /**
@@ -269,7 +266,7 @@ public class LanguageProfilerBuilder {
     public List<NGramEntry> getSorted() {
         // make sure sorting is done only once
         if (sorted == null) {
-            sorted = new ArrayList<NGramEntry>(ngrams.values());
+            sorted = new ArrayList<>(ngrams.values());
             Collections.sort(sorted);
 
             // trim at NGRAM_LENGTH entries
@@ -286,10 +283,7 @@ public class LanguageProfilerBuilder {
         StringBuffer s = new StringBuffer().append("NGramProfile: ")
                                            .append(name).append("\n");
 
-        Iterator<NGramEntry> i = getSorted().iterator();
-
-        while (i.hasNext()) {
-            NGramEntry entry = i.next();
+        for (NGramEntry entry : getSorted()) {
             s.append("[").append(entry.seq).append("/").append(entry.count)
                          .append("/").append(entry.frequency).append("]\n");
         }
@@ -383,7 +377,7 @@ public class LanguageProfilerBuilder {
                 ABSOLUTE_MIN_NGRAM_LENGTH, ABSOLUTE_MAX_NGRAM_LENGTH);
         BufferedInputStream bis = new BufferedInputStream(is);
 
-        byte buffer[] = new byte[4096];
+        byte[] buffer = new byte[4096];
         StringBuilder text = new StringBuilder();
         int len;
 
@@ -416,8 +410,8 @@ public class LanguageProfilerBuilder {
         // First dispatch ngrams in many lists depending on their size
         // (one list for each size, in order to store MAX_SIZE ngrams for each
         // size of ngram)
-        List<NGramEntry> list = new ArrayList<NGramEntry>();
-        List<NGramEntry> sublist = new ArrayList<NGramEntry>();
+        List<NGramEntry> list = new ArrayList<>();
+        List<NGramEntry> sublist = new ArrayList<>();
         NGramEntry[] entries = ngrams.values().toArray(
                 new NGramEntry[ngrams.size()]);
         for (int i = minLength; i <= maxLength; i++) {
@@ -547,8 +541,7 @@ public class LanguageProfilerBuilder {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
-            // throw new TikaException("");
+            LOG.error("Some error: {}", e.getMessage(), e);
         }
     }
 
