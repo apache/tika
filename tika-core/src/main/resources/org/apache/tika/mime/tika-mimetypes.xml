@@ -82,9 +82,8 @@
     <alias type="application/bat"/>
     <sub-class-of type="text/plain"/>
     <magic priority="50">
-      <match value="@echo off" type="string" offset="0" />
-      <match value="rem " type="string" offset="0" />
-      <match value="REM " type="string" offset="0" />
+      <match value="@echo off" type="stringignorecase" offset="0" />
+      <match value="rem " type="stringignorecase" offset="0" />
     </magic>
     <glob pattern="*.bat"/>
     <glob pattern="*.cmd"/>
