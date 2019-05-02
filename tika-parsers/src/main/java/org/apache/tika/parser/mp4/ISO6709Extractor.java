@@ -16,12 +16,13 @@
  */
 package org.apache.tika.parser.mp4;
 
+import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.metadata.Metadata;
 
-class ISO6709Extractor {
+class ISO6709Extractor implements Serializable {
     //based on: https://en.wikipedia.org/wiki/ISO_6709
     //strip lat long -- ignore crs for now
     private static final Pattern ISO6709_PATTERN =
