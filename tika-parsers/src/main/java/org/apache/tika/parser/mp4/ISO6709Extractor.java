@@ -17,6 +17,7 @@
 package org.apache.tika.parser.mp4;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,13 +77,13 @@ class ISO6709Extractor implements Serializable {
     private String calcDecimalDegrees(String sign, String degrees, String minutes) {
         double d = Integer.parseInt(degrees);
         d += (Double.parseDouble(minutes)/60);
-        return sign+String.format("%.8f", d);
+        return sign+String.format(Locale.ROOT, "%.8f", d);
     }
 
     private String calcDecimalDegrees(String sign, String degrees, String minutes, String seconds) {
         double d = Integer.parseInt(degrees);
         d += (Double.parseDouble(minutes)/60);
         d += (Double.parseDouble(seconds)/3600);
-        return sign+String.format("%.8f", d);
+        return sign+String.format(Locale.ROOT, "%.8f", d);
     }
 }
