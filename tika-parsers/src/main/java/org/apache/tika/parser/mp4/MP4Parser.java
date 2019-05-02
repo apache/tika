@@ -39,13 +39,13 @@ import com.googlecode.mp4parser.boxes.apple.AppleCommentBox;
 import com.googlecode.mp4parser.boxes.apple.AppleCompilationBox;
 import com.googlecode.mp4parser.boxes.apple.AppleDiskNumberBox;
 import com.googlecode.mp4parser.boxes.apple.AppleEncoderBox;
+import com.googlecode.mp4parser.boxes.apple.AppleGPSCoordinatesBox;
 import com.googlecode.mp4parser.boxes.apple.AppleGenreBox;
 import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
 import com.googlecode.mp4parser.boxes.apple.AppleRecordingYear2Box;
 import com.googlecode.mp4parser.boxes.apple.AppleTrackAuthorBox;
 import com.googlecode.mp4parser.boxes.apple.AppleTrackNumberBox;
 import com.googlecode.mp4parser.boxes.apple.Utf8AppleDataBox;
-import org.apache.poi.ss.formula.functions.T;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -89,7 +89,6 @@ public class MP4Parser extends AbstractParser {
     static {
         DURATION_FORMAT.applyPattern("0.0#");
     }
-    
     // Ensure this stays in Sync with the entries in tika-mimetypes.xml
     private static final Map<MediaType,List<String>> typesMap = new HashMap<MediaType, List<String>>();
     static {
@@ -111,6 +110,8 @@ public class MP4Parser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
        Collections.unmodifiableSet(typesMap.keySet());
+
+    private ISO6709Extractor iso6709Extractor = new ISO6709Extractor();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -216,6 +217,7 @@ public class MP4Parser extends AbstractParser {
                 // Get metadata from the User Data Box
                 UserDataBox userData = getOrNull(moov, UserDataBox.class);
                 if (userData != null) {
+                    extractGPS(userData, metadata);
                     MetaBox meta = getOrNull(userData, MetaBox.class);
 
                     // Check for iTunes Metadata
@@ -303,6 +305,15 @@ public class MP4Parser extends AbstractParser {
             tmp.dispose();
         }
 
+    }
+
+    private void extractGPS(UserDataBox userData, Metadata metadata) {
+        AppleGPSCoordinatesBox coordBox = getOrNull(userData, AppleGPSCoordinatesBox.class);
+        if (coordBox == null) {
+            return;
+        }
+        String iso6709 = coordBox.getValue();
+        iso6709Extractor.extract(iso6709, metadata);
     }
 
     private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {
