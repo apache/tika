@@ -8,6 +8,11 @@ Release 2.0.0 - ???
 
 Release 1.21 - ????
 
+   * Add optional AUTO mode to OCR'ing of PDFs.  If tesseract is installed
+     and on the path, and this option is selected programmatically
+     or via TikaConfig(), the PDFParser will use heuristics to decide
+     whether or not to run OCR per page on PDFs. (TIKA-2749)
+
    * The ZipContainerDetector's default behavior was changed to run
      streaming detection up to its markLimit.  Users can get the
      legacy behavior (spool-to-file/rely-on-underlying-file-in-TikaInputStream)

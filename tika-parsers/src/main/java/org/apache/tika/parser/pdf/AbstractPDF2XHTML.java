@@ -429,6 +429,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                 doOCROnCurrentPage();
+            } else if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.AUTO)) {
+                //TODO add more sophistication
+                if (totalCharsPerPage < 10 || unmappedUnicodeCharsPerPage > 10) {
+                    doOCROnCurrentPage();
+                }
             }
 
             PDPageAdditionalActions pageActions = page.getActions();
