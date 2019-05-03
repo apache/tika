@@ -36,7 +36,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>1.0.0-beta3</dl4j.version>
+    <dl4j.version>1.0.0-beta4</dl4j.version>
     <twelvemonkeys.version>3.4.1</twelvemonkeys.version>
   </properties>
 
@@ -341,12 +341,12 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.4</version>
+      <version>1.18.6</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>27.0.1-jre</version>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
