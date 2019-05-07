@@ -116,6 +116,13 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
     private int markLimit = DEFAULT_MARK_LIMIT;
 
 
+    /**
+     * minimum confidence score that there's enough
+     * evidence to determine csv/tsv vs. txt
+     */
+    @Field
+    private double minConfidence = 0.50;
+
     public TextAndCSVParser() {
         super();
     }
@@ -267,7 +274,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                 (params.getMediaType() == null ||
                         isCSVOrTSV(params.getMediaType()))) {
 
-            CSVSniffer sniffer = new CSVSniffer(markLimit, delimiters);
+            CSVSniffer sniffer = new CSVSniffer(markLimit, delimiters, minConfidence);
             CSVResult result = sniffer.getBest(reader, metadata);
             params.setMediaType(result.getMediaType());
             params.setDelimiter(result.getDelimiter());

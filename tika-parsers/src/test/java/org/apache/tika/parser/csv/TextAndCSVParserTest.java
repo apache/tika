@@ -28,12 +28,14 @@ import java.util.Map;
 
 import org.apache.commons.io.ByteOrderMark;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TextAndCSVParserTest extends TikaTest {
@@ -67,7 +69,16 @@ public class TextAndCSVParserTest extends TikaTest {
 
     private static String EXPECTED_CSV = EXPECTED_TSV.replaceAll(",+", " ");
 
-    private static Parser PARSER = new AutoDetectParser();
+    private static Parser PARSER;
+
+    @BeforeClass
+    public static void setUp() throws Exception {
+
+        try (InputStream is = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream("org/apache/tika/parser/csv/tika-config.xml")) {
+            PARSER = new AutoDetectParser(new TikaConfig(is));
+        }
+    }
 
     @Test
     public void testCSV_UTF8() throws Exception {
