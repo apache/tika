@@ -35,10 +35,12 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class FictionBookParser extends XMLParser {
     private static final long serialVersionUID = 4195954546491524374L;
-    
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("x-fictionbook+xml"));
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return Collections.singleton(MediaType.application("x-fictionbook+xml"));
+        return SUPPORTED_TYPES;
     }
 
     @Override
