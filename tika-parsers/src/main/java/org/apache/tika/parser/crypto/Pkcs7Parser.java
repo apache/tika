@@ -51,8 +51,11 @@ public class Pkcs7Parser extends AbstractParser {
     private static final MediaType PKCS7_SIGNATURE =
             MediaType.application("pkcs7-signature");
 
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            MediaType.set(PKCS7_MIME, PKCS7_SIGNATURE);
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return MediaType.set(PKCS7_MIME, PKCS7_SIGNATURE);
+        return SUPPORTED_TYPES;
     }
 
     public void parse(
