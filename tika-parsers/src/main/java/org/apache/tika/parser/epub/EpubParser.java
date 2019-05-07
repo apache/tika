@@ -280,13 +280,15 @@ public class EpubParser extends AbstractParser {
         for (String id : contentOrderScraper.contentItems) {
             HRefMediaPair hRefMediaPair = contentOrderScraper.locationMap.get(id);
             if (hRefMediaPair != null &&
-                    hRefMediaPair.href != null &&
-                    hRefMediaPair.href.toLowerCase(Locale.US).contains("html")) {
-                zae = zipFile.getEntry(relativePath+hRefMediaPair.href);
-                if (zae != null) {
-                    try (InputStream is = zipFile.getInputStream(zae)) {
-                        content.parse(is, bodyHandler, metadata, context);
-                        processed.add(id);
+                    hRefMediaPair.href != null) {
+                String href = hRefMediaPair.href.toLowerCase(Locale.US);
+                if (href.endsWith("htm") || href.endsWith("html")) {
+                    zae = zipFile.getEntry(relativePath + hRefMediaPair.href);
+                    if (zae != null) {
+                        try (InputStream is = zipFile.getInputStream(zae)) {
+                            content.parse(is, bodyHandler, metadata, context);
+                            processed.add(id);
+                        }
                     }
                 }
             }
