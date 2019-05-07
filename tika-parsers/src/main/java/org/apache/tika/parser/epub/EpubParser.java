@@ -235,10 +235,7 @@ public class EpubParser extends AbstractParser {
             return false;
         }
         ZipArchiveEntry zae = zipFile.getEntry(rootOPF);
-        if (zae == null) {
-            return false;
-        }
-        if (!zipFile.canReadEntryData(zae)) {
+        if (zae == null || !zipFile.canReadEntryData(zae)) {
             return false;
         }
         meta.parse(zipFile.getInputStream(zae), new DefaultHandler(), metadata, context);
@@ -336,7 +333,7 @@ public class EpubParser extends AbstractParser {
         String fullPath = relativePath + hRefMediaPair.href;
 
         ZipArchiveEntry ze = zipFile.getEntry(fullPath);
-        if (!zipFile.canReadEntryData(ze)) {
+        if (ze == null || !zipFile.canReadEntryData(ze)) {
             return;
         }
         Metadata embeddedMetadata = new Metadata();
