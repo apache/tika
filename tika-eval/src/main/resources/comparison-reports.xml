@@ -665,6 +665,49 @@
             group by mime_id_a, mime_id_b
             );
         </sql>
+        <sql>
+            drop table if exists parse_time_compared;
+        </sql>
+        <sql>
+            create table parse_time_compared (
+            mime_id_a integer,
+            mime_id_b integer,
+            total_a bigint,
+            total_b bigint,
+            prcnt_increase double
+            );
+        </sql>
+            <sql>
+                insert into parse_time_compared (mime_id_a, mime_id_b,
+                total_a, total_b, prcnt_increase)
+                select ma.mime_id, mb.mime_id,0,0,0.0
+                from profiles_a a
+                join profiles_b b on a.id=b.id
+                join mimes ma on ma.mime_id=a.mime_id
+                join mimes mb on mb.mime_id=b.mime_id
+                group by ma.mime_id, mb.mime_id
+            </sql>
+        <sql>
+            update parse_time_compared ptc set total_a=(
+            select sum(pa.elapsed_time_millis) as total_a from profiles_a pa
+            join profiles_b pb on pa.id=pb.id
+            where pa.mime_id= ptc.mime_id_a
+            and pb.mime_id=ptc.mime_id_b
+            group by mime_id_a, mime_id_b)
+        </sql>
+        <sql>
+            update parse_time_compared ptc set total_b=(
+            select sum(pb.elapsed_time_millis) as total_b from profiles_b pb
+            join profiles_a pa on pa.id=pb.id
+            where pa.mime_id= ptc.mime_id_a
+            and pb.mime_id=ptc.mime_id_b
+            group by mime_id_a, mime_id_b)
+        </sql>
+        <sql>
+            update parse_time_compared ptc set prcnt_increase=(
+            cast(total_b as decimal)/cast(total_a as decimal))
+            where total_a > 0;
+        </sql>
     </before>
 
     <!-- MIMES -->
@@ -1664,6 +1707,21 @@
             where tb.tags_parse_exception=true
             order by m.mime_string
             limit 20000
+        </sql>
+    </report>
+
+    <report reportName="Parse Time (Millis) Compared"
+            reportFilename="content/parse_time_millis_compared.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select ma.mime_string as mime_string_a,
+            mb.mime_string as mime_string_b,
+            total_a, total_b, prcnt_increase
+            from parse_time_compared ptc
+            join mimes ma on ptc.mime_id_a=ma.mime_id
+            join mimes mb on ptc.mime_id_b=mb.mime_id
+            order by prcnt_increase desc
         </sql>
     </report>
     <after>
