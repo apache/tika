@@ -1711,17 +1711,38 @@
     </report>
 
     <report reportName="Parse Time (Millis) Compared"
-            reportFilename="content/parse_time_millis_compared.xlsx"
+            reportFilename="parse_times/parse_time_millis_by_mime_compared.xlsx"
             format="xlsx"
             includeSql="true">
         <sql>
-            select ma.mime_string as mime_string_a,
-            mb.mime_string as mime_string_b,
-            total_a, total_b, prcnt_increase
+            select ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
+            total_a as TOTAL_MILLIS_A, total_b as TOTAL_MILLIS_B,
+            prcnt_increase as PERCENT_INCREASE
             from parse_time_compared ptc
             join mimes ma on ptc.mime_id_a=ma.mime_id
             join mimes mb on ptc.mime_id_b=mb.mime_id
             order by prcnt_increase desc
+        </sql>
+    </report>
+    <report reportName="Parse Time (Millis) Details"
+            reportFilename="parse_times/parse_time_millis_details.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select file_path, c.length as CONTAINTER_LENGTH,
+            ma.mime_string as MIME_STRING_A,
+            mb.mime_string as MIME_STRING_B,
+            pa.elapsed_time_millis as TOTAL_MILLIS_A,
+            pb.elapsed_time_millis as TOTAL_MILLIS_B,
+            (pb.elapsed_time_millis-pa.elapsed_time_millis) as DIFF_MILLIS
+            from profiles_a pa
+            join profiles_b pb on pa.id=pb.id
+            join mimes ma on ma.mime_id=pa.mime_id
+            join mimes mb on mb.mime_id=pb.mime_id
+            join containers c on pa.container_id=c.container_id
+            order by DIFF_MILLIS desc
+            limit 20000;
         </sql>
     </report>
     <after>

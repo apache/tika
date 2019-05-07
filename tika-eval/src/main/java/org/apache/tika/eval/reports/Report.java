@@ -164,6 +164,7 @@ public class Report {
             case Types.DOUBLE:
             case Types.FLOAT:
             case Types.DECIMAL:
+            case Types.REAL:
             case Types.NUMERIC:
                 double dbl = rs.getDouble(colIndex);
                 if (rs.wasNull()) {
