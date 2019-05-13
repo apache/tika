@@ -264,7 +264,9 @@
         <artifactId>apache-rat-plugin</artifactId>
         <version>${rat.version}</version>
         <configuration>
-          <excludes />
+          <excludes>
+            <exclude>model/org/apache/tika/parser/recognition/**</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <!-- to get the OpenNLP models in the right place for AgeRecogniser: TODO: fix AgeRecogniser in next version to load from classpath -->
