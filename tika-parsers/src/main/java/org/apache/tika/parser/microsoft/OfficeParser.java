@@ -224,10 +224,11 @@ public class OfficeParser extends AbstractOfficeParser {
                     // Decrypt the OLE2 stream, and delegate the resulting OOXML
                     //  file to the regular OOXML parser for normal handling
                     OOXMLParser parser = new OOXMLParser();
-
-                    parser.parse(d.getDataStream(root), new EmbeddedContentHandler(
-                                    new BodyContentHandler(xhtml)),
-                            metadata, context);
+                    try (TikaInputStream tis = TikaInputStream.get(d.getDataStream(root))) {
+                        parser.parse(tis, new EmbeddedContentHandler(
+                                        new BodyContentHandler(xhtml)),
+                                metadata, context);
+                    }
                 } catch (GeneralSecurityException ex) {
                     throw new EncryptedDocumentException(ex);
                 }
