@@ -1,4 +1,4 @@
-Release 1.21 - 05/13/2019
+Release 1.21 - 05/14/2019
 
    * Add optional AUTO mode to OCR'ing of PDFs.  If tesseract is installed
      and on the path, and this option is selected programmatically
