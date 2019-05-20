@@ -581,7 +581,18 @@
           <groupId>com.google.protobuf</groupId>
           <artifactId>protobuf-java</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>c3p0</groupId>
+          <artifactId>c3p0</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!-- needs to be excluded and version bumped
+         to avoid billion laughs vuln -->
+    <dependency>
+      <groupId>com.mchange</groupId>
+      <artifactId>c3p0</artifactId>
+      <version>0.9.5.4</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
