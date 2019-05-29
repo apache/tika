@@ -124,7 +124,7 @@ public class UnpackerResource {
             //no need to digest for unwrapping
             parser = ((DigestingParser)parser).getWrappedParser();
         }
-
+        TikaResource.fillParseContext(pc, httpHeaders.getRequestHeaders(), null);
         TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
         TikaResource.logRequest(LOG, info, metadata);
 
