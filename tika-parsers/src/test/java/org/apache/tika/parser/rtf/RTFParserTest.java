@@ -555,6 +555,27 @@ public class RTFParserTest extends TikaTest {
         assertContains("supercali ATB Allison, Timothy B.  This is a comment fragilistic",
                 getXML("testRTF_annotation_spacing.rtf").xml);
     }
+
+    @Test
+    public void testTIKA1713() throws Exception {
+        assertContains("For discussion", getXML("testRTFTIKA_1713.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA2150() throws Exception {
+        assertContains("TO\tFROM", getXML("testRTFTIKA_2150.rtf").xml);
+    }
+    @Test
+    public void testTIKA2500() throws Exception {
+        assertContains("Level1", getXML("testRTFTIKA_2500.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA2883() throws Exception {
+        assertContains("This message has been archived.",
+                getXML("testRTFTIKA_2883.rtf").xml);
+    }
+
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
 
