@@ -282,7 +282,9 @@ final class TextExtractor {
     // immediately open the top group (start with {):
     private GroupState groupState = new GroupState();
     private boolean inHeader = true;
-    private int fontTableState;
+    //0 not yet in font table, 1 in font table, 2 have processed font table
+    private int fontTableState = 0;
+    //depth at which the font table started
     private int fontTableDepth;
     // Non null if we are processing metadata (title,
     // keywords, etc.) inside the info group:
@@ -865,6 +867,12 @@ final class TextExtractor {
                     }
                 }
             }
+            //if you've already seen the font table,
+            //you aren't in another header item (e.g. styles)
+            //and you see an fX, you're out of the header
+            if (fontTableState == 2 && ! groupState.ignore && equals("f")) {
+                inHeader = false;
+            }
 
             if (currentList != null) {
                 if (equals("listid")) {
@@ -1096,7 +1104,10 @@ final class TextExtractor {
                 }
             }
 
-            if (!groupState.ignore && (equals("par") || equals("pard") || equals("sect") || equals("sectd") || equals("plain") || equals("ltrch") || equals("rtlch"))) {
+            if (!groupState.ignore && (equals("par") ||
+                    equals("pard") || equals("sect") || equals("sectd") || equals("plain") ||
+                    equals("ltrch") || equals("rtlch")
+                    || equals("htmlrtf") || equals("line"))) {
                 inHeader = false;
             }
         } else {
