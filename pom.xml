@@ -32,7 +32,7 @@
   <artifactId>tika</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika</name>
-  <url>http://tika.apache.org</url>
+  <url>https://tika.apache.org</url>
 
   <modules>
     <module>tika-parent</module>
@@ -189,7 +189,7 @@ least three +1 Tika PMC votes are cast.
   </description>
   <organization>
     <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
+    <url>https://www.apache.org</url>
   </organization>
   <issueManagement>
     <system>JIRA</system>
