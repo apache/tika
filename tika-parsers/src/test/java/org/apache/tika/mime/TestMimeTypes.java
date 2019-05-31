@@ -694,6 +694,7 @@ public class TestMimeTypes {
        
        assertTypeByData("video/x-ms-asf", "testASF.asf");
        assertTypeByData("video/x-ms-wmv", "testWMV.wmv");
+       assertTypeByData("video/x-ms-wmv", "testWMV_WMV2.wmv");
        assertTypeByData("audio/x-ms-wma", "testWMA.wma");
     }
     
