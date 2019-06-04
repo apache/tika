@@ -1,3 +1,8 @@
+Release 1.22 - ???
+
+   * Improve StreamingZipContainerDetector for xltx, xltm and
+     several other file formats (TIKA-2886).
+
 Release 1.21 - 05/14/2019
 
    * Add optional AUTO mode to OCR'ing of PDFs.  If tesseract is installed

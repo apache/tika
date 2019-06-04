@@ -93,6 +93,9 @@ public class ZipContainerDetector implements Detector {
     @Field
     int markLimit = 16 * 1024 * 1024;
 
+    private StreamingZipContainerDetector streamingZipContainerDetector = new StreamingZipContainerDetector();
+
+    @Override
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
         // Check if we have access to the document
@@ -126,7 +129,7 @@ public class ZipContainerDetector implements Detector {
             }
 
             try (LookaheadInputStream lookahead = new LookaheadInputStream(input, markLimit)) {
-                return StreamingZipContainerDetector.detect(lookahead);
+                return streamingZipContainerDetector.detect(lookahead, metadata);
             }
         } else if (!type.equals(MediaType.OCTET_STREAM)) {
             return type;

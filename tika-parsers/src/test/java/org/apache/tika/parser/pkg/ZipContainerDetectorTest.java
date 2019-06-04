@@ -46,6 +46,7 @@ public class ZipContainerDetectorTest extends TikaTest {
     private static MediaType ODT_TEXT = MediaType.application("vnd.oasis.opendocument.text");
     private static MediaType TIFF = MediaType.image("tiff");
     ZipContainerDetector zipContainerDetector = new ZipContainerDetector();
+    StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
 
     @Test
     public void testTiffWorkaround() throws Exception {
@@ -99,7 +100,7 @@ public class ZipContainerDetectorTest extends TikaTest {
             long start = System.currentTimeMillis();
             try (InputStream input = ODFParserTest.class.getResourceAsStream(
                     "/test-documents/" + file)) {
-                MediaType mediaType = StreamingZipContainerDetector.detect(input);
+                MediaType mediaType = streamingZipDetector.detect(input, new Metadata());
                 assertEquals(ZipContainerDetectorBase.XPS, mediaType);
             }
             try (TikaInputStream input = TikaInputStream.get(Paths.get(ODFParserTest.class.getResource(
