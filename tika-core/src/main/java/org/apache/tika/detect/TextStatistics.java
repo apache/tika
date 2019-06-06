@@ -45,7 +45,7 @@ public class TextStatistics {
      */
     public boolean isMostlyAscii() {
         int control = count(0, 0x20);
-        int ascii = count(0x20, 0x7e) + count(0xc0, 0xff);
+        int ascii = count(0x20, 0x7f) + count(0xc0, 0x100);
         int safe = countSafeControl();
         return total > 0
                 && (control - safe) * 100 < total * 2
