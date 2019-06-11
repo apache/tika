@@ -16,36 +16,38 @@
  */
 package org.apache.tika.eval.tools;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Utility class that runs TopCommonTokenCounter against a directory
- * of table files (named {lang}_table.gz) and outputs common tokens
- * files for each input table file in the output directory.
+ * of table files (named {lang}_table.gz or leipzip-like afr_...-sentences.txt)
+ * and outputs common tokens files for each input table file in the output directory.
  */
 public class BatchTopCommonTokenCounter {
 
     public static void main(String[] args) throws Exception {
-        Path tableFileDir = Paths.get(args[0]);
-        Path commonTokensDir = Paths.get(args[1]);
-        for (File f : tableFileDir.toFile().listFiles()) {
-            System.err.println(f);
-            if (!f.getName().contains("bn_table")) {
-                //continue;
+
+        Path commonTokensDir = Paths.get(args[0]);
+        Path tableFileDir = Paths.get(args[1]);
+        Map<String, List<Path>> langFiles = LeipzigHelper.getFiles(tableFileDir);
+
+        for (Map.Entry<String, List<Path>> e : langFiles.entrySet()) {
+
+            String[] cmd = new String[e.getValue().size()+1];
+            Path commonTokensFile = commonTokensDir.resolve(e.getKey());
+            cmd[0] = ProcessUtils.escapeCommandLine(commonTokensFile.toAbsolutePath().toString());
+            for (int i = 0; i < e.getValue().size(); i++) {
+                cmd[i+1] =
+                        ProcessUtils.escapeCommandLine(
+                                e.getValue().get(i).toAbsolutePath().toString());
             }
-            Path commonTokensFile = commonTokensDir.resolve(
-                    f.getName().replaceAll("_table(\\.txt)?(\\.gz)?$", ""));
-
-
             TopCommonTokenCounter.main(
-                    new String[]{
-                            ProcessUtils.escapeCommandLine(f.getAbsolutePath()),
-                            ProcessUtils.escapeCommandLine(commonTokensFile.toAbsolutePath().toString())
-                    }
+                cmd
             );
         }
     }

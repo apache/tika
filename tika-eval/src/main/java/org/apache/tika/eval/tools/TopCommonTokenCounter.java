@@ -49,6 +49,8 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.PriorityQueue;
 import org.apache.tika.eval.tokens.AnalyzerManager;
+import org.apache.tika.eval.tokens.URLEmailNormalizingFilterFactory;
+import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Utility class that reads in a UTF-8 input file with one document per row
@@ -61,14 +63,31 @@ import org.apache.tika.eval.tokens.AnalyzerManager;
  * for common html markup terms.
  */
 public class TopCommonTokenCounter {
+
+    private static String LICENSE =
+            "# Licensed to the Apache Software Foundation (ASF) under one or more\n" +
+            "# contributor license agreements.  See the NOTICE file distributed with\n" +
+            "# this work for additional information regarding copyright ownership.\n" +
+            "# The ASF licenses this file to You under the Apache License, Version 2.0\n" +
+            "# (the \"License\"); you may not use this file except in compliance with\n" +
+            "# the License.  You may obtain a copy of the License at\n" +
+            "#\n" +
+            "#     http://www.apache.org/licenses/LICENSE-2.0\n" +
+            "#\n" +
+            "# Unless required by applicable law or agreed to in writing, software\n" +
+            "# distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
+            "# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
+            "# See the License for the specific language governing permissions and\n" +
+            "# limitations under the License.\n";
+
     private static final String FIELD = "f";
-    private static int TOP_N = 20000;
+    private static int TOP_N = 30000;
     private static int MIN_DOC_FREQ = 10;
     //these should exist in every list
     static Set<String> WHITE_LIST = new HashSet<>(Arrays.asList(
             new String[] {
-                    "___email___",
-                    "___url___"
+                    URLEmailNormalizingFilterFactory.URL,
+                    URLEmailNormalizingFilterFactory.EMAIL
             }
     ));
 
@@ -98,17 +117,24 @@ public class TopCommonTokenCounter {
     ));
 
     public static void main(String[] args) throws Exception {
-        Path inputFile = Paths.get(args[0]);
-        Path commonTokensFile = Paths.get(args[1]);
+        Path commonTokensFile = Paths.get(args[0]);
+        List<Path> inputFiles = new ArrayList<>();
+        for (int i = 1; i < args.length; i++) {
+            inputFiles.add(Paths.get(
+                    ProcessUtils.unescapeCommandLine(args[i])));
+        }
         TopCommonTokenCounter counter = new TopCommonTokenCounter();
-        counter.execute(inputFile, commonTokensFile);
+        counter.execute(commonTokensFile, inputFiles);
     }
 
-    private void execute(Path inputFile, Path commonTokensFile) throws Exception {
+    private void execute(Path commonTokensFile, List<Path> inputFiles) throws Exception {
         Path luceneDir = Files.createTempDirectory("tika-eval-lucene-");
         AbstractTokenTFDFPriorityQueue queue = new TokenDFPriorityQueue(TOP_N);
-        try {
-            Directory directory = FSDirectory.open(luceneDir);
+        long totalDocs = -1;
+        long sumDocFreqs = -1;
+        long uniqueTerms = -1;
+        try (Directory directory = FSDirectory.open(luceneDir)) {
+
             AnalyzerManager analyzerManager = AnalyzerManager.newInstance(-1);
 
             Analyzer analyzer = analyzerManager.getCommonTokensAnalyzer();
@@ -117,19 +143,38 @@ public class TopCommonTokenCounter {
             int len = 0;
             try (IndexWriter writer = new IndexWriter(directory, indexWriterConfig)) {
                 List<Document> docs = new ArrayList<>();
-                try (BufferedReader reader = getReader(inputFile)) {
-                    String line = reader.readLine();
-                    while (line != null) {
-                        len += line.length();
-                        Document document = new Document();
-                        document.add(new TextField(FIELD, line, Field.Store.NO));
-                        docs.add(document);
-                        if (len > maxLen) {
-                            writer.addDocuments(docs);
-                            docs.clear();
-                            len = 0;
+                for (Path inputFile : inputFiles) {
+                    //total hack
+                    boolean isLeipzig = false;
+                    if (inputFile.getFileName().toString().contains("-sentences.txt")) {
+                        isLeipzig = true;
+                    }
+                    int lines = 0;
+                    try (BufferedReader reader = getReader(inputFile)) {
+                        String line = reader.readLine();
+                        while (line != null) {
+                            if (isLeipzig) {
+                                int tab = line.indexOf("\t");
+                                if (tab > -1) {
+                                    line = line.substring(tab+1);
+                                }
+                            }
+                            len += line.length();
+                            Document document = new Document();
+                            document.add(new TextField(FIELD, line, Field.Store.NO));
+                            docs.add(document);
+                            if (len > maxLen) {
+                                writer.addDocuments(docs);
+                                docs.clear();
+                                len = 0;
+                            }
+                            line = reader.readLine();
+                            if (++lines % 100000 == 0) {
+                                System.out.println("processed "+lines +
+                                        " for "+inputFile.getFileName()
+                                + " :: "+ commonTokensFile.toAbsolutePath());
+                            }
                         }
-                        line = reader.readLine();
                     }
                 }
                 if (docs.size() > 0) {
@@ -138,13 +183,18 @@ public class TopCommonTokenCounter {
                 writer.commit();
                 writer.flush();
             }
+
             try (IndexReader reader = DirectoryReader.open(directory)) {
                 LeafReader wrappedReader = SlowCompositeReaderWrapper.wrap(reader);
+                totalDocs = wrappedReader.getDocCount(FIELD);
+                sumDocFreqs = wrappedReader.getSumDocFreq(FIELD);
+
                 Terms terms = wrappedReader.terms(FIELD);
                 TermsEnum termsEnum = terms.iterator();
                 BytesRef bytesRef = termsEnum.next();
                 int docsWThisField = wrappedReader.getDocCount(FIELD);
                 while (bytesRef != null) {
+                    uniqueTerms++;
                     int df = termsEnum.docFreq();
                     long tf = termsEnum.totalTermFreq();
                     if (MIN_DOC_FREQ > -1 && df < MIN_DOC_FREQ) {
@@ -155,7 +205,7 @@ public class TopCommonTokenCounter {
                     if (queue.top() == null || queue.size() < TOP_N ||
                             df >= queue.top().df) {
                         String t = bytesRef.utf8ToString();
-                        if (! WHITE_LIST.contains(t) && ! BLACK_LIST.contains(t)) {
+                        if (! BLACK_LIST.contains(t)) {
                             queue.insertWithOverflow(new TokenDFTF(t, df, tf));
                         }
 
@@ -167,7 +217,8 @@ public class TopCommonTokenCounter {
             FileUtils.deleteDirectory(luceneDir.toFile());
         }
 
-        writeTopN(commonTokensFile, queue);
+        writeTopN(commonTokensFile, totalDocs,
+                sumDocFreqs, uniqueTerms, queue);
 
 
     }
@@ -182,7 +233,8 @@ public class TopCommonTokenCounter {
         );
     }
 
-    private static void writeTopN(Path path, AbstractTokenTFDFPriorityQueue queue) throws IOException {
+    private static void writeTopN(Path path,
+                                  long totalDocs, long sumDocFreqs, long uniqueTerms, AbstractTokenTFDFPriorityQueue queue) throws IOException {
         if (Files.isRegularFile(path)) {
             System.err.println("File "+path.getFileName() + " already exists. Skipping.");
             return;
@@ -191,6 +243,10 @@ public class TopCommonTokenCounter {
         BufferedWriter writer =
                 Files.newBufferedWriter(path, StandardCharsets.UTF_8);
         StringBuilder sb = new StringBuilder();
+        writer.write(LICENSE);
+        writer.write("#DOC_COUNT\t"+totalDocs+"\n");
+        writer.write("#SUM_DOC_FREQS\t"+sumDocFreqs+"\n");
+        writer.write("#UNIQUE_TERMS\t"+uniqueTerms+"\n");
         //add these tokens no matter what
         for (String t : WHITE_LIST) {
             writer.write(t);
@@ -207,7 +263,7 @@ public class TopCommonTokenCounter {
     private static String getRow(StringBuilder sb, TokenDFTF tp) {
         sb.setLength(0);
         sb.append(clean(tp.token));
-        //sb.append("\t").append(tp.df);
+        sb.append("\t").append(tp.df);
         //sb.append("\t").append(tp.tf);
         return sb.toString();
     }

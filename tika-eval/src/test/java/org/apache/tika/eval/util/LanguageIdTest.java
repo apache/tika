@@ -16,22 +16,25 @@
  */
 package org.apache.tika.eval.util;
 
-import com.google.common.base.Optional;
-import com.optimaize.langdetect.i18n.LdLocale;
-import org.apache.tika.eval.util.LanguageIDWrapper;
+import java.util.List;
+
+
+import org.apache.tika.eval.langid.Language;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class LanguageIdTest {
     @Test(timeout = 10000)
-    public void testDefenseAgainstBadRegexInOptimaize() throws Exception {
+    public void testDefenseAgainstBadRegexInOpenNLP() throws Exception {
         //TIKA-2777
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 50000; i++) {
             sb.append("a");
         }
         LanguageIDWrapper.loadBuiltInModels();
-        Optional<LdLocale> optional = LanguageIDWrapper.detect(sb.toString());
-        Assert.assertEquals("so", optional.get().getLanguage());
+        LanguageIDWrapper wrapper = new LanguageIDWrapper();
+        List<Language> languages = wrapper.getProbabilities(sb.toString());
+        Assert.assertEquals("mri", languages.get(0).getLanguage());
     }
 }
