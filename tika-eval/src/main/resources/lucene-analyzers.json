@@ -35,27 +35,16 @@
       },
       "tokenfilters": [
         {
-          "factory": "patternreplace",
+          "factory": "urlemailnormalizing",
           "params": {
-            "pattern": "^[\\w+\\.]{1,50}@(?:\\w{1,100}\\.){1,10}\\w{1,100}$",
-            "replacement": "___email___",
-            "replace": "all"
           }
-        },
-        {
-          "factory": "patternreplace",
-          "params": {
-            "pattern": "^(?:(?:ftp|https?):\\/\\/)?(?:\\w{1,50}\\.){1,10}\\w{0,50}\\/?$",
-            "replacement": "___url___",
-            "replace": "all"
-          }
-        },
-        {
-          "factory": "icufolding",
-          "params": {}
         },
         {
           "factory": "alphaideograph",
+          "params": {}
+        },
+        {
+          "factory": "icufolding",
           "params": {}
         },
         {
@@ -67,7 +56,7 @@
         {
           "factory": "cjkbigramawarelength",
           "params": {
-            "min": 4,
+            "min": 3,
             "max": 20
           }
         }

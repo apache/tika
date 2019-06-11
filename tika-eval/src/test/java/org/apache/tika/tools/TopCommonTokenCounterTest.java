@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -42,8 +43,8 @@ public class TopCommonTokenCounterTest extends TikaTest {
     @BeforeClass
     public static void setUp() throws Exception {
         String[] docs = new String[] {
-                "the quick brown fox",
-                "jumped over the brown lazy",
+                "th quick brown fox",
+                "jumped over th brown lazy",
                 "brown lazy fox",
                 "\u666e\u6797\u65af\u987f\u5927\u5b66",
                 "\u666e\u6797\u65af\u987f\u5927\u5b66"
@@ -64,9 +65,9 @@ public class TopCommonTokenCounterTest extends TikaTest {
         TopCommonTokenCounter.main(
                 new String[]{
                         ProcessUtils.escapeCommandLine(
-                                WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString()),
+                                WORKING_DIR.resolve(COMMON_TOKENS_FILE).toAbsolutePath().toString()),
                         ProcessUtils.escapeCommandLine(
-                                WORKING_DIR.resolve(COMMON_TOKENS_FILE).toAbsolutePath().toString())
+                                WORKING_DIR.resolve(INPUT_FILE).toAbsolutePath().toString())
                 });
     }
 
@@ -77,11 +78,17 @@ public class TopCommonTokenCounterTest extends TikaTest {
 
     @Test
     public void testSimple() throws Exception {
-        List<String> tokens = FileUtils.readLines(WORKING_DIR.resolve(COMMON_TOKENS_FILE).toFile(),
+        List<String> rows = FileUtils.readLines(WORKING_DIR.resolve(COMMON_TOKENS_FILE).toFile(),
                 StandardCharsets.UTF_8);
+        List<String> tokens = new ArrayList<>();
+        for (String row : rows) {
+            if (!row.startsWith("#")) {
+                tokens.add(row.split("\t")[0]);
+            }
+        }
         assertEquals("brown", tokens.get(2));
-        assertEquals("lazy", tokens.get(3));
-        assertNotContained("fox", tokens);//3 char word should be dropped
+        assertEquals("lazy", tokens.get(4));
+        assertNotContained("th", tokens);//3 char word should be dropped
         assertNotContained("\u987f\u5927\u5b66", tokens);//cjk trigram should not be included
         assertNotContained("\u5b66", tokens);//cjk unigram should not be included
         assertContains("\u5927\u5b66", tokens);//cjk bigrams only

@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -50,15 +51,23 @@ public class CommonTokenCountManager {
     private final String defaultLangCode;
 
     public CommonTokenCountManager(Path commonTokensDir, String defaultLangCode) throws IOException {
+        if (defaultLangCode == null) {
+            defaultLangCode = "";
+        }
         this.defaultLangCode = defaultLangCode;
         this.commonTokensDir = commonTokensDir;
-        tryToLoad(defaultLangCode);
-        //if you couldn't load it, make sure to add an empty
-        //set to prevent npes later
-        Set<String> set = commonTokenMap.get(defaultLangCode);
-        if (set == null) {
-            LOG.warn("No common tokens for default language: '"+defaultLangCode+"'");
-            commonTokenMap.put(defaultLangCode, new HashSet<String>());
+        if (! "".equals(defaultLangCode)) {
+            tryToLoad(defaultLangCode);
+            //if you couldn't load it, make sure to add an empty
+            //set to prevent npes later
+            Set<String> set = commonTokenMap.get(defaultLangCode);
+            if (set == null) {
+                LOG.warn("No common tokens for default language: '" + defaultLangCode + "'");
+                commonTokenMap.put(defaultLangCode, Collections.EMPTY_SET);
+            }
+        } else {
+            commonTokenMap.put(defaultLangCode, Collections.EMPTY_SET);
+
         }
     }
 
@@ -88,6 +97,9 @@ public class CommonTokenCountManager {
     }
 
 
+    public Set<String> getTokens(String lang) {
+        return Collections.unmodifiableSet(new HashSet(commonTokenMap.get(getActualLangCode(lang))));
+    }
     //return langcode for lang that you are actually using
     //lazily load the appropriate model
     private String getActualLangCode(String langCode) {

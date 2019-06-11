@@ -21,7 +21,9 @@ import java.util.Map;
 
 import org.apache.lucene.analysis.FilteringTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.standard.UAX29URLEmailTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
@@ -41,18 +43,25 @@ public class AlphaIdeographFilterFactory extends TokenFilterFactory {
     }
 
     /**
-     * Remove tokens tokens that do not contain an "
+     * Remove tokens that do not contain an alphabetic or ideographic
      */
     private class AlphaFilter extends FilteringTokenFilter {
 
         private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-
+        private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
         public AlphaFilter(TokenStream in) {
             super(in);
         }
 
         @Override
         protected boolean accept() throws IOException {
+            String type = typeAtt.type();
+            if (type ==
+                            UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.EMOJI] ||
+                    type == UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.NUM]
+            ) {
+                return false;
+            }
             return isAlphabetic(termAtt.buffer(), termAtt.length());
         }
     }
