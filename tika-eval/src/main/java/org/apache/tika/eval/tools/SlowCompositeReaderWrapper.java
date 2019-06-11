@@ -21,8 +21,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.lucene.index.*;
+
+import org.apache.lucene.index.BinaryDocValues;
+import org.apache.lucene.index.CompositeReader;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.DocValues;
+import org.apache.lucene.index.DocValuesType;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
+import org.apache.lucene.index.Fields;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafMetaData;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.MultiBits;
+import org.apache.lucene.index.MultiDocValues;
 import org.apache.lucene.index.MultiDocValues.MultiSortedDocValues;
+import org.apache.lucene.index.MultiReader;
+import org.apache.lucene.index.MultiTerms;
+import org.apache.lucene.index.NumericDocValues;
+import org.apache.lucene.index.OrdinalMap;
+import org.apache.lucene.index.PointValues;
+import org.apache.lucene.index.SortedDocValues;
+import org.apache.lucene.index.SortedNumericDocValues;
+import org.apache.lucene.index.SortedSetDocValues;
+import org.apache.lucene.index.StoredFieldVisitor;
+import org.apache.lucene.index.Terms;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.Version;
 
@@ -53,12 +77,12 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
     // also have a cached FieldInfos instance so this is consistent. SOLR-12878
     private final FieldInfos fieldInfos;
 
-    final Map<String,Terms> cachedTerms = new ConcurrentHashMap<>();
+    final Map<String, Terms> cachedTerms = new ConcurrentHashMap<>();
 
     // TODO: consider ConcurrentHashMap ?
     // TODO: this could really be a weak map somewhere else on the coreCacheKey,
     // but do we really need to optimize slow-wrapper any more?
-    final Map<String,OrdinalMap> cachedOrdMaps = new HashMap<>();
+    final Map<String, OrdinalMap> cachedOrdMaps = new HashMap<>();
 
     /** This method is sugar for getting an {@link LeafReader} from
      * an {@link IndexReader} of any kind. If the reader is already atomic,

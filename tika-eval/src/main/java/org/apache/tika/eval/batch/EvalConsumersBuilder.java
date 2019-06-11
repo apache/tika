@@ -35,7 +35,7 @@ import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
-import org.apache.tika.eval.util.LanguageIDWrapper;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.PropsUtil;
 import org.apache.tika.util.XMLDOMUtil;
@@ -71,8 +71,8 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
 
         Path commonTokens = getPath(localAttrs, "commonTokens");
         String defaultLangCode = localAttrs.get("defaultLangCode");
-        if (defaultLangCode == null || "".equals(defaultLangCode)) {
-            defaultLangCode = "en";
+        if (defaultLangCode == null) {
+            defaultLangCode = "";
         }
         //can be null, in which case will load from memory
         try {

@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.optimaize.langdetect.DetectedLanguage;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
@@ -50,6 +49,7 @@ import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
+import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.tokens.CommonTokenResult;
@@ -58,7 +58,7 @@ import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.eval.tokens.TokenStatistics;
 import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.eval.util.ContentTagParser;
-import org.apache.tika.eval.util.LanguageIDWrapper;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -605,31 +605,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (content.length() > maxContentLengthForLangId) {
             s = content.substring(0, maxContentLengthForLangId);
         }
-        List<DetectedLanguage> probabilities = langIder.getProbabilities(s);
+        List<Language> probabilities = langIder.getProbabilities(s);
         if (probabilities.size() > 0) {
-            data.put(Cols.LANG_ID_1, getLangString(probabilities.get(0)));
+            data.put(Cols.LANG_ID_1, probabilities.get(0).getLanguage());
             data.put(Cols.LANG_ID_PROB_1,
-            Double.toString(probabilities.get(0).getProbability()));
+            Double.toString(probabilities.get(0).getConfidence()));
         }
         if (probabilities.size() > 1) {
-            data.put(Cols.LANG_ID_2, getLangString(probabilities.get(1)));
+            data.put(Cols.LANG_ID_2, probabilities.get(1).getLanguage());
             data.put(Cols.LANG_ID_PROB_2,
-            Double.toString(probabilities.get(1).getProbability()));
+                    Double.toString(probabilities.get(1).getConfidence()));
         }
-    }
-
-    private String getLangString(DetectedLanguage detectedLanguage) {
-        //So that we have mapping between lang id and common-tokens file names
-        String lang = detectedLanguage.getLocale().getLanguage();
-        if ("zh".equals(lang)) {
-            if (detectedLanguage.getLocale().getRegion().isPresent()) {
-                lang += "-" + detectedLanguage.getLocale().getRegion().get().toLowerCase(Locale.US);
-            } else {
-                //hope for the best
-                lang += "-cn";
-            }
-        }
-        return lang;
     }
 
     void getFileTypes(Metadata metadata, Map<Cols, String> output) {
