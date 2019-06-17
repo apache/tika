@@ -142,7 +142,9 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         } catch (SAXException e) {
             throw new MimeTypeException("Invalid type configuration", e);
         } finally {
-            releaseParser(parser);
+            if(parser != null) {
+                releaseParser(parser);
+            }
         }
     }
 
