@@ -20,6 +20,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Locale;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -95,7 +96,7 @@ public class OOXMLExtractorFactory {
                 try {
                     pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
                 } catch (InvalidOperationException e) {
-                    tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                    tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
                     ZipSalvager.salvageCopy(tis.getFile(), tmpRepairedCopy);
                     pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                 }
@@ -110,7 +111,7 @@ public class OOXMLExtractorFactory {
                         pkg = OPCPackage.open(rereadableInputStream);
                     } catch (EOFException e) {
                         rereadableInputStream.rewind();
-                        tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                        tmpRepairedCopy = Files.createTempFile("tika-ooxml-repair-", "").toFile();
                         ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy);
                         //if there isn't enough left to be opened as a package
                         //throw an exception -- we may want to fall back to streaming
