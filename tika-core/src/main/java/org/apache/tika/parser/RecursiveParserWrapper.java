@@ -20,15 +20,19 @@ package org.apache.tika.parser;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.SecureContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -221,7 +225,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
         try {
-            getWrappedParser().parse(stream, localHandler, metadata, context);
+            try (TikaInputStream tis = TikaInputStream.get(stream)) {
+                RecursivelySecureContentHandler secureContentHandler =
+                        new RecursivelySecureContentHandler(localHandler, tis);
+                context.set(RecursivelySecureContentHandler.class, secureContentHandler);
+                getWrappedParser().parse(tis, secureContentHandler, metadata, context);
+            }
         } catch (SAXException e) {
             boolean wlr = isWriteLimitReached(e);
             if (wlr == false) {
@@ -367,8 +376,14 @@ public class RecursiveParserWrapper extends ParserDecorator {
             Parser preContextParser = context.get(Parser.class);
             context.set(Parser.class, new EmbeddedParserDecorator(getWrappedParser(), objectLocation, parserState));
             long started = System.currentTimeMillis();
+            RecursivelySecureContentHandler secureContentHandler =
+                    context.get(RecursivelySecureContentHandler.class);
+            //store the handler that was used before this parse
+            //so that you can return it back to its state at the end of this parse
+            ContentHandler preContextHandler = secureContentHandler.handler;
+            secureContentHandler.updateContentHandler(localHandler);
             try {
-                super.parse(stream, localHandler, metadata, context);
+                super.parse(stream, secureContentHandler, metadata, context);
             } catch (SAXException e) {
                 boolean wlr = isWriteLimitReached(e);
                 if (wlr == true) {
@@ -390,6 +405,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 }
             } finally {
                 context.set(Parser.class, preContextParser);
+                secureContentHandler.updateContentHandler(preContextHandler);
                 long elapsedMillis = System.currentTimeMillis() - started;
                 metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
                 parserState.recursiveParserWrapperHandler.endEmbeddedDocument(localHandler, metadata);
@@ -407,7 +423,46 @@ public class RecursiveParserWrapper extends ParserDecorator {
         private ParserState(AbstractRecursiveParserWrapperHandler handler) {
             this.recursiveParserWrapperHandler = handler;
         }
+    }
 
+    private class RecursivelySecureContentHandler
+            extends SecureContentHandler {
+        private ContentHandler handler;
+        public RecursivelySecureContentHandler(ContentHandler handler, TikaInputStream stream) {
+            super(handler, stream);
+            this.handler = handler;
+        }
 
+        public void updateContentHandler(ContentHandler handler) {
+            setContentHandler(handler);
+            this.handler = handler;
+        }
+
+        /**
+         *  Bypass the SecureContentHandler...
+         *
+         *  This handler only looks at zip bomb via zip expansion.
+         *  Users should be protected within entries against nested
+         *  nested xml entities.  We don't want to carry
+         *  those stats _across_ entries.
+         *
+         * @param uri
+         * @param localName
+         * @param name
+         * @param atts
+         * @throws SAXException
+         */
+        @Override
+        public void startElement(
+                String uri, String localName, String name, Attributes atts)
+                throws SAXException {
+            this.handler.startElement(uri, localName, name, atts);
+        }
+
+        @Override
+        public void endElement(
+                String uri, String localName, String name) throws SAXException {
+            this.handler.endElement(uri, localName, name);
+        }
     }
 }
