@@ -150,6 +150,7 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
         mailMetadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
         mailMetadata.set(TikaCoreProperties.CREATED, pstMail.getCreationTime());
+        mailMetadata.set(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME, pstMail.getClientSubmitTime());
         mailMetadata.set(TikaCoreProperties.MODIFIED, pstMail.getLastModificationTime());
         mailMetadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
         mailMetadata.set("descriptorNodeId", valueOf(pstMail.getDescriptorNodeId()));
