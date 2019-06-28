@@ -135,7 +135,7 @@ public class OutlookPSTParserTest extends TikaTest {
 
         assertEquals("Couchbase",m6.get(Message.MESSAGE_FROM_NAME));
         assertEquals("couchbase@couchbase.com", m6.get(Message.MESSAGE_FROM_EMAIL));
-
+        assertContains("2014-02-26", m1.get(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME));
     }
 
     @Test
