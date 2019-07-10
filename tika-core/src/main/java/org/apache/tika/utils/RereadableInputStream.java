@@ -219,6 +219,12 @@ public class RereadableInputStream extends InputStream {
      */
     public void close() throws IOException {
         closeStream();
+
+        if (storeOutputStream != null) {
+            storeOutputStream.close();
+            storeOutputStream = null;
+        }
+
         super.close();
         if (storeFile != null) {
             storeFile.delete();
