@@ -23,15 +23,20 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class LangIdTest {
+
+    @BeforeClass
+    public static void init() throws Exception {
+        LanguageIDWrapper.loadBuiltInModels();
+    }
 
     @Test
     public void testCommonTokensCoverage() throws Exception {
         //make sure that there is a common tokens file for every
         //language
-        LanguageIDWrapper.loadBuiltInModels();
         LanguageIDWrapper wrapper = new LanguageIDWrapper();
         CommonTokenCountManager commonTokens = new CommonTokenCountManager(null, "eng");
         for (String lang : wrapper.getSupportedLanguages()) {

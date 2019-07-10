@@ -53,7 +53,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
  * </p>
  *
  */
-public class ProbingLanguageDetector implements LanguageDetector {
+class ProbingLanguageDetector implements LanguageDetector {
 
     /**
      * Default chunk size (in codepoints) to take from the
@@ -73,7 +73,7 @@ public class ProbingLanguageDetector implements LanguageDetector {
      * Default minimum difference in confidence between the language with
      * the highest confidence and the language with the second highest confidence.
      */
-    public static final double DEFAULT_MIN_DIFF = 0.10;
+    public static final double DEFAULT_MIN_DIFF = 0.20;
 
     /**
      * Default absolute maximum length of the String (in codepoints) to process
@@ -131,17 +131,17 @@ public class ProbingLanguageDetector implements LanguageDetector {
         int nGrams = 0;
         while (true) {
             int actualChunkSize = (start + chunkSize > maxLength) ? maxLength - start : chunkSize;
-            CharSequence normed = chunk(content, start, actualChunkSize);
 
-            int[] chunk = normed.codePoints().toArray();
-            if (chunk.length == 0) {
+            CSAndLength csAndLength = chunk(content, start, actualChunkSize);
+            int[] chunk = csAndLength.normed.codePoints().toArray();
+            if (csAndLength.originalLength == 0) {
                 if (currPredictions == null) {
                     return predict(ngramCounts);
                 } else {
                     return currPredictions;
                 }
             }
-            start += chunk.length;
+            start += csAndLength.originalLength;
             ngrammer.reset(chunk);
 
             while (ngrammer.hasNext()) {
@@ -338,15 +338,25 @@ public class ProbingLanguageDetector implements LanguageDetector {
         return true;
     }
 
-    private CharSequence chunk(CharSequence content, int start, int chunkSize) {
+    private CSAndLength chunk(CharSequence content, int start, int chunkSize) {
         if (start == 0 && chunkSize > content.length()) {
-            return normalizer.normalize(content);
+            int length = content.codePoints().toArray().length;
+            return new CSAndLength(normalizer.normalize(content), length);
         }
         int[] codepoints = content.codePoints().skip(start).limit(chunkSize).toArray();
         String chunk = new String(codepoints, 0, codepoints.length);
-        return normalizer.normalize(chunk);
+        return new CSAndLength(normalizer.normalize(chunk), codepoints.length);
     }
 
+    private static class CSAndLength {
+        private final CharSequence normed;
+        private final int originalLength;
+
+        public CSAndLength(CharSequence normed, int originalLength) {
+            this.normed = normed;
+            this.originalLength = originalLength;
+        }
+    }
     private static class CharIntNGrammer implements Iterator<String> {
         private String next;
         private int pos = 0;
