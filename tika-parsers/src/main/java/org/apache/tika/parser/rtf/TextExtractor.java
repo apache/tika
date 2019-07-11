@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Stack;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
@@ -57,6 +58,11 @@ import org.xml.sax.SAXException;
 final class TextExtractor {
 
     private static final char SPACE = ' ';
+    private static final String P = "p";
+    private static final String LI = "li";
+    private static final String OL = "ol";
+    private static final String UL = "ul";
+
     private static final Charset ASCII = Charset.forName("US-ASCII");
     private static final Charset WINDOWS_1252 = getCharset("WINDOWS-1252");
     private static final Charset MAC_ROMAN = getCharset("MacRoman");
@@ -309,6 +315,22 @@ final class TextExtractor {
     // Used when extracting CREATION date:
     private int year, month, day, hour, minute;
 
+    //This keeps track of the following elements as they are
+    //written to the handler: p, li, ol, ul
+    //This tries to prevent malformed tag orders in the RTF
+    //e.g. <p></li></ol></p>
+    //from generating malformed xml tags. (TIKA-2899)
+    //This may conceal problems with our parser.
+    //TODO:
+    // 1) do we need to add all elements, a, b, i, etc.
+    // 2) are we doing the right thing by ignoring an element
+    //    if its match doesn't pop off the stack...or should
+    //    we pop all at the first failure.
+    private Stack<String> paragraphStack = new Stack<>();
+    //this is an arbitrary limit on the size of the stack
+    //to defend against DoS with memory consumption
+    private int maxStackSize = 1000;
+
     public TextExtractor(XHTMLContentHandler out, Metadata metadata,
                          RTFEmbObjHandler embObjHandler) {
         this.metadata = metadata;
@@ -481,6 +503,11 @@ final class TextExtractor {
         }
 
         endParagraph(false);
+
+        //close out whatever tags were left
+        while (paragraphStack.size() > 0) {
+            end(paragraphStack.pop());
+        }
         out.endDocument();
     }
 
@@ -590,9 +617,11 @@ final class TextExtractor {
                 startList(groupState.list);
             }
             if (inList()) {
-                out.startElement("li");
+                start("li");
+                pushParagraphTag(LI);
             } else {
-                out.startElement("p");
+                start("p");
+                pushParagraphTag(P);
             }
 
             // Ensure <b><i> order
@@ -603,6 +632,14 @@ final class TextExtractor {
                 start("i");
             }
             inParagraph = true;
+        }
+    }
+
+    private void pushParagraphTag(String tag) {
+        if (paragraphStack.size() < maxStackSize) {
+            paragraphStack.push(tag);
+        } else {
+            //ignore.  Something is very, very wrong...
         }
     }
 
@@ -622,13 +659,30 @@ final class TextExtractor {
                 groupState.bold = preserveStyles;
             }
             if (inList()) {
-                out.endElement("li");
+                if (paragraphStack.size() > 0) {
+                    String lastP = paragraphStack.pop();
+                    if (lastP.equals(LI)) {
+                        end(LI);
+                    } else {
+                        pushParagraphTag(lastP);
+                    }
+                } else {
+                    //there should have been a starting li
+                }
             } else {
-                out.endElement("p");
+                if (paragraphStack.size() > 0) {
+                    String lastP = paragraphStack.pop();
+                    if (P.equals(lastP)) {
+                        end(P);
+                    } else {
+                        pushParagraphTag(lastP);
+                    }
+                }
             }
 
             if (preserveStyles && (groupState.bold || groupState.italic)) {
-                start("p");
+                start(P);
+                pushParagraphTag(P);
                 if (groupState.bold) {
                     start("b");
                 }
@@ -995,7 +1049,15 @@ final class TextExtractor {
      */
     private void endList(int listID) throws IOException, SAXException, TikaException {
         if (!ignoreLists) {
-            out.endElement(isUnorderedList(listID) ? "ul" : "ol");
+            String xl = isUnorderedList(listID) ? UL : OL;
+            if (paragraphStack.size() > 0) {
+                String p = paragraphStack.pop();
+                if (xl.equals(p)) {
+                    end(xl);
+                }
+            } else {
+                //stack as empty, the list was never started
+            }
         }
     }
 
@@ -1010,7 +1072,9 @@ final class TextExtractor {
      */
     private void startList(int listID) throws IOException, SAXException, TikaException {
         if (!ignoreLists) {
-            out.startElement(isUnorderedList(listID) ? "ul" : "ol");
+            String xl = isUnorderedList(listID) ? UL : OL;
+            start(xl);
+            pushParagraphTag(xl);
         }
     }
 
@@ -1453,7 +1517,7 @@ final class TextExtractor {
             // inlined, but fail to record them in metadata
             // as a field value.
         } else if (fieldState == 3) {
-            out.endElement("a");
+            end("a");
             fieldState = 0;
         }
     }
