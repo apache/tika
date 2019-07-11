@@ -55,7 +55,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -574,6 +573,12 @@ public class RTFParserTest extends TikaTest {
     public void testTIKA2883() throws Exception {
         assertContains("This message has been archived.",
                 getXML("testRTFTIKA_2883.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA2899() throws Exception {
+        assertContains("this Agreement on today",
+                getXML("testRTFTIKA_2899.rtf").xml);
     }
 
     private Result getResult(String filename) throws Exception {
