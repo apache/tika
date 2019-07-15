@@ -601,7 +601,12 @@ final class TextExtractor {
     }
 
     private void lazyStartParagraph() throws IOException, SAXException, TikaException {
-        if (!inParagraph) {
+
+        boolean localInParagraph = inParagraph;
+        if (paragraphStack.size() > 0 && paragraphStack.contains(P)) {
+            localInParagraph = true;
+        }
+        if (!localInParagraph) {
             // Ensure </i></b> order
             if (groupState.italic) {
                 end("i");
@@ -617,10 +622,10 @@ final class TextExtractor {
                 startList(groupState.list);
             }
             if (inList()) {
-                start("li");
+                start(LI);
                 pushParagraphTag(LI);
             } else {
-                start("p");
+                start(P);
                 pushParagraphTag(P);
             }
 
@@ -649,7 +654,7 @@ final class TextExtractor {
         if (!inParagraph) {
             lazyStartParagraph();
         }
-        if (inParagraph) {
+        if (inParagraph || paragraphStack.size() > 0) {
             if (groupState.italic) {
                 end("i");
                 groupState.italic = preserveStyles;
@@ -658,6 +663,7 @@ final class TextExtractor {
                 end("b");
                 groupState.bold = preserveStyles;
             }
+            boolean badTagAlignment = false;
             if (inList()) {
                 if (paragraphStack.size() > 0) {
                     String lastP = paragraphStack.pop();
@@ -665,6 +671,7 @@ final class TextExtractor {
                         end(LI);
                     } else {
                         pushParagraphTag(lastP);
+                        badTagAlignment = true;
                     }
                 } else {
                     //there should have been a starting li
@@ -676,10 +683,17 @@ final class TextExtractor {
                         end(P);
                     } else {
                         pushParagraphTag(lastP);
+                        badTagAlignment = true;
                     }
                 }
             }
-
+            //if there was a failure in tag alignment,
+            //dump all tags and start fresh.
+            if (badTagAlignment) {
+                while (paragraphStack.size() > 0) {
+                    end(paragraphStack.pop());
+                }
+            }
             if (preserveStyles && (groupState.bold || groupState.italic)) {
                 start(P);
                 pushParagraphTag(P);
