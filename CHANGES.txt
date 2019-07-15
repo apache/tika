@@ -1,5 +1,25 @@
 Release 1.22 - ???
 
+   * Known regression: PDFBOX-4587 PDF passwords with codepoints
+     between 0xF000 and 0XF0000 will cause an exception.
+
+   * Improve AutoDetectReader performance by caching encoding
+     detector (TIKA-1568).
+
+   * Prevent RTFParser from outputting illegal tag combinations (TIKA-2889).
+
+   * Fix RereadableInputStream to release all resources (TIKA-2903).
+
+   * Implement custom language identifier in the tika-eval module based on
+     OpenNLP's language detector; add 18 languages and add common words
+     lists for all 121 languages (TIKA-2790).
+
+   * Fix NPE in MimeTypesReader.releaseParser() via Eamonn Saunders (TIKA-2896).
+
+   * Fix RTFParser to extract more content (TIKA-2883).
+
+   * Add clientSubmitTime to the metadata extracted from PST files (TIKA-2898).
+
    * Improve StreamingZipContainerDetector for xltx, xltm and
      several other file formats (TIKA-2886).
 
