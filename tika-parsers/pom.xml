@@ -956,7 +956,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-scr-plugin</artifactId>
-                    <version>${maven.scr.version}</version>
+                    <versionRange>${maven.scr.version}</versionRange>
                     <goals>
                       <goal>scr</goal>
                     </goals>
@@ -969,7 +969,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.codehaus.gmaven</groupId>
                     <artifactId>groovy-maven-plugin</artifactId>
-                    <version>${groovy.maven.version}</version>
+                    <versionRange>${groovy.maven.version}</versionRange>
                     <goals>
                       <goal>execute</goal>
                     </goals>
@@ -977,6 +977,19 @@
                   <action>
                     <ignore />
                   </action>
+                </pluginExecution>
+                <pluginExecution>
+                	<pluginExecutionFilter>
+                		<groupId>org.sonatype.ossindex.maven</groupId>
+                		<artifactId>ossindex-maven-plugin</artifactId>
+                		<versionRange>[3.0.4,)</versionRange>
+                		<goals>
+                			<goal>audit</goal>
+                		</goals>
+                	</pluginExecutionFilter>
+                	<action>
+                		<ignore></ignore>
+                	</action>
                 </pluginExecution>
               </pluginExecutions>
             </lifecycleMappingMetadata>
