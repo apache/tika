@@ -1,6 +1,7 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
 
+
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
@@ -56,4 +57,22 @@ public class HwpV5ParserTest extends TikaTest {
         }
     }
 	
+	@Test
+    public void testAutoDetectParser() throws Exception {
+	    AutoDetectParser parser = new AutoDetectParser();
+	    BodyContentHandler handler = new BodyContentHandler();
+	    Metadata metadata = new Metadata();
+	    try (InputStream stream = HwpV5ParserTest.class.getResourceAsStream("/test-documents/test-documents-v5.hwp")) {
+	        parser.parse(stream, handler, metadata);
+	        
+	        assertContains("Apache Tika", handler.toString());
+	        
+           assertEquals(
+                    "application/x-hwp-v5",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
+	    }
+
+    }
 }
