@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -237,6 +238,12 @@ public abstract class TikaTest {
                                                   boolean suppressException) throws Exception {
         try (InputStream is = getResourceAsStream("/test-documents/" + filePath)) {
             return getRecursiveMetadata(is, context, metadata, suppressException);
+        }
+    }
+
+    protected List<Metadata> getRecursiveMetadata(Path p, boolean suppressException) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(p)) {
+            return getRecursiveMetadata(tis, new ParseContext(), new Metadata(), suppressException);
         }
     }
 

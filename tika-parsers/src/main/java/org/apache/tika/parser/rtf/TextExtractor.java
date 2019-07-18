@@ -865,7 +865,6 @@ final class TextExtractor {
 
     // Handle control word that takes a parameter:
     private void processControlWord(int param, PushbackInputStream in) throws IOException, SAXException, TikaException {
-
         // TODO: afN?  (associated font number)
 
         // TODO: do these alter text output...?
@@ -1245,6 +1244,9 @@ final class TextExtractor {
         } else if (equals("par")) {
             if (!ignored) {
                 endParagraph(true);
+            }
+            if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
+                pendingListEnd();
             }
         } else if (equals("shptxt")) {
             pushText();
