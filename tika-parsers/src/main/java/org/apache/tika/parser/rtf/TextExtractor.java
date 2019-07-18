@@ -305,7 +305,7 @@ final class TextExtractor {
     private Map<Integer, ListDescriptor> currentListTable;
     private ListDescriptor currentList;
     private int listTableLevel = -1;
-    private boolean ignoreLists;
+    private boolean ignoreListMarkup;
     // Non-null if we've seen the url for a HYPERLINK but not yet
     // its text:
     private String pendingURL;
@@ -373,11 +373,11 @@ final class TextExtractor {
     }
 
     public boolean isIgnoringLists() {
-        return ignoreLists;
+        return ignoreListMarkup;
     }
 
-    public void setIgnoreLists(boolean ignore) {
-        this.ignoreLists = ignore;
+    public void setIgnoreListMarkup(boolean ignore) {
+        this.ignoreListMarkup = ignore;
     }
 
     // Push pending bytes or pending chars:
@@ -1038,7 +1038,7 @@ final class TextExtractor {
     }
 
     private boolean inList() {
-        return !ignoreLists && groupState.list != 0;
+        return !ignoreListMarkup && groupState.list != 0;
     }
 
     /**
@@ -1061,7 +1061,7 @@ final class TextExtractor {
      * @throws TikaException
      */
     private void endList(int listID) throws IOException, SAXException, TikaException {
-        if (!ignoreLists) {
+        if (!ignoreListMarkup) {
             String xl = isUnorderedList(listID) ? UL : OL;
             if (paragraphStack.size() > 0) {
                 String p = paragraphStack.pop();
@@ -1084,7 +1084,7 @@ final class TextExtractor {
      * @throws TikaException
      */
     private void startList(int listID) throws IOException, SAXException, TikaException {
-        if (!ignoreLists) {
+        if (!ignoreListMarkup) {
             String xl = isUnorderedList(listID) ? UL : OL;
             start(xl);
             pushParagraphTag(xl);
@@ -1243,9 +1243,9 @@ final class TextExtractor {
         } else if (equals("par")) {
             if (!ignored) {
                 endParagraph(true);
-            }
-            if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
-                pendingListEnd();
+                if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
+                    pendingListEnd();
+                }
             }
         } else if (equals("shptxt")) {
             pushText();
