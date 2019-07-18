@@ -1,7 +1,10 @@
 Release 1.22 - ???
 
-   * Known regression: PDFBOX-4587 PDF passwords with codepoints
+   * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
      between 0xF000 and 0XF0000 will cause an exception.
+
+   * Fix order of closing streams to avoid "Failed to close temporary resource"
+     exception (TIKA-2908).
 
    * Improve AutoDetectReader performance by caching encoding
      detector (TIKA-1568).
