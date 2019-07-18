@@ -51,7 +51,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
@@ -353,6 +352,19 @@ public class RTFParserTest extends TikaTest {
         assertContains("</ol>", content);
         assertContains("<ul>\t<li>first</li>", content);
         assertContains("</ul>", content);
+    }
+
+    @Test
+    public void testTurningOffList() throws Exception {
+        InputStream is = getClass().getResourceAsStream(
+                "/org/apache/tika/parser/rtf/ignoreListMarkup-tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String content = getXML("testRTFListMicrosoftWord.rtf", p).xml;
+        assertNotContained("<ol>", content);
+        assertNotContained("<ul>", content);
+        assertNotContained("<li>", content);
     }
 
     @Test
