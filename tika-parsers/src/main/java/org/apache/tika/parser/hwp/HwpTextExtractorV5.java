@@ -65,13 +65,6 @@ public class HwpTextExtractorV5 {
 	private static final byte[] HWP_V5_SIGNATURE = "HWP Document File"
 			.getBytes();
 
-//	private static final int[] HWP_CONTROL_CHARS = new int[] { 0, 10, 13, 24,
-//			25, 26, 27, 28, 29, 30, 31 };
-//	private static final int[] HWP_INLINE_CHARS = new int[] { 4, 5, 6, 7, 8, 9,
-//			19, 20 };
-//	private static final int[] HWP_EXTENDED_CHARS = new int[] { 1, 2, 3, 11,
-//			12, 14, 15, 16, 17, 18, 21, 22, 23 };
-
 	private static final int HWPTAG_BEGIN = 0x010;
 	
 	private static final int I = 1; // INLINE
@@ -145,8 +138,8 @@ public class HwpTextExtractorV5 {
 		try {
 			Entry summaryEntry = root.getEntry("\u0005HwpSummaryInformation");
 			
-			parseSummaryInformation(summaryEntry, metadata);
-//			setMetadataWithSummaryInformation(si, metadata);
+			populateMatadata(summaryEntry, metadata);
+			
 		} catch (NoPropertySetStreamException | IOException e) {
 			throw new UnsupportedFormatException(
 					"cannot parse the Summary Information");
@@ -154,9 +147,7 @@ public class HwpTextExtractorV5 {
 		
 	}
 	
-	private void parseSummaryInformation(Entry summaryEntry, Metadata metadata) throws IOException, NoPropertySetStreamException {
-		
-		// SummaryInformation si = new SummaryInformation();
+	private void populateMatadata(Entry summaryEntry, Metadata metadata) throws IOException, NoPropertySetStreamException {
 		
 		DocumentInputStream summaryStream = new DocumentInputStream(
 				(DocumentEntry) summaryEntry);
@@ -171,56 +162,36 @@ public class HwpTextExtractorV5 {
 			
 			switch(propID) {
 			case 2:
-//				 si.setTitle((String)value);
 				metadata.set(TikaCoreProperties.TITLE, (String)value);
 				break;
 			case 3:
-//				 si.setSubject((String)value);
 				metadata.set(OfficeOpenXMLCore.SUBJECT, (String)value);
 				break;
 			case 4:
-//				 si.setAuthor((String)value);
 				metadata.set(TikaCoreProperties.CREATOR, (String)value);
 				break;
 			case 5:
-//				si.setKeywords((String)value);
 				metadata.set(Office.KEYWORDS, (String)value);
 				break;
 			case 6:
-//				si.setComments((String)value);
 				metadata.set(TikaCoreProperties.COMMENTS, (String)value);
 				break;
 			case 8:
-//				si.setLastAuthor((String)value);
 				metadata.set(TikaCoreProperties.MODIFIER, (String)value);
 				break;
 			case 12:
-//				si.setCreateDateTime((Date)value);
 				metadata.set(TikaCoreProperties.CREATED, (Date)value);
 				break;
 			case 13:
-//				si.setLastSaveDateTime((Date)value);
 				metadata.set(TikaCoreProperties.MODIFIED, (Date)value);
 				break;
-//			case 14:
-//				si.setPageCount((int)value);
-//				break;
+			case 14:
+				metadata.set(Office.PAGE_COUNT, (Date)value);
+				break;
 			default:
 			}
 		}
-		
-//		return si;
 	}
-	
-//	private void setMetadataWithSummaryInformation(SummaryInformation si, Metadata metadata) {
-//		metadata.set(TikaCoreProperties.CREATOR, si.getAuthor());
-//		metadata.set(TikaCoreProperties.COMMENTS, si.getComments());
-//		metadata.set(TikaCoreProperties.MODIFIER, si.getLastAuthor());
-//		metadata.set(TikaCoreProperties.CREATED, si.getCreateDateTime());
-//		metadata.set(TikaCoreProperties.MODIFIED, si.getLastSaveDateTime());
-//		metadata.set(Office.KEYWORDS, si.getKeywords());
-//		metadata.set(OfficeOpenXMLCore.SUBJECT, si.getSubject());
-//	}
 	
 	/**
 	 * extract the HWP File Header
@@ -271,7 +242,7 @@ public class HwpTextExtractorV5 {
 	 */
 	private void parseBodyText(FileHeader header, DirectoryNode root,
 			XHTMLContentHandler xhtml) throws IOException, SAXException {
-		// BodyText 읽기
+		// read BodyText
 		Entry bodyText = root.getEntry("BodyText");
 		if (bodyText == null || !bodyText.isDirectoryEntry())
 			throw new IOException("Invalid BodyText");
@@ -406,10 +377,7 @@ public class HwpTextExtractorV5 {
 			if (!readTag(reader, tag))
 				break;
 
-			if (HWPTAG_BEGIN + 50 == tag.id) {
-				reader.ensureSkip(tag.length);
-//				writeParaHeader(reader, tag.length, buf);
-			} else if (HWPTAG_BEGIN + 51 == tag.id) {
+			if (HWPTAG_BEGIN + 51 == tag.id) {
 				if (tag.length % 2 != 0)
 					throw new IOException("Invalid block size");
 
@@ -426,18 +394,9 @@ public class HwpTextExtractorV5 {
 			} else {
 				reader.ensureSkip(tag.length);
 			}
-
-//			if (buf.length() > 0) {
-//				log.debug("TAG[{}]({}):{} [{}]", new Object[] { tag.id,
-//						tag.level, tag.length, buf });
-//			}
 		}
 	}
 
-//	private void writeParaHeader(HwpStreamReader reader, long length,
-//			StringBuffer buf) throws IOException {
-//		reader.ensureSkip(length);
-//	}
 
 	/**
 	 * transfer character stream of HWPTAG_PARA_TEXT to STRING

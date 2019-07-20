@@ -34,7 +34,7 @@ public class HwpStreamReader {
 	}
 
 	/**
-	 * 읽을 데이터가 더 있는가?
+	 * More data to read ?
 	 * 
 	 * @return
 	 * @throws IOException
@@ -120,7 +120,7 @@ public class HwpStreamReader {
 	}
 
 	/**
-	 * n만큼 skip 하지 못할 경우 IOException 을 발생한다
+	 * ensure skip of n byte
 	 * 
 	 * @param n
 	 * @throws IOException
