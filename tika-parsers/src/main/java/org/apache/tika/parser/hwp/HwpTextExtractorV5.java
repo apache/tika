@@ -186,7 +186,7 @@ public class HwpTextExtractorV5 {
 				metadata.set(TikaCoreProperties.MODIFIED, (Date)value);
 				break;
 			case 14:
-				metadata.set(Office.PAGE_COUNT, (Date)value);
+				metadata.set(Office.PAGE_COUNT, (int)value);
 				break;
 			default:
 			}
