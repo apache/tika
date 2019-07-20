@@ -17,6 +17,7 @@
  */
 package org.apache.tika.parser.hwp;
 
+import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,14 +38,17 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.poi.hpsf.Property;
 import org.apache.poi.hpsf.PropertySet;
-import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -70,7 +74,6 @@ public class HwpTextExtractorV5 {
 
 	private static final int HWPTAG_BEGIN = 0x010;
 
-	private POIFSFileSystem fs;
 
 	/**
 	 * extract Text from HWP Stream.
@@ -84,10 +87,11 @@ public class HwpTextExtractorV5 {
 	 */
 	public void extract(InputStream source, Metadata metadata, XHTMLContentHandler xhtml)
 			throws FileNotFoundException, IOException,
-			UnsupportedHwpFormatException, SAXException {
+			TikaException, SAXException {
 		if (source == null || xhtml == null)
 			throw new IllegalArgumentException();
 
+		POIFSFileSystem fs = null;
 		try {
 			fs = new POIFSFileSystem(source);
 
@@ -96,60 +100,54 @@ public class HwpTextExtractorV5 {
 			extract0(root, metadata, xhtml);
 
 		} catch (IOException e) {
-			throw new UnsupportedHwpFormatException(
+			throw new TikaException(
 					"error occurred when parsing HWP Format, It may not HWP Format.", e);
-		} 
+		} finally {
+			IOUtils.closeQuietly(fs);
+		}
 	}
 
 	private void extract0(DirectoryNode root, Metadata metadata, XHTMLContentHandler xhtml)
-			throws IOException, UnsupportedHwpFormatException, SAXException {
+			throws IOException, SAXException, TikaException {
 
-		FileHeader header;
-		try {
-			Entry headerEntry = root.getEntry("FileHeader");
-			
-			if (!headerEntry.isDocumentEntry())
-				throw new UnsupportedHwpFormatException(
-						"cannot parse the File Header");
+		Entry headerEntry = root.getEntry("FileHeader");
+		if (!headerEntry.isDocumentEntry())
+			throw new UnsupportedFormatException("cannot parse the File Header");
 
-			header = getHeader(headerEntry);
-			
-			parseSummaryInformation(root, metadata);
-			
-		} catch (IOException e) {
-			throw new UnsupportedHwpFormatException(
-					"cannot parse the File Header", e);
-		}
+		FileHeader header = getHeader(headerEntry);
 
 		if (header == null)
-			throw new UnsupportedHwpFormatException(
-					"cannot parse the File Header");
+			throw new UnsupportedFormatException("cannot parse the File Header");
+		if (header.encrypted)
+			throw new EncryptedDocumentException("document is encrypted");
 
+		parseSummaryInformation(root, metadata);
+		
 		if (header.viewtext) {
 			parseViewText(header, root, xhtml);
 		} else {
 			parseBodyText(header, root, xhtml);
 		}
+		
 	}
 
-	private void parseSummaryInformation(DirectoryNode root, Metadata metadata) throws UnsupportedHwpFormatException {
+	private void parseSummaryInformation(DirectoryNode root, Metadata metadata) throws TikaException {
 
 		try {
+			Entry summaryEntry = root.getEntry("\u0005HwpSummaryInformation");
 			
-			Entry summaryEntry = root.getEntry("HwpSummaryInformation");
-			
-			SummaryInformation si = getSummaryInformation(summaryEntry);
-			setMetadataWithSummaryInformation(si, metadata);
+			parseSummaryInformation(summaryEntry, metadata);
+//			setMetadataWithSummaryInformation(si, metadata);
 		} catch (NoPropertySetStreamException | IOException e) {
-			throw new UnsupportedHwpFormatException(
+			throw new UnsupportedFormatException(
 					"cannot parse the Summary Information");
 		}
 		
 	}
 	
-	private SummaryInformation getSummaryInformation(Entry summaryEntry) throws IOException, NoPropertySetStreamException {
+	private void parseSummaryInformation(Entry summaryEntry, Metadata metadata) throws IOException, NoPropertySetStreamException {
 		
-		SummaryInformation si = new SummaryInformation();
+		// SummaryInformation si = new SummaryInformation();
 		
 		DocumentInputStream summaryStream = new DocumentInputStream(
 				(DocumentEntry) summaryEntry);
@@ -164,49 +162,56 @@ public class HwpTextExtractorV5 {
 			
 			switch(propID) {
 			case 2:
-				si.setTitle((String)value);
+//				 si.setTitle((String)value);
+				metadata.set(TikaCoreProperties.TITLE, (String)value);
 				break;
 			case 3:
-				si.setSubject((String)value);
+//				 si.setSubject((String)value);
+				metadata.set(OfficeOpenXMLCore.SUBJECT, (String)value);
 				break;
 			case 4:
-				si.setAuthor((String)value);
+//				 si.setAuthor((String)value);
+				metadata.set(TikaCoreProperties.CREATOR, (String)value);
 				break;
 			case 5:
-				si.setKeywords((String)value);
+//				si.setKeywords((String)value);
+				metadata.set(Office.KEYWORDS, (String)value);
 				break;
 			case 6:
-				si.setComments((String)value);
+//				si.setComments((String)value);
+				metadata.set(TikaCoreProperties.COMMENTS, (String)value);
 				break;
 			case 8:
-				si.setLastAuthor((String)value);
+//				si.setLastAuthor((String)value);
+				metadata.set(TikaCoreProperties.MODIFIER, (String)value);
 				break;
 			case 12:
-				si.setCreateDateTime((Date)value);
+//				si.setCreateDateTime((Date)value);
+				metadata.set(TikaCoreProperties.CREATED, (Date)value);
 				break;
 			case 13:
-				si.setLastSaveDateTime((Date)value);
+//				si.setLastSaveDateTime((Date)value);
+				metadata.set(TikaCoreProperties.MODIFIED, (Date)value);
 				break;
-			case 14:
-				si.setPageCount((int)value);
-				break;
+//			case 14:
+//				si.setPageCount((int)value);
+//				break;
 			default:
 			}
 		}
 		
-		return si;
+//		return si;
 	}
 	
-	private void setMetadataWithSummaryInformation(SummaryInformation si, Metadata metadata) {
-		metadata.set(TikaCoreProperties.TITLE, si.getTitle());
-		metadata.set(TikaCoreProperties.CREATOR, si.getAuthor());
-		metadata.set(TikaCoreProperties.COMMENTS, si.getComments());
-		metadata.set(TikaCoreProperties.MODIFIER, si.getLastAuthor());
-		metadata.set(TikaCoreProperties.CREATED, si.getCreateDateTime());
-		metadata.set(TikaCoreProperties.MODIFIED, si.getLastSaveDateTime());
-		metadata.set(Office.KEYWORDS, si.getKeywords());
-		metadata.set(OfficeOpenXMLCore.SUBJECT, si.getSubject());
-	}
+//	private void setMetadataWithSummaryInformation(SummaryInformation si, Metadata metadata) {
+//		metadata.set(TikaCoreProperties.CREATOR, si.getAuthor());
+//		metadata.set(TikaCoreProperties.COMMENTS, si.getComments());
+//		metadata.set(TikaCoreProperties.MODIFIER, si.getLastAuthor());
+//		metadata.set(TikaCoreProperties.CREATED, si.getCreateDateTime());
+//		metadata.set(TikaCoreProperties.MODIFIED, si.getLastSaveDateTime());
+//		metadata.set(Office.KEYWORDS, si.getKeywords());
+//		metadata.set(OfficeOpenXMLCore.SUBJECT, si.getSubject());
+//	}
 	
 	/**
 	 * extract the HWP File Header
@@ -310,8 +315,8 @@ public class HwpTextExtractorV5 {
 				InputStream input = new DocumentInputStream(
 						(DocumentEntry) entry);
 	
-				Key key = readKey(input);
 				try {
+					Key key = readKey(input);
 					input = createDecryptStream(input, key);
 					if (header.compressed)
 						input = new InflaterInputStream(input, new Inflater(
@@ -328,11 +333,7 @@ public class HwpTextExtractorV5 {
 				} catch (SAXException e) {
 					throw new IOException(e);
 				} finally {
-					try {
-						input.close();
-					} catch (IOException e) {
-						log.error("never happen?", e);
-					}
+					IOUtils.closeQuietly(input);
 				}
 			} else {
 				log.warn("unknown Entry '{}'({})", entry.getName(), entry);
@@ -343,9 +344,11 @@ public class HwpTextExtractorV5 {
 	private Key readKey(InputStream input) throws IOException {
 		byte[] data = new byte[260];
 
-		input.read(data, 0, 4); // TAG,
+		if (IOUtils.readFully(input, data, 0, 4) != 4)// TAG,
+			throw new EOFException(); 
 
-		input.read(data, 0, 256);
+		if (IOUtils.readFully(input, data, 0, 256) != 256)
+			throw new EOFException();
 
 		SRand srand = new SRand(LittleEndian.getInt(data));
 		byte xor = 0;
@@ -359,7 +362,7 @@ public class HwpTextExtractorV5 {
 			}
 		}
 
-		int offset = 4 + (data[0] & 0xF);
+		int offset = 4 + (data[0] & 0xF); // 4 + (0~15) ?
 		byte[] key = Arrays.copyOfRange(data, offset, offset + 16);
 
 		SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
@@ -405,16 +408,19 @@ public class HwpTextExtractorV5 {
 
 				if (buf.length() > 0) {
 					buf.append('\n');
-					xhtml.characters(buf.toString());		
+					
+					xhtml.startElement("p");
+					xhtml.characters(buf.toString());
+					xhtml.endElement("p");
 				}
 			} else {
 				reader.ensureSkip(tag.length);
 			}
 
-			if (buf.length() > 0) {
-				log.debug("TAG[{}]({}):{} [{}]", new Object[] { tag.id,
-						tag.level, tag.length, buf });
-			}
+//			if (buf.length() > 0) {
+//				log.debug("TAG[{}]({}):{} [{}]", new Object[] { tag.id,
+//						tag.level, tag.length, buf });
+//			}
 		}
 	}
 

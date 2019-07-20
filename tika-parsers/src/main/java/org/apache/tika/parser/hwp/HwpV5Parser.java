@@ -60,13 +60,9 @@ public class HwpV5Parser extends AbstractParser {
         
         try {
         	extractor.extract(stream, metadata, xhtml);
-		} catch (UnsupportedHwpFormatException e) {
-			throw new TikaException("Fail to parse HWP File - "+e.getMessage());
 		} finally {
 			xhtml.endDocument();
 		}
-		
-		
 	}
 
 }

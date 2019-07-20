@@ -20,9 +20,6 @@ package org.apache.tika.parser.hwp;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
@@ -33,8 +30,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import junit.framework.TestCase;
 
 public class HwpV5ParserTest extends TikaTest {
 
@@ -63,6 +58,25 @@ public class HwpV5ParserTest extends TikaTest {
 	    BodyContentHandler handler = new BodyContentHandler();
 	    Metadata metadata = new Metadata();
 	    try (InputStream stream = HwpV5ParserTest.class.getResourceAsStream("/test-documents/test-documents-v5.hwp")) {
+	        parser.parse(stream, handler, metadata);
+	        
+	        assertContains("Apache Tika", handler.toString());
+	        
+           assertEquals(
+                    "application/x-hwp-v5",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
+	    }
+
+    }
+	
+	@Test
+    public void testDistributedHwp() throws Exception {
+	    AutoDetectParser parser = new AutoDetectParser();
+	    BodyContentHandler handler = new BodyContentHandler();
+	    Metadata metadata = new Metadata();
+	    try (InputStream stream = HwpV5ParserTest.class.getResourceAsStream("/test-documents/test-documents-v5-dist.hwp")) {
 	        parser.parse(stream, handler, metadata);
 	        
 	        assertContains("Apache Tika", handler.toString());

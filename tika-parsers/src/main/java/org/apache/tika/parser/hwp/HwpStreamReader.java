@@ -21,12 +21,10 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HwpStreamReader {
-	private Logger log = LoggerFactory.getLogger(getClass());
 	private InputStream input;
 	private byte[] buf;
 
@@ -52,7 +50,9 @@ public class HwpStreamReader {
 	 * @throws IOException
 	 */
 	public short uint8() throws IOException {
-		if (ensure(1) == 0)
+		int read = IOUtils.readFully(input, buf, 0, 1);
+
+		if (read == -1)
 			return -1;
 
 		return LittleEndian.getUByte(buf);
@@ -65,8 +65,13 @@ public class HwpStreamReader {
 	 * @throws IOException
 	 */
 	public int uint16() throws IOException {
-		if (ensure(2) == 0)
+		int read = IOUtils.readFully(input, buf, 0, 2);
+
+		if (read == -1)
 			return -1;
+
+		if (read < 2)
+			throw new EOFException();
 
 		return LittleEndian.getUShort(buf);
 	}
@@ -84,7 +89,9 @@ public class HwpStreamReader {
 
 		int[] uints = new int[i];
 		for (int ii = 0; ii < i; ii++) {
-			if (ensure(2) == 0)
+			int read = IOUtils.readFully(input, buf, 0, 2);
+
+			if (read < 2)
 				throw new EOFException();
 
 			uints[ii] = LittleEndian.getUShort(buf);
@@ -100,20 +107,15 @@ public class HwpStreamReader {
 	 * @throws IOException
 	 */
 	public long uint32() throws IOException {
-		if (ensure(4) == 0)
+		int read = IOUtils.readFully(input, buf, 0, 4);
+
+		if (read == -1)
 			return -1;
 
-		return LittleEndian.getUInt(buf);
-	}
+		if (read < 4)
+			throw new EOFException();
 
-	/**
-	 * 
-	 * @param n
-	 * @return
-	 * @throws IOException
-	 */
-	public long skip(long n) throws IOException {
-		return input.skip(n);
+		return LittleEndian.getUInt(buf);
 	}
 
 	/**
@@ -123,43 +125,6 @@ public class HwpStreamReader {
 	 * @throws IOException
 	 */
 	public void ensureSkip(long n) throws IOException {
-		long skipped = skip(n);
-		if (n != skipped) {
-			log.error("Skip failed {} => {}", n, skipped);
-			throw new IOException();
-		}
-	}
-
-	/**
-	 * count만큼 바이트를 읽는다. InflaterInputStream의 경우 한번에 count만큼 read가 안되는 경우가 있다.
-	 * 그래서 count만큼 읽을 때까지 루프를 실행한다
-	 * 
-	 * @param count
-	 * @return
-	 * @throws IOException
-	 * @throws EOFException
-	 */
-	private int ensure(int count) throws IOException, EOFException {
-		int total = 0;
-		while (total < count) {
-			// if (total > 0) {
-			// log.warn("한번에 읽기 실패 {}/{}. 다시 읽기 시도함 {}", total, count, input);
-			// }
-
-			int read = input.read(buf, total, count - total);
-			if (read <= 0)
-				break;
-
-			total += read;
-		}
-
-		if (total == 0) {
-			// end
-		} else if (total < count) {
-			// unexpected end
-			throw new EOFException();
-		}
-
-		return total;
+		IOUtils.skipFully(input, n);
 	}
 }
