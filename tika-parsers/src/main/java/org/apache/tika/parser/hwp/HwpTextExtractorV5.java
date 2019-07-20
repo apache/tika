@@ -65,14 +65,23 @@ public class HwpTextExtractorV5 {
 	private static final byte[] HWP_V5_SIGNATURE = "HWP Document File"
 			.getBytes();
 
-	private static final int[] HWP_CONTROL_CHARS = new int[] { 0, 10, 13, 24,
-			25, 26, 27, 28, 29, 30, 31 };
-	private static final int[] HWP_INLINE_CHARS = new int[] { 4, 5, 6, 7, 8, 9,
-			19, 20 };
-	private static final int[] HWP_EXTENDED_CHARS = new int[] { 1, 2, 3, 11,
-			12, 14, 15, 16, 17, 18, 21, 22, 23 };
+//	private static final int[] HWP_CONTROL_CHARS = new int[] { 0, 10, 13, 24,
+//			25, 26, 27, 28, 29, 30, 31 };
+//	private static final int[] HWP_INLINE_CHARS = new int[] { 4, 5, 6, 7, 8, 9,
+//			19, 20 };
+//	private static final int[] HWP_EXTENDED_CHARS = new int[] { 1, 2, 3, 11,
+//			12, 14, 15, 16, 17, 18, 21, 22, 23 };
 
 	private static final int HWPTAG_BEGIN = 0x010;
+	
+	private static final int I = 1; // INLINE
+	private static final int C = 2; // CONTROL
+	private static final int X = 3; // EXTENDED
+	
+	private static final int[] HWP_CHAR_TYPE = new int[] { C, X, X, X, I, I, I, I, I, I, // 0-9
+			C, X, X, C, X, X, X, X, X, I, // 10-19
+			I, X, X, X, C, C, C, C, C, C, // 20-29
+			C, C }; // 30-31
 
 
 	/**
@@ -397,13 +406,14 @@ public class HwpTextExtractorV5 {
 			if (!readTag(reader, tag))
 				break;
 
-			buf.setLength(0);
 			if (HWPTAG_BEGIN + 50 == tag.id) {
-				writeParaHeader(reader, tag.length, buf);
+				reader.ensureSkip(tag.length);
+//				writeParaHeader(reader, tag.length, buf);
 			} else if (HWPTAG_BEGIN + 51 == tag.id) {
 				if (tag.length % 2 != 0)
 					throw new IOException("Invalid block size");
 
+				buf.setLength(0);
 				writeParaText(reader, tag.length, buf);
 
 				if (buf.length() > 0) {
@@ -424,10 +434,10 @@ public class HwpTextExtractorV5 {
 		}
 	}
 
-	private void writeParaHeader(HwpStreamReader reader, long length,
-			StringBuffer buf) throws IOException {
-		reader.ensureSkip(length);
-	}
+//	private void writeParaHeader(HwpStreamReader reader, long length,
+//			StringBuffer buf) throws IOException {
+//		reader.ensureSkip(length);
+//	}
 
 	/**
 	 * transfer character stream of HWPTAG_PARA_TEXT to STRING
@@ -443,15 +453,20 @@ public class HwpTextExtractorV5 {
 
 		for (int index = 0; index < chars.length; index++) {
 			int ch = chars[index];
-			if (Arrays.binarySearch(HWP_INLINE_CHARS, ch) >= 0) {
-				if (ch == 9) {
+			if (ch < 32) {
+				if (ch == 9) { // tab, INLINE
 					buf.append('\t');
+					index += 7;
+				} else {
+					int type = HWP_CHAR_TYPE[ch];
+					if (I == type) { // INLINE
+						index += 7;
+					} else if (X == type) { // EXTENDED
+						index += 7;
+					} else if (C == type) { // CONTROL
+						buf.append(' ');
+					}
 				}
-				index += 7;
-			} else if (Arrays.binarySearch(HWP_EXTENDED_CHARS, ch) >= 0) {
-				index += 7;
-			} else if (Arrays.binarySearch(HWP_CONTROL_CHARS, ch) >= 0) {
-				buf.append(' ');
 			} else {
 				buf.append((char) ch);
 			}

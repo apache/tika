@@ -87,14 +87,15 @@ public class HwpStreamReader {
 		if (i <= 0)
 			throw new IllegalArgumentException();
 
+		byte[] buf = new byte[i * 2];
+		int read = IOUtils.readFully(input, buf, 0, i * 2);
+
+		if (read != i * 2)
+			throw new EOFException();
+		
 		int[] uints = new int[i];
 		for (int ii = 0; ii < i; ii++) {
-			int read = IOUtils.readFully(input, buf, 0, 2);
-
-			if (read < 2)
-				throw new EOFException();
-
-			uints[ii] = LittleEndian.getUShort(buf);
+			uints[ii] = LittleEndian.getUShort(buf, ii * 2);
 		}
 
 		return uints;
