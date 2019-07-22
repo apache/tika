@@ -25,12 +25,15 @@ import java.io.EOFException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
@@ -57,13 +60,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-public class HwpTextExtractorV5 {
-
+public class HwpTextExtractorV5 implements Serializable {
+    private static final long serialVersionUID = 1L;
     protected static Logger LOG = LoggerFactory
             .getLogger(HwpTextExtractorV5.class);
 
     private static final byte[] HWP_V5_SIGNATURE = "HWP Document File"
-            .getBytes();
+            .getBytes(StandardCharsets.US_ASCII);
 
     private static final int HWPTAG_BEGIN = 0x010;
 
@@ -491,7 +494,8 @@ public class HwpTextExtractorV5 {
         int r;
 
         public String toString() {
-            return String.format("%d.%d.%d.%d", m, n, p, r);
+            return String.format(
+                    Locale.US, "%d.%d.%d.%d", m, n, p, r);
         }
 
         public static HwpVersion parseVersion(long longVersion) {
