@@ -1,7 +1,5 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
-
-
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
@@ -20,73 +18,39 @@ package org.apache.tika.parser.hwp;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.InputStream;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.parser.Parser;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 public class HwpV5ParserTest extends TikaTest {
 
-	@Test
+    @Test
     public void testHwpV5Parser() throws Exception {
-
-        try (InputStream input = HwpV5ParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents-v5.hwp")) {
-            ContentHandler handler = new BodyContentHandler();
-            Metadata metadata = new Metadata();
-            new HwpV5Parser().parse(input, handler, metadata, new ParseContext());
-
+        for (Parser parser : new Parser[]{new HwpV5Parser(),
+                new AutoDetectParser()}) {
+            XMLResult result = getXML("test-documents-v5.hwp", parser);
+            Metadata metadata = result.metadata;
             assertEquals(
-                    "application/x-hwp-v5",
-                    metadata.get(Metadata.CONTENT_TYPE));
+                    "application/x-hwp-v5", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
-            
-            assertContains("Apache Tika", handler.toString());
+
+            assertContains("Apache Tika", result.xml.toString());
         }
     }
-	
-	@Test
-    public void testAutoDetectParser() throws Exception {
-	    AutoDetectParser parser = new AutoDetectParser();
-	    BodyContentHandler handler = new BodyContentHandler();
-	    Metadata metadata = new Metadata();
-	    try (InputStream stream = HwpV5ParserTest.class.getResourceAsStream("/test-documents/test-documents-v5.hwp")) {
-	        parser.parse(stream, handler, metadata);
-	        
-	        assertContains("Apache Tika", handler.toString());
-	        
-           assertEquals(
-                    "application/x-hwp-v5",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
-	    }
 
-    }
-	
-	@Test
+    @Test
     public void testDistributedHwp() throws Exception {
-	    AutoDetectParser parser = new AutoDetectParser();
-	    BodyContentHandler handler = new BodyContentHandler();
-	    Metadata metadata = new Metadata();
-	    try (InputStream stream = HwpV5ParserTest.class.getResourceAsStream("/test-documents/test-documents-v5-dist.hwp")) {
-	        parser.parse(stream, handler, metadata);
-	        
-	        assertContains("Apache Tika", handler.toString());
-	        
-           assertEquals(
-                    "application/x-hwp-v5",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
-	    }
+        XMLResult result = getXML("test-documents-v5-dist.hwp");
+        assertContains("Apache Tika", result.xml);
 
+        assertEquals(
+                "application/x-hwp-v5",
+                result.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Apache Tika", result.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("SooMyung Lee", result.metadata.get(TikaCoreProperties.CREATOR));
     }
 }
