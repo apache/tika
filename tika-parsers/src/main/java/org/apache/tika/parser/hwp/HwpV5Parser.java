@@ -1,6 +1,5 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
-
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
@@ -33,36 +32,36 @@ import org.xml.sax.SAXException;
 
 public class HwpV5Parser extends AbstractParser {
 
-	private static final long serialVersionUID = 1L;
-	
-	private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-hwp-v5"));
-    public static final String HWP_MIME_TYPE = "application/x-hwp-v5";
-    
-    private HwpTextExtractorV5 extractor;
-    
-    public HwpV5Parser() {
-    	extractor = new HwpTextExtractorV5();
-    }
-    
-	@Override
-	public Set<MediaType> getSupportedTypes(ParseContext context) {
-		return SUPPORTED_TYPES;
-	}
+    private static final long serialVersionUID = 1L;
 
-	@Override
-	public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
-			throws IOException, SAXException, TikaException {
-		
-		metadata.set(Metadata.CONTENT_TYPE, HWP_MIME_TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-hwp-v5"));
+    public static final String HWP_MIME_TYPE = "application/x-hwp-v5";
+
+    private HwpTextExtractorV5 extractor;
+
+    public HwpV5Parser() {
+        extractor = new HwpTextExtractorV5();
+    }
+
+    @Override
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
+    @Override
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+
+        metadata.set(Metadata.CONTENT_TYPE, HWP_MIME_TYPE);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        
+
         try {
-        	extractor.extract(stream, metadata, xhtml);
-		} finally {
-			xhtml.endDocument();
-		}
-	}
+            extractor.extract(stream, metadata, xhtml);
+        } finally {
+            xhtml.endDocument();
+        }
+    }
 
 }

@@ -1,6 +1,5 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
-
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
@@ -25,107 +24,111 @@ import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
 
 public class HwpStreamReader {
-	private InputStream input;
-	private byte[] buf;
+    private InputStream input;
+    private byte[] buf;
 
-	public HwpStreamReader(InputStream inputStream) {
-		this.input = inputStream;
-		buf = new byte[4];
-	}
+    public HwpStreamReader(InputStream inputStream) {
+        this.input = inputStream;
+        buf = new byte[4];
+    }
 
-	/**
-	 * More data to read ?
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public boolean available() throws IOException {
-		return input.available() > 0;
-	}
+    /**
+     * More data to read ?
+     *
+     * @return
+     * @throws IOException
+     */
+    public boolean available() throws IOException {
+        return input.available() > 0;
+    }
 
-	/**
-	 * unsigned 1 byte
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public short uint8() throws IOException {
-		int read = IOUtils.readFully(input, buf, 0, 1);
+    /**
+     * unsigned 1 byte
+     *
+     * @return
+     * @throws IOException
+     */
+    public short uint8() throws IOException {
+        int read = IOUtils.readFully(input, buf, 0, 1);
 
-		if (read == -1)
-			return -1;
+        if (read == -1) {
+            return -1;
+        }
 
-		return LittleEndian.getUByte(buf);
-	}
+        return LittleEndian.getUByte(buf);
+    }
 
-	/**
-	 * unsigned 2 byte
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public int uint16() throws IOException {
-		int read = IOUtils.readFully(input, buf, 0, 2);
+    /**
+     * unsigned 2 byte
+     *
+     * @return
+     * @throws IOException
+     */
+    public int uint16() throws IOException {
+        int read = IOUtils.readFully(input, buf, 0, 2);
 
-		if (read == -1)
-			return -1;
+        if (read == -1) {
+            return -1;
+        }
 
-		if (read < 2)
-			throw new EOFException();
+        if (read < 2) {
+            throw new EOFException();
+        }
+        return LittleEndian.getUShort(buf);
+    }
 
-		return LittleEndian.getUShort(buf);
-	}
+    /**
+     * unsigned 2 byte array
+     *
+     * @param i
+     * @return
+     * @throws IOException
+     */
+    public int[] uint16(int i) throws IOException {
+        if (i <= 0) {
+            throw new IllegalArgumentException();
+        }
+        byte[] buf = new byte[i * 2];
+        int read = IOUtils.readFully(input, buf, 0, i * 2);
 
-	/**
-	 * unsigned 2 byte array
-	 * 
-	 * @param i
-	 * @return
-	 * @throws IOException
-	 */
-	public int[] uint16(int i) throws IOException {
-		if (i <= 0)
-			throw new IllegalArgumentException();
+        if (read != i * 2) {
+            throw new EOFException();
+        }
+        int[] uints = new int[i];
+        for (int ii = 0; ii < i; ii++) {
+            uints[ii] = LittleEndian.getUShort(buf, ii * 2);
+        }
 
-		byte[] buf = new byte[i * 2];
-		int read = IOUtils.readFully(input, buf, 0, i * 2);
+        return uints;
+    }
 
-		if (read != i * 2)
-			throw new EOFException();
-		
-		int[] uints = new int[i];
-		for (int ii = 0; ii < i; ii++) {
-			uints[ii] = LittleEndian.getUShort(buf, ii * 2);
-		}
+    /**
+     * unsigned 4 byte
+     *
+     * @return
+     * @throws IOException
+     */
+    public long uint32() throws IOException {
+        int read = IOUtils.readFully(input, buf, 0, 4);
 
-		return uints;
-	}
+        if (read == -1) {
+            return -1;
+        }
 
-	/**
-	 * unsigned 4 byte
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	public long uint32() throws IOException {
-		int read = IOUtils.readFully(input, buf, 0, 4);
+        if (read < 4) {
+            throw new EOFException();
+        }
 
-		if (read == -1)
-			return -1;
+        return LittleEndian.getUInt(buf);
+    }
 
-		if (read < 4)
-			throw new EOFException();
-
-		return LittleEndian.getUInt(buf);
-	}
-
-	/**
-	 * ensure skip of n byte
-	 * 
-	 * @param n
-	 * @throws IOException
-	 */
-	public void ensureSkip(long n) throws IOException {
-		IOUtils.skipFully(input, n);
-	}
+    /**
+     * ensure skip of n byte
+     *
+     * @param n
+     * @throws IOException
+     */
+    public void ensureSkip(long n) throws IOException {
+        IOUtils.skipFully(input, n);
+    }
 }
