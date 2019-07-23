@@ -250,8 +250,9 @@ public class HwpTextExtractorV5 implements Serializable {
                                XHTMLContentHandler xhtml) throws IOException, SAXException {
         // read BodyText
         Entry bodyText = root.getEntry("BodyText");
-        if (bodyText == null || !bodyText.isDirectoryEntry())
+        if (bodyText == null || !bodyText.isDirectoryEntry()) {
             throw new IOException("Invalid BodyText");
+        }
 
         Iterator<Entry> iterator = ((DirectoryEntry) bodyText).getEntries();
         while (iterator.hasNext()) {
@@ -262,8 +263,10 @@ public class HwpTextExtractorV5 implements Serializable {
 
                 InputStream input = new DocumentInputStream(
                         (DocumentEntry) entry);
-                if (header.compressed)
+
+                if (header.compressed) {
                     input = new InflaterInputStream(input, new Inflater(true));
+                }
 
                 HwpStreamReader reader = new HwpStreamReader(input);
 
