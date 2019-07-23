@@ -59,7 +59,6 @@ public class HwpV5ParserTest extends TikaTest {
     @Test
     public void testExisting() throws Exception {
         XMLResult result = getXML("testHWP_5.0.hwp");
-        System.out.println(result.xml);
         String content = result.xml;
         Metadata metadata = result.metadata;
         assertContains("\uD14C\uC2A4\uD2B8", content);
