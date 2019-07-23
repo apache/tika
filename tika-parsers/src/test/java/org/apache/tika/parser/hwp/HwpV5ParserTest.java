@@ -31,7 +31,8 @@ public class HwpV5ParserTest extends TikaTest {
     public void testHwpV5Parser() throws Exception {
         for (Parser parser : new Parser[]{new HwpV5Parser(),
                 new AutoDetectParser()}) {
-            XMLResult result = getXML("test-documents-v5.hwp", parser);
+            XMLResult result = getXML("testHWP-v5b.hwp", parser);
+            assertContains("<p>Apache Tika - \uCEE8\uD150\uCE20", result.xml);
             Metadata metadata = result.metadata;
             assertEquals(
                     "application/x-hwp-v5", metadata.get(Metadata.CONTENT_TYPE));
@@ -44,13 +45,26 @@ public class HwpV5ParserTest extends TikaTest {
 
     @Test
     public void testDistributedHwp() throws Exception {
-        XMLResult result = getXML("test-documents-v5-dist.hwp");
-        assertContains("Apache Tika", result.xml);
+        XMLResult result = getXML("testHWP-v5-dist.hwp");
+        String content = result.xml;
+        assertContains("<p>Apache Tika - \uCEE8\uD150\uCE20", content);
 
         assertEquals(
                 "application/x-hwp-v5",
                 result.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Apache Tika", result.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("SooMyung Lee", result.metadata.get(TikaCoreProperties.CREATOR));
+    }
+
+    @Test
+    public void testExisting() throws Exception {
+        XMLResult result = getXML("testHWP_5.0.hwp");
+        System.out.println(result.xml);
+        String content = result.xml;
+        Metadata metadata = result.metadata;
+        assertContains("\uD14C\uC2A4\uD2B8", content);
+        assertContains("test", content);
+        assertEquals("next1009", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("\uD14C\uC2A4\uD2B8", metadata.get(TikaCoreProperties.TITLE));
     }
 }
