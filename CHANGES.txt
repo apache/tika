@@ -7,7 +7,7 @@ Release 1.22 - 07/24/2019
      JinSup Kim (ddoleye) (TIKA-2909).
 
    * Fix order of closing streams to avoid "Failed to close temporary resource"
-     exception (TIKA-2908).
+     exception in TesseractOCRParser (TIKA-2908).
 
    * Improve AutoDetectReader performance by caching encoding
      detector (TIKA-1568).
