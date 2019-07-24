@@ -37,6 +37,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -207,7 +208,9 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
     public static MediaType parseOOXMLContentTypes(InputStream is) {
         ContentTypeHandler contentTypeHandler = new ContentTypeHandler();
         try {
-            XMLReaderUtils.parseSAX(is, contentTypeHandler, new ParseContext());
+            XMLReaderUtils.parseSAX(is,
+                    new OfflineContentHandler(contentTypeHandler),
+                    new ParseContext());
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
