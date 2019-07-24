@@ -520,7 +520,10 @@ public class XMLReaderUtils implements Serializable {
             if (builder != null) {
                 return builder;
             }
+            LOG.log(Level.WARNING, "Contention waiting for a DOMParser. "+
+                    "Consider increasing the XMLReaderUtils.POOL_SIZE");
             waiting++;
+
             if (waiting > 3000) {
                 //freshen the pool.  Something went very wrong...
                 setPoolSize(POOL_SIZE);
@@ -586,6 +589,9 @@ public class XMLReaderUtils implements Serializable {
             if (parser != null) {
                 return parser;
             }
+            LOG.log(Level.WARNING, "Contention waiting for a DOMParser. "+
+                    "Consider increasing the XMLReaderUtils.POOL_SIZE");
+
             waiting++;
             if (waiting > 3000) {
                 //freshen the pool.  Something went very wrong...

@@ -59,14 +59,16 @@ public class Word2006MLParser extends AbstractOfficeParser {
 
         xhtml.startDocument();
         try {
-            XMLReaderUtils.parseSAX(
+            //need to get new SAXParser because
+            //an attachment might require another SAXParser
+            //mid-parse
+            XMLReaderUtils.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
-                            new Word2006MLDocHandler(xhtml, metadata, context))),
-                    context);
+                            new Word2006MLDocHandler(xhtml, metadata, context))));
         } catch (SAXException e) {
             throw new TikaException("XML parse error", e);
         }
-            xhtml.endDocument();
+        xhtml.endDocument();
     }
 }
