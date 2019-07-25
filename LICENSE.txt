@@ -415,7 +415,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ----------------------------------------------
-testGZ_quine.gz test file (MIT License)
+quine.gz test file (MIT License)
 https://twitter.com/WhoStoleHonno/status/1153315367235784704?s=20
 
 Copyright (c) 2019 by Matthew Barber.

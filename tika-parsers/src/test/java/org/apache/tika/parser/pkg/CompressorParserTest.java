@@ -115,11 +115,13 @@ public class CompressorParserTest extends TikaTest {
 
     @Test(expected = TikaException.class)
     public void testQuineXHTML() throws Exception {
-        getXML("testGZ_quine.gz");
+        //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
+        getXML("quine.gz");
     }
 
     @Test
     public void testQuineRecursive() throws Exception {
-        getRecursiveMetadata("testGZ_quine.gz");
+        //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
+        getRecursiveMetadata("quine.gz");
     }
 }
