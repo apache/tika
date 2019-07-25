@@ -236,7 +236,7 @@ public class ZipParserTest extends AbstractPkgTest {
         //http://alf.nu/s/droste.zip in unit tests
         //Out of respect to the author, please maintain
         //the original file name
-        debug(getRecursiveMetadata("droste.zip"));
+        getRecursiveMetadata("droste.zip");
     }
 
     @Test(expected = TikaException.class)
