@@ -1,4 +1,4 @@
-Release 1.22 - 07/24/2019
+Release 1.22 - 07/25/2019
 
    * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
      between 0xF000 and 0XF0000 will cause an exception.
