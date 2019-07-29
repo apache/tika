@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.utils.ProcessUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -176,9 +177,7 @@ public class TikaCLIBatchCommandLineTest {
         boolean ex = false;
         try {
             String path = testFile.toAbsolutePath().toString();
-            if (path.contains(" ")) {
-                path = "\"" + path + "\"";
-            }
+            path = ProcessUtils.escapeCommandLine(path);
             String[] params = {testInputPathForCommandLine, path};
 
             String[] commandLine = BatchCommandLineBuilder.build(params);
