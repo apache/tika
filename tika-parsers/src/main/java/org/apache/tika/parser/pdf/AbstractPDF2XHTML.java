@@ -146,7 +146,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<IOException> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
-    private final ParseContext context;
+    final ParseContext context;
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;

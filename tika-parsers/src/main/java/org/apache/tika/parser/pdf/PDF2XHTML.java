@@ -16,6 +16,19 @@
  */
 package org.apache.tika.parser.pdf;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
@@ -44,19 +57,6 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -191,88 +191,93 @@ class PDF2XHTML extends AbstractPDF2XHTML {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                 continue;
             }
+            processImageObject(object, seenThisPage);
+        }
+    }
 
-            if (object == null) {
-                continue;
-            }
-            COSStream cosStream = object.getCOSObject();
-            if (seenThisPage.contains(cosStream)) {
-                //avoid infinite recursion TIKA-1742
-                continue;
-            }
-            seenThisPage.add(cosStream);
+    private void processImageObject(PDXObject object, Set<COSBase> seenThisPage) throws SAXException, IOException {
+        if (object == null) {
+            return;
+        }
+        COSStream cosStream = object.getCOSObject();
+        if (seenThisPage.contains(cosStream)) {
+            //avoid infinite recursion TIKA-1742
+            return;
+        }
+        seenThisPage.add(cosStream);
 
-            if (object instanceof PDFormXObject) {
-                extractImages(((PDFormXObject) object).getResources(), seenThisPage);
-            } else if (object instanceof PDImageXObject) {
+        if (object instanceof PDFormXObject) {
+            extractImages(((PDFormXObject) object).getResources(), seenThisPage);
+        } else if (object instanceof PDImageXObject) {
 
-                PDImageXObject image = (PDImageXObject) object;
+            PDImageXObject image = (PDImageXObject) object;
 
-                Metadata embeddedMetadata = new Metadata();
-                String extension = image.getSuffix();
-                
-                if (extension == null || extension.equals("png")) {
-                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
-                    extension = "png";
-                } else if (extension.equals("jpg")) {
-                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-                } else if (extension.equals("tiff")) {
-                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/tiff");
-                    extension = "tif";
-                } else if (extension.equals("jpx")) {
-                    embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
-                } else if (extension.equals("jb2")) {
-                    embeddedMetadata.set(
-                            Metadata.CONTENT_TYPE, "image/x-jbig2");
-                } else {
-                    //TODO: determine if we need to add more image types
+            Metadata embeddedMetadata = new Metadata();
+            String extension = image.getSuffix();
+
+            if (extension == null || extension.equals("png")) {
+                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
+                extension = "png";
+            } else if (extension.equals("jpg")) {
+                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+            } else if (extension.equals("tiff")) {
+                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/tiff");
+                extension = "tif";
+            } else if (extension.equals("jpx")) {
+                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
+            } else if (extension.equals("jb2")) {
+                embeddedMetadata.set(
+                        Metadata.CONTENT_TYPE, "image/x-jbig2");
+            } else {
+                //TODO: determine if we need to add more image types
 //                    throw new RuntimeException("EXTEN:" + extension);
+            }
+            Integer imageNumber = processedInlineImages.get(cosStream);
+            if (imageNumber == null) {
+                imageNumber = inlineImageCounter++;
+            }
+            String fileName = "image" + imageNumber + "." + extension;
+            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
+
+            // Output the img tag
+            AttributesImpl attr = new AttributesImpl();
+            attr.addAttribute("", "src", "src", "CDATA", "embedded:" + fileName);
+            attr.addAttribute("", "alt", "alt", "CDATA", fileName);
+            xhtml.startElement("img", attr);
+            xhtml.endElement("img");
+
+            //Do we only want to process unique COSObject ids?
+            //If so, have we already processed this one?
+            if (config.getExtractUniqueInlineImagesOnly() == true) {
+                if (processedInlineImages.containsKey(cosStream)) {
+                    return;
                 }
-                Integer imageNumber = processedInlineImages.get(cosStream);
-                if (imageNumber == null) {
-                    imageNumber = inlineImageCounter++;
-                }
-                String fileName = "image" + imageNumber + "."+extension;
-                embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
+                processedInlineImages.put(cosStream, imageNumber);
+            }
 
-                // Output the img tag
-                AttributesImpl attr = new AttributesImpl();
-                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + fileName);
-                attr.addAttribute("", "alt", "alt", "CDATA", fileName);
-                xhtml.startElement("img", attr);
-                xhtml.endElement("img");
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
-                //Do we only want to process unique COSObject ids?
-                //If so, have we already processed this one?
-                if (config.getExtractUniqueInlineImagesOnly() == true) {
-                    if (processedInlineImages.containsKey(cosStream)) {
-                        continue;
-                    }
-                    processedInlineImages.put(cosStream, imageNumber);
-                }
-
-                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-
-                if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                try {
+                    //extract the metadata contained outside of the image
+                    PDMetadataExtractor.extract(image.getMetadata(),
+                            embeddedMetadata, context);
                     try {
-                        //TODO: handle image.getMetadata()?
-                        try {
-                            writeToBuffer(image, extension, buffer);
-                        } catch (IOException e) {
-                            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
-                            continue;
-                        }
-                        try (InputStream embeddedIs = TikaInputStream.get(buffer.toByteArray())) {
-                            embeddedDocumentExtractor.parseEmbedded(
-                                    embeddedIs,
-                                    new EmbeddedContentHandler(xhtml),
-                                    embeddedMetadata, false);
-                        }
+                        writeToBuffer(image, extension, buffer);
                     } catch (IOException e) {
-                        handleCatchableIOE(e);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                        return;
                     }
+                    try (InputStream embeddedIs = TikaInputStream.get(buffer.toByteArray())) {
+                        embeddedDocumentExtractor.parseEmbedded(
+                                embeddedIs,
+                                new EmbeddedContentHandler(xhtml),
+                                embeddedMetadata, false);
+                    }
+                } catch (IOException e) {
+                    handleCatchableIOE(e);
                 }
             }
         }
