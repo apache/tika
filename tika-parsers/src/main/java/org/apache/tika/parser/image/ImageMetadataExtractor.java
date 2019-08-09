@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.FileInputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -29,6 +30,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.drew.imaging.heif.HeifMetadataReader;
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.riff.RiffProcessingException;
@@ -146,6 +148,18 @@ public class ImageMetadataExtractor {
             throw new TikaException("Can't process Riff data", e);
         } catch (MetadataException e) {
             throw new TikaException("Can't process Riff data", e);
+        }
+    }
+
+    public void parseHeif(File file) throws IOException, TikaException {
+        try {
+            com.drew.metadata.Metadata heifMetadata = new com.drew.metadata.Metadata();
+            heifMetadata = HeifMetadataReader.readMetadata(new FileInputStream(file));
+            handle(heifMetadata);
+        } catch (IOException e) {
+            throw e;
+        } catch (MetadataException e) {
+            throw new TikaException("Can't process Heif data", e);
         }
     }
 

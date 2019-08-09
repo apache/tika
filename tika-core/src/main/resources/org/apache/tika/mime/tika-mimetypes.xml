@@ -5609,6 +5609,38 @@
     <glob pattern="*.webp"/>
   </mime-type>
 
+  <mime-type type="image/heic">
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="50">
+      <match value="ftypheic" type="string" offset="4"/>
+      <match value="ftypheix" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heic"/>
+  </mime-type>
+
+  <mime-type type="image/heif">
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="50">
+      <match value="ftypmif1" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heif"/>
+  </mime-type>
+
+  <mime-type type="image/heif-sequence">
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="50">
+      <match value="ftypmsf1" type="string" offset="4"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="image/heic-sequence">
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="50">
+      <match value="ftyphevc" type="string" offset="4"/>
+      <match value="ftyphevx" type="string" offset="4"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="image/wmf">
     <alias type="image/x-wmf"/>
     <alias type="application/x-msmetafile"/>
