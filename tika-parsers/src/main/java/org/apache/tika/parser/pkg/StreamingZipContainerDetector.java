@@ -57,6 +57,7 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
         OOXML_CONTENT_TYPES.put(XSSFRelation.XLSB_BINARY_WORKBOOK.getContentType(), XLSB);
         OOXML_CONTENT_TYPES.put(XSSFRelation.TEMPLATE_WORKBOOK.getContentType(), XLTX);
         OOXML_CONTENT_TYPES.put(XSSFRelation.MACRO_TEMPLATE_WORKBOOK.getContentType(), XLTM);
+        OOXML_CONTENT_TYPES.put(XSSFRelation.MACRO_ADDIN_WORKBOOK.getContentType(), XLAM);
 
         OOXML_CONTENT_TYPES.put(XSLFRelation.MAIN.getContentType(), PPTX);
         OOXML_CONTENT_TYPES.put(XSLFRelation.MACRO.getContentType(), PPSM);
