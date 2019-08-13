@@ -33,6 +33,9 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
 
     private final CommonTokenCountManager commonTokenCountManager;
 
+    public CommonTokens() {
+        this(new CommonTokenCountManager());
+    }
     public CommonTokens(CommonTokenCountManager mgr) {
         this.commonTokenCountManager = mgr;
     }
