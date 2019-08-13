@@ -19,8 +19,6 @@ package org.apache.tika.eval;
 
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.tika.batch.FileResource;
@@ -50,12 +49,20 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.eval.langid.Language;
+import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
+import org.apache.tika.eval.textstats.CommonTokens;
+import org.apache.tika.eval.textstats.CompositeTextStatsCalculator;
+import org.apache.tika.eval.textstats.ContentLengthCalculator;
+import org.apache.tika.eval.textstats.TextStatsCalculator;
+import org.apache.tika.eval.textstats.TokenEntropy;
+import org.apache.tika.eval.textstats.TokenLengths;
+import org.apache.tika.eval.textstats.TopNTokens;
+import org.apache.tika.eval.textstats.UnicodeBlockCounter;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.tokens.CommonTokenResult;
-import org.apache.tika.eval.tokens.TokenCounter;
+import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
-import org.apache.tika.eval.tokens.TokenStatistics;
 import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.eval.util.ContentTagParser;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
@@ -137,11 +144,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         tmp.put("UL", Cols.TAGS_UL);
         return Collections.unmodifiableMap(tmp);
     }
-    private static CommonTokenCountManager commonTokenCountManager;
+    private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
+
     private String lastExtractExtension = null;
 
     AnalyzerManager analyzerManager;
-    TokenCounter tokenCounter;
 
 
     public enum EXCEPTION_TYPE {
@@ -186,7 +193,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             Pattern.compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
 
     private TikaConfig config = TikaConfig.getDefaultConfig();//TODO: allow configuration
-    final LanguageIDWrapper langIder;
+    CompositeTextStatsCalculator compositeTextStatsCalculator;
     protected IDBWriter writer;
 
     /**
@@ -195,22 +202,30 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      * @throws IOException
      */
     public static void loadCommonTokens(Path p, String defaultLangCode) throws IOException {
-        commonTokenCountManager = new CommonTokenCountManager(p, defaultLangCode);
+        COMMON_TOKEN_COUNT_MANAGER = new CommonTokenCountManager(p, defaultLangCode);
     }
 
     public AbstractProfiler(ArrayBlockingQueue<FileResource> fileQueue,
                             IDBWriter writer) {
         super(fileQueue);
         this.writer = writer;
-        langIder = new LanguageIDWrapper();
         LanguageIDWrapper.setMaxTextLength(maxContentLengthForLangId);
-        initAnalyzersAndTokenCounter(maxTokens);
+        this.compositeTextStatsCalculator = initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
     }
 
-    private void initAnalyzersAndTokenCounter(int maxTokens) {
+    private CompositeTextStatsCalculator initAnalyzersAndTokenCounter(int maxTokens, LanguageIDWrapper langIder) {
         try {
             analyzerManager = AnalyzerManager.newInstance(maxTokens);
-            tokenCounter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
+            List<TextStatsCalculator> calculators = new ArrayList<>();
+            calculators.add(new CommonTokens(COMMON_TOKEN_COUNT_MANAGER));
+            calculators.add(new TokenEntropy());
+            calculators.add(new TokenLengths());
+            calculators.add(new TopNTokens(10));
+            calculators.add(new BasicTokenCountStatsCalculator());
+            calculators.add(new ContentLengthCalculator());
+            calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
+
+            return new CompositeTextStatsCalculator(calculators, analyzerManager.getGeneralAnalyzer(), langIder);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -242,7 +257,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      */
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
-        initAnalyzersAndTokenCounter(maxTokens);
+        initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
     }
 
 
@@ -352,68 +367,72 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
     }
 
+    protected Map<Class, Object> calcTextStats(ContentTags contentTags) {
+/*        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
+            return Collections.EMPTY_MAP;
+        }*/
+        Map<Cols, String> data = new HashMap<>();
+        String content = truncateContent(contentTags, maxContentLength, data);
+        if (content == null || content.trim().length() == 0) {
+            content = "";
+        }
+         return compositeTextStatsCalculator.calculate(content);
+    }
     /**
      * Checks to see if metadata is null or content is empty (null or only whitespace).
      * If any of these, then this does no processing, and the fileId is not
      * entered into the content table.
      *
      * @param fileId
-     * @param contentTags
-     * @param fieldName
+     * @param textStats
      * @param contentsTable
      */
-    protected void writeContentData(String fileId, ContentTags contentTags,
-                                    String fieldName, TableInfo contentsTable) throws IOException {
-        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
-            return;
-        }
+    protected void writeContentData(String fileId, Map<Class, Object> textStats, TableInfo contentsTable) throws IOException {
         Map<Cols, String> data = new HashMap<>();
-        String content = truncateContent(contentTags, maxContentLength, data);
-        if (content == null || content.trim().length() == 0) {
-            return;
-        }
-        tokenCounter.clear(fieldName);
-        tokenCounter.add(fieldName, content);
-
         data.put(Cols.ID, fileId);
-        data.put(Cols.CONTENT_LENGTH, Integer.toString(content.length()));
-        langid(contentTags, data);
-        String langid = data.get(Cols.LANG_ID_1);
-        langid = (langid == null) ? "" : langid;
-
-        writeTokenCounts(data, fieldName, tokenCounter);
-        CommonTokenResult commonTokenResult = null;
-        try {
-            commonTokenResult = commonTokenCountManager.countTokenOverlaps(langid,
-                    tokenCounter.getTokens(fieldName));
-        } catch (IOException e) {
-            LOG.error("{}", e.getMessage(), e);
+        if (textStats.containsKey(ContentLengthCalculator.class)) {
+            data.put(Cols.CONTENT_LENGTH, Integer.toString((Integer) textStats.get(ContentLengthCalculator.class)));
+        } else {
+            data.put(Cols.CONTENT_LENGTH, "0");
         }
-        data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
-        data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
-        data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
-        TokenStatistics tokenStatistics = tokenCounter.getTokenStatistics(fieldName);
-        data.put(Cols.NUM_UNIQUE_TOKENS,
-                Integer.toString(tokenStatistics.getTotalUniqueTokens()));
-        data.put(Cols.NUM_TOKENS,
-                Integer.toString(tokenStatistics.getTotalTokens()));
-        data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS,
-                Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
-        data.put(Cols.NUM_ALPHABETIC_TOKENS,
-                Integer.toString(commonTokenResult.getAlphabeticTokens()));
+        langid(textStats, data);
 
-        data.put(Cols.TOKEN_ENTROPY_RATE,
-                Double.toString(tokenStatistics.getEntropy()));
-        SummaryStatistics summStats = tokenStatistics.getSummaryStatistics();
-        data.put(Cols.TOKEN_LENGTH_SUM,
-                Integer.toString((int) summStats.getSum()));
+        writeTokenCounts(textStats, data);
+        CommonTokenResult commonTokenResult = (CommonTokenResult)textStats.get(CommonTokens.class);
+        if (commonTokenResult != null) {
+            data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
+            data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
+            data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
+            data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS,
+                    Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
+            data.put(Cols.NUM_ALPHABETIC_TOKENS,
+                    Integer.toString(commonTokenResult.getAlphabeticTokens()));
+        }
+        TokenCounts tokenCounts = (TokenCounts)textStats.get(BasicTokenCountStatsCalculator.class);
+        if (tokenCounts != null) {
 
-        data.put(Cols.TOKEN_LENGTH_MEAN,
-                Double.toString(summStats.getMean()));
+            data.put(Cols.NUM_UNIQUE_TOKENS,
+                    Integer.toString(tokenCounts.getTotalUniqueTokens()));
+            data.put(Cols.NUM_TOKENS,
+                    Integer.toString(tokenCounts.getTotalTokens()));
+        }
+        if (textStats.get(TokenEntropy.class) != null) {
+            data.put(Cols.TOKEN_ENTROPY_RATE,
+                    Double.toString((Double)textStats.get(TokenEntropy.class)));
+        }
 
-        data.put(Cols.TOKEN_LENGTH_STD_DEV,
-                Double.toString(summStats.getStandardDeviation()));
-        unicodeBlocks(contentTags, data);
+        SummaryStatistics summStats = (SummaryStatistics)textStats.get(TokenLengths.class);
+        if (summStats != null) {
+            data.put(Cols.TOKEN_LENGTH_SUM,
+                    Integer.toString((int) summStats.getSum()));
+
+            data.put(Cols.TOKEN_LENGTH_MEAN,
+                    Double.toString(summStats.getMean()));
+
+            data.put(Cols.TOKEN_LENGTH_STD_DEV,
+                    Double.toString(summStats.getStandardDeviation()));
+        }
+        unicodeBlocks(textStats, data);
         try {
             writer.writeRow(contentsTable, data);
         } catch (IOException e) {
@@ -544,40 +563,12 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         return parseContentAndTags(evalFilePaths, metadata);
     }
 
-    void unicodeBlocks(ContentTags contentTags, Map<Cols, String> data) {
-        String content = contentTags.getContent();
-        if (content.length() < 200) {
-            return;
-        }
-        String s = content;
-        if (content.length() > maxContentLengthForLangId) {
-            s = content.substring(0, maxContentLengthForLangId);
-        }
-        Map<String, Integer> m = new HashMap<>();
-        Reader r = new StringReader(s);
-        try {
-            int c = r.read();
-            while (c != -1) {
-                Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
-                String blockString = (block == null) ? "NULL" : block.toString();
-                Integer i = m.get(blockString);
-                if (i == null) {
-                    i = 0;
-                }
-                i++;
-                if (block == null) {
-                    blockString = "NULL";
-                }
-                m.put(blockString, i);
-                c = r.read();
-            }
-        } catch (IOException e) {
-            LOG.warn("IOException", e);
-        }
+    void unicodeBlocks(Map<Class, Object> tokenStats, Map<Cols, String> data) {
 
+        Map<String, MutableInt> blocks = (Map<String, MutableInt>)tokenStats.get(UnicodeBlockCounter.class);
         List<Pair<String, Integer>> pairs = new ArrayList<>();
-        for (Map.Entry<String, Integer> e : m.entrySet()) {
-            pairs.add(Pair.of(e.getKey(), e.getValue()));
+        for (Map.Entry<String, MutableInt> e : blocks.entrySet()) {
+            pairs.add(Pair.of(e.getKey(), e.getValue().intValue()));
         }
         Collections.sort(pairs, new Comparator<Pair<String, Integer>>() {
             @Override
@@ -596,16 +587,9 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
 
-    void langid(ContentTags contentTags, Map<Cols, String> data) {
-        String content = contentTags.getContent();
-        if (content.length() < 50) {
-            return;
-        }
-        String s = content;
-        if (content.length() > maxContentLengthForLangId) {
-            s = content.substring(0, maxContentLengthForLangId);
-        }
-        List<Language> probabilities = langIder.getProbabilities(s);
+    void langid(Map<Class, Object> stats, Map<Cols, String> data) {
+        List<Language> probabilities = (List<Language>)stats.get(LanguageIDWrapper.class);
+
         if (probabilities.size() > 0) {
             data.put(Cols.LANG_ID_1, probabilities.get(0).getLanguage());
             data.put(Cols.LANG_ID_PROB_1,
@@ -630,15 +614,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         output.put(Cols.MIME_ID, Integer.toString(mimeId));
     }
 
-    void writeTokenCounts(Map<Cols, String> data, String field,
-                          TokenCounter tokenCounter) {
-
-
-        int stops = 0;
+    void writeTokenCounts(Map<Class, Object> textStats, Map<Cols, String> data) {
+        TokenIntPair[] tokenIntPairs = (TokenIntPair[])textStats.get(TopNTokens.class);
         int i = 0;
         StringBuilder sb = new StringBuilder();
-        TokenStatistics tokenStatistics = tokenCounter.getTokenStatistics(field);
-        for (TokenIntPair t : tokenStatistics.getTopN()) {
+        for (TokenIntPair t : tokenIntPairs) {
             if (i++ > 0) {
                 sb.append(" | ");
             }

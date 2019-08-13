@@ -78,7 +78,8 @@ public class TopCommonTokenCounter {
             "# distributed under the License is distributed on an \"AS IS\" BASIS,\n" +
             "# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n" +
             "# See the License for the specific language governing permissions and\n" +
-            "# limitations under the License.\n";
+            "# limitations under the License.\n"+
+            "#\n";
 
     private static final String FIELD = "f";
     private static int TOP_N = 30000;
@@ -124,6 +125,11 @@ public class TopCommonTokenCounter {
                     ProcessUtils.unescapeCommandLine(args[i])));
         }
         TopCommonTokenCounter counter = new TopCommonTokenCounter();
+        if (Files.exists(commonTokensFile)) {
+            System.err.println(commonTokensFile.getFileName().toString()+
+                    " exists. I'm skipping this.");
+            return;
+        }
         counter.execute(commonTokensFile, inputFiles);
     }
 
@@ -132,6 +138,7 @@ public class TopCommonTokenCounter {
         AbstractTokenTFDFPriorityQueue queue = new TokenDFPriorityQueue(TOP_N);
         long totalDocs = -1;
         long sumDocFreqs = -1;
+        long sumTotalTermFreqs = -1;
         long uniqueTerms = -1;
         try (Directory directory = FSDirectory.open(luceneDir)) {
 
@@ -188,6 +195,7 @@ public class TopCommonTokenCounter {
                 LeafReader wrappedReader = SlowCompositeReaderWrapper.wrap(reader);
                 totalDocs = wrappedReader.getDocCount(FIELD);
                 sumDocFreqs = wrappedReader.getSumDocFreq(FIELD);
+                sumTotalTermFreqs = wrappedReader.getSumTotalTermFreq(FIELD);
 
                 Terms terms = wrappedReader.terms(FIELD);
                 TermsEnum termsEnum = terms.iterator();
@@ -218,7 +226,7 @@ public class TopCommonTokenCounter {
         }
 
         writeTopN(commonTokensFile, totalDocs,
-                sumDocFreqs, uniqueTerms, queue);
+                sumDocFreqs, sumTotalTermFreqs, uniqueTerms, queue);
 
 
     }
@@ -234,7 +242,9 @@ public class TopCommonTokenCounter {
     }
 
     private static void writeTopN(Path path,
-                                  long totalDocs, long sumDocFreqs, long uniqueTerms, AbstractTokenTFDFPriorityQueue queue) throws IOException {
+                                  long totalDocs, long sumDocFreqs,
+                                  long sumTotalTermFreqs,
+                                  long uniqueTerms, AbstractTokenTFDFPriorityQueue queue) throws IOException {
         if (Files.isRegularFile(path)) {
             System.err.println("File "+path.getFileName() + " already exists. Skipping.");
             return;
@@ -246,7 +256,9 @@ public class TopCommonTokenCounter {
         writer.write(LICENSE);
         writer.write("#DOC_COUNT\t"+totalDocs+"\n");
         writer.write("#SUM_DOC_FREQS\t"+sumDocFreqs+"\n");
+        writer.write("#SUM_TERM_FREQS\t"+sumTotalTermFreqs+"\n");
         writer.write("#UNIQUE_TERMS\t"+uniqueTerms+"\n");
+        writer.write("#TOKEN\tDOCFREQ\tTERMFREQ\n");
         //add these tokens no matter what
         for (String t : WHITE_LIST) {
             writer.write(t);
@@ -264,7 +276,7 @@ public class TopCommonTokenCounter {
         sb.setLength(0);
         sb.append(clean(tp.token));
         sb.append("\t").append(tp.df);
-        //sb.append("\t").append(tp.tf);
+        sb.append("\t").append(tp.tf);
         return sb.toString();
     }
 

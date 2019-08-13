@@ -70,4 +70,8 @@ public class CommonTokenResult {
     public int getAlphabeticTokens() {
         return alphabeticTokens;
     }
+
+    public double getOOV() {
+        return 1.0 - (double)commonTokens/(double)alphabeticTokens;
+    }
 }

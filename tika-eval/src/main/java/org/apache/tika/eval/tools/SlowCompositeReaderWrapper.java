@@ -184,7 +184,7 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                 SortedDocValues dv = MultiDocValues.getSortedValues(in, field);
                 if (dv instanceof MultiSortedDocValues) {
                     map = ((MultiSortedDocValues)dv).mapping;
-                    IndexReader.CacheHelper cacheHelper = getReaderCacheHelper();
+                    CacheHelper cacheHelper = getReaderCacheHelper();
                     if (cacheHelper != null && map.owner == cacheHelper.getKey()) {
                         cachedOrdMaps.put(field, map);
                     }
@@ -226,7 +226,7 @@ public final class SlowCompositeReaderWrapper extends LeafReader {
                 SortedSetDocValues dv = MultiDocValues.getSortedSetValues(in, field);
                 if (dv instanceof MultiDocValues.MultiSortedSetDocValues) {
                     map = ((MultiDocValues.MultiSortedSetDocValues)dv).mapping;
-                    IndexReader.CacheHelper cacheHelper = getReaderCacheHelper();
+                    CacheHelper cacheHelper = getReaderCacheHelper();
                     if (cacheHelper != null && map.owner == cacheHelper.getKey()) {
                         cachedOrdMaps.put(field, map);
                     }
