@@ -27,12 +27,14 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.TokenCounts;
 
 
 public class CompositeTextStatsCalculator {
 
     private static final String FIELD = "f";
+    private static final int DEFAULT_MAX_TOKENS = 10_000_000;
     private final Analyzer analyzer;
     private final LanguageIDWrapper languageIDWrapper;
     private final List<LanguageAwareTokenCountStats> languageAwareTokenCountStats = new ArrayList<>();
@@ -40,7 +42,9 @@ public class CompositeTextStatsCalculator {
     private final List<StringStatsCalculator> stringStatCalculators = new ArrayList<>();
 
     public CompositeTextStatsCalculator(List<TextStatsCalculator> calculators) {
-        this(calculators, null, null);
+        this(calculators,
+                AnalyzerManager.newInstance(DEFAULT_MAX_TOKENS).getGeneralAnalyzer(),
+                new LanguageIDWrapper());
     }
 
     public CompositeTextStatsCalculator(List<TextStatsCalculator> calculators, Analyzer analyzer,

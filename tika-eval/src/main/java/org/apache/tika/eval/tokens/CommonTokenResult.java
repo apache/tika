@@ -34,6 +34,10 @@ public class CommonTokenResult {
         this.alphabeticTokens = alphabeticTokens;
     }
 
+    /**
+     *
+     * @return the language used to select the common_tokens list
+     */
     public String getLangCode() {
         return langCode;
     }

@@ -49,6 +49,7 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.eval.langid.Language;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.textstats.CommonTokens;
 import org.apache.tika.eval.textstats.CompositeTextStatsCalculator;
@@ -63,9 +64,8 @@ import org.apache.tika.eval.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.tokens.CommonTokenResult;
 import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
-import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.eval.util.ContentTagParser;
-import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -144,6 +144,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         tmp.put("UL", Cols.TAGS_UL);
         return Collections.unmodifiableMap(tmp);
     }
+
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
 
     private String lastExtractExtension = null;
@@ -192,13 +193,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     private final static Pattern ENCRYPTION_EXCEPTION =
             Pattern.compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
 
-    private TikaConfig config = TikaConfig.getDefaultConfig();//TODO: allow configuration
+    private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
+
+    //TODO: allow configuration
+    //private TikaConfig config = TikaConfig.getDefaultConfig();
     CompositeTextStatsCalculator compositeTextStatsCalculator;
     protected IDBWriter writer;
 
     /**
-     *
      * @param p path to the common_tokens directory.  If this is null, try to load from classPath
+     * @param defaultLangCode this is the language code to use if a common_words list doesn't exist for the
+     *                        detected langauge; can be <code>null</code>
      * @throws IOException
      */
     public static void loadCommonTokens(Path p, String defaultLangCode) throws IOException {
@@ -210,30 +215,26 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         super(fileQueue);
         this.writer = writer;
         LanguageIDWrapper.setMaxTextLength(maxContentLengthForLangId);
-        this.compositeTextStatsCalculator = initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
+        this.compositeTextStatsCalculator = initAnalyzersAndTokenCounter(maxTokens, LANG_ID);
     }
 
     private CompositeTextStatsCalculator initAnalyzersAndTokenCounter(int maxTokens, LanguageIDWrapper langIder) {
-        try {
-            analyzerManager = AnalyzerManager.newInstance(maxTokens);
-            List<TextStatsCalculator> calculators = new ArrayList<>();
-            calculators.add(new CommonTokens(COMMON_TOKEN_COUNT_MANAGER));
-            calculators.add(new TokenEntropy());
-            calculators.add(new TokenLengths());
-            calculators.add(new TopNTokens(10));
-            calculators.add(new BasicTokenCountStatsCalculator());
-            calculators.add(new ContentLengthCalculator());
-            calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
+        analyzerManager = AnalyzerManager.newInstance(maxTokens);
+        List<TextStatsCalculator> calculators = new ArrayList<>();
+        calculators.add(new CommonTokens(COMMON_TOKEN_COUNT_MANAGER));
+        calculators.add(new TokenEntropy());
+        calculators.add(new TokenLengths());
+        calculators.add(new TopNTokens(10));
+        calculators.add(new BasicTokenCountStatsCalculator());
+        calculators.add(new ContentLengthCalculator());
+        calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
 
-            return new CompositeTextStatsCalculator(calculators, analyzerManager.getGeneralAnalyzer(), langIder);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+        return new CompositeTextStatsCalculator(calculators, analyzerManager.getGeneralAnalyzer(), langIder);
     }
 
     /**
      * Truncate the content string if greater than this length to this length
+     *
      * @param maxContentLength
      */
     public void setMaxContentLength(int maxContentLength) {
@@ -281,7 +282,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.CONTAINER_ID, containerId);
         data.put(Cols.MD5, m.get(DIGEST_KEY));
 
-        if ( i < numAttachments.size()) {
+        if (i < numAttachments.size()) {
             data.put(Cols.NUM_ATTACHMENTS, Integer.toString(numAttachments.get(i)));
         }
         data.put(Cols.ELAPSED_TIME_MILLIS, getTime(m));
@@ -376,8 +377,9 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (content == null || content.trim().length() == 0) {
             content = "";
         }
-         return compositeTextStatsCalculator.calculate(content);
+        return compositeTextStatsCalculator.calculate(content);
     }
+
     /**
      * Checks to see if metadata is null or content is empty (null or only whitespace).
      * If any of these, then this does no processing, and the fileId is not
@@ -398,7 +400,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         langid(textStats, data);
 
         writeTokenCounts(textStats, data);
-        CommonTokenResult commonTokenResult = (CommonTokenResult)textStats.get(CommonTokens.class);
+        CommonTokenResult commonTokenResult = (CommonTokenResult) textStats.get(CommonTokens.class);
         if (commonTokenResult != null) {
             data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
             data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
@@ -408,7 +410,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             data.put(Cols.NUM_ALPHABETIC_TOKENS,
                     Integer.toString(commonTokenResult.getAlphabeticTokens()));
         }
-        TokenCounts tokenCounts = (TokenCounts)textStats.get(BasicTokenCountStatsCalculator.class);
+        TokenCounts tokenCounts = (TokenCounts) textStats.get(BasicTokenCountStatsCalculator.class);
         if (tokenCounts != null) {
 
             data.put(Cols.NUM_UNIQUE_TOKENS,
@@ -418,10 +420,10 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
         if (textStats.get(TokenEntropy.class) != null) {
             data.put(Cols.TOKEN_ENTROPY_RATE,
-                    Double.toString((Double)textStats.get(TokenEntropy.class)));
+                    Double.toString((Double) textStats.get(TokenEntropy.class)));
         }
 
-        SummaryStatistics summStats = (SummaryStatistics)textStats.get(TokenLengths.class);
+        SummaryStatistics summStats = (SummaryStatistics) textStats.get(TokenLengths.class);
         if (summStats != null) {
             data.put(Cols.TOKEN_LENGTH_SUM,
                     Integer.toString((int) summStats.getSum()));
@@ -556,6 +558,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         return c;
 
     }
+
     protected static ContentTags getContent(EvalFilePaths evalFilePaths, Metadata metadata) {
         if (metadata == null) {
             return ContentTags.EMPTY_CONTENT_TAGS;
@@ -565,7 +568,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
     void unicodeBlocks(Map<Class, Object> tokenStats, Map<Cols, String> data) {
 
-        Map<String, MutableInt> blocks = (Map<String, MutableInt>)tokenStats.get(UnicodeBlockCounter.class);
+        Map<String, MutableInt> blocks = (Map<String, MutableInt>) tokenStats.get(UnicodeBlockCounter.class);
         List<Pair<String, Integer>> pairs = new ArrayList<>();
         for (Map.Entry<String, MutableInt> e : blocks.entrySet()) {
             pairs.add(Pair.of(e.getKey(), e.getValue().intValue()));
@@ -582,18 +585,18 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             if (i > 0) {
                 sb.append(" | ");
             }
-            sb.append(pairs.get(i).getKey()+": "+pairs.get(i).getValue());
+            sb.append(pairs.get(i).getKey() + ": " + pairs.get(i).getValue());
         }
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
 
     void langid(Map<Class, Object> stats, Map<Cols, String> data) {
-        List<Language> probabilities = (List<Language>)stats.get(LanguageIDWrapper.class);
+        List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
 
         if (probabilities.size() > 0) {
             data.put(Cols.LANG_ID_1, probabilities.get(0).getLanguage());
             data.put(Cols.LANG_ID_PROB_1,
-            Double.toString(probabilities.get(0).getConfidence()));
+                    Double.toString(probabilities.get(0).getConfidence()));
         }
         if (probabilities.size() > 1) {
             data.put(Cols.LANG_ID_2, probabilities.get(1).getLanguage());
@@ -615,7 +618,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     void writeTokenCounts(Map<Class, Object> textStats, Map<Cols, String> data) {
-        TokenIntPair[] tokenIntPairs = (TokenIntPair[])textStats.get(TopNTokens.class);
+        TokenIntPair[] tokenIntPairs = (TokenIntPair[]) textStats.get(TopNTokens.class);
         int i = 0;
         StringBuilder sb = new StringBuilder();
         for (TokenIntPair t : tokenIntPairs) {
@@ -635,7 +638,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
 
     /**
-     *
      * @param metadata
      * @param extracts
      * @return evalfilepaths for files if crawling an extract directory
@@ -647,7 +649,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         Path relativeSourceFilePath = Paths.get(m.replaceAll(""));
         //just try slapping the relextractfilepath on the extractdir
         Path extractFile = extracts.resolve(relExtractFilePath);
-        if (! Files.isRegularFile(extractFile)) {
+        if (!Files.isRegularFile(extractFile)) {
             //if that doesn't work, try to find the right extract file.
             //This is necessary if crawling extractsA and trying to find a file in
             //extractsB that is not in the same format: json vs txt or compressed
@@ -655,6 +657,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
         return new EvalFilePaths(relativeSourceFilePath, extractFile);
     }
+
     //call this if the crawler is crawling through the src directory
     protected EvalFilePaths getPathsFromSrcCrawl(Metadata metadata, Path srcDir,
                                                  Path extracts) {
@@ -673,7 +676,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     /**
-     *
      * @param extractRootDir
      * @param relativeSourceFilePath
      * @return extractFile or null if couldn't find one.
@@ -681,16 +683,16 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     private Path findFile(Path extractRootDir, Path relativeSourceFilePath) {
         String relSrcFilePathString = relativeSourceFilePath.toString();
         if (lastExtractExtension != null) {
-            Path candidate = extractRootDir.resolve(relSrcFilePathString+lastExtractExtension);
+            Path candidate = extractRootDir.resolve(relSrcFilePathString + lastExtractExtension);
             if (Files.isRegularFile(candidate)) {
                 return candidate;
             }
         }
         for (String ext : EXTRACT_EXTENSIONS) {
             for (String compress : COMPRESSION_EXTENSIONS) {
-                Path candidate = extractRootDir.resolve(relSrcFilePathString+ext+compress);
+                Path candidate = extractRootDir.resolve(relSrcFilePathString + ext + compress);
                 if (Files.isRegularFile(candidate)) {
-                    lastExtractExtension = ext+compress;
+                    lastExtractExtension = ext + compress;
                     return candidate;
                 }
             }
@@ -737,7 +739,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     /**
-     *
      * @param list
      * @return empty list if input list is empty or null
      */
@@ -747,7 +748,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             return ret;
         }
         //container document attachment count = list.size()-1
-        ret.add(list.size()-1);
+        ret.add(list.size() - 1);
 
         Map<String, Integer> counts = new HashMap<>();
         for (int i = 1; i < list.size(); i++) {
@@ -758,7 +759,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             }
             String[] parts = path.split("/");
             StringBuilder parent = new StringBuilder();
-            for (int end = 1; end < parts.length-1; end++) {
+            for (int end = 1; end < parts.length - 1; end++) {
                 parent.setLength(0);
                 join("/", parent, parts, 1, end);
                 String parentPath = parent.toString();
@@ -801,7 +802,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".html")) {
             try {
                 return ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
-            } catch (IOException|SAXException e) {
+            } catch (IOException | SAXException e) {
                 LOG.warn("Problem parsing html in {}; backing off to treat string as text",
                         evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
 
@@ -809,17 +810,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             }
         } else if (
                 evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".xhtml") ||
-                (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
+                        (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
             try {
                 return ContentTagParser.parseXML(s, UC_TAGS_OF_INTEREST.keySet());
-            } catch (TikaException|IOException|SAXException e) {
+            } catch (TikaException | IOException | SAXException e) {
                 LOG.warn("Problem parsing xhtml in {}; backing off to html parser",
                         evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
                 try {
                     ContentTags contentTags = ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
                     contentTags.setParseException(true);
                     return contentTags;
-                } catch (IOException|SAXException e2) {
+                } catch (IOException | SAXException e2) {
                     LOG.warn("Problem parsing html in {}; backing off to treat string as text",
                             evalFilePaths.getExtractFile().toAbsolutePath().toString(), e2);
                 }

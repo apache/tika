@@ -56,7 +56,10 @@ public class CommonTokenCountManager {
     //make this configurable
     private final String defaultLangCode;
 
-    public CommonTokenCountManager(Path commonTokensDir, String defaultLangCode) throws IOException {
+    public CommonTokenCountManager() {
+        this(null, null);
+    }
+    public CommonTokenCountManager(Path commonTokensDir, String defaultLangCode) {
         if (defaultLangCode == null) {
             defaultLangCode = "";
         }
