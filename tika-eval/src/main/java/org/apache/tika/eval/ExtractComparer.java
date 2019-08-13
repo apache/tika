@@ -39,8 +39,10 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
+import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.tokens.ContrastStatistics;
 import org.apache.tika.eval.tokens.TokenContraster;
+import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
@@ -275,7 +277,8 @@ public class ExtractComparer extends AbstractProfiler {
         }
         List<Integer> numAttachmentsA = countAttachments(metadataListA);
         List<Integer> numAttachmentsB = countAttachments(metadataListB);
-
+        Map<Class, Object> tokenStatsA = null;
+        Map<Class, Object> tokenStatsB = null;
         //now get that metadata
         if (metadataListA != null) {
             for (int i = 0; i < metadataListA.size(); i++) {
@@ -304,29 +307,28 @@ public class ExtractComparer extends AbstractProfiler {
                     writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
                 }
                 writeEmbeddedFilePathData(i, fileId, metadataA, metadataB);
-                //prep the token counting
-                tokenCounter.clear(FIELD_A);
-                tokenCounter.clear(FIELD_B);
                 //write content
                 try {
-                    writeContentData(fileId, contentTagsA, FIELD_A, CONTENTS_TABLE_A);
-                    writeContentData(fileId, contentTagsB, FIELD_B, CONTENTS_TABLE_B);
+                    tokenStatsA = calcTextStats(contentTagsA);
+                    tokenStatsB = calcTextStats(contentTagsB);
+                    writeContentData(fileId, tokenStatsA, CONTENTS_TABLE_A);
+                    writeContentData(fileId, tokenStatsB, CONTENTS_TABLE_B);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
+                TokenCounts tokenCountsA = (TokenCounts)tokenStatsA.get(BasicTokenCountStatsCalculator.class);
+                TokenCounts tokenCountsB = (TokenCounts)tokenStatsB.get(BasicTokenCountStatsCalculator.class);
                 //now run comparisons
-                if (tokenCounter.getTokenStatistics(FIELD_A).getTotalTokens() > 0
-                        && tokenCounter.getTokenStatistics(FIELD_B).getTotalTokens() > 0) {
+                if (tokenCountsA.getTotalTokens() > 0
+                        && tokenCountsB.getTotalTokens() > 0) {
                     Map<Cols, String> data = new HashMap<>();
                     data.put(Cols.ID, fileId);
 
                     ContrastStatistics contrastStatistics =
                             tokenContraster.calculateContrastStatistics(
-                            tokenCounter.getTokens(FIELD_A),
-                            tokenCounter.getTokenStatistics(FIELD_A),
-                            tokenCounter.getTokens(FIELD_B),
-                            tokenCounter.getTokenStatistics(FIELD_B));
+                            tokenCountsA,
+                            tokenCountsB);
 
                     writeContrasts(data, contrastStatistics);
                     writer.writeRow(CONTENT_COMPARISONS, data);
@@ -349,11 +351,10 @@ public class ExtractComparer extends AbstractProfiler {
                 writeEmbeddedFilePathData(i, fileId, null, metadataB);
                 writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
 
-                //prep the token counting
-                tokenCounter.clear(FIELD_B);
                 //write content
                 try {
-                    writeContentData(fileId, contentTagsB, FIELD_B, CONTENTS_TABLE_B);
+                    tokenStatsB = calcTextStats(contentTagsB);
+                    writeContentData(fileId, tokenStatsB, CONTENTS_TABLE_B);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

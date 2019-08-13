@@ -29,10 +29,10 @@ import opennlp.tools.util.normalizer.EmojiCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.NumberCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.ShrinkCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
-import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.eval.textstats.StringStatsCalculator;
 
 
-public class LanguageIDWrapper {
+public class LanguageIDWrapper implements StringStatsCalculator<List<Language>> {
 
     static LanguageDetectorModel LANG_MODEL;
 
@@ -80,6 +80,11 @@ public class LanguageIDWrapper {
 
     public static void setMaxTextLength(int maxTextLength) {
         MAX_TEXT_LENGTH = maxTextLength;
+    }
+
+    @Override
+    public List<Language> calculate(String txt) {
+        return getProbabilities(txt);
     }
 
     private static class TikaUrlCharSequenceNormalizer implements CharSequenceNormalizer {

@@ -30,8 +30,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +42,14 @@ import org.slf4j.LoggerFactory;
 public class CommonTokenCountManager {
     private static final Logger LOG = LoggerFactory.getLogger(CommonTokenCountManager.class);
 
-    private final static Charset COMMON_TOKENS_CHARSET = StandardCharsets.UTF_8;
+    private static final Charset COMMON_TOKENS_CHARSET = StandardCharsets.UTF_8;
+    private static final String TERM_FREQS = "#SUM_TERM_FREQS\t";
+
+    private Matcher digitsMatcher = Pattern.compile("(\\d+)").matcher("");
 
     private final Path commonTokensDir;
 
-    Map<String, Set<String>> commonTokenMap = new ConcurrentHashMap<>();
+    Map<String, LangModel> commonTokenMap = new ConcurrentHashMap<>();
     Set<String> alreadyTriedToLoad = new HashSet<>();
 
     //if we have no model or if no langid is passed in
@@ -60,17 +66,21 @@ public class CommonTokenCountManager {
             tryToLoad(defaultLangCode);
             //if you couldn't load it, make sure to add an empty
             //set to prevent npes later
-            Set<String> set = commonTokenMap.get(defaultLangCode);
-            if (set == null) {
+            LangModel langModel = commonTokenMap.get(defaultLangCode);
+            if (langModel == null) {
                 LOG.warn("No common tokens for default language: '" + defaultLangCode + "'");
-                commonTokenMap.put(defaultLangCode, Collections.EMPTY_SET);
+                commonTokenMap.put(defaultLangCode, LangModel.EMPTY_MODEL);
             }
         } else {
-            commonTokenMap.put(defaultLangCode, Collections.EMPTY_SET);
+            commonTokenMap.put(defaultLangCode, LangModel.EMPTY_MODEL);
 
         }
     }
 
+    @Deprecated
+    /**
+     * @deprecated use {@link org.apache.tika.eval.textstats.CommonTokens} instead
+     */
     public CommonTokenResult countTokenOverlaps(String langCode,
                                                 Map<String, MutableInt> tokens) throws IOException {
         String actualLangCode = getActualLangCode(langCode);
@@ -78,7 +88,7 @@ public class CommonTokenCountManager {
         int numCommonTokens = 0;
         int numUniqueAlphabeticTokens = 0;
         int numAlphabeticTokens = 0;
-        Set<String> commonTokens = commonTokenMap.get(actualLangCode);
+        LangModel model = commonTokenMap.get(actualLangCode);
         for (Map.Entry<String, MutableInt> e : tokens.entrySet()) {
             String token = e.getKey();
             int count = e.getValue().intValue();
@@ -86,7 +96,7 @@ public class CommonTokenCountManager {
                 numAlphabeticTokens += count;
                 numUniqueAlphabeticTokens++;
             }
-            if (commonTokens.contains(token)) {
+            if (model.contains(token)) {
                 numCommonTokens += count;
                 numUniqueCommonTokens++;
             }
@@ -98,7 +108,18 @@ public class CommonTokenCountManager {
 
 
     public Set<String> getTokens(String lang) {
-        return Collections.unmodifiableSet(new HashSet(commonTokenMap.get(getActualLangCode(lang))));
+        return Collections.unmodifiableSet(
+                new HashSet(commonTokenMap.get(getActualLangCode(lang)).getTokens()));
+    }
+
+    /**
+     * @param lang
+     * @return pair of actual language code used and a set of common
+     * tokens for that language
+     */
+    public Pair<String, LangModel> getLangTokens(String lang) {
+        String actualLangCode = getActualLangCode(lang);
+        return Pair.of(actualLangCode, commonTokenMap.get(actualLangCode));
     }
     //return langcode for lang that you are actually using
     //lazily load the appropriate model
@@ -110,8 +131,8 @@ public class CommonTokenCountManager {
             return langCode;
         }
         tryToLoad(langCode);
-        Set<String> set = commonTokenMap.get(langCode);
-        if (set == null) {
+        LangModel model = commonTokenMap.get(langCode);
+        if (model == null) {
             return defaultLangCode;
         }
         return langCode;
@@ -154,12 +175,7 @@ public class CommonTokenCountManager {
                 return;
             }
 
-
-            Set<String> set = commonTokenMap.get(langCode);
-            if (set == null) {
-                set = new HashSet<>();
-                commonTokenMap.put(langCode, set);
-            }
+            LangModel model = null;
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(is, COMMON_TOKENS_CHARSET))) {
                 alreadyTriedToLoad.add(langCode);
@@ -167,19 +183,35 @@ public class CommonTokenCountManager {
                 while (line != null) {
                     line = line.trim();
                     if (line.startsWith("#")) {
+                        if (line.startsWith(TERM_FREQS)) {
+                            digitsMatcher.reset(line);
+                            if (digitsMatcher.find()) {
+                                model = new LangModel(Long.parseLong(digitsMatcher.group(1)));
+                            }
+                        }
                         line = reader.readLine();
                         continue;
                     }
                     //allow language models with, e.g. tab-delimited counts after the term
                     String[] cols = line.split("\t");
                     String t = cols[0].trim();
-                    if (t.length() > 0) {
-                        set.add(t);
+                    if (t.length() > 0 && cols.length > 2) {
+                        if (model == null) {
+                            throw new IllegalArgumentException(
+                                    "Common tokens file must have included comment line "+
+                                            " with "+TERM_FREQS);
+                        }
+                        //document frequency
+                        String df = cols[1];
+                        //token frequency
+                        long tf = Long.parseLong(cols[2]);
+                        model.add(t, tf);
                     }
 
                     line = reader.readLine();
                 }
             }
+            commonTokenMap.put(langCode, model);
         } catch (IOException e) {
             LOG.warn("IOException trying to read: '" + langCode + "'");
         } finally {
