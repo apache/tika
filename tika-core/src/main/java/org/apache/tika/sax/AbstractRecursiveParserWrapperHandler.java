@@ -46,8 +46,11 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED =
             Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 
+    //exception in embedded file
     public final static Property EMBEDDED_EXCEPTION = ParserUtils.EMBEDDED_EXCEPTION;
-
+    //exception in main file
+    public final static Property CONTAINER_EXCEPTION = Property.internalText(
+            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime");
     public final static Property EMBEDDED_RESOURCE_PATH =
             Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"embedded_resource_path");
 

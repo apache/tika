@@ -241,7 +241,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             //try our best to record the problem in the metadata object
             //then rethrow
             String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime", stackTrace);
+            metadata.add(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION, stackTrace);
             throw e;
         } finally {
             long elapsedMillis = System.currentTimeMillis() - started;
