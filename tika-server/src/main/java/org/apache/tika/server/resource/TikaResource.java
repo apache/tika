@@ -37,7 +37,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
@@ -119,7 +118,7 @@ public class TikaResource {
         final Parser parser = new AutoDetectParser(tikaConfig);
 
         Map<MediaType, Parser> parsers = ((AutoDetectParser)parser).getParsers();
-        parsers.put(MediaType.APPLICATION_XML, new HtmlParser());
+
         ((AutoDetectParser)parser).setParsers(parsers);
 
         ((AutoDetectParser)parser).setFallback(new Parser() {
