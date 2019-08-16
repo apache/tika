@@ -14,26 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.eval.textstats;
+package org.apache.tika.eval.util;
 
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.tika.eval.tokens.TokenCounts;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class TokenEntropy implements TokenCountStatsCalculator<Double> {
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.utils.ExceptionUtils;
 
-    @Override
-    public Double calculate(TokenCounts tokenCounts) {
-        double ent = 0.0d;
-        double p = 0.0d;
-        double base = 2.0;
-        double totalTokens = (double)tokenCounts.getTotalTokens();
-        for (MutableInt i : tokenCounts.getTokens().values()) {
-            int termFreq = i.intValue();
+public class EvalExceptionUtils {
 
-            p = (double) termFreq / totalTokens;
-            ent += p * FastMath.log(base, p);
+    //these remove runtime info from the stacktraces so
+    //that actual causes can be counted.
+    private final static Pattern CAUSED_BY_SNIPPER =
+            Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
+
+    public static String normalize(String stacktrace) {
+        if (StringUtils.isBlank(stacktrace)) {
+            return "";
         }
-        return -1.0*ent;
+        String sortTrace = ExceptionUtils.trimMessage(stacktrace);
+
+        Matcher matcher = CAUSED_BY_SNIPPER.matcher(sortTrace);
+        sortTrace = matcher.replaceAll("$1");
+        return sortTrace.replaceAll("org.apache.tika.", "o.a.t.");
     }
 }

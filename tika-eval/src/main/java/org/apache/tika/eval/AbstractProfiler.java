@@ -66,6 +66,7 @@ import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.eval.util.ContentTagParser;
 import org.apache.tika.eval.util.ContentTags;
+import org.apache.tika.eval.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -183,10 +184,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     int maxTokens = 200000;
 
 
-    //these remove runtime info from the stacktraces so
-    //that actual causes can be counted.
-    private final static Pattern CAUSED_BY_SNIPPER =
-            Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
 
     private final static Pattern ACCESS_PERMISSION_EXCEPTION =
             Pattern.compile("org\\.apache\\.tika\\.exception\\.AccessPermissionException");
@@ -495,7 +492,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
     void getExceptionStrings(Metadata metadata, Map<Cols, String> data) {
 
-        String fullTrace = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "runtime");
+        String fullTrace = metadata.get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION);
 
         if (fullTrace == null) {
             fullTrace = metadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION);
@@ -528,11 +525,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             //IOException from org.apache.tika.parser.microsoft.OfficeParser@2b1ea6ee
             //For reporting purposes, let's snip off the object id so that we can more
             //easily count exceptions.
-            String sortTrace = ExceptionUtils.trimMessage(fullTrace);
-
-            matcher = CAUSED_BY_SNIPPER.matcher(sortTrace);
-            sortTrace = matcher.replaceAll("$1");
-            sortTrace = sortTrace.replaceAll("org.apache.tika.", "o.a.t.");
+            String sortTrace = EvalExceptionUtils.normalize(fullTrace);
             data.put(Cols.SORT_STACK_TRACE, sortTrace);
         }
     }
