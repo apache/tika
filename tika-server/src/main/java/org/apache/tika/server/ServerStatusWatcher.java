@@ -147,10 +147,14 @@ public class ServerStatusWatcher implements Runnable {
             if (millisElapsed > serverTimeouts.getTaskTimeoutMillis()) {
                 serverStatus.setStatus(ServerStatus.STATUS.TIMEOUT);
                 if (status.fileName.isPresent()) {
-                    LOG.error("Timeout task {}, millis elapsed {}, file {}",
+                    LOG.error("Timeout task {}, millis elapsed {}, file {}" +
+                                    "consider increasing the allowable time with the " +
+                                    "-taskTimeoutMillis flag",
                             status.task.toString(), Long.toString(millisElapsed), status.fileName.get());
                 } else {
-                    LOG.error("Timeout task {}, millis elapsed {}",
+                    LOG.error("Timeout task {}, millis elapsed {}; " +
+                                    "consider increasing the allowable time with the " +
+                                    "-taskTimeoutMillis flag",
                             status.task.toString(), Long.toString(millisElapsed));
                 }
             }
