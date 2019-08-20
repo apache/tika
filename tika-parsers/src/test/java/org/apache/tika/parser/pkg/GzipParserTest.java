@@ -19,14 +19,27 @@ package org.apache.tika.parser.pkg;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 
+import java.io.IOException;
 import java.io.InputStream;
 
+import com.drew.lang.Charsets;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Test case for parsing gzip files.
@@ -67,6 +80,28 @@ public class GzipParserTest extends AbstractPkgTest {
     }
 
     /**
+     * Tests that the filename stored in gzip header is reinstated upon decompression
+     */
+    @Test
+    public void testGzipFilenamePreserved() throws Exception {
+        Parser p = new AutoDetectParser();
+        ContentHandlerFactory factory = new BasicContentHandlerFactory(
+                BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
+
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, factory);
+
+        ContentHandler handler = new DefaultHandler();
+        Metadata metadata = new Metadata();
+
+        try (InputStream stream = GzipParserTest.class.getResourceAsStream(
+                "/test-documents/gzipped-text.gz")) {
+            wrapper.parse(stream, handler, metadata, recursingContext);
+        }
+
+        assertContains("textFile.txt", metadata.get("X-TIKA:content"));
+    }
+
+    /**
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.
      */
@@ -86,7 +121,6 @@ public class GzipParserTest extends AbstractPkgTest {
        assertEquals(1, tracker.mediatypes.size());
        assertEquals(1, tracker.modifiedAts.size());
        
-       assertEquals(null, tracker.filenames.get(0));
        assertEquals(null, tracker.mediatypes.get(0));
        assertEquals(null, tracker.modifiedAts.get(0));
 

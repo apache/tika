@@ -251,26 +251,14 @@ public class CompressorParser extends AbstractParser {
         try {
             Metadata entrydata = new Metadata();
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+
             if (name != null) {
-                if (name.endsWith(".tbz")) {
-                    name = name.substring(0, name.length() - 4) + ".tar";
-                } else if (name.endsWith(".tbz2")) {
-                    name = name.substring(0, name.length() - 5) + ".tar";
-                } else if (name.endsWith(".bz")) {
-                    name = name.substring(0, name.length() - 3);
-                } else if (name.endsWith(".bz2")) {
-                    name = name.substring(0, name.length() - 4);
-                } else if (name.endsWith(".xz")) {
-                    name = name.substring(0, name.length() - 3);
-                } else if (name.endsWith(".zlib")) {
-                    name = name.substring(0, name.length() - 5);
-                } else if (name.endsWith(".pack")) {
-                    name = name.substring(0, name.length() - 5);
-                } else if (name.endsWith(".br")) {
-                    name = name.substring(0, name.length() - 3);
-                } else if (name.length() > 0) {
-                    name = GzipUtils.getUncompressedFilename(name);
-                }
+                name = calculateEntryFilename(name);
+            } else if (cis instanceof GzipCompressorInputStream) {
+                name = ((GzipCompressorInputStream) cis).getMetaData().getFilename();
+            }
+
+            if (name != null) {
                 entrydata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             }
 
@@ -285,6 +273,29 @@ public class CompressorParser extends AbstractParser {
         }
 
         xhtml.endDocument();
+    }
+
+    private String calculateEntryFilename(String name) {
+        if (name.endsWith(".tbz")) {
+            name = name.substring(0, name.length() - 4) + ".tar";
+        } else if (name.endsWith(".tbz2")) {
+            name = name.substring(0, name.length() - 5) + ".tar";
+        } else if (name.endsWith(".bz")) {
+            name = name.substring(0, name.length() - 3);
+        } else if (name.endsWith(".bz2")) {
+            name = name.substring(0, name.length() - 4);
+        } else if (name.endsWith(".xz")) {
+            name = name.substring(0, name.length() - 3);
+        } else if (name.endsWith(".zlib")) {
+            name = name.substring(0, name.length() - 5);
+        } else if (name.endsWith(".pack")) {
+            name = name.substring(0, name.length() - 5);
+        } else if (name.endsWith(".br")) {
+            name = name.substring(0, name.length() - 3);
+        } else if (name.length() > 0) {
+            name = GzipUtils.getUncompressedFilename(name);
+        }
+        return name;
     }
 
     /**
