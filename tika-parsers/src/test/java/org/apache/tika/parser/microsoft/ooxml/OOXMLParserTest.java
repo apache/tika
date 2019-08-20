@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -67,6 +68,7 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -191,6 +193,42 @@ public class OOXMLParserTest extends TikaTest {
              assertContains("At 4:20 AM on Thursday May 17, 2007", content);
              **************************************************************************/
         }
+    }
+
+    @Test
+    public void testExcelIncludeMissingRows() throws Exception {
+		final Metadata metadata = new Metadata();
+		final ParseContext context = new ParseContext();
+		final OfficeParserConfig config = new OfficeParserConfig();
+		config.setIncludeMissingRows(true);
+		context.set(OfficeParserConfig.class, config);
+		final ContentHandler handler = new ToXMLContentHandler();
+		try (final InputStream stream = getTestDocument("testEXCEL_includeMissingRows.xlsx")) {
+			parser.parse(stream, handler, metadata, context);
+			// Extract tbody content and split it into its component rows.
+			final Pattern tablePattern = Pattern.compile("(?<=<tbody>).*(?=<\\/tbody>)", Pattern.DOTALL);
+			final Matcher matcher = tablePattern.matcher(handler.toString());
+			assertTrue("Could not find contents of <tbody>.", matcher.find());
+
+			final String[] rows = matcher.group().split("\\n");
+			assertEquals("Expected 8 rows.", 8, rows.length);
+
+			final Pattern cellContentPattern = Pattern.compile("(?<=<td>)[\\w \\d]*(?=<\\/td>)");
+			final int[] emptyRows = new int[] { 0, 2, 5, 6 };
+			int emptyRowIndex = 0;
+			for (int i = 0; i < rows.length; i++) {
+				// If current row index points to an empty row, cellContentPattern should not be able
+				// to find any cell.
+				if (emptyRowIndex < emptyRows.length && i == emptyRows[emptyRowIndex]) {
+					assertFalse(String.format("Expecting empty row at index %d.", i),
+							cellContentPattern.matcher(rows[i]).find());
+					emptyRowIndex++;
+				} else {
+					assertTrue(String.format("Expecting non-empty row at index %d.", i),
+							cellContentPattern.matcher(rows[i]).find());
+				}
+			}
+		}
     }
 
     @Test

@@ -430,9 +430,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         xhtml.endElement("tr");
                     }
                 }
-
                 // Start the new row
                 xhtml.startElement("tr");
+                lastSeenRow = rowNum;
                 lastSeenCol = -1;
             } catch (SAXException e) {
             }
