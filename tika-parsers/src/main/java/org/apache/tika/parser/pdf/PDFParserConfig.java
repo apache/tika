@@ -48,6 +48,7 @@ public class PDFParserConfig implements Serializable {
 
 
     public enum OCR_STRATEGY {
+        AUTO,
         NO_OCR,
         OCR_ONLY,
         OCR_AND_TEXT_EXTRACTION;
@@ -61,6 +62,8 @@ public class PDFParserConfig implements Serializable {
                 return OCR_ONLY;
             } else if (s.toLowerCase(Locale.ROOT).contains("ocr_and_text")) {
                 return OCR_AND_TEXT_EXTRACTION;
+            } else if ("auto".equals(s.toLowerCase(Locale.ROOT))) {
+                return AUTO;
             }
             StringBuilder sb = new StringBuilder();
             sb.append("I regret that I don't recognize '").append(s);
@@ -138,6 +141,8 @@ public class PDFParserConfig implements Serializable {
     private long maxMainMemoryBytes = -1;
 
     private boolean setKCMS = false;
+
+    private boolean detectAngles = false;
 
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
@@ -231,6 +236,7 @@ public class PDFParserConfig implements Serializable {
         }
 
         maxMainMemoryBytes = getIntProp(props.getProperty("maxMainMemoryBytes"), -1);
+        detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
     }
 
     /**
@@ -735,6 +741,14 @@ public class PDFParserConfig implements Serializable {
         throw new IllegalArgumentException(sb.toString());
     }
 
+    public void setDetectAngles(boolean detectAngles) {
+        this.detectAngles = detectAngles;
+    }
+
+    public boolean getDetectAngles() {
+        return detectAngles;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -752,7 +766,7 @@ public class PDFParserConfig implements Serializable {
         if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
         if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
         if (getOcrDPI() != config.getOcrDPI()) return false;
-        if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) return false;
+        if (getCatchIntermediateIOExceptions() != config.getCatchIntermediateIOExceptions()) return false;
         if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) return false;
         if (!getSpacingTolerance().equals(config.getSpacingTolerance())) return false;
         if (!getOcrStrategy().equals(config.getOcrStrategy())) return false;
@@ -781,7 +795,7 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + getOcrImageType().hashCode();
         result = 31 * result + getOcrImageFormatName().hashCode();
         result = 31 * result + getAccessChecker().hashCode();
-        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
+        result = 31 * result + (getCatchIntermediateIOExceptions() ? 1 : 0);
         result = 31 * result + (getExtractActions() ? 1 : 0);
         result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
         return result;

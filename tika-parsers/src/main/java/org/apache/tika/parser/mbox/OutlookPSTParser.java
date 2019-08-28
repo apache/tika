@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singleton;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
@@ -32,12 +31,9 @@ import com.pff.PSTFile;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
 import com.pff.PSTRecipient;
-import org.apache.poi.ss.formula.functions.T;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -46,12 +42,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OutlookExtractor;
-import org.apache.tika.parser.rtf.RTFParser;
-import org.apache.tika.parser.txt.TXTParser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -159,6 +150,7 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
         mailMetadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
         mailMetadata.set(TikaCoreProperties.CREATED, pstMail.getCreationTime());
+        mailMetadata.set(Office.MAPI_MESSAGE_CLIENT_SUBMIT_TIME, pstMail.getClientSubmitTime());
         mailMetadata.set(TikaCoreProperties.MODIFIED, pstMail.getLastModificationTime());
         mailMetadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
         mailMetadata.set("descriptorNodeId", valueOf(pstMail.getDescriptorNodeId()));
@@ -219,8 +211,10 @@ public class OutlookPSTParser extends AbstractParser {
         //the underlying bytes from the pstMail object...
 
         byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
-        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, MediaType.TEXT_PLAIN.toString());
-        embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
+        mailMetadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE,
+                MediaType.TEXT_PLAIN.toString());
+        embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent),
+                handler, mailMetadata, true);
     }
 
     private void parseMailAttachments(XHTMLContentHandler xhtml, PSTMessage email,

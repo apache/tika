@@ -21,7 +21,9 @@ import java.util.Map;
 
 import org.apache.lucene.analysis.FilteringTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.standard.UAX29URLEmailTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.analysis.util.TokenFilterFactory;
 
 /**
@@ -29,7 +31,7 @@ import org.apache.lucene.analysis.util.TokenFilterFactory;
  */
 public class AlphaIdeographFilterFactory extends TokenFilterFactory {
 
-
+    private static final int UNDERSCORE = (int)'_';
 
     public AlphaIdeographFilterFactory(Map<String, String> args) {
         super(args);
@@ -41,38 +43,48 @@ public class AlphaIdeographFilterFactory extends TokenFilterFactory {
     }
 
     /**
-     * Remove tokens tokens that do not contain an "
+     * Remove tokens that do not contain an alphabetic or ideographic
      */
     private class AlphaFilter extends FilteringTokenFilter {
 
         private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
-
+        private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
         public AlphaFilter(TokenStream in) {
             super(in);
         }
 
         @Override
         protected boolean accept() throws IOException {
-            return isAlphabetic(termAtt.buffer());
+            String type = typeAtt.type();
+            if (type ==
+                            UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.EMOJI] ||
+                    type == UAX29URLEmailTokenizer.TOKEN_TYPES[UAX29URLEmailTokenizer.NUM]
+            ) {
+                return false;
+            }
+            return isAlphabetic(termAtt.buffer(), termAtt.length());
         }
     }
 
-    public static boolean isAlphabetic(char[] token) {
-        for (int i = 0; i < token.length; i++) {
+    public static boolean isAlphabetic(char[] token, int length) {
+        for (int i = 0; i < length; i++) {
             int cp = token[i];
             if (Character.isHighSurrogate(token[i])) {
-                if (i < token.length-1) {
+                if (i < length-1) {
                     cp = Character.toCodePoint(token[i], token[i + 1]);
                     i++;
                 }
             }
-
-            if (Character.isAlphabetic(cp) ||
-                    Character.isIdeographic(cp)) {
-                return true;
+            if (Character.isDigit(cp)) {
+                return false;
+            }
+            if (! Character.isAlphabetic(cp) &&
+                    ! Character.isIdeographic(cp) &&
+                    cp != UNDERSCORE) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
 }

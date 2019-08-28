@@ -409,7 +409,7 @@ public class TestMetadata {
         public Integer call() throws Exception {
             for (int i = 0; i < 1000; i++) {
                 Metadata m = new Metadata();
-                long start = new Date().getTime();
+                long start = System.currentTimeMillis();
                 start += random.nextInt(1000000);
                 Date now = new Date(start);
                 DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);

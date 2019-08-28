@@ -52,11 +52,20 @@ public class ServerTimeouts {
      */
     public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 120000;
 
+    /**
+     * Number of milliseconds to wait for child process to startup
+     */
+    public static final long DEFAULT_CHILD_STARTUP_MILLIS = 120000;
+
+    private int maxRestarts = -1;
+
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
 
     private long pingTimeoutMillis = DEFAULT_PING_TIMEOUT_MILLIS;
 
     private long pingPulseMillis = DEFAULT_PING_PULSE_MILLIS;
+
+    private long maxChildStartupMillis = DEFAULT_CHILD_STARTUP_MILLIS;
 
 
     /**
@@ -102,5 +111,26 @@ public class ServerTimeouts {
      */
     public void setPingPulseMillis(long pingPulseMillis) {
         this.pingPulseMillis = pingPulseMillis;
+    }
+
+    public int getMaxRestarts() {
+        return maxRestarts;
+    }
+
+    public void setMaxRestarts(int maxRestarts) {
+        this.maxRestarts = maxRestarts;
+    }
+
+    /**
+     * Maximum time in millis to allow for the child process to startup
+     * or restart
+     * @return
+     */
+    public long getMaxChildStartupMillis() {
+        return maxChildStartupMillis;
+    }
+
+    public void setMaxChildStartupMillis(long maxChildStartupMillis) {
+        this.maxChildStartupMillis = maxChildStartupMillis;
     }
 }

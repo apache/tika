@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,7 +35,9 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.tika.config.Field;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.LookaheadInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -173,6 +176,26 @@ public class POIFSContainerDetector implements Detector {
      * Regexp for matching the MPP Project Data stream
      */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
+
+    @Field
+    private int markLimit = 16 * 1024 * 1024;
+
+    /**
+     * If a TikaInputStream is passed in to {@link #detect(InputStream, Metadata)},
+     * and there is not an underlying file, this detector will spool up to {@link #markLimit}
+     * to disk.  If the stream was read in entirety (e.g. the spooled file is not truncated),
+     * this detector will open the file with POI and perform detection.
+     * If the spooled file is truncated, the detector will return {@link #OLE} (or
+     * {@link MediaType#OCTET_STREAM} if there's no OLE header).
+     *
+     * As of Tika 1.21, this detector respects the legacy behavior of not performing detection
+     * on a non-TikaInputStream.
+     *
+     * @param markLimit
+     */
+    public void setMarkLimit(int markLimit) {
+        this.markLimit = markLimit;
+    }
 
     /**
      * Internal detection of the specific kind of OLE2 document, based on the
@@ -378,14 +401,21 @@ public class POIFSContainerDetector implements Detector {
         return false;
     }
 
-    private static Set<String> getTopLevelNames(TikaInputStream stream)
+    private Set<String> getTopLevelNames(TikaInputStream stream)
             throws IOException {
         // Force the document stream to a (possibly temporary) file
-        // so we don't modify the current position of the stream
-        File file = stream.getFile();
+        // so we don't modify the current position of the stream.
+        //If the markLimit is < 0, this will spool the entire file
+        //to disk if there is not an underlying file.
+        Path file = stream.getPath(markLimit);
+
+        //if the stream was longer than markLimit, don't detect
+        if (file == null) {
+            return Collections.emptySet();
+        }
 
         try {
-            POIFSFileSystem fs = new POIFSFileSystem(file, true);
+            POIFSFileSystem fs = new POIFSFileSystem(file.toFile(), true);
 
             // Optimize a possible later parsing process by keeping
             // a reference to the already opened POI file system
@@ -440,7 +470,9 @@ public class POIFSContainerDetector implements Detector {
                         || input.read() != 0x1a || input.read() != 0xe1) {
                     return MediaType.OCTET_STREAM;
                 }
-            } finally {
+            } catch (IOException e) {
+                return MediaType.OCTET_STREAM;
+            } finally  {
                 input.reset();
             }
         }

@@ -34,7 +34,7 @@ class FileStarted {
      * @param resourceId string for unique resource id
      */
     public FileStarted(String resourceId) {
-        this(resourceId, new Date().getTime());
+        this(resourceId, System.currentTimeMillis());
     }
 
     public FileStarted(String resourceId, long started) {
@@ -62,7 +62,7 @@ class FileStarted {
      * file resource
      */
     public long getElapsedMillis() {
-        long now = new Date().getTime();
+        long now = System.currentTimeMillis();
         return now - started;
     }
 

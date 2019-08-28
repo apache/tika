@@ -45,6 +45,7 @@ class GroupState {
     public boolean sv;
     //in embedded object or not
     public boolean object;
+    public boolean annotation;
 
     // Create default (root) GroupState
     public GroupState() {
@@ -61,7 +62,7 @@ class GroupState {
         fontCharset = other.fontCharset;
         depth = 1 + other.depth;
         pictDepth = other.pictDepth > 0 ? other.pictDepth + 1 : 0;
-        //do not inherit object, sn, sv or sp
+        //do not inherit object, sn, sv, sp or annotation
 
     }
 }

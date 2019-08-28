@@ -61,6 +61,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
@@ -236,23 +237,19 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
-        FileOutputStream fos = null;
-        TikaInputStream tis = null;
         try {
             int w = image.getWidth(null);
             int h = image.getHeight(null);
             BufferedImage bImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
             File file = tmp.createTemporaryFile();
-            fos = new FileOutputStream(file);
-            ImageIO.write(bImage, "png", fos);
-            tis = TikaInputStream.get(file);
-            parse(tis, handler, metadata, context);
+            try (OutputStream fos = new FileOutputStream(file)) {
+                ImageIO.write(bImage, "png", fos);
+            }
+            try (TikaInputStream tis = TikaInputStream.get(file)) {
+                parse(tis, handler, metadata, context);
+            }
         } finally {
             tmp.dispose();
-            if (tis != null)
-                tis.close();
-            if (fos != null)
-                fos.close();
         }
     }
 

@@ -19,6 +19,7 @@ org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
 org.apache.tika.parser.crypto.Pkcs7Parser
 org.apache.tika.parser.crypto.TSDParser
+org.apache.tika.parser.csv.TextAndCSVParser
 org.apache.tika.parser.dwg.DWGParser
 org.apache.tika.parser.envi.EnviHeaderParser
 org.apache.tika.parser.epub.EpubParser
@@ -27,6 +28,7 @@ org.apache.tika.parser.feed.FeedParser
 org.apache.tika.parser.font.AdobeFontMetricParser
 org.apache.tika.parser.font.TrueTypeParser
 org.apache.tika.parser.html.HtmlParser
+org.apache.tika.parser.hwp.HwpV5Parser
 org.apache.tika.parser.image.BPGParser
 org.apache.tika.parser.image.ImageParser
 org.apache.tika.parser.image.PSDParser
@@ -60,7 +62,6 @@ org.apache.tika.parser.pkg.PackageParser
 org.apache.tika.parser.pkg.RarParser
 org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.sas.SAS7BDATParser
-org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser
 org.apache.tika.parser.wordperfect.QuattroProParser
 org.apache.tika.parser.wordperfect.WordPerfectParser

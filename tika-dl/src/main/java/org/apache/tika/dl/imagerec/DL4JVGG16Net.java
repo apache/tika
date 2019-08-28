@@ -136,7 +136,7 @@ public class DL4JVGG16Net implements ObjectRecogniser {
         for (int batch = 0; batch < predictions.size(0); batch++) {
             INDArray currentBatch = predictions.getRow(batch).dup();
             while (i < topN) {
-                topNPredictions[i] = Nd4j.argMax(currentBatch, 1).getInt(0, 0);
+                topNPredictions[i] = Nd4j.argMax(currentBatch, 1).getInt(0);
                 topNProb[i] = currentBatch.getFloat(batch, topNPredictions[i]);
                 currentBatch.putScalar(0, topNPredictions[i], 0);
                 outLabels[i]= imageNetLabels.getLabel(topNPredictions[i]);

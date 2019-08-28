@@ -140,4 +140,7 @@ public interface Office {
     Property MAPI_FROM_REPRESENTING_EMAIL = Property.internalText(
             PREFIX_DOC_META+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+"mapi-from-representing-email");
 
+    Property MAPI_MESSAGE_CLIENT_SUBMIT_TIME = Property.internalDate(
+            PREFIX_DOC_META+TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER+
+                    "mapi-msg-client-submit-time");
 }

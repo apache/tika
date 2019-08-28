@@ -41,23 +41,26 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- for java 10 -->
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-core</artifactId>
-      <version>${jaxb.version}</version>
-    </dependency>
+    <!-- for java 10
+      See TIKA-2778 for why we need to do this now.
+      May the gods of dependency management fix this in the future.
+      -->
     <dependency>
       <groupId>org.glassfish.jaxb</groupId>
       <artifactId>jaxb-runtime</artifactId>
       <version>${jaxb.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>jakarta.activation</groupId>
+          <artifactId>jakarta.activation-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
-      <groupId>javax.activation</groupId>
-      <artifactId>activation</artifactId>
-      <version>1.1.1</version>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>jakarta.activation</artifactId>
+      <version>1.2.1</version>
     </dependency>
-
     <dependency>
       <groupId>com.optimaize.languagedetector</groupId>
       <artifactId>language-detector</artifactId>
@@ -74,7 +77,7 @@
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>17.0</version>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
@@ -105,6 +108,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -123,6 +127,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/langdetect/*</exclude>
@@ -166,7 +171,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-scr-plugin</artifactId>
-                    <versionRange>[1.7.2,)</versionRange>
+                    <version>${maven.scr.version}</version>
                     <goals>
                       <goal>scr</goal>
                     </goals>

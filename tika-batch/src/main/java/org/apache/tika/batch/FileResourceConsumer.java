@@ -312,7 +312,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
 
     private FileResource getNextFileResource() throws InterruptedException {
         FileResource fileResource = null;
-        long start = new Date().getTime();
+        long start = System.currentTimeMillis();
         while (fileResource == null) {
             //check to see if thread is interrupted before polling
             if (Thread.currentThread().isInterrupted()) {
@@ -338,7 +338,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             }
             LOG.debug("{} is waiting for file and the queue size is: {}", consumerId, fileQueue.size());
 
-            long elapsed = new Date().getTime() - start;
+            long elapsed = System.currentTimeMillis() - start;
             if (maxConsecWaitInMillis > 0 && elapsed > maxConsecWaitInMillis) {
                 setEndedState(STATE.EXCEEDED_MAX_CONSEC_WAIT_MILLIS);
                 break;

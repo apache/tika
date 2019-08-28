@@ -16,8 +16,9 @@
  */
 package org.apache.tika.config;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Interface for error handling strategies in service class loading.
@@ -53,13 +54,12 @@ public interface LoadErrorHandler {
     };
 
     /**
-     * Strategy that logs warnings of all problems using a {@link Logger}
+     * Strategy that logs warnings of all problems using a {@link org.slf4j.Logger}
      * created using the given class name.
      */
     LoadErrorHandler WARN = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
-            Logger.getLogger(classname).log(
-                    Level.WARNING, "Unable to load " + classname, throwable);
+            LoggerFactory.getLogger(classname).warn("Unable to load {}", classname, throwable);
         }
         @Override
         public String toString() {

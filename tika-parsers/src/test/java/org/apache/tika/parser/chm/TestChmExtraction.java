@@ -229,7 +229,13 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
                             //this file is a beast, skip it
                             if (pathname.getName().equals("testChm2.chm")) {
                                 return false;
-                            } else {
+                                //this file throws an exception in the baseline and then
+                                //isn't included in the actual tests.
+                                //If we do want to include it we need to change the way
+                                //MultiThreadedTikaTest handles files that throw exceptions
+                            } else if (pathname.getName().equals("testChm_oom.chm")) {
+                                return false;
+                            } else{
                                 return true;
                             }
                         } else {

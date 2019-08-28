@@ -51,8 +51,11 @@ public class Pkcs7Parser extends AbstractParser {
     private static final MediaType PKCS7_SIGNATURE =
             MediaType.application("pkcs7-signature");
 
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            MediaType.set(PKCS7_MIME, PKCS7_SIGNATURE);
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return MediaType.set(PKCS7_MIME, PKCS7_SIGNATURE);
+        return SUPPORTED_TYPES;
     }
 
     public void parse(
@@ -62,8 +65,9 @@ public class Pkcs7Parser extends AbstractParser {
         try {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
-            try (CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider,
-                    new CloseShieldInputStream(stream))) {
+            CMSSignedDataParser parser =
+                    new CMSSignedDataParser(digestCalculatorProvider, new CloseShieldInputStream(stream));
+            try {
                 CMSTypedStream content = parser.getSignedContent();
                 if (content == null) {
                     throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
@@ -73,6 +77,8 @@ public class Pkcs7Parser extends AbstractParser {
                             context.get(Parser.class, EmptyParser.INSTANCE);
                     delegate.parse(input, handler, metadata, context);
                 }
+            } finally {
+                parser.close();
             }
         } catch (OperatorCreationException e) {
             throw new TikaException("Unable to create DigestCalculatorProvider", e);

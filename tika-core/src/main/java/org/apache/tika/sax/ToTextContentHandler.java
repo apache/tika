@@ -23,7 +23,9 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Locale;
 
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -31,10 +33,18 @@ import org.xml.sax.helpers.DefaultHandler;
  * SAX event handler that writes all character content out to a character
  * stream. No escaping or other transformations are made on the character
  * content.
- *
+ * <p>
+ * As of Tika 1.20, this handler ignores content within &lt;script&gt; and
+ * &lt;style&gt; tags.
+ *</p>
  * @since Apache Tika 0.10
  */
 public class ToTextContentHandler extends DefaultHandler {
+
+    private static final String STYLE = "STYLE";
+    private static final String SCRIPT = "SCRIPT";
+    private int styleDepth = 0;
+    private int scriptDepth = 0;
 
     /**
      * The character stream.
@@ -89,6 +99,11 @@ public class ToTextContentHandler extends DefaultHandler {
     @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
+
+        if (styleDepth+scriptDepth != 0) {
+            return;
+        }
+
         try {
             writer.write(ch, start, length);
         } catch (IOException e) {
@@ -122,6 +137,32 @@ public class ToTextContentHandler extends DefaultHandler {
             writer.flush();
         } catch (IOException e) {
             throw new SAXException("Error flushing character output", e);
+        }
+    }
+
+    @Override
+    public void startElement(
+            String uri, String localName, String qName, Attributes atts)
+            throws SAXException {
+        String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
+        if (uc.equals(STYLE)) {
+            styleDepth++;
+        }
+        if (uc.equals(SCRIPT)) {
+            scriptDepth++;
+        }
+    }
+
+    @Override
+    public void endElement(
+            String uri, String localName, String qName)
+            throws SAXException {
+        String uc = (qName == null) ? "" : qName.toUpperCase(Locale.ENGLISH);
+        if (uc.equals(STYLE)) {
+            styleDepth--;
+        }
+        if (uc.equals(SCRIPT)) {
+            scriptDepth--;
         }
     }
 

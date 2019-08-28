@@ -158,7 +158,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         List<Parser> parsers = new ArrayList<>();
         findEncodingDetectionParsers(p, parsers);
 
-        assertEquals(4, parsers.size());
+        assertEquals(5, parsers.size());
 
         for (Parser encodingDetectingParser : parsers) {
             EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser) encodingDetectingParser).getEncodingDetector();

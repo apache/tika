@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;
 import org.junit.Test;

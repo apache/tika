@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executor;
 
+import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
@@ -269,7 +270,9 @@ public class ParsingReader extends Reader {
      */
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
-        if (throwable instanceof IOException) {
+        if (throwable instanceof ZeroByteFileException) {
+            return -1;
+        } else if (throwable instanceof IOException) {
             throw (IOException) throwable;
         } else if (throwable != null) {
             IOException exception = new IOException("");

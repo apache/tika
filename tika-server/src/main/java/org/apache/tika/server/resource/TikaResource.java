@@ -17,6 +17,7 @@
 
 package org.apache.tika.server.resource;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -88,8 +89,11 @@ public class TikaResource {
     public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
+    public static final String PASSWORD = "Password";
+    public static final String PASSWORD_BASE64_UTF8 = "Password_Base64_UTF-8";
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
+    private static final Base64 BASE_64 = new Base64();
 
     private static TikaConfig tikaConfig;
     private static DigestingParser.Digester digester = null;
@@ -223,6 +227,10 @@ public class TikaResource {
                     clazz = boolean.class;
                 } else if (field.getType() == Boolean.class) {
                     clazz = Boolean.class;
+                } else if (field.getType() == long.class) {
+                    clazz = long.class;
+                } else if (field.getType() == Long.class) {
+                    clazz = Long.class;
                 }
             }
 
@@ -247,6 +255,8 @@ public class TikaResource {
                     m.invoke(object, Boolean.parseBoolean(val));
                 } else if (clazz == float.class || clazz == Float.class) {
                     m.invoke(object, Float.parseFloat(val));
+                } else if (clazz == long.class || clazz == Long.class) {
+                    m.invoke(object, Long.parseLong(val));
                 } else {
                     throw new IllegalArgumentException("setter must be String, int, float, double or boolean...for now");
                 }
@@ -255,8 +265,10 @@ public class TikaResource {
             }
 
         } catch (Throwable ex) {
-            throw new WebApplicationException(String.format(Locale.ROOT,
-                    "%s is an invalid %s header", key, X_TIKA_OCR_HEADER_PREFIX));
+            throw new WebApplicationException(
+                    String.format(Locale.ROOT,
+                    "%s is an invalid %s header",
+                            key, X_TIKA_OCR_HEADER_PREFIX), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -332,8 +344,14 @@ public class TikaResource {
             });
         }
 
-        final String password = httpHeaders.getFirst("Password");
-        if (password != null) {
+        String tmpPassword = httpHeaders.getFirst(PASSWORD_BASE64_UTF8);
+        if (tmpPassword != null) {
+            tmpPassword = decodeBase64UTF8(tmpPassword);
+        } else {
+            tmpPassword = httpHeaders.getFirst(PASSWORD);
+        }
+        if (tmpPassword != null) {
+            final String password = tmpPassword;
             context.set(PasswordProvider.class, new PasswordProvider() {
                 @Override
                 public String getPassword(Metadata metadata) {
@@ -341,6 +359,11 @@ public class TikaResource {
                 }
             });
         }
+    }
+
+    private static String decodeBase64UTF8(String s) {
+        byte[] bytes = BASE_64.decode(s);
+        return new String(bytes, UTF_8);
     }
 
     public static void setDetector(Parser p, Detector detector) {

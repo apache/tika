@@ -104,24 +104,33 @@ abstract class AbstractPOIFSExtractor {
                                           String relationshipID, ClassID storageClassID, String mediaType, XHTMLContentHandler xhtml,
                                           boolean outputHtml)
             throws IOException, SAXException, TikaException {
+        handleEmbeddedResource(resource, new Metadata(), filename,
+                relationshipID, storageClassID, mediaType, xhtml, outputHtml);
+    }
+
+    protected void handleEmbeddedResource(TikaInputStream resource, Metadata embeddedMetadata, String filename,
+                String relationshipID, ClassID storageClassID, String mediaType, XHTMLContentHandler xhtml,
+        boolean outputHtml)
+            throws IOException, SAXException, TikaException {
+
         try {
-            Metadata metadata = new Metadata();
+
             if (filename != null) {
-                metadata.set(Metadata.TIKA_MIME_FILE, filename);
-                metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
+                embeddedMetadata.set(Metadata.TIKA_MIME_FILE, filename);
+                embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             }
             if (relationshipID != null) {
-                metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipID);
+                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipID);
             }
             if (storageClassID != null) {
-                metadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID, storageClassID.toString());
+                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID, storageClassID.toString());
             }
             if (mediaType != null) {
-                metadata.set(Metadata.CONTENT_TYPE, mediaType);
+                embeddedMetadata.set(Metadata.CONTENT_TYPE, mediaType);
             }
 
-            if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
-                embeddedDocumentUtil.parseEmbedded(resource, xhtml, metadata, outputHtml);
+            if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
+                embeddedDocumentUtil.parseEmbedded(resource, xhtml, embeddedMetadata, outputHtml);
             }
         } finally {
             resource.close();

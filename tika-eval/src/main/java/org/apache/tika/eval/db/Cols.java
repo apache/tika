@@ -16,6 +16,8 @@
  */
 package org.apache.tika.eval.db;
 
+import java.sql.Types;
+
 public enum Cols {
     //container table
     CONTAINER_ID,
@@ -43,8 +45,10 @@ public enum Cols {
     CONTENT_LENGTH,
     NUM_UNIQUE_TOKENS,
     NUM_TOKENS,
+    NUM_UNIQUE_ALPHABETIC_TOKENS,
     NUM_ALPHABETIC_TOKENS, //alphabetic or ideographic tokens
     COMMON_TOKENS_LANG, //which language was used for the common tokens metric?
+    NUM_UNIQUE_COMMON_TOKENS,
     NUM_COMMON_TOKENS,
     TOP_N_TOKENS,
     LANG_ID_1,
@@ -86,6 +90,25 @@ public enum Cols {
     MIME_STRING,//string representation of mime type
 
     DIR_NAME_A,//for comparisons in REF_PAIR_NAMES
-    DIR_NAME_B
+    DIR_NAME_B,
+    
+    //structure tags
+    TAGS_A,
+    TAGS_B,
+    TAGS_DIV,
+    TAGS_I,
+    TAGS_IMG,
+    TAGS_LI,
+    TAGS_P,
+    TAGS_OL,
+    TAGS_TABLE,
+    TAGS_TD,
+    TAGS_TITLE,
+    TAGS_TR,
+    TAGS_UL,
+    TAGS_U,
+    TAGS_PARSE_EXCEPTION, //if there was a SAX|IO|TikaException while parsing the html or xhtml
+    ;
+
 }
 

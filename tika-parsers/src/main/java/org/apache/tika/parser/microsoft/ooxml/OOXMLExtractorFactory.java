@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.EOFException;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
@@ -25,6 +27,7 @@ import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -52,7 +55,11 @@ import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
+import org.apache.tika.parser.utils.ZipSalvager;
+import org.apache.tika.utils.RereadableInputStream;
 import org.apache.xmlbeans.XmlException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -62,6 +69,9 @@ import org.xml.sax.SAXException;
  */
 public class OOXMLExtractorFactory {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OOXMLExtractorFactory.class);
+    private static final int MAX_BUFFER_LENGTH = 1000000;
+
     public static void parse(
             InputStream stream, ContentHandler baseHandler,
             Metadata metadata, ParseContext context)
@@ -69,26 +79,61 @@ public class OOXMLExtractorFactory {
         Locale locale = context.get(Locale.class, LocaleUtil.getUserLocale());
         ExtractorFactory.setThreadPrefersEventExtractors(true);
 
+        //if there's a problem opening the zip file;
+        //create a tmp file, and copy what you can read of it.
+        File tmpRepairedCopy = null;
+
+        OPCPackage pkg = null;
         try {
             OOXMLExtractor extractor = null;
-            OPCPackage pkg;
 
             // Locate or Open the OPCPackage for the file
             TikaInputStream tis = TikaInputStream.cast(stream);
             if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
                 pkg = (OPCPackage) tis.getOpenContainer();
             } else if (tis != null && tis.hasFile()) {
-                pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
+                try {
+                    pkg = OPCPackage.open(tis.getFile().getPath(), PackageAccess.READ);
+                } catch (InvalidOperationException e) {
+                    tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                    ZipSalvager.salvageCopy(tis.getFile(), tmpRepairedCopy);
+                    pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
+                }
                 tis.setOpenContainer(pkg);
             } else {
-                InputStream shield = new CloseShieldInputStream(stream);
-                pkg = OPCPackage.open(shield);
+                //OPCPackage slurps rris into memory so we can close rris
+                //without apparent problems
+                try (RereadableInputStream rereadableInputStream =
+                        new RereadableInputStream(stream, MAX_BUFFER_LENGTH,
+                                true, false)) {
+                    try {
+                        pkg = OPCPackage.open(rereadableInputStream);
+                    } catch (EOFException e) {
+                        rereadableInputStream.rewind();
+                        tmpRepairedCopy = File.createTempFile("tika-ooxml-repair-", "");
+                        ZipSalvager.salvageCopy(rereadableInputStream, tmpRepairedCopy);
+                        //if there isn't enough left to be opened as a package
+                        //throw an exception -- we may want to fall back to streaming
+                        //parsing
+                        pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
+                    }
+                }
             }
 
-            // Get the type, and ensure it's one we handle
-            MediaType type = ZipContainerDetector.detectOfficeOpenXML(pkg);
-            if (type == null) {
-                type = ZipContainerDetector.detectXPSOPC(pkg);
+            MediaType type = null;
+            String mediaTypeString = metadata.get(Metadata.CONTENT_TYPE);
+            if (mediaTypeString != null) {
+                type = MediaType.parse(mediaTypeString);
+            }
+            if (type != null && OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
+                // Not a supported type, delegate to Empty Parser
+                EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
+                return;
+            }
+
+            if (type == null || ! OOXMLParser.SUPPORTED_TYPES.contains(type)) {
+                // Get the type, and ensure it's one we handle
+                type = ZipContainerDetector.detectOfficeOpenXML(pkg);
             }
 
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
@@ -169,7 +214,20 @@ public class OOXMLExtractorFactory {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (XmlException e) {
             throw new TikaException("Error creating OOXML extractor", e);
-
+        } finally {
+            if (tmpRepairedCopy != null) {
+                if (pkg != null) {
+                    try {
+                        pkg.close();
+                    } catch (IOException e) {
+                        LOG.warn("problem closing pkg file");
+                    }
+                }
+                boolean deleted = tmpRepairedCopy.delete();
+                if (! deleted) {
+                    LOG.warn("failed to delete tmp (repair) file: "+tmpRepairedCopy.getAbsolutePath());
+                }
+            }
         }
     }
 

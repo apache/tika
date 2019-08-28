@@ -304,7 +304,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
 
     private void handleOLE(Row row, String cName, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
-        OleBlob blob = getBlob(row, cName);
+        OleBlob blob = row.getBlob(cName);
         //lifted shamelessly from Jackcess's OleBlobTest
         if (blob == null)
             return;
@@ -366,18 +366,6 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 handleCompoundContent(cc, xhtml);
                 break;
         }
-    }
-
-    /*
-       Temporary work around until POI 4.0.0 is released and jackcess upgrades
-       This is copy/pasted from jackcess
-    */
-    private OleBlob getBlob(Row row, String cName) {
-        byte[] bytes = row.getBytes(cName);
-        if (bytes == null) {
-            return null;
-        }
-        return JackcessOleUtil.parseBlob(bytes);
     }
 
     private void handleCompoundContent(OleBlob.CompoundContent cc, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {

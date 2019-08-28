@@ -86,7 +86,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
 
-    protected final static String[] EMBEDDED_RELATIONSHIPS = new String[]{
+    protected static final String[] EMBEDDED_RELATIONSHIPS = new String[]{
             RELATION_AUDIO,
             PackageRelationshipTypes.IMAGE_PART,
             POIXMLDocument.PACK_OBJECT_REL_TYPE,

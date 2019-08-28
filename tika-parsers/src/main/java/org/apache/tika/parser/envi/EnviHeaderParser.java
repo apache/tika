@@ -116,15 +116,92 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
      * Write a line to the XHTMLContentHandler and populate the key, value into the Metadata
      */
     private void writeParagraphAndSetMetadata(String line, Metadata metadata) throws SAXException {
-        if(line.length() < 150) {
-            String[] keyValue = line.split("=");
+        if(line.length() < 300) {
+            String[] keyValue = line.split("=", 2);
             if(keyValue.length != 1) {
-                metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                if (keyValue[0].trim().equals("map info")) {
+                    String[] mapInfoValues = parseMapInfoContents(keyValue[1]);
+                    if (mapInfoValues[0].equals("UTM")) {
+                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                        String [] latLonStringArray = convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
+                        String xhtmlLatLongLine = "lat/lon = { " + latLonStringArray[0] + ", " + latLonStringArray[1] + " }";
+                        xhtml.startElement("p");
+                        xhtml.characters(xhtmlLatLongLine);
+                        xhtml.endElement("p");
+                    } else {
+                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                    }
+                } else {
+                    metadata.set("envi." + keyValue[0].trim().replace(" ", "."), keyValue[1].trim());
+                }
             }
         }
         xhtml.startElement("p");
         xhtml.characters(line);
         xhtml.endElement("p");
+    }
+
+    private String[] parseMapInfoContents(String mapInfoValue) {
+        StringBuilder mapInfoValueStringBuilder = new StringBuilder();
+        for (int i = 0; i < mapInfoValue.length(); ++i) {
+            if (mapInfoValue.charAt(i) != '{' && mapInfoValue.charAt(i) != '}' && mapInfoValue.charAt(i) != ' ') {
+                mapInfoValueStringBuilder.append(mapInfoValue.charAt(i));
+            }
+        }
+        String[] mapInfoValues = mapInfoValueStringBuilder.toString().split(",");
+        return mapInfoValues;
+    }
+
+    // Conversion logic taken from https://stackoverflow.com/questions/343865/how-to-convert-from-utm-to-latlng-in-python-or-javascript/344083#344083
+    private String [] convertMapInfoValuesToLatLngAndSetMetadata(String[] mapInfoValues, Metadata metadata) {
+        // Based on the map info data, pixelEasting is at index 3 and pixelNorthing is at index 4
+        double pixelEasting = Double.valueOf(mapInfoValues[3].trim());
+        double pixelNorthing = Double.valueOf(mapInfoValues[4].trim());
+        int zone = 0;
+        if(!mapInfoValues[7].trim().isEmpty()){
+            zone = Integer.parseInt(mapInfoValues[7].trim());
+        }
+
+        double a = 6378137.0;
+        double e = 0.0818191910;
+        double e1sq = 0.006739497;
+        double k0 = 0.9996;
+
+        double arc = pixelNorthing / k0;
+        double mu = arc / (a * (1.0 - Math.pow(e, 2.0) / 4.0 - 3.0 * Math.pow(e, 4.0) / 64.0 - 5.0 * Math.pow(e, 6.0) / 256.0));
+
+        double ei = (1.0 - Math.pow((1.0 - e * e), (1.0 / 2.0))) / (1.0 + Math.pow((1.0 - e * e), (1.0 / 2.0)));
+
+        double ca = 3.0 * ei / 2.0 - 27.0 * Math.pow(ei, 3.0) / 32.0;
+
+        double cb = 21.0 * Math.pow(ei, 2.0) / 16.0 - 55.0 * Math.pow(ei, 4.0) / 32.0;
+        double cc = 151.0 * Math.pow(ei, 3.0) / 96.0;
+        double cd = 1097.0 * Math.pow(ei, 4.0) / 512.0;
+        double phi1 = mu + ca * Math.sin(2.0 * mu) + cb * Math.sin(4.0 * mu) + cc * Math.sin(6.0 * mu) + cd * Math.sin(8.0 * mu);
+
+        double n0 = a / Math.pow((1.0 - Math.pow((e * Math.sin(phi1)), 2.0)), (1.0 / 2.0));
+
+        double r0 = a * (1.0 - e * e) / Math.pow((1.0 - Math.pow((e * Math.sin(phi1)), 2.0)), (3.0 / 2.0));
+        double fact1 = n0 * Math.tan(phi1) / r0;
+
+        double _a1 = 500000.0 - pixelEasting;
+        double dd0 = _a1 / (n0 * k0);
+        double fact2 = dd0 * dd0 / 2.0;
+        double t0 = Math.pow(Math.tan(phi1), 2.0);
+        double Q0 = e1sq * Math.pow(Math.cos(phi1), 2.0);
+        double fact3 = (5.0 + 3.0 * t0 + 10.0 * Q0 - 4.0 * Q0 * Q0 - 9.0 * e1sq) * Math.pow(dd0, 4.0) / 24.0;
+        double fact4 = (61.0 + 90.0 * t0 + 298.0 * Q0 + 45.0 * t0 * t0 - 252.0 * e1sq - 3.0 * Q0 * Q0) * Math.pow(dd0, 6.0) / 720.0;
+        double lof1 = _a1 / (n0 * k0);
+        double lof2 = (1.0 + 2.0 * t0 + Q0) * Math.pow(dd0, 3.0) / 6.0;
+        double lof3 = (5.0 - 2.0 * Q0 + 28.0 * t0 - 3.0 * Math.pow(Q0, 2.0) + 8.0 * e1sq + 24.0 * Math.pow(t0, 2.0)) * Math.pow(dd0, 5.0) / 120.0;
+        double _a2 = (lof1 - lof2 + lof3) / Math.cos(phi1);
+        double _a3 = _a2 * 180.0 / Math.PI;
+        double zoneCM = (zone > 0) ? 6 * zone - 183.0 : 3.0;
+        double latitude = 180.0 * (phi1 - fact1 * (fact2 + fact3 + fact4)) / Math.PI;
+        double longitude = zoneCM - _a3;
+        metadata.set("envi.lat/lon" , latitude + ", " + longitude);
+
+        return new String [] {Double.toString(latitude), Double.toString(longitude)};
     }
 
     /*

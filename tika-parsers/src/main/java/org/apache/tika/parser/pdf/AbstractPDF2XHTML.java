@@ -46,12 +46,14 @@ import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDSimpleFileSpecification;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.interactive.action.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionImportData;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionJavaScript;
@@ -78,6 +80,8 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDXFAResource;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
+import org.apache.pdfbox.util.Matrix;
+import org.apache.pdfbox.util.Vector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -142,12 +146,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<IOException> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
-    private final ParseContext context;
+    final ParseContext context;
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
 
-    private int pageIndex = 0;
+    //zero-based pageIndex
+    int pageIndex = 0;
+    int startPage = -1;//private in PDFTextStripper...must have own copy because we override processpages
+    int unmappedUnicodeCharsPerPage = 0;
+    int totalCharsPerPage = 0;
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config) throws IOException {
@@ -347,6 +355,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void endPage(PDPage page) throws IOException {
+        metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
+        metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE,
+                unmappedUnicodeCharsPerPage);
+        totalCharsPerPage = 0;
+        unmappedUnicodeCharsPerPage = 0;
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
@@ -416,6 +429,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                 doOCROnCurrentPage();
+            } else if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.AUTO)) {
+                //TODO add more sophistication
+                if (totalCharsPerPage < 10 || unmappedUnicodeCharsPerPage > 10) {
+                    doOCROnCurrentPage();
+                }
             }
 
             PDPageAdditionalActions pageActions = page.getActions();
@@ -427,9 +445,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (SAXException|TikaException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
         } catch (IOException e) {
-            exceptions.add(e);
-        } finally {
-            pageIndex++;
+            handleCatchableIOE(e);
         }
     }
 
@@ -784,5 +800,71 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         catch (NoSuchMethodException|IllegalAccessException|InvocationTargetException e) {
         }
         return null;
+    }
+
+    /**
+     * we need to override this because we are overriding {@link #processPages(PDPageTree)}
+     * @return
+     */
+    @Override
+    public int getCurrentPageNo() {
+        return pageIndex+1;
+    }
+
+    /**
+     * See TIKA-2845 for why we need to override this.
+     *
+     * @param pages
+     * @throws IOException
+     */
+    @Override
+    protected void processPages(PDPageTree pages) throws IOException {
+        //we currently need this hack because we aren't able to increment
+        //the private currentPageNo in PDFTextStripper,
+        //and PDFTextStripper's processPage relies on that variable
+        //being >= startPage when deciding whether or not to process a page
+        // See:
+        // if (currentPageNo >= startPage && currentPageNo <= endPage
+        //                && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
+        //                && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber))
+        //        {
+        super.setStartPage(-1);
+        for (PDPage page : pages) {
+            if (getCurrentPageNo() >= getStartPage()
+                    && getCurrentPageNo() <= getEndPage()) {
+                processPage(page);
+            }
+            pageIndex++;
+        }
+    }
+
+    @Override
+    public void setStartBookmark(PDOutlineItem pdOutlineItem) {
+        throw new UnsupportedOperationException("We don't currently support this -- See PDFTextStripper's processPages() for how to implement this.");
+    }
+
+    @Override
+    public void setEndBookmark(PDOutlineItem pdOutlineItem) {
+        throw new UnsupportedOperationException("We don't currently support this -- See PDFTextStripper's processPages() for how to implement this.");
+    }
+
+    @Override
+    public void setStartPage(int startPage) {
+        this.startPage = startPage;
+    }
+
+    @Override
+    public int getStartPage() {
+        return startPage;
+    }
+
+    @Override
+    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, String unicode, Vector displacement) throws IOException
+    {
+        super.showGlyph(textRenderingMatrix, font, code, unicode, displacement);
+        if (unicode == null || unicode.isEmpty()) {
+            unmappedUnicodeCharsPerPage++;
+        }
+        totalCharsPerPage++;
     }
 }

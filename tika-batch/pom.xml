@@ -105,25 +105,9 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-remote-resources-plugin</artifactId>
-        <version>1.5</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>bundle</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <includes>
-            <include>**/*.xml</include>
-          </includes>
-        </configuration>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -138,6 +122,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/**</exclude>
@@ -159,25 +144,6 @@
           <execution>
             <goals>
               <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.10</version>
-        <configuration>
-          <additionalClasspathElements>
-            <additionalClasspathElement>
-              ${project.build.directory}/${project.build.finalName}.jar
-            </additionalClasspathElement>
-          </additionalClasspathElements>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
             </goals>
           </execution>
         </executions>

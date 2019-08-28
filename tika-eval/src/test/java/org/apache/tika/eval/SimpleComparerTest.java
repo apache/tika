@@ -17,7 +17,6 @@
 package org.apache.tika.eval;
 
 import static org.apache.tika.eval.AbstractProfiler.EXCEPTION_TYPE;
-import static org.apache.tika.eval.AbstractProfiler.getContent;
 import static org.apache.tika.eval.io.ExtractReader.IGNORE_LENGTH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -38,11 +37,12 @@ import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
-import org.apache.tika.eval.util.LanguageIDWrapper;
+import org.apache.tika.eval.util.ContentTags;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -53,18 +53,24 @@ import org.junit.Test;
 public class SimpleComparerTest extends TikaTest {
 
     private ExtractComparer comparer = null;
-    private MockDBWriter writer = null;
+    private static MockDBWriter WRITER;
+
+    @BeforeClass
+    public static void staticSetUp() throws Exception {
+        WRITER = new MockDBWriter();
+        AbstractProfiler.loadCommonTokens(
+                Paths.get(SimpleComparerTest.class.getResource("/common_tokens").toURI()), "en");
+        LanguageIDWrapper.loadBuiltInModels();
+    }
 
     @Before
     public void setUp() throws Exception {
-        writer = new MockDBWriter();
+        WRITER.clear();
         comparer = new ExtractComparer(null, null,
                 Paths.get("extractsA"), Paths.get("extractsB"),
                 new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
                         IGNORE_LENGTH, IGNORE_LENGTH),
-                writer);
-        AbstractProfiler.loadCommonTokens(this.getResourceAsFile("/common_tokens").toPath(), "en");
-        LanguageIDWrapper.loadBuiltInModels();
+                WRITER);
     }
 
     @Test
@@ -79,35 +85,35 @@ public class SimpleComparerTest extends TikaTest {
 
         comparer.compareFiles(fpsA, fpsB);
 
-        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENT_COMPARISONS);
+        List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS);
         Map<Cols, String> row = tableInfos.get(0);
-        assertEquals("0", row.get(Cols.ID));
         assertTrue(
                 row.get(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A)
                         .startsWith("1,200: 1 | 120000: 1 | over: 1"));
 
-        tableInfos = writer.getTable(ExtractComparer.CONTENTS_TABLE_A);
+        tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
         row = tableInfos.get(0);
-        assertEquals("0", row.get(Cols.ID));
         assertEquals("70", row.get(Cols.CONTENT_LENGTH));
         assertEquals("10", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("14", row.get(Cols.NUM_TOKENS));
+        assertEquals("8", row.get(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS));
         assertEquals("12", row.get(Cols.NUM_ALPHABETIC_TOKENS));
-        assertEquals("6", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("8", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
+        assertEquals("12", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("57", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("en", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("eng", row.get(Cols.COMMON_TOKENS_LANG));
 
-        tableInfos = writer.getTable(ExtractComparer.CONTENTS_TABLE_B);
+        tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_B);
         row = tableInfos.get(0);
-        assertEquals("0", row.get(Cols.ID));
         assertEquals("76", row.get(Cols.CONTENT_LENGTH));
         assertEquals("9", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("13", row.get(Cols.NUM_TOKENS));
-        assertEquals("4", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("8", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
+        assertEquals("10", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("64", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("en", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("eng", row.get(Cols.COMMON_TOKENS_LANG));
 
-        tableInfos = writer.getTable(ExtractComparer.PROFILES_A);
+        tableInfos = WRITER.getTable(ExtractComparer.PROFILES_A);
         row = tableInfos.get(0);
         assertEquals("2", row.get(Cols.NUM_PAGES));
 
@@ -125,15 +131,15 @@ public class SimpleComparerTest extends TikaTest {
 
         comparer.compareFiles(fpsA, fpsB);
 
-        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENTS_TABLE_A);
+        List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
 
         Map<Cols, String> row = tableInfos.get(0);
         assertEquals("133", row.get(Cols.CONTENT_LENGTH));
         assertEquals("7", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("24", row.get(Cols.NUM_TOKENS));
-        assertEquals("3", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("18", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("108", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("es", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("spa", row.get(Cols.COMMON_TOKENS_LANG));
         assertEquals("24", row.get(Cols.NUM_ALPHABETIC_TOKENS));
 
     }
@@ -154,12 +160,12 @@ public class SimpleComparerTest extends TikaTest {
 
         comparer.compareFiles(fpsA, fpsB);
 
-        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENTS_TABLE_A);
+        List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
 
         Map<Cols, String> row = tableInfos.get(0);
         assertEquals("122", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("3", row.get(Cols.NUM_COMMON_TOKENS));
-        assertEquals("zh-cn", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("20", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("cmn", row.get(Cols.COMMON_TOKENS_LANG));
 
     }
 
@@ -174,9 +180,8 @@ public class SimpleComparerTest extends TikaTest {
                 getResourceAsFile("/test-dirs/extractsB/file4_emptyB.pdf.json").toPath()
         );
         comparer.compareFiles(fpsA, fpsB);
-        List<Map<Cols, String>> table = writer.getTable(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
+        List<Map<Cols, String>> table = WRITER.getTable(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
         Map<Cols, String> row = table.get(0);
-        //debugPrintRow(row);
         assertEquals(Integer.toString(ExtractReaderException.TYPE.ZERO_BYTE_EXTRACT_FILE.ordinal()),
                 row.get(Cols.EXTRACT_EXCEPTION_ID));
     }
@@ -184,24 +189,23 @@ public class SimpleComparerTest extends TikaTest {
 
     @Test
     public void testGetContent() throws Exception {
-        Metadata m = new Metadata();
-        m.add(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, "0123456789");
+        ContentTags contentTags = new ContentTags("0123456789");
         Map<Cols, String> data = new HashMap<>();
-        String content = getContent(m, 10, data);
+        String content = AbstractProfiler.truncateContent(contentTags, 10, data);
         assertEquals(10, content.length());
         assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
-        content = getContent(m, 4, data);
+        content = AbstractProfiler.truncateContent(contentTags, 4, data);
         assertEquals(4, content.length());
         assertEquals("TRUE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test Metadata with no content
-        content = getContent(new Metadata(), 10, data);
+        content = AbstractProfiler.truncateContent(ContentTags.EMPTY_CONTENT_TAGS, 10, data);
         assertEquals(0, content.length());
         assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
 
         //test null Metadata
-        content = getContent(null, 10, data);
+        content = AbstractProfiler.truncateContent(null, 10, data);
         assertEquals(0, content.length());
         assertEquals("FALSE", data.get(Cols.CONTENT_TRUNCATED_AT_MAX_LEN));
     }
@@ -218,17 +222,15 @@ public class SimpleComparerTest extends TikaTest {
         );
         comparer.compareFiles(fpsA, fpsB);
         for (TableInfo t : new TableInfo[]{ExtractComparer.EXCEPTION_TABLE_A, ExtractComparer.EXCEPTION_TABLE_B}) {
-            List<Map<Cols, String>> table = writer.getTable(t);
+            List<Map<Cols, String>> table = WRITER.getTable(t);
 
             Map<Cols, String> rowA = table.get(0);
-            //debugPrintRow(rowA);
             assertEquals(Integer.toString(EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()),
                     rowA.get(Cols.PARSE_EXCEPTION_ID));
             assertNull(rowA.get(Cols.ORIG_STACK_TRACE));
             assertNull(rowA.get(Cols.SORT_STACK_TRACE));
         }
     }
-
 
     @Test
     public void testAttachmentCounts() {
@@ -276,11 +278,84 @@ public class SimpleComparerTest extends TikaTest {
                 getResourceAsFile("/test-dirs/extractsB/file14_diffAttachOrder.json").toPath()
         );
         comparer.compareFiles(fpsA, fpsB);
-        List<Map<Cols, String>> tableInfos = writer.getTable(ExtractComparer.CONTENT_COMPARISONS);
+        List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS);
         assertEquals(3, tableInfos.size());
         for (int i = 0; i < tableInfos.size(); i++) {
             assertEquals("1.0", tableInfos.get(i).get(Cols.OVERLAP));
         }
+    }
+
+    @Test
+    public void testTags() throws Exception {
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file15_tags.json"),
+                getResourceAsFile("/test-dirs/extractsA/file15_tags.json").toPath()
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("file15_tags.html"),
+                getResourceAsFile("/test-dirs/extractsB/file15_tags.html").toPath());
+        comparer.compareFiles(fpsA, fpsB);
+        List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
+        assertEquals(1, tableInfosA.size());
+        Map<Cols, String> tableInfoA = tableInfosA.get(0);
+        assertEquals("18", tableInfoA.get(Cols.TAGS_P));
+        assertEquals("1", tableInfoA.get(Cols.TAGS_DIV));
+        assertEquals("1", tableInfoA.get(Cols.TAGS_TITLE));
+
+        List<Map<Cols, String>> tableInfosB = WRITER.getTable(ExtractComparer.TAGS_TABLE_B);
+        assertEquals(1, tableInfosB.size());
+        Map<Cols, String> tableInfoB = tableInfosB.get(0);
+        assertEquals("18", tableInfoB.get(Cols.TAGS_DIV));
+        assertEquals("1", tableInfoB.get(Cols.TAGS_IMG));
+    }
+
+    @Test
+    public void testBadTags() throws Exception {
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file16_badtags.json"),
+                getResourceAsFile("/test-dirs/extractsA/file16_badTags.json").toPath()
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("file16_badtags.html"),
+                getResourceAsFile("/test-dirs/extractsB/file16_badTags.html").toPath());
+        comparer.compareFiles(fpsA, fpsB);
+        List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
+        assertEquals(1, tableInfosA.size());
+        Map<Cols, String> tableInfoA = tableInfosA.get(0);
+        assertEquals("true", tableInfoA.get(Cols.TAGS_PARSE_EXCEPTION));
+
+        List<Map<Cols, String>> tableInfosB = WRITER.getTable(ExtractComparer.TAGS_TABLE_B);
+        assertEquals(1, tableInfosB.size());
+        Map<Cols, String> tableInfoB = tableInfosB.get(0);
+        //there actually is a tag problem, but tagsoup fixes it.
+        //this confirms behavior.
+        assertEquals("false", tableInfoB.get(Cols.TAGS_PARSE_EXCEPTION));
+    }
+
+    @Test
+    public void testTagsOutOfOrder() throws Exception {
+        EvalFilePaths fpsA = new EvalFilePaths(
+                Paths.get("file17_tagsOutOfOrder.json"),
+                getResourceAsFile("/test-dirs/extractsA/file17_tagsOutOfOrder.json").toPath()
+        );
+        EvalFilePaths fpsB = new EvalFilePaths(
+                Paths.get("file16_badtags.html"),
+                getResourceAsFile("/test-dirs/extractsB/file16_badtags.html").toPath());
+        comparer.compareFiles(fpsA, fpsB);
+        List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
+        assertEquals(1, tableInfosA.size());
+        Map<Cols, String> tableInfoA = tableInfosA.get(0);
+        assertEquals("true", tableInfoA.get(Cols.TAGS_PARSE_EXCEPTION));
+
+        //confirm that backoff to html parser worked
+        List<Map<Cols, String>> contentsA = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
+        assertEquals(1, contentsA.size());
+        Map<Cols, String> contentsARow1 = contentsA.get(0);
+        String topN = contentsARow1.get(Cols.TOP_N_TOKENS);
+        assertNotContained("content:", topN);
+        assertNotContained(" p: ", topN);
+        assertContains("apache: 12", topN);
+
     }
 
     @Test
@@ -313,7 +388,7 @@ public class SimpleComparerTest extends TikaTest {
     }
 
     private void debugPrintTable(TableInfo tableInfo) {
-        List<Map<Cols, String>> table = writer.getTable(tableInfo);
+        List<Map<Cols, String>> table = WRITER.getTable(tableInfo);
         if (table == null) {
             return;
         }

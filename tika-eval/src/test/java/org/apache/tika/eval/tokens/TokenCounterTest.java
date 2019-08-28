@@ -64,16 +64,16 @@ public class TokenCounterTest {
         int numberOfTests = 100;
         for (int i = 0; i < numberOfTests; i++) {
             String s = generateString();
-            long start = new Date().getTime();
+            long start = System.currentTimeMillis();
             TokenCounter counter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
             counter.add(FIELD, s);
-            simple += new Date().getTime()-start;
+            simple += System.currentTimeMillis()-start;
             TokenStatistics simpleTokenStatistics = counter.getTokenStatistics(FIELD);
 
-            start = new Date().getTime();
+            start = System.currentTimeMillis();
             LuceneTokenCounter tokenCounter = new LuceneTokenCounter(analyzerManager.getGeneralAnalyzer());
             tokenCounter.add(FIELD, s);
-            lucene += new Date().getTime()-start;
+            lucene += System.currentTimeMillis()-start;
             assertEquals(s, simpleTokenStatistics, tokenCounter.getTokenStatistics(FIELD));
         }
     }
@@ -90,7 +90,7 @@ public class TokenCounterTest {
 
     @Test
     public void testCJKFilter() throws Exception {
-        String s = "then quickbrownfoxjumpedoverthelazy dogss dog 普林斯顿大学";
+        String s = "then quickbrownfoxjumpedoverthelazy dogss d 2000 普林斯顿大学";
         Analyzer analyzer = analyzerManager.getCommonTokensAnalyzer();
         TokenStream ts = analyzer.tokenStream(FIELD, s);
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
