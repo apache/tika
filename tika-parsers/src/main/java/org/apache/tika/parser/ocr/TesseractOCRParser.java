@@ -167,9 +167,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         boolean hasTesseract = ExternalParser.check(checkCmd);
         TESSERACT_PRESENT.put(tesseract, hasTesseract);
         return hasTesseract;
-
+     
     }
-
+    
     private boolean hasImageMagick(TesseractOCRConfig config) {
         // Fetch where the config says to find ImageMagick Program
         String ImageMagick = getImageMagickPath(config);
@@ -198,9 +198,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         String[] checkCmd = { ImageMagick };
         boolean hasImageMagick = ExternalParser.check(checkCmd);
         IMAGE_MAGICK_PRESENT.put(ImageMagick, hasImageMagick);
-
+        
         return hasImageMagick;
-
+     
     }
 
     private String getImageMagickPath(TesseractOCRConfig config) {
@@ -234,30 +234,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         return hasPython;
     }
 
-=======
-        return hasImageMagick;
-
-    }
-
-    private static boolean hasPython() {
-    	// check if python is installed and if the rotation program path has been specified correctly
-
-    	boolean hasPython = false;
-
-		try {
-			Process proc = Runtime.getRuntime().exec("python -h");
-			BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream(), "UTF-8"));
-			if(stdInput.read() != -1) {
-				hasPython = true;
-			}
-		} catch (IOException e) {
-
-		}
-
-		return hasPython;
-    }
-
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
     public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
@@ -369,24 +345,14 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * @throws IOException if an input error occurred
      * @throws TikaException if an exception timed out
      */
-<<<<<<< HEAD
     private void processImage(File scratchFile, TesseractOCRConfig config) throws IOException, TikaException {
-
-=======
-    private void processImage(File streamingObject, TesseractOCRConfig config) throws IOException, TikaException {
-
-<<<<<<< HEAD
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
-=======
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
+    	
     	// fetch rotation script from resources
     	InputStream in = getClass().getResourceAsStream("rotation.py");
     	TemporaryResources tmp = new TemporaryResources();
     	File rotationScript = tmp.createTemporaryFile();
     	Files.copy(in, rotationScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     	CommandLine commandLine = new CommandLine("python");
     	String[] args = {"-W",
                 "ignore",
@@ -394,48 +360,27 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 "-f",
                 scratchFile.getAbsolutePath()};
     	commandLine.addArguments(args, true);
-    	String angle = "0";
-
-=======
-    	String cmd = "python " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
-    	String angle = "0";
-
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
-=======
-    	String cmd = "python " + rotationScript.getAbsolutePath() + " -f " + streamingObject.getAbsolutePath();
-    	String angle = "0";
-
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
+    	String angle = "0"; 
+    			
     	DefaultExecutor executor = new DefaultExecutor();
     	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     	PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
         executor.setStreamHandler(streamHandler);
-
+        
         // determine the angle of rotation required to make the text horizontal
         if(config.getApplyRotation() && hasPython()) {
             try {
-<<<<<<< HEAD
                 executor.execute(commandLine);
                 String tmpAngle = outputStream.toString("UTF-8").trim();
                 //verify that you've gotten a numeric value out
                 Double.parseDouble(tmpAngle);
                 angle = tmpAngle;
-            } catch(Exception e) {
-=======
-                executor.execute(cmdLine);
-                angle = outputStream.toString("UTF-8").trim();
-            } catch(Exception e) {
-<<<<<<< HEAD
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
-=======
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
+            } catch(Exception e) {	
 
             }
         }
-
+              
         // process the image - parameter values can be set in TesseractOCRConfig.properties
-<<<<<<< HEAD
-<<<<<<< HEAD
         commandLine = new CommandLine(getImageMagickPath(config));
         args = new String[]{
                 "-density", Integer.toString(config.getDensity()),
@@ -450,37 +395,14 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         commandLine.addArguments(args, true);
 		try {
 			executor.execute(commandLine);
-		} catch(Exception e) {
-=======
-=======
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
-    	String line = "convert -density " + config.getDensity() + " -depth " + config.getDepth() +
-    			" -colorspace " + config.getColorspace() +  " -filter " + config.getFilter() +
-    			" -resize " + config.getResize() + "% -rotate "+ angle + " " + streamingObject.getAbsolutePath() +
-    			" " + streamingObject.getAbsolutePath();
-        cmdLine = CommandLine.parse(line);
-		try {
-			executor.execute(cmdLine);
-		} catch(Exception e) {
+		} catch(Exception e) {	
 
-		}
-<<<<<<< HEAD
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
-
+		} 
+       
         tmp.close();
     }
-<<<<<<< HEAD
-
+    
     private void parse(TikaInputStream tikaInputStream, File tmpOCROutputFile, ParseContext parseContext,
-=======
-=======
-
-        tmp.close();
-    }
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
-
-    private void parse(TikaInputStream tikaInputStream, File tmpImgFile, ParseContext parseContext,
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
                        XHTMLContentHandler xhtml, TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
         File tmpTxtOutput = null;
@@ -490,7 +412,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
             if (size >= config.getMinFileSizeToOcr() && size <= config.getMaxFileSizeToOcr()) {
 
-<<<<<<< HEAD
             	// Process image if ImageMagick Tool is present
             	if(config.isEnableImageProcessing() == 1 && hasImageMagick(config)) {
                     // copy the contents of the original input file into a temporary file
@@ -513,26 +434,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 // Tesseract appends the output type (.txt or .hocr) to output file name
                 tmpTxtOutput = new File(tmpOCROutputFile.getAbsolutePath() + "." +
                         config.getOutputType().toString().toLowerCase(Locale.US));
-=======
-            	// copy the contents of the original input file into a temporary file
-            	// which will be processed for OCR
-            	TemporaryResources tmp = new TemporaryResources();
-            	File tmpFile = tmp.createTemporaryFile();
-            	FileUtils.copyFile(input, tmpFile);
-
-            	// Process image if ImageMagick Tool is present
-            	if(config.isEnableImageProcessing() == 1 && hasImageMagick(config)) {
-            		processImage(tmpFile,config);
-            	}
-
-                doOCR(tmpFile, tmpImgFile, config);
-
-                // Tesseract appends the output type (.txt or .hocr) to output file name
-                tmpTxtOutput = new File(tmpImgFile.getAbsolutePath() + "." + config.getOutputType().name().toLowerCase(Locale.US));
-<<<<<<< HEAD
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
-=======
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
 
                 if (tmpTxtOutput.exists()) {
                     try (InputStream is = new FileInputStream(tmpTxtOutput)) {
@@ -543,14 +444,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                         }
                     }
                 }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
-
-                tmp.close();
->>>>>>> need to lowercase the output file to match the format passed to tesseract cmd line
             }
         } finally {
             if (tmpTxtOutput != null) {
@@ -785,7 +678,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                     new HashSet<>(Arrays.asList(elements)));
         }
     }
-<<<<<<< HEAD
 
     protected boolean hasWarned() {
         if (HAS_WARNED) {
@@ -886,6 +778,5 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public TesseractOCRConfig getDefaultConfig() {
         return defaultConfig;
     }
-=======
->>>>>>> bfc7efb1004c8cbd8678408fa37ba638a58b6f42
 }
+
