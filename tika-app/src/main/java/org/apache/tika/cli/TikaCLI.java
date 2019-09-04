@@ -1066,7 +1066,7 @@ public class TikaCLI {
                     throw new IOException("unable to create directory \"" + parent + "\"");
                 }
             }
-            System.out.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
+            System.err.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
 
             try (FileOutputStream os = new FileOutputStream(outputFile)) {
                 if (inputStream instanceof TikaInputStream) {
