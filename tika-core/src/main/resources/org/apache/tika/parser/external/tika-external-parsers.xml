@@ -109,6 +109,8 @@
        <match key="xmpDM:fileDataRate">\s*Bit Rate.*:\s+([\d\w]+)\s*</match>
        <!-- Sample Encoding: 16-bit Signed Integer PCM -->
        <match key="Sample Encoding">\s*Sample Encoding.*:\s+(.*)\s*</match>
+       <!--  Comment        : 'Comment=Processed by SoX' -->
+       <match key="xmpDM:logComment">\s*Comment.*:\s+(.*)\s*</match>
      </metadata>
   </parser>
 </external-parsers>
