@@ -333,4 +333,5 @@ public interface TikaCoreProperties {
             EmbeddedResourceType.INLINE.toString());
 
 
+    Property HAS_SIGNATURE = Property.internalBoolean("hasSignature");
 }
