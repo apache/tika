@@ -1,5 +1,7 @@
 Release 1.23 - ??/??/???
 
+   * Upgrade to PDFBox 2.0.17
+
    * NOTE: tika-server no longer hard-codes the HtmlParser to handle
      XML files (TIKA-2910).  Users must now configure that behavior
      via a tika-config.xml file.
