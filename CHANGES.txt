@@ -5,6 +5,9 @@ Release 2.0.0 - ???
 
    Other changes
 
+Release 1.23
+   * Upgrade to PDFBox 2.0.17
+
 Release 1.22 - ???
 
    * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
