@@ -205,6 +205,11 @@ public class UnpackerResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         Map<String, String> results = readZipArchive((InputStream)response.getEntity());
         assertTrue(results.containsKey("image0.png"));
-        assertEquals("7c2f14acbb737672a1245f4ceb50622a", results.get("image0.png"));
+        String md5 = results.get("image0.png");
+        assertTrue(
+                //pre Java 11
+                md5.equals("7c2f14acbb737672a1245f4ceb50622a") ||
+                //Java 11 -- underlying image libraries generate a diff image in Java 11
+                md5.equals("58b8269d1a584b7e8c1adcb936123923"));
     }
 }
