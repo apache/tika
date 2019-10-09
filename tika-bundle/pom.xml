@@ -457,6 +457,7 @@
               *
             </Import-Package>
           </instructions>
+          <createDependencyReducedPom>true</createDependencyReducedPom>
         </configuration>
       </plugin>
       <!-- TIKA-763: Workaround to avoid including LGPL classes -->
