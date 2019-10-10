@@ -36,7 +36,7 @@
 
   <properties>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.12</codec.version>
+    <codec.version>1.13</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.8</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
@@ -78,7 +78,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- for java 10
+   <!-- for java 10
       See TIKA-2778 for why we need to do this now.
       May the gods of API design fix this in the future.
       -->

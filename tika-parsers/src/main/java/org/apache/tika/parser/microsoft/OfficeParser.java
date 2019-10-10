@@ -137,7 +137,7 @@ public class OfficeParser extends AbstractOfficeParser {
 
                 //We might consider not bothering to check for macros in root,
                 //if we know we're processing ppt based on content-type identified in metadata
-                extractMacros(root.getNFileSystem(), xhtml,
+                extractMacros(root.getFileSystem(), xhtml,
                             EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
 
             }

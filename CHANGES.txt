@@ -6,12 +6,15 @@ Release 2.0.0 - ???
    Other changes
 
 Release 1.23
-   * Upgrade to PDFBox 2.0.17
+
+   * Upgrade to POI 4.1.1 (TIKA-2851).
+
+   * Upgrade to PDFBox 2.0.17 (TIKA-2951).
 
    * Ensure that the PDFParser respects custom configuration of Tesseract
      from tika-config.xml via Eric Pugh (TIKA-2970).
 
-Release 1.22 - ???
+Release 1.22 - 07/29/2019
 
    * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
      between 0xF000 and 0XF0000 will cause an exception.
