@@ -16,7 +16,9 @@
  */
 package org.apache.tika;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -28,7 +30,6 @@ import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -104,8 +105,9 @@ public class TestXXEInXML extends XMLTestBase {
                 new AutoDetectParser(), new ParseContext());
     }
 
+
     @Test
-    public void testXMLInZips() throws Exception {
+    public void testPOIOOXMLs() throws Exception {
         for (String fileName : new String[]{
                 "testWORD.docx",
                 "testWORD_1img.docx",
@@ -119,15 +121,13 @@ public class TestXXEInXML extends XMLTestBase {
                 "testPPT_2imgs.pptx",
                 "testPPT_comment.pptx",
                 "testPPT_EmbeddedPDF.pptx",
-                "testPPT_macros.pptm",
-                "testEPUB.epub"
+                "testPPT_macros.pptm"
         }) {
-            _testOOXML(fileName);
+            _testPOIOOXMLs(fileName);
         }
     }
 
-    private void _testOOXML(String fileName) throws Exception {
-
+    private void _testPOIOOXMLs(String fileName) throws Exception {
         Path originalOOXML = getResourceAsFile("/test-documents/"+fileName).toPath();
         Path injected = injectZippedXMLs(originalOOXML, XXE, false);
 
@@ -138,10 +138,13 @@ public class TestXXEInXML extends XMLTestBase {
         Metadata metadata = new Metadata();
         try {
             p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            fail("problem with: "+fileName + ": "+ e.getMessage());
+        } catch (TikaException e) {
+            Throwable cause = e.getCause();
+            if (!(cause instanceof InvalidFormatException)) {
+                //as of POI 4.1.x
+                fail("POI should have thrown an IFE complaining about " +
+                        "not being able to read content types part !");
+            }
         } finally {
             Files.delete(injected);
         }
@@ -164,6 +167,33 @@ public class TestXXEInXML extends XMLTestBase {
             Files.delete(injected);
         }
     }
+
+    @Test
+    public void testXMLInZips() throws Exception {
+        for (String fileName : new String[]{
+                "testEPUB.epub"
+        }) {
+            _testXMLInZips(fileName);
+        }
+    }
+
+    private void _testXMLInZips(String fileName) throws Exception {
+        Path originalOOXML = getResourceAsFile("/test-documents/"+fileName).toPath();
+        Path injected = injectZippedXMLs(originalOOXML, XXE, false);
+
+        Parser p = new AutoDetectParser();
+        ContentHandler xhtml = new ToHTMLContentHandler();
+        ParseContext parseContext = new ParseContext();
+        //if the SafeContentHandler is turned off, this will throw an FNFE
+        Metadata metadata = new Metadata();
+        try {
+            p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
+        } finally {
+            Files.delete(injected);
+        }
+
+    }
+
 
     @Test
     public void testDOM() throws Exception {
@@ -207,9 +237,4 @@ public class TestXXEInXML extends XMLTestBase {
             TikaConfig tikaConfig = new TikaConfig(new ByteArrayInputStream(injected));
         }
     }
-
-
-
-
-
 }
