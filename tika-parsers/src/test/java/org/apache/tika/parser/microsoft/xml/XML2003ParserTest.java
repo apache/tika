@@ -47,8 +47,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
     @Test
     public void testBasicWord() throws Exception {
         List<Metadata> list =  getRecursiveMetadata("testWORD2003.xml");
-        assertEquals(8, list.size());
-
+        assertEquals(6, list.size());
         Metadata m = list.get(0);//container doc
         String xml = m.get(RecursiveParserWrapper.TIKA_CONTENT);
         xml = xml.replaceAll("\\s+", " ");
@@ -81,7 +80,9 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
 
         //make sure embedded docs were properly processed
         assertContains("moscow-birds",
-                Arrays.asList(list.get(7).getValues(TikaCoreProperties.KEYWORDS)));
+                Arrays.asList(list.get(5).getValues(TikaCoreProperties.KEYWORDS)));
+
+        assertEquals("testJPEG_EXIF.jpg", list.get(5).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
 
         //check that text is extracted with breaks between elements
         String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"), new AutoDetectParser());
@@ -92,7 +93,6 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         assertContains("footnote Figure", txt);
         assertContains("test space", txt);
 
-        assertEquals("testJPEG_EXIF.jpg", list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 
     @Test

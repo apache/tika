@@ -37,6 +37,11 @@ public class WMFParserTest extends TikaTest {
         testTextExtraction("testWMF_charset.wmf", 0, "普林斯");
     }
 
+    @Test
+    public void testOneOff() throws Exception {
+        debug(getRecursiveMetadata("testWMF-bad.wmf"));
+    }
+
     private void testTextExtraction(String fileName, int metaDataItemIndex, String expectedText) throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata(fileName);
         Metadata wmfMetadata = metadataList.get(metaDataItemIndex);

@@ -69,18 +69,18 @@ public class WMFParser extends AbstractParser {
                 //this is pure hackery for specifying the font
                 //TODO: do what Graphics does by maintaining the stack, etc.!
                 //This fix should be done within POI
-                if (record.getRecordType().equals(HwmfRecordType.createFontIndirect)) {
+                if (record.getWmfRecordType().equals(HwmfRecordType.createFontIndirect)) {
                     HwmfFont font = ((HwmfText.WmfCreateFontIndirect) record).getFont();
                     charset = (font.getCharset() == null || font.getCharset().getCharset() == null)
                             ? LocaleUtil.CHARSET_1252 :
                             font.getCharset().getCharset();
                 }
-                if (record.getRecordType().equals(HwmfRecordType.extTextOut)) {
+                if (record.getWmfRecordType().equals(HwmfRecordType.extTextOut)) {
                     HwmfText.WmfExtTextOut textOut = (HwmfText.WmfExtTextOut) record;
                     xhtml.startElement("p");
                     xhtml.characters(textOut.getText(charset));
                     xhtml.endElement("p");
-                } else if (record.getRecordType().equals(HwmfRecordType.textOut)) {
+                } else if (record.getWmfRecordType().equals(HwmfRecordType.textOut)) {
                     HwmfText.WmfTextOut textOut = (HwmfText.WmfTextOut) record;
                     xhtml.startElement("p");
                     xhtml.characters(textOut.getText(charset));
