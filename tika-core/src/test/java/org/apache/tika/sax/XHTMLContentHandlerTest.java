@@ -157,6 +157,49 @@ public class XHTMLContentHandlerTest {
 
         assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
     }
+    
+    
+    @Test
+    public void testInvalidControlCharacter0x7F() throws Exception {
+        xhtml.startDocument();
+        xhtml.startElement("menu");
+        xhtml.element("li", "a\u007Fz");
+        xhtml.endElement("menu");
+        xhtml.endDocument();
+        
+        String[] words = getRealWords(output.toString());
+        System.out.println(words[0]);
+        assertEquals(1, words.length);
+        assertEquals("a\ufffdz", words[0]);
+    }
+    
+    @Test
+    public void testInvalidControlCharacter0x9F() throws Exception {
+        xhtml.startDocument();
+        xhtml.startElement("menu");
+        xhtml.element("li", "a\u009Fz");
+        xhtml.endElement("menu");
+        xhtml.endDocument();
+        
+        String[] words = getRealWords(output.toString());
+        System.out.println(words[0]);
+        assertEquals(1, words.length);
+        assertEquals("a\ufffdz", words[0]);
+    }
+    
+    @Test
+    public void testInvalidControlCharacter0x93() throws Exception {
+        xhtml.startDocument();
+        xhtml.startElement("menu");
+        xhtml.element("li", "a\u0093z");
+        xhtml.endElement("menu");
+        xhtml.endDocument();
+        
+        String[] words = getRealWords(output.toString());
+        System.out.println(words[0]);
+        assertEquals(1, words.length);
+        assertEquals("a\ufffdz", words[0]);
+    }
 
     /**
      * Return array of non-zerolength words. Splitting on whitespace will get us
