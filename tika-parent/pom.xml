@@ -322,7 +322,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <!-- plugin versions -->
-    <forbiddenapis.version>2.6</forbiddenapis.version>
+    <forbiddenapis.version>2.7</forbiddenapis.version>
     <groovy.maven.version>2.1</groovy.maven.version>
     <maven.antrun.version>1.8</maven.antrun.version>
     <maven.assembly.version>3.1.0</maven.assembly.version>
