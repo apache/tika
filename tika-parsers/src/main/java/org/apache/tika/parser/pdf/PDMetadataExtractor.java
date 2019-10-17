@@ -52,8 +52,12 @@ class PDMetadataExtractor {
 
     static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
+            metadata.set(PDF.HAS_XMP, "false");
             return;
         }
+        //this file has XMP...
+        //whether or not it is readable or throws an exception is another story...
+        metadata.set(PDF.HAS_XMP, "true");
         //now go for the XMP
         Document dom = loadDOM(pdMetadata, metadata, context);
 
@@ -225,6 +229,7 @@ class PDMetadataExtractor {
         if (pdMetadata == null) {
             return null;
         }
+
         InputStream is = null;
         try {
             try {
