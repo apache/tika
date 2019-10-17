@@ -759,6 +759,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         //if there is, process it
         if (nonNull > 0) {
+            metadata.add(TikaCoreProperties.HAS_SIGNATURE, "true");
             xhtml.startElement("li", parentAttributes);
 
             AttributesImpl attrs = new AttributesImpl();

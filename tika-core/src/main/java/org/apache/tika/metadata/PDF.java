@@ -75,4 +75,19 @@ public interface PDF {
 
     Property UNMAPPED_UNICODE_CHARS_PER_PAGE =
             Property.internalIntegerSequence(PDF_PREFIX+"unmappedUnicodeCharsPerPage");
+
+    /**
+     * Has XFA
+     */
+    Property HAS_XFA = Property.internalBoolean(PDF_PREFIX+"hasXFA");
+
+    /**
+     * Has XMP, whether or not it is valid
+     */
+    Property HAS_XMP = Property.internalBoolean(PDF_PREFIX+"hasXMP");
+
+    /**
+     * Has > 0 AcroForm fields
+     */
+    Property HAS_ACROFORM_FIELDS = Property.internalBoolean(PDF_PREFIX+"hasAcroFormFields");
 }

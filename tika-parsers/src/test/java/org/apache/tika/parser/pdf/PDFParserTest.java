@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -614,13 +613,17 @@ public class PDFParserTest extends TikaTest {
         //The current test doc does not contain any content in the signature area.
         //This just tests that a RuntimeException is not thrown.
         //TODO: find a better test file for this issue.
-        String xml = getXML("/testPDF_acroform3.pdf").xml;
-        assertTrue("found", (xml.contains("<li>aTextField: TIKA-1226</li>")));
+        XMLResult result = getXML("testPDF_acroform3.pdf");
+        Metadata m = result.metadata;
+        assertEquals("true", m.get(PDF.HAS_XMP));
+        assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
+        assertEquals("false", m.get(PDF.HAS_XFA));
+        assertTrue("found", (result.xml.contains("<li>aTextField: TIKA-1226</li>")));
     }
 
     @Test // TIKA-1228, TIKA-1268
     public void testEmbeddedFilesInChildren() throws Exception {
-        String xml = getXML("/testPDF_childAttachments.pdf").xml;
+        String xml = getXML("testPDF_childAttachments.pdf").xml;
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
         assertTrue(xml.contains("regressiveness"));
 
@@ -1083,6 +1086,12 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testNoXMP() throws Exception {
+        assertEquals("false",
+                getXML("testPDF.pdf").metadata.get(PDF.HAS_XMP));
+    }
+
+    @Test
     public void testPDFEncodedStringsInXMP() throws Exception {
         //TIKA-1678
         XMLResult r = getXML("testPDF_PDFEncodedStringInXMP.pdf");
@@ -1092,6 +1101,10 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testXFAExtractionBasic() throws Exception {
         XMLResult r = getXML("testPDF_XFA_govdocs1_258578.pdf");
+        Metadata m = r.metadata;
+        assertEquals("true", m.get(PDF.HAS_XFA));
+        assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
+        assertEquals("true", m.get(PDF.HAS_XMP));
         //contains content existing only in the "regular" pdf
         assertContains("Mount Rushmore National Memorial", r.xml);
         //contains xfa fields and data
