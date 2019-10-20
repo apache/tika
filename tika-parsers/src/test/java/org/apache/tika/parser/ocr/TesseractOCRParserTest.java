@@ -58,7 +58,7 @@ public class TesseractOCRParserTest extends TikaTest {
         TesseractOCRParserTest tesseractOCRTest = new TesseractOCRParserTest();
         canRunTesseract = canRun(config);
         if (!canRunTesseract) {
-        	System.out.println("Tesseract executable isn't on the path, so skipping tests.  If Tesseract is installed in a custom location, please update TesseractOCRConfig.properties in src/test/resources.");
+        	System.err.println("Tesseract executable isn't on the path, so skipping tests.  If Tesseract is installed in a custom location, please update TesseractOCRConfig.properties in src/test/resources.");
         }
     }
     
