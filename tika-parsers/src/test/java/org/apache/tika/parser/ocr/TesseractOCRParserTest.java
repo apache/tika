@@ -46,16 +46,27 @@ import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
+import org.junit.BeforeClass;
 
 public class TesseractOCRParserTest extends TikaTest {
+	
+	private static boolean canRunTesseract;
 
-    public static boolean canRun() {
+    @BeforeClass
+    public static void setUp() throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         TesseractOCRParserTest tesseractOCRTest = new TesseractOCRParserTest();
-        return tesseractOCRTest.canRun(config);
+        canRunTesseract = canRun(config);
+        if (!canRunTesseract) {
+        	System.out.println("Tesseract executable isn't on the path, so skipping tests.  If Tesseract is installed in a custom location, please update TesseractOCRConfig.properties in src/test/resources.");
+        }
+    }
+    
+    public static boolean canRun() {
+        return canRunTesseract;
     }
 
-    private boolean canRun(TesseractOCRConfig config) {
+    private static boolean canRun(TesseractOCRConfig config) {
         String[] checkCmd = {config.getTesseractPath() + getTesseractProg()};
         // If Tesseract is not on the path, do not run the test.
         return ExternalParser.check(checkCmd);
