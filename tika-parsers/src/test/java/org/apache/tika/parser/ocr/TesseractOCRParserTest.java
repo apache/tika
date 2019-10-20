@@ -51,11 +51,15 @@ public class TesseractOCRParserTest extends TikaTest {
 
     public static boolean canRun() {
         TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setTesseractPath("/usr/local/bin");
+        config.setTessdataPath("/usr/local/Cellar/tesseract/4.1.0/share/tessdata");
         TesseractOCRParserTest tesseractOCRTest = new TesseractOCRParserTest();
         return tesseractOCRTest.canRun(config);
     }
 
     private boolean canRun(TesseractOCRConfig config) {
+    	config.setTesseractPath("/usr/local/bin");
+        config.setTessdataPath("/usr/local/Cellar/tesseract/4.1.0/share/tessdata");
         String[] checkCmd = {config.getTesseractPath() + getTesseractProg()};
         // If Tesseract is not on the path, do not run the test.
         return ExternalParser.check(checkCmd);
@@ -164,6 +168,8 @@ public class TesseractOCRParserTest extends TikaTest {
                           BasicContentHandlerFactory.HANDLER_TYPE handlerType,
                           TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setTesseractPath("/usr/local/bin");
+        config.setTessdataPath("/usr/local/Cellar/tesseract/4.1.0/share/tessdata");
         config.setOutputType(outputType);
         
         Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),

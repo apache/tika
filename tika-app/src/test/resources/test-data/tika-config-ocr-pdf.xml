@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<properties>
+  <parsers>
+    <parser class="org.apache.tika.parser.DefaultParser">
+      <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
+      <parser-exclude class="org.apache.tika.parser.pdf.PDFParser"/>
+    </parser>
+    <parser class="org.apache.tika.parser.ocr.TesseractOCRParser">
+      <params>
+        <param name="tesseractPath" type="string">/usr/local/bin/</param>
+        <param name="tessdataPath" type="string">/usr/local/Cellar/tesseract/4.1.0/share/tessdata</param>
+        <param name="outputType" type="string">hocr</param>
+      </params>
+    </parser>
+    <parser class="org.apache.tika.parser.pdf.PDFParser">
+      <params>
+        <param name="ocrStrategy" type="string">ocr_only</param>         
+        <param name="extractInlineImages" type="boolean">true</param>              
+      </params>
+    </parser>
+
+  </parsers>
+</properties>
