@@ -524,6 +524,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
                 config.getOutputType().name().toLowerCase(Locale.US)
         ));
+        LOG.debug("Tesseract command: " + String.join(" ", cmd));
+        
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
         final Process process = pb.start();
