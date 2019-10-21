@@ -123,9 +123,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         // If Tesseract is installed, offer our supported image types
         TesseractOCRConfig config = context.get(TesseractOCRConfig.class, defaultConfig);
-        System.err.println("In getSupportedTypes");
-        System.err.println("Default Cojnfig:" + defaultConfig.getOutputType());
-        System.err.println("config:" + config.getOutputType());
         if (hasTesseract(config)) {
             return SUPPORTED_TYPES;
         }
@@ -408,7 +405,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     private void parse(TikaInputStream tikaInputStream, File tmpOCROutputFile, ParseContext parseContext,
                        XHTMLContentHandler xhtml, TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
-    	System.err.println("The Config has output type of " + config.getOutputType());
         File tmpTxtOutput = null;
         try {
             File input = tikaInputStream.getFile();
@@ -463,13 +459,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      */
     @Override
     public void initialize(Map<String, Param> params) throws TikaConfigException {
-    	System.err.println("Boom, here I am!!!!!!!!!!!!!!");
-    	System.err.println(params.keySet());
-    	System.err.println("Params:" + params.toString());
-    	//String s = params.get("OutputType").getValue().toString();
-    	//System.err.println("I got " + s);
-    	//defaultConfig.setOutputType(s);
-    	
+
     }
 
     @Override
@@ -477,7 +467,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             throws TikaConfigException {
         //this will incorrectly trigger for people who turn off Tesseract
         //by sending in a bogus tesseract path via a custom TesseractOCRConfig.
-    	System.out.println("Ack, here I am");
         //TODO: figure out how to solve that.
         if (! hasWarned()) {
             if (hasTesseract(defaultConfig)) {

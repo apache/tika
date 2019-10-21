@@ -59,8 +59,6 @@ public class ParseContext implements Serializable {
      * @param value the value to be added, or <code>null</code> to remove
      */
     public <T> void set(Class<T> key, T value) {
-    	System.err.println("Here is the key:" + key);
-    	System.err.println("Here is the val:" + value);
         if (value != null) {
             context.put(key.getName(), value);
         } else {
