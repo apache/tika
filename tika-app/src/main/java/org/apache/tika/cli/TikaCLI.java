@@ -49,6 +49,7 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -98,6 +99,8 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -193,6 +196,33 @@ public class TikaCLI {
             context.set(PDFParserConfig.class, pdfParserConfig);
         }
     }
+    
+    private void enableOCRPDF() throws TikaException, IOException, SAXException {
+    	
+    	configure();
+    	
+    	CompositeParser parser = (CompositeParser)config.getParser();
+    	Iterator<Parser> iter = parser.getAllComponentParsers().iterator();
+    	while(iter.hasNext()) {
+    		Parser p = iter.next();
+    		if (p instanceof TesseractOCRParser) {
+    			TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser) p).getDefaultConfig();
+    			context.set(TesseractOCRConfig.class, tesseractOCRConfig);
+    			// Should we mimic the warn?
+    		}
+    	}
+    	
+        if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
+            PDFParserConfig pdfParserConfig = new PDFParserConfig();
+            pdfParserConfig.setExtractInlineImages(true);
+            String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
+                    "inline images for the PDFParser (TIKA-2374).\n" +
+                    "Aside from the -z option, this is not the default behavior\n"+
+                    "in Tika generally or in tika-server.";
+            LOG.info(warn);
+            context.set(PDFParserConfig.class, pdfParserConfig);
+        }
+    }    
 
     private class OutputType {
         public void process(
@@ -452,6 +482,7 @@ public class TikaCLI {
             extractDir = new File(dirPath);
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             extractInlineImagesFromPDFs();
+            enableOCRPDF();
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
