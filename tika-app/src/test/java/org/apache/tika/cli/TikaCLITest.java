@@ -472,13 +472,14 @@ public class TikaCLITest {
     }
     
     @Test
-    public void testStupidTesseractConfig() throws Exception {
+    public void testModifyAndRunTesseractViaConfig() throws Exception {
     	String[] params = new String[]{"--config="+testDataFile.toString()+"/tika-config-ocr-pdf.xml", "--jsonRecursive","--extract","--pretty-print","-v","-x", resourcePrefix+"testPDF_childAttachments.pdf"};
         TikaCLI.main(params);
         String content = outContent.toString(UTF_8.name());
-        System.err.println(content);
-        //assertTrue(content.contains("apple"));
-        //assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
+        assertTrue(content.contains("org.apache.tika.parser.ocr.TesseractOCRParser"));
+        assertTrue(content.contains("bbox"));
+        assertTrue(content.contains("ocr_line"));
+        
     }
 
     @Test
