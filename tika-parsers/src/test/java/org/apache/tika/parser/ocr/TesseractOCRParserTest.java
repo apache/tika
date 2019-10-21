@@ -43,6 +43,7 @@ import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.junit.Assume;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -96,7 +97,7 @@ public class TesseractOCRParserTest extends TikaTest {
         MediaType png = MediaType.image("png");
 
         // Assuming that Tesseract is on the path, we should find 5 Parsers that support PNG.
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
 
         assertEquals(8, parser.getSupportedTypes(parseContext).size());
         assertTrue(parser.getSupportedTypes(parseContext).contains(png));
@@ -133,7 +134,7 @@ public class TesseractOCRParserTest extends TikaTest {
     
     @Test
     public void testOCROutputsHOCR() throws Exception {
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
 
         String resource = "/test-documents/testOCR.pdf";
 
@@ -148,7 +149,9 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
-    	String contents = runOCR(resource, nonOCRContains, numMetadatas,
+        Assume.assumeTrue("can run OCR", canRun());
+
+        String contents = runOCR(resource, nonOCRContains, numMetadatas,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
         	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
@@ -201,7 +204,8 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testSingleImage() throws Exception {
-        assumeTrue(canRun());
+        Assume.assumeTrue("can run OCR", canRun());
+
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
         //test metadata extraction
@@ -266,7 +270,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testInterwordSpacing() throws Exception {
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
         //default
         String xml = getXML("testOCR_spacing.png").xml;
         assertContains("The quick", xml);
@@ -286,7 +290,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void confirmMultiPageTiffHandling() throws Exception {
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
         //tesseract should handle multipage tiffs by itself
         //let's confirm that
         String xml = getXML("testTIFF_multipage.tif").xml;
