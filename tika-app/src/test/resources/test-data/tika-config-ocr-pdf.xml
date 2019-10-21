@@ -14,8 +14,8 @@
     </parser>
     <parser class="org.apache.tika.parser.pdf.PDFParser">
       <params>
-        <param name="ocrStrategy" type="string">ocr_only</param>         
-        <param name="extractInlineImages" type="boolean">true</param>              
+        <param name="ocrStrategy" type="string">ocr_only</param>
+        <param name="extractInlineImages" type="bool">true</param>
       </params>
     </parser>
 
