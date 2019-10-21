@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.rendering.ImageType;
@@ -1232,6 +1233,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertNotContained("1309.61", content);
     }
+
     @Test
     public void testEmbeddedJPEG() throws Exception {
         //TIKA-1990, test that an embedded jpeg is correctly decoded
@@ -1304,6 +1306,30 @@ public class PDFParserTest extends TikaTest {
         assertContains("Norconex", xmlResult.xml);
     }
 
+    @Test
+    public void testTesseractInitializationWorks() throws Exception {
+        //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
+        //make it through to when the TesseractOCRParser is called via
+        //the PDFParser
+        if (!canRunOCR()) {
+            return;
+        }
+
+        //via the config, tesseract should skip this file because it is too large
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
+        assertTrue(StringUtils.isAllBlank(text));
+
+        //now override the max file size to ocr, and you should get text
+        ParseContext pc = new ParseContext();
+        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+        pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
+        text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
+        assertContains("Happy", text);
+    }
 
     @Test
     public void testInitializationViaConfig() throws Exception {
@@ -1316,7 +1342,6 @@ public class PDFParserTest extends TikaTest {
 
         // Column text is now interleaved:
         assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
-
     }
 
     @Test

@@ -716,6 +716,11 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     @Field
+    public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
+        defaultConfig.setMaxFileSizeToOcr(maxFileSizeToOcr);
+    }
+
+    @Field
     public void setMinFileSizeToOcr(long minFileSizeToOcr) {
         defaultConfig.setMinFileSizeToOcr(minFileSizeToOcr);
     }
