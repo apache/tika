@@ -50,10 +50,8 @@ import java.util.List;
  * this class.
  *
  */
-public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
-    private Metadata metadata;
+public class PhoneExtractingContentHandler extends EndDocumentHandler {
     private static final String PHONE_NUMBERS = "phonenumbers";
-    private StringBuilder stringBuilder;
 
     /**
      * Creates a decorator for the given SAX event handler and Metadata object.
@@ -61,9 +59,7 @@ public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
      * @param handler SAX event handler to be decorated
      */
     public PhoneExtractingContentHandler(ContentHandler handler, Metadata metadata) {
-        super(handler);
-        this.metadata = metadata;
-        this.stringBuilder = new StringBuilder();
+        super(handler, metadata);
     }
 
     /**
@@ -78,31 +74,11 @@ public class PhoneExtractingContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * The characters method is called whenever a Parser wants to pass raw...
-     * characters to the ContentHandler. But, sometimes, phone numbers are split
-     * accross different calls to characters, depending on the specific Parser
-     * used. So, we simply add all characters to a StringBuilder and analyze it
-     * once the document is finished.
-     */
-    @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
-        try {
-            String text = new String(Arrays.copyOfRange(ch, start, start + length));
-            stringBuilder.append(text);
-            super.characters(ch, start, length);
-        } catch (SAXException e) {
-            handleException(e);
-        }
-    }
-
-
-    /**
      * This method is called whenever the Parser is done parsing the file. So,
      * we check the output for any phone numbers.
      */
     @Override
-    public void endDocument() throws SAXException {
-        super.endDocument();
+    public void _endDocument() throws SAXException {
         List<String> numbers = CleanPhoneText.extractPhoneNumbers(stringBuilder.toString());
         for (String number : numbers) {
             metadata.add(PHONE_NUMBERS, number);

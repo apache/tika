@@ -27,7 +27,6 @@ import java.sql.SQLException;
 
 import org.apache.log4j.Level;
 import org.apache.tika.io.IOUtils;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

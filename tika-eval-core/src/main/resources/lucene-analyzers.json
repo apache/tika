@@ -1,0 +1,66 @@
+{
+  "analyzers": {
+    "general": {
+      "charfilters": [
+        {
+          "factory": "mapping",
+          "params": {
+            "mapping": "/lucene-char-mapping.txt"
+          }
+        }
+      ],
+      "tokenizer": {
+        "factory": "uax29urlemail",
+        "params": {}
+      },
+      "tokenfilters": [
+        {
+          "factory": "icufolding",
+          "params": {}
+        },
+        {
+          "factory": "cjkbigram",
+          "params": {
+            "outputUnigrams": "false"
+          }
+        }
+      ]
+    },
+    "common_tokens": {
+      "_comment" : "Use this analyzer for counting common tokens in a corpus.",
+      "_comment" : "This isn't used by tika-eval during profiling or comparing",
+      "tokenizer": {
+        "factory": "uax29urlemail",
+        "params": {}
+      },
+      "tokenfilters": [
+        {
+          "factory": "urlemailnormalizing",
+          "params": {
+          }
+        },
+        {
+          "factory": "alphaideograph",
+          "params": {}
+        },
+        {
+          "factory": "icufolding",
+          "params": {}
+        },
+        {
+          "factory": "cjkbigram",
+          "params": {
+            "outputUnigrams": "false"
+          }
+        },
+        {
+          "factory": "cjkbigramawarelength",
+          "params": {
+            "min": 3,
+            "max": 20
+          }
+        }
+      ]
+    }
+  }
+}

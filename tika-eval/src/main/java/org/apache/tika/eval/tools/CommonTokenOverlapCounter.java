@@ -16,6 +16,8 @@
  */
 package org.apache.tika.eval.tools;
 
+import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -24,8 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import org.apache.tika.eval.tokens.CommonTokenCountManager;
 
 public class CommonTokenOverlapCounter {
 

@@ -32,13 +32,13 @@ import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.eval.AbstractProfiler;
+import org.apache.tika.eval.core.io.ExtractReader;
+import org.apache.tika.eval.core.io.ExtractReaderException;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.DBWriter;
-import org.apache.tika.eval.io.ExtractReader;
-import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.util.PropsUtil;
 

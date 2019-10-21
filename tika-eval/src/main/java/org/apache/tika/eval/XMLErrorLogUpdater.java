@@ -130,7 +130,7 @@ public class XMLErrorLogUpdater {
                             String filePath, AbstractProfiler.PARSE_ERROR_TYPE type) throws SQLException {
             int containerId = getContainerId(filePath);
             String sql = "SELECT count(1) from "+errorTableName +
-                    " where "+Cols.CONTAINER_ID +
+                    " where "+ Cols.CONTAINER_ID +
                     " = "+containerId + " or "+
                     Cols.FILE_PATH + "='"+filePath+"'";
             ResultSet rs = statement.executeQuery(sql);

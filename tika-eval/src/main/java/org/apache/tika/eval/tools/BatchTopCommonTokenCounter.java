@@ -16,12 +16,12 @@
  */
 package org.apache.tika.eval.tools;
 
+import org.apache.tika.utils.ProcessUtils;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Utility class that runs TopCommonTokenCounter against a directory

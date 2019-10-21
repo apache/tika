@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.eval.textstats.CommonTokens;
-import org.apache.tika.eval.textstats.CompositeTextStatsCalculator;
-import org.apache.tika.eval.textstats.TextStatsCalculator;
-import org.apache.tika.eval.tokens.CommonTokenResult;
+import org.apache.tika.eval.core.textstats.CommonTokens;
+import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
+import org.apache.tika.eval.core.textstats.TextStatsCalculator;
+import org.apache.tika.eval.core.tokens.CommonTokenResult;
 
 /**
  * These examples create a new {@link CompositeTextStatsCalculator}

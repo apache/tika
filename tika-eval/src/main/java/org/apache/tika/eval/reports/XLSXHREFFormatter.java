@@ -28,8 +28,6 @@ import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
-import javax.swing.event.HyperlinkListener;
-
 
 public class XLSXHREFFormatter implements XSLXCellFormatter {
     //xlsx files can only have this many hyperlinks

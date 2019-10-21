@@ -28,8 +28,8 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.tika.eval.tokens.AlphaIdeographFilterFactory;
-import org.apache.tika.eval.tokens.AnalyzerManager;
+import org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory;
+import org.apache.tika.eval.core.tokens.AnalyzerManager;
 import org.junit.Test;
 
 public class AnalyzerManagerTest {

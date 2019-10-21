@@ -16,8 +16,6 @@
  */
 package org.apache.tika.eval;
 
-import static org.apache.tika.eval.AbstractProfiler.EXCEPTION_TYPE;
-import static org.apache.tika.eval.io.ExtractReader.IGNORE_LENGTH;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -31,14 +29,13 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.tika.MockDBWriter;
 import org.apache.tika.TikaTest;
+import org.apache.tika.eval.core.io.ExtractReaderException;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
-import org.apache.tika.eval.io.ExtractReader;
-import org.apache.tika.eval.io.ExtractReaderException;
-import org.apache.tika.eval.util.ContentTags;
-import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.eval.core.io.ExtractReader;
+import org.apache.tika.eval.core.langid.LanguageIDWrapper;
+import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;
@@ -69,7 +66,7 @@ public class SimpleComparerTest extends TikaTest {
         comparer = new ExtractComparer(null, null,
                 Paths.get("extractsA"), Paths.get("extractsB"),
                 new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS,
-                        IGNORE_LENGTH, IGNORE_LENGTH),
+                        ExtractReader.IGNORE_LENGTH, ExtractReader.IGNORE_LENGTH),
                 WRITER);
     }
 
@@ -225,7 +222,7 @@ public class SimpleComparerTest extends TikaTest {
             List<Map<Cols, String>> table = WRITER.getTable(t);
 
             Map<Cols, String> rowA = table.get(0);
-            assertEquals(Integer.toString(EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()),
+            assertEquals(Integer.toString(AbstractProfiler.EXCEPTION_TYPE.ACCESS_PERMISSION.ordinal()),
                     rowA.get(Cols.PARSE_EXCEPTION_ID));
             assertNull(rowA.get(Cols.ORIG_STACK_TRACE));
             assertNull(rowA.get(Cols.SORT_STACK_TRACE));

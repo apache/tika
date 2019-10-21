@@ -30,10 +30,8 @@ import org.xml.sax.helpers.DefaultHandler;
  * standard references while parsing.
  *
  */
-public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
+public class StandardsExtractingContentHandler extends EndDocumentHandler {
 	public static final String STANDARD_REFERENCES = "standard_references";
-	private Metadata metadata;
-	private StringBuilder stringBuilder;
 	private double threshold = 0;
 
 	/**
@@ -45,9 +43,7 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 	 *            {@link Metadata} object.
 	 */
 	public StandardsExtractingContentHandler(ContentHandler handler, Metadata metadata) {
-		super(handler);
-		this.metadata = metadata;
-		this.stringBuilder = new StringBuilder();
+		super(handler, metadata);
 	}
 
 	/**
@@ -82,31 +78,13 @@ public class StandardsExtractingContentHandler extends ContentHandlerDecorator {
 		this.threshold = score;
 	}
 
-	/**
-	 * The characters method is called whenever a Parser wants to pass raw
-	 * characters to the ContentHandler. However, standard references are often
-	 * split across different calls to characters, depending on the specific
-	 * Parser used. Therefore, we simply add all characters to a StringBuilder
-	 * and analyze it once the document is finished.
-	 */
-	@Override
-	public void characters(char[] ch, int start, int length) throws SAXException {
-		try {
-			String text = new String(Arrays.copyOfRange(ch, start, start + length));
-			stringBuilder.append(text);
-			super.characters(ch, start, length);
-		} catch (SAXException e) {
-			handleException(e);
-		}
-	}
 
 	/**
 	 * This method is called whenever the Parser is done parsing the file. So,
 	 * we check the output for any standard references.
 	 */
 	@Override
-	public void endDocument() throws SAXException {
-		super.endDocument();
+	protected void _endDocument() throws SAXException {
 		List<StandardReference> standards = StandardsText.extractStandardReferences(stringBuilder.toString(),
 				threshold);
 		for (StandardReference standardReference : standards) {
