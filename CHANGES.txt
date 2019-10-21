@@ -8,6 +8,9 @@ Release 2.0.0 - ???
 Release 1.23
    * Upgrade to PDFBox 2.0.17
 
+   * Ensure that the PDFParser respects custom configuration of Tesseract
+     from tika-config.xml via Eric Pugh (TIKA-2970).
+
 Release 1.22 - ???
 
    * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
