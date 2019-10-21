@@ -473,10 +473,11 @@ public class TikaCLITest {
     
     @Test
     public void testModifyAndRunTesseractViaConfig() throws Exception {
-    	String[] params = new String[]{"--config="+testDataFile.toString()+"/tika-config-ocr-pdf.xml", "--jsonRecursive","--extract","--pretty-print","-v","-x", resourcePrefix+"testPDF_childAttachments.pdf"};
+    	String[] params = new String[]{"--config="+testDataFile.toString()+"/tika-config-ocr-pdf.xml", "--jsonRecursive","--extract","--pretty-print","-v","-x", resourcePrefix+"testPDF_bom.pdf"};
         TikaCLI.main(params);
         String content = outContent.toString(UTF_8.name());
         assertTrue(content.contains("org.apache.tika.parser.ocr.TesseractOCRParser"));
+        assertTrue(content.contains("Hello"));
         assertTrue(content.contains("bbox"));
         assertTrue(content.contains("ocr_line"));
         
