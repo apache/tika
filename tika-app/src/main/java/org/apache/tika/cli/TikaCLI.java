@@ -208,20 +208,10 @@ public class TikaCLI {
     		if (p instanceof TesseractOCRParser) {
     			TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser) p).getDefaultConfig();
     			context.set(TesseractOCRConfig.class, tesseractOCRConfig);
-    			// Should we mimic the warn?
+    			// TODO Should we mimic the warn from extractInlineImagesFromPDFs?
     		}
     	}
     	
-        if (configFilePath == null && context.get(PDFParserConfig.class) == null) {
-            PDFParserConfig pdfParserConfig = new PDFParserConfig();
-            pdfParserConfig.setExtractInlineImages(true);
-            String warn = "As a convenience, TikaCLI has turned on extraction of\n" +
-                    "inline images for the PDFParser (TIKA-2374).\n" +
-                    "Aside from the -z option, this is not the default behavior\n"+
-                    "in Tika generally or in tika-server.";
-            LOG.info(warn);
-            context.set(PDFParserConfig.class, pdfParserConfig);
-        }
     }    
 
     private class OutputType {
