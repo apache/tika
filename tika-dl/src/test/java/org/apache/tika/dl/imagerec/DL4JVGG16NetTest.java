@@ -17,6 +17,7 @@
 package org.apache.tika.dl.imagerec;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -36,24 +37,24 @@ public class DL4JVGG16NetTest {
         } catch (Exception e) {
             if (e.getMessage() != null
                     && (e.getMessage().contains("Connection refused")
-            || e.getMessage().contains("connect timed out"))) {
-                //skip test
-                return;
+                    || e.getMessage().contains("connect timed out"))) {
+                assumeTrue("skipping test because of connection issue", false);
+            }
+            throw e;
+        }
+
+        assumeTrue("something went wrong loading tika config", config != null);
+        Tika tika = new Tika(config);
+        Metadata md = new Metadata();
+        tika.parse(getClass().getResourceAsStream("lion.jpg"), md);
+        String[] objects = md.getValues("OBJECT");
+        boolean found = false;
+        for (String object : objects) {
+            if (object.contains("lion")) {
+                found = true;
             }
         }
-        
-        if(config != null) {
-        	Tika tika = new Tika(config);
-            Metadata md = new Metadata();
-            tika.parse(getClass().getResourceAsStream("lion.jpg"), md);
-            String[] objects = md.getValues("OBJECT");
-            boolean found = false;
-            for (String object : objects) {
-                if (object.contains("lion")){
-                    found = true;
-                }
-            }
-            assertTrue(found);
-        }
+        assertTrue(found);
     }
+
 }

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -1239,7 +1240,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedDocsWithOCROnly() throws Exception {
-        if (! canRunOCR()) { return; }
+        assumeTrue("can run OCR", canRunOCR());
 
         for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
             PDFParserConfig config = new PDFParserConfig();
@@ -1278,9 +1279,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testJBIG2OCROnly() throws Exception {
-        if (!canRunOCR()) {
-            return;
-        }
+        assumeTrue("can run OCR", canRunOCR());
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
@@ -1296,9 +1295,7 @@ public class PDFParserTest extends TikaTest {
         //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
         //make it through to when the TesseractOCRParser is called via
         //the PDFParser
-        if (!canRunOCR()) {
-            return;
-        }
+        assumeTrue("can run OCR", canRunOCR());
 
         //via the config, tesseract should skip this file because it is too large
         InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml");
