@@ -16,7 +16,7 @@
  */
 package org.apache.tika.eval.tools;
 
-import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
+import org.apache.tika.eval.tokens.CommonTokenCountManager;
 
 import java.io.File;
 import java.io.IOException;

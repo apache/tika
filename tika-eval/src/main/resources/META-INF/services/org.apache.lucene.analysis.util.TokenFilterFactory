@@ -13,6 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-org.apache.tika.eval.core.tokens.AlphaIdeographFilterFactory
-org.apache.tika.eval.core.tokens.CJKBigramAwareLengthFilterFactory
-org.apache.tika.eval.core.tokens.URLEmailNormalizingFilterFactory
+org.apache.tika.eval.tokens.AlphaIdeographFilterFactory
+org.apache.tika.eval.tokens.CJKBigramAwareLengthFilterFactory
+org.apache.tika.eval.tokens.URLEmailNormalizingFilterFactory

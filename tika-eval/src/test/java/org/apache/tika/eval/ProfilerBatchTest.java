@@ -35,7 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.eval.core.io.ExtractReaderException;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.TableInfo;

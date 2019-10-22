@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.eval.core.io.ExtractReader;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;

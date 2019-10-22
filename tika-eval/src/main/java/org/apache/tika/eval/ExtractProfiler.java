@@ -28,13 +28,13 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.tika.batch.FileResource;
-import org.apache.tika.eval.core.io.ExtractReader;
-import org.apache.tika.eval.core.io.ExtractReaderException;
+import org.apache.tika.eval.io.ExtractReader;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.db.ColInfo;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.IDBWriter;
-import org.apache.tika.eval.core.util.ContentTags;
+import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 

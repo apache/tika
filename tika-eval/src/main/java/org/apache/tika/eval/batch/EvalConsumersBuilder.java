@@ -32,7 +32,7 @@ import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.batch.builders.AbstractConsumersBuilder;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.eval.AbstractProfiler;
-import org.apache.tika.eval.core.langid.LanguageIDWrapper;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.db.H2Util;
 import org.apache.tika.eval.db.JDBCUtil;
 import org.apache.tika.eval.db.MimeBuffer;

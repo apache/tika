@@ -33,8 +33,8 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.PriorityQueue;
-import org.apache.tika.eval.core.tokens.AnalyzerManager;
-import org.apache.tika.eval.core.tokens.URLEmailNormalizingFilterFactory;
+import org.apache.tika.eval.tokens.AnalyzerManager;
+import org.apache.tika.eval.tokens.URLEmailNormalizingFilterFactory;
 import org.apache.tika.utils.ProcessUtils;
 
 import java.io.BufferedReader;

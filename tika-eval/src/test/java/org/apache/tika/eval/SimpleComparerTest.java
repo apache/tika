@@ -30,12 +30,12 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.eval.core.io.ExtractReaderException;
+import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
-import org.apache.tika.eval.core.io.ExtractReader;
-import org.apache.tika.eval.core.langid.LanguageIDWrapper;
-import org.apache.tika.eval.core.util.ContentTags;
+import org.apache.tika.eval.io.ExtractReader;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;
