@@ -95,7 +95,7 @@ def downloadFile(String urlStr, File file) {
     }
 }
 
-def urlPrefix = "https://opennlp.sourceforge.net/models-1.5"
+def urlPrefix = "http://opennlp.sourceforge.net/models-1.5"
 def prefixPath = "src/test/resources/org/apache/tika/parser/ner/opennlp/"
 def ageUrlPrefix = "https://raw.githubusercontent.com/USCDataScience/AgePredictor/master/model"
 def agePrefixPath = "src/test/resources/org/apache/tika/parser/recognition/"
