@@ -452,6 +452,11 @@ public class PDFParser extends AbstractParser implements Initializable {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
+    @Deprecated
+    /**
+     * @deprecated as of Tika 1.23, this is no longer used in rendering page images for OCR;
+     * use {@link #setOcrDPI(int)}
+     */
     @Field
     void setOcrImageScale(float imageScale) {
         defaultConfig.setOcrImageScale(imageScale);

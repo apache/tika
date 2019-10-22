@@ -126,6 +126,9 @@ public class PDFParserConfig implements Serializable {
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
+    /**
+     * deprecated ... use OCRDPI instead
+     */
     private float ocrImageScale = 2.0f;
 
     private AccessChecker accessChecker;
@@ -654,12 +657,17 @@ public class PDFParserConfig implements Serializable {
     /**
      * Scale to use if rendering a page and then running OCR on that rendered image.
      * Default is 2.0f.
-     * @return
+     * @deprecated as of Tika 1.23, this is no longer used in rendering page images; use {@link #setOcrDPI(int)}
      */
     public float getOcrImageScale() {
         return ocrImageScale;
     }
 
+    /**
+     *
+     * @param ocrImageScale
+     * @deprecated (as of Tika 1.23, this is no longer used in rendering page images)
+     */
     public void setOcrImageScale(float ocrImageScale) {
         this.ocrImageScale = ocrImageScale;
     }

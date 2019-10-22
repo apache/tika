@@ -1,5 +1,9 @@
 Release 1.23 - ??/??/???
 
+   * NOTE: The PDFParser now relies on OCRDPI to render page images when
+     users configure OCR on rendered page images. This will have the effect
+     of increasing rendered image size (TIKA-2624).
+
    * Upgrade to POI 4.1.1 (TIKA-2851).
 
    * Upgrade to PDFBox 2.0.17 (TIKA-2951).
