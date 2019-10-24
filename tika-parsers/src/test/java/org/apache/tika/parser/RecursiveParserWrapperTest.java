@@ -24,13 +24,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.ClosedInputStream;
+import org.apache.tika.io.ProxyInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -345,6 +349,29 @@ public class RecursiveParserWrapperTest {
         assertEquals("a869bf6432ebd14e19fc79416274e0c9", list.get(7).get(md5Key));
     }
 
+    @Test
+    public void testStreamNotClosed() throws Exception {
+        //TIKA-2974
+        ParseContext context = new ParseContext();
+        Parser wrapped = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped, true);
+        String path = "/test-documents/test_recursive_embedded.docx";
+        ContentHandlerFactory contentHandlerFactory =
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
+
+        CloseCountingInputStream stream = null;
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory);
+        try {
+            stream = new CloseCountingInputStream(RecursiveParserWrapperTest.class.getResourceAsStream(path));
+            wrapper.parse(stream, handler, metadata, context);
+            assertEquals(0, stream.counter);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
+    }
+
     private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory,
                                        boolean catchEmbeddedExceptions,
                                        DigestingParser.Digester digester) throws Exception {
@@ -369,11 +396,29 @@ public class RecursiveParserWrapperTest {
             IOUtils.closeQuietly(stream);
         }
         return handler.getMetadataList();
-
     }
 
     private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory)
             throws Exception {
         return getMetadata(metadata, contentHandlerFactory, true, null);
+    }
+
+    private static class CloseCountingInputStream extends ProxyInputStream {
+        int counter = 0;
+
+        public CloseCountingInputStream(InputStream in) {
+            super(in);
+        }
+
+        /**
+         * Replaces the underlying input stream with a {@link ClosedInputStream}
+         * sentinel. The original input stream will remain open, but this proxy
+         * will appear closed.
+         */
+        @Override
+        public void close() throws IOException {
+            in.close();
+            counter++;
+        }
     }
 }
