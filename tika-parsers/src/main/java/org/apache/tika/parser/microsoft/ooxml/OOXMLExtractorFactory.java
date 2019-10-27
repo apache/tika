@@ -148,7 +148,7 @@ public class OOXMLExtractorFactory {
             // We can rely on this being non-null.
             OfficeParserConfig config = context.get(OfficeParserConfig.class);
             if (config.getUseSAXDocxExtractor()) {
-                poiExtractor = trySXWPF(pkg);
+                poiExtractor = trySXWPF(pkg, config);
             }
             if (poiExtractor == null) {
                 poiExtractor = tryXSLF(pkg, config.getUseSAXPptxExtractor());
@@ -231,7 +231,7 @@ public class OOXMLExtractorFactory {
         }
     }
 
-    private static POIXMLTextExtractor trySXWPF(OPCPackage pkg) throws XmlException, OpenXML4JException, IOException {
+    private static POIXMLTextExtractor trySXWPF(OPCPackage pkg, OfficeParserConfig config) throws XmlException, OpenXML4JException, IOException {
         PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType("http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
         if (packageRelationshipCollection.size() == 0) {
             packageRelationshipCollection = pkg.getRelationshipsByType("http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument");
@@ -244,7 +244,7 @@ public class OOXMLExtractorFactory {
         String targetContentType = corePart.getContentType();
         for (XWPFRelation relation : XWPFWordExtractor.SUPPORTED_TYPES) {
             if (targetContentType.equals(relation.getContentType())) {
-                return new XWPFEventBasedWordExtractor(pkg);
+                return new XWPFEventBasedWordExtractor(pkg, config);
             }
         }
         return null;

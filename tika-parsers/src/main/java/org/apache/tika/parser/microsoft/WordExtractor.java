@@ -198,8 +198,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.element("p", paragraph);
         }
 
-        for (String paragraph : wordExtractor.getCommentsText()) {
-            xhtml.element("p", paragraph);
+        if (officeParserConfig.getIncludeComments()) {
+            for (String paragraph : wordExtractor.getCommentsText()) {
+                xhtml.element("p", paragraph);
+            }
         }
 
         for (String paragraph : wordExtractor.getEndnoteText()) {

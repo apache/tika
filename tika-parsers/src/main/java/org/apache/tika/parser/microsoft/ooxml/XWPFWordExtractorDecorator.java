@@ -315,12 +315,13 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("a");
         }
 
-
-        // Now do any comments for the paragraph
-        XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
-        String commentText = comments.getCommentText();
-        if (commentText != null && commentText.length() > 0) {
-            xhtml.characters(commentText);
+        if (config.getIncludeComments()) {
+            // Now do any comments for the paragraph
+            XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
+            String commentText = comments.getCommentText();
+            if (commentText != null && commentText.length() > 0) {
+                xhtml.characters(commentText);
+            }
         }
 
         String footnameText = paragraph.getFootnoteText();

@@ -31,6 +31,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeSlideNotes = true;
     private boolean includeSlideMasterContent = true;
     private boolean concatenatePhoneticRuns = true;
+    private boolean includeComments = true;
 
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
@@ -243,6 +244,26 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setIncludeSlideMasterContent(boolean includeSlideMasterContent) {
         this.includeSlideMasterContent = includeSlideMasterContent;
+    }
+
+    /**
+     * @since 1.23
+     * @return whether or not to process comments in a doc or docx file.
+     */
+    public boolean getIncludeComments() {
+        return includeComments;
+    }
+
+    /**
+     * Whether or not to include content from comments in a .doc or docx file.
+     * If set to <code>false</code>, the parser will not extract
+     * comments on paragraph runs.
+     *
+     * @since 1.23
+     * @param includeComments
+     */
+    public void setIncludeComments(boolean includeComments) {
+        this.includeComments = includeComments;
     }
 }
 
