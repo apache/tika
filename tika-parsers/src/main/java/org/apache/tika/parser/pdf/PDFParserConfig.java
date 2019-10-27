@@ -48,6 +48,7 @@ public class PDFParserConfig implements Serializable {
 
 
     public enum OCR_STRATEGY {
+        AUTO,
         NO_OCR,
         OCR_ONLY,
         OCR_AND_TEXT_EXTRACTION;
@@ -61,6 +62,8 @@ public class PDFParserConfig implements Serializable {
                 return OCR_ONLY;
             } else if (s.toLowerCase(Locale.ROOT).contains("ocr_and_text")) {
                 return OCR_AND_TEXT_EXTRACTION;
+            } else if ("auto".equals(s.toLowerCase(Locale.ROOT))) {
+                return AUTO;
             }
             StringBuilder sb = new StringBuilder();
             sb.append("I regret that I don't recognize '").append(s);
@@ -123,6 +126,9 @@ public class PDFParserConfig implements Serializable {
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
+    /**
+     * deprecated ... use OCRDPI instead
+     */
     private float ocrImageScale = 2.0f;
 
     private AccessChecker accessChecker;
@@ -651,12 +657,17 @@ public class PDFParserConfig implements Serializable {
     /**
      * Scale to use if rendering a page and then running OCR on that rendered image.
      * Default is 2.0f.
-     * @return
+     * @deprecated as of Tika 1.23, this is no longer used in rendering page images; use {@link #setOcrDPI(int)}
      */
     public float getOcrImageScale() {
         return ocrImageScale;
     }
 
+    /**
+     *
+     * @param ocrImageScale
+     * @deprecated (as of Tika 1.23, this is no longer used in rendering page images)
+     */
     public void setOcrImageScale(float ocrImageScale) {
         this.ocrImageScale = ocrImageScale;
     }
@@ -763,7 +774,7 @@ public class PDFParserConfig implements Serializable {
         if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
         if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
         if (getOcrDPI() != config.getOcrDPI()) return false;
-        if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) return false;
+        if (getCatchIntermediateIOExceptions() != config.getCatchIntermediateIOExceptions()) return false;
         if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) return false;
         if (!getSpacingTolerance().equals(config.getSpacingTolerance())) return false;
         if (!getOcrStrategy().equals(config.getOcrStrategy())) return false;
@@ -792,7 +803,7 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + getOcrImageType().hashCode();
         result = 31 * result + getOcrImageFormatName().hashCode();
         result = 31 * result + getAccessChecker().hashCode();
-        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
+        result = 31 * result + (getCatchIntermediateIOExceptions() ? 1 : 0);
         result = 31 * result + (getExtractActions() ? 1 : 0);
         result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
         return result;

@@ -148,11 +148,4 @@ commented out until we get permission to add the test file
     }
     */
 
-    InputStream truncate(String testFileName, int length) throws IOException {
-        byte[] bytes = new byte[length];
-        try (InputStream is = getResourceAsStream("/test-documents/" + testFileName)) {
-            IOUtils.readFully(is, bytes);
-        }
-        return new ByteArrayInputStream(bytes);
-    }
 }

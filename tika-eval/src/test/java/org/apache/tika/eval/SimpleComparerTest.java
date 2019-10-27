@@ -38,7 +38,7 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.util.ContentTags;
-import org.apache.tika.eval.util.LanguageIDWrapper;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;
@@ -98,20 +98,20 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals("14", row.get(Cols.NUM_TOKENS));
         assertEquals("8", row.get(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS));
         assertEquals("12", row.get(Cols.NUM_ALPHABETIC_TOKENS));
-        assertEquals("3", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
-        assertEquals("6", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("8", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
+        assertEquals("12", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("57", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("en", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("eng", row.get(Cols.COMMON_TOKENS_LANG));
 
         tableInfos = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_B);
         row = tableInfos.get(0);
         assertEquals("76", row.get(Cols.CONTENT_LENGTH));
         assertEquals("9", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("13", row.get(Cols.NUM_TOKENS));
-        assertEquals("3", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
-        assertEquals("4", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("8", row.get(Cols.NUM_UNIQUE_COMMON_TOKENS));
+        assertEquals("10", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("64", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("en", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("eng", row.get(Cols.COMMON_TOKENS_LANG));
 
         tableInfos = WRITER.getTable(ExtractComparer.PROFILES_A);
         row = tableInfos.get(0);
@@ -137,9 +137,9 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals("133", row.get(Cols.CONTENT_LENGTH));
         assertEquals("7", row.get(Cols.NUM_UNIQUE_TOKENS));
         assertEquals("24", row.get(Cols.NUM_TOKENS));
-        assertEquals("3", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("18", row.get(Cols.NUM_COMMON_TOKENS));
         assertEquals("108", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("es", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("spa", row.get(Cols.COMMON_TOKENS_LANG));
         assertEquals("24", row.get(Cols.NUM_ALPHABETIC_TOKENS));
 
     }
@@ -164,8 +164,8 @@ public class SimpleComparerTest extends TikaTest {
 
         Map<Cols, String> row = tableInfos.get(0);
         assertEquals("122", row.get(Cols.TOKEN_LENGTH_SUM));
-        assertEquals("3", row.get(Cols.NUM_COMMON_TOKENS));
-        assertEquals("zh-cn", row.get(Cols.COMMON_TOKENS_LANG));
+        assertEquals("20", row.get(Cols.NUM_COMMON_TOKENS));
+        assertEquals("cmn", row.get(Cols.COMMON_TOKENS_LANG));
 
     }
 
@@ -346,6 +346,16 @@ public class SimpleComparerTest extends TikaTest {
         assertEquals(1, tableInfosA.size());
         Map<Cols, String> tableInfoA = tableInfosA.get(0);
         assertEquals("true", tableInfoA.get(Cols.TAGS_PARSE_EXCEPTION));
+
+        //confirm that backoff to html parser worked
+        List<Map<Cols, String>> contentsA = WRITER.getTable(ExtractComparer.CONTENTS_TABLE_A);
+        assertEquals(1, contentsA.size());
+        Map<Cols, String> contentsARow1 = contentsA.get(0);
+        String topN = contentsARow1.get(Cols.TOP_N_TOKENS);
+        assertNotContained("content:", topN);
+        assertNotContained(" p: ", topN);
+        assertContains("apache: 12", topN);
+
     }
 
     @Test

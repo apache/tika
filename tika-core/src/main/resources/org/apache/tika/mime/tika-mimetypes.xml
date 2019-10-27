@@ -82,9 +82,8 @@
     <alias type="application/bat"/>
     <sub-class-of type="text/plain"/>
     <magic priority="50">
-      <match value="@echo off" type="string" offset="0" />
-      <match value="rem " type="string" offset="0" />
-      <match value="REM " type="string" offset="0" />
+      <match value="@echo off" type="stringignorecase" offset="0" />
+      <match value="rem " type="stringignorecase" offset="0" />
     </magic>
     <glob pattern="*.bat"/>
     <glob pattern="*.cmd"/>
@@ -3510,16 +3509,6 @@
 	 <glob pattern="*.grb"/>
 	 <glob pattern="*.grb1"/>
 	 <glob pattern="*.grb2"/>
-  </mime-type>
-
-  <mime-type type="application/x-gtar">
-    <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
-    <magic priority="50">
-      <!-- GNU tar archive -->
-      <match value="ustar  \0" type="string" offset="257" />
-    </magic>
-    <glob pattern="*.gtar"/>
-    <sub-class-of type="application/x-tar"/>
   </mime-type>
 
   <mime-type type="application/gzip">

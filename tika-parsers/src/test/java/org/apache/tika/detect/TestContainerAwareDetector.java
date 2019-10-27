@@ -35,8 +35,10 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+import org.apache.tika.parser.pkg.StreamingZipContainerDetector;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.After;
 import org.junit.Test;
@@ -47,7 +49,9 @@ import org.junit.Test;
 public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
     private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
+    private final MediaTypeRegistry mediaTypeRegistry = mimeTypes.getMediaTypeRegistry();
     private final Detector detector = new DefaultDetector(mimeTypes);
+    private final StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
 
     @After
     public void tearDown() throws TikaException {
@@ -82,10 +86,21 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
                         mimeTypes.detect(stream, m));
             }
 
+            MediaType expected = MediaType.parse(typeFromDetector);
             // All being well, the detector should get it perfect
             assertEquals(
-                    MediaType.parse(typeFromDetector),
+                    expected,
                     detector.detect(stream, m));
+
+            if (mediaTypeRegistry.isSpecializationOf(
+                    expected, MediaType.APPLICATION_ZIP) &&
+                ! expected.toString().contains("tika-ooxml-protected")) {
+
+                assertEquals(
+                        expected,
+                        streamingZipDetector.detect(stream, m));
+            }
+
         }
     }
 
@@ -222,6 +237,9 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
         assertTypeByData("testEXCEL.strict.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testEXCEL_macro_enabled_template.xltm", "application/vnd.ms-excel.template.macroenabled.12");
+        assertTypeByData("testEXCEL_template.xltx", "application/vnd.openxmlformats-officedocument.spreadsheetml.template");
+
         assertTypeByData("testPPT.xps", "application/vnd.ms-xpsdocument");
 
         assertTypeByData("testVISIO.vsdm", "application/vnd.ms-visio.drawing.macroenabled.12");

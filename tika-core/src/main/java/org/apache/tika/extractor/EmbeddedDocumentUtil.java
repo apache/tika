@@ -269,9 +269,7 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     private static Parser findInComposite(CompositeParser p, Class clazz, ParseContext context) {
-        Map<MediaType, Parser> map = p.getParsers(context);
-        for (Map.Entry<MediaType, Parser> e : map.entrySet()) {
-            Parser candidate = e.getValue();
+        for (Parser candidate : p.getAllComponentParsers()) {
             if (equals(candidate, clazz)) {
                 return candidate;
             }

@@ -260,6 +260,67 @@
             CONTAINER_LENGTH asc
         </sql>
     </report>
+    <report reportName="TagExceptionsByMime"
+        reportFilename="tags/tag_exceptions_by_mime.xlsx"
+        format="xlsx"
+        includeSql="true">
+
+        <sql>
+            select mime_string, count(1) as CNT
+            from tags t
+            join profiles p on p.id=t.id
+            join mimes m on p.mime_id=m.mime_id
+            where tags_parse_exception=TRUE
+            group by mime_string
+            order by CNT desc
+        </sql>
+    </report>
+    <report reportName="Tag Exceptions Details"
+            reportFilename="tags/tag_exceptions_details.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select c.file_path,p.file_name,mime_string,is_embedded from
+            tags t
+            join profiles p on t.id=p.id
+            join containers c on p.container_id=c.container_id
+            join mimes m on p.mime_id=m.mime_id
+            where t.tags_parse_exception=true
+            order by m.mime_string
+            limit 20000
+        </sql>
+    </report>
+    <report reportName="Tags by Mime"
+            reportFilename="tags/tags_by_mime.xlsx"
+            format="xlsx"
+            includeSql="true">
+
+        <sql>
+            select mime_string,
+            sum(tags_a) as tags_a,
+            sum(tags_b) as tags_b,
+            sum(tags_div) as tags_div,
+            sum(tags_i) as tags_i,
+            sum(tags_img) as tags_img,
+            sum(tags_li) as tags_li,
+            sum(tags_ol) as tags_ol,
+            sum(tags_p) as tags_p,
+            sum(tags_table) as tags_table,
+            sum(tags_td) as tags_td,
+            sum(tags_title) as tags_title,
+            sum(tags_tr) as tags_tr,
+            sum(tags_u) as tags_u,
+            sum(tags_ul) as tags_ul
+
+            from tags t
+            join profiles p on t.id=p.id
+            join mimes m on p.mime_id=m.mime_id
+            where tags_parse_exception=false
+            group by m.mime_id
+        </sql>
+
+    </report>
     <after>
 
         <!--<sql>drop index on x</sql>

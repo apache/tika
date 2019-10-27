@@ -94,6 +94,7 @@ public enum Cols {
     
     //structure tags
     TAGS_A,
+    TAGS_B,
     TAGS_DIV,
     TAGS_I,
     TAGS_IMG,

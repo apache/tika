@@ -29,6 +29,7 @@ import java.util.Set;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.tika.Tika;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -226,6 +227,21 @@ public class ZipParserTest extends AbstractPkgTest {
     public void testJARDetection() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testJAR.jar");
         assertEquals("application/java-archive", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testQuineRecursiveParserWrapper() throws Exception {
+        //received permission from author via dm
+        //2019-07-25 to include
+        //http://alf.nu/s/droste.zip in unit tests
+        //Out of respect to the author, please maintain
+        //the original file name
+        getRecursiveMetadata("droste.zip");
+    }
+
+    @Test(expected = TikaException.class)
+    public void testQuine() throws Exception {
+        getXML("droste.zip");
     }
 
 }

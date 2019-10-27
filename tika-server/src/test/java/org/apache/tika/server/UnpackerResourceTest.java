@@ -33,6 +33,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.apache.tika.server.writer.ZipWriter;
@@ -196,4 +197,19 @@ public class UnpackerResourceTest extends CXFTestBase {
         assertTrue(responseMsg.contains("test"));
     }
 
+    @Test
+    public void testPDFImages() throws Exception {
+        Response response = WebClient.create(endPoint + UNPACKER_PATH)
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"ExtractInlineImages", "true")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
+        Map<String, String> results = readZipArchive((InputStream)response.getEntity());
+        assertTrue(results.containsKey("image0.png"));
+        String md5 = results.get("image0.png");
+        assertTrue(
+                //pre Java 11
+                md5.equals("7c2f14acbb737672a1245f4ceb50622a") ||
+                //Java 11 -- underlying image libraries generate a diff image in Java 11
+                md5.equals("58b8269d1a584b7e8c1adcb936123923"));
+    }
 }

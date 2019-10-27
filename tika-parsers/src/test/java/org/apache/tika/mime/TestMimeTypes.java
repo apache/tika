@@ -627,6 +627,7 @@ public class TestMimeTypes {
        assertTypeByName("application/x-bat", "testBAT.bat");
        assertTypeByName("application/x-bat", "testCMD.cmd");
        assertType(      "application/x-bat", "testBAT.bat");
+       assertType(      "application/x-bat", "testBATUpper.bat");
     }
     
     @Test

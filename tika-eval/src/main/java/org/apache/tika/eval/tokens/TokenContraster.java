@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.lucene.util.PriorityQueue;
+import org.apache.tika.eval.textstats.TokenCountPriorityQueue;
 
 /**
  * Computes some corpus contrast statistics.
@@ -29,8 +30,8 @@ import org.apache.lucene.util.PriorityQueue;
  */
 public class TokenContraster {
 
-    private TokenStatistics tokenStatisticsA;
-    private TokenStatistics tokenStatisticsB;
+    private TokenCounts tokensA;
+    private TokenCounts tokensB;
 
     private TokenCountPriorityQueue uniqA;
     private TokenCountPriorityQueue uniqB;
@@ -48,14 +49,12 @@ public class TokenContraster {
     private double overlap = 0.0;
 
 
-    public ContrastStatistics calculateContrastStatistics(Map<String, MutableInt> mapA,
-                                                          TokenStatistics tokenStatisticsA,
-                                                          Map<String, MutableInt> mapB,
-                                                          TokenStatistics tokenStatisticsB) {
+    public ContrastStatistics calculateContrastStatistics(TokenCounts tokensA, TokenCounts tokensB) {
         reset();
-        this.tokenStatisticsA = tokenStatisticsA;
-        this.tokenStatisticsB = tokenStatisticsB;
-
+        this.tokensA = tokensA;
+        this.tokensB = tokensB;
+        Map<String, MutableInt> mapA = tokensA.getTokens();
+        Map<String, MutableInt> mapB = tokensB.getTokens();
         for (Map.Entry<String, MutableInt> e : mapA.entrySet()) {
             MutableInt bVal = mapB.get(e.getKey());
             int b = (bVal == null) ? 0 : bVal.intValue();
@@ -115,12 +114,12 @@ public class TokenContraster {
 
     private void finishComputing() {
 
-        long sumUniqTokens = tokenStatisticsA.getTotalUniqueTokens()
-                +tokenStatisticsB.getTotalUniqueTokens();
+        long sumUniqTokens = tokensA.getTotalUniqueTokens()
+                +tokensB.getTotalUniqueTokens();
 
         diceCoefficient = (double) diceCoefficientNum / (double) sumUniqTokens;
-        overlap = (float) overlapNum / (double) (tokenStatisticsA.getTotalTokens() +
-                tokenStatisticsB.getTotalTokens());
+        overlap = (float) overlapNum / (double) (tokensA.getTotalTokens() +
+                tokensB.getTotalTokens());
 
     }
 

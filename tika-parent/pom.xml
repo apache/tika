@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.21-SNAPSHOT</version>
+  <version>1.23-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -269,7 +269,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.12</version>
+        <version>4.13-beta-3</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -297,6 +297,22 @@
         <artifactId>jul-to-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
+
+      <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>javax.annotation-api</artifactId>
+        <version>1.3.2</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.xml.soap</groupId>
+        <artifactId>javax.xml.soap-api</artifactId>
+        <version>1.4.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jvnet.staxex</groupId>
+        <artifactId>stax-ex</artifactId>
+        <version>1.8.1</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -307,33 +323,36 @@
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <!-- plugin versions -->
     <forbiddenapis.version>2.6</forbiddenapis.version>
-    <groovy.maven.version>2.0</groovy.maven.version>
+    <groovy.maven.version>2.1</groovy.maven.version>
     <maven.antrun.version>1.8</maven.antrun.version>
     <maven.assembly.version>3.1.0</maven.assembly.version>
-    <maven.bundle.version>4.0.0</maven.bundle.version>
+    <maven.bundle.version>4.1.0</maven.bundle.version>
     <maven.failsafe.version>2.22.1</maven.failsafe.version>
-    <maven.javadoc.version>3.0.1</maven.javadoc.version>
+    <maven.javadoc.version>3.1.1</maven.javadoc.version>
     <maven.scr.version>1.7.4</maven.scr.version>
     <maven.surefire.version>2.22.1</maven.surefire.version>
-    <maven.shade.version>3.2.0</maven.shade.version>
-    <rat.version>0.12</rat.version>
+    <maven.shade.version>3.2.1</maven.shade.version>
+    <rat.version>0.13</rat.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>4.0.1</poi.version>
-    <commons.compress.version>1.18</commons.compress.version>
+    <poi.version>4.1.1</poi.version>
+    <commons.compress.version>1.19</commons.compress.version>
     <commons.io.version>2.6</commons.io.version>
-    <commons.lang3.version>3.8.1</commons.lang3.version>
+    <commons.lang3.version>3.9</commons.lang3.version>
     <gson.version>2.8.5</gson.version>
+    <guava.version>28.0-jre</guava.version>
     <osgi.core.version>6.0.0</osgi.core.version>
 
-    <cxf.version>3.2.7</cxf.version>
-    <slf4j.version>1.7.25</slf4j.version>
-    <jackson.version>2.9.7</jackson.version>
+    <cxf.version>3.3.2</cxf.version>
+    <slf4j.version>1.7.28</slf4j.version>
+    <jackson.version>2.10.0</jackson.version>
+    <jackson.databind.version>2.10.0</jackson.databind.version>
     <!-- when this is next upgraded, see if we can get rid of
          javax.activation dependency in tika-server -->
-    <jaxb.version>2.3.1</jaxb.version>
+    <jaxb.version>2.3.2</jaxb.version>
     <cli.version>1.4</cli.version>
-    <lucene.version>7.5.0</lucene.version>
-    <mockito.version>2.23.4</mockito.version>
+    <lucene.version>8.1.1</lucene.version>
+    <mockito.version>3.0.0</mockito.version>
+    <opennlp.version>1.9.1</opennlp.version>
   </properties>
 
   <build>
@@ -358,6 +377,31 @@
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.sonatype.ossindex.maven</groupId>
+        <artifactId>ossindex-maven-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>audit-dependencies</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>audit</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- example of how to ignore coordinates
+                <configuration>
+                    <excludeCoordinates>
+                        <exclude>
+                            <groupId>com.h2database</groupId>
+                            <artifactId>h2</artifactId>
+                            <version>1.4.197</version>
+                        </exclude>
+                    </excludeCoordinates>
+                </configuration>
+      -->
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
@@ -425,7 +469,7 @@
               <rules>
                 <dependencyConvergence />
                 <requireMavenVersion>
-                  <version>3.1</version>
+                  <version>3.3</version>
                 </requireMavenVersion>
               </rules>
             </configuration>
@@ -499,6 +543,6 @@
     <connection>scm:git:https://github.com/apache/</connection>
     <developerConnection>scm:git:https://github.com/apache/</developerConnection>
     <url>https://github.com/apache/tika</url>
-    <tag>1.19.1-rc1</tag>
+    <tag>1.22-rc3</tag>
   </scm>
 </project>

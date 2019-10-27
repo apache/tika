@@ -42,7 +42,7 @@ public class AnalyzerManager {
         this.commonTokensAnalyzer = commonTokensAnalyzer;
     }
 
-    public static AnalyzerManager newInstance(int maxTokens) throws IOException {
+    public static AnalyzerManager newInstance(int maxTokens) {
         InputStream is = AnalyzerManager.class.getClassLoader().getResourceAsStream("lucene-analyzers.json");
         Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8);
         GsonBuilder builder = new GsonBuilder();

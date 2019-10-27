@@ -22,13 +22,11 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.poi.hemf.extractor.HemfExtractor;
-import org.apache.poi.hemf.record.AbstractHemfComment;
-import org.apache.poi.hemf.record.HemfCommentPublic;
-import org.apache.poi.hemf.record.HemfCommentRecord;
-import org.apache.poi.hemf.record.HemfRecord;
-import org.apache.poi.hemf.record.HemfRecordType;
-import org.apache.poi.hemf.record.HemfText;
+import org.apache.poi.hemf.record.emf.HemfComment;
+import org.apache.poi.hemf.record.emf.HemfRecord;
+import org.apache.poi.hemf.record.emf.HemfRecordType;
+import org.apache.poi.hemf.record.emf.HemfText;
+import org.apache.poi.hemf.usermodel.HemfPicture;
 import org.apache.poi.util.RecordFormatException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -74,41 +72,46 @@ public class EMFParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try {
-            HemfExtractor ex = new HemfExtractor(stream);
-            long lastY = -1;
-            long lastX = -1;
+            HemfPicture ex = new HemfPicture(stream);
+            double lastY = -1;
+            double lastX = -1;
             long fudgeFactorX = 1000;//derive this from the font or frame/bounds information
             StringBuilder buffer = new StringBuilder();
             for (HemfRecord record : ex) {
-                if (record.getRecordType() == HemfRecordType.comment) {
-                    AbstractHemfComment comment = ((HemfCommentRecord) record).getComment();
-                    if (comment instanceof HemfCommentPublic.MultiFormats) {
+                if (record.getEmfRecordType() == HemfRecordType.comment) {
+                    HemfComment.EmfCommentData commentData = ((HemfComment.EmfComment) record).getCommentData();
+                    if (commentData instanceof HemfComment.EmfCommentDataMultiformats) {
                         if (embeddedDocumentExtractor == null) {
                             embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
                         }
-                        handleMultiFormats((HemfCommentPublic.MultiFormats)comment, xhtml, embeddedDocumentExtractor);
-                    } else if (comment instanceof  HemfCommentPublic.WindowsMetafile) {
+                        handleMultiFormats(
+                                (HemfComment.EmfCommentDataMultiformats)commentData, xhtml, embeddedDocumentExtractor);
+                    } else if (commentData instanceof HemfComment.EmfCommentDataWMF) {
                         if (embeddedDocumentExtractor == null) {
                             embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
                         }
-                        handleWMF((HemfCommentPublic.WindowsMetafile)comment, xhtml, embeddedDocumentExtractor);
+                        handleWMF(((HemfComment.EmfCommentDataWMF) commentData).getWMFData(),
+                                xhtml, embeddedDocumentExtractor);
                     }
-                } else if (record.getRecordType().equals(HemfRecordType.exttextoutw)) {
-                    HemfText.ExtTextOutW extTextOutW = (HemfText.ExtTextOutW) record;
-                    if (lastY > -1 && lastY != extTextOutW.getY()) {
+                } else if (record.getEmfRecordType().equals(HemfRecordType.extTextOutW)) {
+
+                    HemfText.EmfExtTextOutW extTextOutW = (HemfText.EmfExtTextOutW) record;
+                    //change equality to delta diff;
+
+                    if (lastY > -1 && lastY != extTextOutW.getReference().getY()) {
                         xhtml.startElement("p");
                         xhtml.characters(buffer.toString());
                         xhtml.endElement("p");
                         buffer.setLength(0);
                         lastX = -1;
                     }
-                    if (lastX > -1 && extTextOutW.getX() - lastX > fudgeFactorX) {
+                    if (lastX > -1 && extTextOutW.getReference().getX() - lastX > fudgeFactorX) {
                         buffer.append(" ");
                     }
                     String txt = extTextOutW.getText();
                     buffer.append(txt);
-                    lastY = extTextOutW.getY();
-                    lastX = extTextOutW.getX();
+                    lastY = extTextOutW.getReference().getY();
+                    lastX = extTextOutW.getReference().getX();
                 }
             }
             if (buffer.length() > 0) {
@@ -124,12 +127,12 @@ public class EMFParser extends AbstractParser {
         xhtml.endDocument();
     }
 
-    private void handleWMF(HemfCommentPublic.WindowsMetafile comment, ContentHandler contentHandler,
+    private void handleWMF(byte[] bytes, ContentHandler contentHandler,
                            EmbeddedDocumentExtractor embeddedDocumentExtractor) throws IOException, SAXException, TikaException {
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(Metadata.CONTENT_TYPE, WMF_MEDIA_TYPE.toString());
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            try (InputStream is = TikaInputStream.get(comment.getWmfInputStream())) {
+            try (InputStream is = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor.parseEmbedded(is,
                         new EmbeddedContentHandler(contentHandler), embeddedMetadata, false);
 
@@ -139,11 +142,13 @@ public class EMFParser extends AbstractParser {
 
     }
 
-    private void handleMultiFormats(HemfCommentPublic.MultiFormats comment, ContentHandler handler,
+    private void handleMultiFormats(HemfComment.EmfCommentDataMultiformats commentData, ContentHandler handler,
                                     EmbeddedDocumentExtractor embeddedDocumentExtractor) throws IOException, TikaException, SAXException {
-        for (HemfCommentPublic.HemfMultiFormatsData data :
-                ((HemfCommentPublic.MultiFormats) comment).getData()) {
-            handleEmbedded(data.getData(), embeddedDocumentExtractor, handler);
+
+        for (HemfComment.EmfCommentDataFormat dataFormat :
+                commentData.getFormats()) {
+            //is this right?!
+            handleEmbedded(dataFormat.getRawData(), embeddedDocumentExtractor, handler);
         }
     }
 

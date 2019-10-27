@@ -85,6 +85,9 @@ public class RTFParser extends AbstractParser {
     @Field
     private int memoryLimitInKb = EMB_OBJ_MAX_BYTES/1024;
 
+    @Field
+    private boolean ignoreListMarkup = false;
+
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
@@ -95,6 +98,7 @@ public class RTFParser extends AbstractParser {
             XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(handler, metadata);
             RTFEmbObjHandler embObjHandler = new RTFEmbObjHandler(xhtmlHandler, metadata, context, getMemoryLimitInKb());
             final TextExtractor ert = new TextExtractor(xhtmlHandler, metadata, embObjHandler);
+            ert.setIgnoreListMarkup(ignoreListMarkup);
             ert.extract(stream);
         } catch (IOException e) {
             tagged.throwIfCauseOf(e);

@@ -24,7 +24,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.21-SNAPSHOT</version>
+    <version>1.23-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -36,7 +36,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>1.0.0-beta3</dl4j.version>
+    <dl4j.version>1.0.0-beta4</dl4j.version>
+    <twelvemonkeys.version>3.4.1</twelvemonkeys.version>
   </properties>
 
   <dependencies>
@@ -200,10 +201,47 @@
           <groupId>com.github.jai-imageio</groupId>
           <artifactId>jai-imageio-core</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-jpeg</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-tiff</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-psd</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.twelvemonkeys.imageio</groupId>
+          <artifactId>imageio-bmp</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.datavec</groupId>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-jpeg</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-psd</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-bmp</artifactId>
+      <version>${twelvemonkeys.version}</version>
+    </dependency>
+
+    <dependency>
+    <groupId>org.datavec</groupId>
       <artifactId>datavec-api</artifactId>
       <version>${dl4j.version}</version>
       <exclusions>
@@ -296,29 +334,34 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-compress</artifactId>
-      <version>${commons.compress.version}</version>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>${commons.compress.version}</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
-      <version>1.18.4</version>
+      <version>1.18.8</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
-      <version>20.0</version>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>2.10.1</version>
+      <version>2.10.3</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>2.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

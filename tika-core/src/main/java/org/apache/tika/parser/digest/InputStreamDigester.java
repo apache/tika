@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -126,7 +127,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
         //try the usual mark/reset stuff.
         //however, if you actually hit the bound,
         //then stop and spool to file via TikaInputStream
-        SimpleBoundedInputStream bis = new SimpleBoundedInputStream(markLimit, is);
+        BoundedInputStream bis = new BoundedInputStream(markLimit, is);
         boolean finishedStream = false;
         bis.mark(markLimit + 1);
         finishedStream = digestStream(bis, metadata);
@@ -153,7 +154,6 @@ public class InputStreamDigester implements DigestingParser.Digester {
         }
     }
 
-
     private String getMetadataKey() {
         return TikaCoreProperties.TIKA_META_PREFIX +
                 "digest" + Metadata.NAMESPACE_PREFIX_DELIMITER +
@@ -179,8 +179,8 @@ public class InputStreamDigester implements DigestingParser.Digester {
         updateDigest(messageDigest, is);
         digestBytes = messageDigest.digest();
 
-        if (is instanceof SimpleBoundedInputStream) {
-            if (((SimpleBoundedInputStream) is).hasHitBound()) {
+        if (is instanceof BoundedInputStream) {
+            if (((BoundedInputStream) is).hasHitBound()) {
                 return false;
             }
         }
@@ -202,99 +202,4 @@ public class InputStreamDigester implements DigestingParser.Digester {
         return digest;
     }
 
-
-    /**
-     * Very slight modification of Commons' BoundedInputStream
-     * so that we can figure out if this hit the bound or not.
-     */
-    private static class SimpleBoundedInputStream extends InputStream {
-        private final static int EOF = -1;
-        private final long max;
-        private final InputStream in;
-        private long pos;
-
-        private SimpleBoundedInputStream(long max, InputStream in) {
-            this.max = max;
-            this.in = in;
-        }
-
-        @Override
-        public int read() throws IOException {
-            if (max >= 0 && pos >= max) {
-                return EOF;
-            }
-            final int result = in.read();
-            pos++;
-            return result;
-        }
-
-        /**
-         * Invokes the delegate's <code>read(byte[])</code> method.
-         *
-         * @param b the buffer to read the bytes into
-         * @return the number of bytes read or -1 if the end of stream or
-         * the limit has been reached.
-         * @throws IOException if an I/O error occurs
-         */
-        @Override
-        public int read(final byte[] b) throws IOException {
-            return this.read(b, 0, b.length);
-        }
-
-        /**
-         * Invokes the delegate's <code>read(byte[], int, int)</code> method.
-         *
-         * @param b   the buffer to read the bytes into
-         * @param off The start offset
-         * @param len The number of bytes to read
-         * @return the number of bytes read or -1 if the end of stream or
-         * the limit has been reached.
-         * @throws IOException if an I/O error occurs
-         */
-        @Override
-        public int read(final byte[] b, final int off, final int len) throws IOException {
-            if (max >= 0 && pos >= max) {
-                return EOF;
-            }
-            final long maxRead = max >= 0 ? Math.min(len, max - pos) : len;
-            final int bytesRead = in.read(b, off, (int) maxRead);
-
-            if (bytesRead == EOF) {
-                return EOF;
-            }
-
-            pos += bytesRead;
-            return bytesRead;
-        }
-
-        /**
-         * Invokes the delegate's <code>skip(long)</code> method.
-         *
-         * @param n the number of bytes to skip
-         * @return the actual number of bytes skipped
-         * @throws IOException if an I/O error occurs
-         */
-        @Override
-        public long skip(final long n) throws IOException {
-            final long toSkip = max >= 0 ? Math.min(n, max - pos) : n;
-            final long skippedBytes = in.skip(toSkip);
-            pos += skippedBytes;
-            return skippedBytes;
-        }
-
-        @Override
-        public void reset() throws IOException {
-            in.reset();
-            pos = 0;
-        }
-
-        @Override
-        public void mark(int readLimit) {
-            in.mark(readLimit);
-        }
-
-        public boolean hasHitBound() {
-            return pos >= max;
-        }
-    }
 }

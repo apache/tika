@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -25,11 +26,13 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.resource.TikaResource;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -233,7 +236,7 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(responseMsg.contains("Example text"));
     }
 
-    //TIKA-2638
+    //TIKA-2638 and TIKA-2816
     @Test
     public void testOCRLanguageConfig() throws Exception {
         if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
@@ -244,6 +247,8 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"OcrStrategy", "ocr_only")
                 .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"Language", "eng+fra")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MinFileSizeToOcr", "10")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MaxFileSizeToOcr", "1000000000")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
@@ -281,7 +286,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX + "OcrStrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
     }
 
     //TIKA-2669
@@ -380,7 +385,7 @@ public class TikaResourceTest extends CXFTestBase {
                                 "trustedPageSeparator",
                         "\u0020")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
 
     }
 
@@ -420,5 +425,33 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
 
         assertContains("plundered our seas", responseMsg);
+    }
+
+    @Test
+    public void testUnicodePasswordProtectedSpaces() throws Exception {
+        //TIKA-2858
+        final String password = "    ";
+        final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream("testPassword4Spaces.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Just some text.", responseMsg);
+    }
+
+    @Test
+    public void testUnicodePasswordProtectedUnicode() throws Exception {
+        //TIKA-2858
+        final String password = "  ! < > \" \\ \u20AC \u0153 \u00A4 \u0031\u2044\u0034 \u0031\u2044\u0032 \uD841\uDF0E \uD867\uDD98 \uD83D\uDE00  ";
+        final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream("testUnicodePassword.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Just some text.", responseMsg);
     }
 }

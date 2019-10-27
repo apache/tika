@@ -51,11 +51,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -357,6 +355,19 @@ public class RTFParserTest extends TikaTest {
     }
 
     @Test
+    public void testTurningOffList() throws Exception {
+        InputStream is = getClass().getResourceAsStream(
+                "/org/apache/tika/parser/rtf/ignoreListMarkup-tika-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String content = getXML("testRTFListMicrosoftWord.rtf", p).xml;
+        assertNotContained("<ol>", content);
+        assertNotContained("<ul>", content);
+        assertNotContained("<li>", content);
+    }
+
+    @Test
     public void testListLibreOffice() throws Exception {
         String content = getXML("testRTFListLibreOffice.rtf").xml;
         assertContains("<ol>\t<li>one</li>", content);
@@ -547,6 +558,39 @@ public class RTFParserTest extends TikaTest {
         XMLResult r = getXML("testRTFBoldPlain.rtf");
         assertContains("<b>Hank</b>", r.xml);
         assertNotContained("<b>Anna Smith", r.xml);
+    }
+
+    @Test
+    public void testSpacingInAnnotations() throws Exception {
+        //TIKA-2838
+        assertContains("supercali ATB Allison, Timothy B.  This is a comment fragilistic",
+                getXML("testRTF_annotation_spacing.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA1713() throws Exception {
+        assertContains("For discussion", getXML("testRTFTIKA_1713.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA2150() throws Exception {
+        assertContains("TO\tFROM", getXML("testRTFTIKA_2150.rtf").xml);
+    }
+    @Test
+    public void testTIKA2500() throws Exception {
+        assertContains("Level1", getXML("testRTFTIKA_2500.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA2883() throws Exception {
+        assertContains("This message has been archived.",
+                getXML("testRTFTIKA_2883.rtf").xml);
+    }
+
+    @Test
+    public void testTIKA2899() throws Exception {
+        assertContains("this Agreement on today",
+                getXML("testRTFTIKA_2899.rtf").xml);
     }
 
     private Result getResult(String filename) throws Exception {

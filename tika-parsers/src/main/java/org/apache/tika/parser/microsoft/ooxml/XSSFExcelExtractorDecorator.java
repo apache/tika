@@ -449,7 +449,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         public void cell(String cellRef, String formattedValue, XSSFComment comment) {
             try {
                 // Handle any missing cells
-                int colNum = (new CellReference(cellRef)).getCol();
+                int colNum = (cellRef == null) ? lastSeenCol+1 : (new CellReference(cellRef)).getCol();
                 for (int cn=lastSeenCol+1; cn<colNum; cn++) {
                     xhtml.startElement("td");
                     xhtml.endElement("td");

@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parent</artifactId>
-        <version>1.21-SNAPSHOT</version>
+        <version>1.23-SNAPSHOT</version>
         <relativePath>../tika-parent/pom.xml</relativePath>
     </parent>
 
@@ -56,15 +56,12 @@
             <version>3.6.1</version>
         </dependency>
 
+        <!-- check if exclusion from oss-index check
+            is necessary on next upgrade -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.197</version>
-        </dependency>
-        <dependency>
-            <groupId>com.optimaize.languagedetector</groupId>
-            <artifactId>language-detector</artifactId>
-            <version>0.6</version>
+            <version>1.4.200</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>
@@ -96,6 +93,11 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-memory</artifactId>
             <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.opennlp</groupId>
+            <artifactId>opennlp-tools</artifactId>
+            <version>${opennlp.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -177,23 +179,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <artifactId>maven-remote-resources-plugin</artifactId>
-                <version>1.5</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>bundle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <includes>
-                        <include>**/*.xml</include>
-                    </includes>
-                </configuration>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>

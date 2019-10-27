@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,6 +44,13 @@ public class AutoDetectReader extends BufferedReader {
 
     private static final ServiceLoader DEFAULT_LOADER =
             new ServiceLoader(AutoDetectReader.class.getClassLoader());
+
+    private static EncodingDetector DEFAULT_DETECTOR;
+
+    static {
+        DEFAULT_DETECTOR = new CompositeEncodingDetector(
+                DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
+    }
 
     private static Charset detect(
             InputStream input, Metadata metadata,
@@ -125,14 +133,13 @@ public class AutoDetectReader extends BufferedReader {
 
     public AutoDetectReader(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
-        this(stream, metadata, DEFAULT_LOADER);
+        this(stream, metadata, DEFAULT_DETECTOR);
     }
 
     public AutoDetectReader(InputStream stream)
             throws IOException, TikaException {
         this(stream, new Metadata());
     }
-
     private static InputStream getBuffered(InputStream stream) {
         if (stream.markSupported()) {
             return stream;

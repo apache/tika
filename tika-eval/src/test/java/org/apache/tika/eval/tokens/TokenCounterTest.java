@@ -90,7 +90,7 @@ public class TokenCounterTest {
 
     @Test
     public void testCJKFilter() throws Exception {
-        String s = "then quickbrownfoxjumpedoverthelazy dogss dog 普林斯顿大学";
+        String s = "then quickbrownfoxjumpedoverthelazy dogss d 2000 普林斯顿大学";
         Analyzer analyzer = analyzerManager.getCommonTokensAnalyzer();
         TokenStream ts = analyzer.tokenStream(FIELD, s);
         CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
