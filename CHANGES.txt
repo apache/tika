@@ -5,6 +5,8 @@ Release 2.0.0 - ???
 
    Other changes
 
+   * Add parser for XLIFF v1.2 files (TIKA-2975).
+
 Release 1.23
 
    * Upgrade to POI 4.1.1 (TIKA-2851).
