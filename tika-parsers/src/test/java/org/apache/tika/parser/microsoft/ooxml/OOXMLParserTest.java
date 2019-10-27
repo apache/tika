@@ -1878,6 +1878,19 @@ public class OOXMLParserTest extends TikaTest {
         //TIKA_2446
         getRecursiveMetadata("testZIP_corrupted_oom.zip");
     }
+
+    @Test
+    public void testSigned() throws Exception {
+        Metadata m = getXML("testWORD_signed.docx").metadata;
+        assertEquals("true", m.get(TikaCoreProperties.HAS_SIGNATURE));
+
+        m = getXML("testEXCEL_signed.xlsx").metadata;
+        assertEquals("true", m.get(TikaCoreProperties.HAS_SIGNATURE));
+
+        m = getXML("testPPT_signed.pptx").metadata;
+        assertEquals("true", m.get(TikaCoreProperties.HAS_SIGNATURE));
+
+    }
 }
 
 

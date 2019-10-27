@@ -19,8 +19,6 @@ package org.apache.tika.eval;
 
 
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.tika.batch.FileResource;
@@ -50,15 +49,24 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.eval.langid.Language;
+import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
+import org.apache.tika.eval.textstats.CommonTokens;
+import org.apache.tika.eval.textstats.CompositeTextStatsCalculator;
+import org.apache.tika.eval.textstats.ContentLengthCalculator;
+import org.apache.tika.eval.textstats.TextStatsCalculator;
+import org.apache.tika.eval.textstats.TokenEntropy;
+import org.apache.tika.eval.textstats.TokenLengths;
+import org.apache.tika.eval.textstats.TopNTokens;
+import org.apache.tika.eval.textstats.UnicodeBlockCounter;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.tokens.CommonTokenResult;
-import org.apache.tika.eval.tokens.TokenCounter;
+import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
-import org.apache.tika.eval.tokens.TokenStatistics;
-import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.eval.util.ContentTagParser;
-import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.eval.util.ContentTags;
+import org.apache.tika.eval.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -137,11 +145,12 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         tmp.put("UL", Cols.TAGS_UL);
         return Collections.unmodifiableMap(tmp);
     }
-    private static CommonTokenCountManager commonTokenCountManager;
+
+    private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
+
     private String lastExtractExtension = null;
 
     AnalyzerManager analyzerManager;
-    TokenCounter tokenCounter;
 
 
     public enum EXCEPTION_TYPE {
@@ -175,50 +184,54 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     int maxTokens = 200000;
 
 
-    //these remove runtime info from the stacktraces so
-    //that actual causes can be counted.
-    private final static Pattern CAUSED_BY_SNIPPER =
-            Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
 
     private final static Pattern ACCESS_PERMISSION_EXCEPTION =
             Pattern.compile("org\\.apache\\.tika\\.exception\\.AccessPermissionException");
     private final static Pattern ENCRYPTION_EXCEPTION =
             Pattern.compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
 
-    private TikaConfig config = TikaConfig.getDefaultConfig();//TODO: allow configuration
-    final LanguageIDWrapper langIder;
+    private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
+
+    //TODO: allow configuration
+    //private TikaConfig config = TikaConfig.getDefaultConfig();
+    CompositeTextStatsCalculator compositeTextStatsCalculator;
     protected IDBWriter writer;
 
     /**
-     *
      * @param p path to the common_tokens directory.  If this is null, try to load from classPath
+     * @param defaultLangCode this is the language code to use if a common_words list doesn't exist for the
+     *                        detected langauge; can be <code>null</code>
      * @throws IOException
      */
     public static void loadCommonTokens(Path p, String defaultLangCode) throws IOException {
-        commonTokenCountManager = new CommonTokenCountManager(p, defaultLangCode);
+        COMMON_TOKEN_COUNT_MANAGER = new CommonTokenCountManager(p, defaultLangCode);
     }
 
     public AbstractProfiler(ArrayBlockingQueue<FileResource> fileQueue,
                             IDBWriter writer) {
         super(fileQueue);
         this.writer = writer;
-        langIder = new LanguageIDWrapper();
         LanguageIDWrapper.setMaxTextLength(maxContentLengthForLangId);
-        initAnalyzersAndTokenCounter(maxTokens);
+        this.compositeTextStatsCalculator = initAnalyzersAndTokenCounter(maxTokens, LANG_ID);
     }
 
-    private void initAnalyzersAndTokenCounter(int maxTokens) {
-        try {
-            analyzerManager = AnalyzerManager.newInstance(maxTokens);
-            tokenCounter = new TokenCounter(analyzerManager.getGeneralAnalyzer());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    private CompositeTextStatsCalculator initAnalyzersAndTokenCounter(int maxTokens, LanguageIDWrapper langIder) {
+        analyzerManager = AnalyzerManager.newInstance(maxTokens);
+        List<TextStatsCalculator> calculators = new ArrayList<>();
+        calculators.add(new CommonTokens(COMMON_TOKEN_COUNT_MANAGER));
+        calculators.add(new TokenEntropy());
+        calculators.add(new TokenLengths());
+        calculators.add(new TopNTokens(10));
+        calculators.add(new BasicTokenCountStatsCalculator());
+        calculators.add(new ContentLengthCalculator());
+        calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
 
+        return new CompositeTextStatsCalculator(calculators, analyzerManager.getGeneralAnalyzer(), langIder);
     }
 
     /**
      * Truncate the content string if greater than this length to this length
+     *
      * @param maxContentLength
      */
     public void setMaxContentLength(int maxContentLength) {
@@ -242,7 +255,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
      */
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
-        initAnalyzersAndTokenCounter(maxTokens);
+        initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
     }
 
 
@@ -266,7 +279,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         data.put(Cols.CONTAINER_ID, containerId);
         data.put(Cols.MD5, m.get(DIGEST_KEY));
 
-        if ( i < numAttachments.size()) {
+        if (i < numAttachments.size()) {
             data.put(Cols.NUM_ATTACHMENTS, Integer.toString(numAttachments.get(i)));
         }
         data.put(Cols.ELAPSED_TIME_MILLIS, getTime(m));
@@ -352,68 +365,73 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
     }
 
+    protected Map<Class, Object> calcTextStats(ContentTags contentTags) {
+/*        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
+            return Collections.EMPTY_MAP;
+        }*/
+        Map<Cols, String> data = new HashMap<>();
+        String content = truncateContent(contentTags, maxContentLength, data);
+        if (content == null || content.trim().length() == 0) {
+            content = "";
+        }
+        return compositeTextStatsCalculator.calculate(content);
+    }
+
     /**
      * Checks to see if metadata is null or content is empty (null or only whitespace).
      * If any of these, then this does no processing, and the fileId is not
      * entered into the content table.
      *
      * @param fileId
-     * @param contentTags
-     * @param fieldName
+     * @param textStats
      * @param contentsTable
      */
-    protected void writeContentData(String fileId, ContentTags contentTags,
-                                    String fieldName, TableInfo contentsTable) throws IOException {
-        if (contentTags == ContentTags.EMPTY_CONTENT_TAGS) {
-            return;
-        }
+    protected void writeContentData(String fileId, Map<Class, Object> textStats, TableInfo contentsTable) throws IOException {
         Map<Cols, String> data = new HashMap<>();
-        String content = truncateContent(contentTags, maxContentLength, data);
-        if (content == null || content.trim().length() == 0) {
-            return;
-        }
-        tokenCounter.clear(fieldName);
-        tokenCounter.add(fieldName, content);
-
         data.put(Cols.ID, fileId);
-        data.put(Cols.CONTENT_LENGTH, Integer.toString(content.length()));
-        langid(contentTags, data);
-        String langid = data.get(Cols.LANG_ID_1);
-        langid = (langid == null) ? "" : langid;
-
-        writeTokenCounts(data, fieldName, tokenCounter);
-        CommonTokenResult commonTokenResult = null;
-        try {
-            commonTokenResult = commonTokenCountManager.countTokenOverlaps(langid,
-                    tokenCounter.getTokens(fieldName));
-        } catch (IOException e) {
-            LOG.error("{}", e.getMessage(), e);
+        if (textStats.containsKey(ContentLengthCalculator.class)) {
+            data.put(Cols.CONTENT_LENGTH, Integer.toString((Integer) textStats.get(ContentLengthCalculator.class)));
+        } else {
+            data.put(Cols.CONTENT_LENGTH, "0");
         }
-        data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
-        data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
-        data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
-        TokenStatistics tokenStatistics = tokenCounter.getTokenStatistics(fieldName);
-        data.put(Cols.NUM_UNIQUE_TOKENS,
-                Integer.toString(tokenStatistics.getTotalUniqueTokens()));
-        data.put(Cols.NUM_TOKENS,
-                Integer.toString(tokenStatistics.getTotalTokens()));
-        data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS,
-                Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
-        data.put(Cols.NUM_ALPHABETIC_TOKENS,
-                Integer.toString(commonTokenResult.getAlphabeticTokens()));
+        langid(textStats, data);
 
-        data.put(Cols.TOKEN_ENTROPY_RATE,
-                Double.toString(tokenStatistics.getEntropy()));
-        SummaryStatistics summStats = tokenStatistics.getSummaryStatistics();
-        data.put(Cols.TOKEN_LENGTH_SUM,
-                Integer.toString((int) summStats.getSum()));
+        writeTokenCounts(textStats, data);
+        CommonTokenResult commonTokenResult = (CommonTokenResult) textStats.get(CommonTokens.class);
+        if (commonTokenResult != null) {
+            data.put(Cols.COMMON_TOKENS_LANG, commonTokenResult.getLangCode());
+            data.put(Cols.NUM_UNIQUE_COMMON_TOKENS, Integer.toString(commonTokenResult.getUniqueCommonTokens()));
+            data.put(Cols.NUM_COMMON_TOKENS, Integer.toString(commonTokenResult.getCommonTokens()));
+            data.put(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS,
+                    Integer.toString(commonTokenResult.getUniqueAlphabeticTokens()));
+            data.put(Cols.NUM_ALPHABETIC_TOKENS,
+                    Integer.toString(commonTokenResult.getAlphabeticTokens()));
+        }
+        TokenCounts tokenCounts = (TokenCounts) textStats.get(BasicTokenCountStatsCalculator.class);
+        if (tokenCounts != null) {
 
-        data.put(Cols.TOKEN_LENGTH_MEAN,
-                Double.toString(summStats.getMean()));
+            data.put(Cols.NUM_UNIQUE_TOKENS,
+                    Integer.toString(tokenCounts.getTotalUniqueTokens()));
+            data.put(Cols.NUM_TOKENS,
+                    Integer.toString(tokenCounts.getTotalTokens()));
+        }
+        if (textStats.get(TokenEntropy.class) != null) {
+            data.put(Cols.TOKEN_ENTROPY_RATE,
+                    Double.toString((Double) textStats.get(TokenEntropy.class)));
+        }
 
-        data.put(Cols.TOKEN_LENGTH_STD_DEV,
-                Double.toString(summStats.getStandardDeviation()));
-        unicodeBlocks(contentTags, data);
+        SummaryStatistics summStats = (SummaryStatistics) textStats.get(TokenLengths.class);
+        if (summStats != null) {
+            data.put(Cols.TOKEN_LENGTH_SUM,
+                    Integer.toString((int) summStats.getSum()));
+
+            data.put(Cols.TOKEN_LENGTH_MEAN,
+                    Double.toString(summStats.getMean()));
+
+            data.put(Cols.TOKEN_LENGTH_STD_DEV,
+                    Double.toString(summStats.getStandardDeviation()));
+        }
+        unicodeBlocks(textStats, data);
         try {
             writer.writeRow(contentsTable, data);
         } catch (IOException e) {
@@ -474,7 +492,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
     void getExceptionStrings(Metadata metadata, Map<Cols, String> data) {
 
-        String fullTrace = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "runtime");
+        String fullTrace = metadata.get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION);
 
         if (fullTrace == null) {
             fullTrace = metadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION);
@@ -507,11 +525,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             //IOException from org.apache.tika.parser.microsoft.OfficeParser@2b1ea6ee
             //For reporting purposes, let's snip off the object id so that we can more
             //easily count exceptions.
-            String sortTrace = ExceptionUtils.trimMessage(fullTrace);
-
-            matcher = CAUSED_BY_SNIPPER.matcher(sortTrace);
-            sortTrace = matcher.replaceAll("$1");
-            sortTrace = sortTrace.replaceAll("org.apache.tika.", "o.a.t.");
+            String sortTrace = EvalExceptionUtils.normalize(fullTrace);
             data.put(Cols.SORT_STACK_TRACE, sortTrace);
         }
     }
@@ -537,6 +551,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         return c;
 
     }
+
     protected static ContentTags getContent(EvalFilePaths evalFilePaths, Metadata metadata) {
         if (metadata == null) {
             return ContentTags.EMPTY_CONTENT_TAGS;
@@ -544,40 +559,12 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         return parseContentAndTags(evalFilePaths, metadata);
     }
 
-    void unicodeBlocks(ContentTags contentTags, Map<Cols, String> data) {
-        String content = contentTags.getContent();
-        if (content.length() < 200) {
-            return;
-        }
-        String s = content;
-        if (content.length() > maxContentLengthForLangId) {
-            s = content.substring(0, maxContentLengthForLangId);
-        }
-        Map<String, Integer> m = new HashMap<>();
-        Reader r = new StringReader(s);
-        try {
-            int c = r.read();
-            while (c != -1) {
-                Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
-                String blockString = (block == null) ? "NULL" : block.toString();
-                Integer i = m.get(blockString);
-                if (i == null) {
-                    i = 0;
-                }
-                i++;
-                if (block == null) {
-                    blockString = "NULL";
-                }
-                m.put(blockString, i);
-                c = r.read();
-            }
-        } catch (IOException e) {
-            LOG.warn("IOException", e);
-        }
+    void unicodeBlocks(Map<Class, Object> tokenStats, Map<Cols, String> data) {
 
+        Map<String, MutableInt> blocks = (Map<String, MutableInt>) tokenStats.get(UnicodeBlockCounter.class);
         List<Pair<String, Integer>> pairs = new ArrayList<>();
-        for (Map.Entry<String, Integer> e : m.entrySet()) {
-            pairs.add(Pair.of(e.getKey(), e.getValue()));
+        for (Map.Entry<String, MutableInt> e : blocks.entrySet()) {
+            pairs.add(Pair.of(e.getKey(), e.getValue().intValue()));
         }
         Collections.sort(pairs, new Comparator<Pair<String, Integer>>() {
             @Override
@@ -591,25 +578,18 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             if (i > 0) {
                 sb.append(" | ");
             }
-            sb.append(pairs.get(i).getKey()+": "+pairs.get(i).getValue());
+            sb.append(pairs.get(i).getKey() + ": " + pairs.get(i).getValue());
         }
         data.put(Cols.UNICODE_CHAR_BLOCKS, sb.toString());
     }
 
-    void langid(ContentTags contentTags, Map<Cols, String> data) {
-        String content = contentTags.getContent();
-        if (content.length() < 50) {
-            return;
-        }
-        String s = content;
-        if (content.length() > maxContentLengthForLangId) {
-            s = content.substring(0, maxContentLengthForLangId);
-        }
-        List<Language> probabilities = langIder.getProbabilities(s);
+    void langid(Map<Class, Object> stats, Map<Cols, String> data) {
+        List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
+
         if (probabilities.size() > 0) {
             data.put(Cols.LANG_ID_1, probabilities.get(0).getLanguage());
             data.put(Cols.LANG_ID_PROB_1,
-            Double.toString(probabilities.get(0).getConfidence()));
+                    Double.toString(probabilities.get(0).getConfidence()));
         }
         if (probabilities.size() > 1) {
             data.put(Cols.LANG_ID_2, probabilities.get(1).getLanguage());
@@ -630,15 +610,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         output.put(Cols.MIME_ID, Integer.toString(mimeId));
     }
 
-    void writeTokenCounts(Map<Cols, String> data, String field,
-                          TokenCounter tokenCounter) {
-
-
-        int stops = 0;
+    void writeTokenCounts(Map<Class, Object> textStats, Map<Cols, String> data) {
+        TokenIntPair[] tokenIntPairs = (TokenIntPair[]) textStats.get(TopNTokens.class);
         int i = 0;
         StringBuilder sb = new StringBuilder();
-        TokenStatistics tokenStatistics = tokenCounter.getTokenStatistics(field);
-        for (TokenIntPair t : tokenStatistics.getTopN()) {
+        for (TokenIntPair t : tokenIntPairs) {
             if (i++ > 0) {
                 sb.append(" | ");
             }
@@ -655,7 +631,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
 
 
     /**
-     *
      * @param metadata
      * @param extracts
      * @return evalfilepaths for files if crawling an extract directory
@@ -667,7 +642,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         Path relativeSourceFilePath = Paths.get(m.replaceAll(""));
         //just try slapping the relextractfilepath on the extractdir
         Path extractFile = extracts.resolve(relExtractFilePath);
-        if (! Files.isRegularFile(extractFile)) {
+        if (!Files.isRegularFile(extractFile)) {
             //if that doesn't work, try to find the right extract file.
             //This is necessary if crawling extractsA and trying to find a file in
             //extractsB that is not in the same format: json vs txt or compressed
@@ -675,6 +650,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         }
         return new EvalFilePaths(relativeSourceFilePath, extractFile);
     }
+
     //call this if the crawler is crawling through the src directory
     protected EvalFilePaths getPathsFromSrcCrawl(Metadata metadata, Path srcDir,
                                                  Path extracts) {
@@ -693,7 +669,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     /**
-     *
      * @param extractRootDir
      * @param relativeSourceFilePath
      * @return extractFile or null if couldn't find one.
@@ -701,16 +676,16 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     private Path findFile(Path extractRootDir, Path relativeSourceFilePath) {
         String relSrcFilePathString = relativeSourceFilePath.toString();
         if (lastExtractExtension != null) {
-            Path candidate = extractRootDir.resolve(relSrcFilePathString+lastExtractExtension);
+            Path candidate = extractRootDir.resolve(relSrcFilePathString + lastExtractExtension);
             if (Files.isRegularFile(candidate)) {
                 return candidate;
             }
         }
         for (String ext : EXTRACT_EXTENSIONS) {
             for (String compress : COMPRESSION_EXTENSIONS) {
-                Path candidate = extractRootDir.resolve(relSrcFilePathString+ext+compress);
+                Path candidate = extractRootDir.resolve(relSrcFilePathString + ext + compress);
                 if (Files.isRegularFile(candidate)) {
-                    lastExtractExtension = ext+compress;
+                    lastExtractExtension = ext + compress;
                     return candidate;
                 }
             }
@@ -757,7 +732,6 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     /**
-     *
      * @param list
      * @return empty list if input list is empty or null
      */
@@ -767,7 +741,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             return ret;
         }
         //container document attachment count = list.size()-1
-        ret.add(list.size()-1);
+        ret.add(list.size() - 1);
 
         Map<String, Integer> counts = new HashMap<>();
         for (int i = 1; i < list.size(); i++) {
@@ -778,7 +752,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             }
             String[] parts = path.split("/");
             StringBuilder parent = new StringBuilder();
-            for (int end = 1; end < parts.length-1; end++) {
+            for (int end = 1; end < parts.length - 1; end++) {
                 parent.setLength(0);
                 join("/", parent, parts, 1, end);
                 String parentPath = parent.toString();
@@ -821,7 +795,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         if (evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".html")) {
             try {
                 return ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
-            } catch (IOException|SAXException e) {
+            } catch (IOException | SAXException e) {
                 LOG.warn("Problem parsing html in {}; backing off to treat string as text",
                         evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
 
@@ -829,17 +803,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
             }
         } else if (
                 evalFilePaths.getExtractFile().getFileName().toString().toLowerCase(Locale.ENGLISH).endsWith(".xhtml") ||
-                (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
+                        (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
             try {
                 return ContentTagParser.parseXML(s, UC_TAGS_OF_INTEREST.keySet());
-            } catch (TikaException|IOException|SAXException e) {
+            } catch (TikaException | IOException | SAXException e) {
                 LOG.warn("Problem parsing xhtml in {}; backing off to html parser",
                         evalFilePaths.getExtractFile().toAbsolutePath().toString(), e);
                 try {
                     ContentTags contentTags = ContentTagParser.parseHTML(s, UC_TAGS_OF_INTEREST.keySet());
                     contentTags.setParseException(true);
                     return contentTags;
-                } catch (IOException|SAXException e2) {
+                } catch (IOException | SAXException e2) {
                     LOG.warn("Problem parsing html in {}; backing off to treat string as text",
                             evalFilePaths.getExtractFile().toAbsolutePath().toString(), e2);
                 }

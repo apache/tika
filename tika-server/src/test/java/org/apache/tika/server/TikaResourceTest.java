@@ -286,7 +286,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX + "OcrStrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
     }
 
     //TIKA-2669
@@ -385,7 +385,7 @@ public class TikaResourceTest extends CXFTestBase {
                                 "trustedPageSeparator",
                         "\u0020")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
 
     }
 
@@ -442,7 +442,6 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    @Ignore("until we understand what's going on")
     public void testUnicodePasswordProtectedUnicode() throws Exception {
         //TIKA-2858
         final String password = "  ! < > \" \\ \u20AC \u0153 \u00A4 \u0031\u2044\u0034 \u0031\u2044\u0032 \uD841\uDF0E \uD867\uDD98 \uD83D\uDE00  ";

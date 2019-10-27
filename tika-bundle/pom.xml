@@ -172,6 +172,7 @@
               poi|poi-scratchpad|
               poi-ooxml|
               poi-ooxml-schemas|
+              commons-math3|
               curvesapi|
               xmlbeans|
               jackcess|
@@ -279,6 +280,18 @@
               opennlp.tools.namefind;resolution:=optional,
 	          opennlp.tools.authorage;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
+              net.sf.saxon;resolution:=optional,
+              net.sf.saxon.dom;resolution:=optional,
+              net.sf.saxon.om;resolution:=optional,
+              net.sf.saxon.query;resolution:=optional,
+              net.sf.saxon.sxpath;resolution:=optional,
+              net.sf.saxon.value;resolution:=optional,
+              org.apache.batik.anim.dom;resolution:=optional,
+              org.apache.batik.bridge;resolution:=optional,
+              org.apache.batik.ext.awt;resolution:=optional,
+              org.apache.batik.ext.awt.image.renderable;resolution:=optional,
+              org.apache.batik.gvt;resolution:=optional,
+              org.apache.batik.util;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
               org.apache.commons.exec;resolution:=optional,
@@ -289,10 +302,6 @@
               org.apache.commons.httpclient.params;resolution:=optional,
               org.apache.commons.httpclient.protocol;resolution:=optional,
               org.apache.commons.httpclient.util;resolution:=optional,
-
-              org.apache.commons.math3.exception;resolution:=optional,
-              org.apache.commons.math3.linear;resolution:=optional,
-              org.apache.commons.math3.stat.regression;resolution:=optional,
               org.apache.commons.vfs2;resolution:=optional,
               org.apache.commons.vfs2.provider;resolution:=optional,
               org.apache.commons.vfs2.util;resolution:=optional,
@@ -457,6 +466,7 @@
               *
             </Import-Package>
           </instructions>
+          <createDependencyReducedPom>true</createDependencyReducedPom>
         </configuration>
       </plugin>
       <!-- TIKA-763: Workaround to avoid including LGPL classes -->

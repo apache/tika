@@ -146,10 +146,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<IOException> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
-    private final ParseContext context;
+    final ParseContext context;
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
+    final TesseractOCRParser tesseractOCRParser;//can be null!
 
     //zero-based pageIndex
     int pageIndex = 0;
@@ -165,6 +166,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.metadata = metadata;
         this.config = config;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (config.getOcrStrategy() == NO_OCR) {
+            tesseractOCRParser = null;
+        } else {
+            tesseractOCRParser = (TesseractOCRParser)EmbeddedDocumentUtil.tryToFindExistingLeafParser(TesseractOCRParser.class, context);
+        }
     }
 
     @Override
@@ -322,9 +328,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         TesseractOCRConfig tesseractConfig =
-                context.get(TesseractOCRConfig.class, DEFAULT_TESSERACT_CONFIG);
+                context.get(TesseractOCRConfig.class, tesseractOCRParser.getDefaultConfig());
 
-        TesseractOCRParser tesseractOCRParser = new TesseractOCRParser();
         if (! tesseractOCRParser.hasTesseract(tesseractConfig)) {
             throw new TikaException("Tesseract is not available. "+
                     "Please set the OCR_STRATEGY to NO_OCR or configure Tesseract correctly");
@@ -334,12 +339,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         TemporaryResources tmp = new TemporaryResources();
         try {
 
-            BufferedImage image = renderer.renderImage(pageIndex, config.getOcrImageScale(), config.getOcrImageType());
+            int dpi = config.getOcrDPI();
+            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
             Path tmpFile = tmp.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
                 ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
-                        os, config.getOcrDPI(), config.getOcrImageQuality());
+                        os, dpi, config.getOcrImageQuality());
             }
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 tesseractOCRParser.parseInline(is, xhtml, tesseractConfig);
@@ -759,6 +765,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         //if there is, process it
         if (nonNull > 0) {
+            metadata.add(TikaCoreProperties.HAS_SIGNATURE, "true");
             xhtml.startElement("li", parentAttributes);
 
             AttributesImpl attrs = new AttributesImpl();

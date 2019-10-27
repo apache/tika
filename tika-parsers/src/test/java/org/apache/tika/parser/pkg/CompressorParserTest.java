@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -111,5 +112,17 @@ public class CompressorParserTest extends TikaTest {
                 fail("CompressorParser should support: "+mt.toString());
             }
         }
+    }
+
+    @Test(expected = TikaException.class)
+    public void testQuineXHTML() throws Exception {
+        //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
+        getXML("quine.gz");
+    }
+
+    @Test
+    public void testQuineRecursive() throws Exception {
+        //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
+        getRecursiveMetadata("quine.gz");
     }
 }

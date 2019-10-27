@@ -46,6 +46,7 @@ import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
@@ -117,6 +118,14 @@ public class OOXMLExtractorFactory {
                         //parsing
                         pkg = OPCPackage.open(tmpRepairedCopy, PackageAccess.READ);
                     }
+                }
+            }
+
+            if (pkg != null) {
+                PackageRelationshipCollection prc =
+                        pkg.getRelationshipsByType(OOXMLParser.SIGNATURE_RELATIONSHIP);
+                if (prc != null && prc.size() > 0) {
+                    metadata.set(TikaCoreProperties.HAS_SIGNATURE, "true");
                 }
             }
 

@@ -27,7 +27,14 @@ import org.apache.commons.math3.util.FastMath;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.tika.eval.textstats.TokenCountPriorityQueue;
 
+/**
+ * @deprecated use {@link org.apache.tika.eval.textstats.CompositeTextStatsCalculator}
+ * with {@link org.apache.tika.eval.textstats.TokenEntropy}, {@link org.apache.tika.eval.textstats.TokenLengths}
+ * and {@link org.apache.tika.eval.textstats.TopNTokens}.
+ */
+@Deprecated
 public class TokenCounter {
 
 

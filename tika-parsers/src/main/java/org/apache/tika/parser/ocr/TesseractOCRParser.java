@@ -524,6 +524,8 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
                 config.getOutputType().name().toLowerCase(Locale.US)
         ));
+        LOG.debug("Tesseract command: " + String.join(" ", cmd));
+        
         ProcessBuilder pb = new ProcessBuilder(cmd);
         setEnv(config, pb);
         final Process process = pb.start();
@@ -713,6 +715,11 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     @Field
     public void setPageSegMode(String pageSegMode) {
         defaultConfig.setPageSegMode(pageSegMode);
+    }
+
+    @Field
+    public void setMaxFileSizeToOcr(long maxFileSizeToOcr) {
+        defaultConfig.setMaxFileSizeToOcr(maxFileSizeToOcr);
     }
 
     @Field

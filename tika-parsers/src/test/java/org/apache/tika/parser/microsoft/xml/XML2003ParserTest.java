@@ -18,25 +18,36 @@ package org.apache.tika.parser.microsoft.xml;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.AfterClass;
 import org.junit.Test;
 
-public class XML2003ParserTest extends TikaTest {
+public class XML2003ParserTest extends MultiThreadedTikaTest {
+
+    @AfterClass
+    public static void tearDown() throws TikaException {
+        XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
+    }
 
     @Test
     public void testBasicWord() throws Exception {
         List<Metadata> list =  getRecursiveMetadata("testWORD2003.xml");
-        assertEquals(8, list.size());
-
+        assertEquals(6, list.size());
         Metadata m = list.get(0);//container doc
         String xml = m.get(RecursiveParserWrapper.TIKA_CONTENT);
         xml = xml.replaceAll("\\s+", " ");
@@ -69,7 +80,9 @@ public class XML2003ParserTest extends TikaTest {
 
         //make sure embedded docs were properly processed
         assertContains("moscow-birds",
-                Arrays.asList(list.get(7).getValues(TikaCoreProperties.SUBJECT)));
+                Arrays.asList(list.get(5).getValues(TikaCoreProperties.SUBJECT)));
+
+        assertEquals("testJPEG_EXIF.jpg", list.get(5).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
 
         //check that text is extracted with breaks between elements
         String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"), new AutoDetectParser());
@@ -80,7 +93,6 @@ public class XML2003ParserTest extends TikaTest {
         assertContains("footnote Figure", txt);
         assertContains("test space", txt);
 
-        assertEquals("testJPEG_EXIF.jpg", list.get(7).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 
     @Test
@@ -107,4 +119,25 @@ public class XML2003ParserTest extends TikaTest {
 
     }
 
+    @Test(timeout = 60000)
+    public void testMultiThreaded() throws Exception {
+        XMLReaderUtils.setPoolSize(4);
+        int numThreads = XMLReaderUtils.getPoolSize()*2;
+        ParseContext[] contexts = new ParseContext[numThreads];
+        for (int i = 0; i < contexts.length; i++) {
+            contexts[i] = new ParseContext();
+        }
+
+        testMultiThreaded(new AutoDetectParser(), contexts, numThreads, 2,
+                new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.getName().equals("testWORD2003.xml")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+
+    }
 }

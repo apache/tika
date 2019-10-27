@@ -36,14 +36,14 @@
 
   <properties>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.12</codec.version>
+    <codec.version>1.13</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.8</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.3</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.16</pdfbox.version>
+    <pdfbox.version>2.0.17</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>0.8</sis.version>
@@ -78,7 +78,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- for java 10
+   <!-- for java 10
       See TIKA-2778 for why we need to do this now.
       May the gods of API design fix this in the future.
       -->

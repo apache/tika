@@ -29,22 +29,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.jempbox.xmp.XMPMetadata;
-import org.apache.jempbox.xmp.XMPSchema;
-import org.apache.jempbox.xmp.XMPSchemaDublinCore;
-import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
-import org.apache.pdfbox.cos.COSArray;
-import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
-import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
-import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -53,7 +44,6 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
@@ -61,17 +51,13 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -160,7 +146,9 @@ public class PDFParser extends AbstractParser implements Initializable {
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
-                if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
+                boolean hasXFA = hasXFA(pdfDocument);
+                metadata.set(PDF.HAS_XFA, Boolean.toString(hasXFA));
+                if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
@@ -229,51 +217,43 @@ public class PDFParser extends AbstractParser implements Initializable {
         if (document.getDocumentCatalog().getLanguage() != null) {
             metadata.set(TikaCoreProperties.LANGUAGE, document.getDocumentCatalog().getLanguage());
         }
-
-        //now go for the XMP
-        Document dom = loadDOM(document.getDocumentCatalog().getMetadata(), metadata, context);
-
-        XMPMetadata xmp = null;
-        if (dom != null) {
-            xmp = new XMPMetadata(dom);
+        if (document.getDocumentCatalog().getAcroForm() != null &&
+            document.getDocumentCatalog().getAcroForm().getFields() != null &&
+            document.getDocumentCatalog().getAcroForm().getFields().size() > 0) {
+            metadata.set(PDF.HAS_ACROFORM_FIELDS, "true");
         }
-        XMPSchemaDublinCore dcSchema = null;
-
-        if (xmp != null) {
-            try {
-                dcSchema = xmp.getDublinCoreSchema();
-            } catch (IOException e) {}
-
-            JempboxExtractor.extractXMPMM(xmp, metadata);
-        }
+        PDMetadataExtractor.extract(document.getDocumentCatalog().getMetadata(), metadata, context);
 
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
-        extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
-        addMetadata(metadata, PDF.DOC_INFO_TITLE, info.getTitle());
-        extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, info.getAuthor(), dcSchema);
-        addMetadata(metadata, PDF.DOC_INFO_CREATOR, info.getAuthor());
-        extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, null, dcSchema);
-        addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
-        addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
-        addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
-        addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
-        addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
-        extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TITLE, info.getTitle());
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR, info.getAuthor());
+        //if this wasn't already set by xmp, use doc info
+        if (metadata.get(TikaCoreProperties.CREATOR) == null) {
+            PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATOR, info.getAuthor());
+        }
+        if (metadata.get(TikaCoreProperties.TITLE) == null) {
+            PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
+        }
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
+        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
+        PDMetadataExtractor.addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
 
-        addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
 
-        addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getKeywords());
-        addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
-        addMetadata(metadata, OfficeOpenXMLCore.SUBJECT, info.getSubject());
+        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getKeywords());
+        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
+        PDMetadataExtractor.addMetadata(metadata, OfficeOpenXMLCore.SUBJECT, info.getSubject());
 
-        addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
         Calendar created = info.getCreationDate();
-        addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
-        addMetadata(metadata, TikaCoreProperties.CREATED, created);
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
+        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATED, created);
         Calendar modified = info.getModificationDate();
-        addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
-        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, modified);
+        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
+        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, modified);
 
         // All remaining metadata is custom
         // Copy this over as-is
@@ -282,8 +262,8 @@ public class PDFParser extends AbstractParser implements Initializable {
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
-                addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
+                PDMetadataExtractor.addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
+                PDMetadataExtractor.addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
                         info.getCOSObject().getDictionaryObject(key));
             }
         }
@@ -298,27 +278,7 @@ public class PDFParser extends AbstractParser implements Initializable {
                 MEDIA_TYPE.toString() + "; version=" +
                         Float.toString(document.getDocument().getVersion()));
 
-        try {
-            if (xmp != null) {
-                xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
-                XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
-                if (pdfaxmp != null) {
-                    if (pdfaxmp.getPart() != null) {
-                        metadata.set(PDF.PDFAID_PART, Integer.toString(pdfaxmp.getPart()));
-                    }
-                    if (pdfaxmp.getConformance() != null) {
-                        metadata.set(PDF.PDFAID_CONFORMANCE, pdfaxmp.getConformance());
-                        String version = "A-" + pdfaxmp.getPart() + pdfaxmp.getConformance().toLowerCase(Locale.ROOT);
-                        metadata.set(PDF.PDFA_VERSION, version);
-                        metadata.add(TikaCoreProperties.FORMAT.getName(),
-                                MEDIA_TYPE.toString() + "; version=\"" + version + "\"");
-                    }
-                }
-                // TODO WARN if this XMP version is inconsistent with document header version?          
-            }
-        } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed", "" + e);
-        }
+
         //TODO: Let's try to move this into PDFBox.
         //Attempt to determine Adobe extension level, if present:
         COSDictionary root = document.getDocumentCatalog().getCOSObject();
@@ -346,179 +306,15 @@ public class PDFParser extends AbstractParser implements Initializable {
         }
     }
 
-    /**
-     * Try to extract all multilingual items from the XMPSchema
-     * <p/>
-     * This relies on the property having a valid xmp getName()
-     * <p/>
-     * For now, this only extracts the first language if the property does not allow multiple values (see TIKA-1295)
-     *
-     * @param metadata
-     * @param property
-     * @param pdfBoxBaseline
-     * @param schema
-     */
-    private void extractMultilingualItems(Metadata metadata, Property property,
-                                          String pdfBoxBaseline, XMPSchema schema) {
-        //if schema is null, just go with pdfBoxBaseline
-        if (schema == null) {
-            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-                addMetadata(metadata, property, pdfBoxBaseline);
-            }
-            return;
-        }
 
-        for (String lang : schema.getLanguagePropertyLanguages(property.getName())) {
-            String value = schema.getLanguageProperty(property.getName(), lang);
-
-            if (value != null && value.length() > 0) {
-                //if you're going to add it below in the baseline addition, don't add it now
-                if (pdfBoxBaseline != null && value.equals(pdfBoxBaseline)) {
-                    continue;
-                }
-                addMetadata(metadata, property, value);
-                if (!property.isMultiValuePermitted()) {
-                    return;
-                }
-            }
-        }
-
-        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-            //if we've already added something above and multivalue is not permitted
-            //return.
-            if (!property.isMultiValuePermitted()) {
-                if (metadata.get(property) != null) {
-                    return;
-                }
-            }
-            addMetadata(metadata, property, pdfBoxBaseline);
-        }
+    private boolean hasXFA(PDDocument pdDocument) {
+        return pdDocument.getDocumentCatalog() != null &&
+                pdDocument.getDocumentCatalog().getAcroForm() != null &&
+                pdDocument.getDocumentCatalog().getAcroForm().hasXFA();
     }
 
-
-    /**
-     * This tries to read a list from a particular property in
-     * XMPSchemaDublinCore.
-     * If it can't find the information, it falls back to the
-     * pdfboxBaseline.  The pdfboxBaseline should be the value
-     * that pdfbox returns from its PDDocumentInformation object
-     * (e.g. getAuthor()) This method is designed include the pdfboxBaseline,
-     * and it should not duplicate the pdfboxBaseline.
-     * <p/>
-     * Until PDFBOX-1803/TIKA-1233 are fixed, do not call this
-     * on dates!
-     * <p/>
-     * This relies on the property having a DublinCore compliant getName()
-     *
-     * @param property
-     * @param pdfBoxBaseline
-     * @param dc
-     * @param metadata
-     */
-    private void extractDublinCoreListItems(Metadata metadata, Property property,
-                                            String pdfBoxBaseline, XMPSchemaDublinCore dc) {
-        //if no dc, add baseline and return
-        if (dc == null) {
-            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-                addMetadata(metadata, property, pdfBoxBaseline);
-            }
-            return;
-        }
-        List<String> items = getXMPBagOrSeqList(dc, property.getName());
-        if (items == null) {
-            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-                addMetadata(metadata, property, pdfBoxBaseline);
-            }
-            return;
-        }
-        for (String item : items) {
-            if (pdfBoxBaseline != null && !item.equals(pdfBoxBaseline)) {
-                addMetadata(metadata, property, item);
-            }
-        }
-        //finally, add the baseline
-        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-            addMetadata(metadata, property, pdfBoxBaseline);
-        }
-    }
-
-    /**
-     * As of this writing, XMPSchema can contain bags or sequence lists
-     * for some attributes...despite standards documentation.
-     * JempBox expects one or the other for specific attributes.
-     * Until more flexibility is added to JempBox, Tika will have to handle both.
-     *
-     * @param schema
-     * @param name
-     * @return list of values or null
-     */
-    private List<String> getXMPBagOrSeqList(XMPSchema schema, String name) {
-        List<String> ret = schema.getBagList(name);
-        if (ret == null) {
-            ret = schema.getSequenceList(name);
-        }
-        return ret;
-    }
-
-    private void addMetadata(Metadata metadata, Property property, String value) {
-        if (value != null) {
-            String decoded = decode(value);
-            if (property.isMultiValuePermitted() || metadata.get(property) == null) {
-                metadata.add(property, decoded);
-            }
-            //silently skip adding property that already exists if multiple values are not permitted
-        }
-    }
-
-    private void addMetadata(Metadata metadata, String name, String value) {
-        if (value != null) {
-            metadata.add(name, decode(value));
-        }
-    }
-
-    private String decode(String value) {
-        if (PDFEncodedStringDecoder.shouldDecode(value)) {
-            PDFEncodedStringDecoder d = new PDFEncodedStringDecoder();
-            return d.decode(value);
-        }
-        return value;
-    }
-
-
-    private void addMetadata(Metadata metadata, Property property, Calendar value) {
-        if (value != null) {
-            metadata.set(property, value);
-        }
-    }
-
-    /**
-     * Used when processing custom metadata entries, as PDFBox won't do
-     * the conversion for us in the way it does for the standard ones
-     */
-    private void addMetadata(Metadata metadata, String name, COSBase value) {
-        if (value instanceof COSArray) {
-            for (Object v : ((COSArray) value).toList()) {
-                addMetadata(metadata, name, ((COSBase) v));
-            }
-        } else if (value instanceof COSString) {
-            addMetadata(metadata, name, ((COSString) value).getString());
-        }
-        // Avoid calling COSDictionary#toString, since it can lead to infinite
-        // recursion. See TIKA-1038 and PDFBOX-1835.
-        else if (value != null && !(value instanceof COSDictionary)) {
-            addMetadata(metadata, name, value.toString());
-        }
-    }
-
-
-    private boolean shouldHandleXFAOnly(PDDocument pdDocument, PDFParserConfig config) {
-        if (config.getIfXFAExtractOnlyXFA() &&
-            pdDocument.getDocumentCatalog() != null &&
-            pdDocument.getDocumentCatalog().getAcroForm() != null &&
-            pdDocument.getDocumentCatalog().getAcroForm().getXFA() != null) {
-            return true;
-        }
-        return false;
+    private boolean shouldHandleXFAOnly(boolean hasXFA, PDFParserConfig config) {
+        return config.getIfXFAExtractOnlyXFA() && hasXFA;
     }
 
     private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler,
@@ -654,11 +450,6 @@ public class PDFParser extends AbstractParser implements Initializable {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
-    @Field
-    void setOcrImageScale(float imageScale) {
-        defaultConfig.setOcrImageScale(imageScale);
-    }
-
 	@Field
 	void setExtractBookmarksText(boolean extractBookmarksText) {
 		defaultConfig.setExtractBookmarksText(extractBookmarksText);
@@ -724,28 +515,6 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     public void setInitializableProblemHandler(InitializableProblemHandler initializableProblemHandler) {
         this.initializableProblemHandler = initializableProblemHandler;
-    }
-    //can return null!
-    private Document loadDOM(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
-        if (pdMetadata == null) {
-            return null;
-        }
-        InputStream is = null;
-        try {
-            try {
-                is = pdMetadata.exportXMPMetadata();
-            } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
-                return null;
-            }
-            return XMLReaderUtils.buildDOM(is, context);
-        } catch (IOException|SAXException|TikaException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
-        } finally {
-            IOUtils.closeQuietly(is);
-        }
-        return null;
-
     }
 
     /**

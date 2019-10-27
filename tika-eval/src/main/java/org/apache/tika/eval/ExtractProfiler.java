@@ -252,7 +252,8 @@ public class ExtractProfiler extends AbstractProfiler {
             writeEmbeddedPathData(i, fileId, m, EMBEDDED_FILE_PATH_TABLE);
             writeExceptionData(fileId, m, EXCEPTION_TABLE);
             try {
-                writeContentData(fileId, contentTags, FIELD, CONTENTS_TABLE);
+                Map<Class, Object> textStats = calcTextStats(contentTags);
+                writeContentData(fileId, textStats, CONTENTS_TABLE);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

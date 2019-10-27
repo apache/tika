@@ -20,13 +20,13 @@ package org.apache.tika.parser;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.SecureContentHandler;
@@ -224,13 +224,13 @@ public class RecursiveParserWrapper extends ParserDecorator {
         ContentHandler localHandler = parserState.recursiveParserWrapperHandler.getNewContentHandler();
         long started = System.currentTimeMillis();
         parserState.recursiveParserWrapperHandler.startDocument();
+        TemporaryResources tmp = new TemporaryResources();
         try {
-            try (TikaInputStream tis = TikaInputStream.get(stream)) {
-                RecursivelySecureContentHandler secureContentHandler =
+            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            RecursivelySecureContentHandler secureContentHandler =
                         new RecursivelySecureContentHandler(localHandler, tis);
-                context.set(RecursivelySecureContentHandler.class, secureContentHandler);
-                getWrappedParser().parse(tis, secureContentHandler, metadata, context);
-            }
+            context.set(RecursivelySecureContentHandler.class, secureContentHandler);
+            getWrappedParser().parse(tis, secureContentHandler, metadata, context);
         } catch (SAXException e) {
             boolean wlr = isWriteLimitReached(e);
             if (wlr == false) {
@@ -241,9 +241,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
             //try our best to record the problem in the metadata object
             //then rethrow
             String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime", stackTrace);
+            metadata.add(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION, stackTrace);
             throw e;
         } finally {
+            tmp.dispose();
             long elapsedMillis = System.currentTimeMillis() - started;
             metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);

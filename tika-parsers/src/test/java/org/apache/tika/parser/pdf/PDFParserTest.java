@@ -23,8 +23,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
-import java.io.File;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.pdfbox.rendering.ImageType;
@@ -614,13 +615,17 @@ public class PDFParserTest extends TikaTest {
         //The current test doc does not contain any content in the signature area.
         //This just tests that a RuntimeException is not thrown.
         //TODO: find a better test file for this issue.
-        String xml = getXML("/testPDF_acroform3.pdf").xml;
-        assertTrue("found", (xml.contains("<li>aTextField: TIKA-1226</li>")));
+        XMLResult result = getXML("testPDF_acroform3.pdf");
+        Metadata m = result.metadata;
+        assertEquals("true", m.get(PDF.HAS_XMP));
+        assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
+        assertEquals("false", m.get(PDF.HAS_XFA));
+        assertTrue("found", (result.xml.contains("<li>aTextField: TIKA-1226</li>")));
     }
 
     @Test // TIKA-1228, TIKA-1268
     public void testEmbeddedFilesInChildren() throws Exception {
-        String xml = getXML("/testPDF_childAttachments.pdf").xml;
+        String xml = getXML("testPDF_childAttachments.pdf").xml;
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
         assertTrue(xml.contains("regressiveness"));
 
@@ -1083,6 +1088,12 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testNoXMP() throws Exception {
+        assertEquals("false",
+                getXML("testPDF.pdf").metadata.get(PDF.HAS_XMP));
+    }
+
+    @Test
     public void testPDFEncodedStringsInXMP() throws Exception {
         //TIKA-1678
         XMLResult r = getXML("testPDF_PDFEncodedStringInXMP.pdf");
@@ -1092,6 +1103,10 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testXFAExtractionBasic() throws Exception {
         XMLResult r = getXML("testPDF_XFA_govdocs1_258578.pdf");
+        Metadata m = r.metadata;
+        assertEquals("true", m.get(PDF.HAS_XFA));
+        assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
+        assertEquals("true", m.get(PDF.HAS_XMP));
         //contains content existing only in the "regular" pdf
         assertContains("Mount Rushmore National Memorial", r.xml);
         //contains xfa fields and data
@@ -1204,6 +1219,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(0, m.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length);
         assertNotContained("1309.61", content);
     }
+
     @Test
     public void testEmbeddedJPEG() throws Exception {
         //TIKA-1990, test that an embedded jpeg is correctly decoded
@@ -1224,7 +1240,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testEmbeddedDocsWithOCROnly() throws Exception {
-        if (! canRunOCR()) { return; }
+        assumeTrue("can run OCR", canRunOCR());
 
         for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
             PDFParserConfig config = new PDFParserConfig();
@@ -1263,9 +1279,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testJBIG2OCROnly() throws Exception {
-        if (!canRunOCR()) {
-            return;
-        }
+        assumeTrue("can run OCR", canRunOCR());
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
         ParseContext context = new ParseContext();
@@ -1276,6 +1290,28 @@ public class PDFParserTest extends TikaTest {
         assertContains("Norconex", xmlResult.xml);
     }
 
+    @Test
+    public void testTesseractInitializationWorks() throws Exception {
+        //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
+        //make it through to when the TesseractOCRParser is called via
+        //the PDFParser
+        assumeTrue("can run OCR", canRunOCR());
+
+        //via the config, tesseract should skip this file because it is too large
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+        String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
+        assertTrue(StringUtils.isAllBlank(text));
+
+        //now override the max file size to ocr, and you should get text
+        ParseContext pc = new ParseContext();
+        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+        pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
+        text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
+        assertContains("Happy", text);
+    }
 
     @Test
     public void testInitializationViaConfig() throws Exception {
@@ -1288,7 +1324,6 @@ public class PDFParserTest extends TikaTest {
 
         // Column text is now interleaved:
         assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
-
     }
 
     @Test
@@ -1341,7 +1376,6 @@ public class PDFParserTest extends TikaTest {
             assertEquals(false, pdfParserConfig.getExtractUniqueInlineImagesOnly());
             assertEquals(314, pdfParserConfig.getOcrDPI());
             assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
-            assertEquals(1.3f, pdfParserConfig.getOcrImageScale(), .01f);
             assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
             assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
             assertEquals(false, pdfParserConfig.getCatchIntermediateIOExceptions());

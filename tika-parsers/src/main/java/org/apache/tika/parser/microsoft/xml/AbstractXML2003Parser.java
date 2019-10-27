@@ -98,11 +98,13 @@ public abstract class AbstractXML2003Parser extends AbstractParser {
 
         TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
         try {
-            XMLReaderUtils.parseSAX(
+            //need to get new SAXParser because
+            //an attachment might require another SAXParser
+            //mid-parse
+            XMLReaderUtils.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
-                            getContentHandler(tagged, metadata, context))),
-                    context);
+                            getContentHandler(tagged, metadata, context))));
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
