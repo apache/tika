@@ -7219,6 +7219,14 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="application/x-xliff+xml">
+    <sub-class-of type="application/xml"/>
+    <_comment>XLIFF 1.2 document</_comment>
+    <root-XML namespaceURI="urn:oasis:names:tc:xliff:document:1.2" localName="xliff"/>
+    <glob pattern="*.xlf"/>
+    <glob pattern="*.xliff"/>
+  </mime-type>
+
   <mime-type type="text/x-rsrc">
     <_comment>R source code</_comment>
     <glob pattern="*.r"/>
