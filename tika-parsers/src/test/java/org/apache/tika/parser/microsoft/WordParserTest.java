@@ -657,7 +657,7 @@ public class WordParserTest extends TikaTest {
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setIncludeComments(false);
         pc.set(OfficeParserConfig.class, officeParserConfig);
-        String xml = getXML("testWORD_various.doc", pc).xml;
+        String xml = getXML("testWORD_comments.doc", pc).xml;
         assertNotContained("Here is a comment", xml);
     }
 
@@ -667,7 +667,7 @@ public class WordParserTest extends TikaTest {
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setIncludeComments(true);
         pc.set(OfficeParserConfig.class, officeParserConfig);
-        String xml = getXML("testWORD_various.doc", pc).xml;
+        String xml = getXML("testWORD_comments.doc", pc).xml;
         assertContains("Here is a comment", xml);
     }
 }
