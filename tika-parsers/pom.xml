@@ -585,7 +585,17 @@
           <groupId>c3p0</groupId>
           <artifactId>c3p0</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.quartz-scheduler</groupId>
+          <artifactId>quartz</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!--needs to be bumped for xml vulnerability -->
+    <dependency>
+      <groupId>org.quartz-scheduler</groupId>
+      <artifactId>quartz</artifactId>
+      <version>2.3.2</version>
     </dependency>
     <!-- needs to be excluded and version bumped
          to avoid billion laughs vuln -->
