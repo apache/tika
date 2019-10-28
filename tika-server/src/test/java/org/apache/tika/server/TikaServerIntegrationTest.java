@@ -323,7 +323,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100",
                                 "-tmpFilePrefix", "tika-server-stderr"
 
@@ -360,7 +360,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100"
                         });
             }
