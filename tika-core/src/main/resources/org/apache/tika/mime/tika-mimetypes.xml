@@ -7226,6 +7226,12 @@
     <glob pattern="*.xliff"/>
   </mime-type>
 
+  <mime-type type="application/x-xliff+zip">
+    <sub-class-of type="application/zip"/>
+    <_comment>XLZ Archive</_comment>
+    <glob pattern="*.xlz"/>
+  </mime-type>
+
   <mime-type type="text/x-rsrc">
     <_comment>R source code</_comment>
     <glob pattern="*.r"/>
