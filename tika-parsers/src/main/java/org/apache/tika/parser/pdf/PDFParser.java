@@ -517,6 +517,10 @@ public class PDFParser extends AbstractParser implements Initializable {
         this.initializableProblemHandler = initializableProblemHandler;
     }
 
+    @Field
+    public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
+        defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
+    }
     /**
      * This is a no-op.  There is no need to initialize multiple fields.
      * The regular field loading should happen without this.

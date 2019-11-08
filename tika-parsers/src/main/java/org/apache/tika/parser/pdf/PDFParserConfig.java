@@ -232,7 +232,7 @@ public class PDFParserConfig implements Serializable {
             accessChecker = new AccessChecker(allowExtractionForAccessibility);
         }
 
-        maxMainMemoryBytes = getIntProp(props.getProperty("maxMainMemoryBytes"), -1);
+        maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
         detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
     }
 
@@ -677,7 +677,16 @@ public class PDFParserConfig implements Serializable {
         return maxMainMemoryBytes;
     }
 
+    /**
+     * @deprecated use {@link #setMaxMainMemoryBytes(long)}
+     * @param maxMainMemoryBytes
+     */
+    @Deprecated
     public void setMaxMainMemoryBytes(int maxMainMemoryBytes) {
+        this.maxMainMemoryBytes = maxMainMemoryBytes;
+    }
+
+    public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
     }
 
