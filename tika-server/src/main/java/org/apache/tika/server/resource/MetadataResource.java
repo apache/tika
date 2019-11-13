@@ -50,14 +50,16 @@ public class MetadataResource {
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
         return Response.ok(
-                parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info)).build();
+                parseMetadata(att.getObject(InputStream.class), new Metadata(),
+                        att.getHeaders(), info)).build();
     }
 
     @PUT
     @Produces({"text/csv", "application/json", "application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        Metadata metadata = new Metadata();
         return Response.ok(
-                parseMetadata(TikaResource.getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info)).build();
+                parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders), metadata, httpHeaders.getRequestHeaders(), info)).build();
     }
 
     /**
@@ -91,17 +93,20 @@ public class MetadataResource {
         // use BAD request to indicate that we may not have had enough data to
         // process the request
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
-        Metadata metadata = null;
+        Metadata metadata = new Metadata();
+        boolean success = false;
         try {
-            metadata = parseMetadata(TikaResource.getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
+            parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders),
+                    metadata, httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field
             defaultErrorResponse = Response.Status.NOT_FOUND;
+            success = true;
         } catch (Exception e) {
             LOG.info("Failed to process field {}", field, e);
         }
 
-        if (metadata == null || metadata.get(field) == null) {
+        if (success == false || metadata.get(field) == null) {
             return Response.status(defaultErrorResponse).entity("Failed to get metadata field " + field).build();
         }
 
@@ -114,9 +119,8 @@ public class MetadataResource {
         return Response.ok(metadata).build();
     }
 
-    private Metadata parseMetadata(InputStream is,
+    private Metadata parseMetadata(InputStream is, Metadata metadata,
                                    MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
-        final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
         TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
