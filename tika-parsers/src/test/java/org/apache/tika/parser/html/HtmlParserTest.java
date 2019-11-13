@@ -1137,7 +1137,7 @@ public class HtmlParserTest extends TikaTest {
                 "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\" />\n" +
                 "<title>title</title></head><body>body</body></html>";
         Metadata metadata = new Metadata();
-        new AutoDetectParser().parse(
+        AUTO_DETECT_PARSER.parse(
                 new ByteArrayInputStream(test.getBytes(UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
 
@@ -1151,7 +1151,7 @@ public class HtmlParserTest extends TikaTest {
                 "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-NUMBER_SEVEN\" />\n" +
                 "<title>title</title></head><body>body</body></html>";
         metadata = new Metadata();
-        new AutoDetectParser().parse(
+        AUTO_DETECT_PARSER.parse(
                 new ByteArrayInputStream(test.getBytes(UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
 
@@ -1243,7 +1243,7 @@ public class HtmlParserTest extends TikaTest {
                 "<body>"+
                 "有什么需要我帮你的" +
                 "</body></html>").getBytes(StandardCharsets.UTF_8);
-        XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
+        XMLResult r = getXML(new ByteArrayInputStream(bytes), AUTO_DETECT_PARSER, new Metadata());
         assertContains("有什么需要我帮你的", r.xml);
     }
 

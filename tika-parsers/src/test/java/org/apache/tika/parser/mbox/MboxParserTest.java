@@ -29,7 +29,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Before;
@@ -157,7 +156,6 @@ public class MboxParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        context.set(Parser.class, new AutoDetectParser());
 
         try (InputStream stream = getResourceAsStream("/test-documents/single_mail.mbox")) {
             mboxParser.parse(stream, handler, metadata, context);

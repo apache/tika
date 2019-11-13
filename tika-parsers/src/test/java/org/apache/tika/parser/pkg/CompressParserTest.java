@@ -24,8 +24,6 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -36,16 +34,11 @@ import org.xml.sax.ContentHandler;
 public class CompressParserTest extends AbstractPkgTest {
     @Test
     public void testCompressParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = TarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tar.Z");
-        try {
-            parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
+        try (InputStream stream = TarParserTest.class.getResourceAsStream("/test-documents/test-documents.tar.Z")) {
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-compress", metadata.get(Metadata.CONTENT_TYPE));
@@ -76,17 +69,12 @@ public class CompressParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.tar.Z");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream("/test-documents/test-documents.tar.Z")) {
+           AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should find a single entry, for the (compressed) tar file
        assertEquals(1, tracker.filenames.size());

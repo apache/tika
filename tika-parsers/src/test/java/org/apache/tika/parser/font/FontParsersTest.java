@@ -16,41 +16,32 @@
  */
 package org.apache.tika.parser.font;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.OperatingSystemMXBean;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.parser.font.AdobeFontMetricParser.*;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * Test case for parsing various different font files.
  */
-public class FontParsersTest {
+public class FontParsersTest extends TikaTest {
     @Test
     public void testAdobeFontMetricParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
 
         try (TikaInputStream stream = TikaInputStream.get(
                 FontParsersTest.class.getResource("/test-documents/testAFM.afm"))) {
-            parser.parse(stream, handler, metadata, context);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         }
 
         assertEquals("application/x-font-adobe-metric", metadata.get(Metadata.CONTENT_TYPE));
@@ -74,7 +65,6 @@ public class FontParsersTest {
 
     @Test
     public void testTTFParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
@@ -84,7 +74,7 @@ public class FontParsersTest {
 
         try (TikaInputStream stream = TikaInputStream.get(
                 FontParsersTest.class.getResource("/test-documents/testTrueType3.ttf"))) {
-            parser.parse(stream, handler, metadata, context);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         }
 
         assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));

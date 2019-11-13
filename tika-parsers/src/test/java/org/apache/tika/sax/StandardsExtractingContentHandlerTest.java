@@ -17,33 +17,31 @@
 
 package org.apache.tika.sax;
 
-import static org.junit.Assert.*;
 
-import java.io.File;
 import java.io.InputStream;
 
-import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.junit.Test;
+
+import static junit.framework.TestCase.assertTrue;
 
 /**
  * Test class for the {@link StandardsExtractingContentHandler} class.
  */
-public class StandardsExtractingContentHandlerTest {
+public class StandardsExtractingContentHandlerTest extends TikaTest {
 
 	@Test
 	public void testExtractStandards() throws Exception {
-		Parser parser = new AutoDetectParser();
+
 		Metadata metadata = new Metadata();
 		
 		StandardsExtractingContentHandler handler = new StandardsExtractingContentHandler(new BodyContentHandler(-1), metadata);
 		handler.setThreshold(0.75);
 		InputStream inputStream = StandardsExtractingContentHandlerTest.class.getResourceAsStream("/test-documents/testStandardsExtractor.pdf");
 		
-		parser.parse(inputStream, handler, metadata, new ParseContext());
+		AUTO_DETECT_PARSER.parse(inputStream, handler, metadata, new ParseContext());
 		
 		String[] standardReferences = metadata.getValues(StandardsExtractingContentHandler.STANDARD_REFERENCES);
 		

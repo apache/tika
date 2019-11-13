@@ -16,14 +16,12 @@
  */
 package org.apache.tika.parser.mat;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ToXMLContentHandler;
@@ -35,23 +33,15 @@ import org.junit.Test;
 public class MatParserTest extends TikaTest {
     @Test
     public void testParser() throws Exception {
-        AutoDetectParser parser = new AutoDetectParser();
-        ToXMLContentHandler handler = new ToXMLContentHandler();
-        Metadata metadata = new Metadata();
-        String path = "/test-documents/breidamerkurjokull_radar_profiles_2009.mat";
 
-        try (InputStream stream = getResourceAsStream(path)) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-
+        XMLResult xmlResult = getXML("breidamerkurjokull_radar_profiles_2009.mat");
+        Metadata metadata = xmlResult.metadata;
+        String content = xmlResult.xml;
         // Check Metadata
         assertEquals("PCWIN64", metadata.get("platform"));
         assertEquals("MATLAB 5.0 MAT-file", metadata.get("fileType"));
         assertEquals("IM", metadata.get("endian"));
         assertEquals("Thu Feb 21 15:52:49 2013", metadata.get("createdOn"));
-
-        // Check Content
-        String content = handler.toString();
 
         assertContains("<li>[1x909  double array]</li>", content);
         assertContains("<p>c1:[1x1  struct array]</p>", content);

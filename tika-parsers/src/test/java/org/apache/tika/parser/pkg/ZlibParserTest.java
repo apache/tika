@@ -21,8 +21,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -33,13 +31,12 @@ import org.xml.sax.ContentHandler;
 public class ZlibParserTest extends AbstractPkgTest {
     @Test
     public void testZlibParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/testTXT.zlib")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/zlib", metadata.get(Metadata.CONTENT_TYPE));
@@ -54,13 +51,12 @@ public class ZlibParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/testTXT.zlib")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
        // Should have found a single text document inside

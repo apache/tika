@@ -24,8 +24,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -33,14 +31,13 @@ import org.xml.sax.ContentHandler;
 public class ArParserTest extends AbstractPkgTest {
     @Test
     public void testArParsing() throws Exception {
-        Parser parser = new AutoDetectParser();
 
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = ArParserTest.class.getResourceAsStream(
                 "/test-documents/testARofText.ar")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-archive",
@@ -52,7 +49,7 @@ public class ArParserTest extends AbstractPkgTest {
 
         try (InputStream stream = ArParserTest.class.getResourceAsStream(
                 "/test-documents/testARofSND.ar")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-archive",
@@ -67,13 +64,12 @@ public class ArParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = ArParserTest.class.getResourceAsStream(
                 "/test-documents/testARofText.ar")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
 
         assertEquals(1, tracker.filenames.size());
@@ -95,7 +91,7 @@ public class ArParserTest extends AbstractPkgTest {
         tracker.reset();
         try (InputStream stream = ArParserTest.class.getResourceAsStream(
                 "/test-documents/testARofSND.ar")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
 
         assertEquals(1, tracker.filenames.size());
