@@ -37,7 +37,6 @@ import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -53,13 +52,12 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testOutlookParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/test-outlook.msg")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals(
                 "application/vnd.ms-outlook",
@@ -107,13 +105,12 @@ public class OutlookParserTest extends TikaTest {
      */
     @Test
     public void testMultipleCopies() throws Exception {
-        Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/testMSG.msg")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         assertEquals(
@@ -153,13 +150,12 @@ public class OutlookParserTest extends TikaTest {
      */
     @Test
     public void testOutlookNew() throws Exception {
-        Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/test-outlook2003.msg")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals(
                 "application/vnd.ms-outlook",
@@ -182,7 +178,6 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testOutlookHTMLVersion() throws Exception {
-        Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
 
         // Check the HTML version
@@ -196,7 +191,7 @@ public class OutlookParserTest extends TikaTest {
 
         try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/testMSG_chinese.msg")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // As the HTML version should have been processed, ensure
@@ -224,7 +219,6 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testOutlookForwarded() throws Exception {
-        Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
 
         // Check the HTML version
@@ -238,7 +232,7 @@ public class OutlookParserTest extends TikaTest {
 
         try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/testMSG_forwarded.msg")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // Make sure we don't have nested docs
@@ -249,7 +243,6 @@ public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testOutlookHTMLfromRTF() throws Exception {
-        Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
 
         // Check the HTML version
@@ -263,7 +256,7 @@ public class OutlookParserTest extends TikaTest {
 
         try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/test-outlook2003.msg")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         // As the HTML version should have been processed, ensure

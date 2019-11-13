@@ -23,14 +23,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -42,11 +40,9 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -341,8 +337,7 @@ public class SXWPFExtractorTest extends TikaTest {
     @Test
     public void testVarious() throws Exception {
         Metadata metadata = new Metadata();
-        String content = getText(getResourceAsStream("/test-documents/testWORD_various.docx"),
-                new AutoDetectParser(), parseContext, metadata);
+        String content = getText("testWORD_various.docx", metadata, parseContext);
         //content = content.replaceAll("\\s+"," ");
         assertContains("Footnote appears here", content);
         assertContains("This is a footnote.", content);
@@ -400,15 +395,9 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testWordCustomProperties() throws Exception {
-        Metadata metadata = new Metadata();
-
-        try (InputStream input = OOXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_custom_props.docx")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OOXMLParser().parse(input, handler, metadata, context);
-        }
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+        Metadata metadata = getXML("testWORD_custom_props.docx", parseContext).metadata;
 
         assertEquals(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -568,7 +557,6 @@ public class SXWPFExtractorTest extends TikaTest {
         tests.put("testWORD_protected_passtika.docx",
                 "This is an encrypted Word 2007 File");
 
-        Parser parser = new AutoDetectParser();
         Metadata m = new Metadata();
         PasswordProvider passwordProvider = new PasswordProvider() {
             @Override
@@ -848,11 +836,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("<i><u>unde</u><strike><u>r</u></strike><u>line</u></i>", xml);
 
         //confirm that spaces aren't added for <strike/> and <u/>
-        ContentHandler contentHandler = new BodyContentHandler();
-        try (InputStream is = getResourceAsStream("/test-documents/testWORD_various.docx")){
-            new AutoDetectParser().parse(is, contentHandler, new Metadata(), parseContext);
-        }
-        String txt = contentHandler.toString();
+        String txt = getText("testWORD_various.docx", new Metadata(), parseContext);
         assertContainsCount("italic", txt, 3);
         assertNotContained("ita ", txt);
 

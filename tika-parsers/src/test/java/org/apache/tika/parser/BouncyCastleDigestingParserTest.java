@@ -52,7 +52,6 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
     private final static long SEED = new Random().nextLong();
 
     private final Random random = new Random(SEED);
-    private final Parser p = new AutoDetectParser();
 
     @Test
     public void testBasic() throws Exception {
@@ -76,7 +75,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         for (String algo : expected.keySet()) {
             Metadata m = new Metadata();
             XMLResult xml = getXML("test_recursive_embedded.docx",
-                    new DigestingParser(p, new BouncyCastleDigester(UNLIMITED, algo)), m);
+                    new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(UNLIMITED, algo)), m);
             assertEquals(algo, expected.get(algo), m.get(P + algo));
         }
 
@@ -109,7 +108,7 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         //test comma separated
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(p, new BouncyCastleDigester(UNLIMITED,
+                new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(UNLIMITED,
                         "MD5,SHA256,SHA384,SHA512,SHA3-512,SHA1:32")), m);
         for (String algo : new String[]{
                 "MD5", "SHA256", "SHA384", "SHA512", "SHA3-512",
@@ -127,21 +126,21 @@ public class BouncyCastleDigestingParserTest extends TikaTest {
         String expectedMD5 = "59f626e09a8c16ab6dbc2800c685f772";
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(p, new BouncyCastleDigester(100, "MD5")), m);
+                new DigestingParser(AUTO_DETECT_PARSER, new BouncyCastleDigester(100, "MD5")), m);
         assertEquals(expectedMD5, m.get(P+"MD5"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNegativeMaxMarkLength() throws Exception {
         getXML("test_recursive_embedded.docx",
-                    new DigestingParser(p,
+                    new DigestingParser(AUTO_DETECT_PARSER,
                             new BouncyCastleDigester(-1, "MD5")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testUnrecognizedEncodingOptions() throws Exception {
         getXML("test_recursive_embedded.docx",
-                new DigestingParser(p,
+                new DigestingParser(AUTO_DETECT_PARSER,
                         new BouncyCastleDigester(100000,
                                 "MD5:33")));
     }

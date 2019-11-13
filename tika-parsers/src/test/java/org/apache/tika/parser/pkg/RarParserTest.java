@@ -26,7 +26,6 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -41,13 +40,12 @@ public class RarParserTest extends AbstractPkgTest {
 
     @Test
     public void testRarParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = RarParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.rar")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-rar-compressed", metadata.get(Metadata.CONTENT_TYPE));
@@ -78,13 +76,12 @@ public class RarParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
         try (InputStream stream = RarParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.rar")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
        // Should have found all 9 documents, but not the directory

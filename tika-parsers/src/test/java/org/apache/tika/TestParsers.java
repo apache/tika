@@ -27,7 +27,6 @@ import java.io.InputStream;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.junit.Before;
@@ -115,12 +114,11 @@ public class TestParsers extends MultiThreadedTikaTest {
     @Ignore("ignore for regular builds; run occasionally")
     public void testAllMultiThreaded() throws Exception {
         //this runs against all files in /test-documents
-        Parser p = new AutoDetectParser();
         ParseContext[] contexts = new ParseContext[10];
         for (int i = 0; i < 10; i++) {
              contexts[i] = new ParseContext();
         }
-        testMultiThreaded(p, contexts, 10, 100, new FileFilter() {
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, 10, 100, new FileFilter() {
             @Override
             public boolean accept(File pathname) {
                 return true;

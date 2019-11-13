@@ -31,7 +31,6 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -236,7 +235,7 @@ public class ODFParserTest extends TikaTest {
                 "/test-documents/testMasterFooter.odp")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new AutoDetectParser().parse(input, handler, metadata);
+            AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
 
             String content = handler.toString();
             assertContains("Master footer is here", content);
@@ -249,7 +248,7 @@ public class ODFParserTest extends TikaTest {
                 "/test-documents/testFooter.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new AutoDetectParser().parse(input, handler, metadata);
+            AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
 
             String content = handler.toString();
             assertContains("Here is some text...", content);
@@ -264,7 +263,7 @@ public class ODFParserTest extends TikaTest {
                 "/test-documents/testFooter.ods")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new AutoDetectParser().parse(input, handler, metadata);
+            AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
 
             String content = handler.toString();
             assertContains("Here is a footer in the center area", content);

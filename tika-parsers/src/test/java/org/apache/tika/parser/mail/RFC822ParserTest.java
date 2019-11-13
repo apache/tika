@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.james.mime4j.stream.MimeConfig;
-import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -56,7 +55,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
@@ -189,7 +187,6 @@ public class RFC822ParserTest extends TikaTest {
         InputStream stream = getStream("test-documents/testRFC822_quoted");
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
-        context.set(Parser.class, new AutoDetectParser());
 
         try {
             EXTRACT_ALL_ALTERNATIVES_PARSER.parse(stream, handler, metadata, context);

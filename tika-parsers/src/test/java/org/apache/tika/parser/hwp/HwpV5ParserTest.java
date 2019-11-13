@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
 
@@ -30,7 +29,7 @@ public class HwpV5ParserTest extends TikaTest {
     @Test
     public void testHwpV5Parser() throws Exception {
         for (Parser parser : new Parser[]{new HwpV5Parser(),
-                new AutoDetectParser()}) {
+                AUTO_DETECT_PARSER}) {
             XMLResult result = getXML("testHWP-v5b.hwp", parser);
             assertContains("<p>Apache Tika - \uCEE8\uD150\uCE20", result.xml);
             Metadata metadata = result.metadata;

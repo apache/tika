@@ -21,9 +21,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -90,20 +88,19 @@ public class SourceCodeParserTest extends TikaTest {
 
     @Test
     public void testReturnContentAsIsForTextHandler() throws Exception {
-        String strContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"), new AutoDetectParser(), createMetadata("text/plain")).xml;
+        String strContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"),
+                AUTO_DETECT_PARSER, createMetadata("text/plain")).xml;
 
         assertTrue(strContent.indexOf("public class HelloWorld {") > 0);
     }
 
     @Test
     public void testNoMarkupInToTextHandler() throws Exception {
-
-        Parser p = new AutoDetectParser();
         ContentHandler contentHandler = new ToTextContentHandler();
         ParseContext parseContext = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get(
                 getResourceAsStream("/test-documents/testJAVA.java"))) {
-            p.parse(tis, contentHandler, createMetadata("text/x-java-source"),
+            AUTO_DETECT_PARSER.parse(tis, contentHandler, createMetadata("text/x-java-source"),
                     parseContext);
         }
         String strContent = contentHandler.toString();

@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -45,9 +44,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -220,9 +217,8 @@ public class TestCorruptedFiles extends TikaTest {
 
         @Override
         public Boolean call() throws Exception {
-            Parser p = new AutoDetectParser();
             try {
-                p.parse(new ByteArrayInputStream(corrupted), new DefaultHandler(),
+                AUTO_DETECT_PARSER.parse(new ByteArrayInputStream(corrupted), new DefaultHandler(),
                         new Metadata(), new ParseContext());
             } catch (SAXException|TikaException|IOException e) {
 
@@ -271,12 +267,11 @@ public class TestCorruptedFiles extends TikaTest {
     }
 
     private Map<String, byte[]> extract(byte[] bytes) throws Exception {
-        Parser p = new AutoDetectParser();
         ParseContext parseContext = new ParseContext();
         Map<String, byte[]> map = new HashMap<>();
         parseContext.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(map));
         try (InputStream is = TikaInputStream.get(bytes)){
-            p.parse(is, new DefaultHandler(), new Metadata(), parseContext);
+            AUTO_DETECT_PARSER.parse(is, new DefaultHandler(), new Metadata(), parseContext);
         }
         return map;
     }

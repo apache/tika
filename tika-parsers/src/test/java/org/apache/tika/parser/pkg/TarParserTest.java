@@ -24,8 +24,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -37,13 +35,12 @@ public class TarParserTest extends AbstractPkgTest {
 
     @Test
     public void testTarParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = TarParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.tar")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-gtar", metadata.get(Metadata.CONTENT_TYPE));
@@ -74,13 +71,12 @@ public class TarParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.tar")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
        // Should have found all 9 documents, but not the directory

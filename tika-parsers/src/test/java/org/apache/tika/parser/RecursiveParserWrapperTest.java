@@ -18,20 +18,18 @@ package org.apache.tika.parser;
  */
 
 
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.debug;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.ClosedInputStream;
 import org.apache.tika.io.ProxyInputStream;
@@ -47,7 +45,7 @@ import org.apache.tika.utils.ParserUtils;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class RecursiveParserWrapperTest {
+public class RecursiveParserWrapperTest extends TikaTest {
 
     @Test
     public void testBasicXML() throws Exception {
@@ -94,8 +92,7 @@ public class RecursiveParserWrapperTest {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
 
-        Parser wrapped = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         InputStream stream = RecursiveParserWrapperTest.class.getResourceAsStream(
                 "/test-documents/test_recursive_embedded.docx");
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
@@ -128,8 +125,7 @@ public class RecursiveParserWrapperTest {
         Metadata metadata = new Metadata();
         String limitReached = null;
 
-        Parser wrapped = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped,
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
 
         InputStream stream = RecursiveParserWrapperTest.class.getResourceAsStream(
@@ -183,8 +179,7 @@ public class RecursiveParserWrapperTest {
         Metadata metadata = new Metadata();
         String limitReached = null;
 
-        Parser wrapped = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
 
         InputStream stream = RecursiveParserWrapperTest.class.getResourceAsStream(
                 "/test-documents/test_recursive_embedded.docx");
@@ -298,8 +293,7 @@ public class RecursiveParserWrapperTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "embedded_then_npe.xml");
 
         ParseContext context = new ParseContext();
-        Parser wrapped = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped, true);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER, true);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
 
@@ -353,9 +347,8 @@ public class RecursiveParserWrapperTest {
     public void testStreamNotClosed() throws Exception {
         //TIKA-2974
         ParseContext context = new ParseContext();
-        Parser wrapped = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped, true);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER, true);
         String path = "/test-documents/test_recursive_embedded.docx";
         ContentHandlerFactory contentHandlerFactory =
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
@@ -376,7 +369,7 @@ public class RecursiveParserWrapperTest {
                                        boolean catchEmbeddedExceptions,
                                        DigestingParser.Digester digester) throws Exception {
         ParseContext context = new ParseContext();
-        Parser wrapped = new AutoDetectParser();
+        Parser wrapped = AUTO_DETECT_PARSER;
         if (digester != null) {
             wrapped = new DigestingParser(wrapped, digester);
         }

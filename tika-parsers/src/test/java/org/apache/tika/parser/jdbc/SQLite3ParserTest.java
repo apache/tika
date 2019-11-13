@@ -36,7 +36,6 @@ import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -55,7 +54,6 @@ public class SQLite3ParserTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
-        Parser p = new AutoDetectParser();
 
         //test different types of input streams
         //actual inputstream, memory buffered bytearray and literal file
@@ -71,7 +69,7 @@ public class SQLite3ParserTest extends TikaTest {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             //1) getXML closes the stream
             //2) getXML runs recursively on the contents, so the embedded docs should show up
-            XMLResult result = getXML(stream, p, metadata);
+            XMLResult result = getXML(stream, AUTO_DETECT_PARSER, metadata);
             stream.close();
             String x = result.xml;
             //first table name
@@ -105,14 +103,12 @@ public class SQLite3ParserTest extends TikaTest {
     //yield \t and \n at the appropriate places
     @Test
     public void testSpacesInBodyContentHandler() throws Exception {
-        Parser p = new AutoDetectParser();
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ContentHandler handler = new BodyContentHandler(-1);
         ParseContext ctx = new ParseContext();
-        ctx.set(Parser.class, p);
         try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
-            p.parse(stream, handler, metadata, ctx);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, ctx);
         }
         String s = handler.toString();
         assertContains("0\t2.3\t2.4\tlorem", s);
@@ -122,14 +118,13 @@ public class SQLite3ParserTest extends TikaTest {
     //test what happens if the user does not want embedded docs handled
     @Test
     public void testNotAddingEmbeddedParserToParseContext() throws Exception {
-        Parser p = new AutoDetectParser();
         ContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            p.parse(is, handler, metadata, parseContext);
+            AUTO_DETECT_PARSER.parse(is, handler, metadata, parseContext);
         }
         String xml = handler.toString();
         //just includes headers for embedded documents
@@ -144,10 +139,9 @@ public class SQLite3ParserTest extends TikaTest {
 
     @Test
     public void testRecursiveParserWrapper() throws Exception {
-        Parser p = new AutoDetectParser();
 
         RecursiveParserWrapper wrapper =
-                new RecursiveParserWrapper(p);
+                new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         Metadata metadata = new Metadata();
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(

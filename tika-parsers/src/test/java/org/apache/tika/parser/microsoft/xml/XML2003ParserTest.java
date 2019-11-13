@@ -30,7 +30,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -85,7 +84,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         assertEquals("testJPEG_EXIF.jpg", list.get(5).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
 
         //check that text is extracted with breaks between elements
-        String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"), new AutoDetectParser());
+        String txt = getText(getResourceAsStream("/test-documents/testWORD2003.xml"),AUTO_DETECT_PARSER);
         txt = txt.replaceAll("\\s+", " ");
         assertNotContained("beforeR1", txt);
         assertContains("R1 c1 R1 c2", txt);
@@ -113,7 +112,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         assertContains("<td>5.5</td>", xml);
 
         //check that text is extracted with breaks between elements
-        String txt = getText(getResourceAsStream("/test-documents/testEXCEL2003.xml"), new AutoDetectParser());
+        String txt = getText(getResourceAsStream("/test-documents/testEXCEL2003.xml"), AUTO_DETECT_PARSER);
         txt = txt.replaceAll("\\s+", " ");
         assertContains("Col1 Col2 Col3 Col4 string 1 1.10", txt);
 
@@ -128,7 +127,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
             contexts[i] = new ParseContext();
         }
 
-        testMultiThreaded(new AutoDetectParser(), contexts, numThreads, 2,
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
                 new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
