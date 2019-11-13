@@ -17,6 +17,8 @@
 
 package org.apache.tika.server;
 
+import org.apache.tika.metadata.Metadata;
+
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +31,7 @@ import java.io.InputStream;
  */
 public interface InputStreamFactory {
 
-    public InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException;
+    InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException;
+    InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException;
 
 }

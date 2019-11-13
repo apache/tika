@@ -82,7 +82,8 @@ public class RecursiveMetadataResource {
                                              @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
         return Response.ok(
-                parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info, handlerTypeName)).build();
+                parseMetadata(att.getObject(InputStream.class), new Metadata(),
+                        att.getHeaders(), info, handlerTypeName)).build();
     }
 
     /**
@@ -117,15 +118,16 @@ public class RecursiveMetadataResource {
                                 @Context UriInfo info,
                                 @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName
                                 ) throws Exception {
+        Metadata metadata = new Metadata();
         return Response.ok(
-                parseMetadata(TikaResource.getInputStream(is, httpHeaders),
+                parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders),
+						metadata,
 						httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
     }
 
-	private MetadataList parseMetadata(InputStream is,
+	private MetadataList parseMetadata(InputStream is, Metadata metadata,
 			MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)
 			throws Exception {
-		final Metadata metadata = new Metadata();
 		final ParseContext context = new ParseContext();
 		Parser parser = TikaResource.createParser();
 		// TODO: parameterize choice of max chars/max embedded attachments
