@@ -5314,6 +5314,46 @@
     <glob pattern="*.gif"/>
   </mime-type>
 
+  <mime-type type="image/heif">
+    <_comment>HEIF - High Efficiency Image File</_comment>
+    <acronym>HEIF</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="60">
+      <match value="ftypmif1" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heif"/>
+    <sub-class-of type="video/quicktime" />
+  </mime-type>
+  <mime-type type="image/heif-sequence">
+    <_comment>HEIF Sequence - High Efficiency Image Sequence</_comment>
+    <magic priority="60">
+      <match value="ftypmsf1" type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="video/quicktime" />
+  </mime-type>
+
+  <mime-type type="image/heic">
+    <alias   type="image/hevc"/>
+    <_comment>HEIF Image using HEVC Codec</_comment>
+    <acronym>HEIC</acronym>
+    <magic priority="60">
+      <match value="ftypheic" type="string" offset="4"/>
+      <match value="ftypheix" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heic"/>
+    <sub-class-of type="image/heif" />
+  </mime-type>
+  <mime-type type="image/heic-sequence">
+    <alias   type="image/hevc-sequence"/>
+    <_comment>HEIF Sequence using HEVC Codec</_comment>
+    <acronym>HEVC</acronym>
+    <magic priority="60">
+      <match value="ftyphevc" type="string" offset="4"/>
+      <match value="ftyphevx" type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="image/heif-sequence" />
+  </mime-type>
+
   <mime-type type="image/icns">
     <_comment>Apple Icon Image Format</_comment>
     <magic priority="50">
