@@ -408,6 +408,18 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testHeifDetection() throws Exception {
+        // HEIF image using the HEVC Codec == HEIC
+        //  created using https://compare.rokka.io/_compare on testJPEG_GEO.jpg
+        assertType("image/heic", "testHEIF.heic");
+        assertTypeByData("image/heic", "testHEIF.heic");
+        assertTypeByName("image/heic", "testHEIF.heic");
+
+        // TODO Create a HEIF using another codec, to test .heif data
+        assertTypeByName("image/heif", "testHEIF.heif");
+    }
+
+    @Test
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");
         assertTypeByData("image/jpeg", "testJPEG.jpg");
