@@ -1103,6 +1103,15 @@
   <mime-type type="application/vnd.denovo.fcselayout-link">
     <glob pattern="*.fe_launch"/>
   </mime-type>
+  <mime-type type="application/vnd.digilite.prolights">
+    <tika:link>http://support.digilite.eu/?digilite=library</tika:link>
+    <_comment>digilite.eu Prolights configuration file</_comment>
+    <_comment>Note glob clash with Adobe's .fdf</_comment>
+    <!--<glob pattern="*.fdf"/>-->
+    <magic priority="50">
+      <match value="0x7F0C442B" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/vnd.dir-bi.plate-dl-nosuffix"/>
   <mime-type type="application/vnd.dna">
     <glob pattern="*.dna"/>
