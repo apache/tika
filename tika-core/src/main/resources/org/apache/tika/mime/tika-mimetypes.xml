@@ -982,6 +982,8 @@
     <glob pattern="*.aet"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xdp+xml">
+    <sub-class-of type="application/xml"/>
+    <root-XML localName="xdp" namespaceURI="http://ns.adobe.com/xdp/" />
     <glob pattern="*.xdp"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xfdf">

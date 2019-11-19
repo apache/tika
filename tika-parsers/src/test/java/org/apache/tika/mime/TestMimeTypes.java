@@ -188,6 +188,12 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testXDP() throws Exception {
+        assertTypeDetection("testXDP.xdp",
+                "application/vnd.adobe.xdp+xml");
+    }
+
+    @Test
     public void testHFATypes() throws Exception {
         assertTypeByData("application/x-erdas-hfa","testHFA.hfa");
     }
