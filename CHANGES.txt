@@ -16,8 +16,8 @@ Release 1.23
 
    * Add parser for XLIFF v1.2 files (TIKA-2975).
 
-   * Add mime type detection support for WebAssembly (TIKA-2894) and
-     HEIF / HEIC images (TIKA-2942).
+   * Add mime type detection support for WebAssembly (TIKA-2894),
+     HEIF / HEIC images (TIKA-2942) and Digilite FDF (TIKA-2988).
 
    * Add an XLZ Parser (TIKA-2976).
    
