@@ -193,7 +193,7 @@ public class TestMimeTypes {
     }
 
     @Test
-    public void testXFDX() throws Exception {
+    public void testXFDF() throws Exception {
         //for an example: https://docs.appligent.com/fdfmerge/fdfmerge-form-data-format/
         assertTypeDetection("testXFDF.xfdf",
                 "application/vnd.adobe.xfdf");
