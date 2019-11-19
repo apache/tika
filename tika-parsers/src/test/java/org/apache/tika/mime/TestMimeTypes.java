@@ -179,6 +179,15 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testDigiliteFDF() throws Exception {
+        //not to be confused with Adobe's .fdf!
+        assertTypeByData("application/vnd.digilite.prolights",
+                "testDigilite.fdf");
+        assertTypeByNameAndData("application/vnd.digilite.prolights",
+                "testDigilite.fdf");
+    }
+
+    @Test
     public void testHFATypes() throws Exception {
         assertTypeByData("application/x-erdas-hfa","testHFA.hfa");
     }
