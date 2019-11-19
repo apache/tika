@@ -959,6 +959,8 @@
     <glob pattern="*.xdp"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xfdf">
+    <sub-class-of type="application/xml"/>
+    <root-XML localName="xfdf" namespaceURI="http://ns.adobe.com/xfdf/" />
     <glob pattern="*.xfdf"/>
   </mime-type>
   <mime-type type="application/vnd.aether.imp"/>
