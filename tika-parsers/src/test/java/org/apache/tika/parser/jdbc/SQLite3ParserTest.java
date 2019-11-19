@@ -34,14 +34,16 @@ import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -52,7 +54,6 @@ public class SQLite3ParserTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
-        Parser p = new AutoDetectParser();
 
         //test different types of input streams
         //actual inputstream, memory buffered bytearray and literal file
@@ -68,7 +69,7 @@ public class SQLite3ParserTest extends TikaTest {
             metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
             //1) getXML closes the stream
             //2) getXML runs recursively on the contents, so the embedded docs should show up
-            XMLResult result = getXML(stream, p, metadata);
+            XMLResult result = getXML(stream, AUTO_DETECT_PARSER, metadata);
             stream.close();
             String x = result.xml;
             //first table name
@@ -102,14 +103,12 @@ public class SQLite3ParserTest extends TikaTest {
     //yield \t and \n at the appropriate places
     @Test
     public void testSpacesInBodyContentHandler() throws Exception {
-        Parser p = new AutoDetectParser();
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ContentHandler handler = new BodyContentHandler(-1);
         ParseContext ctx = new ParseContext();
-        ctx.set(Parser.class, p);
         try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
-            p.parse(stream, handler, metadata, ctx);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, ctx);
         }
         String s = handler.toString();
         assertContains("0\t2.3\t2.4\tlorem", s);
@@ -119,14 +118,13 @@ public class SQLite3ParserTest extends TikaTest {
     //test what happens if the user does not want embedded docs handled
     @Test
     public void testNotAddingEmbeddedParserToParseContext() throws Exception {
-        Parser p = new AutoDetectParser();
         ContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, new EmptyParser());
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            p.parse(is, handler, metadata, parseContext);
+            AUTO_DETECT_PARSER.parse(is, handler, metadata, parseContext);
         }
         String xml = handler.toString();
         //just includes headers for embedded documents
@@ -141,34 +139,37 @@ public class SQLite3ParserTest extends TikaTest {
 
     @Test
     public void testRecursiveParserWrapper() throws Exception {
-        Parser p = new AutoDetectParser();
 
         RecursiveParserWrapper wrapper =
-                new RecursiveParserWrapper(p, new BasicContentHandlerFactory(
-                        BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
+                new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         Metadata metadata = new Metadata();
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(
+                        BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1)
+        );
+
         try (InputStream is = getResourceAsStream(TEST_FILE1)) {
             metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
-            wrapper.parse(is, new BodyContentHandler(-1), metadata, new ParseContext());
+            wrapper.parse(is, handler, metadata, new ParseContext());
         }
-        List<Metadata> metadataList = wrapper.getMetadata();
+        List<Metadata> metadataList = handler.getMetadataList();
         int i = 0;
         assertEquals(5, metadataList.size());
         //make sure the \t are inserted in a body handler
 
-        String table = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String table = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("0\t2.3\t2.4\tlorem", table);
         assertContains("普林斯顿大学", table);
 
         //make sure the \n is inserted
-        String table2 = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String table2 = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("do eiusmod tempor\n", table2);
 
-        assertContains("The quick brown fox", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("The quick brown fox", metadataList.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(2).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(4).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test

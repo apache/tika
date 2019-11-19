@@ -31,7 +31,7 @@
                 <param name="ocrImageQuality" type="float">2.1</param>
                 <param name="ocrImageFormatName" type="string">jpeg</param>
                 <param name="ocrImageScale" type="float">1.3</param>
-                <param name="maxMainMemoryBytes" type="int">524288000</param>
+                <param name="maxMainMemoryBytes" type="long">524288000</param>
                 <!-- we really should throw an exception for this!! -->
                 <param name="someRandomThingOrOther" type="bool">true</param>
             </params>

@@ -507,6 +507,7 @@ public class XMLReaderUtils implements Serializable {
     private static PoolDOMBuilder acquireDOMBuilder()
             throws TikaException {
         int waiting = 0;
+        long lastWarn = -1;
         while (true) {
             PoolDOMBuilder builder = null;
             DOM_READ_WRITE_LOCK.readLock().lock();
@@ -520,7 +521,14 @@ public class XMLReaderUtils implements Serializable {
             if (builder != null) {
                 return builder;
             }
+            if (lastWarn < 0 || System.currentTimeMillis() - lastWarn > 1000) {
+                //avoid spamming logs
+                LOG.log(Level.WARNING, "Contention waiting for a DOMParser. "+
+                        "Consider increasing the XMLReaderUtils.POOL_SIZE");
+                lastWarn = System.currentTimeMillis();
+            }
             waiting++;
+
             if (waiting > 3000) {
                 //freshen the pool.  Something went very wrong...
                 setPoolSize(POOL_SIZE);
@@ -573,6 +581,7 @@ public class XMLReaderUtils implements Serializable {
     private static PoolSAXParser acquireSAXParser()
             throws TikaException {
         int waiting = 0;
+        long lastWarn = -1;
         while (true) {
             PoolSAXParser parser = null;
             SAX_READ_WRITE_LOCK.readLock().lock();
@@ -585,6 +594,12 @@ public class XMLReaderUtils implements Serializable {
             }
             if (parser != null) {
                 return parser;
+            }
+            if (lastWarn < 0 || System.currentTimeMillis() - lastWarn > 1000) {
+                //avoid spamming logs
+                LOG.warning("Contention waiting for a SAXParser. " +
+                        "Consider increasing the XMLReaderUtils.POOL_SIZE");
+                lastWarn = System.currentTimeMillis();
             }
             waiting++;
             if (waiting > 3000) {
@@ -922,7 +937,7 @@ public class XMLReaderUtils implements Serializable {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-
+                // ignored
             }
         }
     }
@@ -939,7 +954,7 @@ public class XMLReaderUtils implements Serializable {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-
+                // ignored
             }
         }
     }
@@ -956,13 +971,13 @@ public class XMLReaderUtils implements Serializable {
             try {
                 saxParser.reset();
             } catch (UnsupportedOperationException e) {
-
+                // ignored
             }
             try {
                 XMLReader reader = saxParser.getXMLReader();
                 clearReader(reader);
             } catch (SAXException e) {
-
+                // ignored
             }
             trySetXercesSecurityManager(saxParser);
         }

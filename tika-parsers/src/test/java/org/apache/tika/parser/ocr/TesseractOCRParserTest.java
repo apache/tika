@@ -27,12 +27,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
@@ -43,6 +41,7 @@ import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.junit.Assume;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -96,7 +95,7 @@ public class TesseractOCRParserTest extends TikaTest {
         MediaType png = MediaType.image("png");
 
         // Assuming that Tesseract is on the path, we should find 5 Parsers that support PNG.
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
 
         assertEquals(8, parser.getSupportedTypes(parseContext).size());
         assertTrue(parser.getSupportedTypes(parseContext).contains(png));
@@ -107,14 +106,14 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testPDFOCR() throws Exception {
-        String resource = "/test-documents/testOCR.pdf";
+        String resource = "testOCR.pdf";
         String[] nonOCRContains = new String[0];
         testBasicOCR(resource, nonOCRContains, 2);
     }
 
     @Test
     public void testDOCXOCR() throws Exception {
-        String resource = "/test-documents/testOCR.docx";
+        String resource = "testOCR.docx";
         String[] nonOCRContains = {
                 "This is some text.",
                 "Here is an embedded image:"
@@ -124,7 +123,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testPPTXOCR() throws Exception {
-        String resource = "/test-documents/testOCR.pptx";
+        String resource = "testOCR.pptx";
         String[] nonOCRContains = {
                 "This is some text"
         };
@@ -133,9 +132,9 @@ public class TesseractOCRParserTest extends TikaTest {
     
     @Test
     public void testOCROutputsHOCR() throws Exception {
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
 
-        String resource = "/test-documents/testOCR.pdf";
+        String resource = "testOCR.pdf";
 
         String[] nonOCRContains = new String[0];
         String contents = runOCR(resource, nonOCRContains, 2,
@@ -148,13 +147,15 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     private void testBasicOCR(String resource, String[] nonOCRContains, int numMetadatas) throws Exception{
-    	String contents = runOCR(resource, nonOCRContains, numMetadatas,
+        Assume.assumeTrue("can run OCR", canRun());
+
+        String contents = runOCR(resource, nonOCRContains, numMetadatas,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
         	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
-        		assertTrue(contents.toString().contains("Apache"));
+        		assertContains("Apache", contents);
         	} else {
-        		assertTrue(contents.toString().contains("Happy New Year 2003!"));
+        		assertContains("Happy New Year 2003!", contents);
         	}
         }
     }
@@ -164,23 +165,17 @@ public class TesseractOCRParserTest extends TikaTest {
                           TesseractOCRConfig.OUTPUT_TYPE outputType) throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.setOutputType(outputType);
-        
-        Parser parser = new RecursiveParserWrapper(new AutoDetectParser(),
-                new BasicContentHandlerFactory(
-                        handlerType, -1));
 
         PDFParserConfig pdfConfig = new PDFParserConfig();
         pdfConfig.setExtractInlineImages(true);
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, config);
-        parseContext.set(Parser.class, parser);
         parseContext.set(PDFParserConfig.class, pdfConfig);
 
-        try (InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(resource)) {
-            parser.parse(stream, new DefaultHandler(), new Metadata(), parseContext);
-        }
-        List<Metadata> metadataList = ((RecursiveParserWrapper) parser).getMetadata();
+        List<Metadata> metadataList = getRecursiveMetadata(resource,
+                AUTO_DETECT_PARSER, handlerType, parseContext);
+
         assertEquals(numMetadatas, metadataList.size());
 
         StringBuilder contents = new StringBuilder();
@@ -201,7 +196,8 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testSingleImage() throws Exception {
-        assumeTrue(canRun());
+        Assume.assumeTrue("can run OCR", canRun());
+
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
         //test metadata extraction
@@ -266,7 +262,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testInterwordSpacing() throws Exception {
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
         //default
         String xml = getXML("testOCR_spacing.png").xml;
         assertContains("The quick", xml);
@@ -286,7 +282,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void confirmMultiPageTiffHandling() throws Exception {
-        assumeTrue(canRun());
+        assumeTrue("can run OCR", canRun());
         //tesseract should handle multipage tiffs by itself
         //let's confirm that
         String xml = getXML("testTIFF_multipage.tif").xml;
@@ -303,7 +299,7 @@ public class TesseractOCRParserTest extends TikaTest {
             parseContext.set(TesseractOCRConfig.class, config);
             assumeTrue(canRun(config));
 
-            String ocr = getText(getResourceAsStream("/test-documents/testRotated.png"), new AutoDetectParser(), parseContext);
+            String ocr = getText("testRotated.png", new Metadata(), parseContext);
             assertContains("Its had resolving otherwise she contented therefore", ocr);
         }
     }

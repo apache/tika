@@ -86,7 +86,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                 new WordMLHandler(ch),
                 new HyperlinkHandler(ch,
                         WORD_ML_URL),
-                new PictHandler(ch,
+                new PictHandler(ch, metadata,
                         EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)));
     }
 
@@ -180,6 +180,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
     private class PictHandler extends DefaultHandler {
         final StringBuilder buffer = new StringBuilder();
+        final Metadata parentMetadata;
         final ContentHandler handler;
         byte[] rawBytes = null;
         EmbeddedDocumentExtractor embeddedDocumentExtractor;
@@ -189,8 +190,10 @@ public class WordMLParser extends AbstractXML2003Parser {
         String pictSource = null;
         final Base64 base64 = new Base64();
 
-        public PictHandler(ContentHandler handler, EmbeddedDocumentExtractor embeddedDocumentExtractor) {
+        public PictHandler(ContentHandler handler, Metadata metadata,
+                           EmbeddedDocumentExtractor embeddedDocumentExtractor) {
             this.handler = handler;
+            this.parentMetadata = metadata;
             this.embeddedDocumentExtractor = embeddedDocumentExtractor;
         }
 
@@ -263,11 +266,17 @@ public class WordMLParser extends AbstractXML2003Parser {
                 handleEmbedded();
             } else if (BIN_DATA.equals(localName)) {
                 inBin = false;
-                rawBytes = base64.decode(buffer.toString());
-                //reset
-                buffer.setLength(0);
-
-                if (! inPict) {
+                boolean success = false;
+                try {
+                    rawBytes = base64.decode(buffer.toString());
+                    success = true;
+                } catch (IllegalArgumentException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                } finally {
+                    //reset
+                    buffer.setLength(0);
+                }
+                if (success && ! inPict) {
                     handleEmbedded();
                 }
             }

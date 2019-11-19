@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * This class looks for &quot;fileUrl&quot; in the http header.  If it is not null
@@ -41,11 +42,28 @@ import org.apache.tika.io.TikaInputStream;
  */
 public class URLEnabledInputStreamFactory implements InputStreamFactory {
 
+    /**
+     * @deprecated use {@link #getInputSteam(InputStream, Metadata, HttpHeaders)}
+     * @param is
+     * @param httpHeaders
+     * @return
+     * @throws IOException
+     */
     @Override
+    @Deprecated
     public InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException {
         String fileUrl = httpHeaders.getHeaderString("fileUrl");
         if(fileUrl != null && !"".equals(fileUrl)){
             return TikaInputStream.get(new URL(fileUrl));
+        }
+        return is;
+    }
+
+    @Override
+    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException {
+        String fileUrl = httpHeaders.getHeaderString("fileUrl");
+        if(fileUrl != null && !"".equals(fileUrl)){
+            return TikaInputStream.get(new URL(fileUrl), metadata);
         }
         return is;
     }

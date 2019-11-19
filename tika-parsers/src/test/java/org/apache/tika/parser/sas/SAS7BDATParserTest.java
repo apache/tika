@@ -28,7 +28,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.executable.MachineMetadata;
@@ -77,13 +76,12 @@ public class SAS7BDATParserTest extends TikaTest {
     
     @Test
     public void testMultiColumns() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = SAS7BDATParserTest.class.getResourceAsStream(
                 "/test-documents/test-columnar.sas7bdat")) {            
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
         assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));

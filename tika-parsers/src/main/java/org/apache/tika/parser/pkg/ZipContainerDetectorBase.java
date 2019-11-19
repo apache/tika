@@ -35,7 +35,7 @@ abstract class ZipContainerDetectorBase {
     static final MediaType DOTM =
             MediaType.application("vnd.ms-word.template.macroenabled.12");
     static final MediaType DOTX =
-            MediaType.application("vnd.ms-word.document.macroEnabled.12");
+            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template");
     static final MediaType PPTX =
             MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
     static final MediaType PPSM =
@@ -60,6 +60,8 @@ abstract class ZipContainerDetectorBase {
             MediaType.application("vnd.ms-excel.template.macroenabled.12");
     static final MediaType XLTX =
             MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template");
+    static final MediaType XLAM =
+            MediaType.application("vnd.ms-excel.addin.macroEnabled.12");
     static final MediaType XPS =
             MediaType.application("vnd.ms-xpsdocument");
 

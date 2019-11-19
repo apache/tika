@@ -22,8 +22,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -35,13 +33,12 @@ public class Bzip2ParserTest extends AbstractPkgTest {
 
     @Test
     public void testBzip2Parsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = Bzip2ParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.tbz2")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/x-bzip2", metadata.get(Metadata.CONTENT_TYPE));
@@ -73,13 +70,12 @@ public class Bzip2ParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.tbz2")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
        // Should find a single entry, for the (compressed) tar file

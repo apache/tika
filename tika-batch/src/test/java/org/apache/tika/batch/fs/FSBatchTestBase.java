@@ -170,6 +170,7 @@ public abstract class FSBatchTestBase extends TikaTest {
     private String[] commandLine(String testConfig, String loggerProps, String[] args) {
         List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
+        commandLine.add("-Djava.awt.headless=true");
         commandLine.add("-Dlog4j.configuration=file:"+
             this.getClass().getResource(loggerProps).getFile());
         commandLine.add("-Xmx128m");
@@ -200,6 +201,7 @@ public abstract class FSBatchTestBase extends TikaTest {
                                               String[] args) throws Exception {
         List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
+        commandLine.add("-Djava.awt.headless=true");
         commandLine.add("-Xmx128m");
         commandLine.add("-cp");
         String cp = System.getProperty("java.class.path");

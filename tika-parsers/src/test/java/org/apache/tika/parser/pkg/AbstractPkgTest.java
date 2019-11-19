@@ -28,7 +28,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.junit.Before;
@@ -42,7 +41,6 @@ public abstract class AbstractPkgTest extends TikaTest {
    protected ParseContext trackingContext;
    protected ParseContext recursingContext;
    
-   protected Parser autoDetectParser;
    protected EmbeddedTrackingParser tracker;
 
    @Before
@@ -51,9 +49,8 @@ public abstract class AbstractPkgTest extends TikaTest {
       trackingContext = new ParseContext();
       trackingContext.set(Parser.class, tracker);
       
-      autoDetectParser = new AutoDetectParser();
       recursingContext = new ParseContext();
-      recursingContext.set(Parser.class, autoDetectParser);
+      recursingContext.set(Parser.class, AUTO_DETECT_PARSER);
    }
 
 
@@ -74,7 +71,7 @@ public abstract class AbstractPkgTest extends TikaTest {
       
       public Set<MediaType> getSupportedTypes(ParseContext context) {
          // Cheat!
-         return (new AutoDetectParser()).getSupportedTypes(context);
+         return AUTO_DETECT_PARSER.getSupportedTypes(context);
       }
 
       public void parse(InputStream stream, ContentHandler handler,

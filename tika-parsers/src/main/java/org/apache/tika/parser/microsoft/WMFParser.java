@@ -61,26 +61,32 @@ public class WMFParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try {
-            HwmfPicture picture = new HwmfPicture(stream);
+            HwmfPicture picture = null;
+            try {
+                picture = new HwmfPicture(stream);
+            } catch (ArrayIndexOutOfBoundsException e) {
+                //POI can throw this on corrupt files
+                throw new TikaException(e.getClass().getSimpleName()+": " + e.getMessage(), e);
+            }
+            Charset charset = LocaleUtil.CHARSET_1252;
             //TODO: make x/y info public in POI so that we can use it here
             //to determine when to keep two text parts on the same line
-            Charset charset = LocaleUtil.CHARSET_1252;
             for (HwmfRecord record : picture.getRecords()) {
                 //this is pure hackery for specifying the font
                 //TODO: do what Graphics does by maintaining the stack, etc.!
                 //This fix should be done within POI
-                if (record.getRecordType().equals(HwmfRecordType.createFontIndirect)) {
+                if (record.getWmfRecordType().equals(HwmfRecordType.createFontIndirect)) {
                     HwmfFont font = ((HwmfText.WmfCreateFontIndirect) record).getFont();
                     charset = (font.getCharset() == null || font.getCharset().getCharset() == null)
                             ? LocaleUtil.CHARSET_1252 :
                             font.getCharset().getCharset();
                 }
-                if (record.getRecordType().equals(HwmfRecordType.extTextOut)) {
+                if (record.getWmfRecordType().equals(HwmfRecordType.extTextOut)) {
                     HwmfText.WmfExtTextOut textOut = (HwmfText.WmfExtTextOut) record;
                     xhtml.startElement("p");
                     xhtml.characters(textOut.getText(charset));
                     xhtml.endElement("p");
-                } else if (record.getRecordType().equals(HwmfRecordType.textOut)) {
+                } else if (record.getWmfRecordType().equals(HwmfRecordType.textOut)) {
                     HwmfText.WmfTextOut textOut = (HwmfText.WmfTextOut) record;
                     xhtml.startElement("p");
                     xhtml.characters(textOut.getText(charset));

@@ -35,6 +35,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.TikaTest;
+import org.apache.tika.utils.ProcessUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -123,9 +124,14 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-extractsA");
-        args.add(extractsDir.resolve("extractsA").toAbsolutePath().toString());
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsA")
+                                .toAbsolutePath().toString()));
         args.add("-extractsB");
-        args.add(extractsDir.resolve("extractsB").toAbsolutePath().toString());
+        args.add(ProcessUtils.escapeCommandLine(
+                extractsDir.resolve("extractsB")
+                        .toAbsolutePath().toString()));
         //add these just to confirm this info doesn't cause problems w cli
         args.add("-maxTokens");
         args.add("10000000");
@@ -135,7 +141,10 @@ public class TikaEvalCLITest extends TikaTest {
         args.add("100000");
 
         args.add("-db");
-        args.add(compareDBDir.toAbsolutePath().toString()+"/"+dbName);
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        compareDBDir
+                                .toAbsolutePath().toString()+"/"+dbName));
 
         execute(args, 60000);
 
@@ -145,7 +154,9 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Profile");
         args.add("-extracts");
-        args.add(extractsDir.resolve("extractsA").toAbsolutePath().toString());
+        args.add(ProcessUtils.escapeCommandLine(
+                extractsDir.resolve("extractsA")
+                        .toAbsolutePath().toString()));
         //add these just to confirm this info doesn't cause problems w cli
         args.add("-maxTokens");
         args.add("10000000");
@@ -155,7 +166,10 @@ public class TikaEvalCLITest extends TikaTest {
         args.add("100000");
 
         args.add("-db");
-        args.add(profileDBDir.toAbsolutePath().toString()+"/"+dbName);
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        profileDBDir
+                                .toAbsolutePath().toString()+"/"+dbName));
         execute(args, 60000);
     }
 
@@ -163,9 +177,14 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Report");
         args.add("-db");
-        args.add(profileDBDir.toAbsolutePath().toString()+"/"+dbName);
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        profileDBDir.toAbsolutePath()
+                                .toString()+"/"+dbName));
         args.add("-rd");
-        args.add(profileReportsDir.toAbsolutePath().toString());
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        profileReportsDir.toAbsolutePath().toString()));
         execute(args, 60000);
     }
 
@@ -173,9 +192,13 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Report");
         args.add("-db");
-        args.add(compareDBDir.toAbsolutePath().toString()+"/"+dbName);
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        compareDBDir.toAbsolutePath().toString()+"/"+dbName));
         args.add("-rd");
-        args.add(compareReportsDir.toAbsolutePath().toString());
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        compareReportsDir.toAbsolutePath().toString()));
         execute(args, 60000);
     }
 
@@ -186,11 +209,20 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-extractsA");
-        args.add(extractsDir.resolve("extractsA").toAbsolutePath().toString());
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsA")
+                                .toAbsolutePath().toString()));
         args.add("-extractsB");
-        args.add(extractsDir.resolve("extractsB").toAbsolutePath().toString());
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        extractsDir.resolve("extractsB")
+                                .toAbsolutePath().toString()));
         args.add("-db");
-        args.add(compareDBDir.toAbsolutePath().toString()+"/"+dbName);
+        args.add(
+                ProcessUtils.escapeCommandLine(
+                        compareDBDir.toAbsolutePath()
+                                .toString()+"/"+dbName));
 
         execute(args, 60000);
         //      args.add("-drop");
@@ -202,6 +234,7 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         String cp = System.getProperty("java.class.path");
         args.add("java");
+        args.add("-Djava.awt.headless=true");
         args.add("-cp");
         args.add(cp);
         args.add("org.apache.tika.eval.TikaEvalCLI");

@@ -37,7 +37,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
@@ -119,7 +118,7 @@ public class TikaResource {
         final Parser parser = new AutoDetectParser(tikaConfig);
 
         Map<MediaType, Parser> parsers = ((AutoDetectParser)parser).getParsers();
-        parsers.put(MediaType.APPLICATION_XML, new HtmlParser());
+
         ((AutoDetectParser)parser).setParsers(parsers);
 
         ((AutoDetectParser)parser).setFallback(new Parser() {
@@ -187,9 +186,9 @@ public class TikaResource {
         }
     }
 
-    public static InputStream getInputStream(InputStream is, HttpHeaders headers) {
+    public static InputStream getInputStream(InputStream is, Metadata metadata, HttpHeaders headers) {
         try {
-            return inputStreamFactory.getInputSteam(is, headers);
+            return inputStreamFactory.getInputSteam(is, metadata, headers);
         } catch (IOException e) {
             throw new TikaServerParseException(e);
         }
@@ -272,8 +271,10 @@ public class TikaResource {
             }
 
         } catch (Throwable ex) {
-            throw new WebApplicationException(String.format(Locale.ROOT,
-                    "%s is an invalid %s header", key, X_TIKA_OCR_HEADER_PREFIX));
+            throw new WebApplicationException(
+                    String.format(Locale.ROOT,
+                    "%s is an invalid %s header",
+                            key, X_TIKA_OCR_HEADER_PREFIX), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -465,7 +466,7 @@ public class TikaResource {
     @Produces("text/plain")
     @Path("form")
     public StreamingOutput getTextFromMultipart(Attachment att, @Context final UriInfo info) {
-        return produceText(att.getObject(InputStream.class), att.getHeaders(), info);
+        return produceText(att.getObject(InputStream.class), new Metadata(), att.getHeaders(), info);
     }
 
     //this is equivalent to text-main in tika-app
@@ -512,12 +513,12 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceText(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
+        final Metadata metadata = new Metadata();
+        return produceText(getInputStream(is, metadata, httpHeaders), metadata, httpHeaders.getRequestHeaders(), info);
     }
 
-    public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
+    public StreamingOutput produceText(final InputStream is, final Metadata metadata, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
         final Parser parser = createParser();
-        final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
 
         fillMetadata(parser, metadata, context, httpHeaders);
@@ -541,14 +542,16 @@ public class TikaResource {
     @Produces("text/html")
     @Path("form")
     public StreamingOutput getHTMLFromMultipart(Attachment att, @Context final UriInfo info) {
-        return produceOutput(att.getObject(InputStream.class), att.getHeaders(), info, "html");
+        return produceOutput(att.getObject(InputStream.class), new Metadata(),
+                att.getHeaders(), info, "html");
     }
 
     @PUT
     @Consumes("*/*")
     @Produces("text/html")
     public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, "html");
+        Metadata metadata = new Metadata();
+        return produceOutput(getInputStream(is, metadata, httpHeaders), metadata, httpHeaders.getRequestHeaders(), info, "html");
     }
 
     @POST
@@ -556,20 +559,22 @@ public class TikaResource {
     @Produces("text/xml")
     @Path("form")
     public StreamingOutput getXMLFromMultipart(Attachment att, @Context final UriInfo info) {
-        return produceOutput(att.getObject(InputStream.class), att.getHeaders(), info, "xml");
+        return produceOutput(att.getObject(InputStream.class),
+                new Metadata(), att.getHeaders(), info, "xml");
     }
 
     @PUT
     @Consumes("*/*")
     @Produces("text/xml")
     public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        return produceOutput(getInputStream(is, httpHeaders), httpHeaders.getRequestHeaders(), info, "xml");
+        Metadata metadata = new Metadata();
+        return produceOutput(getInputStream(is, metadata, httpHeaders),
+                metadata, httpHeaders.getRequestHeaders(), info, "xml");
     }
 
-    private StreamingOutput produceOutput(final InputStream is, final MultivaluedMap<String, String> httpHeaders,
+    private StreamingOutput produceOutput(final InputStream is, Metadata metadata, final MultivaluedMap<String, String> httpHeaders,
                                           final UriInfo info, final String format) {
         final Parser parser = createParser();
-        final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
 
         fillMetadata(parser, metadata, context, httpHeaders);

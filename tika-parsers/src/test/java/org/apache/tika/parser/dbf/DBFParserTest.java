@@ -22,11 +22,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,7 +107,8 @@ public class DBFParserTest extends TikaTest {
 
     @Test
     public void testSpecificTruncated() throws Exception {
-        XMLResult r = getXML(truncate("testDBF.dbf", 781), new AutoDetectParser(), new Metadata());
+        XMLResult r = getXML(truncate("testDBF.dbf", 781),
+                AUTO_DETECT_PARSER, new Metadata());
         String xml = r.xml.replaceAll("[\\t\\r\\n]", " ");
 
         //if you don't keep track of bytes read, you could get content from prev row
@@ -130,7 +129,7 @@ public class DBFParserTest extends TikaTest {
         for (DBFReader.Version version : DBFReader.Version.values()) {
             //this cast happens to work because of the range of possible values
             bytes[0] = (byte) version.getId();
-            XMLResult r = getXML(TikaInputStream.get(bytes), new AutoDetectParser(), new Metadata());
+            XMLResult r = getXML(TikaInputStream.get(bytes), AUTO_DETECT_PARSER, new Metadata());
             assertEquals(version.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
         }
     }
