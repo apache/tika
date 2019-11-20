@@ -81,6 +81,9 @@ public class StackTraceTest extends CXFTestBase {
     @Test
     public void testEncrypted() throws Exception {
         for (String path : PATHS) {
+            if ("/rmeta".equals(path)) {
+                continue;
+            }
             Response response = WebClient
                     .create(endPoint + path)
                     .accept("*/*")
@@ -99,6 +102,9 @@ public class StackTraceTest extends CXFTestBase {
     @Test
     public void testNullPointerOnTika() throws Exception {
         for (String path : PATHS) {
+            if ("/rmeta".equals(path)) {
+                continue;
+            }
             Response response = WebClient
                     .create(endPoint + path)
                     .accept("*/*")

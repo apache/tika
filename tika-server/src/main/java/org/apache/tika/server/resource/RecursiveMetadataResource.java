@@ -143,7 +143,13 @@ public class RecursiveMetadataResource {
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
 		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
 		        new BasicContentHandlerFactory(type, -1), -1);
-		TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+		try {
+            TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+        } catch (SecurityException e) {
+		    throw e;
+        } catch (Exception e) {
+		    //swallow it and report it via the metadata list
+        }
 		/*
 		    We used to have this non-functional bit of code...refactor to add it back and make it work?
 						new LanguageHandler() {
