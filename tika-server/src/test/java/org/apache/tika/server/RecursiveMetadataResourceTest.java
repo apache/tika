@@ -104,7 +104,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
         assertNotNull(metadataList.get(0).get(TikaCoreProperties.CREATOR));
-        assertContains("EncryptedDocumentException", metadataList.get(0).get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException", metadataList.get(0).get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
         // Try again, this time with the password
         response = WebClient
                 .create(endPoint + META_PATH)

@@ -44,7 +44,7 @@ public class ExceptionUtils {
      */
     public static String getFilteredStackTrace(Throwable t) {
         Throwable cause = t;
-        if ((t instanceof TikaException) &&
+        if ((t.getClass().equals(TikaException.class)) &&
                 t.getCause() != null) {
             cause = t.getCause();
         }
