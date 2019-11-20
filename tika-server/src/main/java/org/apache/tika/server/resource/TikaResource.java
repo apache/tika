@@ -27,7 +27,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -117,19 +116,6 @@ public class TikaResource {
     public static Parser createParser() {
         final Parser parser = new AutoDetectParser(tikaConfig);
 
-        Map<MediaType, Parser> parsers = ((AutoDetectParser)parser).getParsers();
-
-        ((AutoDetectParser)parser).setParsers(parsers);
-
-        ((AutoDetectParser)parser).setFallback(new Parser() {
-            public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
-                return parser.getSupportedTypes(parseContext);
-            }
-
-            public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
-                throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
-            }
-        });
         if (digester != null) {
             return new DigestingParser(parser, digester);
         }
