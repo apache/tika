@@ -141,13 +141,13 @@ public class UnpackerResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void test415() throws Exception {
+    public void test204() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type("xxx/xxx")
                 .accept("*/*")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
-        assertEquals(415, response.getStatus());
+        assertEquals(204, response.getStatus());
     }
 
     @Test

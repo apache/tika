@@ -115,15 +115,6 @@ public class TikaResource {
     public static Parser createParser() {
         final Parser parser = new AutoDetectParser(tikaConfig);
 
-        ((AutoDetectParser)parser).setFallback(new Parser() {
-            public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
-                return parser.getSupportedTypes(parseContext);
-            }
-
-            public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
-                throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
-            }
-        });
         if (digester != null) {
             return new DigestingParser(parser, digester);
         }

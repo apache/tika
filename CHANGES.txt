@@ -7,6 +7,9 @@ Release 2.0.0 - ???
 
 Release 1.23
 
+   * NOTE: tika-server no longer returns 415 for file types for which there
+     is no parser.
+
    * Upgrade to POI 4.1.1 (TIKA-2851).
 
    * Upgrade to PDFBox 2.0.17 (TIKA-2951).
