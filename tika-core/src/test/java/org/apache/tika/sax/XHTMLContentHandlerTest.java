@@ -168,7 +168,6 @@ public class XHTMLContentHandlerTest {
         xhtml.endDocument();
         
         String[] words = getRealWords(output.toString());
-        System.out.println(words[0]);
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
     }
@@ -182,7 +181,6 @@ public class XHTMLContentHandlerTest {
         xhtml.endDocument();
         
         String[] words = getRealWords(output.toString());
-        System.out.println(words[0]);
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
     }
@@ -196,7 +194,6 @@ public class XHTMLContentHandlerTest {
         xhtml.endDocument();
         
         String[] words = getRealWords(output.toString());
-        System.out.println(words[0]);
         assertEquals(1, words.length);
         assertEquals("a\ufffdz", words[0]);
     }
