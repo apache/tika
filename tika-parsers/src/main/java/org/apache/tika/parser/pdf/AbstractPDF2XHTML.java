@@ -44,7 +44,6 @@ import java.util.TreeMap;
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -91,7 +90,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.FONT;
+import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -603,7 +602,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         if (fontNames.size() > 0) {
             for (String fontName : fontNames) {
-                metadata.add(FONT.FONT_NAME, fontName);
+                metadata.add(Font.FONT_NAME, fontName);
             }
         }
     }

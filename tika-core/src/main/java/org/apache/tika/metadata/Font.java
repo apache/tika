@@ -15,7 +15,7 @@ package org.apache.tika.metadata; /*
  * limitations under the License.
  */
 
-public interface FONT {
+public interface Font {
 
     String PREFIX_FONT_META = "font";
 

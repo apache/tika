@@ -48,7 +48,7 @@ import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.FONT;
+import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -157,7 +157,7 @@ public class PDFParserTest extends TikaTest {
         ParseContext pc = new ParseContext();
         pc.set(PDFParserConfig.class, config);
         XMLResult r = getXML("testPDFVarious.pdf", pc);
-        assertContains("ABCDEE+Calibri", r.metadata.get(FONT.FONT_NAME));
+        assertContains("ABCDEE+Calibri", r.metadata.get(Font.FONT_NAME));
     }
 
     @Test
