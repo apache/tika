@@ -141,6 +141,8 @@ public class PDFParserConfig implements Serializable {
 
     private boolean extractActions = false;
 
+    private boolean extractFontNames = false;
+
     private long maxMainMemoryBytes = -1;
 
     private boolean setKCMS = false;
@@ -204,6 +206,10 @@ public class PDFParserConfig implements Serializable {
         setExtractUniqueInlineImagesOnly(
                 getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
                         getExtractUniqueInlineImagesOnly()));
+        setExtractFontNames(
+                getBooleanProp(props.getProperty("extractFontNames"),
+                        getExtractFontNames()));
+
 
         setIfXFAExtractOnlyXFA(
             getBooleanProp(props.getProperty("ifXFAExtractOnlyXFA"),
@@ -318,6 +324,17 @@ public class PDFParserConfig implements Serializable {
 		this.extractBookmarksText = extractBookmarksText;
 	}
 
+    /**
+     * Extract font names into a metadata field
+     * @param extractFontNames
+     */
+	public void setExtractFontNames(boolean extractFontNames) {
+	    this.extractFontNames = extractFontNames;
+    }
+
+    public boolean getExtractFontNames() {
+	    return extractFontNames;
+    }
 	/**
      * @see #setExtractInlineImages(boolean)
      */

@@ -33,14 +33,18 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -87,6 +91,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FONT;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -157,6 +162,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int startPage = -1;//private in PDFTextStripper...must have own copy because we override processpages
     int unmappedUnicodeCharsPerPage = 0;
     int totalCharsPerPage = 0;
+
+    private final Set<String> fontNames = new HashSet<>();
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config) throws IOException {
@@ -453,6 +460,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (IOException e) {
             handleCatchableIOE(e);
         }
+
+        if (config.getExtractFontNames()) {
+
+            for (COSName n : page.getResources().getFontNames()) {
+                PDFont font = page.getResources().getFont(n);
+                if (font != null && font.getFontDescriptor() != null) {
+                    String fontName = font.getFontDescriptor().getFontName();
+                    if (fontName != null) {
+                        fontNames.add(fontName);
+                    }
+                }
+            }
+        }
     }
 
     private void handleWidget(PDAnnotationWidget widget) throws TikaException, SAXException, IOException {
@@ -580,6 +600,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to end a document", e);
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
+        }
+        if (fontNames.size() > 0) {
+            for (String fontName : fontNames) {
+                metadata.add(FONT.FONT_NAME, fontName);
+            }
         }
     }
 
