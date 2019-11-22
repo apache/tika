@@ -48,6 +48,7 @@ import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FONT;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -147,6 +148,16 @@ public class PDFParserTest extends TikaTest {
                 !xml.contains("ToolkitApache"));
         assertTrue("should have word boundary between paragraphs",
                 !xml.contains("libraries.Apache"));
+    }
+
+    @Test
+    public void testFontNameExtraction() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractFontNames(true);
+        ParseContext pc = new ParseContext();
+        pc.set(PDFParserConfig.class, config);
+        XMLResult r = getXML("testPDFVarious.pdf", pc);
+        assertContains("ABCDEE+Calibri", r.metadata.get(FONT.FONT_NAME));
     }
 
     @Test

@@ -491,6 +491,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    void setExtractFontNames(boolean extractFontNames) {
+        defaultConfig.setExtractFontNames(extractFontNames);
+    }
+
+    @Field
     void setSetKCMS(boolean setKCMS) {
         defaultConfig.setSetKCMS(setKCMS);
     }
