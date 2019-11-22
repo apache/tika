@@ -518,6 +518,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    public void setDropThreshold(float dropThreshold) {
+        defaultConfig.setDropThreshold(dropThreshold);
+    }
+
+    @Field
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
     }
