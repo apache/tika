@@ -15,14 +15,13 @@ package org.apache.tika.metadata; /*
  * limitations under the License.
  */
 
-public interface FONT {
+public interface Font {
 
     String PREFIX_FONT_META = "font";
 
     /**
      * Basic name of a font used in a file
      */
-    Property FONT_NAME = Property.internalTextBag(PREFIX_FONT_META +
-            TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "name");
+    Property FONT_NAME = Property.internalTextBag(PREFIX_FONT_META +":name");
 
 }
