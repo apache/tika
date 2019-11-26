@@ -5,7 +5,11 @@ Release 2.0.0 - ???
 
    Other changes
 
-Release 1.23
+Release 1.23 - 11/26/2019
+
+   * NOTE: The PDFParser now relies on OCRDPI to render page images when
+     users configure OCR on rendered page images. This will have the effect
+     of increasing rendered image size (TIKA-2624).
 
    * NOTE: tika-server no longer returns 415 for file types for which there
      is no parser.
@@ -29,6 +33,10 @@ Release 1.23
 
 Release 1.22 - 07/29/2019
 
+   * NOTE: tika-server no longer hard-codes the HtmlParser to handle
+     XML files (TIKA-2910).  Users must now configure that behavior
+     via a tika-config.xml file.
+
    * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
      between 0xF000 and 0XF0000 will cause an exception.
 
@@ -36,7 +44,7 @@ Release 1.22 - 07/29/2019
      JinSup Kim (ddoleye) (TIKA-2909).
 
    * Fix order of closing streams to avoid "Failed to close temporary resource"
-     exception (TIKA-2908).
+     exception in TesseractOCRParser (TIKA-2908).
 
    * Improve AutoDetectReader performance by caching encoding
      detector (TIKA-1568).
