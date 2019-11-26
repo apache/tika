@@ -51,6 +51,7 @@ import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -100,7 +101,7 @@ public class HwpTextExtractorV5 implements Serializable {
 
         POIFSFileSystem fs = null;
         try {
-            fs = new POIFSFileSystem(source);
+            fs = new POIFSFileSystem(new CloseShieldInputStream(source));
 
             DirectoryNode root = fs.getRoot();
             extract0(root, metadata, xhtml);
