@@ -1,4 +1,4 @@
-Release 1.23 - ??/??/???
+Release 1.23 - 11/26/2019
 
    * NOTE: The PDFParser now relies on OCRDPI to render page images when
      users configure OCR on rendered page images. This will have the effect
