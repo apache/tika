@@ -469,7 +469,7 @@
               <rules>
                 <dependencyConvergence />
                 <requireMavenVersion>
-                  <version>3.5.0</version>
+                  <version>3.3</version>
                 </requireMavenVersion>
               </rules>
             </configuration>
