@@ -540,13 +540,6 @@
       <version>5.5.0</version>
     </dependency>
 
-    <!-- grib's current jsoup is vulnerable to xss
-         exclude and import a more modern version TIKA-2561-->
-    <dependency>
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>1.12.1</version>
-    </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
@@ -588,6 +581,10 @@
         <exclusion>
           <groupId>org.quartz-scheduler</groupId>
           <artifactId>quartz</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>net.sf.ehcache</groupId>
+          <artifactId>ehcache-core</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
