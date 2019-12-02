@@ -54,6 +54,11 @@
     <httpcomponents.version>4.5.10</httpcomponents.version>
   </properties>
 
+  <!-- Note: as of the 1.23 release, we're waiting for external changes or fixes
+     before upgrading: java-libpst, metadata-extractor. We
+     need someone who understands grib to upgrade our code for edu.ucar:grib
+     See: https://issues.apache.org/jira/browse/TIKA-2925?focusedCommentId=16983541&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-16983541
+  -->
   <dependencies>
     <!-- Optional OSGi dependency, used only when running within OSGi -->
     <dependency>
