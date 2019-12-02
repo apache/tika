@@ -466,7 +466,7 @@ public class RTFParserTest extends TikaTest {
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
         assertEquals(51, meta_jpg.names().length);
-        assertEquals(110, meta_jpg_exif.names().length);
+        assertEquals(112, meta_jpg_exif.names().length);
     }
 
     @Test
