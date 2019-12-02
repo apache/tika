@@ -260,6 +260,18 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
         
         return result;
 	}
-	
+
+	@Test(timeout = 5000)
+	public void testOptimaizeRegexBug() throws Exception {
+		//confirm TIKA-2777 doesn't affect langdetect's Optimaize
+		LanguageDetector detector = new OptimaizeLangDetector()
+				.setShortText(false)
+				.loadModels();
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 50000; i++) {
+			sb.append('a');
+		}
+		detector.detect(sb.toString());
+	}
 
 }

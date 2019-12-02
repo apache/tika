@@ -82,7 +82,8 @@ public class RecursiveMetadataResource {
                                              @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
         return Response.ok(
-                parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info, handlerTypeName)).build();
+                parseMetadata(att.getObject(InputStream.class), new Metadata(),
+                        att.getHeaders(), info, handlerTypeName)).build();
     }
 
     /**
@@ -117,15 +118,16 @@ public class RecursiveMetadataResource {
                                 @Context UriInfo info,
                                 @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName
                                 ) throws Exception {
+        Metadata metadata = new Metadata();
         return Response.ok(
-                parseMetadata(TikaResource.getInputStream(is, httpHeaders),
+                parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders),
+						metadata,
 						httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
     }
 
-	private MetadataList parseMetadata(InputStream is,
+	private MetadataList parseMetadata(InputStream is, Metadata metadata,
 			MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)
 			throws Exception {
-		final Metadata metadata = new Metadata();
 		final ParseContext context = new ParseContext();
 		Parser parser = TikaResource.createParser();
 		// TODO: parameterize choice of max chars/max embedded attachments
@@ -141,7 +143,13 @@ public class RecursiveMetadataResource {
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
 		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
 		        new BasicContentHandlerFactory(type, -1), -1);
-		TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+		try {
+            TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
+        } catch (SecurityException e) {
+		    throw e;
+        } catch (Exception e) {
+		    //swallow it and report it via the metadata list
+        }
 		/*
 		    We used to have this non-functional bit of code...refactor to add it back and make it work?
 						new LanguageHandler() {

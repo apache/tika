@@ -82,9 +82,8 @@
     <alias type="application/bat"/>
     <sub-class-of type="text/plain"/>
     <magic priority="50">
-      <match value="@echo off" type="string" offset="0" />
-      <match value="rem " type="string" offset="0" />
-      <match value="REM " type="string" offset="0" />
+      <match value="@echo off" type="stringignorecase" offset="0" />
+      <match value="rem " type="stringignorecase" offset="0" />
     </magic>
     <glob pattern="*.bat"/>
     <glob pattern="*.cmd"/>
@@ -955,9 +954,13 @@
     <glob pattern="*.aet"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xdp+xml">
+    <sub-class-of type="application/xml"/>
+    <root-XML localName="xdp" namespaceURI="http://ns.adobe.com/xdp/" />
     <glob pattern="*.xdp"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xfdf">
+    <sub-class-of type="application/xml"/>
+    <root-XML localName="xfdf" namespaceURI="http://ns.adobe.com/xfdf/" />
     <glob pattern="*.xfdf"/>
   </mime-type>
   <mime-type type="application/vnd.aether.imp"/>
@@ -1103,6 +1106,15 @@
   </mime-type>
   <mime-type type="application/vnd.denovo.fcselayout-link">
     <glob pattern="*.fe_launch"/>
+  </mime-type>
+  <mime-type type="application/vnd.digilite.prolights">
+    <tika:link>http://support.digilite.eu/?digilite=library</tika:link>
+    <_comment>digilite.eu Prolights configuration file</_comment>
+    <_comment>Note glob clash with Adobe's .fdf</_comment>
+    <!--<glob pattern="*.fdf"/>-->
+    <magic priority="50">
+      <match value="0x7F0C442B" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.dir-bi.plate-dl-nosuffix"/>
   <mime-type type="application/vnd.dna">
@@ -2808,6 +2820,16 @@
     <glob pattern="*.warc"/>
   </mime-type>
 
+  <mime-type type="application/wasm">
+    <acronym>Wasm</acronym>
+    <_comment>Web Assembly</_comment>
+    <magic priority="50">
+      <match value="0x6d736100" type="little32" offset="0" />
+      <match value="0x6d736100" type="big32" offset="0" />
+    </magic>
+    <glob pattern="*.wasm"/>
+  </mime-type>
+
   <mime-type type="application/watcherinfo+xml"/>
   <mime-type type="application/whoispp-query"/>
   <mime-type type="application/whoispp-response"/>
@@ -3510,16 +3532,6 @@
 	 <glob pattern="*.grb"/>
 	 <glob pattern="*.grb1"/>
 	 <glob pattern="*.grb2"/>
-  </mime-type>
-
-  <mime-type type="application/x-gtar">
-    <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
-    <magic priority="50">
-      <!-- GNU tar archive -->
-      <match value="ustar  \0" type="string" offset="257" />
-    </magic>
-    <glob pattern="*.gtar"/>
-    <sub-class-of type="application/x-tar"/>
   </mime-type>
 
   <mime-type type="application/gzip">
@@ -5132,6 +5144,46 @@
       <match value="GIF89a" type="string" offset="0"/>
     </magic>
     <glob pattern="*.gif"/>
+  </mime-type>
+
+  <mime-type type="image/heif">
+    <_comment>HEIF - High Efficiency Image File</_comment>
+    <acronym>HEIF</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="60">
+      <match value="ftypmif1" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heif"/>
+    <sub-class-of type="video/quicktime" />
+  </mime-type>
+  <mime-type type="image/heif-sequence">
+    <_comment>HEIF Sequence - High Efficiency Image Sequence</_comment>
+    <magic priority="60">
+      <match value="ftypmsf1" type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="video/quicktime" />
+  </mime-type>
+
+  <mime-type type="image/heic">
+    <alias   type="image/hevc"/>
+    <_comment>HEIF Image using HEVC Codec</_comment>
+    <acronym>HEIC</acronym>
+    <magic priority="60">
+      <match value="ftypheic" type="string" offset="4"/>
+      <match value="ftypheix" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heic"/>
+    <sub-class-of type="image/heif" />
+  </mime-type>
+  <mime-type type="image/heic-sequence">
+    <alias   type="image/hevc-sequence"/>
+    <_comment>HEIF Sequence using HEVC Codec</_comment>
+    <acronym>HEVC</acronym>
+    <magic priority="60">
+      <match value="ftyphevc" type="string" offset="4"/>
+      <match value="ftyphevx" type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="image/heif-sequence" />
   </mime-type>
 
   <mime-type type="image/icns">
@@ -7217,6 +7269,20 @@
     <_comment>Haxe source code</_comment>
     <glob pattern="*.hx"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="application/x-xliff+xml">
+    <sub-class-of type="application/xml"/>
+    <_comment>XLIFF 1.2 document</_comment>
+    <root-XML namespaceURI="urn:oasis:names:tc:xliff:document:1.2" localName="xliff"/>
+    <glob pattern="*.xlf"/>
+    <glob pattern="*.xliff"/>
+  </mime-type>
+
+  <mime-type type="application/x-xliff+zip">
+    <sub-class-of type="application/zip"/>
+    <_comment>XLZ Archive</_comment>
+    <glob pattern="*.xlz"/>
   </mime-type>
 
   <mime-type type="text/x-rsrc">

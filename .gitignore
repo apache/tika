@@ -1,5 +1,6 @@
 .svn
 target
+dependency-reduced-pom.xml
 .idea
 .classpath
 .project

@@ -17,10 +17,9 @@
 
 package org.apache.tika.sax;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -35,16 +34,16 @@ import static org.apache.tika.TikaTest.assertContains;
  * The phone numbers are added to a multivalued Metadata object under the key, "phonenumbers".
  * You can get an array of phone numbers by calling metadata.getValues("phonenumber").
  */
-public class PhoneExtractingContentHandlerTest {
+public class PhoneExtractingContentHandlerTest extends TikaTest {
     @Test
     public void testExtractPhoneNumbers() throws Exception {
-        Parser parser = new AutoDetectParser();
+
         Metadata metadata = new Metadata();
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
         try (InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");
         assertContains("9498888888", phoneNumbers[0]);

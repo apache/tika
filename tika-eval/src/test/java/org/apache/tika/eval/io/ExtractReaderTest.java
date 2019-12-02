@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,7 +74,7 @@ public class ExtractReaderTest extends TikaTest {
         assertEquals(1, metadataList.size());
         Metadata m = metadataList.get(0);
         assertEquals(1, m.getValues(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length);
-        assertEquals("the quick brown fox fox fox jumped over the lazy lazy dog\n",
+        assertContains("the quick brown fox fox fox jumped over the lazy lazy dog",
                 m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
         //test that the mime is inferred from the file extension

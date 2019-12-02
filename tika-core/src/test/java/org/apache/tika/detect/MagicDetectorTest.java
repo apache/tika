@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
@@ -191,7 +192,20 @@ public class MagicDetectorTest {
         InputStream stream = new RestrictiveInputStream(data);
         assertEquals(testMT, detector.detect(stream, new Metadata()));
     }
-    
+
+    @Test
+    public void testDetectApplicationEnviHdr() throws Exception {
+        InputStream iStream = MagicDetectorTest.class.getResourceAsStream(
+              "/test-documents/ang20150420t182050_corr_v1e_img.hdr");
+        byte[] data = IOUtils.toByteArray(iStream);
+        MediaType testMT = new MediaType("application", "envi.hdr");
+        Detector detector = new MagicDetector(testMT, data, null, false, 0, 0);
+        // Deliberately prevent InputStream.read(...) from reading the entire
+        // buffer in one go
+        InputStream stream = new RestrictiveInputStream(data);
+        assertEquals(testMT, detector.detect(stream, new Metadata()));
+    }
+
     @Test
     public void testDetectString() throws Exception {
         String data = "abcdEFGhijklmnoPQRstuvwxyz0123456789";

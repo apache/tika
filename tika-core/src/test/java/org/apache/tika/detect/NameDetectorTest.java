@@ -43,6 +43,7 @@ public class NameDetectorTest {
                 Pattern.compile(".*\\.txt", Pattern.CASE_INSENSITIVE),
                 MediaType.TEXT_PLAIN);
         patterns.put(Pattern.compile("README"), MediaType.TEXT_PLAIN);
+        patterns.put(Pattern.compile(".*\\.hdr"), MediaType.application("envi.hdr"));
         detector = new NameDetector(patterns);
     }
 
@@ -82,6 +83,8 @@ public class NameDetectorTest {
         assertDetect(MediaType.TEXT_PLAIN, "See README.txt"); // even this!
         assertDetect(MediaType.OCTET_STREAM, "See README");   // but not this
 
+        assertDetect(MediaType.application("envi.hdr"), "ang20150420t182050_corr_v1e_img.hdr");
+
         // test also the zero input cases
         assertDetect(MediaType.OCTET_STREAM, "");
         assertDetect(MediaType.OCTET_STREAM, null);
@@ -103,5 +106,4 @@ public class NameDetectorTest {
             fail("NameDetector should never throw an IOException");
         }
     }
-
 }

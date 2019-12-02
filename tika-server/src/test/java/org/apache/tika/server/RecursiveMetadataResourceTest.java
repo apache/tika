@@ -36,9 +36,10 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.resource.RecursiveMetadataResource;
 import org.apache.tika.server.writer.MetadataListMessageBodyWriter;
 import org.junit.Test;
@@ -97,8 +98,13 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                         .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
 
         // Won't work, no password given
-        assertEquals(500, response.getStatus());
+        assertEquals(200, response.getStatus());
+        // Check results
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
+        assertNotNull(metadataList.get(0).get(TikaCoreProperties.CREATOR));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException", metadataList.get(0).get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
         // Try again, this time with the password
         response = WebClient
                 .create(endPoint + META_PATH)
@@ -111,10 +117,10 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertNotNull(metadataList.get(0).get("Author"));
-        assertEquals("pavel", metadataList.get(0).get("Author"));
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertNotNull(metadataList.get(0).get(TikaCoreProperties.CREATOR));
+        assertEquals("pavel", metadataList.get(0).get(TikaCoreProperties.CREATOR));
     }
 
     @Test

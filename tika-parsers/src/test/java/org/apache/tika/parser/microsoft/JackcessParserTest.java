@@ -30,24 +30,19 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class JackcessParserTest extends TikaTest {
 
     @Test
     public void testBasic() throws Exception {
 
-        Parser p = new AutoDetectParser();
-
-        RecursiveParserWrapper w = new RecursiveParserWrapper(p);
+        RecursiveParserWrapper w = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
 
         for (String fName : new String[]{"testAccess2.accdb", "testAccess2_2000.mdb",
                 "testAccess2_2002-2003.mdb"}) {
@@ -66,7 +61,7 @@ public class JackcessParserTest extends TikaTest {
             }
             List<Metadata> list = handler.getMetadataList();
             assertEquals(4, list.size());
-            String mainContent = list.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+            String mainContent = list.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
 
             //make sure there's a thead and tbody
             assertContains("</thead><tbody>", mainContent);
@@ -86,7 +81,7 @@ public class JackcessParserTest extends TikaTest {
 
             //test embedded document handling
             assertContains("Test Document with embedded pdf",
-                    list.get(3).get(RecursiveParserWrapper.TIKA_CONTENT));
+                    list.get(3).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         }
     }
 
@@ -99,12 +94,11 @@ public class JackcessParserTest extends TikaTest {
                 return "tika";
             }
         });
-        Parser p = new AutoDetectParser();
         String content = null;
         try (InputStream is =
                      this.getResourceAsStream(
                              "/test-documents/testAccess2_encrypted.accdb")){
-            content = getText(is, p, c);
+            content = getText(is, AUTO_DETECT_PARSER, c);
         }
         assertContains("red and brown", content);
 
@@ -120,7 +114,7 @@ public class JackcessParserTest extends TikaTest {
         try (InputStream is =
                      this.getResourceAsStream(
                              "/test-documents/testAccess2_encrypted.accdb")){
-            getText(is, p, c);
+            getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
@@ -138,7 +132,7 @@ public class JackcessParserTest extends TikaTest {
         try (InputStream is =
                      this.getResourceAsStream(
                              "/test-documents/testAccess2_encrypted.accdb")){
-            getText(is, p, c);
+            getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
@@ -151,7 +145,7 @@ public class JackcessParserTest extends TikaTest {
         try (InputStream is =
                      this.getResourceAsStream(
                              "/test-documents/testAccess2_encrypted.accdb")){
-            getText(is, p, c);
+            getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }
@@ -169,7 +163,7 @@ public class JackcessParserTest extends TikaTest {
         try (InputStream is =
                      this.getResourceAsStream(
                              "/test-documents/testAccess2.accdb")){
-            content = getText(is, p, c);
+            content = getText(is, AUTO_DETECT_PARSER, c);
         } catch (EncryptedDocumentException e) {
             ex = true;
         }

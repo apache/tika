@@ -19,7 +19,6 @@ package org.apache.tika.parser.chm;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -220,8 +219,8 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
         for (int i = 0; i < parseContexts.length; i++) {
             parseContexts[i] = new ParseContext();
         }
-        Parser p = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
+
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         testMultiThreaded(wrapper, parseContexts, 10, 10, new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {
@@ -229,7 +228,13 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
                             //this file is a beast, skip it
                             if (pathname.getName().equals("testChm2.chm")) {
                                 return false;
-                            } else {
+                                //this file throws an exception in the baseline and then
+                                //isn't included in the actual tests.
+                                //If we do want to include it we need to change the way
+                                //MultiThreadedTikaTest handles files that throw exceptions
+                            } else if (pathname.getName().equals("testChm_oom.chm")) {
+                                return false;
+                            } else{
                                 return true;
                             }
                         } else {

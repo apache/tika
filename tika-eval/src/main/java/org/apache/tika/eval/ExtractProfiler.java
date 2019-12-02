@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval;
 
-
 import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Types;
@@ -35,8 +34,8 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
+import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 public class ExtractProfiler extends AbstractProfiler {
@@ -136,10 +135,12 @@ public class ExtractProfiler extends AbstractProfiler {
     public static TableInfo CONTENTS_TABLE = new TableInfo("contents",
             new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.CONTENT_LENGTH, Types.INTEGER),
-            new ColInfo(Cols.NUM_TOKENS, Types.INTEGER),
             new ColInfo(Cols.NUM_UNIQUE_TOKENS, Types.INTEGER),
+            new ColInfo(Cols.NUM_TOKENS, Types.INTEGER),
             new ColInfo(Cols.COMMON_TOKENS_LANG, Types.VARCHAR, 12),
+            new ColInfo(Cols.NUM_UNIQUE_COMMON_TOKENS, Types.INTEGER),
             new ColInfo(Cols.NUM_COMMON_TOKENS, Types.INTEGER),
+            new ColInfo(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS, Types.INTEGER),
             new ColInfo(Cols.NUM_ALPHABETIC_TOKENS, Types.INTEGER),
             new ColInfo(Cols.TOP_N_TOKENS, Types.VARCHAR, 1024),
             new ColInfo(Cols.LANG_ID_1, Types.VARCHAR, 12),
@@ -152,6 +153,25 @@ public class ExtractProfiler extends AbstractProfiler {
             new ColInfo(Cols.TOKEN_LENGTH_MEAN, Types.FLOAT),
             new ColInfo(Cols.TOKEN_LENGTH_STD_DEV, Types.FLOAT),
             new ColInfo(Cols.CONTENT_TRUNCATED_AT_MAX_LEN, Types.BOOLEAN)
+    );
+
+    public static TableInfo TAGS_TABLE = new TableInfo("tags",
+            new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.TAGS_A, Types.INTEGER),
+            new ColInfo(Cols.TAGS_B, Types.INTEGER),
+            new ColInfo(Cols.TAGS_DIV, Types.INTEGER),
+            new ColInfo(Cols.TAGS_I, Types.INTEGER),
+            new ColInfo(Cols.TAGS_IMG, Types.INTEGER),
+            new ColInfo(Cols.TAGS_LI, Types.INTEGER),
+            new ColInfo(Cols.TAGS_OL, Types.INTEGER),
+            new ColInfo(Cols.TAGS_P, Types.INTEGER),
+            new ColInfo(Cols.TAGS_TABLE, Types.INTEGER),
+            new ColInfo(Cols.TAGS_TD, Types.INTEGER),
+            new ColInfo(Cols.TAGS_TITLE, Types.INTEGER),
+            new ColInfo(Cols.TAGS_TR, Types.INTEGER),
+            new ColInfo(Cols.TAGS_U, Types.INTEGER),
+            new ColInfo(Cols.TAGS_UL, Types.INTEGER),
+            new ColInfo(Cols.TAGS_PARSE_EXCEPTION, Types.BOOLEAN)
     );
 
     private final Path inputDir;
@@ -224,13 +244,16 @@ public class ExtractProfiler extends AbstractProfiler {
         List<Integer> numAttachments = countAttachments(metadataList);
         int i = 0;
         for (Metadata m : metadataList) {
+            ContentTags contentTags = getContent(fps, m);
             //the first file should have the same id as the container id
             String fileId = (i == 0) ? containerIdString : Integer.toString(ID.incrementAndGet());
-            writeProfileData(fps, i, m, fileId, containerIdString, numAttachments, PROFILE_TABLE);
+            writeTagData(fileId, contentTags, TAGS_TABLE);
+            writeProfileData(fps, i, contentTags, m, fileId, containerIdString, numAttachments, PROFILE_TABLE);
             writeEmbeddedPathData(i, fileId, m, EMBEDDED_FILE_PATH_TABLE);
             writeExceptionData(fileId, m, EXCEPTION_TABLE);
             try {
-                writeContentData(fileId, m, FIELD, CONTENTS_TABLE);
+                Map<Class, Object> textStats = calcTextStats(contentTags);
+                writeContentData(fileId, textStats, CONTENTS_TABLE);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

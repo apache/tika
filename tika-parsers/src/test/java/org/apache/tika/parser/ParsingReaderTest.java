@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
@@ -27,7 +28,7 @@ import org.junit.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
-public class ParsingReaderTest {
+public class ParsingReaderTest extends TikaTest {
 
     @Test
     public void testPlainText() throws Exception {
@@ -88,7 +89,7 @@ public class ParsingReaderTest {
         InputStream stream = ParsingReaderTest.class.getResourceAsStream(
                 "/test-documents/testEXCEL.xls");
         try (Reader reader = new ParsingReader(
-                new AutoDetectParser(), stream, metadata, new ParseContext())) {
+                AUTO_DETECT_PARSER, stream, metadata, new ParseContext())) {
             // Metadata should already be available
             assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
             // Check that the internal buffering isn't broken
@@ -101,4 +102,10 @@ public class ParsingReaderTest {
         }
     }
 
+    @Test
+    public void testZeroByte() throws Exception {
+        InputStream is = new ByteArrayInputStream(new byte[0]);
+        ParsingReader r = new ParsingReader(is);
+        assertEquals(-1, r.read());
+    }
 }

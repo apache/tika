@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Stack;
 import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
@@ -55,6 +56,12 @@ import org.xml.sax.SAXException;
  * "else if" string compares with FSA traversal. */
 
 final class TextExtractor {
+
+    private static final char SPACE = ' ';
+    private static final String P = "p";
+    private static final String LI = "li";
+    private static final String OL = "ol";
+    private static final String UL = "ul";
 
     private static final Charset ASCII = Charset.forName("US-ASCII");
     private static final Charset WINDOWS_1252 = getCharset("WINDOWS-1252");
@@ -281,7 +288,9 @@ final class TextExtractor {
     // immediately open the top group (start with {):
     private GroupState groupState = new GroupState();
     private boolean inHeader = true;
-    private int fontTableState;
+    //0 not yet in font table, 1 in font table, 2 have processed font table
+    private int fontTableState = 0;
+    //depth at which the font table started
     private int fontTableDepth;
     // Non null if we are processing metadata (title,
     // keywords, etc.) inside the info group:
@@ -296,7 +305,7 @@ final class TextExtractor {
     private Map<Integer, ListDescriptor> currentListTable;
     private ListDescriptor currentList;
     private int listTableLevel = -1;
-    private boolean ignoreLists;
+    private boolean ignoreListMarkup;
     // Non-null if we've seen the url for a HYPERLINK but not yet
     // its text:
     private String pendingURL;
@@ -305,6 +314,22 @@ final class TextExtractor {
     private int uprState = -1;
     // Used when extracting CREATION date:
     private int year, month, day, hour, minute;
+
+    //This keeps track of the following elements as they are
+    //written to the handler: p, li, ol, ul
+    //This tries to prevent malformed tag orders in the RTF
+    //e.g. <p></li></ol></p>
+    //from generating malformed xml tags. (TIKA-2899)
+    //This may conceal problems with our parser.
+    //TODO:
+    // 1) do we need to add all elements, a, b, i, etc.
+    // 2) are we doing the right thing by ignoring an element
+    //    if its match doesn't pop off the stack...or should
+    //    we pop all at the first failure.
+    private Stack<String> paragraphStack = new Stack<>();
+    //this is an arbitrary limit on the size of the stack
+    //to defend against DoS with memory consumption
+    private int maxStackSize = 1000;
 
     public TextExtractor(XHTMLContentHandler out, Metadata metadata,
                          RTFEmbObjHandler embObjHandler) {
@@ -348,11 +373,11 @@ final class TextExtractor {
     }
 
     public boolean isIgnoringLists() {
-        return ignoreLists;
+        return ignoreListMarkup;
     }
 
-    public void setIgnoreLists(boolean ignore) {
-        this.ignoreLists = ignore;
+    public void setIgnoreListMarkup(boolean ignore) {
+        this.ignoreListMarkup = ignore;
     }
 
     // Push pending bytes or pending chars:
@@ -478,6 +503,11 @@ final class TextExtractor {
         }
 
         endParagraph(false);
+
+        //close out whatever tags were left
+        while (paragraphStack.size() > 0) {
+            end(paragraphStack.pop());
+        }
         out.endDocument();
     }
 
@@ -571,7 +601,12 @@ final class TextExtractor {
     }
 
     private void lazyStartParagraph() throws IOException, SAXException, TikaException {
-        if (!inParagraph) {
+
+        boolean localInParagraph = inParagraph;
+        if (paragraphStack.size() > 0 && paragraphStack.contains(P)) {
+            localInParagraph = true;
+        }
+        if (!localInParagraph) {
             // Ensure </i></b> order
             if (groupState.italic) {
                 end("i");
@@ -587,9 +622,11 @@ final class TextExtractor {
                 startList(groupState.list);
             }
             if (inList()) {
-                out.startElement("li");
+                start(LI);
+                pushParagraphTag(LI);
             } else {
-                out.startElement("p");
+                start(P);
+                pushParagraphTag(P);
             }
 
             // Ensure <b><i> order
@@ -603,13 +640,21 @@ final class TextExtractor {
         }
     }
 
+    private void pushParagraphTag(String tag) {
+        if (paragraphStack.size() < maxStackSize) {
+            paragraphStack.push(tag);
+        } else {
+            //ignore.  Something is very, very wrong...
+        }
+    }
+
     private void endParagraph(boolean preserveStyles) throws IOException, SAXException, TikaException {
         pushText();
         //maintain consecutive new lines
         if (!inParagraph) {
             lazyStartParagraph();
         }
-        if (inParagraph) {
+        if (inParagraph || paragraphStack.size() > 0) {
             if (groupState.italic) {
                 end("i");
                 groupState.italic = preserveStyles;
@@ -618,14 +663,40 @@ final class TextExtractor {
                 end("b");
                 groupState.bold = preserveStyles;
             }
+            boolean badTagAlignment = false;
             if (inList()) {
-                out.endElement("li");
+                if (paragraphStack.size() > 0) {
+                    String lastP = paragraphStack.pop();
+                    if (lastP.equals(LI)) {
+                        end(LI);
+                    } else {
+                        pushParagraphTag(lastP);
+                        badTagAlignment = true;
+                    }
+                } else {
+                    //there should have been a starting li
+                }
             } else {
-                out.endElement("p");
+                if (paragraphStack.size() > 0) {
+                    String lastP = paragraphStack.pop();
+                    if (P.equals(lastP)) {
+                        end(P);
+                    } else {
+                        pushParagraphTag(lastP);
+                        badTagAlignment = true;
+                    }
+                }
             }
-
+            //if there was a failure in tag alignment,
+            //dump all tags and start fresh.
+            if (badTagAlignment) {
+                while (paragraphStack.size() > 0) {
+                    end(paragraphStack.pop());
+                }
+            }
             if (preserveStyles && (groupState.bold || groupState.italic)) {
-                start("p");
+                start(P);
+                pushParagraphTag(P);
                 if (groupState.bold) {
                     start("b");
                 }
@@ -794,7 +865,6 @@ final class TextExtractor {
 
     // Handle control word that takes a parameter:
     private void processControlWord(int param, PushbackInputStream in) throws IOException, SAXException, TikaException {
-
         // TODO: afN?  (associated font number)
 
         // TODO: do these alter text output...?
@@ -863,6 +933,12 @@ final class TextExtractor {
                         }
                     }
                 }
+            }
+            //if you've already seen the font table,
+            //you aren't in another header item (e.g. styles)
+            //and you see an fX, you're out of the header
+            if (fontTableState == 2 && ! groupState.ignore && equals("f")) {
+                inHeader = false;
             }
 
             if (currentList != null) {
@@ -962,7 +1038,7 @@ final class TextExtractor {
     }
 
     private boolean inList() {
-        return !ignoreLists && groupState.list != 0;
+        return !ignoreListMarkup && groupState.list != 0;
     }
 
     /**
@@ -985,8 +1061,16 @@ final class TextExtractor {
      * @throws TikaException
      */
     private void endList(int listID) throws IOException, SAXException, TikaException {
-        if (!ignoreLists) {
-            out.endElement(isUnorderedList(listID) ? "ul" : "ol");
+        if (!ignoreListMarkup) {
+            String xl = isUnorderedList(listID) ? UL : OL;
+            if (paragraphStack.size() > 0) {
+                String p = paragraphStack.pop();
+                if (xl.equals(p)) {
+                    end(xl);
+                }
+            } else {
+                //stack as empty, the list was never started
+            }
         }
     }
 
@@ -1000,8 +1084,10 @@ final class TextExtractor {
      * @throws TikaException
      */
     private void startList(int listID) throws IOException, SAXException, TikaException {
-        if (!ignoreLists) {
-            out.startElement(isUnorderedList(listID) ? "ul" : "ol");
+        if (!ignoreListMarkup) {
+            String xl = isUnorderedList(listID) ? UL : OL;
+            start(xl);
+            pushParagraphTag(xl);
         }
     }
 
@@ -1096,7 +1182,10 @@ final class TextExtractor {
                 }
             }
 
-            if (!groupState.ignore && (equals("par") || equals("pard") || equals("sect") || equals("sectd") || equals("plain") || equals("ltrch") || equals("rtlch"))) {
+            if (!groupState.ignore && (equals("par") ||
+                    equals("pard") || equals("sect") || equals("sectd") || equals("plain") ||
+                    equals("ltrch") || equals("rtlch")
+                    || equals("htmlrtf") || equals("line"))) {
                 inHeader = false;
             }
         } else {
@@ -1125,7 +1214,6 @@ final class TextExtractor {
         }
 
         final boolean ignored = groupState.ignore;
-
         if (equals("pard")) {
             // Reset styles
             pushText();
@@ -1156,20 +1244,31 @@ final class TextExtractor {
         } else if (equals("par")) {
             if (!ignored) {
                 endParagraph(true);
+                if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
+                    pendingListEnd();
+                }
             }
         } else if (equals("shptxt")) {
             pushText();
             // Text inside a shape
             groupState.ignore = false;
+        } else if (equals("chatn")) {
+            addOutputChar(SPACE);
+            pushText();
+            // Annotation ID
+            groupState.ignore = false;
         } else if (equals("atnid")) {
+            addOutputChar(SPACE);
             pushText();
             // Annotation ID
             groupState.ignore = false;
         } else if (equals("atnauthor")) {
+            addOutputChar(SPACE);
             pushText();
             // Annotation author
             groupState.ignore = false;
         } else if (equals("annotation")) {
+            groupState.annotation = true;
             pushText();
             // Annotation
             groupState.ignore = false;
@@ -1367,7 +1466,9 @@ final class TextExtractor {
                 embObjHandler.handleCompletedObject();
             }
         }
-
+        if (groupState.annotation == true) {
+            addOutputChar(SPACE);
+        }
         if (groupState.object == true) {
             embObjHandler.setInObject(false);
         }
@@ -1433,7 +1534,7 @@ final class TextExtractor {
             // inlined, but fail to record them in metadata
             // as a field value.
         } else if (fieldState == 3) {
-            out.endElement("a");
+            end("a");
             fieldState = 0;
         }
     }

@@ -16,24 +16,33 @@
  */
 package org.apache.tika.server;
 
+import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.Permission;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -41,11 +50,15 @@ import static org.junit.Assert.assertEquals;
 
 public class TikaServerIntegrationTest extends TikaTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
+
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
-    private static final String TEST_OOM = "mock/real_oom.xml";
+    private static final String TEST_OOM = "mock/fake_oom.xml";
     private static final String TEST_SYSTEM_EXIT = "mock/system_exit.xml";
     private static final String TEST_HEAVY_HANG = "mock/heavy_hang_30000.xml";
     private static final String TEST_HEAVY_HANG_SHORT = "mock/heavy_hang_100.xml";
+    private static final String TEST_STDOUT_STDERR = "mock/testStdOutErr.xml";
+    private static final String TEST_STATIC_STDOUT_STDERR = "mock/testStaticStdOutErr.xml";
     private static final String META_PATH = "/rmeta";
 
     //running into conflicts on 9998 with the CXFTestBase tests
@@ -56,6 +69,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             "http://localhost:" + INTEGRATION_TEST_PORT;
 
     private SecurityManager existingSecurityManager = null;
+    private static Path LOG_FILE;
 
     private static class MyExitException extends RuntimeException {
         private final int status;
@@ -67,9 +81,16 @@ public class TikaServerIntegrationTest extends TikaTest {
             return status;
         }
     }
+    @BeforeClass
+    public static void staticSetup() throws Exception {
+        LogUtils.setLoggerClass(NullWebClientLogger.class);
+        LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
+        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_child.xml"), LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
+    }
+
     @Before
     public void setUp() throws Exception {
-        SecurityManager existingSecurityManager = System.getSecurityManager();
+        existingSecurityManager = System.getSecurityManager();
         System.setSecurityManager(new SecurityManager() {
             @Override
             public void checkExit(int status) {
@@ -87,8 +108,13 @@ public class TikaServerIntegrationTest extends TikaTest {
         });
     }
 
+    @AfterClass
+    public static void staticTearDown() throws Exception {
+        Files.delete(LOG_FILE);
+    }
+
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         System.setSecurityManager(existingSecurityManager);
     }
 
@@ -102,29 +128,17 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-maxFiles", "2000",
                                 "-spawnChild",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "basic-"
                         });
             }
         };
         serverThread.start();
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -137,7 +151,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild", "-JXmx256m",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-pingPulseMillis", "100"
+                                "-pingPulseMillis", "100",
+                                "-tmpFilePrefix", "tika-server-oom"
+
                         });
             }
         };
@@ -157,20 +173,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         }
         //give some time for the server to crash/kill itself
         Thread.sleep(2000);
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -182,7 +189,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "tika-server-systemexit"
+
                         });
             }
         };
@@ -200,24 +209,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         }
         //give some time for the server to crash/kill itself
         Thread.sleep(2000);
-
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -230,7 +226,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild", "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "500"
+                                "-pingPulseMillis", "500",
+                                "-tmpFilePrefix", "tika-server-timeoutok"
+
                         });
             }
         };
@@ -246,25 +244,14 @@ public class TikaServerIntegrationTest extends TikaTest {
         } catch (Exception e) {
             //potential exception depending on timing
         }
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testTimeout() throws Exception {
 
         Thread serverThread = new Thread() {
@@ -273,8 +260,10 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild", "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
-                                "-pingPulseMillis", "500"
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "100",
+                                "-pingPulseMillis", "100",
+                                "-tmpFilePrefix", "tika-server-timeout"
+
                         });
             }
         };
@@ -290,22 +279,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         } catch (Exception e) {
             //catchable exception when server shuts down.
         }
-        awaitServerStartup();
-
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .put(ClassLoader
-                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
-        serverThread.interrupt();
-
-
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
     }
 
     @Test
@@ -317,7 +295,9 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-spawnChild", "-JXms20m", "-JXmx10m",
-                                "-p", INTEGRATION_TEST_PORT
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "tika-server-badargs"
+
                         });
             }
         };
@@ -332,21 +312,134 @@ public class TikaServerIntegrationTest extends TikaTest {
 
         assertEquals(-1, i.get());
     }
+
+    @Test
+    public void testStdErrOutBasic() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
+                                "-pingPulseMillis", "100",
+                                "-tmpFilePrefix", "tika-server-stderr"
+
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            awaitServerStartup();
+
+            Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(1, metadataList.size());
+            assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
+    @Ignore("This works, but prints too much junk to the console.  Figure out how to gobble/redirect.")
+    public void testStaticStdErrOutBasic() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
+                                "-pingPulseMillis", "100"
+                        });
+            }
+        };
+        serverThread.start();
+        try {
+            awaitServerStartup();
+
+            Response response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_STATIC_STDOUT_STDERR));
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(1, metadataList.size());
+            assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+
+    @Test
+    public void testStdErrOutLogging() throws Exception {
+        final AtomicInteger i = new AtomicInteger();
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-pingPulseMillis", "100", "-maxRestarts", "0",
+                                "-JDlog4j.configuration=file:"+ LOG_FILE.toAbsolutePath(),
+                                "-tmpFilePrefix", "tika-server-stderrlogging"
+                        });
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_STDOUT_STDERR));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertContains("quick brown fox", metadataList.get(0).get("X-TIKA:content"));
+
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
     private void awaitServerStartup() throws Exception {
 
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
+        WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
         while (elapsed < 30000) {
             try {
-                Response response = WebClient
-                        .create(endPoint + "/tika")
-                        .accept("text/plain")
-                        .get();
+                Response response = client.get();
                 if (response.getStatus() == 200) {
                     return;
                 }
+                LOG.info("tika test client failed to connect to server with status: {}", response.getStatus());
+
             } catch (javax.ws.rs.ProcessingException e) {
+                LOG.info("tika test client failed to connect to server: {}", e.getMessage());
+                LOG.debug("tika test client failed to connect to server", e);
             }
+
             Thread.sleep(100);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
@@ -357,7 +450,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     @Ignore("turn this into a real test")
     public void testMaxFiles() throws Exception {
         //this isn't a real regression test yet.
-        //Can watch logs for confirmation.
+        //Can watch logs at least for confirmation of behavior
         //TODO: convert to real test
         Thread serverThread = new Thread() {
             @Override
@@ -366,22 +459,33 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-maxFiles", "10",
                                 "-spawnChild",
+                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-p", INTEGRATION_TEST_PORT
                         });
             }
         };
         serverThread.start();
         awaitServerStartup();
+        Random r = new Random();
         for (int i = 0; i < 100; i++) {
             System.out.println("FILE # "+i);
             boolean ex = false;
             Response response = null;
+            String file = TEST_RECURSIVE_DOC;
             try {
+                if (r.nextFloat() < 0.01) {
+                    file = TEST_SYSTEM_EXIT;
+                } else if (r.nextFloat() < 0.015) {
+                    file = TEST_OOM;
+                } else if (r.nextFloat() < 0.02) {
+                    file = TEST_HEAVY_HANG;
+                }
+                System.out.println("about to process: "+file);
                 response = WebClient
                         .create(endPoint + META_PATH)
                         .accept("application/json")
                         .put(ClassLoader
-                                .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+                                .getSystemResourceAsStream(file));
             } catch (Exception e) {
                 ex = true;
             }
@@ -393,17 +497,30 @@ public class TikaServerIntegrationTest extends TikaTest {
                 System.out.println("done awaiting");
                 continue;
             }
-            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-            assertEquals(12, metadataList.size());
-            assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
-            assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
-
+            if (file.equals(TEST_RECURSIVE_DOC)) {
+                Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+                List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+                assertEquals(12, metadataList.size());
+                assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+                assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+            }
             //assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
         }
         serverThread.interrupt();
 
     }
 
-
+    private void testBaseline() throws Exception {
+        awaitServerStartup();
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+    }
 }

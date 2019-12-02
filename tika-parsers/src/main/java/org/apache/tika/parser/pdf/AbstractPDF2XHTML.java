@@ -33,25 +33,30 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDSimpleFileSpecification;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.interactive.action.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionImportData;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionJavaScript;
@@ -78,11 +83,14 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDXFAResource;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
+import org.apache.pdfbox.util.Matrix;
+import org.apache.pdfbox.util.Vector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -142,12 +150,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<IOException> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
-    private final ParseContext context;
+    final ParseContext context;
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
+    final TesseractOCRParser tesseractOCRParser;//can be null!
 
-    private int pageIndex = 0;
+    //zero-based pageIndex
+    int pageIndex = 0;
+    int startPage = -1;//private in PDFTextStripper...must have own copy because we override processpages
+    int unmappedUnicodeCharsPerPage = 0;
+    int totalCharsPerPage = 0;
+
+    private final Set<String> fontNames = new HashSet<>();
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config) throws IOException {
@@ -157,6 +172,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.metadata = metadata;
         this.config = config;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (config.getOcrStrategy() == NO_OCR) {
+            tesseractOCRParser = null;
+        } else {
+            tesseractOCRParser = (TesseractOCRParser)EmbeddedDocumentUtil.tryToFindExistingLeafParser(TesseractOCRParser.class, context);
+        }
     }
 
     @Override
@@ -314,9 +334,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         TesseractOCRConfig tesseractConfig =
-                context.get(TesseractOCRConfig.class, DEFAULT_TESSERACT_CONFIG);
+                context.get(TesseractOCRConfig.class, tesseractOCRParser.getDefaultConfig());
 
-        TesseractOCRParser tesseractOCRParser = new TesseractOCRParser();
         if (! tesseractOCRParser.hasTesseract(tesseractConfig)) {
             throw new TikaException("Tesseract is not available. "+
                     "Please set the OCR_STRATEGY to NO_OCR or configure Tesseract correctly");
@@ -326,12 +345,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         TemporaryResources tmp = new TemporaryResources();
         try {
 
-            BufferedImage image = renderer.renderImage(pageIndex, config.getOcrImageScale(), config.getOcrImageType());
+            int dpi = config.getOcrDPI();
+            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
             Path tmpFile = tmp.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
                 ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
-                        os, config.getOcrDPI(), config.getOcrImageQuality());
+                        os, dpi, config.getOcrImageQuality());
             }
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 tesseractOCRParser.parseInline(is, xhtml, tesseractConfig);
@@ -347,6 +367,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void endPage(PDPage page) throws IOException {
+        metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
+        metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE,
+                unmappedUnicodeCharsPerPage);
+        totalCharsPerPage = 0;
+        unmappedUnicodeCharsPerPage = 0;
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
@@ -416,6 +441,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                 doOCROnCurrentPage();
+            } else if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.AUTO)) {
+                //TODO add more sophistication
+                if (totalCharsPerPage < 10 || unmappedUnicodeCharsPerPage > 10) {
+                    doOCROnCurrentPage();
+                }
             }
 
             PDPageAdditionalActions pageActions = page.getActions();
@@ -427,9 +457,20 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (SAXException|TikaException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
         } catch (IOException e) {
-            exceptions.add(e);
-        } finally {
-            pageIndex++;
+            handleCatchableIOE(e);
+        }
+
+        if (config.getExtractFontNames()) {
+
+            for (COSName n : page.getResources().getFontNames()) {
+                PDFont font = page.getResources().getFont(n);
+                if (font != null && font.getFontDescriptor() != null) {
+                    String fontName = font.getFontDescriptor().getFontName();
+                    if (fontName != null) {
+                        fontNames.add(fontName);
+                    }
+                }
+            }
         }
     }
 
@@ -558,6 +599,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to end a document", e);
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
+        }
+        if (fontNames.size() > 0) {
+            for (String fontName : fontNames) {
+                metadata.add(Font.FONT_NAME, fontName);
+            }
         }
     }
 
@@ -743,6 +789,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         //if there is, process it
         if (nonNull > 0) {
+            metadata.set(TikaCoreProperties.HAS_SIGNATURE, "true");
             xhtml.startElement("li", parentAttributes);
 
             AttributesImpl attrs = new AttributesImpl();
@@ -784,5 +831,71 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         catch (NoSuchMethodException|IllegalAccessException|InvocationTargetException e) {
         }
         return null;
+    }
+
+    /**
+     * we need to override this because we are overriding {@link #processPages(PDPageTree)}
+     * @return
+     */
+    @Override
+    public int getCurrentPageNo() {
+        return pageIndex+1;
+    }
+
+    /**
+     * See TIKA-2845 for why we need to override this.
+     *
+     * @param pages
+     * @throws IOException
+     */
+    @Override
+    protected void processPages(PDPageTree pages) throws IOException {
+        //we currently need this hack because we aren't able to increment
+        //the private currentPageNo in PDFTextStripper,
+        //and PDFTextStripper's processPage relies on that variable
+        //being >= startPage when deciding whether or not to process a page
+        // See:
+        // if (currentPageNo >= startPage && currentPageNo <= endPage
+        //                && (startBookmarkPageNumber == -1 || currentPageNo >= startBookmarkPageNumber)
+        //                && (endBookmarkPageNumber == -1 || currentPageNo <= endBookmarkPageNumber))
+        //        {
+        super.setStartPage(-1);
+        for (PDPage page : pages) {
+            if (getCurrentPageNo() >= getStartPage()
+                    && getCurrentPageNo() <= getEndPage()) {
+                processPage(page);
+            }
+            pageIndex++;
+        }
+    }
+
+    @Override
+    public void setStartBookmark(PDOutlineItem pdOutlineItem) {
+        throw new UnsupportedOperationException("We don't currently support this -- See PDFTextStripper's processPages() for how to implement this.");
+    }
+
+    @Override
+    public void setEndBookmark(PDOutlineItem pdOutlineItem) {
+        throw new UnsupportedOperationException("We don't currently support this -- See PDFTextStripper's processPages() for how to implement this.");
+    }
+
+    @Override
+    public void setStartPage(int startPage) {
+        this.startPage = startPage;
+    }
+
+    @Override
+    public int getStartPage() {
+        return startPage;
+    }
+
+    @Override
+    protected void showGlyph(Matrix textRenderingMatrix, PDFont font, int code, String unicode, Vector displacement) throws IOException
+    {
+        super.showGlyph(textRenderingMatrix, font, code, unicode, displacement);
+        if (unicode == null || unicode.isEmpty()) {
+            unmappedUnicodeCharsPerPage++;
+        }
+        totalCharsPerPage++;
     }
 }

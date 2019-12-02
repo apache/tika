@@ -19,9 +19,12 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.List;
 
-import org.apache.tika.TikaTest;
+import org.apache.tika.MultiThreadedTikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -30,10 +33,17 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import org.apache.tika.utils.XMLReaderUtils;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 
-public class Word2006MLParserTest extends TikaTest {
+public class Word2006MLParserTest extends MultiThreadedTikaTest {
+
+    @AfterClass
+    public static void tearDown() throws TikaException {
+        XMLReaderUtils.setPoolSize(XMLReaderUtils.DEFAULT_POOL_SIZE);
+    }
 
     @Test
     public void basicTest() throws Exception {
@@ -167,5 +177,26 @@ public class Word2006MLParserTest extends TikaTest {
 
     }
 
+    @Test(timeout = 60000)
+    public void testMultiThreaded() throws Exception {
+        XMLReaderUtils.setPoolSize(4);
+        int numThreads = XMLReaderUtils.getPoolSize()*2;
+        ParseContext[] contexts = new ParseContext[numThreads];
+        for (int i = 0; i < contexts.length; i++) {
+            contexts[i] = new ParseContext();
+        }
+
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
+                new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.getName().equals("testWORD_2006ml.xml")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+
+    }
 
 }

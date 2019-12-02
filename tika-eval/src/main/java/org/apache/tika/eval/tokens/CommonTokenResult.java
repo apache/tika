@@ -20,21 +20,50 @@ package org.apache.tika.eval.tokens;
 public class CommonTokenResult {
 
     private final String langCode;
+    private final int uniqueCommonTokens;//types
     private final int commonTokens;
+    private final int uniqueAlphabeticTokens;
     private final int alphabeticTokens;
 
-    public CommonTokenResult(String langCode, int commonTokens, int alphabeticTokens) {
+    public CommonTokenResult(String langCode, int uniqueCommonTokens, int commonTokens,
+                             int uniqueAlphabeticTokens, int alphabeticTokens) {
         this.langCode = langCode;
+        this.uniqueCommonTokens = uniqueCommonTokens;
         this.commonTokens = commonTokens;
+        this.uniqueAlphabeticTokens = uniqueAlphabeticTokens;
         this.alphabeticTokens = alphabeticTokens;
     }
 
+    /**
+     *
+     * @return the language used to select the common_tokens list
+     */
     public String getLangCode() {
         return langCode;
     }
 
+    /**
+     *
+     * @return total number of "common tokens"
+     */
     public int getCommonTokens() {
         return commonTokens;
+    }
+
+    /**
+     *
+     * @return number of unique "common tokens" (types)
+     */
+    public int getUniqueCommonTokens() {
+        return uniqueCommonTokens;
+    }
+
+    /**
+     *
+     * @return number of unique alphabetic tokens (types)
+     */
+    public int getUniqueAlphabeticTokens() {
+        return uniqueAlphabeticTokens;
     }
 
     /**
@@ -44,5 +73,9 @@ public class CommonTokenResult {
      */
     public int getAlphabeticTokens() {
         return alphabeticTokens;
+    }
+
+    public double getOOV() {
+        return 1.0 - (double)commonTokens/(double)alphabeticTokens;
     }
 }

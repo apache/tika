@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -106,6 +108,8 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         } catch (EncryptedDocumentException ede) {
             // TODO: can we log a warning that we lack the password?
             // For now, just skip the content
+        } catch (CorruptedFileException e) {
+            throw new IOExceptionWithCause(e);
         } catch (TikaException e) {
             // TODO: can we log a warning somehow?
             // Could not parse the entry, just skip the content

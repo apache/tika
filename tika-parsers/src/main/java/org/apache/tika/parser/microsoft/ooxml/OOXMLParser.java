@@ -41,6 +41,9 @@ public class OOXMLParser extends AbstractOfficeParser {
         ZipSecureFile.setMinInflateRatio(-1.0d);
     }
 
+    protected static final String SIGNATURE_RELATIONSHIP =
+            "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin";
+
     protected static final MediaType XPS = MediaType.application("vnd.ms-xpsdocument");
 
     protected static final Set<MediaType> SUPPORTED_TYPES =

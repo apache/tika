@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.sis.internal.util.CheckedArrayList;
@@ -202,8 +203,8 @@ public class GeographicInformationParser extends AbstractParser{
     }
 
     private void getMetaDataCharacterSet(Metadata metadata, DefaultMetadata defaultMetaData){
-        CheckedHashSet<Charset> charSetList= (CheckedHashSet<Charset>) defaultMetaData.getCharacterSets();
-        for(Charset c:charSetList){
+        Map<Locale, Charset> charsetMap = defaultMetaData.getLocalesAndCharsets();
+        for(Charset c : charsetMap.values()){
             metadata.add("CharacterSet",c.name());
         }
     }
@@ -258,8 +259,8 @@ public class GeographicInformationParser extends AbstractParser{
                 if(f.getName()!=null)
                     metadata.add("ResourceFormatSpecificationAlternativeTitle ",f.getName().toString());
             }
-            CheckedHashSet<Locale> localeCheckedHashSet= (CheckedHashSet<Locale>) defaultDataIdentification.getLanguages();
-            for(Locale l:localeCheckedHashSet){
+            Map<Locale, Charset> localeCharsetMap = defaultDataIdentification.getLocalesAndCharsets();
+            for(Locale l : localeCharsetMap.keySet()) {
                 metadata.add("IdentificationInfoLanguage-->",l.getDisplayLanguage(Locale.ENGLISH));
             }
             CodeListSet<TopicCategory> categoryList= (CodeListSet<TopicCategory>) defaultDataIdentification.getTopicCategories();

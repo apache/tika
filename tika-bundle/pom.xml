@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.20-SNAPSHOT</version>
+    <version>1.24-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -41,6 +41,8 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
+    <!-- some conflict with slf4j with 4.12.0
+        causes failure in testForkParser -->
     <pax.exam.version>4.11.0</pax.exam.version>
   </properties>
 
@@ -123,7 +125,7 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>6.0.0</version>
+      <version>${osgi.core.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -140,6 +142,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
         <extensions>true</extensions>
         <configuration>
           <instructions>
@@ -169,6 +172,7 @@
               poi|poi-scratchpad|
               poi-ooxml|
               poi-ooxml-schemas|
+              commons-math3|
               curvesapi|
               xmlbeans|
               jackcess|
@@ -235,6 +239,12 @@
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
+              com.github.jaiimageio.*;resolution:=optional,
+              com.google.appengine.api.*;resolution:=optional,
+              com.google.apphosting.api.*;resolution:=optional,
+              com.google.common.util.concurrent.internal;resolution:=optional,
+              com.google.errorprone.annotations;resolution:=optional,
+              com.google.errorprone.annotations.concurrent;resolution:=optional,
               com.google.protobuf;resolution:=optional,
               com.ibm.icu.text;resolution:=optional,
               com.parso;resolution:=optional,
@@ -245,6 +255,8 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              edu.mit.ll.mitie;resolution:=optional,
+              edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
               edu.wisc.ssec.mcidas.adde;resolution:=optional,
 	          edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
@@ -273,6 +285,18 @@
               opennlp.tools.namefind;resolution:=optional,
 	          opennlp.tools.authorage;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
+              net.sf.saxon;resolution:=optional,
+              net.sf.saxon.dom;resolution:=optional,
+              net.sf.saxon.om;resolution:=optional,
+              net.sf.saxon.query;resolution:=optional,
+              net.sf.saxon.sxpath;resolution:=optional,
+              net.sf.saxon.value;resolution:=optional,
+              org.apache.batik.anim.dom;resolution:=optional,
+              org.apache.batik.bridge;resolution:=optional,
+              org.apache.batik.ext.awt;resolution:=optional,
+              org.apache.batik.ext.awt.image.renderable;resolution:=optional,
+              org.apache.batik.gvt;resolution:=optional,
+              org.apache.batik.util;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
               org.apache.commons.exec;resolution:=optional,
@@ -283,9 +307,6 @@
               org.apache.commons.httpclient.params;resolution:=optional,
               org.apache.commons.httpclient.protocol;resolution:=optional,
               org.apache.commons.httpclient.util;resolution:=optional,
-
-              org.apache.commons.math3.exception;resolution:=optional,
-              org.apache.commons.math3.linear;resolution:=optional,
               org.apache.commons.vfs2;resolution:=optional,
               org.apache.commons.vfs2.provider;resolution:=optional,
               org.apache.commons.vfs2.util;resolution:=optional,
@@ -293,13 +314,26 @@
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
               org.apache.sis;resolution:=optional,
+              org.apache.sis.coverage;resolution:=optional,
+              org.apache.sis.coverage.grid;resolution:=optional,
               org.apache.sis.distance;resolution:=optional,
               org.apache.sis.feature;resolution:=optional,
               org.apache.sis.geometry;resolution:=optional,
+              org.apache.sis.internal.coverage;resolution:=optional,
               org.apache.sis.internal.feature;resolution:=optional,
               org.apache.sis.internal.referencing;resolution:=optional,
+              org.apache.sis.internal.referencing.j2d;resolution:=optional,
+              org.apache.sis.internal.referencing.provider;resolution:=optional,
+              org.apache.sis.io.wkt;resolution:=optional,
               org.apache.sis.parameter;resolution:=optional,
               org.apache.sis.referencing;resolution:=optional,
+              org.apache.sis.referencing.crs;resolution:=optional,
+              org.apache.sis.referencing.cs;resolution:=optional,
+              org.apache.sis.referencing.datum;resolution:=optional,
+              org.apache.sis.referencing.operation;resolution:=optional,
+              org.apache.sis.referencing.operation.builder;resolution:=optional,
+              org.apache.sis.referencing.operation.matrix;resolution:=optional,
+              org.apache.sis.referencing.operation.transform;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
@@ -323,6 +357,7 @@
               org.bouncycastle.operator.bc;resolution:=optional,
               org.bouncycastle.tsp;resolution:=optional,
               org.brotli.dec;resolution:=optional,
+              org.checkerframework.checker.nullness.qual;resolution:=optional,
               org.cyberneko.html.xercesbridge;resolution:=optional,
               org.etsi.uri.x01903.v14;resolution:=optional,
               org.ibex.nestedvm;resolution:=optional,
@@ -449,6 +484,7 @@
               *
             </Import-Package>
           </instructions>
+          <createDependencyReducedPom>true</createDependencyReducedPom>
         </configuration>
       </plugin>
       <!-- TIKA-763: Workaround to avoid including LGPL classes -->
@@ -481,6 +517,7 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
+        <version>${forbiddenapis.version}</version>
         <configuration>
           <skip>true</skip>
         </configuration>
@@ -505,7 +542,7 @@
 
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.10</version>
+        <version>${maven.failsafe.version}</version>
         <executions>
           <execution>
             <goals>
@@ -525,6 +562,7 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>src/main/resources/META-INF/MANIFEST.MF</exclude>

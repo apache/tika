@@ -158,7 +158,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         List<Parser> parsers = new ArrayList<>();
         findEncodingDetectionParsers(p, parsers);
 
-        assertEquals(3, parsers.size());
+        assertEquals(4, parsers.size());
 
         for (Parser encodingDetectingParser : parsers) {
             EncodingDetector encodingDetector = ((AbstractEncodingDetectorParser) encodingDetectingParser).getEncodingDetector();
@@ -220,7 +220,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
 
         //assert default fails -- will need to fix this if we change our defaults!
-        AutoDetectParser p = new AutoDetectParser();
+        Parser p = AUTO_DETECT_PARSER;
 
         Metadata metadata = new Metadata();
         String xml = getXML(

@@ -310,10 +310,8 @@ public class ImageMetadataExtractor {
 
         public void handle(Directory directory, Metadata metadata)
                 throws MetadataException {
-            //TODO: after upgrading metadataextractor, swap out
-            //magic number with ExifDirectoryBase.TAG_PAGE_NUMBER
-            if (directory.containsTag(297)) {
-                int[] pageNums = directory.getIntArray(297);
+            if (directory.containsTag(ExifDirectoryBase.TAG_PAGE_NUMBER)) {
+                int[] pageNums = directory.getIntArray(ExifDirectoryBase.TAG_PAGE_NUMBER);
                 //pages can be in any order, take the max
                 if (pageNums != null && pageNums.length > 1) {
                     Integer curr = metadata.getInt(TIFF.EXIF_PAGE_COUNT);

@@ -72,6 +72,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -1136,7 +1137,7 @@ public class HtmlParserTest extends TikaTest {
                 "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-8859-1\" />\n" +
                 "<title>title</title></head><body>body</body></html>";
         Metadata metadata = new Metadata();
-        new AutoDetectParser().parse(
+        AUTO_DETECT_PARSER.parse(
                 new ByteArrayInputStream(test.getBytes(UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
 
@@ -1150,7 +1151,7 @@ public class HtmlParserTest extends TikaTest {
                 "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=iso-NUMBER_SEVEN\" />\n" +
                 "<title>title</title></head><body>body</body></html>";
         metadata = new Metadata();
-        new AutoDetectParser().parse(
+        AUTO_DETECT_PARSER.parse(
                 new ByteArrayInputStream(test.getBytes(UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
 
@@ -1242,7 +1243,7 @@ public class HtmlParserTest extends TikaTest {
                 "<body>"+
                 "有什么需要我帮你的" +
                 "</body></html>").getBytes(StandardCharsets.UTF_8);
-        XMLResult r = getXML(new ByteArrayInputStream(bytes), new AutoDetectParser(), new Metadata());
+        XMLResult r = getXML(new ByteArrayInputStream(bytes), AUTO_DETECT_PARSER, new Metadata());
         assertContains("有什么需要我帮你的", r.xml);
     }
 
@@ -1265,8 +1266,10 @@ public class HtmlParserTest extends TikaTest {
     public void testExtractScript() throws Exception {
         HtmlParser p = new HtmlParser();
         p.setExtractScripts(true);
+        //TIKA-2550 -- make absolutely sure that macros are still extracted
+        //with the ToTextHandler
         List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html",
-                p);
+                p, BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         assertEquals(2, metadataList.size());
         assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertContains("cool",

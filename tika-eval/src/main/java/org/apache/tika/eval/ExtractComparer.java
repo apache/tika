@@ -39,12 +39,14 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
+import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.tokens.ContrastStatistics;
 import org.apache.tika.eval.tokens.TokenContraster;
+import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
+import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 public class ExtractComparer extends AbstractProfiler {
@@ -147,6 +149,13 @@ public class ExtractComparer extends AbstractProfiler {
 
     public static TableInfo CONTENTS_TABLE_B = new TableInfo( "contents_b",
             ExtractProfiler.CONTENTS_TABLE.getColInfos());
+
+    public static TableInfo TAGS_TABLE_A = new TableInfo( "tags_a",
+            ExtractProfiler.TAGS_TABLE.getColInfos());
+
+    public static TableInfo TAGS_TABLE_B = new TableInfo( "tags_b",
+            ExtractProfiler.TAGS_TABLE.getColInfos());
+
 
     public static TableInfo EXCEPTION_TABLE_A = new TableInfo ("exceptions_a",
             ExtractProfiler.EXCEPTION_TABLE.getColInfos());
@@ -268,16 +277,22 @@ public class ExtractComparer extends AbstractProfiler {
         }
         List<Integer> numAttachmentsA = countAttachments(metadataListA);
         List<Integer> numAttachmentsB = countAttachments(metadataListB);
-
+        Map<Class, Object> tokenStatsA = null;
+        Map<Class, Object> tokenStatsB = null;
         //now get that metadata
         if (metadataListA != null) {
             for (int i = 0; i < metadataListA.size(); i++) {
                 //the first file should have the same id as the container id
                 String fileId = (i == 0) ? containerID : Integer.toString(ID.getAndIncrement());
                 Metadata metadataA = metadataListA.get(i);
+                ContentTags contentTagsA = getContent(fpsA, metadataA);
+                ContentTags contentTagsB = ContentTags.EMPTY_CONTENT_TAGS;
                 Metadata metadataB = null;
+
                 //TODO: shouldn't be fileA!!!!
-                writeProfileData(fpsA, i, metadataA, fileId, containerID, numAttachmentsA, PROFILES_A);
+                writeTagData(fileId, contentTagsA, TAGS_TABLE_A);
+
+                writeProfileData(fpsA, i, contentTagsA, metadataA, fileId, containerID, numAttachmentsA, PROFILES_A);
                 writeExceptionData(fileId, metadataA, EXCEPTION_TABLE_A);
                 int matchIndex = getMatch(i, metadataListA, metadataListB);
 
@@ -286,33 +301,34 @@ public class ExtractComparer extends AbstractProfiler {
                     handledB.add(matchIndex);
                 }
                 if (metadataB != null) {
-                    writeProfileData(fpsB, i, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
+                    contentTagsB = getContent(fpsB, metadataB);
+                    writeTagData(fileId, contentTagsB, TAGS_TABLE_B);
+                    writeProfileData(fpsB, i, contentTagsB, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
                     writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
                 }
                 writeEmbeddedFilePathData(i, fileId, metadataA, metadataB);
-                //prep the token counting
-                tokenCounter.clear(FIELD_A);
-                tokenCounter.clear(FIELD_B);
                 //write content
                 try {
-                    writeContentData(fileId, metadataA, FIELD_A, CONTENTS_TABLE_A);
-                    writeContentData(fileId, metadataB, FIELD_B, CONTENTS_TABLE_B);
+                    tokenStatsA = calcTextStats(contentTagsA);
+                    tokenStatsB = calcTextStats(contentTagsB);
+                    writeContentData(fileId, tokenStatsA, CONTENTS_TABLE_A);
+                    writeContentData(fileId, tokenStatsB, CONTENTS_TABLE_B);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
+                TokenCounts tokenCountsA = (TokenCounts)tokenStatsA.get(BasicTokenCountStatsCalculator.class);
+                TokenCounts tokenCountsB = (TokenCounts)tokenStatsB.get(BasicTokenCountStatsCalculator.class);
                 //now run comparisons
-                if (tokenCounter.getTokenStatistics(FIELD_A).getTotalTokens() > 0
-                        && tokenCounter.getTokenStatistics(FIELD_B).getTotalTokens() > 0) {
+                if (tokenCountsA.getTotalTokens() > 0
+                        && tokenCountsB.getTotalTokens() > 0) {
                     Map<Cols, String> data = new HashMap<>();
                     data.put(Cols.ID, fileId);
 
                     ContrastStatistics contrastStatistics =
                             tokenContraster.calculateContrastStatistics(
-                            tokenCounter.getTokens(FIELD_A),
-                            tokenCounter.getTokenStatistics(FIELD_A),
-                            tokenCounter.getTokens(FIELD_B),
-                            tokenCounter.getTokenStatistics(FIELD_B));
+                            tokenCountsA,
+                            tokenCountsB);
 
                     writeContrasts(data, contrastStatistics);
                     writer.writeRow(CONTENT_COMPARISONS, data);
@@ -327,17 +343,18 @@ public class ExtractComparer extends AbstractProfiler {
                     continue;
                 }
                 Metadata metadataB = metadataListB.get(i);
+                ContentTags contentTagsB = getContent(fpsB, metadataB);
                 //the first file should have the same id as the container id
                 String fileId = (i == 0) ? containerID : Integer.toString(ID.getAndIncrement());
-                writeProfileData(fpsB, i, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
+                writeTagData(fileId, contentTagsB, TAGS_TABLE_B);
+                writeProfileData(fpsB, i, contentTagsB, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
                 writeEmbeddedFilePathData(i, fileId, null, metadataB);
                 writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
 
-                //prep the token counting
-                tokenCounter.clear(FIELD_B);
                 //write content
                 try {
-                    writeContentData(fileId, metadataB, FIELD_B, CONTENTS_TABLE_B);
+                    tokenStatsB = calcTextStats(contentTagsB);
+                    writeContentData(fileId, tokenStatsB, CONTENTS_TABLE_B);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

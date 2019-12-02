@@ -39,12 +39,14 @@ public class ServerStatus {
     }
 
     public enum STATUS {
-        OPERATING(0),
-        HIT_MAX(1),
-        TIMEOUT(2),
-        ERROR(3),
-        PARENT_REQUESTED_SHUTDOWN(4),
-        PARENT_EXCEPTION(5);
+        INITIALIZING(0),
+        OPERATING(1),
+        HIT_MAX(2),
+        TIMEOUT(3),
+        ERROR(4),
+        PARENT_REQUESTED_SHUTDOWN(5),
+        PARENT_EXCEPTION(6),
+        OFF(7);
 
         private final int shutdownCode;
 
@@ -63,9 +65,10 @@ public class ServerStatus {
         int getShutdownCode() {
             return shutdownCode;
         }
-        byte getByte() { return (byte) shutdownCode;}
+        int getInt() { return shutdownCode;}
 
     }
+
     public enum TASK {
         PARSE,
         DETECT,
@@ -75,8 +78,16 @@ public class ServerStatus {
 
     private AtomicLong counter = new AtomicLong(0);
     private Map<Long, TaskStatus> tasks = new HashMap<>();
-
+    private final boolean isLegacy;
     private STATUS status = STATUS.OPERATING;
+
+    public ServerStatus() {
+        isLegacy = false;
+    }
+
+    public ServerStatus(boolean isLegacy) {
+        this.isLegacy = isLegacy;
+    }
 
     public synchronized long start(TASK task, String fileName) {
         long taskId = counter.incrementAndGet();
@@ -115,7 +126,14 @@ public class ServerStatus {
         return counter.get();
     }
 
+    /**
+     *
+     * @return true if this is legacy, otherwise whether or not status == OPERATING.
+     */
     public synchronized boolean isOperating() {
+        if (isLegacy) {
+            return true;
+        }
         return status == STATUS.OPERATING;
     }
 

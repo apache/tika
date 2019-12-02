@@ -20,8 +20,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -33,7 +33,7 @@ import org.xml.sax.ContentHandler;
  * Limited testing for the iWorks 13 format parser, which
  *  currently doesn't do anything more than detection....
  */
-public class IWork13ParserTest {
+public class IWork13ParserTest extends TikaTest {
     private IWork13PackageParser iWorkParser;
     private ParseContext parseContext;
 
@@ -41,7 +41,7 @@ public class IWork13ParserTest {
     public void setUp() {
         iWorkParser = new IWork13PackageParser();
         parseContext = new ParseContext();
-        parseContext.set(Parser.class, new AutoDetectParser());
+        parseContext.set(Parser.class, AUTO_DETECT_PARSER);
     }
     
     @Test

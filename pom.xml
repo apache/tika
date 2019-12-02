@@ -25,24 +25,24 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.20-SNAPSHOT</version>
+    <version>1.24-SNAPSHOT</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>tika</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika</name>
-  <url>http://tika.apache.org</url>
+  <url>https://tika.apache.org</url>
 
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
+    <module>tika-bundle</module>
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
     <module>tika-app</module>
-    <module>tika-bundle</module>
     <module>tika-server</module>
     <module>tika-translate</module>
     <module>tika-langdetect</module>
@@ -63,6 +63,7 @@
         <plugins>
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
+            <version>${maven.assembly.version}</version>
             <executions>
               <execution>
                 <id>src</id>
@@ -86,6 +87,7 @@
           </plugin>
           <plugin>
             <artifactId>maven-antrun-plugin</artifactId>
+            <version>${maven.antrun.version}</version>
             <executions>
               <execution>
                 <goals>
@@ -173,9 +175,11 @@ least three +1 Tika PMC votes are cast.
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
+        <version>${rat.version}</version>
         <configuration>
           <excludes>
             <exclude>CHANGES.txt</exclude>
+            <exclude>README.md</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -186,7 +190,7 @@ least three +1 Tika PMC votes are cast.
   </description>
   <organization>
     <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
+    <url>https://www.apache.org</url>
   </organization>
   <issueManagement>
     <system>JIRA</system>

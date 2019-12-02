@@ -17,10 +17,18 @@
 package org.apache.tika.parser.epub;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.io.InputStream;
+import java.util.List;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 
 public class EpubParserTest extends TikaTest {
@@ -55,7 +63,47 @@ public class EpubParserTest extends TikaTest {
         assertContainsCount("<html", content, 1);
         assertContainsCount("<head", content, 1);
         assertContainsCount("<body", content, 1);
-
     }
 
+    @Test
+    public void testEpubOrder() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEPUB.epub");
+
+        //test attachments
+        assertEquals(3, metadataList.size());
+        String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        int tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
+        int ch1 = xml.indexOf("<h1>Chapter 1");
+        int ch2 = xml.indexOf("<h1>Chapter 2");
+        assert(tocIndex > -1 && ch1 > -1 && ch2 > -1);
+        assert(tocIndex < ch1);
+        assert(tocIndex < ch2);
+        assert(ch1 < ch2);
+
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml");
+        assertNotNull(is);
+        Parser p = new AutoDetectParser(new TikaConfig(is));
+        xml = getXML("testEPUB.epub", p).xml;
+        tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
+        ch1 = xml.indexOf("<h1>Chapter 1");
+        ch2 = xml.indexOf("<h1>Chapter 2");
+        assert(tocIndex > -1 && ch1 > -1 && ch2 > -1);
+        assert(tocIndex > ch1);
+        assert(tocIndex > ch2);
+        assert(ch1 < ch2);
+    }
+
+
+    @Test
+    public void testTruncated() throws Exception {
+        Parser p = new EpubParser();
+        List<Metadata> metadataList;
+        try (InputStream is = truncate("testEPUB.epub", 10000)) {
+            metadataList = getRecursiveMetadata(is, p, true);
+        }
+        String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        int ch1 = xml.indexOf("<h1>Chapter 1");
+        int ch2 = xml.indexOf("<h1>Chapter 2");
+        assert(ch1 < ch2);
+    }
 }

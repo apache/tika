@@ -16,17 +16,6 @@
  */
 package org.apache.tika.parser.mp4;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
 import com.coremedia.iso.IsoFile;
 import com.coremedia.iso.boxes.Box;
@@ -50,6 +39,7 @@ import com.googlecode.mp4parser.boxes.apple.AppleCommentBox;
 import com.googlecode.mp4parser.boxes.apple.AppleCompilationBox;
 import com.googlecode.mp4parser.boxes.apple.AppleDiskNumberBox;
 import com.googlecode.mp4parser.boxes.apple.AppleEncoderBox;
+import com.googlecode.mp4parser.boxes.apple.AppleGPSCoordinatesBox;
 import com.googlecode.mp4parser.boxes.apple.AppleGenreBox;
 import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
 import com.googlecode.mp4parser.boxes.apple.AppleRecordingYear2Box;
@@ -71,6 +61,18 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Parser for the MP4 media container format, as well as the older
  *  QuickTime format that MP4 is based on.
@@ -87,7 +89,6 @@ public class MP4Parser extends AbstractParser {
     static {
         DURATION_FORMAT.applyPattern("0.0#");
     }
-    
     // Ensure this stays in Sync with the entries in tika-mimetypes.xml
     private static final Map<MediaType,List<String>> typesMap = new HashMap<MediaType, List<String>>();
     static {
@@ -109,6 +110,8 @@ public class MP4Parser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
        Collections.unmodifiableSet(typesMap.keySet());
+
+    private ISO6709Extractor iso6709Extractor = new ISO6709Extractor();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -214,6 +217,7 @@ public class MP4Parser extends AbstractParser {
                 // Get metadata from the User Data Box
                 UserDataBox userData = getOrNull(moov, UserDataBox.class);
                 if (userData != null) {
+                    extractGPS(userData, metadata);
                     MetaBox meta = getOrNull(userData, MetaBox.class);
 
                     // Check for iTunes Metadata
@@ -293,6 +297,7 @@ public class MP4Parser extends AbstractParser {
                     // TODO Check for other kinds too
                 }
 
+
                 // All done
                 xhtml.endDocument();
             }
@@ -300,6 +305,15 @@ public class MP4Parser extends AbstractParser {
             tmp.dispose();
         }
 
+    }
+
+    private void extractGPS(UserDataBox userData, Metadata metadata) {
+        AppleGPSCoordinatesBox coordBox = getOrNull(userData, AppleGPSCoordinatesBox.class);
+        if (coordBox == null) {
+            return;
+        }
+        String iso6709 = coordBox.getValue();
+        iso6709Extractor.extract(iso6709, metadata);
     }
 
     private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {

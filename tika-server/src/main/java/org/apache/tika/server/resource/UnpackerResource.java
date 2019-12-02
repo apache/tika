@@ -96,7 +96,7 @@ public class UnpackerResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info
     ) throws Exception {
-        return process(TikaResource.getInputStream(is, httpHeaders), httpHeaders, info, false);
+        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders, info, false);
     }
 
     @Path("/all{id:(/.*)?}")
@@ -107,7 +107,7 @@ public class UnpackerResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info
     ) throws Exception {
-        return process(TikaResource.getInputStream(is, httpHeaders), httpHeaders, info, true);
+        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders, info, true);
     }
 
     private Map<String, byte[]> process(
@@ -124,7 +124,7 @@ public class UnpackerResource {
             //no need to digest for unwrapping
             parser = ((DigestingParser)parser).getWrappedParser();
         }
-
+        TikaResource.fillParseContext(pc, httpHeaders.getRequestHeaders(), null);
         TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
         TikaResource.logRequest(LOG, info, metadata);
 

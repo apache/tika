@@ -52,7 +52,6 @@ public class DigestingParserTest extends TikaTest {
     private final static long SEED = new Random().nextLong();
 
     private final Random random = new Random(SEED);
-    private final Parser p = new AutoDetectParser();
 
     @Test
     public void testBasic() throws Exception {
@@ -76,7 +75,7 @@ public class DigestingParserTest extends TikaTest {
         for (CommonsDigester.DigestAlgorithm algo : CommonsDigester.DigestAlgorithm.values()) {
             Metadata m = new Metadata();
             XMLResult xml = getXML("test_recursive_embedded.docx",
-                    new DigestingParser(p, new CommonsDigester(UNLIMITED, algo)), m);
+                    new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(UNLIMITED, algo)), m);
             assertEquals(algo.toString(), expected.get(algo), m.get(P + algo.toString()));
         }
 
@@ -104,7 +103,7 @@ public class DigestingParserTest extends TikaTest {
         //test comma separated
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(p, new CommonsDigester(UNLIMITED,
+                new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(UNLIMITED,
                         "md5,sha256,sha384,sha512,sha1:32")), m);
         for (CommonsDigester.DigestAlgorithm algo : new CommonsDigester.DigestAlgorithm[]{
                 CommonsDigester.DigestAlgorithm.MD5,
@@ -123,7 +122,7 @@ public class DigestingParserTest extends TikaTest {
         String expectedMD5 = "59f626e09a8c16ab6dbc2800c685f772";
         Metadata m = new Metadata();
         XMLResult xml = getXML("test_recursive_embedded.docx",
-                new DigestingParser(p, new CommonsDigester(100, CommonsDigester.DigestAlgorithm.MD5)), m);
+                new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(100, CommonsDigester.DigestAlgorithm.MD5)), m);
         assertEquals(expectedMD5, m.get(P+"MD5"));
     }
 
@@ -133,7 +132,7 @@ public class DigestingParserTest extends TikaTest {
         boolean ex = false;
         try {
             XMLResult xml = getXML("test_recursive_embedded.docx",
-                    new DigestingParser(p, new CommonsDigester(-1, CommonsDigester.DigestAlgorithm.MD5)), m);
+                    new DigestingParser(AUTO_DETECT_PARSER, new CommonsDigester(-1, CommonsDigester.DigestAlgorithm.MD5)), m);
         } catch (IllegalArgumentException e) {
             ex = true;
         }

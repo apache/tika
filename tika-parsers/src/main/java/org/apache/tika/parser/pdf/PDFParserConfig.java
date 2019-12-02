@@ -48,6 +48,7 @@ public class PDFParserConfig implements Serializable {
 
 
     public enum OCR_STRATEGY {
+        AUTO,
         NO_OCR,
         OCR_ONLY,
         OCR_AND_TEXT_EXTRACTION;
@@ -61,6 +62,8 @@ public class PDFParserConfig implements Serializable {
                 return OCR_ONLY;
             } else if (s.toLowerCase(Locale.ROOT).contains("ocr_and_text")) {
                 return OCR_AND_TEXT_EXTRACTION;
+            } else if ("auto".equals(s.toLowerCase(Locale.ROOT))) {
+                return AUTO;
             }
             StringBuilder sb = new StringBuilder();
             sb.append("I regret that I don't recognize '").append(s);
@@ -123,6 +126,9 @@ public class PDFParserConfig implements Serializable {
     private ImageType ocrImageType = ImageType.GRAY;
     private String ocrImageFormatName = "png";
     private float ocrImageQuality = 1.0f;
+    /**
+     * deprecated ... use OCRDPI instead
+     */
     private float ocrImageScale = 2.0f;
 
     private AccessChecker accessChecker;
@@ -135,9 +141,13 @@ public class PDFParserConfig implements Serializable {
 
     private boolean extractActions = false;
 
+    private boolean extractFontNames = false;
+
     private long maxMainMemoryBytes = -1;
 
     private boolean setKCMS = false;
+
+    private boolean detectAngles = false;
 
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
@@ -196,6 +206,10 @@ public class PDFParserConfig implements Serializable {
         setExtractUniqueInlineImagesOnly(
                 getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
                         getExtractUniqueInlineImagesOnly()));
+        setExtractFontNames(
+                getBooleanProp(props.getProperty("extractFontNames"),
+                        getExtractFontNames()));
+
 
         setIfXFAExtractOnlyXFA(
             getBooleanProp(props.getProperty("ifXFAExtractOnlyXFA"),
@@ -230,7 +244,8 @@ public class PDFParserConfig implements Serializable {
             accessChecker = new AccessChecker(allowExtractionForAccessibility);
         }
 
-        maxMainMemoryBytes = getIntProp(props.getProperty("maxMainMemoryBytes"), -1);
+        maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
+        detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
     }
 
     /**
@@ -309,6 +324,17 @@ public class PDFParserConfig implements Serializable {
 		this.extractBookmarksText = extractBookmarksText;
 	}
 
+    /**
+     * Extract font names into a metadata field
+     * @param extractFontNames
+     */
+	public void setExtractFontNames(boolean extractFontNames) {
+	    this.extractFontNames = extractFontNames;
+    }
+
+    public boolean getExtractFontNames() {
+	    return extractFontNames;
+    }
 	/**
      * @see #setExtractInlineImages(boolean)
      */
@@ -648,12 +674,17 @@ public class PDFParserConfig implements Serializable {
     /**
      * Scale to use if rendering a page and then running OCR on that rendered image.
      * Default is 2.0f.
-     * @return
+     * @deprecated as of Tika 1.23, this is no longer used in rendering page images; use {@link #setOcrDPI(int)}
      */
     public float getOcrImageScale() {
         return ocrImageScale;
     }
 
+    /**
+     *
+     * @param ocrImageScale
+     * @deprecated (as of Tika 1.23, this is no longer used in rendering page images)
+     */
     public void setOcrImageScale(float ocrImageScale) {
         this.ocrImageScale = ocrImageScale;
     }
@@ -687,7 +718,16 @@ public class PDFParserConfig implements Serializable {
         return maxMainMemoryBytes;
     }
 
+    /**
+     * @deprecated use {@link #setMaxMainMemoryBytes(long)}
+     * @param maxMainMemoryBytes
+     */
+    @Deprecated
     public void setMaxMainMemoryBytes(int maxMainMemoryBytes) {
+        this.maxMainMemoryBytes = maxMainMemoryBytes;
+    }
+
+    public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
     }
 
@@ -735,6 +775,14 @@ public class PDFParserConfig implements Serializable {
         throw new IllegalArgumentException(sb.toString());
     }
 
+    public void setDetectAngles(boolean detectAngles) {
+        this.detectAngles = detectAngles;
+    }
+
+    public boolean getDetectAngles() {
+        return detectAngles;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -752,7 +800,7 @@ public class PDFParserConfig implements Serializable {
         if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
         if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
         if (getOcrDPI() != config.getOcrDPI()) return false;
-        if (isCatchIntermediateIOExceptions() != config.isCatchIntermediateIOExceptions()) return false;
+        if (getCatchIntermediateIOExceptions() != config.getCatchIntermediateIOExceptions()) return false;
         if (!getAverageCharTolerance().equals(config.getAverageCharTolerance())) return false;
         if (!getSpacingTolerance().equals(config.getSpacingTolerance())) return false;
         if (!getOcrStrategy().equals(config.getOcrStrategy())) return false;
@@ -781,7 +829,7 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + getOcrImageType().hashCode();
         result = 31 * result + getOcrImageFormatName().hashCode();
         result = 31 * result + getAccessChecker().hashCode();
-        result = 31 * result + (isCatchIntermediateIOExceptions() ? 1 : 0);
+        result = 31 * result + (getCatchIntermediateIOExceptions() ? 1 : 0);
         result = 31 * result + (getExtractActions() ? 1 : 0);
         result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
         return result;

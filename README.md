@@ -1,16 +1,21 @@
-Welcome to Apache Tika  <http://tika.apache.org/>
+Welcome to Apache Tika  <https://tika.apache.org/>
 =================================================
 
 Apache Tika(TM) is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
 
-Tika is a project of the [Apache Software Foundation](http://www.apache.org).
+Tika is a project of the [Apache Software Foundation](https://www.apache.org).
 
 Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika project logo are trademarks of The Apache Software Foundation.
 
 Getting Started
 ---------------
 
-Tika is based on Java 6 and uses the [Maven 3](http://maven.apache.org) build system. To build Tika, use the following command in this directory:
+Pre-built binaries of Apache Tika standalone applications are available
+from https://tika.apache.org/download.html . Pre-built binaries of all the
+Tika jars can be fetched from Maven Central or your favourite Maven mirror.
+
+Tika is based on Java 8 and uses the [Maven 3](https://maven.apache.org) build system. 
+To build Tika from source, use the following command in the main directory:
 
     mvn clean install
 
@@ -21,13 +26,13 @@ The build consists of a number of components, including a standalone runnable ja
 Contributing via Github
 =======================
 To contribute a patch, follow these instructions (note that installing
-[Hub](http://hub.github.com) is not strictly required, but is recommended).
+[Hub](https://hub.github.com) is not strictly required, but is recommended).
 
 ```
 0. Download and install hub.github.com
 1. File JIRA issue for your fix at https://issues.apache.org/jira/browse/TIKA
 - you will get issue id TIKA-xxx where xxx is the issue ID.
-2. git clone http://github.com/apache/tika.git 
+2. git clone https://github.com/apache/tika.git 
 3. cd tika
 4. git checkout -b TIKA-xxx
 5. edit files
@@ -39,6 +44,32 @@ To contribute a patch, follow these instructions (note that installing
 11. git pull-request
 ```
 
+Building from a Specific Tag
+=======================
+Let's assume that you want to build the 1.22 tag:
+```
+0. Download and install hub.github.com
+1. git clone https://github.com/apache/tika.git 
+2. cd tika
+3. git checkout 1.22
+4. mvn clean install
+```
+
+If a new vulnerability has been discovered between the date of the 
+tag and the date you are building the tag, you may need to build with:
+
+```
+4. mvn clean install -Dossindex.fail=false
+```
+
+If a local test is not working in your environment, please notify
+ the project at dev@tika.apache.org. As an immediate workaround, 
+ you can turn off individual tests with e.g.: 
+
+```
+4. mvn clean install -Dossindex.fail=false -Dtest=\!UnpackerResourceTest#testPDFImages
+```
+
 License (see also LICENSE.txt)
 ------------------------------
 
@@ -46,7 +77,7 @@ Collective work: Copyright 2011 The Apache Software Foundation.
 
 Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.  The ASF licenses this file to You under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.  You may obtain a copy of the License at
 
-<http://www.apache.org/licenses/LICENSE-2.0>
+<https://www.apache.org/licenses/LICENSE-2.0>
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the License for the specific language governing permissions and limitations under the License.
 
@@ -77,9 +108,15 @@ Notification on all code changes are sent to the following mailing list:
 
 The mailing lists are open to anyone and publicly archived.
 
-You can subscribe the mailing lists by sending a message to [LIST]-subscribe@tika.apache.org (for example user-subscribe@...).  To unsubscribe, send a message to [LIST]-unsubscribe@tika.apache.org.  For more instructions, send a message to [LIST]-help@tika.apache.org.
+You can subscribe the mailing lists by sending a message to 
+[LIST]-subscribe@tika.apache.org (for example user-subscribe@...).  
+To unsubscribe, send a message to [LIST]-unsubscribe@tika.apache.org.  
+For more instructions, send a message to [LIST]-help@tika.apache.org.
 
 Issue Tracker
 -------------
 
-If you encounter errors in Tika or want to suggest an improvement or a new feature, please visit the [Tika issue tracker](https://issues.apache.org/jira/browse/TIKA). There you can also find the latest information on known issues and recent bug fixes and enhancements.
+If you encounter errors in Tika or want to suggest an improvement or a new feature,
+ please visit the [Tika issue tracker](https://issues.apache.org/jira/browse/TIKA). 
+ There you can also find the latest information on known issues and 
+ recent bug fixes and enhancements.

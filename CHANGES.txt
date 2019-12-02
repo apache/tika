@@ -1,7 +1,145 @@
-Release 1.20 - ???
+Release 1.23 - 11/26/2019
+
+   * NOTE: The PDFParser now relies on OCRDPI to render page images when
+     users configure OCR on rendered page images. This will have the effect
+     of increasing rendered image size (TIKA-2624).
+
+   * NOTE: tika-server no longer returns 415 for file types for which there
+     is no parser.
+
+   * Upgrade to POI 4.1.1 (TIKA-2851).
+
+   * Upgrade to PDFBox 2.0.17 (TIKA-2951).
+
+   * Ensure that the PDFParser respects custom configuration of Tesseract
+     from tika-config.xml via Eric Pugh (TIKA-2970).
+
+   * Add parser for XLIFF v1.2 files (TIKA-2975).
+
+   * Add mime type detection support for WebAssembly (TIKA-2894),
+     HEIF / HEIC images (TIKA-2942), Digilite FDF (TIKA-2988);
+     and xml-root detection for XFDF (TIKA-2990) and XDP (TIKA-2989).
+
+   * Add an XLZ Parser (TIKA-2976).
+   
+   * Fix deadlock with ForkParser when InputStream throws IOException (TIKA-2892)
+
+Release 1.22 - 07/29/2019
+
+   * NOTE: tika-server no longer hard-codes the HtmlParser to handle
+     XML files (TIKA-2910).  Users must now configure that behavior
+     via a tika-config.xml file.
+
+   * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
+     between 0xF000 and 0XF0000 will cause an exception.
+
+   * Add parser for HWP v5 files via SooMyung Lee (soomyung) and
+     JinSup Kim (ddoleye) (TIKA-2909).
+
+   * Fix order of closing streams to avoid "Failed to close temporary resource"
+     exception in TesseractOCRParser (TIKA-2908).
+
+   * Improve AutoDetectReader performance by caching encoding
+     detector (TIKA-1568).
+
+   * Prevent RTFParser from outputting illegal tag combinations (TIKA-2889).
+
+   * Fix RereadableInputStream to release all resources (TIKA-2903).
+
+   * Implement custom language identifier in the tika-eval module based on
+     OpenNLP's language detector; add 18 languages and add common words
+     lists for all 121 languages (TIKA-2790).
+
+   * Fix NPE in MimeTypesReader.releaseParser() via Eamonn Saunders (TIKA-2896).
+
+   * Fix RTFParser to extract more content (TIKA-2883).
+
+   * Add clientSubmitTime to the metadata extracted from PST files (TIKA-2898).
+
+   * Improve StreamingZipContainerDetector for xltx, xltm and
+     several other file formats (TIKA-2886).
+
+Release 1.21 - 05/14/2019
+
+   * Add optional AUTO mode to OCR'ing of PDFs.  If tesseract is installed
+     and on the path, and this option is selected programmatically
+     or via TikaConfig(), the PDFParser will use heuristics to decide
+     whether or not to run OCR per page on PDFs. (TIKA-2749)
+
+   * The ZipContainerDetector's default behavior was changed to run
+     streaming detection up to its markLimit.  Users can get the
+     legacy behavior (spool-to-file/rely-on-underlying-file-in-TikaInputStream)
+     by setting markLimit=-1. The POIFSContainerDetector requires an underlying file;
+     it will try to spool the file to disk; if the file's length is > markLimit,
+     it will not attempt detection; set markLimit to -1 for legacy behavior (TIKA-2849).
+
+   * Upgrade PDFBox to 2.0.14 (TIKA-2834).
+
+   * Add CSV detection and replace TXTParser with TextAndCSVParser;
+     users can turn off CSV detection by excluding the TextAndCSVParser
+     and adding back the TXTParser via tika-config (TIKA-2833).
+
+   * Add a CSVParser.  CSV detection is currently based solely on filename
+     and/or information conveyed via Metadata (TIKA-2826).
+
+   * General upgrades: asm, bouncycastle, commons-codec, commons-lang3, cxf,
+     guava, h2, httpcomponents, jackcess, junrar, Lucene, mime4j, opennlp, parso,
+     sqlite-jdbc (provided), zstd-jni (provided) (TIKA-2824)
+
+   * Bundle xerces2 with tika-parsers (TIKA-2802).
+
+   * Upgrade jaxb to 2.3.2 (TIKA-2819).
+
+   * Upgrade jackson to 2.9.8 (TIKA-2717).
+
+   * Update tika-eval's common tokens lists (TIKA-2822).
+
+   * Handle bad tags in tika-eval more robustly (TIKA-2810).
+
+   * Add reports for tags in tika-eval (TIKA-2809).
+
+   * Extract text from SDT element within textboxes in .docx files (TIKA-2807).
+
+   * Try to handle truncated OOXML files more robustly (TIKA-2765).
+
+Release 1.20 - 12/17/2018
+
+   * Upgrade to POI 4.0.1 (TIKA-2751).
+
+   * Integrate/parameterize new angles handling in
+     PDFBox (TIKA-2779).
+
+   * Upgrade to PDFBox 2.0.13 (TIKA-2788).
+
+   * Prevent content within <style/> and <script/> elements
+     to be written in the ToTextContentHandler (TIKA-2550).
+
+   * Switch child to parent communication to a shared memory-mapped
+     file in tika-server's -spawnChild mode.
+
+   * Fix bug in tika-server when run in legacy mode (not -spawnChild)
+     that caused it to return 503 on documents submitted after
+     it hit an OutOfMemoryError (TIKA-2776).
+
+   * Upgrade jaxb-runtime and javax.activation (TIKA-2778).
+
+   * tika-app in batch mode now requires an interrupt or
+     kill signal to the parent process to stop the parent
+     and the child processes (TIKA-2780).
+
+   * Bulk upgrade of dependencies (TIKA-2775).
+
+   * Improve language id efficiency in tika-eval (TIKA-2777).
+
+   * Upgrade sqlite "provided" dependency to 3.25.2 (TIKA-2773).
+
+   * Remove duplication of notes in PPT slides (TIKA-2735)
 
    * Use -javaHome or $JAVA_HOME (if they exist) when
      spawning child in tika-server's -spawnChild mode.
+
+   * Fixed closing of styles around Hyperlinks in Word Parser
+     Contributed by Ronan O'Sullivan (TIKA-2599).
 
 Release 1.19.1 - 10/4/2018
 

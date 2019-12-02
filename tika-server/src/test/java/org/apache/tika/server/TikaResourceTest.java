@@ -17,6 +17,8 @@
 
 package org.apache.tika.server;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -24,10 +26,13 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.resource.TikaResource;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +44,7 @@ public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test.doc";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
     private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
+    private static final String TEST_OOM = "mock/fake_oom.xml";
 
     private static final String STREAM_CLOSED_FAULT = "java.io.IOException: Stream Closed";
 
@@ -191,6 +197,12 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testJAXBAndActivationDependency() {
+        //TIKA-2778
+        AttachmentUtil.getCommandMap();
+    }
+
+    @Test
     public void testEmbedded() throws Exception {
         //first try text
         Response response = WebClient.create(endPoint + TIKA_PATH)
@@ -224,7 +236,7 @@ public class TikaResourceTest extends CXFTestBase {
         assertTrue(responseMsg.contains("Example text"));
     }
 
-    //TIKA-2638
+    //TIKA-2638 and TIKA-2816
     @Test
     public void testOCRLanguageConfig() throws Exception {
         if (! new TesseractOCRParser().hasTesseract(new TesseractOCRConfig())) {
@@ -235,6 +247,8 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"OcrStrategy", "ocr_only")
                 .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"Language", "eng+fra")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MinFileSizeToOcr", "10")
+                .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX+"MaxFileSizeToOcr", "1000000000")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
@@ -272,7 +286,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX + "OcrStrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
     }
 
     //TIKA-2669
@@ -337,14 +351,20 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testDataIntegrityCheck() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH)
-                   .type("application/pdf")
-                   .accept("text/plain")
-                   .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
-                  "tesseractPath",
-                          "C://tmp//hello.bat\u0000")
-                .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(400, response.getStatus());
+        Response response = null;
+        try {
+            response = WebClient.create(endPoint + TIKA_PATH)
+                    .type("application/pdf")
+                    .accept("text/plain")
+                    .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
+                                    "tesseractPath",
+                            "C://tmp//hello.bat\u0000")
+                    .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
+            assertEquals(400, response.getStatus());
+        } catch (ProcessingException e) {
+            //can't tell why this intermittently happens. :(
+            //started after the upgrade to 3.2.7
+        }
 
         response = WebClient.create(endPoint + TIKA_PATH)
                 .type("application/pdf")
@@ -363,7 +383,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_OCR_HEADER_PREFIX +
                                 "trustedPageSeparator",
-                        "\u0010")
+                        "\u0020")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         assertEquals(400, response.getStatus());
 
@@ -380,5 +400,58 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         assertEquals(200, response.getStatus());
 
+    }
+
+    @Test
+    public void testOOMInLegacyMode() throws Exception {
+
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + TIKA_PATH)
+                    .accept("text/plain")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
+
+        response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+
+        assertContains("plundered our seas", responseMsg);
+    }
+
+    @Test
+    public void testUnicodePasswordProtectedSpaces() throws Exception {
+        //TIKA-2858
+        final String password = "    ";
+        final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream("testPassword4Spaces.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Just some text.", responseMsg);
+    }
+
+    @Test
+    public void testUnicodePasswordProtectedUnicode() throws Exception {
+        //TIKA-2858
+        final String password = "  ! < > \" \\ \u20AC \u0153 \u00A4 \u0031\u2044\u0034 \u0031\u2044\u0032 \uD841\uDF0E \uD867\uDD98 \uD83D\uDE00  ";
+        final String encoded = new Base64().encodeAsString(password.getBytes(StandardCharsets.UTF_8));
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.PASSWORD_BASE64_UTF8, encoded)
+                .put(ClassLoader.getSystemResourceAsStream("testUnicodePassword.pdf"));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertContains("Just some text.", responseMsg);
     }
 }

@@ -31,8 +31,6 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -46,22 +44,16 @@ public class Seven7ParserTest extends AbstractPkgTest {
     
     @Test
     public void test7ZParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         
         // Ensure 7zip is a parsable format
         assertTrue("No 7zip parser found", 
-                parser.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
+                AUTO_DETECT_PARSER.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
         
         // Parse
-        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.7z")) {
-            parser.parse(stream, handler, metadata, recursingContext);
-        }
+        String content = getText("test-documents.7z", metadata);
 
         assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
-        String content = handler.toString();
         assertContains("test-documents/testEXCEL.xls", content);
         assertContains("Sample Excel Worksheet", content);
         assertContains("test-documents/testHTML.html", content);
@@ -88,13 +80,12 @@ public class Seven7ParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
         try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.7z")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
        // Should have found all 9 documents, but not the directory
@@ -125,7 +116,6 @@ public class Seven7ParserTest extends AbstractPkgTest {
 
     @Test
     public void testPasswordProtected() throws Exception {
-        Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         
@@ -133,7 +123,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         boolean ex = false;
         try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                 "/test-documents/test7Z_protected_passTika.7z")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
             // Good
@@ -146,7 +136,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         ex = false;
         try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                 "/test-documents/full_encrypted.7z")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a full password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
             // Good
@@ -170,7 +160,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         handler = new BodyContentHandler();
         try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                 "/test-documents/test7Z_protected_passTika.7z")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z with wrong password");
         } catch (TikaException e) {
             //if JCE is installed, the cause will be: Caused by: org.tukaani.xz.CorruptedInputException: Compressed data is corrupt
@@ -194,7 +184,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             handler = new BodyContentHandler();
             try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                     "/test-documents/test7Z_protected_passTika.7z")) {
-                parser.parse(stream, handler, metadata, recursingContext);
+                AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             }
 
             assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
@@ -220,7 +210,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             handler = new BodyContentHandler();
             try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                     "/test-documents/test7Z_protected_passTika.7z")) {
-                parser.parse(stream, handler, metadata, recursingContext);
+                AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             } catch (TikaException e) {
                 ioe = true;
             }

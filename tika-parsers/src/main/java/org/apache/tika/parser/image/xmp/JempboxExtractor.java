@@ -208,7 +208,9 @@ public class JempboxExtractor {
 
     private static void addMetadata(Metadata m, Property p, String value) {
         if (value != null) {
-            m.add(p, value);
+            if (p.isMultiValuePermitted() || m.get(p) == null) {
+                m.add(p, value);
+            }
         }
     }
 
