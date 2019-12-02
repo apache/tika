@@ -423,27 +423,32 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
 
     private void awaitServerStartup() throws Exception {
-
+        long maxWaitMs = 30000;
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
         WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
-        while (elapsed < 30000) {
+        while (elapsed < maxWaitMs) {
             try {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
-                    return;
+                    Thread.sleep(100);
+                    response = client.get();
+                    if (response.getStatus() == 200) {
+                        LOG.info("client observes that server successfully started");
+                        return;
+                    }
                 }
-                LOG.info("tika test client failed to connect to server with status: {}", response.getStatus());
+                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
 
             } catch (javax.ws.rs.ProcessingException e) {
-                LOG.info("tika test client failed to connect to server: {}", e.getMessage());
                 LOG.debug("tika test client failed to connect to server", e);
             }
 
             Thread.sleep(100);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
-
+        throw new IllegalStateException("couldn't connect to server after " +
+                maxWaitMs + " ms");
     }
 
     @Test
