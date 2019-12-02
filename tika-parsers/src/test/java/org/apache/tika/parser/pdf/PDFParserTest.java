@@ -1285,6 +1285,21 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testOCRAutoMode() throws Exception {
+        assumeTrue("can run OCR", canRunOCR());
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.AUTO);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        XMLResult xmlResult = getXML("testOCR.pdf", context);
+        assertContains("Happy New Year", xmlResult.xml);
+
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+        String txt = getText("testOCR.pdf", new Metadata(), context);
+        assertEquals("", txt.trim());
+    }
+
+    @Test
     public void testTesseractInitializationWorks() throws Exception {
         //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
         //make it through to when the TesseractOCRParser is called via

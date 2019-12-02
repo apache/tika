@@ -370,8 +370,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
         metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE,
                 unmappedUnicodeCharsPerPage);
-        totalCharsPerPage = 0;
-        unmappedUnicodeCharsPerPage = 0;
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
@@ -458,6 +456,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to end a page", e);
         } catch (IOException e) {
             handleCatchableIOE(e);
+        } finally {
+            totalCharsPerPage = 0;
+            unmappedUnicodeCharsPerPage = 0;
         }
 
         if (config.getExtractFontNames()) {
