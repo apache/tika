@@ -411,6 +411,7 @@
           <targetVersion>${maven.compiler.target}</targetVersion>
           <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
+          <excludes>test-documents/*.class</excludes>
           <bundledSignatures>
             <bundledSignature>jdk-unsafe</bundledSignature>
             <bundledSignature>jdk-deprecated</bundledSignature>
