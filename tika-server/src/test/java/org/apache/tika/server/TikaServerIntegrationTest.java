@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -60,6 +61,8 @@ public class TikaServerIntegrationTest extends TikaTest {
     private static final String TEST_STDOUT_STDERR = "mock/testStdOutErr.xml";
     private static final String TEST_STATIC_STDOUT_STDERR = "mock/testStaticStdOutErr.xml";
     private static final String META_PATH = "/rmeta";
+
+    private static final long MAX_WAIT_MS = 60000;
 
     //running into conflicts on 9998 with the CXFTestBase tests
     //TODO: figure out why?!
@@ -423,20 +426,17 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
 
     private void awaitServerStartup() throws Exception {
-        long maxWaitMs = 30000;
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
         WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
-        while (elapsed < maxWaitMs) {
+        while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
-                    Thread.sleep(100);
-                    response = client.get();
-                    if (response.getStatus() == 200) {
-                        LOG.info("client observes that server successfully started");
-                        return;
-                    }
+                    elapsed = Duration.between(started, Instant.now()).toMillis();
+                    LOG.info("client observes server successfully started after " +
+                            elapsed+ " ms");
+                    return;
                 }
                 LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
 
@@ -447,8 +447,8 @@ public class TikaServerIntegrationTest extends TikaTest {
             Thread.sleep(100);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
-        throw new IllegalStateException("couldn't connect to server after " +
-                maxWaitMs + " ms");
+        throw new TimeoutException("couldn't connect to server after " +
+                elapsed + " ms");
     }
 
     @Test
