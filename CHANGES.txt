@@ -1,3 +1,7 @@
+Release 1.24 - ???
+
+   * Fix bug in ASM parser configuration (TIKA-2992).
+
 Release 1.23 - 12/02/2019
 
    * NOTE: The PDFParser now relies on OCRDPI to render page images when
@@ -26,7 +30,7 @@ Release 1.23 - 12/02/2019
 
    * Add an XLZ Parser (TIKA-2976).
    
-   * Fix deadlock with ForkParser when InputStream throws IOException (TIKA-2892)
+   * Fix deadlock with ForkParser when InputStream throws IOException (TIKA-2892).
 
 Release 1.22 - 07/29/2019
 
