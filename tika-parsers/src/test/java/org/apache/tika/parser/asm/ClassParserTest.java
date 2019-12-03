@@ -18,7 +18,7 @@ package org.apache.tika.parser.asm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.apache.tika.Tika;
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
@@ -26,15 +26,12 @@ import org.junit.Test;
 /**
  * Test case for parsing Java class files.
  */
-public class ClassParserTest {
+public class ClassParserTest extends TikaTest {
 
     @Test
     public void testClassParsing() throws Exception {
-        String path = "/test-documents/AutoDetectParser.class";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                ClassParserTest.class.getResourceAsStream(path), metadata);
-
+        String content = getText("AutoDetectParser.class", metadata);
         assertEquals("AutoDetectParser", metadata.get(TikaCoreProperties.TITLE));
         assertEquals(
                 "AutoDetectParser.class",
@@ -56,4 +53,12 @@ public class ClassParserTest {
                 + " throws java.io.IOException;"));
     }
 
+    @Test
+    public void testJava11() throws Exception {
+        //Make sure that this java 11 target .class
+        //file doesn't throw an exception
+        //TIKA-2992
+        XMLResult xmlResult = getXML("AppleSingleFileParser.class");
+        assertContains("<title>AppleSingleFileParser</title>", xmlResult.xml);
+    }
 }

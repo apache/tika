@@ -5,6 +5,10 @@ Release 2.0.0 - ???
 
    Other changes
 
+Release 1.24 - ???
+
+   * Fix bug in ASM parser configuration (TIKA-2992).
+
 Release 1.23 - 12/02/2019
 
    * NOTE: The PDFParser now relies on OCRDPI to render page images when
