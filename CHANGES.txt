@@ -5,7 +5,7 @@ Release 2.0.0 - ???
 
    Other changes
 
-Release 1.23 - 11/26/2019
+Release 1.23 - 12/02/2019
 
    * NOTE: The PDFParser now relies on OCRDPI to render page images when
      users configure OCR on rendered page images. This will have the effect
@@ -13,6 +13,10 @@ Release 1.23 - 11/26/2019
 
    * NOTE: tika-server no longer returns 415 for file types for which there
      is no parser.
+
+   * Fix bug in AUTO OCR strategy in the PDFParser (TIKA-3002).
+
+   * Fix incorrect height and width metadata extraction from JPEG images (TIKA-2630).
 
    * Upgrade to POI 4.1.1 (TIKA-2851).
 
