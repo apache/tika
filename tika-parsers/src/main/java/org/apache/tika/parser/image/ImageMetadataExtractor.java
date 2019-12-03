@@ -504,12 +504,19 @@ public class ImageMetadataExtractor {
 
             // For Compressed Images read from ExifSubIFDDirectory
             if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)) {
-                metadata.set(Metadata.IMAGE_WIDTH,
-                        trimPixels(directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)));
+                String width = directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH);
+                //check for null because this could overwrite earlier set width if the value is null
+                if (width != null) {
+                    metadata.set(Metadata.IMAGE_WIDTH,
+                            trimPixels(width));
+                }
             }
-            if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)) {
-                metadata.set(Metadata.IMAGE_LENGTH,
-                        trimPixels(directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT)));
+
+            if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT)) {
+                String height = directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT);
+                if (height != null) {
+                    metadata.set(Metadata.IMAGE_LENGTH, trimPixels(height));
+                }
             }
 
         }
