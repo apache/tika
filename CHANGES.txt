@@ -8,6 +8,8 @@ Release 2.0.0 - ???
 Release 1.24 - ???
 
    * Fix bug in ASM parser configuration (TIKA-2992).
+   
+   * Upgrade to java-libpst 0.9.3 (TIKA-2546).
 
 Release 1.23 - 12/02/2019
 
