@@ -1178,8 +1178,11 @@ public class TestMimeTypes {
     public void testOneNote() throws Exception {
         // With name or data we can get the full details
         assertTypeByName("application/onenote; format=one", "testOneNote.one");
-        assertTypeByData("application/onenote; format=one", "testOneNote.one");
-        
+        assertTypeByData("application/onenote; format=one", "Section1SheetTitle.one");
+        assertTypeByData("application/onenote; format=one", "Section2SheetTitle.one");
+        assertTypeByData("application/onenote; format=one", "Section3SheetTitle.one");
+        assertTypeByData("application/onenote; format=one", "Sample1.one");
+
         // TODO Get sample .onetoc2 and .onepkg files
     }
 
