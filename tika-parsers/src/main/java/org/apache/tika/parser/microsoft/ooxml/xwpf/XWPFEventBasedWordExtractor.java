@@ -20,10 +20,7 @@ package org.apache.tika.parser.microsoft.ooxml.xwpf;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.ooxml.POIXMLDocument;
@@ -39,6 +36,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
@@ -60,15 +58,18 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
     private static final Logger LOG = LoggerFactory.getLogger(XWPFEventBasedWordExtractor.class);
 
     private OPCPackage container;
+    private OfficeParserConfig config;
     private POIXMLProperties properties;
 
     public XWPFEventBasedWordExtractor(String path) throws XmlException, OpenXML4JException, IOException {
-        this(OPCPackage.open(path, PackageAccess.READ));
+        this(OPCPackage.open(path, PackageAccess.READ), new OfficeParserConfig());
     }
 
-    public XWPFEventBasedWordExtractor(OPCPackage container) throws XmlException, OpenXML4JException, IOException {
+    public XWPFEventBasedWordExtractor(OPCPackage container, OfficeParserConfig config)
+            throws XmlException, OpenXML4JException, IOException {
         super((POIXMLDocument) null);
         this.container = container;
+        this.config = config;
         this.properties = new POIXMLProperties(container);
     }
 
@@ -170,6 +171,11 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 XWPFRelation.FOOTER,
                 XWPFRelation.ENDNOTE
         }) {
+            //skip comments if we shouldn't extract them
+            if (!config.getIncludeComments() &&
+                    rel.equals(XWPFRelation.COMMENT.getRelation())) {
+                continue;
+            }
             try {
                 PackageRelationshipCollection prc = documentPart.getRelationshipsByType(rel.getRelation());
                 if (prc != null) {

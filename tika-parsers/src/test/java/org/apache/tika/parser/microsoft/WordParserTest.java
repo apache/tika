@@ -254,7 +254,7 @@ public class WordParserTest extends TikaTest {
         assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+"," "));
         assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
         assertContains("This is a hyperlink", content);
-        assertContains("Here is a list:", content);
+        assertContains("Here is a list", content);
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
@@ -648,6 +648,27 @@ public class WordParserTest extends TikaTest {
     public void testSpecialControlCharacter() throws Exception {
         //TIKA-2459
         assertContains("Paragraph one", getXML("testWORD_specialControlCharacter1415.doc").xml);
+    }
+
+    //TIKA-2900
+    @Test
+    public void testExcludeComments() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeComments(false);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_comments.doc", pc).xml;
+        assertNotContained("Here is a comment", xml);
+    }
+
+    @Test
+    public void testIncludeComments() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setIncludeComments(true);
+        pc.set(OfficeParserConfig.class, officeParserConfig);
+        String xml = getXML("testWORD_comments.doc", pc).xml;
+        assertContains("Here is a comment", xml);
     }
 }
 

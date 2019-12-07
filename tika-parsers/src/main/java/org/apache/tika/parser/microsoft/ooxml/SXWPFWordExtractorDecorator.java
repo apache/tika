@@ -167,8 +167,13 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 XWPFRelation.ENDNOTE.getRelation(),
         }) {
             //skip footers if we shouldn't extract them
-            if (! config.getIncludeHeadersAndFooters() &&
+            if (!config.getIncludeHeadersAndFooters() &&
                     rel.equals(XWPFRelation.FOOTER.getRelation())) {
+                continue;
+            }
+            //skip comments if we shouldn't extract them
+            if (!config.getIncludeComments() &&
+                    rel.equals(XWPFRelation.COMMENT.getRelation())) {
                 continue;
             }
             try {
