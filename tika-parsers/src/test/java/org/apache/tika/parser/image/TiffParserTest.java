@@ -70,12 +70,6 @@ public class TiffParserTest extends TikaTest {
                 (long)getXML("testTIFF_multipage.tif")
                 .metadata
                 .getInt(TIFF.EXIF_PAGE_COUNT));
-
-        //Comment \u000A System.out.println("actual code");
     }
 
-    @Test
-    public void testUnicodeNewLine() throws Exception {
-        //Comment \u000A System.out.println("actual code");
-    }
 }
