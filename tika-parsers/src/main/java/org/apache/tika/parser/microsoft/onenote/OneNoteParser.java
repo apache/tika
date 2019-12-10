@@ -16,27 +16,47 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+/**
+ * OneNote tika parser capable of parsing Microsoft OneNote files.
+ * <p>
+ * Based on the Microsoft specs MS-ONE and MS-ONESTORE.
+ */
 public class OneNoteParser extends AbstractParser {
-    private static final MediaType MEDIA_TYPE = MediaType.application("onenote");
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = -752276948656079347L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
+    private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
+
+    static {
+        // All types should be 4 bytes long, space padded as needed
+        typesMap.put(MediaType.application("onenote; format=one"), Arrays.asList("ONE "));
+        // TODO - add onetoc and other onenote mime types
+    }
+
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MEDIA_TYPE);
+            Collections.unmodifiableSet(typesMap.keySet());
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -44,7 +64,86 @@ public class OneNoteParser extends AbstractParser {
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
+            SAXException, TikaException {
 
+        try (TemporaryResources temporaryResources = new TemporaryResources();
+             TikaInputStream tikaInputStream = TikaInputStream.get(stream, temporaryResources);
+             OneNoteDirectFileResource oneNoteDirectFileResource = new OneNoteDirectFileResource(tikaInputStream.getFile())) {
+
+            temporaryResources.addResource(oneNoteDirectFileResource);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            OneNoteDocument oneNoteDocument = createOneNoteDocumentFromDirectFileResource(oneNoteDirectFileResource);
+
+            metadata.set("buildNumberCreated", "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
+            metadata.set("buildNumberLastWroteToFile", "0x" + Long.toHexString(oneNoteDocument.header.buildNumberLastWroteToFile));
+            metadata.set("buildNumberNewestWritten", "0x" + Long.toHexString(oneNoteDocument.header.buildNumberNewestWritten));
+            metadata.set("buildNumberOldestWritten", "0x" + Long.toHexString(oneNoteDocument.header.buildNumberOldestWritten));
+            metadata.set("cbExpectedFileLength", "0x" + Long.toHexString(oneNoteDocument.header.cbExpectedFileLength));
+            metadata.set("cbFreeSpaceInFreeChunkList", "0x" + Long.toHexString(oneNoteDocument.header.cbFreeSpaceInFreeChunkList));
+            metadata.set("cbLegacyExpectedFileLength", "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyExpectedFileLength));
+            metadata.set("cbLegacyFreeSpaceInFreeChunkList",
+                    "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyFreeSpaceInFreeChunkList));
+            metadata.set("crcName", "0x" + Long.toHexString(oneNoteDocument.header.crcName));
+            metadata.set("cTransactionsInLog", "0x" + Long.toHexString(oneNoteDocument.header.cTransactionsInLog));
+            metadata.set("ffvLastCode", "0x" + Long.toHexString(oneNoteDocument.header.ffvLastCode));
+            metadata.set("ffvNewestCode", "0x" + Long.toHexString(oneNoteDocument.header.ffvNewestCode));
+            metadata.set("ffvOldestReader", "0x" + Long.toHexString(oneNoteDocument.header.ffvOldestReader));
+            metadata.set("grfDebugLogFlags", "0x" + Long.toHexString(oneNoteDocument.header.grfDebugLogFlags));
+            metadata.set("nFileVersionGeneration", "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
+            metadata.set("rgbPlaceholder", "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
+
+            Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
+            OneNoteTreeWalker oneNoteTreeWalker = new OneNoteTreeWalker(
+                    new OneNoteTreeWalkerOptions(), oneNoteDocument,
+                    oneNoteDirectFileResource, xhtml, metadata, context, roleAndContext);
+
+            oneNoteTreeWalker.walkTree();
+
+            xhtml.endDocument();
+        }
+    }
+
+    /**
+     * Create a OneNoteDocument object.
+     * <p>
+     * This won't actually have the binary data of any of the sections, but it's more of a metadata structure that contains
+     * the general structure of the container and contains offset positions of where to find the binary data we care about.
+     * <p>
+     * OneNote files are of format:
+     * <p>
+     * The header (section 2.3.1 in MS-ONESTORE) is the first 1024 bytes of the file. It contains references to the other structures in the
+     * file as well as metadata about the file.
+     * The free chunk list (section 2.3.2 in MS-ONESTORE) defines where there are free spaces in the file where data can be written.
+     * The transaction log (section 2.3.3 in MS-ONESTORE) stores the state and length of each file node list (section 2.4 in MS-ONESTORE)
+     * in the file.
+     * The hashed chunk list (section 2.3.4 in MS-ONESTORE) stores read-only objects in the file that can be referenced by multiple
+     * revisions (section 2.1.8 in MS-ONESTORE).
+     * The root file node list (section 2.1.14 in MS-ONESTORE) is the file node list that is the root of the tree of all file node lists in
+     * the file.
+     * <p>
+     * In this method we first parse the header.
+     * <p>
+     * After parsing the header, this results in header.fcrFileNodeListRoot that points to the first
+     *
+     * @param oneNoteDirectFileResource A random access file resource used as the source of the content.
+     * @return A parsed one note document. This document does not contain any of the binary data, rather it just contains
+     * the data pointers and metadata.
+     * @throws IOException Will throw IOException in typical IO issue situations.
+     */
+    public OneNoteDocument createOneNoteDocumentFromDirectFileResource(OneNoteDirectFileResource oneNoteDirectFileResource) throws IOException, TikaException {
+        OneNoteDocument oneNoteDocument = new OneNoteDocument();
+        OneNotePtr oneNotePtr = new OneNotePtr(oneNoteDocument, oneNoteDirectFileResource);
+        // First parse out the header.
+        oneNoteDocument.header = oneNotePtr.deserializeHeader();
+
+        // Now that we parsed the header, the "root file node list"
+
+        oneNotePtr.reposition(oneNoteDocument.header.fcrFileNodeListRoot);
+        FileNodePtr curPath = new FileNodePtr();
+        oneNotePtr.deserializeFileNodeList(oneNoteDocument.root, curPath);
+
+        return oneNoteDocument;
     }
 }
