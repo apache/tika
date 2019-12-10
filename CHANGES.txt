@@ -5,7 +5,47 @@ Release 2.0.0 - ???
 
    Other changes
 
-Release 1.22 - ???
+Release 1.24 - ???
+
+   * Fix bug in ASM parser configuration (TIKA-2992).
+   
+   * Upgrade to java-libpst 0.9.3 (TIKA-2546).
+
+Release 1.23 - 12/02/2019
+
+   * NOTE: The PDFParser now relies on OCRDPI to render page images when
+     users configure OCR on rendered page images. This will have the effect
+     of increasing rendered image size (TIKA-2624).
+
+   * NOTE: tika-server no longer returns 415 for file types for which there
+     is no parser.
+
+   * Fix bug in AUTO OCR strategy in the PDFParser (TIKA-3002).
+
+   * Fix incorrect height and width metadata extraction from JPEG images (TIKA-2630).
+
+   * Upgrade to POI 4.1.1 (TIKA-2851).
+
+   * Upgrade to PDFBox 2.0.17 (TIKA-2951).
+
+   * Ensure that the PDFParser respects custom configuration of Tesseract
+     from tika-config.xml via Eric Pugh (TIKA-2970).
+
+   * Add parser for XLIFF v1.2 files (TIKA-2975).
+
+   * Add mime type detection support for WebAssembly (TIKA-2894),
+     HEIF / HEIC images (TIKA-2942), Digilite FDF (TIKA-2988);
+     and xml-root detection for XFDF (TIKA-2990) and XDP (TIKA-2989).
+
+   * Add an XLZ Parser (TIKA-2976).
+   
+   * Fix deadlock with ForkParser when InputStream throws IOException (TIKA-2892).
+
+Release 1.22 - 07/29/2019
+
+   * NOTE: tika-server no longer hard-codes the HtmlParser to handle
+     XML files (TIKA-2910).  Users must now configure that behavior
+     via a tika-config.xml file.
 
    * NOTE: Known regression: PDFBOX-4587 -- PDF passwords with codepoints
      between 0xF000 and 0XF0000 will cause an exception.
@@ -14,7 +54,7 @@ Release 1.22 - ???
      JinSup Kim (ddoleye) (TIKA-2909).
 
    * Fix order of closing streams to avoid "Failed to close temporary resource"
-     exception (TIKA-2908).
+     exception in TesseractOCRParser (TIKA-2908).
 
    * Improve AutoDetectReader performance by caching encoding
      detector (TIKA-1568).

@@ -41,6 +41,7 @@ import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
+import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
@@ -259,7 +260,11 @@ public class ImageMetadataExtractor {
                 throws MetadataException {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
-                    metadata.set(tag.getTagName(), tag.getDescription());
+                    if (directory instanceof ExifDirectoryBase) {
+                        metadata.set(directory.getName() + ":" + tag.getTagName(), tag.getDescription());
+                    } else {
+                        metadata.set(tag.getTagName(), tag.getDescription());
+                    }
                 }
             }
         }
@@ -287,7 +292,11 @@ public class ImageMetadataExtractor {
                         } else if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
                             value = Boolean.FALSE.toString();
                         }
-                        metadata.set(name, value);
+                        if (directory instanceof ExifDirectoryBase) {
+                            metadata.set(directory.getName() + ":" + name, value);
+                        } else {
+                            metadata.set(name, value);
+                        }
                     }
                 }
             }
@@ -301,10 +310,8 @@ public class ImageMetadataExtractor {
 
         public void handle(Directory directory, Metadata metadata)
                 throws MetadataException {
-            //TODO: after upgrading metadataextractor, swap out
-            //magic number with ExifDirectoryBase.TAG_PAGE_NUMBER
-            if (directory.containsTag(297)) {
-                int[] pageNums = directory.getIntArray(297);
+            if (directory.containsTag(ExifDirectoryBase.TAG_PAGE_NUMBER)) {
+                int[] pageNums = directory.getIntArray(ExifDirectoryBase.TAG_PAGE_NUMBER);
                 //pages can be in any order, take the max
                 if (pageNums != null && pageNums.length > 1) {
                     Integer curr = metadata.getInt(TIFF.EXIF_PAGE_COUNT);
@@ -494,6 +501,24 @@ public class ImageMetadataExtractor {
                 metadata.set(Metadata.IMAGE_LENGTH,
                         trimPixels(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)));
             }
+
+            // For Compressed Images read from ExifSubIFDDirectory
+            if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH)) {
+                String width = directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH);
+                //check for null because this could overwrite earlier set width if the value is null
+                if (width != null) {
+                    metadata.set(Metadata.IMAGE_WIDTH,
+                            trimPixels(width));
+                }
+            }
+
+            if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT)) {
+                String height = directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT);
+                if (height != null) {
+                    metadata.set(Metadata.IMAGE_LENGTH, trimPixels(height));
+                }
+            }
+
         }
 
         /**

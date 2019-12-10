@@ -19,20 +19,12 @@ package org.apache.tika.parser.image;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.InputStream;
-
-import org.apache.commons.io.IOUtils;
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
 
 
-public class WebPParserTest {
-
-    Parser parser = new AutoDetectParser();
+public class WebPParserTest extends TikaTest {
 
     /*
         Two photos in test-documents (testWebp_Alpha_Lossy.webp and testWebp_Alpha_Lossless.webp)
@@ -46,11 +38,7 @@ public class WebPParserTest {
      */
     @Test
     public void testSimple() throws Exception {
-        Metadata metadata = new Metadata();
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testWebp_Alpha_Lossy.webp");
-
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        Metadata metadata = getXML("testWebp_Alpha_Lossy.webp").metadata;
 
         assertEquals("301", metadata.get("Image Height"));
         assertEquals("400", metadata.get("Image Width"));
@@ -58,12 +46,7 @@ public class WebPParserTest {
         assertEquals("false", metadata.get("Is Animation"));
         assertEquals("image/webp", metadata.get(Metadata.CONTENT_TYPE));
 
-        IOUtils.closeQuietly(stream);
-
-        metadata = new Metadata();
-        stream = getClass().getResourceAsStream("/test-documents/testWebp_Alpha_Lossless.webp");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
-
+        metadata = getXML("testWebp_Alpha_Lossless.webp").metadata;
         //unfortunately, there isn't much metadata in lossless
         assertEquals("image/webp", metadata.get(Metadata.CONTENT_TYPE));
 

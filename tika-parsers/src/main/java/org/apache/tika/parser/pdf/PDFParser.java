@@ -29,22 +29,13 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.jempbox.xmp.XMPMetadata;
-import org.apache.jempbox.xmp.XMPSchema;
-import org.apache.jempbox.xmp.XMPSchemaDublinCore;
-import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
-import org.apache.pdfbox.cos.COSArray;
-import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
-import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
-import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.InitializableProblemHandler;
@@ -53,7 +44,6 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
@@ -61,17 +51,13 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
-import org.w3c.dom.Document;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -160,7 +146,9 @@ public class PDFParser extends AbstractParser implements Initializable {
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
-                if (shouldHandleXFAOnly(pdfDocument, localConfig)) {
+                boolean hasXFA = hasXFA(pdfDocument);
+                metadata.set(PDF.HAS_XFA, Boolean.toString(hasXFA));
+                if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
@@ -229,7 +217,11 @@ public class PDFParser extends AbstractParser implements Initializable {
         if (document.getDocumentCatalog().getLanguage() != null) {
             metadata.set(TikaCoreProperties.LANGUAGE, document.getDocumentCatalog().getLanguage());
         }
-
+        if (document.getDocumentCatalog().getAcroForm() != null &&
+            document.getDocumentCatalog().getAcroForm().getFields() != null &&
+            document.getDocumentCatalog().getAcroForm().getFields().size() > 0) {
+            metadata.set(PDF.HAS_ACROFORM_FIELDS, "true");
+        }
         PDMetadataExtractor.extract(document.getDocumentCatalog().getMetadata(), metadata, context);
 
         PDDocumentInformation info = document.getDocumentInformation();
@@ -315,15 +307,14 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
 
+    private boolean hasXFA(PDDocument pdDocument) {
+        return pdDocument.getDocumentCatalog() != null &&
+                pdDocument.getDocumentCatalog().getAcroForm() != null &&
+                pdDocument.getDocumentCatalog().getAcroForm().hasXFA();
+    }
 
-    private boolean shouldHandleXFAOnly(PDDocument pdDocument, PDFParserConfig config) {
-        if (config.getIfXFAExtractOnlyXFA() &&
-            pdDocument.getDocumentCatalog() != null &&
-            pdDocument.getDocumentCatalog().getAcroForm() != null &&
-            pdDocument.getDocumentCatalog().getAcroForm().getXFA() != null) {
-            return true;
-        }
-        return false;
+    private boolean shouldHandleXFAOnly(boolean hasXFA, PDFParserConfig config) {
+        return config.getIfXFAExtractOnlyXFA() && hasXFA;
     }
 
     private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler,
@@ -459,11 +450,6 @@ public class PDFParser extends AbstractParser implements Initializable {
         defaultConfig.setOcrImageFormatName(formatName);
     }
 
-    @Field
-    void setOcrImageScale(float imageScale) {
-        defaultConfig.setOcrImageScale(imageScale);
-    }
-
 	@Field
 	void setExtractBookmarksText(boolean extractBookmarksText) {
 		defaultConfig.setExtractBookmarksText(extractBookmarksText);
@@ -505,6 +491,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    void setExtractFontNames(boolean extractFontNames) {
+        defaultConfig.setExtractFontNames(extractFontNames);
+    }
+
+    @Field
     void setSetKCMS(boolean setKCMS) {
         defaultConfig.setSetKCMS(setKCMS);
     }
@@ -531,6 +522,15 @@ public class PDFParser extends AbstractParser implements Initializable {
         this.initializableProblemHandler = initializableProblemHandler;
     }
 
+    @Field
+    public void setDropThreshold(float dropThreshold) {
+        defaultConfig.setDropThreshold(dropThreshold);
+    }
+
+    @Field
+    public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
+        defaultConfig.setMaxMainMemoryBytes(maxMainMemoryBytes);
+    }
     /**
      * This is a no-op.  There is no need to initialize multiple fields.
      * The regular field loading should happen without this.

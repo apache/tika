@@ -32,20 +32,17 @@ import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.junit.Test;
 
 public class MockParserTest extends TikaTest {
     private final static String M = "/test-documents/mock/";
-    private final static Parser PARSER = new AutoDetectParser();
 
     @Override
     public XMLResult getXML(String path, Metadata m) throws Exception {
         //note that this is specific to MockParserTest with addition of M to the path!
         InputStream is = getResourceAsStream(M+path);
         try {
-            return super.getXML(is, PARSER, m);
+            return super.getXML(is, AUTO_DETECT_PARSER, m);
         } finally {
             IOUtils.closeQuietly(is);
         }

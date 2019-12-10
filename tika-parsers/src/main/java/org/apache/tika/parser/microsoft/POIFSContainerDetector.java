@@ -260,13 +260,15 @@ public class POIFSContainerDetector implements Detector {
                 // Excel 95 or older, we won't be able to parse this....
                 return XLS;
             } else if (names.contains("EncryptedPackage") &&
-                    names.contains("EncryptionInfo") &&
-                    names.contains("\u0006DataSpaces")) {
+                    names.contains("EncryptionInfo")) {
                 // This is a protected OOXML document, which is an OLE2 file
                 //  with an Encrypted Stream which holds the OOXML data
                 // Without decrypting the stream, we can't tell what kind of
                 //  OOXML file we have. Return a general OOXML Protected type,
                 //  and hope the name based detection can guess the rest!
+
+                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
+                //See TIKA-2982
                 return OOXML_PROTECTED;
             } else if (names.contains("EncryptedPackage")) {
                 return OLE;

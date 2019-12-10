@@ -295,7 +295,6 @@ public class ExcelParserTest extends TikaTest {
     @Test
     public void testExcel95() throws Exception {
         Detector detector = new DefaultDetector();
-        AutoDetectParser parser = new AutoDetectParser();
         MediaType type;
         Metadata m;
 
@@ -328,7 +327,7 @@ public class ExcelParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
-            parser.parse(input, handler, m, context);
+            AUTO_DETECT_PARSER.parse(input, handler, m, context);
 
             String content = handler.toString();
 
@@ -355,7 +354,7 @@ public class ExcelParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
-            parser.parse(input, handler, m, context);
+            AUTO_DETECT_PARSER.parse(input, handler, m, context);
 
             String content = handler.toString();
 

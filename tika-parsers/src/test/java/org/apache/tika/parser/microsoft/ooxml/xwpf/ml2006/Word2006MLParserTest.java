@@ -24,14 +24,12 @@ import java.io.FileFilter;
 import java.util.List;
 
 import org.apache.tika.MultiThreadedTikaTest;
-import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
@@ -188,7 +186,7 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
             contexts[i] = new ParseContext();
         }
 
-        testMultiThreaded(new AutoDetectParser(), contexts, numThreads, 2,
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, 2,
                 new FileFilter() {
                     @Override
                     public boolean accept(File pathname) {

@@ -17,6 +17,7 @@
 package org.apache.tika.dl.imagerec;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -29,27 +30,26 @@ public class DL4JInceptionV3NetTest {
     public void recognise() throws Exception {
         TikaConfig config = null;
         try {
-             config = new TikaConfig(getClass().getResourceAsStream("dl4j-inception3-config.xml"));
+            config = new TikaConfig(getClass().getResourceAsStream("dl4j-inception3-config.xml"));
         } catch (Exception e) {
             if (e.getMessage() != null
                     && (e.getMessage().contains("Connection refused")
                     || e.getMessage().contains("connect timed out"))) {
-                //skip test
-                return;
+                assumeTrue("skipping test because of connection issue", false);
+            }
+            throw e;
+        }
+        assumeTrue("something went wrong loading tika config", config != null);
+        Tika tika = new Tika(config);
+        Metadata md = new Metadata();
+        tika.parse(getClass().getResourceAsStream("cat.jpg"), md);
+        String[] objects = md.getValues("OBJECT");
+        boolean found = false;
+        for (String object : objects) {
+            if (object.contains("_cat")) {
+                found = true;
             }
         }
-        if (config != null) {
-            Tika tika = new Tika(config);
-            Metadata md = new Metadata();
-            tika.parse(getClass().getResourceAsStream("cat.jpg"), md);
-            String[] objects = md.getValues("OBJECT");
-            boolean found = false;
-            for (String object : objects) {
-                if (object.contains("_cat")) {
-                    found = true;
-                }
-            }
-            assertTrue(found);
-        }
+        assertTrue(found);
     }
 }

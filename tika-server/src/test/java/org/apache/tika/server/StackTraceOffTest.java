@@ -38,6 +38,7 @@ import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.apache.tika.server.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.writer.MetadataListMessageBodyWriter;
 import org.apache.tika.server.writer.TextMessageBodyWriter;
 import org.apache.tika.server.writer.XMPMessageBodyWriter;
 import org.junit.Assert;
@@ -79,12 +80,16 @@ public class StackTraceOffTest extends CXFTestBase {
         providers.add(new CSVMessageBodyWriter());
         providers.add(new XMPMessageBodyWriter());
         providers.add(new TextMessageBodyWriter());
+        providers.add(new MetadataListMessageBodyWriter());
         sf.setProviders(providers);
     }
 
     @Test
     public void testEncrypted() throws Exception {
         for (String path : PATHS) {
+            if ("/rmeta".equals(path)) {
+                continue;
+            }
             Response response = WebClient
                     .create(endPoint + path)
                     .accept("*/*")
@@ -102,6 +107,9 @@ public class StackTraceOffTest extends CXFTestBase {
     @Test
     public void testNullPointerOnTika() throws Exception {
         for (String path : PATHS) {
+            if ("/rmeta".equals(path)) {
+                continue;
+            }
             Response response = WebClient
                     .create(endPoint + path)
                     .accept("*/*")
@@ -115,24 +123,28 @@ public class StackTraceOffTest extends CXFTestBase {
     }
 
     @Test
-    public void test415() throws Exception {
+    public void testEmptyParser() throws Exception {
+        //As of Tika 1.23, we're no longer returning 415 for file types
+        //that don't have a parser
         //no stack traces for 415
         for (String path : PATHS) {
+
             Response response = WebClient
                     .create(endPoint + path)
-                    .type("blechdeblah/deblechdeblah")
-                    .accept("*/*")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
-            assertNotNull("null response: " + path, response);
-            assertEquals("bad type: " + path, 415, response.getStatus());
-            String msg = getStringFromInputStream((InputStream) response
-                    .getEntity());
-            assertEquals("should be empty: " + path, "", msg);
+                    .accept("*:*")
+                    .put(ClassLoader.getSystemResourceAsStream("testDigilite.fdf"));
+            if (path.equals("/unpack")) {
+                //"NO CONTENT"
+                assertEquals("bad type: " + path, 204, response.getStatus());
+            } else {
+                assertEquals("bad type: " + path, 200, response.getStatus());
+                assertNotNull("null response: " + path, response);
+            }
         }
     }
 
     //For now, make sure that non-complete document
-    //still returns BAD_REQUEST.  We may want to
+    //still returtestXDP.xdpns BAD_REQUEST.  We may want to
     //make MetadataResource return the same types of parse
     //exceptions as the others...
     @Test

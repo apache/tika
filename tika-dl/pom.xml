@@ -36,8 +36,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>1.0.0-beta4</dl4j.version>
-    <twelvemonkeys.version>3.4.1</twelvemonkeys.version>
+    <dl4j.version>1.0.0-beta5</dl4j.version>
+    <twelvemonkeys.version>3.4.2</twelvemonkeys.version>
   </properties>
 
   <dependencies>

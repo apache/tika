@@ -35,10 +35,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -52,13 +49,12 @@ public class ZipParserTest extends AbstractPkgTest {
 
     @Test
     public void testZipParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.zip")) {
-            parser.parse(stream, handler, metadata, recursingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
         assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
@@ -89,13 +85,12 @@ public class ZipParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.zip")) {
-            parser.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
        // Should have found all 9 documents
@@ -166,13 +161,11 @@ public class ZipParserTest extends AbstractPkgTest {
 
         // Also make sure EMBEDDED_RELATIONSHIP_ID was
         // passed when parsing the embedded docs:
-        Parser parser = new AutoDetectParser();
         ParseContext context = new ParseContext();
-        context.set(Parser.class, parser);
         GatherRelIDsDocumentExtractor relIDs = new GatherRelIDsDocumentExtractor();
         context.set(EmbeddedDocumentExtractor.class, relIDs);
         try (InputStream input = getResourceAsStream("/test-documents/testEmbedded.zip")) {
-            parser.parse(input,
+            AUTO_DETECT_PARSER.parse(input,
                     new BodyContentHandler(),
                     new Metadata(),
                     context);
@@ -193,7 +186,7 @@ public class ZipParserTest extends AbstractPkgTest {
                         + "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh"
                         + "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA"
                         + "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
-            autoDetectParser.parse(
+            AUTO_DETECT_PARSER.parse(
                     stream, new DefaultHandler(),
                     new Metadata(), trackingContext);
         }

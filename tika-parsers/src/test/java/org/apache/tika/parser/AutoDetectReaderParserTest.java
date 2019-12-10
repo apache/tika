@@ -41,7 +41,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testMulti() throws Exception {
-        Parser p = new AutoDetectingReaderParser();
+
         int numThreads = 10;
         int numIterations = 10;
         ParseContext[] contexts = new ParseContext[numThreads];
@@ -58,7 +58,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
                 return false;
             }
         };
-        testMultiThreaded(p, contexts, numThreads, numIterations, fileFilter);
+        testMultiThreaded(AUTO_DETECT_PARSER, contexts, numThreads, numIterations, fileFilter);
     }
 
     //this class mimics creating a new AutoDetectReader w/o supplying

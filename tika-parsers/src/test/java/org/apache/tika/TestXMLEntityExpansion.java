@@ -17,7 +17,6 @@
 package org.apache.tika;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -92,14 +91,14 @@ public class TestXMLEntityExpansion extends XMLTestBase {
     public void testProtectedXML() throws Exception {
         byte[] bytes = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>".getBytes(StandardCharsets.UTF_8);
         byte[] injected = injectXML(bytes, ENTITY_EXPANSION_BOMB);
-        Parser p = new AutoDetectParser();
+
         ParseContext context = new ParseContext();
         for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
-            test("default", injected, p, context);
+            test("default", injected, AUTO_DETECT_PARSER, context);
         }
         context.set(SAXParserFactory.class, XMLReaderUtils.getSAXParserFactory());
         for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
-            test("default sax", injected, p, context);
+            test("default sax", injected, AUTO_DETECT_PARSER, context);
         }
         String provider =
                 "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl";
@@ -113,7 +112,7 @@ public class TestXMLEntityExpansion extends XMLTestBase {
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         context.set(SAXParserFactory.class, factory);
         for (int i = 0; i < XMLReaderUtils.getPoolSize()*2; i++) {
-            test("built-in SAX", injected, p, context);
+            test("built-in SAX", injected, AUTO_DETECT_PARSER, context);
         }
     }
 

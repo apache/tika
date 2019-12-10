@@ -36,24 +36,29 @@
 
   <properties>
     <!-- NOTE: sync codec version with POI -->
-    <codec.version>1.12</codec.version>
+    <codec.version>1.13</codec.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.8</tukaani.version>
     <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
     <brotli.version>0.1.2</brotli.version>
     <mime4j.version>0.8.3</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
-    <pdfbox.version>2.0.16</pdfbox.version>
+    <pdfbox.version>2.0.17</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <sis.version>0.8</sis.version>
+    <sis.version>1.0</sis.version>
     <parso.version>2.0.11</parso.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
-    <bouncycastle.version>1.62</bouncycastle.version>
+    <bouncycastle.version>1.64</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
-    <httpcomponents.version>4.5.9</httpcomponents.version>
+    <httpcomponents.version>4.5.10</httpcomponents.version>
   </properties>
 
+  <!-- Note: as of the 1.23 release, we're waiting for external changes or fixes
+     before upgrading: java-libpst, metadata-extractor. We
+     need someone who understands grib to upgrade our code for edu.ucar:grib
+     See: https://issues.apache.org/jira/browse/TIKA-2925?focusedCommentId=16983541&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-16983541
+  -->
   <dependencies>
     <!-- Optional OSGi dependency, used only when running within OSGi -->
     <dependency>
@@ -78,7 +83,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- for java 10
+   <!-- for java 10
       See TIKA-2778 for why we need to do this now.
       May the gods of API design fix this in the future.
       -->
@@ -173,7 +178,7 @@
     <dependency>
       <groupId>com.github.luben</groupId>
       <artifactId>zstd-jni</artifactId>
-      <version>1.4.0-1</version>
+      <version>1.4.4-3</version>
       <scope>provided</scope>
     </dependency>
 
@@ -294,10 +299,14 @@
       <artifactId>tagsoup</artifactId>
       <version>1.2.1</version>
     </dependency>
+    <!-- WARNING: when you upgrade asm make sure that you update the
+      OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
+      See TIKA-2992.
+    -->
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm</artifactId>
-      <version>7.2-beta</version>
+      <version>7.2</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.mp4parser</groupId>
@@ -317,7 +326,7 @@
     <dependency>
       <groupId>com.rometools</groupId>
       <artifactId>rome</artifactId>
-      <version>1.12.1</version>
+      <version>1.12.2</version>
       <exclusions>
         <exclusion>
           <groupId>org.jdom</groupId>
@@ -346,12 +355,10 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!-- can't upgrade to java-libpst 0.9.3 because it requires Java 8
-         and is buggy with OST TIKA-2415 -->
     <dependency>
       <groupId>com.pff</groupId>
       <artifactId>java-libpst</artifactId>
-      <version>0.8.1</version>
+      <version>0.9.3</version>
     </dependency>
     <dependency>
       <groupId>com.github.junrar</groupId>
@@ -537,7 +544,7 @@
     <dependency>
       <groupId>net.java.dev.jna</groupId>
       <artifactId>jna</artifactId>
-      <version>5.3.1</version>
+      <version>5.5.0</version>
     </dependency>
 
     <!-- grib's current jsoup is vulnerable to xss
@@ -550,7 +557,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.9.0</version>
+      <version>3.11.0</version>
     </dependency>
     <dependency>
       <groupId>edu.ucar</groupId>
@@ -585,7 +592,17 @@
           <groupId>c3p0</groupId>
           <artifactId>c3p0</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.quartz-scheduler</groupId>
+          <artifactId>quartz</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!--needs to be bumped for xml vulnerability -->
+    <dependency>
+      <groupId>org.quartz-scheduler</groupId>
+      <artifactId>quartz</artifactId>
+      <version>2.3.2</version>
     </dependency>
     <!-- needs to be excluded and version bumped
          to avoid billion laughs vuln -->
@@ -824,7 +841,7 @@
     <dependency>
       <groupId>org.apache.uima</groupId>
       <artifactId>uimaj-core</artifactId>
-      <version>3.0.2</version>
+      <version>3.1.1</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>

@@ -53,7 +53,6 @@ public class OutlookPSTParserTest extends TikaTest {
 
     @Test
     public void testParse() throws Exception {
-        Parser pstParser = new AutoDetectParser();
         Metadata metadata = new Metadata();
         ContentHandler handler = new ToHTMLContentHandler();
 
@@ -62,7 +61,7 @@ public class OutlookPSTParserTest extends TikaTest {
         context.set(EmbeddedDocumentExtractor.class, trackingExtrator);
         context.set(Parser.class, new AutoDetectParser());
 
-        pstParser.parse(getResourceAsStream("/test-documents/testPST.pst"), handler, metadata, context);
+        AUTO_DETECT_PARSER.parse(getResourceAsStream("/test-documents/testPST.pst"), handler, metadata, context);
 
         String output = handler.toString();
 

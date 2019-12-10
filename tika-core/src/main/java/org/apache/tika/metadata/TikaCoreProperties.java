@@ -222,7 +222,7 @@ public interface TikaCoreProperties {
       */
       Property CREATED = Property.composite(DublinCore.CREATED,
              new Property[] { 
-                     Office.CREATION_DATE, 
+                     Office.CREATION_DATE,
              });
      
      /** 
@@ -230,7 +230,7 @@ public interface TikaCoreProperties {
       * @see Office#SAVE_DATE
       */
       Property MODIFIED = Property.composite(DublinCore.MODIFIED,
-             new Property[] { 
+             new Property[] {
                      Office.SAVE_DATE,
                      Property.internalText("Last-Modified")
              });
@@ -284,5 +284,7 @@ public interface TikaCoreProperties {
                                                                      EmbeddedResourceType.ATTACHMENT.toString(),
                                                                      EmbeddedResourceType.INLINE.toString());
 
-    
+
+
+    Property HAS_SIGNATURE = Property.internalBoolean("hasSignature");
 }

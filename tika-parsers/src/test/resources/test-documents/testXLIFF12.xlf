@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2"
+       xmlns="urn:oasis:names:tc:xliff:document:1.2"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-strict.xsd">
+    <file original="sample.properties"
+          source-language="en" target-language="fr"
+          datatype="javapropertyresourcebundle">
+        <body>
+            <trans-unit id="1" resname="welcome">
+                <source xml:lang="en">Hooray, you're here! The day just got better - enjoy the following tips!</source>
+                <target xml:lang="fr">Hurrah, tu es là. Ça fait une bonne journée - profite des renseignements suivants !</target>
+            </trans-unit>
+            <trans-unit id="2" resname="text_segment">
+                <source xml:lang="en">A section of text like this is known as a text segment. Start rockin' your translations now!</source>
+                <target xml:lang="fr">Un tel extrait est qualifié de segment du texte chez nous. C’est parti – commence tes traductions tout de suite/maintenant !</target>
+            </trans-unit>
+            <trans-unit id="3" resname="tab_shortcut">
+                <source xml:lang="en">Arriba, Arriba! Andale, Andale! Be fast as Speedy Gonzales. Just hit TAB to save and go to the next text segment, once you're done.</source>
+                <target xml:lang="fr">Arriba, Arriba ! Andale, Andale ! Prends Speedy Gonzales de vitesse. Appuie sur TAB pour sauvegarder et continuer avec le segment prochain dès que tu as fini.</target>
+            </trans-unit>
+        </body>
+    </file>
+
+    <file original="sample2.properties"
+          source-language="en" target-language="fr"
+          datatype="javapropertyresourcebundle">
+        <body>
+            <trans-unit id="4" resname="welcome">
+                <source xml:lang="en">Another trans-unit</source>
+                <target xml:lang="fr">Un autre trans-unit</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

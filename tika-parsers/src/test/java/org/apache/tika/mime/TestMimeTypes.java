@@ -179,6 +179,28 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testDigiliteFDF() throws Exception {
+        //not to be confused with Adobe's .fdf!
+        assertTypeByData("application/vnd.digilite.prolights",
+                "testDigilite.fdf");
+        assertTypeByNameAndData("application/vnd.digilite.prolights",
+                "testDigilite.fdf");
+    }
+
+    @Test
+    public void testXDP() throws Exception {
+        assertTypeDetection("testXDP.xdp",
+                "application/vnd.adobe.xdp+xml");
+    }
+
+    @Test
+    public void testXFDF() throws Exception {
+        //for an example: https://docs.appligent.com/fdfmerge/fdfmerge-form-data-format/
+        assertTypeDetection("testXFDF.xfdf",
+                "application/vnd.adobe.xfdf");
+    }
+
+    @Test
     public void testHFATypes() throws Exception {
         assertTypeByData("application/x-erdas-hfa","testHFA.hfa");
     }
@@ -405,6 +427,18 @@ public class TestMimeTypes {
         assertTypeByName("application/fits", "testFITS.fits");
         // Shorter Header pattern (16 rather than 20 spaces)
         assertTypeByData("application/fits", "testFITS_ShorterHeader.fits");
+    }
+
+    @Test
+    public void testHeifDetection() throws Exception {
+        // HEIF image using the HEVC Codec == HEIC
+        //  created using https://compare.rokka.io/_compare on testJPEG_GEO.jpg
+        assertType("image/heic", "testHEIF.heic");
+        assertTypeByData("image/heic", "testHEIF.heic");
+        assertTypeByName("image/heic", "testHEIF.heic");
+
+        // TODO Create a HEIF using another codec, to test .heif data
+        assertTypeByName("image/heif", "testHEIF.heif");
     }
 
     @Test

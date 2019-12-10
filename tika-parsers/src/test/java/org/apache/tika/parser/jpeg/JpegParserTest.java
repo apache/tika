@@ -65,8 +65,8 @@ public class JpegParserTest {
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         // Core EXIF/TIFF tags
-        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("3888", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("2592", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
 
@@ -86,7 +86,7 @@ public class JpegParserTest {
         // Check that EXIF/TIFF tags come through with their raw values too
         // (This may be removed for Tika 1.0, as we support more of them
         //  with explicit Metadata entries)
-        assertEquals("Canon EOS 40D", metadata.get("Model"));
+        assertEquals("Canon EOS 40D", metadata.get("Exif IFD0:Model"));
 
         // Common tags
         assertEquals("2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
@@ -115,8 +115,8 @@ public class JpegParserTest {
         assertEquals("-54.1234", metadata.get(Metadata.LONGITUDE));
 
         // Core EXIF/TIFF tags
-        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("3888", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("2592", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
 

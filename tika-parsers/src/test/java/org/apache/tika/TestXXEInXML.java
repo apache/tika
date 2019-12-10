@@ -16,10 +16,11 @@
  */
 package org.apache.tika;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
@@ -28,7 +29,6 @@ import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -69,7 +69,7 @@ public class TestXXEInXML extends XMLTestBase {
     @Test
     public void testXML() throws Exception {
         parse("testXXE.xml", getResourceAsStream("/test-documents/testXXE.xml"),
-                new AutoDetectParser(), new ParseContext());
+                AUTO_DETECT_PARSER, new ParseContext());
     }
 
     @Test
@@ -93,7 +93,7 @@ public class TestXXEInXML extends XMLTestBase {
         IOUtils.copy(is, bos);
         byte[] injected = injectXML(bos.toByteArray(), XXE);
         parse("testWORD_2003ml.xml",
-                new ByteArrayInputStream(injected), new AutoDetectParser(), new ParseContext());
+                new ByteArrayInputStream(injected), AUTO_DETECT_PARSER, new ParseContext());
         is.close();
 
         is = getResourceAsStream("/test-documents/testWORD_2006ml.xml");
@@ -101,11 +101,12 @@ public class TestXXEInXML extends XMLTestBase {
         IOUtils.copy(is, bos);
         injected = injectXML(bos.toByteArray(), XXE);
         parse("testWORD_2006ml.xml", new ByteArrayInputStream(injected),
-                new AutoDetectParser(), new ParseContext());
+                AUTO_DETECT_PARSER, new ParseContext());
     }
 
+
     @Test
-    public void testXMLInZips() throws Exception {
+    public void testPOIOOXMLs() throws Exception {
         for (String fileName : new String[]{
                 "testWORD.docx",
                 "testWORD_1img.docx",
@@ -119,29 +120,29 @@ public class TestXXEInXML extends XMLTestBase {
                 "testPPT_2imgs.pptx",
                 "testPPT_comment.pptx",
                 "testPPT_EmbeddedPDF.pptx",
-                "testPPT_macros.pptm",
-                "testEPUB.epub"
+                "testPPT_macros.pptm"
         }) {
-            _testOOXML(fileName);
+            _testPOIOOXMLs(fileName);
         }
     }
 
-    private void _testOOXML(String fileName) throws Exception {
-
+    private void _testPOIOOXMLs(String fileName) throws Exception {
         Path originalOOXML = getResourceAsFile("/test-documents/"+fileName).toPath();
         Path injected = injectZippedXMLs(originalOOXML, XXE, false);
 
-        Parser p = new AutoDetectParser();
         ContentHandler xhtml = new ToHTMLContentHandler();
         ParseContext parseContext = new ParseContext();
         //if the SafeContentHandler is turned off, this will throw an FNFE
         Metadata metadata = new Metadata();
         try {
-            p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            fail("problem with: "+fileName + ": "+ e.getMessage());
+            AUTO_DETECT_PARSER.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
+        } catch (TikaException e) {
+            Throwable cause = e.getCause();
+            if (!(cause instanceof InvalidFormatException)) {
+                //as of POI 4.1.x
+                fail("POI should have thrown an IFE complaining about " +
+                        "not being able to read content types part !");
+            }
         } finally {
             Files.delete(injected);
         }
@@ -156,7 +157,7 @@ public class TestXXEInXML extends XMLTestBase {
             officeParserConfig.setUseSAXPptxExtractor(true);
             injected = injectZippedXMLs(originalOOXML, XXE, true);
 
-            p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
+            AUTO_DETECT_PARSER.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             fail("problem with SAX-based: "+fileName + ": "+ e.getMessage());
@@ -164,6 +165,33 @@ public class TestXXEInXML extends XMLTestBase {
             Files.delete(injected);
         }
     }
+
+    @Test
+    public void testXMLInZips() throws Exception {
+        for (String fileName : new String[]{
+                "testEPUB.epub"
+        }) {
+            _testXMLInZips(fileName);
+        }
+    }
+
+    private void _testXMLInZips(String fileName) throws Exception {
+        Path originalOOXML = getResourceAsFile("/test-documents/"+fileName).toPath();
+        Path injected = injectZippedXMLs(originalOOXML, XXE, false);
+
+        Parser p = AUTO_DETECT_PARSER;
+        ContentHandler xhtml = new ToHTMLContentHandler();
+        ParseContext parseContext = new ParseContext();
+        //if the SafeContentHandler is turned off, this will throw an FNFE
+        Metadata metadata = new Metadata();
+        try {
+            p.parse(Files.newInputStream(injected), xhtml, metadata, parseContext);
+        } finally {
+            Files.delete(injected);
+        }
+
+    }
+
 
     @Test
     public void testDOM() throws Exception {
@@ -180,7 +208,7 @@ public class TestXXEInXML extends XMLTestBase {
     public void testDocxWithIncorrectSAXConfiguration() throws Exception {
         Path originalDocx = getResourceAsFile("/test-documents/testWORD_macros.docm").toPath();
         Path injected = injectZippedXMLs(originalDocx, XXE,true);
-        Parser p = new AutoDetectParser();
+
         ContentHandler xhtml = new ToHTMLContentHandler();
         ParseContext parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
@@ -189,7 +217,7 @@ public class TestXXEInXML extends XMLTestBase {
         parseContext.set(SAXParser.class, SAXParserFactory.newInstance().newSAXParser());
         //if the SafeContentHandler is turned off, this will throw an FNFE
         try {
-            p.parse(Files.newInputStream(injected), xhtml, new Metadata(), parseContext);
+            AUTO_DETECT_PARSER.parse(Files.newInputStream(injected), xhtml, new Metadata(), parseContext);
         } finally {
             //Files.delete(injected);
         }
@@ -207,9 +235,4 @@ public class TestXXEInXML extends XMLTestBase {
             TikaConfig tikaConfig = new TikaConfig(new ByteArrayInputStream(injected));
         }
     }
-
-
-
-
-
 }
