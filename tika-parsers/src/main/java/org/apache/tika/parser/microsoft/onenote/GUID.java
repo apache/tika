@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Locale;
 
 class GUID implements Comparable<GUID> {
     int[] guid;
@@ -107,7 +108,7 @@ class GUID implements Comparable<GUID> {
             sb.append(StringUtils.leftPad(Integer.toHexString(guid[i]), 2, '0'));
         }
         sb.append("}");
-        return sb.toString().toUpperCase();
+        return sb.toString().toUpperCase(Locale.US);
     }
 
     public static GUID nil() {

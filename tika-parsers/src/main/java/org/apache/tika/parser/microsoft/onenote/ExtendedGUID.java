@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import java.util.Locale;
 import java.util.Objects;
 
 class ExtendedGUID implements Comparable<ExtendedGUID> {
@@ -59,7 +60,7 @@ class ExtendedGUID implements Comparable<ExtendedGUID> {
 
     @Override
     public String toString() {
-        return String.format("%s [%d]", guid, n);
+        return String.format(Locale.US, "%s [%d]", guid, n);
     }
 
     public GUID getGuid() {

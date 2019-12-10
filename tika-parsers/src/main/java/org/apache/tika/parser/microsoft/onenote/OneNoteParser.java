@@ -25,8 +25,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -46,8 +44,11 @@ import java.util.Set;
  */
 public class OneNoteParser extends AbstractParser {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final Map<MediaType, List<String>> typesMap = new HashMap<>();
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -5504243905998074168L;
 
     static {
         // All types should be 4 bytes long, space padded as needed
