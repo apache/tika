@@ -58,7 +58,7 @@ class OneNoteTreeWalker {
 
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
-     * So we create this offset used to calculate based on Instant.EPOCH.
+     * So we create this offset used to calculate number of seconds between this and the Instant.EPOCH.
      */
     private static final long TIME32_EPOCH_DIFF_1980;
     static {
@@ -68,7 +68,7 @@ class OneNoteTreeWalker {
     }
     /**
      * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
-     * So we create this offset used to calculate based on Instant.EPOCH.
+     * So we create this offset used to calculate number of seconds between this and the Instant.EPOCH.
      */
     private static final long DATETIME_EPOCH_DIFF_1601;
     static {
