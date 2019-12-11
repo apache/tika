@@ -80,7 +80,7 @@ class JCID {
     @Override
     public String toString() {
         return "JCID{" +
-            "jcid=" + JCIDPropertySetTypeEnum.of(jcid) + " (" + jcid + ")" +
+            "jcid=" + JCIDPropertySetTypeEnum.of(jcid) + " (0x" + Long.toHexString(jcid) + ")" +
             ", index=" + index +
             ", isBinary=" + isBinary +
             ", isPropertySet=" + isPropertySet +
