@@ -64,7 +64,7 @@ class OneNoteTreeWalker {
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
         Instant instant = time32Epoch1980.atZone(ZoneOffset.UTC).toInstant();
-        TIME32_EPOCH_DIFF_1980 = instant.toEpochMilli() / 1000 - Instant.EPOCH.toEpochMilli();
+        TIME32_EPOCH_DIFF_1980 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
     }
     /**
      * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
@@ -74,7 +74,7 @@ class OneNoteTreeWalker {
     static {
         LocalDateTime time32Epoch1601 = LocalDateTime.of(1601, Month.JANUARY, 1, 0, 0);
         Instant instant = time32Epoch1601.atZone(ZoneOffset.UTC).toInstant();
-        DATETIME_EPOCH_DIFF_1601 = instant.toEpochMilli() / 1000 - Instant.EPOCH.toEpochMilli();
+        DATETIME_EPOCH_DIFF_1601 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
     }
 
     private OneNoteTreeWalkerOptions options;
