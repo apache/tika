@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -111,6 +112,12 @@ public class OneNoteParser extends AbstractParser {
             }
             if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
                 metadata.set(Property.externalTextBag("originalAuthors"), oneNoteTreeWalker.getOriginalAuthors().toArray(new String[] {}));
+            }
+            if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
+                metadata.set("lastModifiedTimestamp", oneNoteTreeWalker.getLastModifiedTimestamp().toString());
+            }
+            if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {
+                metadata.set("lastModified", String.valueOf(oneNoteTreeWalker.getLastModified()));
             }
             xhtml.endDocument();
         }

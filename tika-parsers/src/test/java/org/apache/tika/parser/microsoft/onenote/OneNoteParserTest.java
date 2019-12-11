@@ -18,8 +18,10 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -50,6 +52,9 @@ public class OneNoteParserTest extends TikaTest {
 
         List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
         assertContains("Microsoft\u0000", originalAuthors);
+
+        Assert.assertEquals("2011-04-15T05:33:02.069648100Z", metadata.get("lastModifiedTimestamp"));
+        Assert.assertEquals(Instant.ofEpochSecond(1446572147), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -77,6 +82,9 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
         assertContains("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
+
+        Assert.assertEquals("2011-04-15T05:33:02.069648100Z", metadata.get("lastModifiedTimestamp"));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426628), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -104,6 +112,9 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
+
+        Assert.assertEquals("2011-04-15T05:33:02.069648100Z", metadata.get("lastModifiedTimestamp"));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426624), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
@@ -131,6 +142,9 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
+
+        Assert.assertEquals("2011-04-15T05:33:02.069648100Z", metadata.get("lastModifiedTimestamp"));
+        Assert.assertEquals(Instant.ofEpochSecond(1574426547), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     private void assertNoJunk(String txt) {

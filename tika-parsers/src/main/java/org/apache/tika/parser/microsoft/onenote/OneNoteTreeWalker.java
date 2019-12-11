@@ -33,6 +33,10 @@ import org.xml.sax.helpers.AttributesImpl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +55,14 @@ class OneNoteTreeWalker {
 
     private static final String P = "p";
     private static Pattern HYPERLINK_PATTERN = Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
+
+    private static final long ONENOTE_TIME32_EPOCH_DIFF;
+    static {
+        LocalDateTime TIME_32_EPOCH = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
+        Instant instant = TIME_32_EPOCH.atZone(ZoneOffset.UTC).toInstant();
+        ONENOTE_TIME32_EPOCH_DIFF = instant.toEpochMilli() / 1000 - Instant.EPOCH.toEpochMilli();
+    }
+
     private OneNoteTreeWalkerOptions options;
     private OneNoteDocument oneNoteDocument;
     private OneNoteDirectFileResource dif;
@@ -61,6 +73,8 @@ class OneNoteTreeWalker {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
+    private Instant lastModifiedTimestamp = Instant.MIN;
+    private long lastModified = Long.MIN_VALUE;
     private boolean mostRecentAuthorProp = false;
     private boolean originalAuthorProp = false;
 
@@ -350,7 +364,20 @@ class OneNoteTreeWalker {
         propMap.put("oneNoteType", "PropertyValue");
         propMap.put("propertyId", propertyValue.propertyId.toString());
 
-        if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.Author) {
+        if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
+            OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
+            content.reposition(propertyValue.rawData);
+            Instant instant = content.deserializeDateTime();
+            if (instant.isAfter(lastModifiedTimestamp)) {
+                lastModifiedTimestamp = instant;
+            }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTime) {
+            // add the ONENOTE_TIME32_EPOCH_DIFF because OneNote TIME32 epoch time is per 1980, not 1970
+            long lastMod = propertyValue.scalar + ONENOTE_TIME32_EPOCH_DIFF;
+            if (lastMod > lastModified) {
+                lastModified = lastMod;
+            }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.Author) {
             String author = getAuthor(propertyValue);
             if (mostRecentAuthorProp) {
                 propMap.put("MostRecentAuthor", author);
@@ -504,5 +531,21 @@ class OneNoteTreeWalker {
 
     public Set<String> getOriginalAuthors() {
         return originalAuthors;
+    }
+
+    public Instant getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
+    }
+
+    public void setLastModifiedTimestamp(Instant lastModifiedTimestamp) {
+        this.lastModifiedTimestamp = lastModifiedTimestamp;
+    }
+
+    public long getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
     }
 }
