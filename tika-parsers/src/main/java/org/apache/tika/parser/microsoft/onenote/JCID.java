@@ -46,6 +46,7 @@ package org.apache.tika.parser.microsoft.onenote;
  * reserved (11 bits): MUST be zero, and MUST be ignored.
  */
 class JCID {
+    long jcid;
     long index;
     boolean isBinary;
     boolean isPropertySet;
@@ -64,6 +65,7 @@ class JCID {
     }
 
     public void loadFrom32BitIndex(long fullIndex) {
+        jcid = fullIndex;
         index = fullIndex & 0xffff;
         isBinary = ((fullIndex >> 16) & 1) == 1;
         isPropertySet = ((fullIndex >> 17) & 1) == 1;
@@ -78,66 +80,69 @@ class JCID {
     @Override
     public String toString() {
         return "JCID{" +
-          "index=" + index +
-          ", isBinary=" + isBinary +
-          ", isPropertySet=" + isPropertySet +
-          ", isGraphNode=" + isGraphNode +
-          ", isFileData=" + isFileData +
-          ", isReadOnly=" + isReadOnly +
-          '}';
+            "jcid=" + jcid +
+            ", index=" + index +
+            ", isBinary=" + isBinary +
+            ", isPropertySet=" + isPropertySet +
+            ", isGraphNode=" + isGraphNode +
+            ", isFileData=" + isFileData +
+            ", isReadOnly=" + isReadOnly +
+            '}';
+    }
+
+    public long getJcid() {
+        return jcid;
+    }
+
+    public void setJcid(long jcid) {
+        this.jcid = jcid;
     }
 
     public long getIndex() {
         return index;
     }
 
-    public JCID setIndex(long index) {
+    public void setIndex(long index) {
         this.index = index;
-        return this;
     }
 
     public boolean isBinary() {
         return isBinary;
     }
 
-    public JCID setBinary(boolean binary) {
+    public void setBinary(boolean binary) {
         isBinary = binary;
-        return this;
     }
 
     public boolean isPropertySet() {
         return isPropertySet;
     }
 
-    public JCID setPropertySet(boolean propertySet) {
+    public void setPropertySet(boolean propertySet) {
         isPropertySet = propertySet;
-        return this;
     }
 
     public boolean isGraphNode() {
         return isGraphNode;
     }
 
-    public JCID setGraphNode(boolean graphNode) {
+    public void setGraphNode(boolean graphNode) {
         isGraphNode = graphNode;
-        return this;
     }
 
     public boolean isFileData() {
         return isFileData;
     }
 
-    public JCID setFileData(boolean fileData) {
+    public void setFileData(boolean fileData) {
         isFileData = fileData;
-        return this;
     }
 
     public boolean isReadOnly() {
         return isReadOnly;
     }
 
-    public JCID setReadOnly(boolean readOnly) {
+    public void setReadOnly(boolean readOnly) {
         isReadOnly = readOnly;
-        return this;
     }
 }

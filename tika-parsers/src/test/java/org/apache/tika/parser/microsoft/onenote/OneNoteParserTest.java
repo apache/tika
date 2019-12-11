@@ -20,6 +20,9 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class OneNoteParserTest extends TikaTest {
 
     //TODO: rename test files testOneNote...
@@ -35,6 +38,18 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("Sample1.one", metadata);
         assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertContains("Olya Veselova\u0000", authors);
+        assertContains("Microsoft\u0000", authors);
+        assertContains("Scott\u0000", authors);
+        assertContains("Scott H. W. Snyder\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("Microsoft\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertContains("Microsoft\u0000", originalAuthors);
     }
 
     @Test
@@ -47,6 +62,21 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Section1HeaderTitle", txt);
         assertContains("Section1TextArea2", txt);
         assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertContains("Olya Veselova\u0000", authors);
+        assertContains("Microsoft\u0000", authors);
+        assertContains("Scott\u0000", authors);
+        assertContains("Scott H. W. Snyder\u0000", authors);
+        assertContains("ndipiazza\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("ndipiazza\u0000", mostRecentAuthors);
+        assertContains("Microsoft\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertContains("Microsoft\u0000", originalAuthors);
+        assertContains("ndipiazza\u0000", mostRecentAuthors);
     }
 
     @Test
@@ -59,6 +89,21 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Section2HeaderTitle", txt);
         assertContains("Section2TextArea2", txt);
         assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertNotContained("Olya Veselova\u0000", authors);
+        assertNotContained("Microsoft\u0000", authors);
+        assertNotContained("Scott\u0000", authors);
+        assertNotContained("Scott H. W. Snyder\u0000", authors);
+        assertContains("ndipiazza\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("ndipiazza\u0000", mostRecentAuthors);
+        assertNotContained("Microsoft\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertNotContained("Microsoft\u0000", originalAuthors);
+        assertContains("ndipiazza\u0000", mostRecentAuthors);
     }
 
     @Test
@@ -71,6 +116,21 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Section3HeaderTitle", txt);
         assertContains("Section3TextArea2", txt);
         assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertNotContained("Olya Veselova\u0000", authors);
+        assertNotContained("Microsoft\u0000", authors);
+        assertNotContained("Scott\u0000", authors);
+        assertNotContained("Scott H. W. Snyder\u0000", authors);
+        assertContains("ndipiazza\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("ndipiazza\u0000", mostRecentAuthors);
+        assertNotContained("Microsoft\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertNotContained("Microsoft\u0000", originalAuthors);
+        assertContains("ndipiazza\u0000", mostRecentAuthors);
     }
 
     private void assertNoJunk(String txt) {

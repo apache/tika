@@ -773,7 +773,7 @@ class OneNotePtr {
         return objectInfoDependencyOverrideData;
     }
 
-    private CompactID deserializeCompactID() throws IOException, TikaException {
+    CompactID deserializeCompactID() throws IOException, TikaException {
         CompactID compactID = new CompactID();
         compactID.n = deserializeLittleEndianChar();
         compactID.guidIndex = deserializeInt24();

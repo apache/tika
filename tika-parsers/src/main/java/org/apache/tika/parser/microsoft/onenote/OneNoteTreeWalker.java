@@ -58,6 +58,11 @@ class OneNoteTreeWalker {
     private Pair<Long, ExtendedGUID> roleAndContext;
     private final Metadata parentMetadata;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
+    private final Set<String> authors = new HashSet<>();
+    private final Set<String> mostRecentAuthors = new HashSet<>();
+    private final Set<String> originalAuthors = new HashSet<>();
+    private boolean mostRecentAuthorProp = false;
+    private boolean originalAuthorProp = false;
 
     /**
      * Create a one tree walker.
@@ -247,6 +252,10 @@ class OneNoteTreeWalker {
                 structure.put("propertySet", propSet);
             }
         }
+//        JCID propSetJcid = fileNode.subType.objectDeclarationWithRefCount.body.jcid;
+//        if (propSetJcid != null && JCIDPropertySetTypeEnum.jcidReadOnlyPersistablePropertyContainerForAuthor.equals(JCIDPropertySetTypeEnum.of(propSetJcid.jcid))) {
+//            System.out.println("hi");
+//        }
         if (fileNode.subType.fileDataStoreObjectReference.ref != null &&
           !FileChunkReference.nil().equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
             structure.put("fileDataStoreObjectReference",
@@ -271,7 +280,6 @@ class OneNoteTreeWalker {
             throw new TikaMemoryLimitException("File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
               " exceeds document size: " + dif.size());
         }
-
         handleEmbedded((int)fileDataStoreObjectReference.ref.fileData.cb);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
         return structure;
@@ -346,7 +354,25 @@ class OneNoteTreeWalker {
         propMap.put("oneNoteType", "PropertyValue");
         propMap.put("propertyId", propertyValue.propertyId.toString());
 
-        if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
+        if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.Author) {
+            String author = getAuthor(propertyValue);
+            if (mostRecentAuthorProp) {
+                propMap.put("MostRecentAuthor", author);
+                mostRecentAuthors.add(author);
+            } else if (originalAuthorProp) {
+                propMap.put("OriginalAuthor", author);
+                originalAuthors.add(author);
+            } else {
+                propMap.put("Author", author);
+                authors.add(author);
+            }
+            mostRecentAuthorProp = false;
+            originalAuthorProp = false;
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorMostRecent) {
+            mostRecentAuthorProp = true;
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
+            originalAuthorProp = true;
+        } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
             propMap.put("scalar", propertyValue.scalar);
         } else {
             OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
@@ -425,6 +451,23 @@ class OneNoteTreeWalker {
         return propMap;
     }
 
+    /**
+     * returns a UTF-16LE author string.
+     * @param propertyValue The property value of an author.
+     * @return Resulting author string in UTF-16LE format.
+     */
+    private String getAuthor(PropertyValue propertyValue) throws IOException, TikaMemoryLimitException {
+        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
+        content.reposition(propertyValue.rawData);
+        if (content.size() > dif.size()) {
+            throw new TikaMemoryLimitException("File data store cb " + content.size() +
+                " exceeds document size: " + dif.size());
+        }
+        ByteBuffer buf = ByteBuffer.allocate(content.size());
+        dif.read(buf);
+        return new String(buf.array(), StandardCharsets.UTF_16LE);
+    }
+
     private void handleRichEditTextUnicode(int length) throws SAXException, IOException, TikaException {
         //this is a null-ended UTF-16LE string
         ByteBuffer buf = ByteBuffer.allocate(length);
@@ -453,5 +496,17 @@ class OneNoteTreeWalker {
             xhtml.characters(txt);
             xhtml.endElement(P);
         }
+    }
+
+    public Set<String> getAuthors() {
+        return authors;
+    }
+
+    public Set<String> getMostRecentAuthors() {
+        return mostRecentAuthors;
+    }
+
+    public Set<String> getOriginalAuthors() {
+        return originalAuthors;
     }
 }

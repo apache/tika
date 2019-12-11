@@ -21,6 +21,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -102,6 +103,15 @@ public class OneNoteParser extends AbstractParser {
 
             oneNoteTreeWalker.walkTree();
 
+            if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
+                metadata.set(Property.externalTextBag("authors"), oneNoteTreeWalker.getAuthors().toArray(new String[] {}));
+            }
+            if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
+                metadata.set(Property.externalTextBag("mostRecentAuthors"), oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[] {}));
+            }
+            if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
+                metadata.set(Property.externalTextBag("originalAuthors"), oneNoteTreeWalker.getOriginalAuthors().toArray(new String[] {}));
+            }
             xhtml.endDocument();
         }
     }
