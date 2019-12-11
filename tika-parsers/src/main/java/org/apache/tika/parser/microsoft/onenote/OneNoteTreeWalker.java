@@ -252,10 +252,6 @@ class OneNoteTreeWalker {
                 structure.put("propertySet", propSet);
             }
         }
-//        JCID propSetJcid = fileNode.subType.objectDeclarationWithRefCount.body.jcid;
-//        if (propSetJcid != null && JCIDPropertySetTypeEnum.jcidReadOnlyPersistablePropertyContainerForAuthor.equals(JCIDPropertySetTypeEnum.of(propSetJcid.jcid))) {
-//            System.out.println("hi");
-//        }
         if (fileNode.subType.fileDataStoreObjectReference.ref != null &&
           !FileChunkReference.nil().equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
             structure.put("fileDataStoreObjectReference",
