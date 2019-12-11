@@ -21,6 +21,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -30,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -102,6 +104,24 @@ public class OneNoteParser extends AbstractParser {
 
             oneNoteTreeWalker.walkTree();
 
+            if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
+                metadata.set(Property.externalTextBag("authors"), oneNoteTreeWalker.getAuthors().toArray(new String[] {}));
+            }
+            if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
+                metadata.set(Property.externalTextBag("mostRecentAuthors"), oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[] {}));
+            }
+            if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
+                metadata.set(Property.externalTextBag("originalAuthors"), oneNoteTreeWalker.getOriginalAuthors().toArray(new String[] {}));
+            }
+            if (!Instant.MAX.equals(oneNoteTreeWalker.getCreationTimestamp())) {
+                metadata.set("creationTimestamp", String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
+            }
+            if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
+                metadata.set("lastModifiedTimestamp", String.valueOf(oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
+            }
+            if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {
+                metadata.set("lastModified", String.valueOf(oneNoteTreeWalker.getLastModified()));
+            }
             xhtml.endDocument();
         }
     }

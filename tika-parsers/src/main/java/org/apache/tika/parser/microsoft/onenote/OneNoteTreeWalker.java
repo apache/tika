@@ -33,6 +33,10 @@ import org.xml.sax.helpers.AttributesImpl;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +55,28 @@ class OneNoteTreeWalker {
 
     private static final String P = "p";
     private static Pattern HYPERLINK_PATTERN = Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
+
+    /**
+     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
+     * So we create this offset used to calculate number of seconds between this and the Instant.EPOCH.
+     */
+    private static final long TIME32_EPOCH_DIFF_1980;
+    static {
+        LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
+        Instant instant = time32Epoch1980.atZone(ZoneOffset.UTC).toInstant();
+        TIME32_EPOCH_DIFF_1980 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
+    }
+    /**
+     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
+     * So we create this offset used to calculate number of seconds between this and the Instant.EPOCH.
+     */
+    private static final long DATETIME_EPOCH_DIFF_1601;
+    static {
+        LocalDateTime time32Epoch1601 = LocalDateTime.of(1601, Month.JANUARY, 1, 0, 0);
+        Instant instant = time32Epoch1601.atZone(ZoneOffset.UTC).toInstant();
+        DATETIME_EPOCH_DIFF_1601 = (instant.toEpochMilli() - Instant.EPOCH.toEpochMilli()) / 1000;
+    }
+
     private OneNoteTreeWalkerOptions options;
     private OneNoteDocument oneNoteDocument;
     private OneNoteDirectFileResource dif;
@@ -58,6 +84,14 @@ class OneNoteTreeWalker {
     private Pair<Long, ExtendedGUID> roleAndContext;
     private final Metadata parentMetadata;
     private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
+    private final Set<String> authors = new HashSet<>();
+    private final Set<String> mostRecentAuthors = new HashSet<>();
+    private final Set<String> originalAuthors = new HashSet<>();
+    private Instant lastModifiedTimestamp = Instant.MIN;
+    private long creationTimestamp = Long.MAX_VALUE;
+    private long lastModified = Long.MIN_VALUE;
+    private boolean mostRecentAuthorProp = false;
+    private boolean originalAuthorProp = false;
 
     /**
      * Create a one tree walker.
@@ -271,7 +305,6 @@ class OneNoteTreeWalker {
             throw new TikaMemoryLimitException("File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
               " exceeds document size: " + dif.size());
         }
-
         handleEmbedded((int)fileDataStoreObjectReference.ref.fileData.cb);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
         return structure;
@@ -346,7 +379,43 @@ class OneNoteTreeWalker {
         propMap.put("oneNoteType", "PropertyValue");
         propMap.put("propertyId", propertyValue.propertyId.toString());
 
-        if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
+        if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
+            long fullval = propertyValue.scalar;
+            Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
+            if (instant.isAfter(lastModifiedTimestamp)) {
+                lastModifiedTimestamp = instant;
+            }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
+            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not 1970
+            long creationTs = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
+            if (creationTs < creationTimestamp) {
+                creationTimestamp = creationTs;
+            }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTime) {
+            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not 1970
+            long lastMod = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
+            if (lastMod > lastModified) {
+                lastModified = lastMod;
+            }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.Author) {
+            String author = getAuthor(propertyValue);
+            if (mostRecentAuthorProp) {
+                propMap.put("MostRecentAuthor", author);
+                mostRecentAuthors.add(author);
+            } else if (originalAuthorProp) {
+                propMap.put("OriginalAuthor", author);
+                originalAuthors.add(author);
+            } else {
+                propMap.put("Author", author);
+                authors.add(author);
+            }
+            mostRecentAuthorProp = false;
+            originalAuthorProp = false;
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorMostRecent) {
+            mostRecentAuthorProp = true;
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.AuthorOriginal) {
+            originalAuthorProp = true;
+        } else if (propertyValue.propertyId.type > 0 && propertyValue.propertyId.type <= 6) {
             propMap.put("scalar", propertyValue.scalar);
         } else {
             OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
@@ -425,6 +494,23 @@ class OneNoteTreeWalker {
         return propMap;
     }
 
+    /**
+     * returns a UTF-16LE author string.
+     * @param propertyValue The property value of an author.
+     * @return Resulting author string in UTF-16LE format.
+     */
+    private String getAuthor(PropertyValue propertyValue) throws IOException, TikaMemoryLimitException {
+        OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
+        content.reposition(propertyValue.rawData);
+        if (content.size() > dif.size()) {
+            throw new TikaMemoryLimitException("File data store cb " + content.size() +
+                " exceeds document size: " + dif.size());
+        }
+        ByteBuffer buf = ByteBuffer.allocate(content.size());
+        dif.read(buf);
+        return new String(buf.array(), StandardCharsets.UTF_16LE);
+    }
+
     private void handleRichEditTextUnicode(int length) throws SAXException, IOException, TikaException {
         //this is a null-ended UTF-16LE string
         ByteBuffer buf = ByteBuffer.allocate(length);
@@ -453,5 +539,41 @@ class OneNoteTreeWalker {
             xhtml.characters(txt);
             xhtml.endElement(P);
         }
+    }
+
+    public Set<String> getAuthors() {
+        return authors;
+    }
+
+    public Set<String> getMostRecentAuthors() {
+        return mostRecentAuthors;
+    }
+
+    public Set<String> getOriginalAuthors() {
+        return originalAuthors;
+    }
+
+    public Instant getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
+    }
+
+    public void setLastModifiedTimestamp(Instant lastModifiedTimestamp) {
+        this.lastModifiedTimestamp = lastModifiedTimestamp;
+    }
+
+    public long getLastModified() {
+        return lastModified;
+    }
+
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    public long getCreationTimestamp() {
+        return creationTimestamp;
+    }
+
+    public void setCreationTimestamp(long creationTimestamp) {
+        this.creationTimestamp = creationTimestamp;
     }
 }
