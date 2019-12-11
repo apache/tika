@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -772,12 +771,6 @@ class OneNotePtr {
             objectInfoDependencyOverrideData.overrides2.add(local);
         }
         return objectInfoDependencyOverrideData;
-    }
-
-    Instant deserializeDateTime() throws IOException {
-        long low = deserializeLittleEndianInt();
-        long high = deserializeLittleEndianInt();
-        return Instant.ofEpochSecond(high, low);
     }
 
     private CompactID deserializeCompactID() throws IOException, TikaException {
