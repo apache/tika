@@ -56,11 +56,25 @@ class OneNoteTreeWalker {
     private static final String P = "p";
     private static Pattern HYPERLINK_PATTERN = Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
 
-    private static final long ONENOTE_TIME32_EPOCH_DIFF;
+    /**
+     * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
+     * So we create this offset used to calculate based on Instant.EPOCH.
+     */
+    private static final long TIME32_EPOCH_DIFF_1980;
     static {
-        LocalDateTime TIME_32_EPOCH = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
-        Instant instant = TIME_32_EPOCH.atZone(ZoneOffset.UTC).toInstant();
-        ONENOTE_TIME32_EPOCH_DIFF = instant.toEpochMilli() / 1000 - Instant.EPOCH.toEpochMilli();
+        LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
+        Instant instant = time32Epoch1980.atZone(ZoneOffset.UTC).toInstant();
+        TIME32_EPOCH_DIFF_1980 = instant.toEpochMilli() / 1000 - Instant.EPOCH.toEpochMilli();
+    }
+    /**
+     * See spec MS-DTYP - 2.3.3 - DATETIME dates are based on epoch of jan 1 1601 UTC.
+     * So we create this offset used to calculate based on Instant.EPOCH.
+     */
+    private static final long DATETIME_EPOCH_DIFF_1601;
+    static {
+        LocalDateTime time32Epoch1601 = LocalDateTime.of(1601, Month.JANUARY, 1, 0, 0);
+        Instant instant = time32Epoch1601.atZone(ZoneOffset.UTC).toInstant();
+        DATETIME_EPOCH_DIFF_1601 = instant.toEpochMilli() / 1000 - Instant.EPOCH.toEpochMilli();
     }
 
     private OneNoteTreeWalkerOptions options;
@@ -74,6 +88,7 @@ class OneNoteTreeWalker {
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
     private Instant lastModifiedTimestamp = Instant.MIN;
+    private long creationTimestamp = Long.MAX_VALUE;
     private long lastModified = Long.MIN_VALUE;
     private boolean mostRecentAuthorProp = false;
     private boolean originalAuthorProp = false;
@@ -365,15 +380,20 @@ class OneNoteTreeWalker {
         propMap.put("propertyId", propertyValue.propertyId.toString());
 
         if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTimeStamp) {
-            OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
-            content.reposition(propertyValue.rawData);
-            Instant instant = content.deserializeDateTime();
+            long fullval = propertyValue.scalar;
+            Instant instant = Instant.ofEpochSecond(fullval / 10000000 + DATETIME_EPOCH_DIFF_1601);
             if (instant.isAfter(lastModifiedTimestamp)) {
                 lastModifiedTimestamp = instant;
             }
+        } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
+            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not 1970
+            long creationTs = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
+            if (creationTs < creationTimestamp) {
+                creationTimestamp = creationTs;
+            }
         } else if (propertyValue.propertyId.propertyEnum == OneNotePropertyEnum.LastModifiedTime) {
-            // add the ONENOTE_TIME32_EPOCH_DIFF because OneNote TIME32 epoch time is per 1980, not 1970
-            long lastMod = propertyValue.scalar + ONENOTE_TIME32_EPOCH_DIFF;
+            // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not 1970
+            long lastMod = propertyValue.scalar + TIME32_EPOCH_DIFF_1980;
             if (lastMod > lastModified) {
                 lastModified = lastMod;
             }
@@ -547,5 +567,13 @@ class OneNoteTreeWalker {
 
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
+    }
+
+    public long getCreationTimestamp() {
+        return creationTimestamp;
+    }
+
+    public void setCreationTimestamp(long creationTimestamp) {
+        this.creationTimestamp = creationTimestamp;
     }
 }

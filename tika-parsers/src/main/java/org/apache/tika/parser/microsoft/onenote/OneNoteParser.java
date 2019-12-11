@@ -113,8 +113,11 @@ public class OneNoteParser extends AbstractParser {
             if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
                 metadata.set(Property.externalTextBag("originalAuthors"), oneNoteTreeWalker.getOriginalAuthors().toArray(new String[] {}));
             }
+            if (!Instant.MAX.equals(oneNoteTreeWalker.getCreationTimestamp())) {
+                metadata.set("creationTimestamp", String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
+            }
             if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
-                metadata.set("lastModifiedTimestamp", oneNoteTreeWalker.getLastModifiedTimestamp().toString());
+                metadata.set("lastModifiedTimestamp", String.valueOf(oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
             }
             if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {
                 metadata.set("lastModified", String.valueOf(oneNoteTreeWalker.getLastModified()));
