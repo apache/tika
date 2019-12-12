@@ -161,8 +161,12 @@ function stop_tika() {
   DIR="$1"
   TIKA_PID="$2"
 
+  if [ -z "$TIKA_PID" ]; then
+    echo "ERROR: No PID found for Tika running on port $TIKA_PORT ... script fails."
+    exit 1
+  fi
+  echo "Sending kill command to Tika running on port $TIKA_PORT with process $TIKA_PID"
   kill -9 $TIKA_PID
-  echo "Killed process $TIKA_PID"
   rm -f "$TIKA_PID_DIR/tika-$TIKA_PORT.pid"
   sleep 1
 
@@ -308,7 +312,7 @@ if $verbose ; then
 fi
 
 # stop all if no port specified
-if [[ "$SCRIPT_CMD" == "stop" && -z "$TIKA_PORT" ]]; then
+if [[ "$SCRIPT_CMD" == "stop" ]]; then
   if $stop_all; then
     none_stopped=true
     find "$TIKA_PID_DIR" -name "tika-*.pid" -type f | while read PIDF
@@ -322,30 +326,33 @@ if [[ "$SCRIPT_CMD" == "stop" && -z "$TIKA_PORT" ]]; then
     # TODO: none_stopped doesn't get reflected across the subshell
     # This can be uncommented once we find a clean way out of it
     # if $none_stopped; then
-    #   echo -e "\nNo Tika nodes found to stop.\n"
+    #   echo -e "\nNo Tika servers found to stop.\n"
     # fi
   else
-    # not stopping all and don't have a port, but if we can find the pid file for the default port 8983, then use that
+    # not stopping all and don't have a port, but if we can find the pid file for the default port 9998, then use that
     none_stopped=true
     numTikas=`find "$TIKA_PID_DIR" -name "tika-*.pid" -type f | wc -l | tr -d ' '`
-    if [ $numTikas -eq 1 ]; then
-      # only do this if there is only 1 node running, otherwise they must provide the -p or --all
-      PID="$(cat "$(find "$TIKA_PID_DIR" -name "tika-*.pid" -type f)")"
-      CHECK_PID=`ps auxww | awk '{print $2}' | grep -w $PID | sort -r | tr -d ' '`
-      if [ "$CHECK_PID" != "" ]; then
-        port=`tika_port "$CHECK_PID"`
-        if [ "$port" != "" ]; then
-          stop_tika "$TIKA_SERVER_DIR" "$port" "$STOP_KEY" "$CHECK_PID"
+    if [ -z "$TIKA_PORT" ]; then
+      if [ $numTikas -eq 1 ]; then
+        # only do this if there is only 1 server running, otherwise they must provide the -p or --all
+        PID="$(cat "$(find "$TIKA_PID_DIR" -name "tika-*.pid" -type f)")"
+        CHECK_PID=`ps auxww | awk '{print $2}' | grep -w $PID | sort -r | tr -d ' '`
+        if [ "$CHECK_PID" != "" ]; then
+          stop_tika "$TIKA_SERVER_DIR" "$CHECK_PID"
           none_stopped=false
         fi
       fi
+    else
+      PID="$(cat "$(find "$TIKA_PID_DIR" -name "tika-$TIKA_PORT.pid" -type f)")"
+      stop_tika "$TIKA_SERVER_DIR" "$PID"
+      none_stopped=false
     fi
 
     if $none_stopped; then
       if [ $numTikas -gt 0 ]; then
-        echo -e "\nFound $numTikas Tika nodes running! Must either specify a port using -p or --all to stop all Tika nodes on this host.\n"
+        echo -e "\nFound $numTikas Tika servers running! Must either specify a port using -p or --all to stop all Tika servers on this host.\n"
       else
-        echo -e "\nNo Tika nodes found to stop.\n"
+        echo -e "\nNo Tika servers found to stop.\n"
       fi
       exit 1
     fi
@@ -506,7 +513,7 @@ function start_tika() {
 
 
 
-if [ "$SCRIPT_CMD" = "start" ]; then
+if [[ "$SCRIPT_CMD" == "start" ]]; then
   start_tika "$FG" "$ADDITIONAL_CMD_OPTS"
   exit 1
 fi
