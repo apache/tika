@@ -18,15 +18,9 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.RecursiveParserWrapperTest;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.InputStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -179,24 +173,12 @@ public class OneNoteParserTest extends TikaTest {
         Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
-    /**
-     * This test has a one note file with a microsoft word doc embedded within.
-     * @throws Exception
-     */
     @Test
-    public void testOneNote2016Embedded() throws Exception {
-        ParseContext context = new ParseContext();
-        Metadata metadata = new Metadata();
+    public void testOneNoteEmbeddedWordDoc() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
-        InputStream stream = RecursiveParserWrapperTest.class.getResourceAsStream(
-            "/test-documents/testOneNoteEmbeddedWordDoc.one");
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-            new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 60));
-        wrapper.parse(stream, handler, metadata, context);
-        List<Metadata> list = handler.getMetadataList();
-
-        // Embedded parsing is broken right now.
+        Assert.assertTrue(metadataList.stream().anyMatch(ml ->
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(ml.get("Content-Type"))));
     }
 
     private void assertNoJunk(String txt) {
