@@ -100,7 +100,7 @@ function print_usage() {
   if [ -z "$CMD" ]; then
     echo ""
     echo "Usage: tika COMMAND OPTIONS"
-    echo "       where COMMAND is one of: start, stop"
+    echo "       where COMMAND is one of: start, stop, status"
     echo ""
     echo "  Standalone server example (start Tika running in the background on port 9998):"
     echo ""
@@ -136,6 +136,13 @@ function print_usage() {
     echo "  -V/--verbose   Verbose messages from this script"
     echo ""
     echo "  NOTE: To see if any Tika servers are running, do: tika status"
+    echo ""
+  elif [ "$CMD" == "status" ]; then
+    echo ""
+    echo "Usage: tika status"
+    echo ""
+    echo "  This command will show the status of all running Tika servers."
+    echo "  It can only detect those Tika servers running on the current host."
     echo ""
   fi
 } # end print_usage
@@ -185,12 +192,9 @@ if [ $# -eq 1 ]; then
         exit
     ;;
     -info|-i|status)
-        get_info
+        #get_info
+        echo "To be done"
         exit $?
-    ;;
-    -version|-v|version)
-        run_tool version
-        exit
     ;;
   esac
 fi
