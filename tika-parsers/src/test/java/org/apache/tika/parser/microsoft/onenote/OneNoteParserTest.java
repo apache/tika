@@ -18,16 +18,21 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.RecursiveParserWrapperTest;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
 public class OneNoteParserTest extends TikaTest {
 
-    //TODO: rename test files testOneNote...
     //test recursive parser wrapper for image files
 
     /**
@@ -35,10 +40,10 @@ public class OneNoteParserTest extends TikaTest {
      */
     @Test
     public void testOneNote2013Doc1() throws Exception {
-//        List<Metadata> metadataList = getRecursiveMetadata("Sample1.one");
+//        List<Metadata> metadataList = getRecursiveMetadata("testOneNote1.one");
   //      debug(metadataList);
         Metadata metadata = new Metadata();
-        String txt = getText("Sample1.one", metadata);
+        String txt = getText("testOneNote1.one", metadata);
         assertNoJunk(txt);
 
         List<String> authors = Arrays.asList(metadata.getValues("authors"));
@@ -61,7 +66,7 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testOneNote2013Doc2() throws Exception {
         Metadata metadata = new Metadata();
-        String txt = getText("Section1SheetTitle.one", metadata);
+        String txt = getText("testOneNote2.one", metadata);
         assertContains("wow this is neat", txt);
         assertContains("neat info about totally killin it bro", txt);
         assertContains("Section1TextArea1", txt);
@@ -92,7 +97,7 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testOneNote2013Doc3() throws Exception {
         Metadata metadata = new Metadata();
-        String txt = getText("Section2SheetTitle.one", metadata);
+        String txt = getText("testOneNote3.one", metadata);
         assertContains("awesome information about sports or some crap like that.", txt);
         assertContains("Quit doing horrible things to me. Dang you. ", txt);
         assertContains("Section2TextArea1", txt);
@@ -123,7 +128,7 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testOneNote2013Doc4() throws Exception {
         Metadata metadata = new Metadata();
-        String txt = getText("Section3SheetTitle.one", metadata);
+        String txt = getText("testOneNote4.one", metadata);
 
         assertContains("way too much information about poptarts to handle.", txt);
         assertContains("Section3TextArea1", txt);
@@ -151,6 +156,49 @@ public class OneNoteParserTest extends TikaTest {
         Assert.assertEquals(Instant.ofEpochSecond(1574426547), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
+    @Test
+    public void testOneNote2016() throws Exception {
+        Metadata metadata = new Metadata();
+        String txt = getText("testOneNote2016.one", metadata);
+
+        assertContains("So good", txt);
+        assertContains("This is one note 2016", txt);
+        assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertContains("nicholas dipiazza\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("nicholas dipiazza\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertContains("nicholas dipiazza\u0000", originalAuthors);
+
+        Assert.assertEquals(Instant.ofEpochSecond(1576107472), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+    }
+
+    /**
+     * This test has a one note file with a microsoft word doc embedded within.
+     * @throws Exception
+     */
+    @Test
+    public void testOneNote2016Embedded() throws Exception {
+        ParseContext context = new ParseContext();
+        Metadata metadata = new Metadata();
+
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
+        InputStream stream = RecursiveParserWrapperTest.class.getResourceAsStream(
+            "/test-documents/testOneNoteEmbeddedWordDoc.one");
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+            new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 60));
+        wrapper.parse(stream, handler, metadata, context);
+        List<Metadata> list = handler.getMetadataList();
+
+        // Embedded parsing is broken right now.
+    }
+
     private void assertNoJunk(String txt) {
         //Should not include font names in the text
         assertNotContained("Calibri", txt);
@@ -159,6 +207,5 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("\u83F2", txt);
         assertNotContained("\u432F", txt);
         assertNotContained("\u01E1", txt);
-
     }
 }
