@@ -30,6 +30,10 @@ if [ -z "$TIKA_PID_DIR" ]; then
   TIKA_PID_DIR="$TIKA_TIP/bin"
 fi
 
+DEFAULT_SERVER_DIR="$TIKA_TIP/"
+
+echo "Default server $DEFAULT_SERVER_DIR"
+
 if [ -n "$TIKA_JAVA_HOME" ]; then
   JAVA="$TIKA_JAVA_HOME/bin/java"
 elif [ -n "$JAVA_HOME" ]; then
@@ -118,7 +122,7 @@ function print_usage() {
     echo ""
     echo "  -p <port>     Specify the port to start the Tika HTTP listener on; default is 9998"
     echo ""
-    echo "  -d            Specify the Tika server directory; defaults to ."
+    echo "  -d            Specify the Tika server directory; defaults to ../"
     echo ""
     echo "  -j/--jar      Specify the tika-server.jar; defaults to tika-server.jar"
     echo ""
@@ -305,6 +309,15 @@ if [ $# -gt 0 ]; then
         ;;
     esac
   done
+fi
+
+if [ -z "$TIKA_SERVER_DIR" ]; then
+  TIKA_SERVER_DIR="$DEFAULT_SERVER_DIR"
+fi
+
+if [ ! -e "$TIKA_SERVER_DIR" ]; then
+  echo -e "\nTika server directory $TIKA_SERVER_DIR not found!\n"
+  exit 1
 fi
 
 ############# start/stop logic below here ################
