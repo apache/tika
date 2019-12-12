@@ -21,6 +21,8 @@ THIS_OS=`uname -s`
 # What version of Java is required to run this version of Tika.
 JAVA_VER_REQ="8"
 
+stop_all=false
+
 TIKA_TIP=`dirname "$TIKA_SCRIPT"`/..
 TIKA_TIP=`cd "$TIKA_TIP"; pwd`
 
@@ -125,15 +127,13 @@ function print_usage() {
 
   elif [ "$CMD" == "stop" ]; then
     echo ""
-    echo "Usage: tika stop [-k key] [-p port] [-V]"
-    echo ""
-    echo "  -k <key>      Stop key; default is tikarocks"
+    echo "Usage: tika stop [-p port] [-V]"
     echo ""
     echo "  -p <port>     Specify the port the Tika HTTP listener is bound to"
     echo ""
-    echo "  -all          Find and stop all running Tika servers on this host"
+    echo "  --all          Find and stop all running Tika servers on this host"
     echo ""
-    echo "  -V/-verbose   Verbose messages from this script"
+    echo "  -V/--verbose   Verbose messages from this script"
     echo ""
     echo "  NOTE: To see if any Tika servers are running, do: tika status"
     echo ""
@@ -154,6 +154,25 @@ function spinner() {
   done
   printf "    \b\b\b\b"
 }
+
+# uses kill -9 to stop Tika process
+function stop_tika() {
+
+  DIR="$1"
+  TIKA_PID="$2"
+
+  kill -9 $TIKA_PID
+  echo "Killed process $TIKA_PID"
+  rm -f "$TIKA_PID_DIR/tika-$TIKA_PORT.pid"
+  sleep 1
+
+  CHECK_PID=`ps auxww | awk '{print $2}' | grep -w $TIKA_PID | sort -r | tr -d ' '`
+  if [ "$CHECK_PID" != "" ]; then
+    echo "ERROR: Failed to kill previous Tika Java process $TIKA_PID ... script fails."
+    exit 1
+  fi
+} # end stop_tika
+
 
 if [ $# -eq 1 ]; then
   case $1 in
@@ -253,6 +272,10 @@ if [ $# -gt 0 ]; then
             verbose=true
             shift
         ;;
+        --all)
+            stop_all=true
+            shift
+        ;;
         --)
             shift
             break
@@ -283,6 +306,53 @@ if $verbose ; then
   echo "Using Java: $JAVA"
   "$JAVA" -version
 fi
+
+# stop all if no port specified
+if [[ "$SCRIPT_CMD" == "stop" && -z "$TIKA_PORT" ]]; then
+  if $stop_all; then
+    none_stopped=true
+    find "$TIKA_PID_DIR" -name "tika-*.pid" -type f | while read PIDF
+      do
+        NEXT_PID=`cat "$PIDF"`
+        echo "About to tika port with $NEXT_PID"
+        stop_tika "$TIKA_SERVER_DIR" "$NEXT_PID"
+        none_stopped=false
+        rm -f "$PIDF"
+    done
+    # TODO: none_stopped doesn't get reflected across the subshell
+    # This can be uncommented once we find a clean way out of it
+    # if $none_stopped; then
+    #   echo -e "\nNo Tika nodes found to stop.\n"
+    # fi
+  else
+    # not stopping all and don't have a port, but if we can find the pid file for the default port 8983, then use that
+    none_stopped=true
+    numTikas=`find "$TIKA_PID_DIR" -name "tika-*.pid" -type f | wc -l | tr -d ' '`
+    if [ $numTikas -eq 1 ]; then
+      # only do this if there is only 1 node running, otherwise they must provide the -p or --all
+      PID="$(cat "$(find "$TIKA_PID_DIR" -name "tika-*.pid" -type f)")"
+      CHECK_PID=`ps auxww | awk '{print $2}' | grep -w $PID | sort -r | tr -d ' '`
+      if [ "$CHECK_PID" != "" ]; then
+        port=`tika_port "$CHECK_PID"`
+        if [ "$port" != "" ]; then
+          stop_tika "$TIKA_SERVER_DIR" "$port" "$STOP_KEY" "$CHECK_PID"
+          none_stopped=false
+        fi
+      fi
+    fi
+
+    if $none_stopped; then
+      if [ $numTikas -gt 0 ]; then
+        echo -e "\nFound $numTikas Tika nodes running! Must either specify a port using -p or --all to stop all Tika nodes on this host.\n"
+      else
+        echo -e "\nNo Tika nodes found to stop.\n"
+      fi
+      exit 1
+    fi
+  fi
+  exit
+fi
+
 
 if [ -z "$TIKA_PORT" ]; then
   TIKA_PORT=9998
@@ -418,7 +488,7 @@ function start_tika() {
             exit # subshell!
           fi
         else
-          TIKA_PID=`ps auxww | grep $TIKA_SERVER_JAR | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
+          TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
           echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
           exit # subshell!
         fi
@@ -427,12 +497,13 @@ function start_tika() {
     else
       echo -e "NOTE: Please install lsof as this script needs it to determine if Tika is listening on port $TIKA_PORT."
       sleep 10
-      TIKA_PID=`ps auxww | grep $TIKA_SERVER_JAR | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
+      TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
       echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
       return;
     fi
   fi
-}
+} # end start_tika
+
 
 
 if [ "$SCRIPT_CMD" = "start" ]; then
