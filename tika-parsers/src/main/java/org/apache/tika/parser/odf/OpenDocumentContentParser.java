@@ -56,6 +56,7 @@ public class OpenDocumentContentParser extends AbstractParser {
         public boolean italic;
         public boolean bold;
         public boolean underlined;
+        public boolean striked;
 
         @Override
         public String toString() {
@@ -63,6 +64,7 @@ public class OpenDocumentContentParser extends AbstractParser {
                     "italic=" + italic +
                     ", bold=" + bold +
                     ", underlined=" + underlined +
+                    ", striked=" + striked +
                     '}';
         }
     }
@@ -105,6 +107,7 @@ public class OpenDocumentContentParser extends AbstractParser {
         private ListStyle listStyle;
 
         // True if we are currently in the named style:
+        private boolean curStriked;
         private boolean curUnderlined;
         private boolean curBold;
         private boolean curItalic;
@@ -237,7 +240,11 @@ public class OpenDocumentContentParser extends AbstractParser {
                 return;
             }
             if (currTextStyle.bold != curBold) {
-                // Enforce nesting -- must close s and i tags
+                // Enforce nesting -- must close s, u and i tags
+                if (curStriked) {
+                    handler.endElement(XHTML, "s", "s");
+                    curStriked = false;
+                }
                 if (curUnderlined) {
                     handler.endElement(XHTML, "u", "u");
                     curUnderlined = false;
@@ -255,7 +262,11 @@ public class OpenDocumentContentParser extends AbstractParser {
             }
 
             if (currTextStyle.italic != curItalic) {
-                // Enforce nesting -- must close s tag
+                // Enforce nesting -- must close s and u tags
+                if (curStriked) {
+                    handler.endElement(XHTML, "s", "s");
+                    curStriked = false;
+                }
                 if (curUnderlined) {
                     handler.endElement(XHTML, "u", "u");
                     curUnderlined = false;
@@ -269,12 +280,26 @@ public class OpenDocumentContentParser extends AbstractParser {
             }
 
             if (currTextStyle.underlined != curUnderlined) {
+                // Enforce nesting -- must close s tags
+                if (curStriked) {
+                    handler.endElement(XHTML, "s", "s");
+                    curStriked = false;
+                }
                 if (currTextStyle.underlined) {
                     handler.startElement(XHTML, "u", "u", EMPTY_ATTRIBUTES);
                 } else {
                     handler.endElement(XHTML, "u", "u");
                 }
                 curUnderlined = currTextStyle.underlined;
+            }
+
+            if (currTextStyle.striked != curStriked) {
+                if (currTextStyle.striked) {
+                    handler.startElement(XHTML, "s", "s", EMPTY_ATTRIBUTES);
+                } else {
+                    handler.endElement(XHTML, "s", "s");
+                }
+                curStriked = currTextStyle.striked;
             }
         }
 
@@ -284,6 +309,10 @@ public class OpenDocumentContentParser extends AbstractParser {
 
         private void closeStyleTags() throws SAXException {
             // Close any still open style tags
+            if (curStriked) {
+                handler.endElement(XHTML, "s", "s");
+                curStriked = false;
+            }
             if (curUnderlined) {
                 handler.endElement(XHTML,"u", "u");
                 curUnderlined = false;
@@ -340,6 +369,10 @@ public class OpenDocumentContentParser extends AbstractParser {
                 String underlineStyle = attrs.getValue(STYLE_NS, "text-underline-style");
                 if (underlineStyle != null && !underlineStyle.equals("none")) {
                     currTextStyle.underlined = true;
+                }
+                String lineThroughStyle = attrs.getValue(STYLE_NS, "text-line-through-style");
+                if (lineThroughStyle != null && !lineThroughStyle.equals("none")) {
+                    currTextStyle.striked = true;
                 }
             } else if (listStyle != null && TEXT_NS.equals(namespaceURI)) {
                 if ("list-level-style-bullet".equals(localName)) {
