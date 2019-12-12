@@ -17,18 +17,6 @@
 package org.apache.tika.mime;
 
 // Junit imports
-import static java.nio.charset.StandardCharsets.UTF_16BE;
-import static java.nio.charset.StandardCharsets.UTF_16LE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
@@ -36,6 +24,19 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 
 /**
  * 
@@ -1178,8 +1179,11 @@ public class TestMimeTypes {
     public void testOneNote() throws Exception {
         // With name or data we can get the full details
         assertTypeByName("application/onenote; format=one", "testOneNote.one");
-        assertTypeByData("application/onenote; format=one", "testOneNote.one");
-        
+        assertTypeByData("application/onenote; format=one", "testOneNote2.one");
+        assertTypeByData("application/onenote; format=one", "testOneNote3.one");
+        assertTypeByData("application/onenote; format=one", "testOneNote4.one");
+        assertTypeByData("application/onenote; format=one", "testOneNote1.one");
+
         // TODO Get sample .onetoc2 and .onepkg files
     }
 
