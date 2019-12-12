@@ -48,6 +48,9 @@ else
   JAVA=java
 fi
 
+if [ -z "$TIKA_STOP_WAIT" ]; then
+  TIKA_STOP_WAIT=180
+fi
 # test that Java exists, is executable and correct version
 JAVA_VER=$("$JAVA" -version 2>&1)
 if [[ $? -ne 0 ]] ; then
@@ -415,8 +418,8 @@ function start_tika() {
             exit # subshell!
           fi
         else
-          TIKA_PID=`ps auxww | grep tika-server\.jar | grep -w "\-port=$TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
-          echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy searching!\n"
+          TIKA_PID=`ps auxww | grep $TIKA_SERVER_JAR | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
+          echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
           exit # subshell!
         fi
       done) &
@@ -424,8 +427,8 @@ function start_tika() {
     else
       echo -e "NOTE: Please install lsof as this script needs it to determine if Tika is listening on port $TIKA_PORT."
       sleep 10
-      TIKA_PID=`ps auxww | grep start\.jar | grep -w "\-Djetty\.port=$TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
-      echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy searching!\n"
+      TIKA_PID=`ps auxww | grep $TIKA_SERVER_JAR | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
+      echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
       return;
     fi
   fi
