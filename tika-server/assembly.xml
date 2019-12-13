@@ -2,8 +2,9 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
   <id>bin</id>
+  <baseDirectory>${project.build.finalName}-bin</baseDirectory>
   <formats>
-    <format>tar.gz</format>
+    <format>tgz</format>
     <format>zip</format>
   </formats>
   <fileSets>
@@ -14,13 +15,6 @@
         <include>README*</include>
       </includes>
     </fileSet>
-    <!--fileSet>
-      <directory>${project.build.directory}</directory>
-      <outputDirectory></outputDirectory>
-      <includes>
-        <include>tika-server-${project.version}.jar</include>
-      </includes>
-    </fileSet-->
     <fileSet>
       <directory>${project.basedir}/bin</directory>
       <outputDirectory>bin</outputDirectory>
@@ -32,5 +26,5 @@
       <outputDirectory/>
       <destName>tika-server.jar</destName>
     </file>
-  </files>  
+  </files>
 </assembly>
