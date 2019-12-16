@@ -38,6 +38,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -80,7 +81,8 @@ public class TNEFParser extends AbstractParser {
             // TODO: Move to title in Tika 2.0
             metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE, subject);
         }
-
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
         // Recurse into the message body RTF
         MAPIAttribute attr = msg.getMessageMAPIAttribute(MAPIProperty.RTF_COMPRESSED);
         if (attr != null && attr instanceof MAPIRtfAttribute) {
@@ -88,7 +90,7 @@ public class TNEFParser extends AbstractParser {
             handleEmbedded(
                     "message.rtf", "application/rtf",
                     rtf.getData(),
-                    embeddedExtractor, handler
+                    embeddedExtractor, xhtml
             );
         }
 
@@ -106,9 +108,10 @@ public class TNEFParser extends AbstractParser {
             }
             handleEmbedded(
                     name, null, attachment.getContents(),
-                    embeddedExtractor, handler
+                    embeddedExtractor, xhtml
             );
         }
+        xhtml.endDocument();
     }
 
     private void handleEmbedded(String name, String type, byte[] contents,
