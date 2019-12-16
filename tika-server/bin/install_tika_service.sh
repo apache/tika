@@ -39,7 +39,7 @@ print_usage() {
   echo "    -i     Directory to extract the Tika installation archive; defaults to /opt/"
   echo "             The specified path must exist prior to using this script."
   echo ""
-  echo "    -p     Port Tika should bind to; default is 9998f"
+  echo "    -p     Port Tika should bind to; default is 9998"
   echo ""
   echo "    -s     Service name; defaults to tika"
   echo ""
@@ -328,9 +328,7 @@ else
   echo -e "\nInstalling /etc/default/$TIKA_SERVICE.in.sh ...\n"
   cp "$TIKA_INSTALL_DIR/bin/tika.in.sh" "/etc/default/$TIKA_SERVICE.in.sh"
   mv "$TIKA_INSTALL_DIR/bin/tika.in.sh" "$TIKA_INSTALL_DIR/bin/tika.in.sh.orig"
-  mv "$TIKA_INSTALL_DIR/bin/tika.in.cmd" "$TIKA_INSTALL_DIR/bin/tika.in.cmd.orig"
   echo "TIKA_PID_DIR=\"$TIKA_VAR_DIR\"
-TIKA_HOME=\"$TIKA_VAR_DIR/data\"
 LOG4J_PROPS=\"$TIKA_VAR_DIR/log4j2.xml\"
 TIKA_LOGS_DIR=\"$TIKA_VAR_DIR/logs\"
 TIKA_PORT=\"$TIKA_PORT\"
@@ -343,7 +341,7 @@ chmod 0640 "/etc/default/$TIKA_SERVICE.in.sh"
 mkdir -p "$TIKA_VAR_DIR/logs"
 chown -R "$TIKA_USER:" "$TIKA_VAR_DIR"
 find "$TIKA_VAR_DIR" -type d -print0 | xargs -0 chmod 0750
-find "$TIKA_VAR_DIR" -type f -print0 | xargs -0 chmod 0640
+find "$TIKA_VAR_DIR" -type f -print0 | xargs -0 chmod 0640  # currently no files exist in /var/tika
 
 # configure autostart of service
 if [[ "$distro" == "RedHat" || "$distro" == "CentOS" || "$distro" == "SUSE" ]]; then
