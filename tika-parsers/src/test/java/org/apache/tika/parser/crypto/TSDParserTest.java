@@ -176,4 +176,11 @@ public class TSDParserTest extends TikaTest {
         assertNotNull(list.get(1).get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
         assertContains("org.apache.pdfbox.pdmodel.PDDocument.load", list.get(1).get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
     }
+
+    @Test
+    public void testToXML() throws Exception {
+        String xml = getXML("Test4.pdf.tsd").xml;
+        assertContains("Empty doc",
+                xml);
+    }
 }
