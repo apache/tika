@@ -310,20 +310,10 @@ class MailContentHandler implements ContentHandler {
 
     @Override
     public void startMessage() throws MimeException {
-        try {
-            handler.startDocument();
-        } catch (SAXException e) {
-            throw new MimeException(e);
-        }
     }
 
     @Override
     public void endMessage() throws MimeException {
-        try {
-            handler.endDocument();
-        } catch (SAXException e) {
-            throw new MimeException(e);
-        }
     }
 
     @Override
