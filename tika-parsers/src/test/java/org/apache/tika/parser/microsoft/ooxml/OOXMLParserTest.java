@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.ctakes.typesystem.type.syntax.O;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
@@ -1765,6 +1766,15 @@ public class OOXMLParserTest extends TikaTest {
         m = getXML("testPPT_signed.pptx").metadata;
         assertEquals("true", m.get(TikaCoreProperties.HAS_SIGNATURE));
 
+    }
+
+    @Test(expected = org.apache.tika.exception.TikaException.class)
+    public void testTruncatedSAXDocx() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig c = new OfficeParserConfig();
+        c.setUseSAXDocxExtractor(true);
+        pc.set(OfficeParserConfig.class, c);
+        getRecursiveMetadata("testWORD_truncated.docx", pc);
     }
 }
 
