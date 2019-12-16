@@ -55,10 +55,7 @@ public class OldExcelParser extends AbstractParser {
                                 XHTMLContentHandler xhtml) throws TikaException, IOException, SAXException {
         // Get the whole text, as a single string
         String text = extractor.getText();
-
         // Split and output
-        xhtml.startDocument();
-
         String line;
         BufferedReader reader = new BufferedReader(new StringReader(text));
         while ((line = reader.readLine()) != null) {
@@ -66,8 +63,6 @@ public class OldExcelParser extends AbstractParser {
             xhtml.characters(line);
             xhtml.endElement("p");
         }
-
-        xhtml.endDocument();
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -92,6 +87,8 @@ public class OldExcelParser extends AbstractParser {
 
         // Have the text extracted and given to our Content Handler
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
         parse(extractor, xhtml);
+        xhtml.endDocument();
     }
 }
