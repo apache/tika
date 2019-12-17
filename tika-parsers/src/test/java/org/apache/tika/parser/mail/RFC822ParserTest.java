@@ -706,6 +706,6 @@ public class RFC822ParserTest extends TikaTest {
         //TODO -- this should treat attachments as attachments, no?
         List<Metadata>  metadataList = getRecursiveMetadata("testGroupWiseEml.eml");
         assertEquals(1, metadataList.size());
-        assertContains("ssssss", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("ssssss", metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 }
