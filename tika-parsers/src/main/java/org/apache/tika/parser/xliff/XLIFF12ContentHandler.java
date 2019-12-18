@@ -40,6 +40,11 @@ public class XLIFF12ContentHandler extends DefaultHandler {
     }
 
     @Override
+    public void startDocument() throws SAXException {
+        xhtml.startDocument();
+    }
+
+    @Override
     public void startElement(
             String uri, String localName, String qName, Attributes attributes)
             throws SAXException {
@@ -58,9 +63,11 @@ public class XLIFF12ContentHandler extends DefaultHandler {
             xhtml.characters(attributes.getValue("original"));
             xhtml.endElement("h1");
 
-            // Add the files source and target languages
+            // Add the files source (mandatory) and target (optional) languages
             metadata.add("source-language", attributes.getValue("source-language"));
-            metadata.add("target-language", attributes.getValue("target-language"));
+            if (null != attributes.getValue("target-language")) {
+                metadata.add("target-language", attributes.getValue("target-language"));
+            }
         }
 
         if ("trans-unit".equals(localName)) {
@@ -70,12 +77,22 @@ public class XLIFF12ContentHandler extends DefaultHandler {
         }
 
         if ("source".equals(localName)) {
-            xhtml.startElement("p", attributeVals);
+            AttributesImpl attrs = extractAttributes(attributes);
+            xhtml.startElement("p", attrs);
         }
 
         if ("target".equals(localName)) {
-            xhtml.startElement("p", attributeVals);
+            AttributesImpl attrs = extractAttributes(attributes);
+            xhtml.startElement("p", attrs);
         }
+    }
+
+    private AttributesImpl extractAttributes(Attributes attributes) {
+        AttributesImpl attrs = new AttributesImpl();
+        if (null != attributes.getValue("xml:lang")) {
+            attrs.addAttribute("", "lang", "lang", "", attributes.getValue("xml:lang"));
+        }
+        return attrs;
     }
 
     @Override
