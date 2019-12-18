@@ -11,6 +11,8 @@ Release 1.24 - ???
    
    * Upgrade to java-libpst 0.9.3 (TIKA-2546).
 
+   * Fixed XLIFF12Parser failures with ToXMLHandler (TIKA-3014).
+
 Release 1.23 - 12/02/2019
 
    * NOTE: The PDFParser now relies on OCRDPI to render page images when
