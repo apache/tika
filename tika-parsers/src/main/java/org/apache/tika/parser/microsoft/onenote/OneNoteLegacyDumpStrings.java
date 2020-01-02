@@ -12,25 +12,43 @@ import java.nio.charset.StandardCharsets;
  * Because the specification for OneNote is not an open spec,
  * we will resort to approximating the result of Linux "strings"
  * program, which just dumps out the text to file.
+ *
+ * This is only needed for OneNote versions prior to 2010, which are the ones that have
+ * no open spec available.
  */
-public class OneNoteLegacyDumpStrings {
+class OneNoteLegacyDumpStrings {
 
+    // TODO - parameterize this
     public static int MIN_STRING_LENGTH = 8;
+    // TODO - parameterize this
     public static float ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO = 0.6f;
 
     OneNoteDirectFileResource oneNoteDirectFileResource;
     XHTMLContentHandler xhtml;
 
+    /**
+     *
+     * @param oneNoteDirectFileResource
+     * @param xhtml
+     */
     public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource, XHTMLContentHandler xhtml) {
         this.oneNoteDirectFileResource = oneNoteDirectFileResource;
         this.xhtml = xhtml;
     }
 
+    /**
+     * Dump all "useful" Ascii and UTF16LE strings found in the file to the XHTMLContentHandler.
+     * @throws TikaException
+     * @throws SAXException
+     */
     public void dump() throws TikaException, SAXException {
         dumpAscii();
         dumpUtf16LE();
     }
 
+    /**
+     * Based on GNU "strings" implementation. Pulls out ascii text segments and writes them to the XHTMLContentHandler.
+     */
     private void dumpAscii() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
@@ -55,6 +73,9 @@ public class OneNoteLegacyDumpStrings {
         }
     }
 
+    /**
+     * Based on GNU "strings" implementation. Pulls out UTF16 LE text segments and writes them to the XHTMLContentHandler.
+     */
     private void dumpUtf16LE() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
@@ -87,6 +108,11 @@ public class OneNoteLegacyDumpStrings {
         }
     }
 
+    /**
+     * Writes a buffer of output characters if the (num alpha chars in the buffer) / (number of chars in the buffer) >
+     * ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO.
+     * @param os Byte array output stream containing the buffer.
+     */
     private void writeIfUseful(ByteArrayOutputStream os) throws SAXException {
         String str = new String(os.toByteArray(), StandardCharsets.US_ASCII);
         String [] spl = str.split(" ");
