@@ -178,22 +178,14 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote2007OrEarlier1.one", metadata);
 
-        assertContains("So good", txt);
-        assertContains("This is one note 2016", txt);
-        assertNoJunk(txt);
-
-        List<String> authors = Arrays.asList(metadata.getValues("authors"));
-        assertContains("nicholas dipiazza\u0000", authors);
-
-        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
-        assertContains("nicholas dipiazza\u0000", mostRecentAuthors);
-
-        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
-        assertContains("nicholas dipiazza\u0000", originalAuthors);
-
-        Assert.assertEquals(Instant.ofEpochSecond(1576107472), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+        // utf-16 LE text
+        assertContains("One note is the application.  The notebooks are the files within the application.  " +
+            "Each notebook can have an unlimited amount of sections and pages.  To create a new notebook, go to file, new, computer, " +
+            "and name it.  It will go to my documents, oneNote Notebooks folder.  The notebook doesn't close and you don't have to save.  " +
+            "If it closes, you can go back to it and it will open at the same place you left off.  If you are offline and the notebook is " +
+            "being stored on a sharepoint site, you can work on it and it will sync when you go back online.", txt);
+        // ascii text
+        assertContains("Correlation between Outlook and OneNote", txt);
     }
 
     @Test
@@ -201,22 +193,9 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote2007OrEarlier2.one", metadata);
 
-        assertContains("So good", txt);
-        assertContains("This is one note 2016", txt);
-        assertNoJunk(txt);
+        // ascii text
+        assertContains("In Outlook meeting notice, select One Note Meeting Notes and then select the \"page\" you want to link/share", txt);
 
-        List<String> authors = Arrays.asList(metadata.getValues("authors"));
-        assertContains("nicholas dipiazza\u0000", authors);
-
-        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
-        assertContains("nicholas dipiazza\u0000", mostRecentAuthors);
-
-        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
-        assertContains("nicholas dipiazza\u0000", originalAuthors);
-
-        Assert.assertEquals(Instant.ofEpochSecond(1576107472), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
-        Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
     }
 
     @Test
