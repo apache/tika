@@ -26,11 +26,6 @@ class OneNoteLegacyDumpStrings {
     OneNoteDirectFileResource oneNoteDirectFileResource;
     XHTMLContentHandler xhtml;
 
-    /**
-     *
-     * @param oneNoteDirectFileResource
-     * @param xhtml
-     */
     public OneNoteLegacyDumpStrings(OneNoteDirectFileResource oneNoteDirectFileResource, XHTMLContentHandler xhtml) {
         this.oneNoteDirectFileResource = oneNoteDirectFileResource;
         this.xhtml = xhtml;
