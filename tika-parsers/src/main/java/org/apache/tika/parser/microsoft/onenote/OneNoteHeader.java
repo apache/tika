@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import org.apache.tika.exception.TikaException;
+
 import java.io.Serializable;
 
 class OneNoteHeader implements Serializable {
@@ -24,10 +26,11 @@ class OneNoteHeader implements Serializable {
     GUID guidFile;
     GUID guidLegacyFileVersion;
     GUID guidFileFormat;
-    long ffvLastCode;
-    long ffvNewestCode;
-    long ffvOldestCode;
-    long ffvOldestReader;
+    long ffvLastCodeThatWroteToThisFile;
+    long ffvOldestCodeThatHasWrittenToThisFile;
+    long ffvNewestCodeThatHasWrittenToThisFile;
+    long ffvOldestCodeThatMayReadThisFile;
+
     FileChunkReference fcrLegacyFreeChunkList;
     FileChunkReference fcrLegacyTransactionLog;
     long cTransactionsInLog;
@@ -57,7 +60,15 @@ class OneNoteHeader implements Serializable {
     long buildNumberLastWroteToFile;
     long buildNumberOldestWritten;
     long buildNumberNewestWritten;
-    byte[] reserved;
+
+    /**
+     * Determine if this OneNote file pre-dates the open specs published by
+     * microsoft.
+     * @return True if file is based on > MS-ONESTORE 1.5. False otherwise.
+     */
+    public boolean isLegacy() {
+        return !GUID.nil().equals(guidLegacyFileVersion);
+    }
 
     public GUID getGuidFileType() {
         return guidFileType;
@@ -95,39 +106,39 @@ class OneNoteHeader implements Serializable {
         return this;
     }
 
-    public long getFfvLastCode() {
-        return ffvLastCode;
+    public long getFfvLastCodeThatWroteToThisFile() {
+        return ffvLastCodeThatWroteToThisFile;
     }
 
-    public OneNoteHeader setFfvLastCode(long ffvLastCode) {
-        this.ffvLastCode = ffvLastCode;
+    public OneNoteHeader setFfvLastCodeThatWroteToThisFile(long ffvLastCodeThatWroteToThisFile) {
+        this.ffvLastCodeThatWroteToThisFile = ffvLastCodeThatWroteToThisFile;
         return this;
     }
 
-    public long getFfvNewestCode() {
-        return ffvNewestCode;
+    public long getFfvOldestCodeThatHasWrittenToThisFile() {
+        return ffvOldestCodeThatHasWrittenToThisFile;
     }
 
-    public OneNoteHeader setFfvNewestCode(long ffvNewestCode) {
-        this.ffvNewestCode = ffvNewestCode;
+    public OneNoteHeader setFfvOldestCodeThatHasWrittenToThisFile(long ffvOldestCodeThatHasWrittenToThisFile) {
+        this.ffvOldestCodeThatHasWrittenToThisFile = ffvOldestCodeThatHasWrittenToThisFile;
         return this;
     }
 
-    public long getFfvOldestCode() {
-        return ffvOldestCode;
+    public long getFfvNewestCodeThatHasWrittenToThisFile() {
+        return ffvNewestCodeThatHasWrittenToThisFile;
     }
 
-    public OneNoteHeader setFfvOldestCode(long ffvOldestCode) {
-        this.ffvOldestCode = ffvOldestCode;
+    public OneNoteHeader setFfvNewestCodeThatHasWrittenToThisFile(long ffvNewestCodeThatHasWrittenToThisFile) {
+        this.ffvNewestCodeThatHasWrittenToThisFile = ffvNewestCodeThatHasWrittenToThisFile;
         return this;
     }
 
-    public long getFfvOldestReader() {
-        return ffvOldestReader;
+    public long getFfvOldestCodeThatMayReadThisFile() {
+        return ffvOldestCodeThatMayReadThisFile;
     }
 
-    public OneNoteHeader setFfvOldestReader(long ffvOldestReader) {
-        this.ffvOldestReader = ffvOldestReader;
+    public OneNoteHeader setFfvOldestCodeThatMayReadThisFile(long ffvOldestCodeThatMayReadThisFile) {
+        this.ffvOldestCodeThatMayReadThisFile = ffvOldestCodeThatMayReadThisFile;
         return this;
     }
 
@@ -389,15 +400,6 @@ class OneNoteHeader implements Serializable {
 
     public OneNoteHeader setBuildNumberNewestWritten(long buildNumberNewestWritten) {
         this.buildNumberNewestWritten = buildNumberNewestWritten;
-        return this;
-    }
-
-    public byte[] getReserved() {
-        return reserved;
-    }
-
-    public OneNoteHeader setReserved(byte[] reserved) {
-        this.reserved = reserved;
         return this;
     }
 }

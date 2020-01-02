@@ -174,6 +174,52 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testOneNote2007OrEarlier1() throws Exception {
+        Metadata metadata = new Metadata();
+        String txt = getText("testOneNote2007OrEarlier1.one", metadata);
+
+        assertContains("So good", txt);
+        assertContains("This is one note 2016", txt);
+        assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertContains("nicholas dipiazza\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("nicholas dipiazza\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertContains("nicholas dipiazza\u0000", originalAuthors);
+
+        Assert.assertEquals(Instant.ofEpochSecond(1576107472), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+    }
+
+    @Test
+    public void testOneNote2007OrEarlier2() throws Exception {
+        Metadata metadata = new Metadata();
+        String txt = getText("testOneNote2007OrEarlier2.one", metadata);
+
+        assertContains("So good", txt);
+        assertContains("This is one note 2016", txt);
+        assertNoJunk(txt);
+
+        List<String> authors = Arrays.asList(metadata.getValues("authors"));
+        assertContains("nicholas dipiazza\u0000", authors);
+
+        List<String> mostRecentAuthors = Arrays.asList(metadata.getValues("mostRecentAuthors"));
+        assertContains("nicholas dipiazza\u0000", mostRecentAuthors);
+
+        List<String> originalAuthors = Arrays.asList(metadata.getValues("originalAuthors"));
+        assertContains("nicholas dipiazza\u0000", originalAuthors);
+
+        Assert.assertEquals(Instant.ofEpochSecond(1576107472), Instant.ofEpochSecond(Long.parseLong(metadata.get("creationTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochMilli(1576107481000L), Instant.ofEpochMilli(Long.parseLong(metadata.get("lastModifiedTimestamp"))));
+        Assert.assertEquals(Instant.ofEpochSecond(1576107480), Instant.ofEpochSecond(Long.parseLong(metadata.get("lastModified"))));
+    }
+
+    @Test
     public void testOneNoteEmbeddedWordDoc() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
