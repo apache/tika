@@ -9,12 +9,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Because the specification for OneNote is not an open spec,
- * we will resort to approximating the result of Linux "strings"
- * program, which just dumps out the text to file.
+ * OneNote versions before OneNote 2010 do not have a published OpenSpec document, and the older formats are drastically
+ * incompatible with the later OpenSpecs.
+ * Therefore, we resort to scraping out useful ASCII and UTF16LE strings using a similar algorithm used by the GNU "strings"
+ * program.
  *
- * This is only needed for OneNote versions prior to 2010, which are the ones that have
- * no open spec available.
+ * This is only needed for OneNote versions prior to 2010.
  */
 class OneNoteLegacyDumpStrings {
 
