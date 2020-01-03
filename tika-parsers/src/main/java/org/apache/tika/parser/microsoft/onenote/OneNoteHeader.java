@@ -64,7 +64,7 @@ class OneNoteHeader implements Serializable {
     /**
      * Determine if this OneNote file pre-dates the open specs published by
      * microsoft.
-     * @return True if file is based on > MS-ONESTORE 1.5. False otherwise.
+     * @return True if file is based on the MS-ONE and MS-ONESTORE specs. False otherwise.
      */
     public boolean isLegacy() {
         return !GUID.nil().equals(guidLegacyFileVersion);
