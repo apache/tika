@@ -16,18 +16,18 @@
  */
 package org.apache.tika.parser.xliff;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class XLIFF12ParserTest {
+public class XLIFF12ParserTest extends TikaTest {
 
     @Test
     public void testXLIFF12() throws Exception {
@@ -44,5 +44,11 @@ public class XLIFF12ParserTest {
         }
     }
 
+    @Test
+    public void testXLIFF12ToXMLHandler() throws Exception {
+        String xml = getXML("testXLIFF12.xlf").xml;
+        assertContains("<p lang=\"en\">Another trans-unit</p>", xml);
+        assertContains("<p lang=\"fr\">Un autre trans-unit</p>", xml);
+    }
 
 }
