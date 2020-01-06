@@ -375,4 +375,17 @@ public class IWorkParserTest extends TikaTest {
         assertContains("Currency Chart name", content);
         assertContains("Chart 2", content);
     }
+
+    //TIKA-3020
+    @Test
+    public void testKeyNoteTableMarkup() throws Exception {
+        String expected = "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>" +
+                "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>" +
+                "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" +
+                "</table>";
+        String xml = getXML("testKeynote.key", iWorkParser).xml;
+        xml = xml.replaceAll("[\r\n]", "");
+        assertContains(expected, xml);
+
+    }
 }

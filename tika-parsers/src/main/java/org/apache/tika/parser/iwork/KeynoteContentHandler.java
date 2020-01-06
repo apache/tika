@@ -163,11 +163,12 @@ class KeynoteContentHandler extends DefaultHandler {
       if (currentColumn == 0) {
           xhtml.startElement("tr");
       }
-
       xhtml.element("td", value);
 
+      currentColumn++;
       if (currentColumn.equals(numberOfColumns)) {
           xhtml.endElement("tr");
+          currentColumn = 0;
       }
     }
 
