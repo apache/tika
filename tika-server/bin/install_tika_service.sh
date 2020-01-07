@@ -90,7 +90,7 @@ if [[ ! $distro ]] ; then
 fi
 
 if [ -z "$1" ]; then
-  print_usage "Must specify the path to the Tika installation archive, such as tika-server-2.0.0-SNAPSHOT.bin.tgz"
+  print_usage "Must specify the path to the Tika installation archive, such as tika-server-2.0.0-SNAPSHOT-bin.tgz"
   exit 1
 fi
 
