@@ -53,9 +53,6 @@
 #-XX:+ParallelRefProcEnabled \
 #-XX:-OmitStackTraceInFastThrow  etc.
 
-# By default the start script uses UTC; override the timezone if needed
-#TIKA_TIMEZONE="UTC"
-
 # Anything you add to the TIKA_OPTS variable will be included in the java
 # start command line as-is, in ADDITION to other options. If you specify the
 # -a option on start script, those options will be appended as well. Examples:
@@ -69,10 +66,6 @@
 # however, you may want to customize the log settings and file appender location
 # so you can point the script to use a different log4j.properties file
 #LOG4J_PROPS=/var/tika/log4j.properties
-
-# Changes the logging level. Valid values: ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF. Default is INFO
-# This is an alternative to changing the rootLogger in log4j.properties
-#TIKA_LOG_LEVEL=INFO
 
 # Location where Tika should write logs to.
 #TIKA_LOGS_DIR=/var/tika/logs

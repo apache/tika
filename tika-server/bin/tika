@@ -352,10 +352,6 @@ if [ $# -gt 0 ]; then
   done
 fi
 
-if [[ $TIKA_LOG_LEVEL ]] ; then
-  TIKA_LOG_LEVEL_OPT="-Dtika.log.level=$TIKA_LOG_LEVEL"
-fi
-
 if [ -z "$TIKA_SERVER_DIR" ]; then
   TIKA_SERVER_DIR="$DEFAULT_SERVER_DIR"
 fi
@@ -476,10 +472,6 @@ function start_tika() {
       echo -e "    TIKA_ADDL_ARGS  = $TIKA_ADDL_ARGS"
     fi
 
-    if [ "$TIKA_LOG_LEVEL" != "" ]; then
-      echo -e "    TIKA_LOG_LEVEL  = $TIKA_LOG_LEVEL"
-    fi
-
     if [ "$TIKA_DATA_HOME" != "" ]; then
       echo -e "    TIKA_DATA_HOME  = $TIKA_DATA_HOME"
     fi
@@ -494,8 +486,7 @@ function start_tika() {
   fi
 
   TIKA_START_OPTS=('-server' "${JAVA_MEM_OPTS[@]}" "${GC_TUNE[@]}" "${GC_LOG_OPTS[@]}" \
-     $TIKA_LOG_LEVEL_OPT -Dtika.log.dir="$TIKA_LOGS_DIR" \
-    "${TIKA_HOST_ARG[@]}" "-Duser.timezone=$TIKA_TIMEZONE" \
+    "${TIKA_HOST_ARG[@]}" \
      "${LOG4J_CONFIG[@]}" "${TIKA_OPTS[@]}")
 
   mkdir -p "$TIKA_LOGS_DIR" 2>/dev/null
