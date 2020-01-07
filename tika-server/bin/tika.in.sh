@@ -74,7 +74,7 @@
 # This is an alternative to changing the rootLogger in log4j2.xml
 #TIKA_LOG_LEVEL=INFO
 
-# Location where Solr should write logs to. Absolute or relative to solr start dir
+# Location where Tika should write logs to.
 #TIKA_LOGS_DIR=logs
 
 # Sets the port Tika binds to, default is 9998
