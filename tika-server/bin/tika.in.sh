@@ -62,7 +62,7 @@
 # If not set, the script will create PID files in /var/tika
 #TIKA_PID_DIR=
 
-# Solr provides a default Log4J configuration xml file in server/resources
+# Tika provides a default Log4J configuration properties file in tika-server.jar
 # however, you may want to customize the log settings and file appender location
 # so you can point the script to use a different log4j.properties file
 #LOG4J_PROPS=/var/tika/log4j.properties
@@ -72,3 +72,8 @@
 
 # Sets the port Tika binds to, default is 9998
 #TIKA_PORT=9998
+
+# Tika Server has a number of options to make it more robust to OOMs, Infinite
+# Loops, and Memory Leaks via the -spawnChild parameter. Learn more at
+# http://wiki.apache.org/tika/TikaJAXRS
+#TIKA_SPAWN_CHILD_OPTS=-spawnChild -maxFiles 100000 -JXmx4g

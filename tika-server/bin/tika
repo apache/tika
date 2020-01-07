@@ -352,6 +352,10 @@ if [ $# -gt 0 ]; then
   done
 fi
 
+if [ -z "$TIKA_SPAWN_CHILD_OPTS" ]; then
+  TIKA_SPAWN_CHILD_OPTS="-spawnChild"
+fi
+
 if [ -z "$TIKA_SERVER_DIR" ]; then
   TIKA_SERVER_DIR="$DEFAULT_SERVER_DIR"
 fi
@@ -463,6 +467,7 @@ function start_tika() {
     echo -e "    JAVA_MEM_OPTS   = ${JAVA_MEM_OPTS[@]}"
     echo -e "    GC_TUNE         = ${GC_TUNE[@]}"
     echo -e "    GC_LOG_OPTS     = ${GC_LOG_OPTS[@]}"
+    echo -e "    TIKA_SPAWN_CHILD_OPTS = $TIKA_SPAWN_CHILD_OPTS"
 
     if [ "$TIKA_OPTS" != "" ]; then
       echo -e "    TIKA_OPTS       = ${TIKA_OPTS[@]}"
@@ -475,6 +480,7 @@ function start_tika() {
     if [ "$TIKA_DATA_HOME" != "" ]; then
       echo -e "    TIKA_DATA_HOME  = $TIKA_DATA_HOME"
     fi
+
     echo -e "\n"
   fi
 
@@ -509,17 +515,17 @@ function start_tika() {
   if [ "$run_in_foreground" == "true" ]; then
     if $verbose ; then
       echo "Startup command"
-      echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST"
+      echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS"
     fi
-    exec "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST
+    exec "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS
   else
     # run Tika in the background
     if $verbose ; then
       echo "Startup command"
-      echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log $TIKA_PID_DIR/tika-$TIKA_PORT.pid"
+      echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS $TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log $TIKA_PID_DIR/tika-$TIKA_PORT.pid"
     fi
     nohup "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS \
-	      -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST \
+	      -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS \
 	1>"$TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log" 2>&1 & echo $! > "$TIKA_PID_DIR/tika-$TIKA_PORT.pid"
 
     # no lsof on cygwin though
@@ -537,11 +543,11 @@ function start_tika() {
             loops=$[$loops+1]
           else
             echo -e "Still not seeing Tika listening on $TIKA_PORT after $TIKA_STOP_WAIT seconds!"
-            tail -30 "$TIKA_LOGS_DIR/tika.log"
+            tail -30 "$TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log"
             exit # subshell!
           fi
         else
-          TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
+          TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v "\-child" | grep -v grep | awk '{print $2}' | sort -r`
           echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
           exit # subshell!
         fi
@@ -550,7 +556,7 @@ function start_tika() {
     else
       echo -e "NOTE: Please install lsof as this script needs it to determine if Tika is listening on port $TIKA_PORT."
       sleep 10
-      TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v grep | awk '{print $2}' | sort -r`
+      TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v "\-child" | grep -v grep | awk '{print $2}' | sort -r`
       echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
       return;
     fi
