@@ -79,9 +79,3 @@
 
 # Sets the port Tika binds to, default is 9998
 #TIKA_PORT=9998
-
-# This would be cool in Tika land.
-# For a visual indication in the Admin UI of what type of environment this cluster is, configure
-# a -Dsolr.environment property below. Valid values are prod, stage, test, dev, with an optional
-# label or color, e.g. -Dsolr.environment=test,label=Functional+test,color=brown
-#SOLR_OPTS="$SOLR_OPTS -Dsolr.environment=prod"
