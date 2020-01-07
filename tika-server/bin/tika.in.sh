@@ -59,23 +59,23 @@
 # Anything you add to the TIKA_OPTS variable will be included in the java
 # start command line as-is, in ADDITION to other options. If you specify the
 # -a option on start script, those options will be appended as well. Examples:
-#TIKA_OPTS="$TIKA_OPTS -Dsolr.autoSoftCommit.maxTime=3000"
+#TIKA_OPTS="$TIKA_OPTS -Dlog4j.configuration=file:log4j_server.xml"
 
 # Location where the bin/tika script will save PID files for running instances
-# If not set, the script will create PID files in $TIKA_TIP/bin
+# If not set, the script will create PID files in /var/tika
 #TIKA_PID_DIR=
 
 # Solr provides a default Log4J configuration xml file in server/resources
 # however, you may want to customize the log settings and file appender location
-# so you can point the script to use a different log4j2.xml file
-#LOG4J_PROPS=/var/solr/log4j2.xml
+# so you can point the script to use a different log4j.properties file
+#LOG4J_PROPS=/var/tika/log4j.properties
 
 # Changes the logging level. Valid values: ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF. Default is INFO
-# This is an alternative to changing the rootLogger in log4j2.xml
+# This is an alternative to changing the rootLogger in log4j.properties
 #TIKA_LOG_LEVEL=INFO
 
 # Location where Tika should write logs to.
-#TIKA_LOGS_DIR=logs
+#TIKA_LOGS_DIR=/var/tika/logs
 
 # Sets the port Tika binds to, default is 9998
 #TIKA_PORT=9998

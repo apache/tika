@@ -329,7 +329,7 @@ else
   cp "$TIKA_INSTALL_DIR/bin/tika.in.sh" "/etc/default/$TIKA_SERVICE.in.sh"
   mv "$TIKA_INSTALL_DIR/bin/tika.in.sh" "$TIKA_INSTALL_DIR/bin/tika.in.sh.orig"
   echo "TIKA_PID_DIR=\"$TIKA_VAR_DIR\"
-LOG4J_PROPS=\"$TIKA_VAR_DIR/log4j2.xml\"
+LOG4J_PROPS=\"$TIKA_VAR_DIR/log4j.properties\"
 TIKA_LOGS_DIR=\"$TIKA_VAR_DIR/logs\"
 TIKA_PORT=\"$TIKA_PORT\"
 " >> "/etc/default/$TIKA_SERVICE.in.sh"
