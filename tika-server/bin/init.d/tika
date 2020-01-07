@@ -63,11 +63,11 @@ if [ $? -ne 0 ]; then
 fi
 
 case "$1" in
-  start|stop|restart|status)
+  start|stop|status)
     TIKA_CMD="$1"
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart|status}"
+    echo "Usage: $0 {start|stop|status}"
     exit
 esac
 
