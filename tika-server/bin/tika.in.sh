@@ -31,7 +31,7 @@
 #  * For Java 8: if this is set, additional params will be added to specify the log file & rotation
 #  * For Java 9 or higher: each included opt param that starts with '-Xlog:gc', but does not include an
 #    output specifier, will have a 'file' output specifier (as well as formatting & rollover options)
-#    appended, using the effective value of the SOLR_LOGS_DIR.
+#    appended, using the effective value of the TIKA_LOGS_DIR.
 #
 #GC_LOG_OPTS='-Xlog:gc*'  # (Java 9+)
 #GC_LOG_OPTS="-verbose:gc -XX:+PrintHeapAtGC -XX:+PrintGCDetails \
