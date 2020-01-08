@@ -224,6 +224,10 @@ if [ -z "$TIKA_PORT" ]; then
   TIKA_PORT=9998
 fi
 
+if [ -z "$TIKA_SPAWN_CHILD_OPTS" ]; then
+  TIKA_SPAWN_CHILD_OPTS="-spawnChild"
+fi
+
 if [ -z "$TIKA_UPGRADE" ]; then
   TIKA_UPGRADE=NO
 fi
