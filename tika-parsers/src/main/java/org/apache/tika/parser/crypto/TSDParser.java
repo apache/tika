@@ -104,7 +104,7 @@ public class TSDParser extends AbstractParser {
             ris.rewind();
 
             //Try to parse embedded file in TSD file
-            this.parseTSDContent(ris, handler, TSDAndEmbeddedMetadata, context);
+            this.parseTSDContent(ris, xhtml, TSDAndEmbeddedMetadata, context);
             xhtml.endDocument();
         }
     }

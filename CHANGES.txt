@@ -7,9 +7,13 @@ Release 2.0.0 - ???
 
 Release 1.24 - ???
 
+   * Upgrade to PDFBox 2.0.18 (TIKA-3021).
+
    * Fix bug in ASM parser configuration (TIKA-2992).
    
    * Upgrade to java-libpst 0.9.3 (TIKA-2546).
+
+   * Fixed XLIFF12Parser failures with ToXMLHandler (TIKA-3014).
 
 Release 1.23 - 12/02/2019
 

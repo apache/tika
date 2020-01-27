@@ -151,7 +151,8 @@ public class EpubParser extends AbstractParser {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".htm") ||
                     entry.getName().endsWith(".html") ||
-                    entry.getName().endsWith(".xhtml")) {
+                    entry.getName().endsWith(".xhtml") ||
+                    entry.getName().endsWith(".xml")) {
                 content.parse(zip, bodyHandler, metadata, context);
             }
             entry = zip.getNextZipEntry();
@@ -276,10 +277,20 @@ public class EpubParser extends AbstractParser {
         Set<String> processed = new HashSet<>();
         for (String id : contentOrderScraper.contentItems) {
             HRefMediaPair hRefMediaPair = contentOrderScraper.locationMap.get(id);
-            if (hRefMediaPair != null &&
-                    hRefMediaPair.href != null) {
+            if (hRefMediaPair != null && hRefMediaPair.href != null) {
+                //we need to test for xhtml/xml because the content parser
+                //expects that.
+                boolean shouldParse = false;
                 String href = hRefMediaPair.href.toLowerCase(Locale.US);
-                if (href.endsWith("htm") || href.endsWith("html")) {
+                if (hRefMediaPair.media != null) {
+                    String mediaType = hRefMediaPair.media.toLowerCase(Locale.US);
+                    if (mediaType.contains("html")) {
+                        shouldParse = true;
+                    }
+                } else if (href.endsWith("htm") || href.endsWith("html") || href.endsWith(".xml")) {
+                    shouldParse = true;
+                }
+                if (shouldParse) {
                     zae = zipFile.getEntry(relativePath + hRefMediaPair.href);
                     if (zae != null) {
                         try (InputStream is = zipFile.getInputStream(zae)) {
@@ -318,6 +329,8 @@ public class EpubParser extends AbstractParser {
         } else if (lc.endsWith("/xml")) {
             return false;
         } else if (lc.contains("x-ibooks")) {
+            return false;
+        } else if (lc.equals("application/x-dtbncx+xml")) {
             return false;
         }
         return true;

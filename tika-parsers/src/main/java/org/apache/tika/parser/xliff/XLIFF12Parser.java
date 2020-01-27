@@ -23,6 +23,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.ContentHandler;
@@ -67,6 +68,7 @@ public class XLIFF12Parser extends AbstractParser {
         metadata.set(Metadata.CONTENT_TYPE, XLF_CONTENT_TYPE.toString());
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+
         XMLReaderUtils.parseSAX(
                 new CloseShieldInputStream(stream),
                 new OfflineContentHandler(new XLIFF12ContentHandler(xhtml, metadata)),
