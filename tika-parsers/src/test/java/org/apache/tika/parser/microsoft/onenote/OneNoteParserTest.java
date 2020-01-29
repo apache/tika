@@ -174,6 +174,31 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testOneNote2007OrEarlier1() throws Exception {
+        Metadata metadata = new Metadata();
+        String txt = getText("testOneNote2007OrEarlier1.one", metadata);
+
+        // utf-16 LE text
+        assertContains("One note is the application.  The notebooks are the files within the application.  " +
+            "Each notebook can have an unlimited amount of sections and pages.  To create a new notebook, go to file, new, computer, " +
+            "and name it.  It will go to my documents, oneNote Notebooks folder.  The notebook doesn't close and you don't have to save.  " +
+            "If it closes, you can go back to it and it will open at the same place you left off.  If you are offline and the notebook is " +
+            "being stored on a sharepoint site, you can work on it and it will sync when you go back online.", txt);
+        // ascii text
+        assertContains("Correlation between Outlook and OneNote", txt);
+    }
+
+    @Test
+    public void testOneNote2007OrEarlier2() throws Exception {
+        Metadata metadata = new Metadata();
+        String txt = getText("testOneNote2007OrEarlier2.one", metadata);
+
+        // ascii text
+        assertContains("In Outlook meeting notice, select One Note Meeting Notes and then select the \"page\" you want to link/share", txt);
+
+    }
+
+    @Test
     public void testOneNoteEmbeddedWordDoc() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
