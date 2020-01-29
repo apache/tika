@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.microsoft.onenote;
 
 import org.apache.commons.codec.binary.Hex;
@@ -47,47 +48,48 @@ class OneNotePtr {
     public static final long FOOTER_CONST = 0x8BC215C38233BA4BL;
     public static final String UNKNOWN = "unknown";
     private static final byte[] IFNDF = new byte[] {
-      60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0
+        60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0
     };
 
     private static final GUID FILE_DATA_STORE_OBJ_HEADER = new GUID(new int[] {
-      0xBD,
-      0xE3,
-      0x16,
-      0xE7,
-      0x26,
-      0x65,
-      0x45,
-      0x11,
-      0xA4,
-      0xC4,
-      0x8D,
-      0x4D,
-      0x0B,
-      0x7A,
-      0x9E,
-      0xAC
+        0xBD,
+        0xE3,
+        0x16,
+        0xE7,
+        0x26,
+        0x65,
+        0x45,
+        0x11,
+        0xA4,
+        0xC4,
+        0x8D,
+        0x4D,
+        0x0B,
+        0x7A,
+        0x9E,
+        0xAC
     });
 
     private static final GUID FILE_DATA_STORE_OBJ_FOOTER = new GUID(new int[] {
-      0x71,
-      0xFB,
-      0xA7,
-      0x22,
-      0x0F,
-      0x79,
-      0x4A,
-      0x0B,
-      0xBB,
-      0x13,
-      0x89,
-      0x92,
-      0x56,
-      0x42,
-      0x6B,
-      0x24});
+        0x71,
+        0xFB,
+        0xA7,
+        0x22,
+        0x0F,
+        0x79,
+        0x4A,
+        0x0B,
+        0xBB,
+        0x13,
+        0x89,
+        0x92,
+        0x56,
+        0x42,
+        0x6B,
+        0x24});
 
     public static final int IFNDF_GUID_LENGTH = 38; // 36 char guid with a { and a } char.
+    public static final int NUM_RESERVED_BYTES_AT_END_OF_HEADER = 728;
     int indentLevel = 0;
 
     long offset;
@@ -111,46 +113,47 @@ class OneNotePtr {
         this.indentLevel = oneNotePtr.indentLevel;
     }
 
-    public OneNoteHeader deserializeHeader() throws IOException {
+    public OneNoteHeader deserializeHeader() throws IOException, TikaException {
         OneNoteHeader data = new OneNoteHeader();
         data.setGuidFileType(deserializeGUID())
-          .setGuidFile(deserializeGUID())
-          .setGuidLegacyFileVersion(deserializeGUID())
-          .setGuidFileFormat(deserializeGUID())
-          .setFfvLastCode(deserializeLittleEndianInt())
-          .setFfvNewestCode(deserializeLittleEndianInt())
-          .setFfvOldestCode(deserializeLittleEndianInt())
-          .setFfvOldestReader(deserializeLittleEndianInt())
-          .setFcrLegacyFreeChunkList(deserializeFileChunkReference64())
-          .setFcrLegacyTransactionLog(deserializeFileChunkReference64())
-          .setcTransactionsInLog(deserializeLittleEndianInt())
-          .setCbExpectedFileLength(deserializeLittleEndianInt())
-          .setRgbPlaceholder(deserializeLittleEndianLong())
-          .setFcrLegacyFileNodeListRoot(deserializeFileChunkReference64())
-          .setCbLegacyFreeSpaceInFreeChunkList(deserializeLittleEndianInt())
-          .setIgnoredZeroA(deserializeLittleEndianChar())
-          .setIgnoredZeroB(deserializeLittleEndianChar())
-          .setIgnoredZeroC(deserializeLittleEndianChar())
-          .setIgnoredZeroD(deserializeLittleEndianChar())
-          .setGuidAncestor(deserializeGUID())
-          .setCrcName(deserializeLittleEndianInt())
-          .setFcrHashedChunkList(deserializeFileChunkReference64x32())
-          .setFcrTransactionLog(deserializeFileChunkReference64x32())
-          .setFcrFileNodeListRoot(deserializeFileChunkReference64x32())
-          .setFcrFreeChunkList(deserializeFileChunkReference64x32())
-          .setCbExpectedFileLength(deserializeLittleEndianLong())
-          .setCbFreeSpaceInFreeChunkList(deserializeLittleEndianLong())
-          .setGuidFileVersion(deserializeGUID())
-          .setnFileVersionGeneration(deserializeLittleEndianLong())
-          .setGuidDenyReadFileVersion(deserializeGUID())
-          .setGrfDebugLogFlags(deserializeLittleEndianInt())
-          .setFcrDebugLogA(deserializeFileChunkReference64x32())
-          .setFcrDebugLogB(deserializeFileChunkReference64x32())
-          .setBuildNumberCreated(deserializeLittleEndianInt())
-          .setBuildNumberLastWroteToFile(deserializeLittleEndianInt())
-          .setBuildNumberOldestWritten(deserializeLittleEndianInt())
-          .setBuildNumberNewestWritten(deserializeLittleEndianInt())
-          .setReserved(deserializedReservedHeader());
+            .setGuidFile(deserializeGUID())
+            .setGuidLegacyFileVersion(deserializeGUID())
+            .setGuidFileFormat(deserializeGUID())
+            .setFfvLastCodeThatWroteToThisFile(deserializeLittleEndianInt())
+            .setFfvOldestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
+            .setFfvNewestCodeThatHasWrittenToThisFile(deserializeLittleEndianInt())
+            .setFfvOldestCodeThatMayReadThisFile(deserializeLittleEndianInt())
+            .setFcrLegacyFreeChunkList(deserializeFileChunkReference64())
+            .setFcrLegacyTransactionLog(deserializeFileChunkReference64())
+            .setcTransactionsInLog(deserializeLittleEndianInt())
+            .setCbExpectedFileLength(deserializeLittleEndianInt())
+            .setRgbPlaceholder(deserializeLittleEndianLong())
+            .setFcrLegacyFileNodeListRoot(deserializeFileChunkReference64())
+            .setCbLegacyFreeSpaceInFreeChunkList(deserializeLittleEndianInt())
+            .setIgnoredZeroA(deserializeLittleEndianChar())
+            .setIgnoredZeroB(deserializeLittleEndianChar())
+            .setIgnoredZeroC(deserializeLittleEndianChar())
+            .setIgnoredZeroD(deserializeLittleEndianChar())
+            .setGuidAncestor(deserializeGUID())
+            .setCrcName(deserializeLittleEndianInt())
+            .setFcrHashedChunkList(deserializeFileChunkReference64x32())
+            .setFcrTransactionLog(deserializeFileChunkReference64x32())
+            .setFcrFileNodeListRoot(deserializeFileChunkReference64x32())
+            .setFcrFreeChunkList(deserializeFileChunkReference64x32())
+            .setCbExpectedFileLength(deserializeLittleEndianLong())
+            .setCbFreeSpaceInFreeChunkList(deserializeLittleEndianLong())
+            .setGuidFileVersion(deserializeGUID())
+            .setnFileVersionGeneration(deserializeLittleEndianLong())
+            .setGuidDenyReadFileVersion(deserializeGUID())
+            .setGrfDebugLogFlags(deserializeLittleEndianInt())
+            .setFcrDebugLogA(deserializeFileChunkReference64x32())
+            .setFcrDebugLogB(deserializeFileChunkReference64x32())
+            .setBuildNumberCreated(deserializeLittleEndianInt())
+            .setBuildNumberLastWroteToFile(deserializeLittleEndianInt())
+            .setBuildNumberOldestWritten(deserializeLittleEndianInt())
+            .setBuildNumberNewestWritten(deserializeLittleEndianInt());
+        ByteBuffer reservedBytesAtEndOfHeader = ByteBuffer.allocate(NUM_RESERVED_BYTES_AT_END_OF_HEADER);
+        deserializeBytes(reservedBytesAtEndOfHeader);
         return data;
     }
 
@@ -159,8 +162,29 @@ class OneNotePtr {
         for (int i = 0; i < 16; ++i) {
             guid[i] = dif.read();
         }
+        int[] guid2 = new int[16];
+        // re-order [0,1,2,3] to little endian
+        guid2[0] = guid[3];
+        guid2[1] = guid[2];
+        guid2[2] = guid[1];
+        guid2[3] = guid[0];
+        // re-order [4,5,6,7] to little endian
+        guid2[4] = guid[5];
+        guid2[5] = guid[4];
+        guid2[6] = guid[7];
+        guid2[7] = guid[6];
+        // the rest is already in right order.
+        guid2[8] = guid[8];
+        guid2[9] = guid[9];
+        guid2[10] = guid[10];
+        guid2[11] = guid[11];
+        guid2[12] = guid[12];
+        guid2[13] = guid[13];
+        guid2[14] = guid[14];
+        guid2[15] = guid[15];
+
         offset = dif.position();
-        return new GUID(guid);
+        return new GUID(guid2);
     }
 
     private byte[] deserializedReservedHeader() throws IOException {
@@ -227,7 +251,7 @@ class OneNotePtr {
         int c1 = dif.read();
         int c2 = dif.read();
         long res = (((c1 & 0xff) << 0) +
-          ((c2 & 0xff) << 8));
+            ((c2 & 0xff) << 8));
         offset = dif.position();
         return res;
     }
@@ -268,7 +292,7 @@ class OneNotePtr {
      * @return The resulting one note pointer after node lists are all parsed.
      */
     public OneNotePtr internalDeserializeFileNodeList(OneNotePtr ptr, FileNodeList fileNodeList, FileNodePtr curPath) throws IOException,
-      TikaException {
+        TikaException {
         OneNotePtr localPtr = new OneNotePtr(document, dif);
         FileNodePtrBackPush bp = new FileNodePtrBackPush(curPath);
         try {
@@ -305,7 +329,7 @@ class OneNotePtr {
      * @param curPath The current FileNodePtr.
      */
     void deserializeFileNodeListFragment(FileNodeList data, FileChunkReference next, FileNodePtr curPath) throws IOException,
-      TikaException {
+        TikaException {
         data.fileNodeListHeader = deserializeFileNodeListHeader();
         boolean terminated = false;
         while (offset + 24 <= end) { // while there are at least 24 bytes free
@@ -334,7 +358,7 @@ class OneNotePtr {
         next.stp = nextChunkRef.stp;
         if (terminated) {
             LOG.debug("{}Chunk terminator found NextChunkRef.cb={}, NextChunkRef.stp={}, Offset={}, End={}", getIndent(), nextChunkRef.cb
-              , nextChunkRef.stp, offset, end);
+                , nextChunkRef.stp, offset, end);
             // TODO check that next is OK
         }
         long footer = deserializeLittleEndianLong();
@@ -381,7 +405,7 @@ class OneNotePtr {
         } else if (data.id == FndStructureConstants.ObjectGroupEndFND) {
             // no data
         } else if (data.id == FndStructureConstants.ObjectSpaceManifestRootFND
-          || data.id == FndStructureConstants.ObjectSpaceManifestListStartFND) {
+            || data.id == FndStructureConstants.ObjectSpaceManifestListStartFND) {
             if (data.id == FndStructureConstants.ObjectSpaceManifestRootFND) {
                 data.idDesc = "gosidRoot";
             } else {
@@ -419,7 +443,7 @@ class OneNotePtr {
             data.gctxid = ExtendedGUID.nil();
             document.registerRevisionManifest(data);
         } else if (data.id == FndStructureConstants.RevisionManifestStart6FND
-          || data.id == FndStructureConstants.RevisionManifestStart7FND) {
+            || data.id == FndStructureConstants.RevisionManifestStart7FND) {
             data.gosid = deserializeExtendedGUID(); // the rid
             data.idDesc = "rid";
             //LOG.debug("{}gosid {}", getIndent(), data.gosid.toString().c_str());
@@ -443,13 +467,13 @@ class OneNotePtr {
             data.subType.globalIdTableEntryFNDX.guid = deserializeGUID();
 
             document.revisionMap.get(document.currentRevision).globalId.put(data.subType.globalIdTableEntryFNDX.index,
-              data.subType.globalIdTableEntryFNDX.guid);
+                data.subType.globalIdTableEntryFNDX.guid);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry2FNDX) {
             data.subType.globalIdTableEntry2FNDX.indexMapFrom = deserializeLittleEndianInt();
             data.subType.globalIdTableEntry2FNDX.indexMapTo = deserializeLittleEndianInt();
 
             ExtendedGUID dependentRevision =
-              document.revisionMap.get(document.currentRevision).dependent;
+                document.revisionMap.get(document.currentRevision).dependent;
             // Get the compactId from the revisionMap's globalId map.
             GUID compactId = document.revisionMap.get(dependentRevision).globalId.get(data.subType.globalIdTableEntry2FNDX.indexMapFrom);
             if (compactId == null) {
@@ -471,10 +495,10 @@ class OneNotePtr {
                     throw new TikaException("COMPACT_ID_MISSING");
                 }
                 document.revisionMap.get(document.currentRevision).globalId.put(data.subType.globalIdTableEntry3FNDX.indexCopyToStart + i
-                  , compactId);
+                    , compactId);
             }
         } else if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX
-          || data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCount2FNDX) {
+            || data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCount2FNDX) {
             data.subType.objectRevisionWithRefCountFNDX.oid = deserializeCompactID(); // the oid
 
             if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX) {
@@ -501,7 +525,7 @@ class OneNotePtr {
             data.subType.rootObjectReference.rootObjectReferenceBase.rootRole = deserializeLittleEndianInt();
 
             LOG.debug("{}Root role {}", getIndent(),
-              data.subType.rootObjectReference.rootObjectReferenceBase.rootRole);
+                data.subType.rootObjectReference.rootObjectReferenceBase.rootRole);
         } else if (data.id == FndStructureConstants.RootObjectReference3FND) {
             data.idDesc = "oidRoot";
             data.gosid = deserializeExtendedGUID();
@@ -509,9 +533,9 @@ class OneNotePtr {
             data.subType.rootObjectReference.rootObjectReferenceBase.rootRole = deserializeLittleEndianInt();
 
             LOG.debug("{}Root role {}", getIndent(),
-              data.subType.rootObjectReference.rootObjectReferenceBase.rootRole);
+                data.subType.rootObjectReference.rootObjectReferenceBase.rootRole);
         } else if (data.id == FndStructureConstants.RevisionRoleDeclarationFND
-          || data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
+            || data.id == FndStructureConstants.RevisionRoleAndContextDeclarationFND) {
             data.gosid = deserializeExtendedGUID();
 
             data.subType.revisionRoleDeclaration.revisionRole = deserializeLittleEndianInt();
@@ -521,8 +545,8 @@ class OneNotePtr {
 
             }
             document.registerAdditionalRevisionRole(data.gosid,
-              data.subType.revisionRoleDeclaration.revisionRole,
-              data.gctxid);
+                data.subType.revisionRoleDeclaration.revisionRole,
+                data.gctxid);
             // FIXME: deal with ObjectDataEncryptionKey
         } else if (data.id == FndStructureConstants.ObjectInfoDependencyOverridesFND) {
             OneNotePtr content = new OneNotePtr(this);
@@ -544,22 +568,22 @@ class OneNotePtr {
             data.subType.fileDataStoreObjectReference.ref = fileDataStorePtr.deserializeFileDataStoreObject();
 
         } else if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX
-          || data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX
-          || data.id == FndStructureConstants.CanRevise.ObjectDeclaration2RefCountFND
-          || data.id == FndStructureConstants.CanRevise.ObjectDeclaration2LargeRefCountFND
-          || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND
-          || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
+            || data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX
+            || data.id == FndStructureConstants.CanRevise.ObjectDeclaration2RefCountFND
+            || data.id == FndStructureConstants.CanRevise.ObjectDeclaration2LargeRefCountFND
+            || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND
+            || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
             data.subType.objectDeclarationWithRefCount.body.file_data_store_reference =
-              false;
+                false;
             if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX
-              || data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX) {
+                || data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCount2FNDX) {
                 data.subType.objectDeclarationWithRefCount.body = deserializeObjectDeclarationWithRefCountBody();
             } else { // one of the other 4 that use the ObjectDeclaration2Body
                 data.subType.objectDeclarationWithRefCount.body = deserializeObjectDeclaration2Body();
             }
             if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationWithRefCountFNDX
-              || data.id == FndStructureConstants.CanRevise.ObjectDeclaration2RefCountFND
-              || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND) {
+                || data.id == FndStructureConstants.CanRevise.ObjectDeclaration2RefCountFND
+                || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND) {
                 long refCnt = deserializeLittleEndianChar();
                 data.subType.objectDeclarationWithRefCount.cRef = refCnt;
             } else {
@@ -567,7 +591,7 @@ class OneNotePtr {
             }
 
             if (data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2RefCountFND
-              || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
+                || data.id == FndStructureConstants.CanRevise.ReadOnlyObjectDeclaration2LargeRefCountFND) {
                 ByteBuffer md5Buffer = ByteBuffer.allocate(16);
                 deserializeBytes(md5Buffer);
                 data.subType.objectDeclarationWithRefCount.readOnly.md5 = md5Buffer.array();
@@ -576,9 +600,9 @@ class OneNotePtr {
             postprocessObjectDeclarationContents(data, curPath);
 
             LOG.debug("{}Ref Count JCID {}", getIndent(),
-              data.subType.objectDeclarationWithRefCount.body.jcid);
+                data.subType.objectDeclarationWithRefCount.body.jcid);
         } else if (data.id == FndStructureConstants.CanRevise.ObjectDeclarationFileData3RefCountFND
-          || data.id == FndStructureConstants.CanRevise.ObjectDeclarationFileData3LargeRefCountFND) {
+            || data.id == FndStructureConstants.CanRevise.ObjectDeclarationFileData3LargeRefCountFND) {
             data.subType.objectDeclarationWithRefCount.body.oid = deserializeCompactID();
 
             long jcid = deserializeLittleEndianInt();
@@ -606,10 +630,10 @@ class OneNotePtr {
             byte[] dataSpaceBufferBytes = dataSpaceBuffer.array();
             offset += dataSpaceBufferBytes.length;
             if (dataSpaceBufferBytes.length == (IFNDF_GUID_LENGTH * 2 + IFNDF.length) &&
-              Arrays.equals(IFNDF, Arrays.copyOfRange(dataSpaceBufferBytes, 0, IFNDF.length))) {
+                Arrays.equals(IFNDF, Arrays.copyOfRange(dataSpaceBufferBytes, 0, IFNDF.length))) {
                 data.subType.objectDeclarationWithRefCount.body.file_data_store_reference = true;
                 GUID guid = GUID.fromCurlyBraceUTF16Bytes(Arrays.copyOfRange(dataSpaceBufferBytes, IFNDF.length,
-                  dataSpaceBufferBytes.length));
+                    dataSpaceBufferBytes.length));
                 ExtendedGUID extendedGUID = new ExtendedGUID(guid, 0);
                 FileChunkReference fileChunk = document.getAssocGuidToRef(extendedGUID);
                 if (fileChunk == null) {
@@ -671,11 +695,11 @@ class OneNotePtr {
         --indentLevel;
         if (data.gosid.equals(ExtendedGUID.nil())) {
             LOG.debug("{}End Node {} ({}) - Offset={}, End={}", getIndent(), FndStructureConstants.nameOf(data.id), (int) data.id, offset
-              , end);
+                , end);
         } else {
             LOG.debug("{}End Node {} ({}) {}:[{}] - Offset={}, End={}", getIndent(), FndStructureConstants.nameOf(data.id), (int) data.id
-              , data.idDesc,
-              data.gosid, offset, end);
+                , data.idDesc,
+                data.gosid, offset, end);
         }
         return data;
     }
@@ -911,7 +935,7 @@ class OneNotePtr {
             data.subType.objectDeclarationWithRefCount.objectRef = objectSpacePropSetPtr.deserializeObjectSpaceObjectPropSet();
             ObjectStreamCounters streamCounters = new ObjectStreamCounters();
             data.propertySet = objectSpacePropSetPtr.deserializePropertySet(streamCounters,
-              data.subType.objectDeclarationWithRefCount.objectRef);
+                data.subType.objectDeclarationWithRefCount.objectRef);
         } else {
             if (!data.subType.objectDeclarationWithRefCount.body.jcid.isFileData) {
                 throw new TikaException("JCID must be file data when !isObjectSpaceObjectPropSet.");
@@ -929,12 +953,12 @@ class OneNotePtr {
     }
 
     private PropertySet deserializePropertySet(ObjectStreamCounters counters, ObjectSpaceObjectPropSet streams) throws IOException,
-      TikaException {
+        TikaException {
         PropertySet data = new PropertySet();
         long count = deserializeLittleEndianShort();
         data.rgPridsData = Stream.generate(PropertyValue::new)
-          .limit((int) count)
-          .collect(Collectors.toList());
+            .limit((int) count)
+            .collect(Collectors.toList());
         for (int i = 0; i < count; ++i) {
             data.rgPridsData.get(i).propertyId = deserializePropertyID();
             LOG.debug("{}Property {}", getIndent(), data.rgPridsData.get(i).propertyId);
@@ -942,7 +966,7 @@ class OneNotePtr {
         LOG.debug("{}{} elements in property set:", getIndent(), count);
         for (int i = 0; i < count; ++i) {
             data.rgPridsData.set(i, deserializePropertyValueFromPropertyID(
-              data.rgPridsData.get(i).propertyId, streams, counters));
+                data.rgPridsData.get(i).propertyId, streams, counters));
         }
         LOG.debug("");
         return data;
@@ -1033,7 +1057,7 @@ class OneNotePtr {
                 case 0xa:
                 case 0xc:
                     if (type == 0x8 || type == 0xa
-                      || type == 0xc) {
+                        || type == 0xc) {
                         val32 = 1;
                     }
                 {
@@ -1055,7 +1079,7 @@ class OneNotePtr {
                         if (index < stream.size()) {
                             data.compactIDs.add(stream.get(index));
                             LOG.debug(" {}[{}]", xtype,
-                              data.compactIDs.get(data.compactIDs.size() - 1));
+                                data.compactIDs.get(data.compactIDs.size() - 1));
                         } else {
                             throw new TikaException("SEGV");
                         }
@@ -1068,8 +1092,8 @@ class OneNotePtr {
                     OneNotePropertyId propId = deserializePropertyID();
                     LOG.debug(" UnifiedSubPropertySet {} {}", val32, propId);
                     data.propertySet.rgPridsData = Stream.generate(PropertyValue::new)
-                      .limit((int) val32)
-                      .collect(Collectors.toList());
+                        .limit((int) val32)
+                        .collect(Collectors.toList());
                     for (int i = 0; i < val32; ++i) {
                         try {
                             data.propertySet.rgPridsData.set(i, deserializePropertyValueFromPropertyID(propId, streams, counters));
@@ -1119,7 +1143,7 @@ class OneNotePtr {
     }
 
     private ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs deserializeObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs() throws IOException
-      , TikaException {
+        , TikaException {
         ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs data = new ObjectSpaceObjectStreamOfOIDsOSIDsOrContextIDs();
         long header = deserializeLittleEndianInt();
         data.count = header & 0xffffff;
@@ -1127,10 +1151,10 @@ class OneNotePtr {
         data.extendedStreamsPresent = ((header >> 30) & 0x1);
         if (LOG.isDebugEnabled()) {
             LOG.debug(
-              "{}Deserialized Stream Header count: {} OsidsNotPresent {} Extended {}",
-              getIndent(), data.count,
-              data.osidsStreamNotPresent,
-              data.extendedStreamsPresent);
+                "{}Deserialized Stream Header count: {} OsidsNotPresent {} Extended {}",
+                getIndent(), data.count,
+                data.osidsStreamNotPresent,
+                data.extendedStreamsPresent);
         }
         for (int i = 0; i < data.count; ++i) {
             CompactID cid;
