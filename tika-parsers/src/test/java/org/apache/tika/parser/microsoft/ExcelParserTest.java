@@ -573,4 +573,10 @@ public class ExcelParserTest extends TikaTest {
         String xml = getXML("testEXCEL_labels-govdocs-515858.xls").xml;
         assertContains("Morocco", xml);
     }
+
+    @Test
+    public void testWorkBookInCapitals() throws Exception {
+        String xml = getXML("testEXCEL_WORKBOOK_in_capitals.xls").xml;
+        assertContains("Inventarliste", xml);
+    }
 }

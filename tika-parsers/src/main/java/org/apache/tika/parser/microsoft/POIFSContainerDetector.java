@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.poi.hssf.model.InternalWorkbook;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -208,6 +209,15 @@ public class POIFSContainerDetector implements Detector {
      */
     protected static MediaType detect(Set<String> names, DirectoryEntry root) {
         if (names != null) {
+            for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
+                if (names.contains(workbookEntryName)) {
+                    MediaType tmp = processCompObjFormatType(root);
+                    if (tmp.equals(MS_GRAPH_CHART)) {
+                        return MS_GRAPH_CHART;
+                    }
+                    return XLS;
+                }
+            }
             if (names.contains("SwDocContentMgr") && names.contains("SwDocMgrTempStorage")) {
                 return SLDWORKS;
             } else if (names.contains("StarCalcDocument")) {
@@ -237,12 +247,6 @@ public class POIFSContainerDetector implements Detector {
                 // Works 7.0 spreadsheet files contain both
                 // we want to avoid classifying this as Excel
                 return XLR;
-            } else if (names.contains("Workbook") || names.contains("WORKBOOK")) {
-                MediaType tmp = processCompObjFormatType(root);
-                if (tmp.equals(MS_GRAPH_CHART)) {
-                    return MS_GRAPH_CHART;
-                }
-                return XLS;
             } else if (names.contains("Book")) {
                 // Excel 95 or older, we won't be able to parse this....
                 return XLS;

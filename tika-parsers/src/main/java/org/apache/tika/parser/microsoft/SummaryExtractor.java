@@ -78,6 +78,9 @@ public class SummaryExtractor {
             DirectoryNode root, String entryName)
             throws IOException, TikaException {
         try {
+            if (! root.hasEntry(entryName)) {
+                return;
+            }
             DocumentEntry entry =
                     (DocumentEntry) root.getEntry(entryName);
             PropertySet properties =
@@ -94,6 +97,8 @@ public class SummaryExtractor {
             // no property stream, just skip it
         } catch (UnexpectedPropertySetTypeException e) {
             throw new TikaException("Unexpected HPSF document", e);
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
             LOG.warn("Ignoring unexpected exception while parsing summary entry {}", entryName, e);
         }
