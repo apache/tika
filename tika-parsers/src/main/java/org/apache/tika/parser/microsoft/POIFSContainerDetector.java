@@ -353,6 +353,10 @@ public class POIFSContainerDetector implements Detector {
      */
     private static MediaType processCompObjFormatType(DirectoryEntry root) {
         try {
+
+            if (! root.hasEntry("\u0001CompObj")) {
+                return OLE;
+            }
             Entry e = root.getEntry("\u0001CompObj");
             if (e != null && e.isDocumentEntry()) {
                 DocumentNode dn = (DocumentNode) e;
@@ -373,6 +377,8 @@ public class POIFSContainerDetector implements Detector {
                     return WPS;
                 }
             }
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
             /*
              * "root.getEntry" can throw FileNotFoundException. The code inside
