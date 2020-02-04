@@ -94,9 +94,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         configureExtractor(this.extractor, locale);
 
         if (locale == null) {
-            formatter = new TikaExcelDataFormatter();
+            formatter = new TikaExcelDataFormatter(context.get(OfficeParserConfig.class));
         } else {
-            formatter = new TikaExcelDataFormatter(locale);
+            formatter = new TikaExcelDataFormatter(context.get(OfficeParserConfig.class), locale);
         }
     }
 

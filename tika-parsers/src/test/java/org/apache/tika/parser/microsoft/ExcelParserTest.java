@@ -175,6 +175,60 @@ public class ExcelParserTest extends TikaTest {
     }
 
     @Test
+    public void testExcelParserFormattingDisabled() throws Exception {
+        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL-formats.xls")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+            officeParserConfig.setExtractFormattedValues(false);
+            context.set(OfficeParserConfig.class, officeParserConfig);
+            context.set(Locale.class, Locale.US);
+            ContentHandler handler = new BodyContentHandler();
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.ms-excel",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            String content = handler.toString();
+
+            // Number #,##0.00
+            assertContains("Number #,##0.00\t1599.99\t-1599.99", content);
+
+            // Currency $#,##0.00;[Red]($#,##0.00)
+            assertContains("Currency $#,##0.00;[Red]($#,##0.00)\t1599.99\t-1599.99", content);
+
+            // Scientific 0.00E+00
+            assertContains("Scientific 0.00E+00\t1.98356388E8\t-1.98356388E8", content);
+
+            // Percentage.
+            assertContains("Percentage (0.025)\t0.025\t0.025", content);
+
+            // Time Format: h:mm
+            assertContains("Time Format: h:mm AM/PM\t33966.260424618056\t33966.760424803244", content);
+            assertContains("Time Format: h:mm\t33966.260424803244\t33966.760424803244", content);
+
+            // Date Format: d-mmm-yy
+            assertContains("Date Format: d-mmm-yy\t39219.84792480324", content);
+
+            // Date Format: m/d/yy
+            assertContains("Date Format: m/d/yy\t40089.84792480324", content);
+
+            // Date/Time Format: m/d/yy h:mm
+            assertContains("Date/Time Format\t39466.190980358806", content);
+
+            // Fraction (2.5): # ?/?
+            assertContains("Fraction (2.5)\t2.5", content);
+
+            assertContains("Custom Number:\t19.99", content);
+            assertContains("Custom Date:\t39219.18056369212", content);
+
+
+        }
+    }
+
+    @Test
     public void testExcelParserPassword() throws Exception {
         try (InputStream input = ExcelParserTest.class.getResourceAsStream(
                 "/test-documents/testEXCEL_protected_passtika.xls")) {

@@ -28,14 +28,35 @@ import org.apache.poi.util.LocaleUtil;
  */
 public class TikaExcelDataFormatter extends DataFormatter {
 
-    public TikaExcelDataFormatter() {
-        this(LocaleUtil.getUserLocale());
+    private OfficeParserConfig officeParserConfig;
+
+    public TikaExcelDataFormatter(OfficeParserConfig officeParserConfig) {
+        this(officeParserConfig, LocaleUtil.getUserLocale());
     }
 
-    public TikaExcelDataFormatter (Locale locale) {
+    public TikaExcelDataFormatter (OfficeParserConfig officeParserConfig, Locale locale) {
         super(locale);
+        this.officeParserConfig = officeParserConfig;
         addFormat("General", new TikaExcelGeneralFormat(locale));
         addFormat("general", new TikaExcelGeneralFormat(locale));
     }
 
+    @Override
+    public String formatRawCellContents(double value, int formatIndex, String formatString) {
+        if(officeParserConfig.getExtractFormattedValues()) {
+            return super.formatRawCellContents(value, formatIndex, formatString);
+        }
+        else {
+            return String.valueOf(value);
+        }
+    }
+
+    @Override
+    public String formatRawCellContents(double value, int formatIndex, String formatString, boolean use1904Windowing) {
+        if(officeParserConfig.getExtractFormattedValues()) {
+            return super.formatRawCellContents(value, formatIndex, formatString, use1904Windowing);
+        } else {
+            return String.valueOf(value);
+        }
+    }
 }

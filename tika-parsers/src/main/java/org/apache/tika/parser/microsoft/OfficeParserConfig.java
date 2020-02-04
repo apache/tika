@@ -22,6 +22,7 @@ import java.io.Serializable;
 public class OfficeParserConfig implements Serializable {
 
     private boolean extractMacros = false;
+    private boolean extractFormattedValues = true;
 
     private boolean includeDeletedContent = false;
     private boolean includeMoveFromContent = false;
@@ -53,6 +54,30 @@ public class OfficeParserConfig implements Serializable {
     public boolean getExtractMacros() {
         return extractMacros;
     }
+
+    /**
+     * Sets whether we honor formatting for numbers or retrieve raw values
+     * (e.g. if the cell value is 3.23427 formatted to three decimal places
+     * should we retrieve 3.234 or 3.23427.
+     *
+     * By default formats are honored
+     *
+     * By ignoring formats, you get increased precision, but will also need to
+     * handle parsing excel dates/times etc yourself
+     *
+     * @param extractFormattedValues
+     */
+    public void setExtractFormattedValues(boolean extractFormattedValues) {
+        this.extractFormattedValues = extractFormattedValues;
+    }
+
+    /**
+     * @return whether or not to honor format settings for numbers
+     */
+    public boolean getExtractFormattedValues() {
+        return extractFormattedValues;
+    }
+
     /**
      * Sets whether or not the parser should include deleted content.
      * <p/>

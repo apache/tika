@@ -282,8 +282,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.handler = handler;
             this.extractor = extractor;
             this.format = NumberFormat.getInstance(locale);
-            this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
-            this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
+            this.formatListener = new TikaFormatTrackingHSSFListener(this, locale, officeParserConfig.getExtractFormattedValues());
+            this.tikaExcelDataFormatter = new TikaExcelDataFormatter(officeParserConfig, locale);
             this.officeParserConfig = officeParserConfig;
         }
 
@@ -459,7 +459,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                                 && unicode.getExtendedRst().getPhoneticText() != null
                                 && unicode.getExtendedRst().getPhoneticText().trim().length() > 0) ?
                                 unicode.getExtendedRst().getPhoneticText() : "";
-                        cellString = unicode.getString()+" "+phonetic;
+                        cellString = unicode.getString() + " " + phonetic;
                     } else {
                         cellString = unicode.getString();
                     }
@@ -510,14 +510,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     //  the continue records are in
                     drawingGroups.add((DrawingGroupRecord) record);
                     break;
-                    
+
                 case HeaderRecord.sid:
-                	if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                    if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
                         HeaderRecord headerRecord = (HeaderRecord) record;
                         addTextCell(record, headerRecord.getText());
                     }
                     break;
-                	
+
                 case FooterRecord.sid:
                     if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
                         FooterRecord footerRecord = (FooterRecord) record;
@@ -629,7 +629,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         handler.startElement("td");
                         currentRow++;
                     } while (officeParserConfig.getIncludeMissingRows() &&
-                             currentRow < entry.getKey().y);
+                            currentRow < entry.getKey().y);
                     currentRow = entry.getKey().y;
                     currentColumn = 0;
                 }
@@ -675,13 +675,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 findPictures(escherRecord.getChildRecords());
             }
         }
+
         private class TikaFormatTrackingHSSFListener extends FormatTrackingHSSFListener {
             //TIKA-2025 -- use this to preserve large numbers in "General" format
             //against the MS spec.
             final TikaExcelGeneralFormat generalFormat;
-            public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale) {
+            final boolean extractFormattedValues;
+
+            public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale, boolean extractFormattedValues) {
                 super(childListener, locale);
                 generalFormat = new TikaExcelGeneralFormat(locale);
+                this.extractFormattedValues = extractFormattedValues;
             }
 
             @Override
@@ -693,21 +697,24 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             @Override
             public String formatNumberDateCell(CellValueRecordInterface cell) {
                 String formatString = this.getFormatString(cell);
-                if (formatString != null && ! formatString.equals("General")) {
+                if (extractFormattedValues && formatString != null && !formatString.equals("General")) {
                     return super.formatNumberDateCell(cell);
                 }
 
                 double value;
-                if(cell instanceof NumberRecord) {
-                    value = ((NumberRecord)cell).getValue();
+                if (cell instanceof NumberRecord) {
+                    value = ((NumberRecord) cell).getValue();
                 } else {
-                    if(!(cell instanceof FormulaRecord)) {
+                    if (!(cell instanceof FormulaRecord)) {
                         throw new IllegalArgumentException("Unsupported CellValue Record passed in " + cell);
                     }
 
-                    value = ((FormulaRecord)cell).getValue();
+                    value = ((FormulaRecord) cell).getValue();
                 }
-                return generalFormat.format(value);
+                if(extractFormattedValues) {
+                    return generalFormat.format(value);
+                }
+                return String.valueOf(value);
             }
         }
     }
