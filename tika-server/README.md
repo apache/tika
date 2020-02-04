@@ -32,6 +32,20 @@ This will load Apache Tika Server and expose its interface on:
 
 `http://localhost:9998`
 
+Installing as a Service on Linux
+-----------------------
+To run as a service on Linux you need to run the `install_tika_service.sh` script.
+
+Assuming you have the binary distribution like `tika-server-2.0.0-SNAPSHOT-bin.tgz`,
+then you can extract the install script via:
+
+`tar xzf tika-server-2.0.0-SNAPSHOT-bin.tgz tika-server-2.0.0-SNAPSHOT-bin/bin/install_tika_service.sh --strip-components=2`
+
+and then run the installation process via:
+
+`./install_tika_service.sh  ./tika-server-2.0.0-SNAPSHOT-bin.tgz`
+
+
 Usage
 -----
 Usage examples from command line with `curl` utility:
@@ -59,4 +73,3 @@ HTTP Return Codes
 `415` - Unknown file type  
 `422` - Unparsable document of known type (password protected documents and unsupported versions like Biff5 Excel)  
 `500` - Internal error  
-

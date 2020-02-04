@@ -1,0 +1,78 @@
+#!/bin/sh
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+### BEGIN INIT INFO
+# Provides:          tika
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       Controls Apache Tika as a Service
+### END INIT INFO
+
+# Example of a very simple *nix init script that delegates commands to the bin/tika script
+# Typical usage is to do:
+#
+#   cp bin/init.d/tika /etc/init.d/tika
+#   chmod 755 /etc/init.d/tika
+#   chown root:root /etc/init.d/tika
+#   update-rc.d tika defaults
+#   update-rc.d tika enable
+
+# Where you extracted the Tika distribution bundle
+TIKA_INSTALL_DIR="/opt/tika"
+
+if [ ! -d "$TIKA_INSTALL_DIR" ]; then
+  echo "$TIKA_INSTALL_DIR not found! Please check the TIKA_INSTALL_DIR setting in your $0 script."
+  exit 1
+fi
+
+# Path to an include file that defines environment specific settings to override default
+# variables used by the bin/tika script. It's highly recommended to define this script so
+# that you can keep the Tika binary files separated from live files (pid, logs, etc)
+# see bin/tika.in.sh for an example
+TIKA_ENV="/etc/default/tika.in.sh"
+
+if [ ! -f "$TIKA_ENV" ]; then
+  echo "$TIKA_ENV not found! Please check the TIKA_ENV setting in your $0 script."
+  exit 1
+fi
+
+# Specify the user to run Tika as; if not set, then Tika will run as root.
+# Running Tika as root is not recommended for production environments
+RUNAS="tika"
+
+# verify the specified run as user exists
+runas_uid="`id -u "$RUNAS"`"
+if [ $? -ne 0 ]; then
+  echo "User $RUNAS not found! Please create the $RUNAS user before running this script."
+  exit 1
+fi
+
+case "$1" in
+  start|stop|status)
+    TIKA_CMD="$1"
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit
+esac
+
+if [ -n "$RUNAS" ]; then
+  su -c "TIKA_INCLUDE=\"$TIKA_ENV\" \"$TIKA_INSTALL_DIR/bin/tika\" $TIKA_CMD" - "$RUNAS"
+else
+  TIKA_INCLUDE="$TIKA_ENV" "$TIKA_INSTALL_DIR/bin/tika" "$TIKA_CMD"
+fi
