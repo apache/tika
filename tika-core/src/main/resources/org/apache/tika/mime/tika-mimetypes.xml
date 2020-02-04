@@ -381,11 +381,29 @@
   <mime-type type="application/marc">
     <glob pattern="*.mrc"/>
   </mime-type>
+
   <mime-type type="application/mathematica">
+    <_comment>Wolfram Mathematica</_comment>
     <glob pattern="*.ma"/>
     <glob pattern="*.nb"/>
     <glob pattern="*.mb"/>
+    <!-- Note - there is no Unique Magic for Mathematica files! -->
+    <!-- Check for a Mathematica-style opening comment as our best hope... -->
+    <magic priority="50">
+      <match value="(**" type="string" offset="0"/>
+      <match value="(* " type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="text/plain"/>
   </mime-type>
+  <mime-type type="application/vnd.wolfram.wl">
+    <_comment>Wolfram Language</_comment>
+    <glob pattern="*.wl"/>
+    <magic priority="50">
+      <match value="#!/usr/bin/env wolframscript" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/mathematica"/>
+  </mime-type>
+
   <mime-type type="application/mathml+xml">
     <glob pattern="*.mathml"/>
   </mime-type>
