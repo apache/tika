@@ -271,7 +271,7 @@
     <acronym>AI</acronym>
     <_comment>Adobe Illustrator Artwork</_comment>
     <tika:link>http://en.wikipedia.org/wiki/Adobe_Illustrator_Artwork</tika:link>
-    <glob pattern="*.ai"/>]
+    <glob pattern="*.ai"/>
     <sub-class-of type="application/postscript"/>
   </mime-type>
 
