@@ -17,20 +17,16 @@ $ java -jar tika-server/target/tika-server.jar --help
 
 Running via Docker
 ------------------
-Assuming you have Docker installed, you can build you own local image using the:
+Assuming you have Docker installed, you can use a prebuilt image:
 
-`mvn dockerfile:build`
-
-The image will be named apache/tika with the tag being the version being built.
-For example, building Apache Tika Server 1.17 will result in an image of `apache/tika-server:1.17`
-
-You can then run this image by executing the following, replacing `1.17` with your build version:
-
-`docker run -d -p 9998:9998 apache/tika-server:1.17`
+`docker run -d -p 9998:9998 apache/tika`
 
 This will load Apache Tika Server and expose its interface on:
 
 `http://localhost:9998`
+
+More information, including different variants, is available at
+https://github.com/apache/tika-docker.
 
 Installing as a Service on Linux
 -----------------------
