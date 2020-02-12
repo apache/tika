@@ -31,6 +31,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,6 +70,7 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -687,7 +690,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
         
         assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("image0.jb2", 
+        assertEquals("image0.jb2",
                 metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("x-jbig2").toString(), 
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));
@@ -1476,6 +1479,34 @@ public class PDFParserTest extends TikaTest {
         assertEquals(120, unmappedUnicodeChars[15]);
 
     }
+
+    @Test //TIKA-3041
+    @Ignore("turn back on if we add file from PDFBOX-52")
+    public void testPDFBox52() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_PDFBOX-52.pdf", context);
+        int max = 0;
+        Matcher matcher = Pattern.compile("image(\\d+)").matcher("");
+        for (Metadata m : metadataList) {
+            String n = m.get(Metadata.RESOURCE_NAME_KEY);
+
+            if (n != null && matcher.reset(n).find()) {
+                int i = Integer.parseInt(matcher.group(1));
+                if (i > max) {
+                    max = i;
+                }
+            }
+        }
+        assertEquals(37, metadataList.size());
+        assertEquals(35, max);
+    }
+
+
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
