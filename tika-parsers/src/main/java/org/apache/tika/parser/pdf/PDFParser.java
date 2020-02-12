@@ -61,6 +61,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static org.apache.tika.parser.pdf.PDMetadataExtractor.addMetadata;
+
 /**
  * PDF parser.
  * <p/>
@@ -228,34 +230,39 @@ public class PDFParser extends AbstractParser implements Initializable {
 
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TITLE, info.getTitle());
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR, info.getAuthor());
+        addMetadata(metadata, PDF.DOC_INFO_TITLE, info.getTitle());
+        addMetadata(metadata, PDF.DOC_INFO_CREATOR, info.getAuthor());
         //if this wasn't already set by xmp, use doc info
         if (metadata.get(TikaCoreProperties.CREATOR) == null) {
-            PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATOR, info.getAuthor());
+            addMetadata(metadata, TikaCoreProperties.CREATOR, info.getAuthor());
         }
         if (metadata.get(TikaCoreProperties.TITLE) == null) {
-            PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
+            addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
         }
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
-        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
-        PDMetadataExtractor.addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
+        addMetadata(metadata, PDF.DOC_INFO_TITLE, info.getTitle());
+        addMetadata(metadata, PDF.DOC_INFO_CREATOR, info.getAuthor());
+        addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
+        addMetadata(metadata, PDF.DOC_INFO_CREATOR_TOOL, info.getCreator());
+        addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
+        addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
+        addMetadata(metadata, "producer", info.getProducer());
+        addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
 
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
+        addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
 
-        PDMetadataExtractor.addMetadata(metadata, Metadata.KEYWORDS, info.getKeywords());
-        PDMetadataExtractor.addMetadata(metadata, Metadata.SUBJECT, info.getSubject());
-        PDMetadataExtractor.addMetadata(metadata, OfficeOpenXMLCore.SUBJECT, info.getSubject());
-
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
+        // TODO: Move to description in Tika 2.0
+        addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
+        addMetadata(metadata, "trapped", info.getTrapped());
+        addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
+        // TODO Remove these in Tika 2.0
         Calendar created = info.getCreationDate();
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
-        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATED, created);
+        addMetadata(metadata, DEPRECATED_CREATED, created);
+        addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
+        addMetadata(metadata, TikaCoreProperties.CREATED, created);
         Calendar modified = info.getModificationDate();
-        PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
-        PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, modified);
+        addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
+        addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
+        addMetadata(metadata, PDF.DOC_INFO_MODIFICATION_DATE, modified);
 
         // All remaining metadata is custom
         // Copy this over as-is
@@ -264,8 +271,8 @@ public class PDFParser extends AbstractParser implements Initializable {
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                PDMetadataExtractor.addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
-                PDMetadataExtractor.addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
+                addMetadata(metadata, name, info.getCOSObject().getDictionaryObject(key));
+                addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
                         info.getCOSObject().getDictionaryObject(key));
             }
         }

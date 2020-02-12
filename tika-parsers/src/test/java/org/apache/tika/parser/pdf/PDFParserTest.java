@@ -26,6 +26,8 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1506,6 +1508,20 @@ public class PDFParserTest extends TikaTest {
         assertEquals(35, max);
     }
 
+    @Test //TIKA-3006
+    public void testBranch1xMetadata() throws Exception {
+        //assert that we don't break legacy metadata keys in branch_1x
+        Metadata m = getXML("testPDF_1x_metadata.pdf").metadata;
+        for (String k : new String[]{
+                "Keywords", "dc:subject",
+                "pdf:docinfo:keywords", "meta:keyword"
+        }) {
+            assertEquals("fails on "+k, "keyword1, keyword2", m.get(k));
+            assertEquals(1, m.getValues(k).length);
+        }
+        assertEquals("2016-07-07T08:37:42Z", m.get("created"));
+
+    }
 
     /**
      * Simple class to count end of document events.  If functionality is useful,
