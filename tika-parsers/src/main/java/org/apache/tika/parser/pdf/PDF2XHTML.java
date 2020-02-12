@@ -16,47 +16,29 @@
  */
 package org.apache.tika.parser.pdf;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Writer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.pdfbox.cos.COSArray;
-import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
-import org.apache.pdfbox.filter.MissingImageReaderException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.PDResources;
-import org.apache.pdfbox.pdmodel.graphics.PDXObject;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceGray;
-import org.apache.pdfbox.pdmodel.graphics.color.PDDeviceRGB;
-import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
-import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.pdfbox.util.Matrix;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -65,16 +47,6 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 class PDF2XHTML extends AbstractPDF2XHTML {
 
-
-    private static final List<String> JPEG = Arrays.asList(
-            COSName.DCT_DECODE.getName(),
-            COSName.DCT_DECODE_ABBREVIATION.getName());
-
-    private static final List<String> JP2 =
-            Arrays.asList(COSName.JPX_DECODE.getName());
-
-    private static final List<String> JB2 = Arrays.asList(
-            COSName.JBIG2_DECODE.getName());
 
     /**
      * This keeps track of the pdf object ids for inline
@@ -88,7 +60,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      * TIKA-1742, we're limiting the export to one image per page.
      */
     private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
-    private int inlineImageCounter = 0;
+    private AtomicInteger inlineImageCounter = new AtomicInteger(0);
     private PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config)
             throws IOException {
@@ -162,7 +134,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try {
             writeParagraphEnd();
             try {
-                extractImages(page.getResources(), new HashSet<COSBase>());
+                extractImages(page);
             } catch (IOException e) {
                 handleCatchableIOE(e);
             }
@@ -174,148 +146,22 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
-    private void extractImages(PDResources resources, Set<COSBase> seenThisPage) throws SAXException, IOException {
-        if (resources == null || config.getExtractInlineImages() == false) {
+    private void extractImages(PDPage page) throws SAXException, IOException {
+        if (config.getExtractInlineImages() == false) {
             return;
         }
 
-        for (COSName name : resources.getXObjectNames()) {
-
-            PDXObject object = null;
-            try {
-                object = resources.getXObject(name);
-            } catch (MissingImageReaderException e) {
-                EmbeddedDocumentUtil.recordException(e, metadata);
-                continue;
-            } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
-                continue;
+        ImageGraphicsEngine engine = new ImageGraphicsEngine(page, embeddedDocumentExtractor,
+                config, processedInlineImages, inlineImageCounter, xhtml, metadata, context);
+        engine.run();
+        List<IOException> engineExceptions = engine.getExceptions();
+        if (engineExceptions.size() > 0) {
+            IOException first = engineExceptions.remove(0);
+            if (config.getCatchIntermediateIOExceptions()) {
+                exceptions.addAll(engineExceptions);
             }
-            processImageObject(object, seenThisPage);
+            throw first;
         }
-    }
-
-    private void processImageObject(PDXObject object, Set<COSBase> seenThisPage) throws SAXException, IOException {
-        if (object == null) {
-            return;
-        }
-        COSStream cosStream = object.getCOSObject();
-        if (seenThisPage.contains(cosStream)) {
-            //avoid infinite recursion TIKA-1742
-            return;
-        }
-        seenThisPage.add(cosStream);
-
-        if (object instanceof PDFormXObject) {
-            extractImages(((PDFormXObject) object).getResources(), seenThisPage);
-        } else if (object instanceof PDImageXObject) {
-
-            PDImageXObject image = (PDImageXObject) object;
-
-            Metadata embeddedMetadata = new Metadata();
-            String extension = image.getSuffix();
-
-            if (extension == null || extension.equals("png")) {
-                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/png");
-                extension = "png";
-            } else if (extension.equals("jpg")) {
-                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-            } else if (extension.equals("tiff")) {
-                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/tiff");
-                extension = "tif";
-            } else if (extension.equals("jpx")) {
-                embeddedMetadata.set(Metadata.CONTENT_TYPE, "image/jp2");
-            } else if (extension.equals("jb2")) {
-                embeddedMetadata.set(
-                        Metadata.CONTENT_TYPE, "image/x-jbig2");
-            } else {
-                //TODO: determine if we need to add more image types
-//                    throw new RuntimeException("EXTEN:" + extension);
-            }
-            Integer imageNumber = processedInlineImages.get(cosStream);
-            if (imageNumber == null) {
-                imageNumber = inlineImageCounter++;
-            }
-            String fileName = "image" + imageNumber + "." + extension;
-            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
-
-            // Output the img tag
-            AttributesImpl attr = new AttributesImpl();
-            attr.addAttribute("", "src", "src", "CDATA", "embedded:" + fileName);
-            attr.addAttribute("", "alt", "alt", "CDATA", fileName);
-            xhtml.startElement("img", attr);
-            xhtml.endElement("img");
-
-            //Do we only want to process unique COSObject ids?
-            //If so, have we already processed this one?
-            if (config.getExtractUniqueInlineImagesOnly() == true) {
-                if (processedInlineImages.containsKey(cosStream)) {
-                    return;
-                }
-                processedInlineImages.put(cosStream, imageNumber);
-            }
-
-            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-
-            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                try {
-                    //extract the metadata contained outside of the image
-                    PDMetadataExtractor.extract(image.getMetadata(),
-                            embeddedMetadata, context);
-                    try {
-                        writeToBuffer(image, extension, buffer);
-                    } catch (IOException e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
-                        return;
-                    }
-                    try (InputStream embeddedIs = TikaInputStream.get(buffer.toByteArray())) {
-                        embeddedDocumentExtractor.parseEmbedded(
-                                embeddedIs,
-                                new EmbeddedContentHandler(xhtml),
-                                embeddedMetadata, false);
-                    }
-                } catch (IOException e) {
-                    handleCatchableIOE(e);
-                }
-            }
-        }
-    }
-
-    //nearly directly copied from PDFBox ExtractImages
-    private void writeToBuffer(PDImageXObject pdImage, String suffix, OutputStream out)
-            throws IOException {
-
-        BufferedImage image = pdImage.getImage();
-        if (image != null) {
-            if ("jpg".equals(suffix)) {
-                String colorSpaceName = pdImage.getColorSpace().getName();
-                //TODO: figure out if we want directJPEG as a configuration
-                //previously: if (directJPeg || PDDeviceGray....
-                if (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
-                        PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName)) {
-                    // RGB or Gray colorspace: get and write the unmodifiedJPEG stream
-                    InputStream data = pdImage.getStream().createInputStream(JPEG);
-                    org.apache.pdfbox.io.IOUtils.copy(data, out);
-                    org.apache.pdfbox.io.IOUtils.closeQuietly(data);
-                } else {
-                    // for CMYK and other "unusual" colorspaces, the JPEG will be converted
-                    ImageIOUtil.writeImage(image, suffix, out);
-                }
-            } else if ("jp2".equals(suffix) || "jpx".equals(suffix)) {
-                InputStream data = pdImage.createInputStream(JP2);
-                org.apache.pdfbox.io.IOUtils.copy(data, out);
-                org.apache.pdfbox.io.IOUtils.closeQuietly(data);
-            } else if ("jb2".equals(suffix)) {
-                InputStream data = pdImage.createInputStream(JB2);
-                org.apache.pdfbox.io.IOUtils.copy(data, out);
-                org.apache.pdfbox.io.IOUtils.closeQuietly(data);
-            } else{
-                ImageIOUtil.writeImage(image, suffix, out);
-            }
-        }
-        out.flush();
     }
 
     @Override
