@@ -654,7 +654,7 @@ public class PDFParserTest extends TikaTest {
 
         assertEquals(5, metadatas.size());
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("image-0.jpg", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("image0.jpg", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("Press Quality(1).joboptions", metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("Unit10.doc", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("jpeg").toString(), metadatas.get(1).get(Metadata.CONTENT_TYPE));
@@ -674,7 +674,6 @@ public class PDFParserTest extends TikaTest {
 
 
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
-        debug(metadatas);
         assertEquals(2, metadatas.size());
         assertContains("test images compressed using JBIG2", metadatas.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
 
@@ -687,7 +686,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
         
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("image-0.jb2",
+        assertEquals("image0.jb2",
                 metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("x-jbig2").toString(), 
                 metadatas.get(1).get(Metadata.CONTENT_TYPE));
@@ -931,7 +930,7 @@ public class PDFParserTest extends TikaTest {
         //regular attachment
         assertContains("<div source=\"attachment\" class=\"embedded\" id=\"Unit10.doc\" />", r.xml);
         //inline image
-        assertContains("<img src=\"embedded:image-1.tif\" alt=\"image-1.tif\" />", r.xml);
+        assertContains("<img src=\"embedded:image1.tif\" alt=\"image1.tif\" />", r.xml);
 
         //doc embedded inside an annotation
         r = getXML("testPDFFileEmbInAnnotation.pdf");
@@ -1476,7 +1475,7 @@ public class PDFParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_PDFBOX-52.pdf", context);
         int max = 0;
-        Matcher matcher = Pattern.compile("image-(\\d+)").matcher("");
+        Matcher matcher = Pattern.compile("image(\\d+)").matcher("");
         for (Metadata m : metadataList) {
             String n = m.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 

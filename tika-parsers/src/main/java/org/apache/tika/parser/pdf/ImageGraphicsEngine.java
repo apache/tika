@@ -265,7 +265,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         //this is the metadata for this particular image
         Metadata metadata = new Metadata();
         String suffix = getSuffix(image, metadata);
-        String fileName = "image-" + imageNumber + "." + suffix;
+        String fileName = "image" + imageNumber + "." + suffix;
 
 
         AttributesImpl attr = new AttributesImpl();
