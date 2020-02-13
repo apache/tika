@@ -261,10 +261,10 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
     }
 
-    private void processImage(PDImage image, int imageNumber) throws IOException, SAXException {
+    private void processImage(PDImage pdImage, int imageNumber) throws IOException, SAXException {
         //this is the metadata for this particular image
         Metadata metadata = new Metadata();
-        String suffix = getSuffix(image, metadata);
+        String suffix = getSuffix(pdImage, metadata);
         String fileName = "image" + imageNumber + "." + suffix;
 
 
@@ -281,13 +281,13 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            if (image instanceof PDImageXObject) {
-                PDMetadataExtractor.extract(((PDImageXObject) image).getMetadata(),
+            if (pdImage instanceof PDImageXObject) {
+                PDMetadataExtractor.extract(((PDImageXObject) pdImage).getMetadata(),
                         metadata, parseContext);
             }
             //extract the metadata contained outside of the image
             try {
-                writeToBuffer(image, suffix, useDirectJPEG, buffer);
+                writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
             }  catch (MissingImageReaderException e) {
                 EmbeddedDocumentUtil.recordException(e, parentMetadata);
                 return;
@@ -305,8 +305,8 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
     }
 
-    private String getSuffix(PDImage image, Metadata metadata) {
-        String suffix = image.getSuffix();
+    private String getSuffix(PDImage pdImage, Metadata metadata) throws IOException {
+        String suffix = pdImage.getSuffix();
 
         if (suffix == null || suffix.equals("png")) {
             metadata.set(Metadata.CONTENT_TYPE, "image/png");
@@ -318,12 +318,19 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             suffix = "tif";
         } else if (suffix.equals("jpx")) {
             metadata.set(Metadata.CONTENT_TYPE, "image/jp2");
+            // use jp2 suffix for file because jpx not known by windows
+            suffix = "jp2";
         } else if (suffix.equals("jb2")) {
+            //PDFBox resets suffix to png when image's suffix == jb2
             metadata.set(
                     Metadata.CONTENT_TYPE, "image/x-jbig2");
         } else {
             //TODO: determine if we need to add more image types
 //                    throw new RuntimeException("EXTEN:" + extension);
+        }
+        if (hasMasks(pdImage)) {
+            // TIKA-3040, PDFBOX-4771: can't save ARGB as JPEG
+            suffix = "png";
         }
         return suffix;
     }
@@ -356,60 +363,71 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     private static void writeToBuffer(PDImage pdImage, String suffix, boolean directJPEG, OutputStream out)
             throws IOException {
 
-        BufferedImage image = pdImage.getImage();
-        if (image != null) {
-            if ("jpg".equals(suffix)) {
+        if ("jpg".equals(suffix)) {
 
-                String colorSpaceName = pdImage.getColorSpace().getName();
-                if (directJPEG ||
-                        !hasMasks(pdImage) &&
-                                (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
-                                        PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName))) {
-                    // RGB or Gray colorspace: get and write the unmodified JPEG stream
-                    InputStream data = pdImage.createInputStream(JPEG);
-                    IOUtils.copy(data, out);
-                    IOUtils.closeQuietly(data);
-                } else {
+            String colorSpaceName = pdImage.getColorSpace().getName();
+            if (directJPEG ||
+                    (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
+                            PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName))) {
+                // RGB or Gray colorspace: get and write the unmodified JPEG stream
+                InputStream data = pdImage.createInputStream(JPEG);
+                IOUtils.copy(data, out);
+                IOUtils.closeQuietly(data);
+            } else {
+                BufferedImage image = pdImage.getImage();
+                if (image != null) {
                     // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, suffix, out);
                 }
-
-            } else if ("jp2".equals(suffix)) {
-                String colorSpaceName = pdImage.getColorSpace().getName();
-                if (directJPEG ||
-                        !hasMasks(pdImage) &&
-                                (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
-                                        PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName))) {
-                    // RGB or Gray colorspace: get and write the unmodified JPEG2000 stream
-                    InputStream data = pdImage.createInputStream(JP2);
-                    IOUtils.copy(data, out);
-                    IOUtils.closeQuietly(data);
-                } else {
-                    // for CMYK and other "unusual" colorspaces, the image will be converted
+            }
+        } else if ("jp2".equals(suffix)) {
+            String colorSpaceName = pdImage.getColorSpace().getName();
+            if (directJPEG ||
+                    !hasMasks(pdImage) &&
+                            (PDDeviceGray.INSTANCE.getName().equals(colorSpaceName) ||
+                                    PDDeviceRGB.INSTANCE.getName().equals(colorSpaceName))) {
+                // RGB or Gray colorspace: get and write the unmodified JPEG2000 stream
+                InputStream data = pdImage.createInputStream(JP2);
+                IOUtils.copy(data, out);
+                IOUtils.closeQuietly(data);
+            } else {
+                // for CMYK and other "unusual" colorspaces, the image will be converted
+                BufferedImage image = pdImage.getImage();
+                if (image != null) {
+                    // for CMYK and other "unusual" colorspaces, the JPEG will be converted
                     ImageIOUtil.writeImage(image, "jpeg2000", out);
                 }
-            } else if ("tiff".equals(suffix) && pdImage.getColorSpace().equals(PDDeviceGray.INSTANCE)) {
-                // CCITT compressed images can have a different colorspace, but this one is B/W
-                // This is a bitonal image, so copy to TYPE_BYTE_BINARY
-                // so that a G4 compressed TIFF image is created by ImageIOUtil.writeImage()
-                int w = image.getWidth();
-                int h = image.getHeight();
-                BufferedImage bitonalImage = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_BINARY);
-                // copy image the old fashioned way - ColorConvertOp is slower!
-                for (int y = 0; y < h; y++) {
-                    for (int x = 0; x < w; x++) {
-                        bitonalImage.setRGB(x, y, image.getRGB(x, y));
-                    }
-                }
-                ImageIOUtil.writeImage(bitonalImage, suffix, out);
-            } else if ("jb2".equals(suffix)) {
-                InputStream data = pdImage.createInputStream(JB2);
-                org.apache.pdfbox.io.IOUtils.copy(data, out);
-                org.apache.pdfbox.io.IOUtils.closeQuietly(data);
-            } else {
-                ImageIOUtil.writeImage(image, suffix, out);
             }
+        } else if ("tif".equals(suffix) && pdImage.getColorSpace().equals(PDDeviceGray.INSTANCE)) {
+            BufferedImage image = pdImage.getImage();
+            if (image == null) {
+                return;
+            }
+            // CCITT compressed images can have a different colorspace, but this one is B/W
+            // This is a bitonal image, so copy to TYPE_BYTE_BINARY
+            // so that a G4 compressed TIFF image is created by ImageIOUtil.writeImage()
+            int w = image.getWidth();
+            int h = image.getHeight();
+            BufferedImage bitonalImage = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_BINARY);
+            // copy image the old fashioned way - ColorConvertOp is slower!
+            for (int y = 0; y < h; y++) {
+                for (int x = 0; x < w; x++) {
+                    bitonalImage.setRGB(x, y, image.getRGB(x, y));
+                }
+            }
+            ImageIOUtil.writeImage(bitonalImage, suffix, out);
+        } else if ("jb2".equals(suffix)) {
+            InputStream data = pdImage.createInputStream(JB2);
+            org.apache.pdfbox.io.IOUtils.copy(data, out);
+            org.apache.pdfbox.io.IOUtils.closeQuietly(data);
+        } else {
+            BufferedImage image = pdImage.getImage();
+            if (image == null) {
+                return;
+            }
+            ImageIOUtil.writeImage(image, suffix, out);
         }
+
         out.flush();
     }
 
