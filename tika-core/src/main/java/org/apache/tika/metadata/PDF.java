@@ -90,4 +90,6 @@ public interface PDF {
      * Has > 0 AcroForm fields
      */
     Property HAS_ACROFORM_FIELDS = Property.internalBoolean(PDF_PREFIX+"hasAcroFormFields");
+
+    Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX+"hasMarkedContent");
 }

@@ -1,5 +1,3 @@
-package org.apache.tika.parser.pdf;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.parser.pdf;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -109,6 +108,10 @@ public class PDFParserConfig implements Serializable {
     //True if inline images (as identified by their object id within
     //a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
+
+    //Should the PDFParser _try_ to extract marked content/structure tags (backoff to regular
+    //text extraction if the given PDF doesn't have marked content)
+    private boolean extractMarkedContent = false;
 
     //The character width-based tolerance value used to estimate where spaces in text should be added
     private Float averageCharTolerance;
@@ -231,6 +234,8 @@ public class PDFParserConfig implements Serializable {
 
         setExtractActions(getBooleanProp(props.getProperty("extractActions"), false));
 
+        setExtractMarkedContent(getBooleanProp(props.getProperty("extractMarkedContent"), false));
+
         setSetKCMS(getBooleanProp(props.getProperty("setKCMS"), false));
 
         boolean checkExtractAccessPermission = getBooleanProp(props.getProperty("checkExtractAccessPermission"), false);
@@ -246,6 +251,22 @@ public class PDFParserConfig implements Serializable {
 
         maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
         detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
+    }
+
+    /**
+     * If the PDF contains marked content, try to extract text and its marked structure.
+     * If the PDF does not contain marked content, backoff to the regular PDF2XHTML for
+     * text extraction.  As of 1.24, this is an "alpha" version.
+     *
+     * @param extractMarkedContent
+     * @since 1.24
+     */
+    public void setExtractMarkedContent(boolean extractMarkedContent) {
+        this.extractMarkedContent = extractMarkedContent;
+    }
+
+    public boolean getExtractMarkedContent() {
+        return extractMarkedContent;
     }
 
     /**
