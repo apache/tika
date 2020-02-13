@@ -70,7 +70,6 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
         assertEquals(3, metadataList.size());
 
         String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
-        System.out.println(xml);
         //the point here is that in the annotations (that we were grabbing by the classic PDF2XHTML),
         //the <a> content is identical to the href.  Here, they are not, which we only get from
         //marked up content...victory!!!
