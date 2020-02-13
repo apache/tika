@@ -61,7 +61,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      */
     private Map<COSStream, Integer> processedInlineImages = new HashMap<>();
     private AtomicInteger inlineImageCounter = new AtomicInteger(0);
-    private PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
+    PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config)
             throws IOException {
         super(document, handler, context, metadata, config);
@@ -146,7 +146,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
-    private void extractImages(PDPage page) throws SAXException, IOException {
+    void extractImages(PDPage page) throws SAXException, IOException {
         if (config.getExtractInlineImages() == false) {
             return;
         }
