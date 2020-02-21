@@ -58,8 +58,8 @@ public interface TikaCoreProperties {
         ATTACHMENT,//standard attachment as in email
         MACRO, //any code that is intended to be run by the application
         METADATA, //e.g. xmp, xfa
-        FONT;//embedded font files
-        //what else?
+        FONT,//embedded font files
+        THUMBNAIL;//TODO: set this in parsers that handle thumbnails
     };
 
     /**

@@ -7,6 +7,8 @@ Release 2.0.0 - ???
 
 Release 1.24 - ???
 
+   * Extract XMP from PSD files (TIKA-3050).
+
    * Added XMLProfiler as an optional parser to profile XFA and XMP
      in PDFs (TIKA-3045).
 
