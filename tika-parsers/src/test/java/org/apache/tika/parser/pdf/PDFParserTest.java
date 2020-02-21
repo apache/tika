@@ -26,8 +26,6 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -66,6 +64,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.parser.xml.XMLProfiler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -1143,6 +1142,53 @@ public class PDFParserTest extends TikaTest {
         assertContains("</xfa_content></body></html>", xml);
 
         assertNotContained("Mount Rushmore National Memorial", xml);
+    }
+
+    @Test
+    public void testXMLProfiler() throws Exception {
+        //test that the xml profiler is not triggered by default
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf");
+        assertEquals(1, metadataList.size());
+
+        //test that it is triggered when added to the default parser
+        //via the config, tesseract should skip this file because it is too large
+        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-xml-profiler-config.xml");
+        assertNotNull(is);
+        TikaConfig tikaConfig = new TikaConfig(is);
+        Parser p = new AutoDetectParser(tikaConfig);
+
+        metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf", p);
+        assertEquals(3, metadataList.size());
+
+        int xmlProfilers = 0;
+        for (Metadata metadata : metadataList) {
+            String[] parsedBy = metadata.getValues("X-Parsed-By");
+            for (int i = 0; i < parsedBy.length; i++) {
+                if (parsedBy[i].equals(XMLProfiler.class.getCanonicalName())) {
+                    xmlProfilers++;
+                }
+            }
+        }
+
+        assertEquals(2, xmlProfilers);
+
+        //check xmp first
+        String[] uris = metadataList.get(1).getValues(XMLProfiler.ENTITY_URIS);
+        String[] localNames = metadataList.get(1).getValues(XMLProfiler.ENTITY_LOCAL_NAMES);
+        assertEquals(8, uris.length);
+        assertEquals(uris.length, localNames.length);
+        assertEquals("adobe:ns:meta/", uris[0]);
+        assertEquals("CreateDate CreatorTool MetadataDate ModifyDate Thumbnails", localNames[2]);
+        assertEquals("x:xmpmeta", metadataList.get(1).get(XMLProfiler.ROOT_ENTITY));
+
+        //check xfa
+        uris = metadataList.get(2).getValues(XMLProfiler.ENTITY_URIS);
+        localNames = metadataList.get(2).getValues(XMLProfiler.ENTITY_LOCAL_NAMES);
+        assertEquals(8, uris.length);
+        assertEquals(uris.length, localNames.length);
+        assertEquals("http://ns.adobe.com/xdp/", uris[1]);
+        assertEquals("field form instanceManager subform value", localNames[5]);
+        assertEquals("xdp:xdp", metadataList.get(2).get(XMLProfiler.ROOT_ENTITY));
     }
 
     @Test

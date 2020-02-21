@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -94,7 +95,9 @@ import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -139,6 +142,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private final static int MAX_ACROFORM_RECURSIONS = 10;
 
     private final static TesseractOCRConfig DEFAULT_TESSERACT_CONFIG = new TesseractOCRConfig();
+
+    private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
+    private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
 
     /**
      * Format used for signature dates
@@ -187,6 +193,70 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to start a page", e);
         }
         writeParagraphStart();
+    }
+
+    private void extractXMPXFA(PDDocument pdfDocument, Metadata parentMetadata, ParseContext context) throws IOException, SAXException {
+        Set<MediaType> supportedTypes = Collections.EMPTY_SET;
+        Parser embeddedParser = context.get(Parser.class);
+        if (embeddedParser != null) {
+            supportedTypes = embeddedParser.getSupportedTypes(context);
+        }
+
+        if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
+            Metadata xmpMetadata = new Metadata();
+            xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
+            xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
+            if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata) &&
+                    supportedTypes.contains(XMP_MEDIA_TYPE)) {
+                InputStream is = null;
+                try {
+                    is = pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata();
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                }
+                if (is != null) {
+                    try {
+                        parseMetadata(is, xmpMetadata);
+                    } finally {
+                        org.apache.tika.io.IOUtils.closeQuietly(is);
+                    }
+                }
+            }
+        }
+
+        //now try the xfa
+        if (pdfDocument.getDocumentCatalog().getAcroForm() != null &&
+            pdfDocument.getDocumentCatalog().getAcroForm().getXFA() != null) {
+
+            Metadata xfaMetadata = new Metadata();
+            xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
+            xfaMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
+            if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata) &&
+                    supportedTypes.contains(XFA_MEDIA_TYPE)) {
+                byte[] bytes = null;
+                try {
+                    bytes = pdfDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes();
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                }
+                if (bytes != null) {
+                    try (InputStream is = new ByteArrayInputStream(bytes)) {
+                        parseMetadata(is, xfaMetadata);
+                    }
+                }
+            }
+        }
+    }
+
+    private void parseMetadata(InputStream stream, Metadata embeddedMetadata) throws IOException, SAXException {
+        try {
+            embeddedDocumentExtractor.parseEmbedded(
+                    stream,
+                    new EmbeddedContentHandler(xhtml),
+                    embeddedMetadata, false);
+        } catch (IOException e) {
+            handleCatchableIOE(e);
+        }
     }
 
     private void extractEmbeddedDocuments(PDDocument document)
@@ -580,6 +650,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             } catch (IOException e) {
                 handleCatchableIOE(e);
             }
+
+            extractXMPXFA(pdf, metadata, context);
 
             //extract acroform data at end of doc
             if (config.getExtractAcroFormContent() == true) {
