@@ -313,10 +313,14 @@
       <artifactId>isoparser</artifactId>
       <version>1.1.22</version>
     </dependency>
+    <!-- this is a fork of com.drewnoakes
+      metadata extractor that shade/relocates com.adobe.internal
+      to com.adobe for backwards compatibility
+    -->
     <dependency>
-      <groupId>com.drewnoakes</groupId>
+      <groupId>org.tallison</groupId>
       <artifactId>metadata-extractor</artifactId>
-      <version>2.11.0</version>
+      <version>2.13.0</version>
     </dependency>
     <dependency>
       <groupId>de.l3s.boilerpipe</groupId>

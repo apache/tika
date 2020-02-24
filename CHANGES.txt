@@ -1,4 +1,7 @@
 Release 1.24 - ???
+
+   * Upgrade metadata-extractor to 2.13.0 (TIKA-2952).
+
    * Upgrade to POI 4.1.2 (TIKA-3047).
 
    * Extract XMP from PSD files (TIKA-3050).

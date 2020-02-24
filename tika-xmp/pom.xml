@@ -90,9 +90,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.adobe.xmp</groupId>
-      <artifactId>xmpcore</artifactId>
-      <version>5.1.3</version>
+      <groupId>org.tallison.xmp</groupId>
+      <artifactId>xmpcore-shaded</artifactId>
+      <version>6.1.10</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
