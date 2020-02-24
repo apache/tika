@@ -236,6 +236,8 @@
               org.apache.tika.fork,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
+              com.adobe.xmp.impl;resolution:=optional,
+              com.adobe.xmp.options;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
