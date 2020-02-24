@@ -15,7 +15,7 @@ Release 1.24 - ???
 
    * Extract inline images that rely on the DCT filter from PDFs (TIKA-3041).
 
-   * Upgrade to PDFBox 2.0.18 (TIKA-3021).
+   * Upgrade to PDFBox 2.0.19 (TIKA-3033).
 
    * Fix bug in ASM parser configuration (TIKA-2992).
    
