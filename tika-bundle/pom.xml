@@ -255,6 +255,7 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              com.zaxxer.sparsebits;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,

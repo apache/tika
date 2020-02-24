@@ -235,7 +235,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
                 }
                 return new XWPFNumbering(numberingPart);
             }
-        } catch (IOException | OpenXML4JException e) {
+        } catch (OpenXML4JException e) {
             LOG.warn("Couldn't load numbering", e);
         }
         return null;
