@@ -7438,7 +7438,11 @@
 
   <mime-type type="video/x-sgi-movie">
     <magic priority="50">
-      <match value="MOVI" type="string" offset="0"/>
+      <match value="MOVI\x00" type="string" offset="0"/>
+      <match value="MOVI\x01" type="string" offset="0"/>
+      <match value="MOVI\x02" type="string" offset="0"/>
+      <match value="MOVI\xfe" type="string" offset="0"/>
+      <match value="MOVI\xff" type="string" offset="0"/>
     </magic>
     <glob pattern="*.movie"/>
   </mime-type>

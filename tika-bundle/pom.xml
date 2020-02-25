@@ -236,6 +236,8 @@
               org.apache.tika.fork,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
+              com.adobe.xmp.impl;resolution:=optional,
+              com.adobe.xmp.options;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
@@ -255,6 +257,7 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              com.zaxxer.sparsebits;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
@@ -532,7 +535,9 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <descriptor>test-bundles.xml</descriptor>
+              <descriptors>
+                <descriptor>test-bundles.xml</descriptor>
+              </descriptors>
               <finalName>test</finalName>
               <attach>false</attach>
             </configuration>

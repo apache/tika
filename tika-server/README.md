@@ -1,6 +1,6 @@
-# Apache Tika JAX-RS Server
+# Apache Tika Server
 
-https://issues.apache.org/jira/browse/TIKA-593
+https://cwiki.apache.org/confluence/display/TIKA/TikaJAXRS
 
 Running
 -------
@@ -25,21 +25,21 @@ This will load Apache Tika Server and expose its interface on:
 
 `http://localhost:9998`
 
-More information, including different variants, is available at
-https://github.com/apache/tika-docker.
+You may also be interested in the https://github.com/apache/tika-docker project
+which provides prebuilt Docker images.
 
 Installing as a Service on Linux
 -----------------------
 To run as a service on Linux you need to run the `install_tika_service.sh` script.
 
-Assuming you have the binary distribution like `tika-server-2.0.0-SNAPSHOT-bin.tgz`,
+Assuming you have the binary distribution like `tika-server-1.24-bin.tgz`,
 then you can extract the install script via:
 
-`tar xzf tika-server-2.0.0-SNAPSHOT-bin.tgz tika-server-2.0.0-SNAPSHOT-bin/bin/install_tika_service.sh --strip-components=2`
+`tar xzf tika-server-1.24-bin.tgz tika-server-1.24-bin/bin/install_tika_service.sh --strip-components=2`
 
 and then run the installation process via:
 
-`./install_tika_service.sh  ./tika-server-2.0.0-SNAPSHOT-bin.tgz`
+`./install_tika_service.sh  ./tika-server-1.24-bin.tgz`
 
 
 Usage

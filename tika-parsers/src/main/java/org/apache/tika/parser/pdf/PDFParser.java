@@ -24,16 +24,18 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureTreeRoot;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.apache.tika.config.Field;
@@ -148,11 +150,15 @@ public class PDFParser extends AbstractParser implements Initializable {
             if (handler != null) {
                 boolean hasXFA = hasXFA(pdfDocument);
                 metadata.set(PDF.HAS_XFA, Boolean.toString(hasXFA));
+                boolean hasMarkedContent = hasMarkedContent(pdfDocument);
+                metadata.set(PDF.HAS_MARKED_CONTENT, Boolean.toString(hasMarkedContent));
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+                } else if (hasMarkedContent && localConfig.getExtractMarkedContent()) {
+                    PDFMarkedContent2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
                     if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
                         metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
@@ -168,6 +174,28 @@ public class PDFParser extends AbstractParser implements Initializable {
                 pdfDocument.close();
             }
         }
+    }
+
+    private boolean hasMarkedContent(PDDocument pdDocument) {
+        PDStructureTreeRoot root = pdDocument.getDocumentCatalog().getStructureTreeRoot();
+        if (root == null) {
+            return false;
+        }
+        COSBase base = root.getK();
+        if (base == null) {
+            return false;
+        }
+        //TODO: are there other checks we need to perform?
+        if (base instanceof COSDictionary) {
+            if (((COSDictionary)base).keySet().size() > 0) {
+                return true;
+            }
+        } else if (base instanceof COSArray) {
+            if (((COSArray) base).size() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String getPassword(Metadata metadata, ParseContext context) {
@@ -503,6 +531,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     @Field
     void setDetectAngles(boolean detectAngles) {
         defaultConfig.setDetectAngles(detectAngles);
+    }
+
+    @Field
+    void setExtractMarkedContent(boolean extractMarkedContent) {
+        defaultConfig.setExtractMarkedContent(extractMarkedContent);
     }
 
     @Field

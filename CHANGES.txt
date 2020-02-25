@@ -7,7 +7,18 @@ Release 2.0.0 - ???
 
 Release 1.24 - ???
 
-   * Upgrade to PDFBox 2.0.18 (TIKA-3021).
+   * Upgrade metadata-extractor to 2.13.0 (TIKA-2952).
+
+   * Upgrade to POI 4.1.2 (TIKA-3047).
+
+   * Extract XMP from PSD files (TIKA-3050).
+
+   * Added XMLProfiler as an optional parser to profile XFA and XMP
+     in PDFs (TIKA-3045).
+
+   * Extract inline images that rely on the DCT filter from PDFs (TIKA-3041).
+
+   * Upgrade to PDFBox 2.0.19 (TIKA-3033).
 
    * Fix bug in ASM parser configuration (TIKA-2992).
    

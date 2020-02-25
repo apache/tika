@@ -118,6 +118,10 @@
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpclient</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpcore</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -152,7 +156,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-      <version>5.2.1.RELEASE</version>
+      <version>5.2.3.RELEASE</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>

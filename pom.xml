@@ -63,7 +63,6 @@
         <plugins>
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>${maven.assembly.version}</version>
             <executions>
               <execution>
                 <id>src</id>
