@@ -535,7 +535,9 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <descriptor>test-bundles.xml</descriptor>
+              <descriptors>
+                <descriptor>test-bundles.xml</descriptor>
+              </descriptors>
               <finalName>test</finalName>
               <attach>false</attach>
             </configuration>
