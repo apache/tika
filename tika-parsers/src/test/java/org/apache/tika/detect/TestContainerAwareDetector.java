@@ -38,6 +38,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 import org.apache.tika.parser.pkg.StreamingZipContainerDetector;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.junit.After;
@@ -96,11 +97,10 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
                     expected, MediaType.APPLICATION_ZIP) &&
                 ! expected.toString().contains("tika-ooxml-protected")) {
 
-                assertEquals(
+                assertEquals("streaming zip detector failed",
                         expected,
                         streamingZipDetector.detect(stream, m));
             }
-
         }
     }
 
@@ -187,7 +187,39 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertType("testVORWriterTemplate.vor",
                 "application/vnd.stardivision.writer",
                 "application/vnd.stardivision.writer");
+        //file from open office bug tracker issue #6452
+        //star office >6.0
+        assertType("testStarOffice-6.0-writer.sxw",
+                "application/vnd.sun.xml.writer",
+                "application/vnd.sun.xml.writer");
+        //ooo byg #5116
+        //can't find a diff in contents btwn sxw and stw...need to rely on file extension
+        assertTypeByNameAndData("testStarOffice-6.0-writer-template.stw",
+                "application/vnd.sun.xml.writer.template",
+                "application/vnd.sun.xml.writer",
+                "application/zip");
 
+        //ooo bug #1151
+        assertType("testStarOffice-6.0-calc.sxc",
+                "application/vnd.sun.xml.calc",
+                "application/vnd.sun.xml.calc");
+        //ooo bug #261
+        assertType("testStarOffice-6.0-draw.sxd",
+                "application/vnd.sun.xml.draw",
+                "application/vnd.sun.xml.draw");
+        //ooo bug #5336
+        assertType("testStarOffice-6.0-draw.sxi",
+                "application/vnd.sun.xml.impress",
+                "application/vnd.sun.xml.impress");
+
+        //ooo bug #67431 -- had to manually fix the name spacing in the manifest.xml
+        assertType("testOpenOffice-autotext.bau",
+                "application/vnd.openofficeorg.autotext",
+                "application/vnd.openofficeorg.autotext");
+        //ooo bug #110760
+        assertType("testOpenOffice-extension.oxt",
+                "application/vnd.openofficeorg.extension",
+                "application/vnd.openofficeorg.extension");
     }
 
     @Test
@@ -358,6 +390,17 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByData("testPages2013.pages",
                 IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString());
     }
+
+    @Test
+    public void testDetectIWork2018() throws Exception {
+        //file from libre office issue tracker, issue #123573
+        //manually removed jpegs for the sake of space*/
+        assertTypeByData("testKeynote2018.key",
+                IWork18PackageParser.IWork18DocumentType.KEYNOTE18.getType().toString());
+        //see https://bugs.documentfoundation.org/show_bug.cgi?id=120709 for a 2018 numbers file
+        //see https://bugs.documentfoundation.org/show_bug.cgi?id=120707 for a 2018 pages file
+    }
+
 
     @Test
     public void testDetectKMZ() throws Exception {
