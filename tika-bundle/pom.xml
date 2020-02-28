@@ -164,6 +164,7 @@
               pdfbox|
               pdfbox-tools|
               pdfbox-debugger|
+              pdfbox-preflight|
               fontbox|
               jempbox|
               bcmail-jdk15on|
@@ -316,6 +317,7 @@
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
+              org.apache.pdfbox.preflight.*;resolution:=optional,
               org.apache.sis;resolution:=optional,
               org.apache.sis.coverage;resolution:=optional,
               org.apache.sis.coverage.grid;resolution:=optional,
