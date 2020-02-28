@@ -7,6 +7,8 @@ Release 2.0.0 - ???
 
 Release 1.24 - ???
 
+   * Add an optional Preflight parser for PDFs (TIKA-3055).
+
    * Improve detection of some zip-based formats (TIKA-3057).
 
    * Upgrade metadata-extractor to 2.13.0 (TIKA-2952).

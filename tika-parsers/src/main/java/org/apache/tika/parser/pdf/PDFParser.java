@@ -20,6 +20,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -137,9 +138,11 @@ public class PDFParser extends AbstractParser implements Initializable {
             }
             if (tstream != null && tstream.hasFile()) {
                 // File based -- send file directly to PDFBox
-                pdfDocument = PDDocument.load(tstream.getPath().toFile(), password, memoryUsageSetting);
+                pdfDocument = getPDDocument(tstream, password, memoryUsageSetting, metadata,
+                        context);
             } else {
-                pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), password, memoryUsageSetting);
+                pdfDocument = getPDDocument(new CloseShieldInputStream(stream), password,
+                        memoryUsageSetting, metadata, context);
             }
             metadata.set(PDF.IS_ENCRYPTED, Boolean.toString(pdfDocument.isEncrypted()));
 
@@ -174,6 +177,18 @@ public class PDFParser extends AbstractParser implements Initializable {
                 pdfDocument.close();
             }
         }
+    }
+
+    protected PDDocument getPDDocument(InputStream inputStream, String password,
+                                     MemoryUsageSetting memoryUsageSetting,
+                                       Metadata metadata, ParseContext parseContext) throws IOException {
+        return PDDocument.load(inputStream, password, memoryUsageSetting);
+    }
+
+    protected PDDocument getPDDocument(Path path, String password,
+                                       MemoryUsageSetting memoryUsageSetting,
+                                       Metadata metadata, ParseContext parseContext) throws IOException {
+        return PDDocument.load(path.toFile(), password, memoryUsageSetting);
     }
 
     private boolean hasMarkedContent(PDDocument pdDocument) {

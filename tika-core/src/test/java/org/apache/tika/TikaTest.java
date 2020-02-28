@@ -30,7 +30,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -448,7 +450,9 @@ public abstract class TikaTest {
     public static void debug(List<Metadata> list) {
         int i = 0;
         for (Metadata m : list) {
-            for (String n : m.names()) {
+            List<String> names = Arrays.asList(m.names());
+            Collections.sort(names);
+            for (String n : names) {
                 for (String v : m.getValues(n)) {
                     System.out.println(i + ": "+n + " : "+v);
                 }
@@ -458,7 +462,9 @@ public abstract class TikaTest {
     }
 
     public static void debug(Metadata metadata) {
-        for (String n : metadata.names()) {
+        List<String> names = Arrays.asList(metadata.names());
+        Collections.sort(names);
+        for (String n : names) {
             for (String v : metadata.getValues(n)) {
                 System.out.println(n + " : "+v);
             }
