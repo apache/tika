@@ -16,13 +16,22 @@
  */
 package org.apache.tika.parser.pkg;
 
+import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 abstract class ZipContainerDetectorBase {
 
@@ -65,6 +74,9 @@ abstract class ZipContainerDetectorBase {
     static final MediaType XPS =
             MediaType.application("vnd.ms-xpsdocument");
 
+    static final MediaType BAU =
+            MediaType.application("vnd.openofficeorg.autotext");
+
     static final Set<String> OOXML_HINTS = fillSet(
             "word/document.xml",
             "_rels/.rels",
@@ -76,6 +88,20 @@ abstract class ZipContainerDetectorBase {
             "xl/worksheets/sheet1.xml"
     );
 
+    static final Map<String, MediaType> STAR_OFFICE_X = new HashMap<>();
+
+    static {
+        STAR_OFFICE_X.put("application/vnd.sun.xml.writer",
+                MediaType.application("vnd.sun.xml.writer"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.calc",
+                MediaType.application("vnd.sun.xml.calc"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.draw",
+                MediaType.application("vnd.sun.xml.draw"));
+        STAR_OFFICE_X.put("application/vnd.sun.xml.impress",
+                MediaType.application("vnd.sun.xml.impress"));
+        STAR_OFFICE_X.put("application/vnd.sun.star.configuration-data",
+                MediaType.application("vnd.openofficeorg.extension"));
+    }
     private static Set<String> fillSet(String ... args) {
         Set<String> tmp = new HashSet<>();
         for (String arg : args) {
@@ -167,4 +193,55 @@ abstract class ZipContainerDetectorBase {
         return null;
     }
 
+    //parse the META-INF/content.xml file
+    static MediaType detectStarOfficeX(InputStream is) {
+        StarOfficeXHandler handler = new StarOfficeXHandler();
+        try {
+            XMLReaderUtils.parseSAX(is,
+                    new OfflineContentHandler(handler),
+                    new ParseContext());
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+        }
+        return handler.mediaType;
+    }
+
+    private static class StarOfficeXHandler extends DefaultHandler {
+
+        private MediaType mediaType = null;
+
+        @Override
+        public void startElement(String uri, String localName,
+                                 String name, Attributes attrs) throws SAXException {
+            if (! "file-entry".equals(localName)) {
+                return;
+            }
+            String mediaTypeString = null;
+            String fullPath = null;
+            for (int i = 0; i < attrs.getLength(); i++) {
+                String attrName = attrs.getLocalName(i);
+                if (attrName.equals("media-type")) {
+                    mediaTypeString = attrs.getValue(i);
+                    if (STAR_OFFICE_X.containsKey(mediaTypeString)) {
+                        mediaType = STAR_OFFICE_X.get(mediaTypeString);
+                        throw new StoppingEarlyException();
+                    }
+                } else if (attrName.equals("full-path")) {
+                    fullPath = attrs.getValue(i);
+                }
+            }
+            if ("".equals(mediaTypeString) && "/".equals(fullPath)) {
+                mediaType = BAU;
+                throw new StoppingEarlyException();
+            }
+        }
+    }
+
+    /**
+     * sentinel exception to stop parsing xml once target is found
+     */
+    static class StoppingEarlyException extends SAXException {
+
+    }
 }

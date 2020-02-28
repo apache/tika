@@ -17,16 +17,6 @@
 
 package org.apache.tika.parser.iwork.iwana;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -37,17 +27,30 @@ import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class IWork13PackageParser extends AbstractParser {
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-    public enum IWork13DocumentType {
-        KEYNOTE13(MediaType.application("vnd.apple.keynote.13")),
-        NUMBERS13(MediaType.application("vnd.apple.numbers.13")),
-        PAGES13(MediaType.application("vnd.apple.pages.13")),
-        UNKNOWN13(MediaType.application("vnd.apple.unknown.13"));
+/**
+ * For now, this parser isn't even registered.  It contains
+ * code that will detect the newer 2018 .keynote, .numbers, .pages files.
+ */
+public class IWork18PackageParser extends AbstractParser {
+
+    public enum IWork18DocumentType {
+        KEYNOTE18(MediaType.application("vnd.apple.keynote.18")),
+        NUMBERS18(MediaType.application("vnd.apple.numbers.18")),
+        PAGES18(MediaType.application("vnd.apple.pages.18"));
 
         private final MediaType mediaType;
 
-        IWork13DocumentType(MediaType mediaType) {
+        IWork18DocumentType(MediaType mediaType) {
             this.mediaType = mediaType;
         }
 
@@ -55,17 +58,22 @@ public class IWork13PackageParser extends AbstractParser {
             return mediaType;
         }
 
+        /**
+         *
+         * @param zipFile
+         * @return mime if detected or null
+         */
         public static MediaType detect(ZipFile zipFile) {
            MediaType type = null;
            Enumeration<? extends ZipEntry> entries = zipFile.getEntries();
            while (entries.hasMoreElements()) {
               ZipEntry entry = entries.nextElement();
-              type = IWork13DocumentType.detectIfPossible(entry);
+              type = IWork18DocumentType.detectIfPossible(entry);
               if (type != null) return type;
            }
            
            // If we get here, we don't know what it is
-           return UNKNOWN13.getType();
+           return null;
         }
         
         /**
@@ -73,39 +81,22 @@ public class IWork13PackageParser extends AbstractParser {
          */
         public static MediaType detectIfPossible(ZipEntry entry) {
            String name = entry.getName();
-           if (! name.endsWith(".iwa")) return null;
-
-           // Is it a uniquely identifying filename?
-           if (name.equals("Index/MasterSlide.iwa") ||
-               name.startsWith("Index/MasterSlide-")) {
-              return KEYNOTE13.getType();
+           if (name.endsWith(".numbers/Metadata/BuildVersionHistory.plist")) {
+               return IWork18DocumentType.NUMBERS18.getType();
+           } else if (name.endsWith(".pages/Metadata/BuildVersionHistory.plist")) {
+               return IWork18DocumentType.PAGES18.getType();
+           } else if (name.endsWith(".key/Metadata/BuildVersionHistory.plist")) {
+                return IWork18DocumentType.KEYNOTE18.getType();
            }
-           if (name.equals("Index/Slide.iwa") ||
-               name.startsWith("Index/Slide-")) {
-              return KEYNOTE13.getType();
-           }
-           
-           // Is it the main document?
-           if (name.equals("Index/Document.iwa")) {
-              // TODO Decode the snappy stream, and check for the Message Type
-              // =     2 (TN::SheetArchive), it is a numbers file; 
-              // = 10000 (TP::DocumentArchive), that's a pages file
-           }
-
-           // Unknown
+ // Unknown
            return null;
         }
     }
 
-    /**
-     * All iWork 13 files contain this, so we can detect based on it
-     */
-    public final static String IWORK13_COMMON_ENTRY = "Metadata/BuildVersionHistory.plist";
-
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-            IWork13DocumentType.KEYNOTE13.getType(),
-            IWork13DocumentType.NUMBERS13.getType(),
-            IWork13DocumentType.PAGES13.getType()
+            IWork18DocumentType.KEYNOTE18.getType(),
+            IWork18DocumentType.NUMBERS18.getType(),
+            IWork18DocumentType.PAGES18.getType()
             )));
 
     @Override
@@ -140,14 +131,14 @@ public class IWork13PackageParser extends AbstractParser {
           while (entries.hasMoreElements()) {
              ZipEntry entry = entries.nextElement();
              if (type == null) {
-                type = IWork13DocumentType.detectIfPossible(entry);
+                type = IWork18DocumentType.detectIfPossible(entry);
              }
           }
        } else {
           ZipEntry entry = zipStream.getNextEntry();
           while (entry != null) {
              if (type == null) {
-                type = IWork13DocumentType.detectIfPossible(entry);
+                type = IWork18DocumentType.detectIfPossible(entry);
              }
              entry = zipStream.getNextEntry();
           }

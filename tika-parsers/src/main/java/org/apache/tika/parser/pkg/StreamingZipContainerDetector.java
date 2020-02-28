@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,6 +38,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
+import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
@@ -125,9 +128,29 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
                         return type.getType();
                     }
                 } else if (name.equals("mimetype")) {
-                    //odt -- TODO -- bound the read and check that the results are
-                    //valid
-                    return MediaType.parse(IOUtils.toString(zipArchiveInputStream, UTF_8));
+                    //can't rely on zae.getSize to determine if there is any
+                    //content here. :(
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    IOUtils.copy(zipArchiveInputStream, bos);
+
+                    if (bos.toByteArray().length > 0)  {
+                        //odt -- TODO -- bound the read and check that the results are
+                        //valid
+                        return MediaType.parse(new String(bos.toByteArray(), UTF_8));
+                    }
+                } else if (name.equals("META-INF/manifest.xml")) {
+                    MediaType mt = detectStarOfficeX(zipArchiveInputStream);
+                    if (mt != null) {
+                        return mt;
+                    }
+                }
+                MediaType mt = IWork18PackageParser.IWork18DocumentType.detectIfPossible(zae);
+                if (mt != null) {
+                    return mt;
+                }
+                mt = IWork13PackageParser.IWork13DocumentType.detectIfPossible(zae);
+                if (mt != null) {
+                    return mt;
                 }
                 zae = zipArchiveInputStream.getNextZipEntry();
             }
@@ -242,7 +265,5 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
         }
     }
 
-    private static class StoppingEarlyException extends SAXException {
 
-    }
 }

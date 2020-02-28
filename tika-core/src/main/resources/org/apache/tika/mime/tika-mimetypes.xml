@@ -2353,6 +2353,11 @@
     <glob pattern="*.oxt"/>
   </mime-type>
 
+  <mime-type type="application/vnd.openofficeorg.autotext">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.bau"/>
+  </mime-type>
+
   <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation">
     <_comment>Office Open XML Presentation</_comment>
     <glob pattern="*.pptx"/>
@@ -2598,6 +2603,29 @@
     <sub-class-of type="application/x-tika-staroffice"/>
     <glob pattern="*.vor"/>
   </mime-type>
+  <mime-type type="application/vnd.sun.xml.writer">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxw"/>
+  </mime-type>
+  <!-- can't currently find any diff in contents btwn writer
+    and template. Must rely on extension -->
+  <mime-type type="application/vnd.sun.xml.writer.template">
+    <sub-class-of type="application/vnd.sun.xml.writer"/>
+    <glob pattern="*.stw"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.calc">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxc"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.draw">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxd"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.impress">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxi"/>
+  </mime-type>
+
   <mime-type type="application/vnd.stardivision.writer-global">
     <glob pattern="*.sgl"/>
   </mime-type>
