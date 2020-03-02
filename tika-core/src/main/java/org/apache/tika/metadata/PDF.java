@@ -89,6 +89,12 @@ public interface PDF {
     Property HAS_XMP = Property.internalBoolean(PDF_PREFIX+"hasXMP");
 
     /**
+     * If xmp is extracted by, e.g. the XMLProfiler, where did it come from?
+     * The document document catalog or a specific page...or?
+     */
+    Property XMP_LOCATION = Property.internalText(PDF_PREFIX+"xmpLocation");
+
+    /**
      * Has > 0 AcroForm fields
      */
     Property HAS_ACROFORM_FIELDS = Property.internalBoolean(PDF_PREFIX+"hasAcroFormFields");
