@@ -408,7 +408,7 @@ public class TikaCLITest {
         new File("subdir/foo.txt").delete();
         new File("subdir").delete();
         TikaCLI.main(params);
-        String content = errContent.toString(UTF_8.name());
+        String content = outContent.toString(UTF_8.name());
         assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
         // clean up. TODO: These should be in target.
         new File("target/subdir/foo.txt").delete();
