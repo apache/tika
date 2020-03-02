@@ -66,6 +66,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -285,6 +286,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
             this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
             this.officeParserConfig = officeParserConfig;
+
+            this.tikaExcelDataFormatter.setDateFormatOverride(officeParserConfig.getDateFormatOverride());
         }
 
         /**
@@ -676,12 +679,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
         }
         private class TikaFormatTrackingHSSFListener extends FormatTrackingHSSFListener {
-            //TIKA-2025 -- use this to preserve large numbers in "General" format
-            //against the MS spec.
-            final TikaExcelGeneralFormat generalFormat;
             public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale) {
                 super(childListener, locale);
-                generalFormat = new TikaExcelGeneralFormat(locale);
             }
 
             @Override
@@ -693,9 +692,6 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             @Override
             public String formatNumberDateCell(CellValueRecordInterface cell) {
                 String formatString = this.getFormatString(cell);
-                if (formatString != null && ! formatString.equals("General")) {
-                    return super.formatNumberDateCell(cell);
-                }
 
                 double value;
                 if(cell instanceof NumberRecord) {
@@ -704,10 +700,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     if(!(cell instanceof FormulaRecord)) {
                         throw new IllegalArgumentException("Unsupported CellValue Record passed in " + cell);
                     }
-
                     value = ((FormulaRecord)cell).getValue();
                 }
-                return generalFormat.format(value);
+                if (DateUtil.isADateFormat(getFormatIndex(cell), formatString)) {
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell), formatString, false);
+                } else if ("general".equalsIgnoreCase(formatString)) {
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell), formatString, false);
+                }
+                return super.formatNumberDateCell(cell);
             }
         }
     }
