@@ -36,6 +36,8 @@ public class OfficeParserConfig implements Serializable {
     private boolean useSAXPptxExtractor = false;
     private boolean extractAllAlternativesFromMSG;
 
+    private String dateOverrideFormat = null;
+
     /**
      * Sets whether or not MSOffice parsers should extract macros.
      * As of Tika 1.15, the default is <code>false</code>.
@@ -243,6 +245,22 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setIncludeSlideMasterContent(boolean includeSlideMasterContent) {
         this.includeSlideMasterContent = includeSlideMasterContent;
+    }
+
+    public String getDateFormatOverride() {
+        return dateOverrideFormat;
+    }
+
+    /**
+     * A user may wish to override the date formats in xls and xlsx files.
+     * For example, a user might prefer 'yyyy-mm-dd' to 'mm/dd/yy'.
+     *
+     * Note: these formats are "Excel formats" not Java's SimpleDateFormat
+     *
+     * @param format
+     */
+    public void setDateOverrideFormat(String format) {
+        this.dateOverrideFormat = format;
     }
 }
 

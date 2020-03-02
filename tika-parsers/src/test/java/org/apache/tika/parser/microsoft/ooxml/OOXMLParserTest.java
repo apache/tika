@@ -1768,6 +1768,17 @@ public class OOXMLParserTest extends TikaTest {
         pc.set(OfficeParserConfig.class, c);
         getRecursiveMetadata("testWORD_truncated.docx", pc);
     }
+
+    @Test
+    public void testDateFormat() throws Exception {
+        TikaConfig tikaConfig = new TikaConfig(
+                this.getClass().getResourceAsStream("tika-config-custom-date-override.xml"));
+        Parser p = new AutoDetectParser(tikaConfig);
+        String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
+        System.out.println(xml);
+        assertContains("2018-09-20", xml);
+        assertContains("1996-08-10", xml);
+    }
 }
 
 
