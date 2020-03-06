@@ -25,6 +25,7 @@ import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -554,4 +555,12 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         testDetector(detector, numThreads, 50, filter, numThreads*3);
     }
 
+    @Test
+    public void testOpenOfficeInAZip() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata(
+                "testOpenOfficeInAZip.zip");
+        assertEquals(3, metadataList.size());
+        assertEquals("application/vnd.oasis.opendocument.presentation",
+                metadataList.get(2).get(Metadata.CONTENT_TYPE));
+    }
 }

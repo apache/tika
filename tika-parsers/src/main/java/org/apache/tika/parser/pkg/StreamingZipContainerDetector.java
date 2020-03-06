@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.HashSet;
@@ -139,7 +140,13 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
                         return MediaType.parse(new String(bos.toByteArray(), UTF_8));
                     }
                 } else if (name.equals("META-INF/manifest.xml")) {
-                    MediaType mt = detectStarOfficeX(zipArchiveInputStream);
+                    //for an unknown reason, passing in the zipArchiveInputStream
+                    //"as is" can cause the iteration of the entries to stop early
+                    //without exception or warning.  So, copy the full stream, then
+                    //process.  TIKA-3061
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    IOUtils.copy(zipArchiveInputStream, bos);
+                    MediaType mt = detectStarOfficeX(new ByteArrayInputStream(bos.toByteArray()));
                     if (mt != null) {
                         return mt;
                     }
@@ -157,6 +164,7 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             //swallow
         }
         //entrynames is the union of directory names and file names
