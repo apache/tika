@@ -19,6 +19,6 @@ package org.apache.tika.eval.textstats;
 public class ContentLengthCalculator implements StringStatsCalculator<Integer> {
     @Override
     public Integer calculate(String txt) {
-        return txt.length();
+        return txt.trim().length();
     }
 }

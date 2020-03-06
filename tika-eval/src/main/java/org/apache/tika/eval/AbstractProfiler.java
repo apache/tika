@@ -390,9 +390,11 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         Map<Cols, String> data = new HashMap<>();
         data.put(Cols.ID, fileId);
         if (textStats.containsKey(ContentLengthCalculator.class)) {
-            data.put(Cols.CONTENT_LENGTH, Integer.toString((Integer) textStats.get(ContentLengthCalculator.class)));
-        } else {
-            data.put(Cols.CONTENT_LENGTH, "0");
+            int length = (int)textStats.get(ContentLengthCalculator.class);
+            if (length == 0) {
+                return;
+            }
+            data.put(Cols.CONTENT_LENGTH, Integer.toString(length));
         }
         langid(textStats, data);
 
