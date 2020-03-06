@@ -256,6 +256,11 @@ public abstract class TikaTest {
             return getRecursiveMetadata(tis, new ParseContext(), new Metadata(), suppressException);
         }
     }
+    protected List<Metadata> getRecursiveMetadata(Path filePath) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(filePath)) {
+            return getRecursiveMetadata(tis, true);
+        }
+    }
 
     protected List<Metadata> getRecursiveMetadata(InputStream is, boolean suppressException) throws Exception {
         return getRecursiveMetadata(is, new ParseContext(), new Metadata(), suppressException);
