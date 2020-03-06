@@ -33,6 +33,7 @@ import org.apache.pdfbox.pdmodel.graphics.image.PDImage;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.graphics.pattern.PDAbstractPattern;
 import org.apache.pdfbox.pdmodel.graphics.pattern.PDTilingPattern;
+import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDSoftMask;
 import org.apache.pdfbox.pdmodel.graphics.state.RenderingMode;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
@@ -118,20 +119,23 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         }
 
         for (COSName name : res.getExtGStateNames()) {
-            PDSoftMask softMask = res.getExtGState(name).getSoftMask();
+            PDExtendedGraphicsState extendedGraphicsState = res.getExtGState(name);
+            if (extendedGraphicsState != null) {
+                PDSoftMask softMask = extendedGraphicsState.getSoftMask();
 
-            if (softMask != null) {
-                try {
-                    PDTransparencyGroup group = softMask.getGroup();
+                if (softMask != null) {
+                    try {
+                        PDTransparencyGroup group = softMask.getGroup();
 
-                    if (group != null) {
-                        // PDFBOX-4327: without this line NPEs will occur
-                        res.getExtGState(name).copyIntoGraphicsState(getGraphicsState());
+                        if (group != null) {
+                            // PDFBOX-4327: without this line NPEs will occur
+                            res.getExtGState(name).copyIntoGraphicsState(getGraphicsState());
 
-                        processSoftMask(group);
+                            processSoftMask(group);
+                        }
+                    } catch (IOException e) {
+                        handleCatchableIOE(e);
                     }
-                } catch (IOException e) {
-                    handleCatchableIOE(e);
                 }
             }
         }
