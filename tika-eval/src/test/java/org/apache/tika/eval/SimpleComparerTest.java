@@ -281,7 +281,7 @@ public class SimpleComparerTest extends TikaTest {
         List<Map<Cols, String>> tableInfos = WRITER.getTable(ExtractComparer.CONTENT_COMPARISONS);
         assertEquals(3, tableInfos.size());
         for (int i = 0; i < tableInfos.size(); i++) {
-            assertEquals("1.0", tableInfos.get(i).get(Cols.OVERLAP));
+            assertEquals("problem with "+i, "1.0", tableInfos.get(i).get(Cols.OVERLAP));
         }
     }
 
@@ -439,6 +439,5 @@ public class SimpleComparerTest extends TikaTest {
                 ExtractComparer.CONTENT_COMPARISONS}) {
             debugPrintTable(t);
         }
-
     }
 }
