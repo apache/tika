@@ -40,8 +40,8 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.EndianUtils;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -137,7 +137,7 @@ class RTFObjDataParser {
     //can return null byte[]
     private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata,
                                        AtomicInteger unknownFilenameCount)
-            throws IOException {
+            throws TikaException, IOException {
 
         byte[] ret = null;
         try (POIFSFileSystem fs = new POIFSFileSystem(is)) {
@@ -150,11 +150,14 @@ class RTFObjDataParser {
 
             if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
-                TikaInputStream stream = TikaInputStream.get(new DocumentInputStream((DocumentEntry) ooxml));
-
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-                IOUtils.copy(stream, out);
+                try (BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb*1024,
+                            new DocumentInputStream((DocumentEntry)ooxml))) {
+                    IOUtils.copy(bis, out);
+                    if (bis.hasHitBound()) {
+                        throw new TikaMemoryLimitException("Hit memory limit exception. Tried to copy > "+memoryLimitInKb*1024);
+                    }
+                }
                 ret = out.toByteArray();
             } else {
                 //try poifs
@@ -184,7 +187,11 @@ class RTFObjDataParser {
 
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     is.reset();
+                    BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb*1024, is);
                     IOUtils.copy(is, out);
+                    if (bis.hasHitBound()) {
+                        throw new TikaMemoryLimitException("Hit memory limit exception. Tried to copy > "+memoryLimitInKb*1024);
+                    }
                     ret = out.toByteArray();
                     metadata.set(Metadata.RESOURCE_NAME_KEY, "file_" + unknownFilenameCount.getAndIncrement() + "." + type.getExtension());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
