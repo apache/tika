@@ -55,7 +55,7 @@
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.64</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
-    <httpcomponents.version>4.5.11</httpcomponents.version>
+    <httpcomponents.version>4.5.12</httpcomponents.version>
   </properties>
 
   <!-- Note: as of the 1.23 release, we're waiting for external changes or fixes
@@ -575,7 +575,7 @@
     <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.12.2</version>
+      <version>1.13.1</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>
