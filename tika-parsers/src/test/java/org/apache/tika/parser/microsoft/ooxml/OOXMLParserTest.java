@@ -1783,7 +1783,6 @@ public class OOXMLParserTest extends TikaTest {
                 this.getClass().getResourceAsStream("tika-config-custom-date-override.xml"));
         Parser p = new AutoDetectParser(tikaConfig);
         String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
-        System.out.println(xml);
         assertContains("2018-09-20", xml);
         assertContains("1996-08-10", xml);
     }
