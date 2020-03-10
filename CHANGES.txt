@@ -1,5 +1,11 @@
 Release 1.24 - ???
 
+   * Upgrade Drew Noakes' metadata-extractor (TIKA-2952).
+
+   * Enable optional extraction of structural tags in PDFs (alpha-grade) (TIKA-3026).
+
+   * Tika app's --extract mode now outputs to STDOUT (TIKA-3035).
+
    * Add an optional Preflight parser for PDFs (TIKA-3055).
 
    * Improve detection of some zip-based formats (TIKA-3057).
