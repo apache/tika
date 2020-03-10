@@ -605,18 +605,21 @@ public class TikaInputStream extends TaggedInputStream {
             if (position > 0) {
                 throw new IOException("Stream is already being read");
             } else {
-                path = tmp.createTempFile();
+                Path tmpFile = tmp.createTempFile();
                 if (maxBytes > -1) {
                     try (InputStream lookAhead = new LookaheadInputStream(in, maxBytes)) {
-                        Files.copy(lookAhead, path, REPLACE_EXISTING);
-                        if (Files.size(path) >= maxBytes) {
+                        Files.copy(lookAhead, tmpFile, REPLACE_EXISTING);
+                        if (Files.size(tmpFile) >= maxBytes) {
+                            //tmpFile will be cleaned up when this TikaInputStream is closed
                             return null;
                         }
                     }
                 } else {
                     // Spool the entire stream into a temporary file
-                    Files.copy(in, path, REPLACE_EXISTING);
+                    Files.copy(in, tmpFile, REPLACE_EXISTING);
                 }
+                //successful so far, set tis' path to tmpFile
+                path = tmpFile;
 
                 // Create a new input stream and make sure it'll get closed
                 InputStream newStream = Files.newInputStream(path);

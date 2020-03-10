@@ -208,125 +208,127 @@ public class POIFSContainerDetector implements Detector {
      * @return
      */
     protected static MediaType detect(Set<String> names, DirectoryEntry root) {
-        if (names != null) {
-            for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
-                if (names.contains(workbookEntryName)) {
-                    MediaType tmp = processCompObjFormatType(root);
-                    if (tmp.equals(MS_GRAPH_CHART)) {
-                        return MS_GRAPH_CHART;
-                    }
-                    return XLS;
+        if (names == null || names.size() == 0) {
+            return OLE;
+        }
+        for (String workbookEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
+            if (names.contains(workbookEntryName)) {
+                MediaType tmp = processCompObjFormatType(root);
+                if (tmp.equals(MS_GRAPH_CHART)) {
+                    return MS_GRAPH_CHART;
                 }
-            }
-            if (names.contains("SwDocContentMgr") && names.contains("SwDocMgrTempStorage")) {
-                return SLDWORKS;
-            } else if (names.contains("StarCalcDocument")) {
-                // Star Office Calc
-                return SDC;
-            } else if (names.contains("StarWriterDocument")) {
-                return SDW;
-            } else if (names.contains("StarDrawDocument3")) {
-                if (root == null) {
-                    /*
-                     * This is either StarOfficeDraw or StarOfficeImpress, we have
-                     * to consult the CompObj to distinguish them, if this method is
-                     * called in "legacy mode", without the root, just return
-                     * x-tika-msoffice. The one-argument method is only for backward
-                     * compatibility, if someone calls old API he/she can get the
-                     * old result.
-                     */
-                    return OLE;
-                } else {
-                    return processCompObjFormatType(root);
-                }
-            } else if (names.contains("\u0005HwpSummaryInformation")) {
-                // Hangul Word Processor v5+ (previous aren't OLE2-based)
-                return HWP;
-            } else if (names.contains("WksSSWorkBook")) {
-                // This check has to be before names.contains("Workbook")
-                // Works 7.0 spreadsheet files contain both
-                // we want to avoid classifying this as Excel
-                return XLR;
-            } else if (names.contains("Book")) {
-                // Excel 95 or older, we won't be able to parse this....
                 return XLS;
-            } else if (names.contains("EncryptedPackage") &&
-                    names.contains("EncryptionInfo")) {
-                // This is a protected OOXML document, which is an OLE2 file
-                //  with an Encrypted Stream which holds the OOXML data
-                // Without decrypting the stream, we can't tell what kind of
-                //  OOXML file we have. Return a general OOXML Protected type,
-                //  and hope the name based detection can guess the rest!
-
-                //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
-                //See TIKA-2982
-                return OOXML_PROTECTED;
-            } else if (names.contains("EncryptedPackage")) {
+            }
+        }
+        if (names.contains("SwDocContentMgr") && names.contains("SwDocMgrTempStorage")) {
+            return SLDWORKS;
+        } else if (names.contains("StarCalcDocument")) {
+            // Star Office Calc
+            return SDC;
+        } else if (names.contains("StarWriterDocument")) {
+            return SDW;
+        } else if (names.contains("StarDrawDocument3")) {
+            if (root == null) {
+                /*
+                 * This is either StarOfficeDraw or StarOfficeImpress, we have
+                 * to consult the CompObj to distinguish them, if this method is
+                 * called in "legacy mode", without the root, just return
+                 * x-tika-msoffice. The one-argument method is only for backward
+                 * compatibility, if someone calls old API he/she can get the
+                 * old result.
+                 */
                 return OLE;
-            } else if (names.contains("WordDocument")) {
-                return DOC;
-            } else if (names.contains("Quill")) {
-                return PUB;
-            } else if (names.contains("PowerPoint Document")) {
-                return PPT;
-            } else if (names.contains("VisioDocument")) {
-                return VSD;
-            } else if (names.contains("\u0001Ole10Native")) {
-                return OLE10_NATIVE;
-            } else if (names.contains("MatOST")) {
-                // this occurs on older Works Word Processor files (versions 3.0 and 4.0)
-                return WPS;
-            } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
-                // Newer Works files
-                return WPS;
-            } else if (names.contains("Contents") && names.contains("\u0003ObjInfo")) {
-                return COMP_OBJ;
-            } else if (names.contains("CONTENTS") && names.contains("\u0001CompObj")) {
-                // CompObj is a general kind of OLE2 embedding, but this may be an old Works file
-                // If we have the Directory, check
-                if (root != null) {
-                    MediaType type = processCompObjFormatType(root);
-                    if (type == WPS) {
-                        return WPS;
-                    } else {
-                        // Assume it's a general CompObj embedded resource
-                        return COMP_OBJ;
-                    }
+            } else {
+                return processCompObjFormatType(root);
+            }
+        } else if (names.contains("\u0005HwpSummaryInformation")) {
+            // Hangul Word Processor v5+ (previous aren't OLE2-based)
+            return HWP;
+        } else if (names.contains("WksSSWorkBook")) {
+            // This check has to be before names.contains("Workbook")
+            // Works 7.0 spreadsheet files contain both
+            // we want to avoid classifying this as Excel
+            return XLR;
+        } else if (names.contains("Book")) {
+            // Excel 95 or older, we won't be able to parse this....
+            return XLS;
+        } else if (names.contains("EncryptedPackage") &&
+                names.contains("EncryptionInfo")) {
+            // This is a protected OOXML document, which is an OLE2 file
+            //  with an Encrypted Stream which holds the OOXML data
+            // Without decrypting the stream, we can't tell what kind of
+            //  OOXML file we have. Return a general OOXML Protected type,
+            //  and hope the name based detection can guess the rest!
+
+            //Until Tika 1.23, we also required: && names.contains("\u0006DataSpaces")
+            //See TIKA-2982
+            return OOXML_PROTECTED;
+        } else if (names.contains("EncryptedPackage")) {
+            return OLE;
+        } else if (names.contains("WordDocument")) {
+            return DOC;
+        } else if (names.contains("Quill")) {
+            return PUB;
+        } else if (names.contains("PowerPoint Document")) {
+            return PPT;
+        } else if (names.contains("VisioDocument")) {
+            return VSD;
+        } else if (names.contains("\u0001Ole10Native")) {
+            return OLE10_NATIVE;
+        } else if (names.contains("MatOST")) {
+            // this occurs on older Works Word Processor files (versions 3.0 and 4.0)
+            return WPS;
+        } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
+            // Newer Works files
+            return WPS;
+        } else if (names.contains("Contents") && names.contains("\u0003ObjInfo")) {
+            return COMP_OBJ;
+        } else if (names.contains("CONTENTS") && names.contains("\u0001CompObj")) {
+            // CompObj is a general kind of OLE2 embedding, but this may be an old Works file
+            // If we have the Directory, check
+            if (root != null) {
+                MediaType type = processCompObjFormatType(root);
+                if (type == WPS) {
+                    return WPS;
                 } else {
                     // Assume it's a general CompObj embedded resource
                     return COMP_OBJ;
                 }
-            } else if (names.contains("CONTENTS")) {
-                // CONTENTS without SPELLING nor CompObj normally means some sort
-                //  of embedded non-office file inside an OLE2 document
-                // This is most commonly triggered on nested directories
-                return OLE;
-            } else if (names.contains("\u0001CompObj") &&
-                    (names.contains("Props") || names.contains("Props9") || names.contains("Props12"))) {
-                // Could be Project, look for common name patterns
-                for (String name : names) {
-                    if (mppDataMatch.matcher(name).matches()) {
-                        return MPP;
-                    }
-                }
-            } else if (names.contains("PerfectOffice_MAIN")) {
-                if (names.contains("SlideShow")) {
-                    return MediaType.application("x-corelpresentations"); // .shw
-                } else if (names.contains("PerfectOffice_OBJECTS")) {
-                    return new MediaType(QUATTROPRO, "version", "7-8"); // .wb?
-                }
-            } else if (names.contains("NativeContent_MAIN")) {
-                return new MediaType(QUATTROPRO, "version", "9"); // .qpw
-            } else if (names.contains("Equation Native")) {
-                return MS_EQUATION;
             } else {
-                for (String name : names) {
-                    if (name.startsWith("__substg1.0_")) {
-                        return MSG;
-                    }
+                // Assume it's a general CompObj embedded resource
+                return COMP_OBJ;
+            }
+        } else if (names.contains("CONTENTS")) {
+            // CONTENTS without SPELLING nor CompObj normally means some sort
+            //  of embedded non-office file inside an OLE2 document
+            // This is most commonly triggered on nested directories
+            return OLE;
+        } else if (names.contains("\u0001CompObj") &&
+                (names.contains("Props") || names.contains("Props9") || names.contains("Props12"))) {
+            // Could be Project, look for common name patterns
+            for (String name : names) {
+                if (mppDataMatch.matcher(name).matches()) {
+                    return MPP;
+                }
+            }
+        } else if (names.contains("PerfectOffice_MAIN")) {
+            if (names.contains("SlideShow")) {
+                return MediaType.application("x-corelpresentations"); // .shw
+            } else if (names.contains("PerfectOffice_OBJECTS")) {
+                return new MediaType(QUATTROPRO, "version", "7-8"); // .wb?
+            }
+        } else if (names.contains("NativeContent_MAIN")) {
+            return new MediaType(QUATTROPRO, "version", "9"); // .qpw
+        } else if (names.contains("Equation Native")) {
+            return MS_EQUATION;
+        } else {
+            for (String name : names) {
+                if (name.startsWith("__substg1.0_")) {
+                    return MSG;
                 }
             }
         }
+
 
         // Couldn't detect a more specific type
         return OLE;
