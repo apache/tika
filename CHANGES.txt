@@ -1,4 +1,4 @@
-Release 1.24 - ???
+Release 1.24 - 3/11/2019
 
    * Upgrade Drew Noakes' metadata-extractor (TIKA-2952).
 
