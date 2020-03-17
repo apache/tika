@@ -7,6 +7,9 @@ Release 2.0.0 - ???
 
 Release 1.24 - 3/11/2019
 
+   * Add scripts to run tika-server as a service via Eric Pugh,
+    and add these scripts and jar as a new artifact in the release (TIKA-3010).
+
    * Upgrade Drew Noakes' metadata-extractor (TIKA-2952).
 
    * Enable optional extraction of structural tags in PDFs (alpha-grade) (TIKA-3026).
