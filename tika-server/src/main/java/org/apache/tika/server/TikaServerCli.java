@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,8 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
+import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
+import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
@@ -323,6 +326,12 @@ public class TikaServerCli {
             }
             sf.setProviders(providers);
 
+            //set compression interceptors
+            sf.setOutInterceptors(
+                    Collections.singletonList(new GZIPOutInterceptor())
+            );
+            sf.setInInterceptors(
+                    Collections.singletonList(new GZIPInInterceptor()));
 
             String url = "http://" + host + ":" + port + "/";
             sf.setAddress(url);

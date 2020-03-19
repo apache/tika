@@ -5,6 +5,10 @@ Release 2.0.0 - ???
 
    Other changes
 
+Release 1.25 - ???
+
+   * Allow gzip compression of input and output streams for tika-server (TIKA-3073).
+
 Release 1.24 - 3/11/2019
 
    * Add scripts to run tika-server as a service via Eric Pugh,
