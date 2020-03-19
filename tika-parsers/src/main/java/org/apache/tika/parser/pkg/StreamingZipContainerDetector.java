@@ -170,7 +170,6 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
             //swallow
         }
         //entrynames is the union of directory names and file names
