@@ -7575,4 +7575,13 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="application/http">
+    <_comment>HTTP File</_comment>
+    <magic priority="50">
+      <match value="HTTP/1.0" type="string" offset="0:8196" />
+      <match value="HTTP/1.1" type="string" offset="0:8196" />
+      <match value="HTTP/2.0" type="string" offset="0:8196" />
+    </magic>
+    <glob pattern="*.http"/>
+  </mime-type>
 </mime-info>

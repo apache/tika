@@ -87,3 +87,4 @@ org.apache.tika.parser.image.ICNSParser
 org.apache.tika.parser.dbf.DBFParser
 org.apache.tika.parser.xliff.XLIFF12Parser
 org.apache.tika.parser.xliff.XLZParser
+org.apache.tika.parser.http.HttpParser
