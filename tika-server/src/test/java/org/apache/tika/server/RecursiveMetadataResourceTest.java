@@ -25,17 +25,23 @@ import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.core.Response;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
@@ -68,6 +74,42 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Object> providers = new ArrayList<>();
         providers.add(new MetadataListMessageBodyWriter());
         sf.setProviders(providers);
+    }
+
+    @Test
+    public void testGZOut() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .acceptEncoding("gzip")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+
+        assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
+    }
+
+    @Test
+    public void testGZIn() throws Exception {
+
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .encoding("gzip")
+                .put(gzip(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC)));
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+
+        assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
+
     }
 
     @Test
