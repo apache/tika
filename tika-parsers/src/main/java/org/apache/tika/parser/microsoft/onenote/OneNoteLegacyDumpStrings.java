@@ -6,6 +6,7 @@ import org.xml.sax.SAXException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -22,7 +23,8 @@ class OneNoteLegacyDumpStrings {
     public static int MIN_STRING_LENGTH = 8;
     // TODO - parameterize this
     public static float ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO = 0.6f;
-
+    // TODO - parameterize this
+    public static long BUFFER_SIZE = 1000000L;
     OneNoteDirectFileResource oneNoteDirectFileResource;
     XHTMLContentHandler xhtml;
 
@@ -47,62 +49,79 @@ class OneNoteLegacyDumpStrings {
     private void dumpAscii() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-
-            for (int b = oneNoteDirectFileResource.read(); b != -1; b = oneNoteDirectFileResource.read()) {
-                if (b >= 0x20 && b < 0x7F) {
-                    os.write(b);
-                } else {
-                    if (os.size() >= MIN_STRING_LENGTH) {
-                        writeIfUseful(os);
-                    }
-                    os.reset();
+            long sz = oneNoteDirectFileResource.size();
+            long pos;
+            while ((pos = oneNoteDirectFileResource.position()) != sz) {
+                long nextBufferSize = BUFFER_SIZE;
+                if (sz - pos < BUFFER_SIZE) {
+                    nextBufferSize = sz - pos;
                 }
-            }
-            if (os.size() >= MIN_STRING_LENGTH) {
-                writeIfUseful(os);
+                ByteBuffer byteBuffer = ByteBuffer.allocate((int)nextBufferSize);
+                oneNoteDirectFileResource.read(byteBuffer);
+                for (long i = 0; i < nextBufferSize - 1; ++i) {
+                    int b = byteBuffer.get((int) i);
+                    if (b >= 0x20 && b < 0x7F) {
+                        os.write(b);
+                    } else {
+                        if (os.size() >= MIN_STRING_LENGTH) {
+                            writeIfUseful(os);
+                        }
+                        os.reset();
+                    }
+                }
+                if (os.size() >= MIN_STRING_LENGTH) {
+                    writeIfUseful(os);
+                }
             }
         } catch (IOException e) {
             throw new TikaException("Could not extract text from legacy OneNote document", e);
         }
     }
-
     /**
      * Based on GNU "strings" implementation. Pulls out UTF16 LE text segments and writes them to the XHTMLContentHandler.
      */
     private void dumpUtf16LE() throws SAXException, TikaException {
         try {
             oneNoteDirectFileResource.position(0);
-
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-
             long sz = oneNoteDirectFileResource.size();
-
-            for (long i = 0; i < sz - 1; ++i) {
-                oneNoteDirectFileResource.position(i);
-
-                int c1 = oneNoteDirectFileResource.read();
-                int c2 = oneNoteDirectFileResource.read();
-
-                if (c1 == 0x00 && c2 >= 0x20 && c2 < 0x7F) {
-                    ++i;
-                    os.write(c2);
-                } else {
-                    if (os.size() >= MIN_STRING_LENGTH) {
-                        writeIfUseful(os);
-                    }
-                    os.reset();
-                }
+            long bufSize = BUFFER_SIZE;
+            // Make sure the buffer size is a multiple of 2.
+            if (bufSize % 2 == 1) {
+                bufSize += 1L;
             }
-            if (os.size() >= MIN_STRING_LENGTH) {
-                writeIfUseful(os);
+
+            long pos;
+            while ((pos = oneNoteDirectFileResource.position()) != sz) {
+                long nextBufferSize = bufSize;
+                if (sz - pos < bufSize) {
+                    nextBufferSize = sz - pos;
+                }
+                ByteBuffer byteBuffer = ByteBuffer.allocate((int)nextBufferSize);
+                oneNoteDirectFileResource.read(byteBuffer);
+
+                for (long i = 0; i < nextBufferSize - 1; ++i) {
+                    int c1 = byteBuffer.get((int)i);
+                    int c2 = byteBuffer.get((int)i+1);
+                    if (c1 == 0x00 && c2 >= 0x20 && c2 < 0x7F) {
+                        ++i;
+                        os.write(c2);
+                    } else {
+                        if (os.size() >= MIN_STRING_LENGTH) {
+                            writeIfUseful(os);
+                        }
+                        os.reset();
+                    }
+                }
+                if (os.size() >= MIN_STRING_LENGTH) {
+                    writeIfUseful(os);
+                }
             }
         } catch (IOException e) {
             throw new TikaException("Could not extract text from legacy OneNote document", e);
         }
     }
-
     /**
      * Writes a buffer of output characters if the (num alpha chars in the buffer) / (number of chars in the buffer) >
      * ACCEPTABLE_ALPHA_TO_OTHER_CHAR_RATIO.
