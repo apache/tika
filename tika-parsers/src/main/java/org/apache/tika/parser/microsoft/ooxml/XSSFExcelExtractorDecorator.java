@@ -98,6 +98,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         } else {
             formatter = new TikaExcelDataFormatter(locale);
         }
+        OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
+        if (officeParserConfig != null) {
+            ((TikaExcelDataFormatter)formatter).setDateFormatOverride(officeParserConfig.getDateFormatOverride());
+        }
     }
 
     protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {

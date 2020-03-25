@@ -100,6 +100,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.parser.sas.SAS7BDATParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -145,6 +146,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
+
+    public static final String XMP_DOCUMENT_CATALOG_LOCATION = "documentCatalog";
+    public static final String XMP_PAGE_LOCATION_PREFIX = "page ";
 
     /**
      * Format used for signature dates
@@ -202,25 +206,26 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             supportedTypes = embeddedParser.getSupportedTypes(context);
         }
 
-        if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
-            Metadata xmpMetadata = new Metadata();
-            xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
-            xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
-            if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata) &&
-                    supportedTypes.contains(XMP_MEDIA_TYPE)) {
-                InputStream is = null;
-                try {
-                    is = pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata();
+        if (supportedTypes.contains(XMP_MEDIA_TYPE)) {
+            //try the main metadata
+            if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
+                try (InputStream is = pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata()) {
+                    extractXMPAsEmbeddedFile(is, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 }
-                if (is != null) {
-                    try {
-                        parseMetadata(is, xmpMetadata);
-                    } finally {
-                        org.apache.tika.io.IOUtils.closeQuietly(is);
+            }
+            //now iterate through the pages
+            int pageNumber = 1;
+            for (PDPage page : pdfDocument.getPages()) {
+                if (page.getMetadata() != null) {
+                    try (InputStream is = page.getMetadata().exportXMPMetadata()) {
+                        extractXMPAsEmbeddedFile(is, XMP_PAGE_LOCATION_PREFIX+pageNumber);
+                    } catch (IOException e) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     }
                 }
+                pageNumber++;
             }
         }
 
@@ -246,6 +251,24 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
             }
         }
+    }
+
+    private void extractXMPAsEmbeddedFile(InputStream is, String location) throws IOException, SAXException {
+        if (is == null) {
+            return;
+        }
+        Metadata xmpMetadata = new Metadata();
+        xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
+        xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
+        xmpMetadata.set(PDF.XMP_LOCATION, location);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata)) {
+            try {
+                parseMetadata(is, xmpMetadata);
+            } finally {
+                org.apache.tika.io.IOUtils.closeQuietly(is);
+            }
+        }
+
     }
 
     private void parseMetadata(InputStream stream, Metadata embeddedMetadata) throws IOException, SAXException {
@@ -440,6 +463,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
         metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE,
                 unmappedUnicodeCharsPerPage);
+
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {

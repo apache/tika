@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.util.Locale;
 
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.util.LocaleUtil;
 
 /**
@@ -27,6 +28,8 @@ import org.apache.poi.util.LocaleUtil;
  * See TIKA-2025.
  */
 public class TikaExcelDataFormatter extends DataFormatter {
+
+    private String dateOverrideFormatString;
 
     public TikaExcelDataFormatter() {
         this(LocaleUtil.getUserLocale());
@@ -38,4 +41,19 @@ public class TikaExcelDataFormatter extends DataFormatter {
         addFormat("general", new TikaExcelGeneralFormat(locale));
     }
 
+    @Override
+    public String formatRawCellContents(double value, int formatIndex, String formatString, boolean use1904Windowing) {
+        if (DateUtil.isADateFormat(formatIndex, formatString)) {
+            String activeDateFormatString = (dateOverrideFormatString == null) ? formatString : dateOverrideFormatString;
+            return super.formatRawCellContents(value, formatIndex, activeDateFormatString, use1904Windowing);
+        } else {
+            return super.formatRawCellContents(value, formatIndex, formatString, use1904Windowing);
+        }
+    }
+
+    public void setDateFormatOverride(String dateOverrideFormat) {
+        if (dateOverrideFormat != null && dateOverrideFormat.trim().length() > 0) {
+            this.dateOverrideFormatString = dateOverrideFormat;
+        }
+    }
 }

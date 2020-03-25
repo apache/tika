@@ -25,11 +25,15 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -37,11 +41,16 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
+import org.apache.cxf.interceptor.Interceptor;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.message.Message;
+import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
+import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.server.resource.TikaResource;
@@ -86,6 +95,13 @@ public abstract class CXFTestBase {
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
                 new DefaultInputStreamFactory(), new ServerStatus(true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
+        //set compression interceptors
+        sf.setOutInterceptors(
+                Collections.singletonList(new GZIPOutInterceptor())
+        );
+        sf.setInInterceptors(
+                Collections.singletonList(new GZIPInInterceptor()));
+
         setUpResources(sf);
         setUpProviders(sf);
         sf.setAddress(endPoint + "/");
@@ -101,7 +117,6 @@ public abstract class CXFTestBase {
                 JAXRSBindingFactory.JAXRS_BINDING_ID,
                 factory
         );
-
         server = sf.create();
     }
 
@@ -174,6 +189,15 @@ public abstract class CXFTestBase {
         Path tmp = Files.createTempFile("apache-tika-server-test-tmp-", "."+archiveType);
         Files.copy(inputStream, tmp, StandardCopyOption.REPLACE_EXISTING);
         return tmp;
+    }
+
+    public static InputStream gzip(InputStream is) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        OutputStream gz = new GzipCompressorOutputStream(bos);
+        IOUtils.copy(is, gz);
+        gz.flush();
+        gz.close();
+        return new ByteArrayInputStream(bos.toByteArray());
     }
 
 }

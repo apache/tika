@@ -164,6 +164,7 @@
               pdfbox|
               pdfbox-tools|
               pdfbox-debugger|
+              pdfbox-preflight|
               fontbox|
               jempbox|
               bcmail-jdk15on|
@@ -236,6 +237,8 @@
               org.apache.tika.fork,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
+              com.adobe.xmp.impl;resolution:=optional,
+              com.adobe.xmp.options;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
@@ -255,6 +258,7 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              com.zaxxer.sparsebits;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
@@ -313,6 +317,7 @@
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
+              org.apache.pdfbox.preflight.*;resolution:=optional,
               org.apache.sis;resolution:=optional,
               org.apache.sis.coverage;resolution:=optional,
               org.apache.sis.coverage.grid;resolution:=optional,
@@ -532,7 +537,9 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <descriptor>test-bundles.xml</descriptor>
+              <descriptors>
+                <descriptor>test-bundles.xml</descriptor>
+              </descriptors>
               <finalName>test</finalName>
               <attach>false</attach>
             </configuration>

@@ -5,7 +5,28 @@ Release 2.0.0 - ???
 
    Other changes
 
-Release 1.24 - ???
+Release 1.25 - ???
+
+   * Allow gzip compression of input and output streams for tika-server (TIKA-3073).
+
+Release 1.24 - 3/11/2019
+
+   * Add scripts to run tika-server as a service via Eric Pugh,
+    and add these scripts and jar as a new artifact in the release (TIKA-3010).
+
+   * Upgrade Drew Noakes' metadata-extractor (TIKA-2952).
+
+   * Enable optional extraction of structural tags in PDFs (alpha-grade) (TIKA-3026).
+
+   * Tika app's --extract mode now outputs to STDOUT (TIKA-3035).
+
+   * Add an optional Preflight parser for PDFs (TIKA-3055).
+
+   * Improve detection of some zip-based formats (TIKA-3057).
+
+   * Upgrade metadata-extractor to 2.13.0 (TIKA-2952).
+
+   * Upgrade to POI 4.1.2 (TIKA-3047).
 
    * Extract XMP from PSD files (TIKA-3050).
 
@@ -14,7 +35,7 @@ Release 1.24 - ???
 
    * Extract inline images that rely on the DCT filter from PDFs (TIKA-3041).
 
-   * Upgrade to PDFBox 2.0.18 (TIKA-3021).
+   * Upgrade to PDFBox 2.0.19 (TIKA-3033).
 
    * Fix bug in ASM parser configuration (TIKA-2992).
    

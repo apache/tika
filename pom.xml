@@ -63,7 +63,6 @@
         <plugins>
           <plugin>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>${maven.assembly.version}</version>
             <executions>
               <execution>
                 <id>src</id>
@@ -103,6 +102,8 @@
                         <include name="target/*-src.zip*" />
                         <include name="tika-app/target/tika-app-${project.version}.jar*" />
                         <include name="tika-server/target/tika-server-${project.version}.jar*" />
+                        <include name="tika-server/target/tika-server-${project.version}-bin.tgz*" />
+                        <include name="tika-server/target/tika-server-${project.version}-bin.zip*" />
                         <include name="tika-eval/target/tika-eval-${project.version}.jar*" />
                       </fileset>
                     </copy>

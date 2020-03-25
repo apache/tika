@@ -38,6 +38,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
@@ -488,8 +489,8 @@ public class ExcelParserTest extends TikaTest {
         Locale locale = LocaleUtil.getUserLocale();
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(locale);
         //16 digit number is treated as scientific notation as is the 16 digit formula
-        assertContains("1"+symbols.getDecimalSeparator()+"23456789012345E15</td>\t"+
-                "<td>1"+symbols.getDecimalSeparator()+"23456789012345E15", xml);
+        assertContains("1"+symbols.getDecimalSeparator()+"23456789012345E+15</td>\t"+
+                "<td>1"+symbols.getDecimalSeparator()+"23456789012345E+15", xml);
     }
 
     @Test
@@ -574,5 +575,15 @@ public class ExcelParserTest extends TikaTest {
     public void testWorkBookInCapitals() throws Exception {
         String xml = getXML("testEXCEL_WORKBOOK_in_capitals.xls").xml;
         assertContains("Inventarliste", xml);
+    }
+
+    @Test
+    public void testDateFormat() throws Exception {
+        TikaConfig tikaConfig = new TikaConfig(
+                this.getClass().getResourceAsStream("tika-config-custom-date-override.xml"));
+        Parser p = new AutoDetectParser(tikaConfig);
+        String xml = getXML("testEXCEL_dateFormats.xls", p).xml;
+        assertContains("2018-09-20", xml);
+        assertContains("1996-08-10", xml);
     }
 }

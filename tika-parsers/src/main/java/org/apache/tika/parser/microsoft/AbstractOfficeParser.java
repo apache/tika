@@ -145,4 +145,9 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     public void setByteArrayMaxOverride(int maxOverride) {
         IOUtils.setByteArrayMaxOverride(maxOverride);
     }
+
+    @Field
+    public void setDateFormatOverride(String format) {
+        defaultOfficeParserConfig.setDateOverrideFormat(format);
+    }
 }
