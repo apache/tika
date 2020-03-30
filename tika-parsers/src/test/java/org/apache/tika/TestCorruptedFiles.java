@@ -51,6 +51,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -67,7 +68,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * unearth a large number of bugs.
  * </p>
  */
-//@Ignore
+@Ignore
 public class TestCorruptedFiles extends TikaTest {
 
     //I did the per_10000, because I wasn't able to reproduce
