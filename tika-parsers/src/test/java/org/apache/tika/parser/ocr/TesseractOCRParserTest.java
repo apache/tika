@@ -319,17 +319,4 @@ public class TesseractOCRParserTest extends TikaTest {
         assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
     }
 
-    private Parser findParser(Parser parser, Class clazz) {
-        if (parser instanceof CompositeParser) {
-            for (Parser child : ((CompositeParser)parser).getAllComponentParsers()) {
-                Parser found = findParser(child, clazz);
-                if (found != null) {
-                    return found;
-                }
-            }
-        } else if (clazz.isInstance(parser)) {
-            return parser;
-        }
-        return null;
-    }
 }

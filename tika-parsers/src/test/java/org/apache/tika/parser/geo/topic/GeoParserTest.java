@@ -21,11 +21,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -34,12 +38,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
-public class GeoParserTest {
+public class GeoParserTest extends TikaTest {
 	private Parser geoparser = new GeoParser();
 
 	@Test
-	public void testFunctions() throws UnsupportedEncodingException,
-			IOException, SAXException, TikaException {
+	public void testFunctions() throws IOException, SAXException, TikaException {
 		String text = "The millennial-scale cooling trend that followed the HTM coincides with the decrease in China "
 				+ "summer insolation driven by slow changes in Earth's orbit. Despite the nearly linear forcing, the transition from the HTM to "
 				+ "the Little Ice Age (1500-1900 AD) was neither gradual nor uniform. To understand how feedbacks and perturbations result in rapid changes, "
@@ -55,7 +58,7 @@ public class GeoParserTest {
 
 		InputStream s = new ByteArrayInputStream(text.getBytes(UTF_8));
 		/* if it's not available no tests to run */
-		if (!((GeoParser) geoparser).isAvailable())
+		if (!((GeoParser) geoparser).isAvailable(config))
 			return;
 
 		geoparser.parse(s, new BodyContentHandler(), metadata, context);
@@ -73,7 +76,7 @@ public class GeoParserTest {
 	}
 
 	@Test
-	public void testNulls() throws UnsupportedEncodingException, IOException,
+	public void testNulls() throws IOException,
 			SAXException, TikaException {
 		String text = "";
 
@@ -87,5 +90,16 @@ public class GeoParserTest {
 		assertNull(metadata.get("Geographic_LONGITUDE"));
 		assertNull(metadata.get("Geographic_LATITUDE"));
 
+	}
+
+	@Test
+	public void testConfig() throws Exception {
+		TikaConfig config = new TikaConfig(getResourceAsStream(
+				"/org/apache/tika/config/TIKA-3078-geo.topic.GeoParser.xml"));
+		Parser p = config.getParser();
+		GeoParser geoParser = (GeoParser)findParser(p, org.apache.tika.parser.geo.topic.GeoParser.class);
+		assertNotNull(geoParser);
+		assertEquals("http://localhost/gazetteerRestEndpoint", geoParser.getGazetteerRestEndpoint());
+		assertEquals(new URL("file:/ner/model/url"), geoParser.getNerModelUrl());
 	}
 }

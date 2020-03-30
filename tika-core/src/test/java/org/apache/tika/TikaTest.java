@@ -43,6 +43,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -474,4 +475,19 @@ public abstract class TikaTest {
             }
         }
     }
+
+    public static Parser findParser(Parser parser, Class clazz) {
+        if (parser instanceof CompositeParser) {
+            for (Parser child : ((CompositeParser)parser).getAllComponentParsers()) {
+                Parser found = findParser(child, clazz);
+                if (found != null) {
+                    return found;
+                }
+            }
+        } else if (clazz.isInstance(parser)) {
+            return parser;
+        }
+        return null;
+    }
+
 }
