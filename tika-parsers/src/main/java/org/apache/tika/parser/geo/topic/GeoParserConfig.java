@@ -99,4 +99,5 @@ public class GeoParserConfig implements Serializable {
     public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
 		this.gazetteerRestEndpoint = gazetteerRestEndpoint;
 	}
+
 }
