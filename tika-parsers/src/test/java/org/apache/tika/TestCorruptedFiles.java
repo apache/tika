@@ -28,7 +28,11 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -47,7 +51,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -64,7 +67,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * unearth a large number of bugs.
  * </p>
  */
-@Ignore
+//@Ignore
 public class TestCorruptedFiles extends TikaTest {
 
     //I did the per_10000, because I wasn't able to reproduce
@@ -74,19 +77,22 @@ public class TestCorruptedFiles extends TikaTest {
     /**
      *  per 10,000 bytes, how many should be corrupted
      */
-    private static final int PER_10000_CORRUPTED = 100;
+    private static final int PER_10000_CORRUPTED = 1000;
 
     /**
      * per 10,000 iterations, how many should be truncated instead of corrupted
      */
-    private static final double PER_10000_TRUNCATED = 10;
+    private static final double PER_10000_TRUNCATED = 1000;
 
     /**
      * per 10,000 iterations, how many should have random bytes concatenated
      */
-    private static final double PER_10000_AUGMENTED = 10;
+    private static final double PER_10000_AUGMENTED = 1000;
 
-
+    /**
+     * per 10,000 iterations, how many should have segments swapped
+     */
+    private static final double PER_10000_SWAPPED = 1000;
     /**
      * how much time to allow for the parse
      */
@@ -99,13 +105,14 @@ public class TestCorruptedFiles extends TikaTest {
 
     private static boolean HANDLE_EMBEDDED_DOCS_INDIVIDUALLY = true;
 
-    private static Random randomSeedGenerator = new Random();
+    private static Random RANDOM_SEED_GENERATOR = new Random();
     private static Path CORRUPTED;
     private static boolean FAILED;
 
     @BeforeClass
     public static void setUp() throws IOException {
         CORRUPTED = Files.createTempFile("tika-corrupted-",".tmp");
+        System.out.println("corrupted file: " + CORRUPTED);
     }
 
     @AfterClass
@@ -120,13 +127,18 @@ public class TestCorruptedFiles extends TikaTest {
     @Test
     public void testExtension() throws Throwable {
         Random r = new Random();
-        for (File f : getResourceAsFile("/test-documents").listFiles()) {
-            if (! f.isDirectory()) {
-                System.out.println("testing: "+f);
-                long seed = r.nextLong();
+        long seed = r.nextLong();
+        Random rand = new Random(seed);
+        List<File> files = Arrays.asList(getResourceAsFile("/test-documents").listFiles());
+        Collections.shuffle(files);
+        for (File f : files) {
+            if (! f.isDirectory()) {//&& f.getName().endsWith(".one")) {
                 for (int i = 0; i < NUM_ITERATIONS; i++) {
                     try {
-                        testSingleFile(getBytes(f.getName()), new Random(seed));
+                        FAILED = true;
+                        System.out.println("testing: "+f + " : "+i);
+                        testSingleFile(getBytes(f.getName()), rand);
+                        FAILED = false;
                     } catch (Throwable t) {
                         t.printStackTrace();
                         fail("error "+f.getName()+ " seed: "+seed + " : "+CORRUPTED);
@@ -142,7 +154,7 @@ public class TestCorruptedFiles extends TikaTest {
         long seed = 7850890625037579255l;
         try {
             for (int i = 0; i < NUM_ITERATIONS; i++) {
-                seed = randomSeedGenerator.nextLong();
+                seed = RANDOM_SEED_GENERATOR.nextLong();
                 FAILED = true;
                 testSingleFile(getBytes(fileName), new Random(seed));
                 FAILED = false;
@@ -160,7 +172,7 @@ public class TestCorruptedFiles extends TikaTest {
         long seed = 0;
         for (int i = 0; i < NUM_ITERATIONS; i++) {
             for (Map.Entry<String, byte[]> e : embedded.entrySet()) {
-                seed = randomSeedGenerator.nextLong();
+                seed = RANDOM_SEED_GENERATOR.nextLong();
                 try{
                     FAILED = true;
                     testSingleFile(e.getValue(), new Random(seed));
@@ -187,10 +199,54 @@ public class TestCorruptedFiles extends TikaTest {
         }
     }
 
+    @Test
+    public void testAllTruncated() throws Throwable {
+        Random r = new Random();
+        for (String fileName : new String[] {
+                "testOneNote1.one", "testOneNote2.one", "testOneNote3.one",
+                "testOneNote2007OrEarlier1.one", "testOneNote2007OrEarlier2.one"
+        }) {
+            byte[] bytes = getBytes(fileName);
+            int len = bytes.length;
+            for (int i = len; i > -1; i -= r.nextInt(1000)) {
+                if (i < 0) {
+                    break;
+                }
+                byte[] truncated = new byte[i];
+                System.arraycopy(bytes, 0, truncated, 0, i);
+                System.out.println("testing length: "+truncated.length + ": "+fileName);
+                try {
+                    FAILED = true;
+                    testSingleFile(truncated);
+                    FAILED = false;
+                } finally {
+
+                }
+
+            }
+        }
+    }
+
+    public void testSingleFile(byte[] bytes) throws Throwable {
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        ExecutorCompletionService executorCompletionService = new ExecutorCompletionService(executorService);
+        executorCompletionService.submit(new ParseTask(bytes));
+        Future<Boolean> future = executorCompletionService.poll(MAX_ALLOWABLE_TIME_MILLIS, TimeUnit.MILLISECONDS);
+        if (future == null) {
+            throw new TimeoutException("timed out: "+CORRUPTED);
+        }
+
+        //if the exception isn't caught, it will be thrown here
+        Boolean result = future.get(1, TimeUnit.SECONDS);
+        if (result == null) {
+            throw new TimeoutException("timed out: " + CORRUPTED);
+        }
+    }
+
     public void testSingleFile(byte[] bytes, Random random) throws Throwable {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         ExecutorCompletionService executorCompletionService = new ExecutorCompletionService(executorService);
-        executorCompletionService.submit(new ParseTask(bytes, random));
+        executorCompletionService.submit(new CorruptAndParseTask(bytes, random));
         Future<Boolean> future = executorCompletionService.poll(MAX_ALLOWABLE_TIME_MILLIS, TimeUnit.MILLISECONDS);
         if (future == null) {
             throw new TimeoutException("timed out: "+CORRUPTED);
@@ -204,30 +260,36 @@ public class TestCorruptedFiles extends TikaTest {
     }
 
     private class ParseTask implements Callable<Boolean> {
-        private byte[] corrupted = null;
-        ParseTask(byte[] original, Random random) throws IOException {
-            corrupted = corrupt(new ByteArrayInputStream(original), random);
-            Files.delete(CORRUPTED);
-            OutputStream os = Files.newOutputStream(CORRUPTED, StandardOpenOption.CREATE);
-            IOUtils.copy(new ByteArrayInputStream(corrupted), os);
-            os.flush();
-            os.close();
+        protected byte[] bytes;
+        ParseTask(byte[] bytes) {
+            this.bytes = bytes;
         }
-
 
         @Override
         public Boolean call() throws Exception {
             try {
-                AUTO_DETECT_PARSER.parse(new ByteArrayInputStream(corrupted), new DefaultHandler(),
+                AUTO_DETECT_PARSER.parse(new ByteArrayInputStream(bytes), new DefaultHandler(),
                         new Metadata(), new ParseContext());
-            } catch (SAXException|TikaException|IOException e) {
-
+                //TODO: what else do we want to ignore?
+            } catch (SAXException|TikaException|IOException|AssertionError|IllegalArgumentException e) {
             }
             return true;
         }
+
     }
 
-    private byte[] corrupt(InputStream is, Random random) throws IOException {
+    private class CorruptAndParseTask extends ParseTask {
+        CorruptAndParseTask(byte[] original, Random random) throws IOException {
+            super(corrupt(new ByteArrayInputStream(original), random));
+            Files.delete(CORRUPTED);
+            OutputStream os = Files.newOutputStream(CORRUPTED, StandardOpenOption.CREATE);
+            IOUtils.copy(new ByteArrayInputStream(bytes), os);
+            os.flush();
+            os.close();
+        }
+    }
+
+    private static byte[] corrupt(InputStream is, Random random) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         IOUtils.copy(is, bos);
         byte[] bytes = bos.toByteArray();
@@ -248,15 +310,30 @@ public class TestCorruptedFiles extends TikaTest {
                 corrupted[i] = (byte) random.nextInt(255);
             }
             return corrupted;
-        } else {
+        } else if (random.nextInt(10000) <= PER_10000_SWAPPED) {
+            int srcStart = random.nextInt(bytes.length);
+            int destStart = random.nextInt(bytes.length);
+            int len = random.nextInt((int)((double)bytes.length/(double)4));
+            len = Math.max(srcStart, destStart) + len >= bytes.length ?
+                    bytes.length-Math.max(srcStart, destStart)-1 : len;
+
             byte[] corrupted = new byte[bytes.length];
-            for (int i = 0; i < bytes.length; i++) {
-                byte c = (random.nextInt(10000) < PER_10000_CORRUPTED) ?
-                        (byte) random.nextInt(255) : bytes[i];
-                corrupted[i] = c;
+            //first copy everything
+            System.arraycopy(bytes, 0, corrupted, 0, bytes.length);
+            System.arraycopy(bytes, srcStart, corrupted, destStart, len);
+            if (Arrays.equals(bytes, corrupted)) {
+                System.err.println("tried to swap, but bytes are identical");
             }
             return corrupted;
         }
+        byte[] corrupted = new byte[bytes.length];
+        for (int i = 0; i < bytes.length; i++) {
+            byte c = (random.nextInt(10000) < PER_10000_CORRUPTED) ?
+                    (byte) random.nextInt(255) : bytes[i];
+            corrupted[i] = c;
+        }
+        return corrupted;
+
     }
 
 
