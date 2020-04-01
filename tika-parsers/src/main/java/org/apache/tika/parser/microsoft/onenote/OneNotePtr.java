@@ -337,7 +337,12 @@ class OneNotePtr {
             // + 4 bytes for the FileNode header
             CheckedFileNodePushBack pushBack = new CheckedFileNodePushBack(data);
             try {
+                long initialOffset = offset;
                 FileNode fileNode = deserializeFileNode(data.children.get(data.children.size() - 1), curPath);
+                if (initialOffset == offset) {
+                    //nothing read; avoid an infinite loop
+                    break;
+                }
                 if (fileNode.id == FndStructureConstants.ChunkTerminatorFND || fileNode.id == 0) {
                     terminated = true;
                     break;
@@ -678,7 +683,6 @@ class OneNotePtr {
         end = backup.end;
 
         if (reserved != 1) {
-            System.exit(1);
             throw new TikaException("RESERVED_NONZERO");
         }
 
