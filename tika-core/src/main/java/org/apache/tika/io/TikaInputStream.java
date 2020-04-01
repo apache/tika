@@ -60,10 +60,18 @@ import org.apache.tika.parser.Parser;
  * associated with a TikaInputStream should first use the
  * {@link #get(InputStream)} factory method to cast or wrap a given
  * {@link InputStream} into a TikaInputStream instance.
+ * <p>
+ * TikaInputStream includes a few safety features to protect against parsers
+ * that may fail to check for an EOF or may incorrectly rely on the unreliable
+ * value returned from {@link FileInputStream#skip}.  These parser failures
+ * can lead to infinite loops.  We strongly encourage the use of
+ * TikaInputStream.
  *
  * @since Apache Tika 0.8
  */
 public class TikaInputStream extends TaggedInputStream {
+
+    private static final int MAX_CONSECUTIVE_EOFS = 1000;
 
     /**
      * Checks whether the given stream is a TikaInputStream instance.
@@ -731,9 +739,21 @@ public class TikaInputStream extends TaggedInputStream {
         return position;
     }
 
+    /**
+     * This relies on {@link IOUtils#skip(InputStream, long)} to ensure
+     * that the alleged bytes skipped were actually skipped.
+     *
+     * @param ln the number of bytes to skip
+     * @return the number of bytes skipped
+     * @throws IOException if the number of bytes requested to be skipped does not match the number of bytes skipped
+     *      or if there's an IOException during the read.
+     */
     @Override
     public long skip(long ln) throws IOException {
-        long n = super.skip(ln);
+        long n = IOUtils.skip(super.in, ln);
+        if (n != ln) {
+            throw new IOException("tried to skip "+ln + " but actually skipped: "+n);
+        }
         position += n;
         return n;
     }
@@ -777,7 +797,7 @@ public class TikaInputStream extends TaggedInputStream {
             position += n;
         } else {
             consecutiveEOFs++;
-            if (consecutiveEOFs > 1000) {
+            if (consecutiveEOFs > MAX_CONSECUTIVE_EOFS) {
                 throw new IOException("Read too many -1 (EOFs); there could be an infinite loop." +
                         "If you think your file is not corrupt, please open an issue on Tika's JIRA");
             }
