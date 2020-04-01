@@ -144,7 +144,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
             int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
             int bytesRead = 0;
 
-            while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) >= 0) {
+            while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) > 0) {
                 sb.append(buffer, 0, bytesRead);
                 max -= bytesRead;
             }
