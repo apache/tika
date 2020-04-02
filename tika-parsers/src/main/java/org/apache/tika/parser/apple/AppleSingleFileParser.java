@@ -28,6 +28,7 @@ import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
@@ -48,6 +49,7 @@ import org.xml.sax.SAXException;
  */
 public class AppleSingleFileParser extends AbstractParser {
 
+    private static final int MAX_FIELD_LENGTH = 1_073_741_824;
     /**
      * Entry types
      */
@@ -123,8 +125,8 @@ public class AppleSingleFileParser extends AbstractParser {
             IOUtils.skipFully(stream, diff);
             bytesRead += diff;
             if (f.entryId == REAL_NAME) {
-                if (f.length > Integer.MAX_VALUE) {
-                    throw new TikaException("File name length can't be > integer max");
+                if (f.length > MAX_FIELD_LENGTH) {
+                    throw new TikaMemoryLimitException(f.length, MAX_FIELD_LENGTH);
                 }
                 buffer = new byte[(int)f.length];
                 IOUtils.readFully(stream, buffer);

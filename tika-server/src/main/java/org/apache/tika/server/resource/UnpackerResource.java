@@ -186,7 +186,7 @@ public class UnpackerResource {
             IOUtils.copy(bis, bos);
             if (bis.hasHitBound()) {
                 throw new IOExceptionWithCause(
-                        new TikaMemoryLimitException("Tried to read beyond "+MAX_ATTACHMENT_BYTES + "bytes"));
+                        new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES+1, MAX_ATTACHMENT_BYTES));
             }
             byte[] data = bos.toByteArray();
 

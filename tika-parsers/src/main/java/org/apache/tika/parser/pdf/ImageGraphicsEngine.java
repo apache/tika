@@ -454,7 +454,8 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         BoundedInputStream bis = new BoundedInputStream(MAX_IMAGE_LENGTH_BYTES, is);
         IOUtils.copy(bis, os);
         if (bis.hasHitBound()) {
-            throw new TikaMemoryLimitException("Image size is larger than allowed (" + MAX_IMAGE_LENGTH_BYTES + ")");
+            throw new TikaMemoryLimitException(
+                    "Image size is larger than allowed (" + MAX_IMAGE_LENGTH_BYTES + ")");
         }
 
     }

@@ -628,7 +628,8 @@ class OneNotePtr {
             }
 
             if (cch > dif.size()) {
-                throw new TikaMemoryLimitException("CCH=" + cch + " was found that was great than file size " + dif.size());
+                throw new TikaMemoryLimitException("CCH=" + cch + " was found that was greater" +
+                        " than file size " + dif.size());
             }
             ByteBuffer dataSpaceBuffer = ByteBuffer.allocate((int) cch * 2);
             dif.read(dataSpaceBuffer);
@@ -1174,7 +1175,8 @@ class OneNotePtr {
 
     public void dumpHex() throws TikaMemoryLimitException, IOException {
         if (end - offset > dif.size()) {
-            throw new TikaMemoryLimitException("Exceeded memory limit when trying to dumpHex - " + (end - offset) + " > " + dif.size());
+            throw new TikaMemoryLimitException("Exceeded memory limit when trying to dumpHex - " +
+                    "" + (end - offset) + " > " + dif.size());
         }
         ByteBuffer byteBuffer = ByteBuffer.allocate((int) (end - offset));
         LOG.debug(Hex.encodeHexString(byteBuffer.array()));
