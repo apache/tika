@@ -153,9 +153,7 @@ class RTFEmbObjHandler {
             throw new TikaException("Requesting I read < 0 bytes ?!");
         }
         if (len > memoryLimitInKb*1024) {
-            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
-                    ") bytes), but maximum allowed is ("+(memoryLimitInKb*1024)+")."+
-                    "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
+            throw new TikaMemoryLimitException(len, (memoryLimitInKb*1024));
         }
 
         byte[] bytes = new byte[len];

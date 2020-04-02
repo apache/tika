@@ -155,7 +155,8 @@ class RTFObjDataParser {
                             new DocumentInputStream((DocumentEntry)ooxml))) {
                     IOUtils.copy(bis, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException("Hit memory limit exception. Tried to copy > "+memoryLimitInKb*1024);
+                        throw new TikaMemoryLimitException(
+                                (memoryLimitInKb*1024+1), (memoryLimitInKb*1024));
                     }
                 }
                 ret = out.toByteArray();
@@ -190,7 +191,7 @@ class RTFObjDataParser {
                     BoundedInputStream bis = new BoundedInputStream(memoryLimitInKb*1024, is);
                     IOUtils.copy(is, out);
                     if (bis.hasHitBound()) {
-                        throw new TikaMemoryLimitException("Hit memory limit exception. Tried to copy > "+memoryLimitInKb*1024);
+                        throw new TikaMemoryLimitException(memoryLimitInKb*1024+1, memoryLimitInKb*1024);
                     }
                     ret = out.toByteArray();
                     metadata.set(Metadata.RESOURCE_NAME_KEY, "file_" + unknownFilenameCount.getAndIncrement() + "." + type.getExtension());
@@ -325,12 +326,9 @@ class RTFObjDataParser {
         if (len < 0) {
             throw new IOException("Requested length for reading bytes < 0?!: " + len);
         } else if (memoryLimitInKb > -1 && len > memoryLimitInKb*1024) {
-            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
-                    ") bytes), but maximum allowed is ("+(memoryLimitInKb*1024)+")."+
-                    "If this is a valid RTF file, consider increasing the memory limit via TikaConfig.");
+            throw new TikaMemoryLimitException(len, memoryLimitInKb*1024);
         } else if (len > Integer.MAX_VALUE) {
-            throw new TikaMemoryLimitException("File embedded in RTF caused this (" + len +
-                    ") bytes), but there is a hard limit of Integer.MAX_VALUE+");
+            throw new TikaMemoryLimitException(len, Integer.MAX_VALUE);
         }
 
         return new byte[(int) len];

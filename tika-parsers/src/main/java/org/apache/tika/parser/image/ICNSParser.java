@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Set;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -36,6 +37,7 @@ import org.xml.sax.SAXException;
  */
 public class ICNSParser extends AbstractParser {
     private static final long serialVersionUID = 922010233654248327L;
+    private static final long MAX_IMAGE_LENGTH_BYTES = 10485760;// 10MB
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.image("icns"));
     public static final String ICNS_MIME_TYPE = "image/icns";
@@ -58,6 +60,9 @@ public class ICNSParser extends AbstractParser {
         }
         IOUtils.readFully(stream, header, 0, 4); //Extract image size/length of bytes in file
         int image_length = java.nio.ByteBuffer.wrap(header).getInt();
+        if (image_length > MAX_IMAGE_LENGTH_BYTES) {
+            throw new TikaMemoryLimitException(image_length, MAX_IMAGE_LENGTH_BYTES);
+        }
         byte[] full_file = new byte[image_length];
         IOUtils.readFully(stream, full_file);
         ArrayList<ICNSType> icons = new ArrayList<>();
@@ -74,7 +79,7 @@ public class ICNSParser extends AbstractParser {
             if (icnstype == null) {
                 //exit out of loop
                 //No more icons left
-                offset = image_length - 8;
+                break;
             } else if (icnstype.hasMask() == true) {
                 icon_masks.add(findIconType(tempByteArray));
             } else {
