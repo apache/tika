@@ -93,12 +93,10 @@ public class OutlookPSTParser extends AbstractParser {
             if (isValid) {
                 parseFolder(xhtml, pstFile.getRootFolder(), embeddedExtractor);
             }
+        } catch (TikaException e) {
+            throw e;
         } catch (Exception e) {
-            if(e instanceof TikaException) {
-                throw (TikaException) e;
-            }else {
-                throw new TikaException(e.getMessage(), e);
-            }
+            throw new TikaException(e.getMessage(), e);
         } finally {
             if (pstFile != null && pstFile.getFileHandle() != null) {
                 try {
@@ -267,7 +265,7 @@ public class OutlookPSTParser extends AbstractParser {
                 xhtml.endElement("div");
 
             } catch (Exception e) {
-                throw new TikaException("Unable to unpack document stream", e);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, mailMetadata);
             }
         }
     }

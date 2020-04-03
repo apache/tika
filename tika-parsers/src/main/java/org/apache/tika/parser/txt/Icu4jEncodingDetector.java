@@ -70,7 +70,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         for (CharsetMatch match : detector.detectAll()) {
             try {
                 return CharsetUtils.forName(match.getName());
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 // ignore
             }
         }

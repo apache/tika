@@ -76,7 +76,7 @@ public class AutoDetectReader extends BufferedReader {
             if (charset != null) {
                 try {
                     return CharsetUtils.forName(charset);
-                } catch (Exception e) {
+                } catch (IllegalArgumentException e) {
                     // ignore
                 }
             }

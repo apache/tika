@@ -146,7 +146,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
             }
 
         } catch (Exception e) {
-            LOG.debug(e.getMessage(), e);
+            LOG.warn(e.getMessage(), e);
         }
         return names;
     }

@@ -183,8 +183,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                 tStream.close();
             }
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception ex) {
-
+            //swallow
         }
     }
 
@@ -204,10 +206,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 for (PackageRelationship rel : source.getRelationships()) {
                     try {
                         handleEmbeddedPart(source, rel, handler, metadata, handledTarget);
+                    } catch (SAXException|SecurityException e) {
+                        throw e;
                     } catch (Exception e) {
-                        if (e instanceof SAXException) {
-                            throw e;
-                        }
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
                     }
                 }

@@ -225,8 +225,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             }
 
 
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
-
+            //swallow
         } finally {
             IOUtils.closeQuietly(tmp);
         }

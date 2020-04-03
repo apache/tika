@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashSet;
@@ -161,7 +162,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
                 if (CharsetUtils.isSupported(candCharset)) {
                     try {
                         return CharsetUtils.forName(candCharset);
-                    } catch (Exception e) {
+                    } catch (IllegalArgumentException e) {
                         //ignore
                     }
                 }
