@@ -218,7 +218,7 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-
+            //swallow
         }
         return relsHandler.rels;
     }
@@ -251,7 +251,7 @@ public class StreamingZipContainerDetector extends ZipContainerDetectorBase impl
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-
+            //swallow
         }
         return contentTypeHandler.mediaType;
     }

@@ -317,10 +317,9 @@ public class OfficeParser extends AbstractOfficeParser {
         try {
             reader = new VBAMacroReader(fs);
             macros = reader.readMacros();
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof SecurityException) {
-                throw e;
-            }
             Metadata m = new Metadata();
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");

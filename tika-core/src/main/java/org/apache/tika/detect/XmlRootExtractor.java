@@ -53,6 +53,8 @@ public class XmlRootExtractor {
             XMLReaderUtils.parseSAX(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(handler), EMPTY_CONTEXT);
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception ignore) {
         }
         return handler.rootElement;

@@ -278,9 +278,9 @@ public class CompositeParser extends AbstractParser {
             }
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
-            } catch (RuntimeException e) {
-                throw new TikaException(
-                        "Unexpected RuntimeException from " + parser, e);
+            } catch (SecurityException e) {
+                //rethrow security exceptions
+                throw e;
             } catch (IOException e) {
                 taggedStream.throwIfCauseOf(e);
                 throw new TikaException(
@@ -289,6 +289,9 @@ public class CompositeParser extends AbstractParser {
                 if (taggedHandler != null) taggedHandler.throwIfCauseOf(e);
                 throw new TikaException(
                         "TIKA-237: Illegal SAXException from " + parser, e);
+            } catch (RuntimeException e) {
+                throw new TikaException(
+                        "Unexpected RuntimeException from " + parser, e);
             }
         } finally {
             tmp.dispose();
