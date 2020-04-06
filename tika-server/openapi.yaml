@@ -1,0 +1,433 @@
+openapi: 3.0.2
+externalDocs:
+  url: https://cwiki.apache.org/confluence/display/TIKA/TikaServer
+  description: Find more info here
+info:
+  contact:
+    email: dev@tika.apache.org
+  description: The Tika server implements [JAX-RS](http://en.wikipedia.org/wiki/JAX-RS) (Java API for RESTful Web Services) to provide web services according to the Representational State Transfer (REST) architectural style. This facilitates a wide varity oif operations and flexibility with regards to both client and server implementations. The officially supported Tika server implementation is packaged using the OpenAPI [jaxrs-cxf generator](https://openapi-generator.tech/docs/generators/jaxrs-cxf]. This work was tracked through [TIKA-3082](https://issues.apache.org/jira/browse/TIKA-3082).
+    <b>N.B.</b> the OpenAPI version always tracks the underlying Tika version to remove uncertainty about which version of Tika is running within the server.
+  license:
+    name: Apache v2
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Tika JAX-RS Server
+  version: 2.0.0-SNAPSHOT
+servers:
+  - description: Local development server
+    url: 'https://localhost:9998'
+tags:
+#################################################
+## Tags are alphabetical to improve readability #
+#################################################
+- name: Detector Resource
+  description: Uses the default detector to identify MIME/media type.
+- name: Information Services
+  description: Utility information such as available endpoints, defined mime types, available detectors, available parsers, etc.
+- name: Language Resource
+  description: Language identification
+- name: Metadata Resource
+  description: Metadata extraction
+- name: Recursive Metadata and Content
+  description: Recursive metadata and content extraction which results in JSONified list of metadata objects for the container document and all embedded documents
+- name: Tika Resource
+  description: Content extraction
+- name: Translate Resource
+  description: Flexible document translation with pluggable *translators*, translating from *src* language to *dest*
+- name: Unpack Resource
+  description: Provides extraction of an embedded document type to the /unpack service, areturning a zip or tar of the raw bytes of the embedded files.
+paths:
+##################################################
+## Paths are alphabetical to improve readability #
+##################################################
+  /:
+    get:
+      description: Hitting the route of the server will give a basic report of all the endpoints defined in the server, what URL they have etc.
+      operationId: get_endpoints
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Endpoints'
+          description: If successful, this operation returns HTTP status code 200, with the body containing a list of endpoints.
+          headers:
+            Content-Type:
+              schema:
+                enum: [application/json]
+                example: application/json
+                default: application/json
+                type: string
+              description: Content-Type served to client.
+        '500':
+          description: An error occurred processing the call.
+      summary: GET a list of all server endpoints
+      tags:
+      - Information Services
+  /detectors:
+    get:
+      description: The top level detector to be used, and any child detectors within it. Available as plain text, json or human readable HTML
+      operationId: get_detectors
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultDetector'
+          description: If successful, this operation returns HTTP status code 200, with the body the default detector information.
+          headers:
+            Content-Type:
+              schema:
+                enum: [application/json, text/plain, text/html]
+                example: application/json
+                default: application/json
+                type: string
+              description: Content-Type served to client.
+        '500':
+          description: An error occurred processing the call.
+      summary: GET information about the top level detector to be used, and any child detectors within it.
+      tags:
+      - Information Services
+  /detect/stream:
+    put:
+      description: PUT a document and use the default detector to identify the MIME/media type. The caveat here is that providing a hint for the filename can increase the quality of detection. Default return is a string of the Media type name.
+      operationId: put_stream
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'text/csv'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the body being a string for the detected mime type.
+          headers:
+            Content-Type:
+              schema:
+                example: text/plain
+                default: text/plain
+                type: string
+              description: Content-type served to client.
+        '500':
+          description: An error occurred processing the call.
+      summary: PUT a document and use the default detector to identify the MIME/media type.
+      tags:
+      - Detector Resource
+  /language/stream:
+    post:
+      description: 'POST a UTF-8 text file to the LanguageIdentifier to identify its language. <b>NOTE</b>: This endpoint does not parse files.  It runs detection on a UTF-8 string.'
+      operationId: post_language_stream
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the body being a string of the 2 character identified language.
+        '500':
+          description: An error occurred processing the call.
+      summary: 'PUT a UTF-8 text file to the LanguageIdentifier to identify its language.'
+      tags:
+      - Language Resource
+    put:
+      description: 'POST a UTF-8 text file to the LanguageIdentifier to identify its language. <b>NOTE</b>: This endpoint does not parse files.  It runs detection on a UTF-8 string.'
+      operationId: put_language_stream
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the body being a string of the 2 character identified language.
+        '500':
+          description: An error occurred processing the call.
+      summary: 'PUT a UTF-8 text file to the LanguageIdentifier to identify its language.'
+      tags:
+      - Language Resource
+  /language/string:
+    post:
+      description: POST a text string to the LanguageIdentifier to identify its language.
+      operationId: post_language_string
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the body being a string of the 2 character identified language.
+        '500':
+          description: An error occurred processing the call.
+      summary: POST a text string to the LanguageIdentifier to identify its language.
+      tags:
+      - Language Resource
+    put:
+      description: PUT a text string to the LanguageIdentifier to identify its language.
+      operationId: put_language_string
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the body being a string of the 2 character identified language.
+        '500':
+          description: An error occurred processing the call.
+      summary: PUT a text string to the LanguageIdentifier to identify its language.
+      tags:
+      - Language Resource
+  /meta:
+    put:
+      description: PUT a document to the metadata extraction resource.
+      operationId: put_document_meta
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+            #TODO
+            #application/rdf+xml:
+            #  schema:
+            text/plain:
+              schema:
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the body containing all of the extracted metadata for the uploaded data.
+        '500':
+          description: An error occurred processing the call.
+      summary: PUT a document to the metadata extraction resource.
+      tags:
+      - Metadata Resource
+  /meta/{metadata_key}:
+    put:
+      description: PUT a document to the metadata extraction resource and get a specific metadata key's value.
+      parameters:
+      - description: The metadata key for which you wish to obtain it's value
+        explode: false
+        in: path
+        name: metadata_key
+        required: true
+        schema:
+          example: 
+          type: string
+        style: simple
+      operationId: put_document_meta_get_key_value
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+            #TODO
+            #application/rdf+xml:
+            #  schema:
+            #TODO
+            # text/csv:
+            #   schema:
+            #     type: object
+            #     additionalProperties:
+            #       type: string
+          description: If successful, this operation returns HTTP status code 200, with the body containing the extracted metadata value for the given key.
+        '500':
+          description: An error occurred processing the call.
+      summary: PUT a document to the metadata extraction resource and get a specific metadata key's value.
+      tags:
+      - Metadata Resource
+  /mime-types:
+    get:
+      description: Mime types, their aliases, their supertype, and the parser. Available as plain text, json or human readable HTML.
+      operationId: get_mimetypes
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MimeTypes'
+          description: If successful, this operation returns HTTP status code 200, with the body containing Mime types, their aliases, their supertype, and the parser.
+          headers:
+            Content-Type:
+              schema:
+                enum: [application/json]
+                example: application/json
+                default: application/json
+                type: string
+              description: Content-Type served to client.
+        '500':
+          description: An error occurred processing the call.
+      summary: GET all mime types, their aliases, their supertype, and the parser.
+      tags:
+      - Information Services
+  /parsers:
+    get:
+      description: Lists all of the parsers currently available.
+      operationId: get_parsers
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsersORParsersDetails'
+          description: If successful, this operation returns HTTP status code 200, with the body containing a list of parser objects.
+          headers:
+            Content-Type:
+              schema:
+                enum: [application/json]
+                example: application/json
+                default: application/json
+                type: string
+              description: Content-Type served to client.
+        '500':
+          description: An error occurred processing the call.
+      summary: GET all of the parsers currently available.
+      tags:
+      - Information Services
+  /parsers/details:
+    get:
+      description: List all the available parsers, along with what mimetypes they support.
+      operationId: get_parsers_details
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParsersORParsersDetails'
+          description: If successful, this operation returns HTTP status code 200, with the body containing a list of parser object details including the mime types handled by each parser.
+          headers:
+            Content-Type:
+              schema:
+                enum: [application/json]
+                example: application/json
+                default: application/json
+                type: string
+              description: Content-Type served to client.
+        '500':
+          description: An error occurred processing the call.
+      summary: GET all the available parsers, along with what mimetypes they support.
+      tags:
+      - Information Services
+components:
+  parameters:
+    JPLUserID:
+      description: 'A string representing an individual JPL user'
+      explode: false
+      in: path
+      name: jpl_user_id
+      required: true
+      schema:
+        example: 'rmoss'
+        type: string
+    ACLRecord:
+      description: 'A string representing the ACL Type.'
+      explode: false
+      in: path
+      name: acl_type
+      required: true
+      schema:
+        example: 'all_us'
+        type: string
+    ACLType:
+      description: 'A string representing the ACL Type.'
+      explode: false
+      in: path
+      name: acl_type
+      required: true
+      schema:
+        example: 'all_us'
+        type: string
+  schemas:
+    Children:
+      type: object
+      properties:
+        schema:
+          oneOf:
+          - $ref: '#/components/schemas/Children'
+          - $ref: '#/components/schemas/SupportedTypes'
+        composite:
+          example: true
+          type: boolean
+        name:
+          example: "org.apache.tika.parser.apple.AppleSingleFileParser"
+          type: string
+        decorated:
+          example: true
+          type: boolean
+    DefaultDetector:
+      example: '{"children":[{"composite":false,"name":"org.apache.tika.detect.OverrideDetector"},{"composite":false,"name":"org.apache.tika.parser.microsoft.POIFSContainerDetector"},{"composite":false,"name":"org.apache.tika.parser.pkg.ZipContainerD:etector"},{"composite":false,"name":"org.gagravarr.tika.OggDetector"},{"composite":false,"name":"org.apache.tika.mime.MimeTypes"}],"composite":true,"name":"org.apache.tika.detect.DefaultDetector"}'
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            type: object
+            properties:
+              composite:
+                example: true
+                type: boolean
+              name:
+                example: "org.apache.tika.detect.OverrideDetector"
+                type: string
+        composite:
+          example: true
+          type: boolean
+        name:
+          example: "org.apache.tika.detect.DefaultDetector"
+          type: string
+    Endpoints:
+      type: array
+      items:
+        type: object
+        properties:
+          endpoint:
+            type: string
+          description:
+            type: string
+    MimeTypes:
+      type: array
+      items:
+        type: object
+        properties:
+          alias:
+            type: array
+            items:
+              example: ["application/x-msi", "application/x-windows-installer"]
+              type: string
+          name:
+            example: "application/rtf"
+            type: string
+          parser:
+            example: "org.apache.tika.parser.rtf.RTFParser"
+            type: string
+          supertype:
+            example: "text/plain"
+            type: string
+        required:
+          - name
+    ParsersORParsersDetails:
+      type: object
+      properties:
+        children:
+          type: array
+          items:
+            type: object
+            properties:
+              children:
+                $ref: '#/components/schemas/ParsersORParsersDetails'
+              composite:
+                example: true
+                type: boolean
+              name:
+                example: "org.apache.tika.parser.apple.AppleSingleFileParser"
+                type: string
+              decorated:
+                example: true
+                type: boolean
+    SupportedTypes:
+      type: array
+      items:
+        example: ["application/x-midi", "audi/midi"]
+        type: string

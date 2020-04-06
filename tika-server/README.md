@@ -1,6 +1,10 @@
 # Apache Tika Server
 
-https://cwiki.apache.org/confluence/display/TIKA/TikaJAXRS
+https://cwiki.apache.org/confluence/display/TIKA/TikaServer
+
+OpenAPI
+-------
+The OpenAPI specification can be found in `openapi.yaml` file in this directory. This work was tracked through [TIKA-3082](https://issues.apache.org/jira/browse/TIKA-3082).
 
 Running
 -------
