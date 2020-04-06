@@ -38,7 +38,6 @@ org.apache.tika.parser.iwork.IWorkPackageParser
 org.apache.tika.parser.jpeg.JpegParser
 org.apache.tika.parser.mail.RFC822Parser
 org.apache.tika.parser.mbox.MboxParser
-org.apache.tika.parser.onenote.OneNoteParser
 org.apache.tika.parser.mbox.OutlookPSTParser
 org.apache.tika.parser.microsoft.EMFParser
 org.apache.tika.parser.microsoft.WMFParser
