@@ -92,6 +92,9 @@ public class ICNSParser extends AbstractParser {
             tempByteArray[2] = full_file[offset + 6];
             tempByteArray[3] = full_file[offset + 7];
             int icon_length = java.nio.ByteBuffer.wrap(tempByteArray).getInt();
+            if (icon_length <= 0) {
+                break;
+            }
             offset = offset + icon_length;
         }
         String icon_details = "", iconmask_details = "", bitsPerPixel,dimensions;
