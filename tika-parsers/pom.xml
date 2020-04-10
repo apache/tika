@@ -322,9 +322,9 @@
       <version>8.0.1</version>
     </dependency>
     <dependency>
-      <groupId>com.googlecode.mp4parser</groupId>
+      <groupId>org.tallison</groupId>
       <artifactId>isoparser</artifactId>
-      <version>1.1.22</version>
+      <version>1.9.41.2</version>
     </dependency>
     <!-- this is a fork of com.drewnoakes
       metadata extractor that shade/relocates com.adobe.internal

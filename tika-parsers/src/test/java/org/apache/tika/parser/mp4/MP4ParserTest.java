@@ -19,6 +19,7 @@ package org.apache.tika.parser.mp4;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.nio.file.Paths;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
