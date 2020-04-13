@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1777,6 +1778,16 @@ public class OOXMLParserTest extends TikaTest {
         String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
         assertContains("2018-09-20", xml);
         assertContains("1996-08-10", xml);
+    }
+
+    @Test
+    public void testDocSecurity() throws Exception {
+        assertEquals(OfficeOpenXMLExtended.SECURITY_PASSWORD_PROTECTED,
+                getRecursiveMetadata("protectedFile.xlsx")
+                .get(0).get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
+        assertEquals(OfficeOpenXMLExtended.SECURITY_READ_ONLY_ENFORCED,
+                getRecursiveMetadata("testWORD_docSecurity.docx")
+                        .get(0).get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
     }
 }
 

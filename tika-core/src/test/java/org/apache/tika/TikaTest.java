@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -491,4 +492,19 @@ public abstract class TikaTest {
         return null;
     }
 
+    public List<Path> getAllTestFiles() {
+        //for now, just get main files
+        //TODO: fix this to be recursive
+        try {
+            File[] pathArray = Paths.get(this.getClass().getResource("/test-documents")
+                    .toURI()).toFile().listFiles();
+            List<Path> paths = new ArrayList<>();
+            for (File f : pathArray) {
+                paths.add(f.toPath());
+            }
+            return paths;
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
