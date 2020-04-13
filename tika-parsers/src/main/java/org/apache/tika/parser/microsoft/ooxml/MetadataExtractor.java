@@ -137,7 +137,10 @@ public class MetadataExtractor {
         setProperty(metadata, OfficeOpenXMLExtended.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
         setProperty(metadata, OfficeOpenXMLExtended.TEMPLATE, propsHolder.getTemplate());
         setProperty(metadata, OfficeOpenXMLExtended.TOTAL_TIME, totalTime);
-
+        int docSecurityFlag = propsHolder.getDocSecurity();
+        setProperty(metadata, OfficeOpenXMLExtended.DOC_SECURITY, docSecurityFlag);
+        setProperty(metadata, OfficeOpenXMLExtended.DOC_SECURITY_STRING,
+                getDocSecurityString(docSecurityFlag));
         if (propsHolder.getPages() > 0) {
             metadata.set(PagedText.N_PAGES, propsHolder.getPages());
         } else if (propsHolder.getSlides() > 0) {
@@ -169,6 +172,25 @@ public class MetadataExtractor {
         setProperty(metadata, MSOffice.WORD_COUNT, propsHolder.getWords());
         setProperty(metadata, MSOffice.CHARACTER_COUNT, propsHolder.getCharacters());
         setProperty(metadata, MSOffice.CHARACTER_COUNT_WITH_SPACES, propsHolder.getCharactersWithSpaces());
+    }
+
+    private String getDocSecurityString(int docSecurityFlag) {
+        //mappings from: https://exiftool.org/TagNames/OOXML.html and
+        //https://docs.microsoft.com/en-us/dotnet/api/documentformat.openxml.extendedproperties.documentsecurity?view=openxml-2.8.1
+        switch(docSecurityFlag) {
+            case 0:
+                return OfficeOpenXMLExtended.SECURITY_NONE;
+            case 1:
+                return OfficeOpenXMLExtended.SECURITY_PASSWORD_PROTECTED;
+            case 2:
+                return OfficeOpenXMLExtended.SECURITY_READ_ONLY_RECOMMENDED;
+            case 4:
+                return OfficeOpenXMLExtended.SECURITY_READ_ONLY_ENFORCED;
+            case 8:
+                return OfficeOpenXMLExtended.SECURITY_LOCKED_FOR_ANNOTATIONS;
+            default:
+                return OfficeOpenXMLExtended.SECURITY_UNKNOWN;
+        }
     }
 
     private void extractMetadata(POIXMLProperties.CustomProperties properties,
