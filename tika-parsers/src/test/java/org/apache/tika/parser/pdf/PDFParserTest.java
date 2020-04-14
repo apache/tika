@@ -1512,6 +1512,16 @@ public class PDFParserTest extends TikaTest {
 
     }
 
+    @Test
+    public void testNPEInPDFParserConfig() {
+        //TIKA-3091
+        PDFParserConfig config = new PDFParserConfig();
+        //don't care about values; want to make sure no NPE is thrown
+        String txt = config.toString();
+        config.hashCode();
+        config.equals(new PDFParserConfig());
+    }
+
     @Test //TIKA-3041
     @Ignore("turn back on if we add file from PDFBOX-52")
     public void testPDFBox52() throws Exception {
