@@ -524,6 +524,17 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    void setAverageCharTolerance(float averageCharTolerance) {
+        defaultConfig.setAverageCharTolerance(averageCharTolerance);
+    }
+
+    @Field
+    void setSpacingTolerance(float spacingTolerance) {
+        defaultConfig.setSpacingTolerance(spacingTolerance);
+    }
+
+
+    @Field
     void setCatchIntermediateExceptions(boolean catchIntermediateExceptions) {
         defaultConfig.setCatchIntermediateIOExceptions(catchIntermediateExceptions);
     }
