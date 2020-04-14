@@ -19,12 +19,11 @@ package org.apache.tika.eval.batch;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,9 +40,13 @@ import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.util.PropsUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class EvalConsumerBuilder {
-    private AtomicInteger count = new AtomicInteger(0);
+
+    private static final Logger LOG = LoggerFactory.getLogger(EvalConsumerBuilder.class);
+
     protected ArrayBlockingQueue<FileResource> queue;
     Map<String, String> localAttrs;
     JDBCUtil dbUtil;
@@ -75,7 +78,7 @@ public abstract class EvalConsumerBuilder {
         //step 3. create mime buffer
         this.mimeBuffer = new MimeBuffer(dbUtil.getConnection(), TikaConfig.getDefaultConfig());
 
-        //step 4. populate the reference tabless
+        //step 4. populate the reference tables
         populateRefTables();
 
         return mimeBuffer;
@@ -100,21 +103,27 @@ public abstract class EvalConsumerBuilder {
     protected abstract void addErrorLogTablePairs(DBConsumersManager manager);
 
     public void populateRefTables() throws IOException, SQLException {
-        //test for one ref table.  If it exists, don't populate ref tables
-        //TODO: test one at a time
-        boolean tableExists = false;
+        boolean refTablesPopulated = true;
         try (Connection connection = dbUtil.getConnection()) {
-            Set<String> tables = dbUtil.getTables(connection);
-            if (tables.contains(
-                    AbstractProfiler.REF_PARSE_ERROR_TYPES.getName().toLowerCase(Locale.US)
-            )) {
-                tableExists = true;
+            for (TableInfo tableInfo : getRefTableInfos()) {
+                int rows = 0;
+                try (ResultSet rs = connection.createStatement().executeQuery("select * from "+
+                        tableInfo.getName())) {
+                    while (rs.next()) {
+                        rows++;
+                    }
+                }
+                if (rows == 0) {
+                    refTablesPopulated = false;
+                    break;
+                }
+
             }
         } catch (SQLException e) {
             //swallow
         }
-
-        if (tableExists) {
+        if (refTablesPopulated) {
+            LOG.info("ref tables are already populated");
             return;
         }
 
