@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import org.apache.commons.compress.compressors.deflate.DeflateParameters;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.poi.hpsf.Property;
 import org.apache.poi.hpsf.PropertySet;
@@ -261,7 +262,6 @@ public class HwpTextExtractorV5 implements Serializable {
             if (entry.getName().startsWith("Section")
                     && entry instanceof DocumentEntry) {
                 LOG.debug("extract {}", entry.getName());
-
                 InputStream input = new DocumentInputStream(
                         (DocumentEntry) entry);
 
@@ -384,7 +384,7 @@ public class HwpTextExtractorV5 implements Serializable {
      */
     private void parse(HwpStreamReader reader, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
-        StringBuffer buf = new StringBuffer(1024);
+        StringBuilder buf = new StringBuilder();
         TagInfo tag = new TagInfo();
 
         while (true) {
@@ -421,7 +421,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws IOException
      */
     private void writeParaText(HwpStreamReader reader, long datasize,
-                               StringBuffer buf) throws IOException {
+                               StringBuilder buf) throws IOException {
         int[] chars = reader.uint16((int) (datasize / 2));
 
         for (int index = 0; index < chars.length; index++) {

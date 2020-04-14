@@ -18,13 +18,19 @@ package org.apache.tika.parser.hwp;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.commons.io.filefilter.RegexFileFilter;
+import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.junit.Test;
 
-public class HwpV5ParserTest extends TikaTest {
+import java.nio.file.Paths;
+
+public class HwpV5ParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testHwpV5Parser() throws Exception {
@@ -64,5 +70,16 @@ public class HwpV5ParserTest extends TikaTest {
         assertContains("test", content);
         assertEquals("next1009", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("\uD14C\uC2A4\uD2B8", metadata.get(TikaCoreProperties.TITLE));
+    }
+
+    @Test
+    public void testMultiThreadedSkipFully() throws Exception {
+        //TIKA-3092
+        int numThreads = 2;
+        int numIterations = 50;
+        ParseContext[] parseContexts = new ParseContext[numThreads];
+
+        testMultiThreaded(new RecursiveParserWrapper(AUTO_DETECT_PARSER), parseContexts, numThreads, numIterations,
+                new RegexFileFilter(".*\\.hwp"));
     }
 }

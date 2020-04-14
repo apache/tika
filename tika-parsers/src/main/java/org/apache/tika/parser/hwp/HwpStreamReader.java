@@ -24,6 +24,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
 
 public class HwpStreamReader {
+    private byte[] skipBuffer = new byte[4096];
     private InputStream input;
     private byte[] buf;
 
@@ -32,15 +33,6 @@ public class HwpStreamReader {
         buf = new byte[4];
     }
 
-    /**
-     * More data to read ?
-     *
-     * @return
-     * @throws IOException
-     */
-    public boolean available() throws IOException {
-        return input.available() > 0;
-    }
 
     /**
      * unsigned 1 byte
@@ -129,6 +121,12 @@ public class HwpStreamReader {
      * @throws IOException
      */
     public void ensureSkip(long n) throws IOException {
-        IOUtils.skipFully(input, n);
+        //Leaving this for anyone who can figure out why this doesn't
+        //work.  See HwpV5ParserTest#testMultiThreadedSkipFully
+        //long skipped = org.apache.tika.io.IOUtils.skip(input, n);
+        long skipped = org.apache.tika.io.IOUtils.skip(input, n, skipBuffer);
+        if (skipped != n) {
+            throw new EOFException();
+        }
     }
 }
