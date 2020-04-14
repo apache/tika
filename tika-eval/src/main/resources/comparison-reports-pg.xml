@@ -25,24 +25,24 @@
     <before>
 
         <sql>drop table if exists md5_multiples_tmp_a</sql>
-        <sql>create table md5_multiples_tmp_a (MD5 char(32), cnt int)
+        <sql>create table md5_multiples_tmp_a (MD5, cnt)
             as
-            select md5, count(1) cnt
+            select md5, count(1) as cnt
             from profiles_a
             where md5 is not null
             group by md5
-            having cnt &gt; 1
+            having count(1) &gt; 1
             order by cnt desc
         </sql>
 
         <sql>drop table if exists md5_multiples_tmp_b</sql>
-        <sql>create table md5_multiples_tmp_b (MD5 char(32), cnt int)
+        <sql>create table md5_multiples_tmp_b (MD5, cnt)
             as
             select md5, count(1) cnt
             from profiles_b
             where md5 is not null
             group by md5
-            having cnt &gt; 1
+            having count(1) &gt; 1
             order by cnt desc
         </sql>
         <!-- build mime indexes -->
@@ -133,12 +133,12 @@
             create table token_counts_compared
             (mime_id_a integer,
             mime_id_b integer,
-            num_tokens_a long default 0,
-            num_tokens_b long default 0,
-            num_alphabetic_tokens_a long default 0,
-            num_alphabetic_tokens_b long default 0,
-            num_common_tokens_a long default 0,
-            num_common_tokens_b long default 0
+            num_tokens_a bigint default 0,
+            num_tokens_b bigint default 0,
+            num_alphabetic_tokens_a bigint default 0,
+            num_alphabetic_tokens_b bigint default 0,
+            num_common_tokens_a bigint default 0,
+            num_common_tokens_b bigint default 0
             );
         </sql>
         <sql>
@@ -674,7 +674,7 @@
             mime_id_b integer,
             total_a bigint,
             total_b bigint,
-            prcnt_increase double
+            prcnt_increase double precision
             );
         </sql>
             <sql>
@@ -913,7 +913,7 @@
             join mimes m on m.mime_id=p.mime_id
             join ref_parse_exception_types r on
             r.parse_exception_id=e.parse_exception_id
-            group by p.mime_id, parse_exception_description
+            group by m.mime_string, parse_exception_description
             order by MIME_TYPE, EXCEPTION_TYPE
         </sql>
     </report>
@@ -932,7 +932,7 @@
             join mimes m on m.mime_id=p.mime_id
             join ref_parse_exception_types r on
             r.parse_exception_id=e.parse_exception_id
-            group by p.mime_id, parse_exception_description
+            group by m.mime_string, parse_exception_description
             order by MIME_TYPE, EXCEPTION_TYPE
         </sql>
     </report>
@@ -963,7 +963,7 @@
             left join exceptions_a ea on ca.id = ea.id
             where eb.orig_stack_trace is not null
             and ea.orig_stack_trace is null
-            order by ca.num_common_tokens - ifnull(cb.num_common_tokens,0) desc
+            order by ca.num_common_tokens - coalesce(cb.num_common_tokens,0) desc
         </sql>
     </report>
 
@@ -1004,7 +1004,7 @@
             from exceptions_a ea
             left join exceptions_b eb on ea.id = eb.id
             join profiles_a pa on pa.id=ea.id
-            join profiles_b pb on pb.id=pa.id //this ensures that files were actually processed in both runs
+            join profiles_b pb on pb.id=pa.id --this ensures that files were actually processed in both runs
             join containers c on pa.container_id=c.container_id
             join mimes ma on ma.mime_id=pa.mime_id
             join mimes mb on mb.mime_id=pb.mime_id
@@ -1211,7 +1211,7 @@
             from exceptions_a e
             join ref_parse_exception_types t on
             t.parse_exception_id=e.parse_exception_id
-            group by e.parse_exception_id
+            group by t.parse_exception_description
         </sql>
     </report>
     <report reportName="parseExceptionTypesB"
@@ -1223,7 +1223,7 @@
             from exceptions_b e
             join ref_parse_exception_types t on
             t.parse_exception_id=e.parse_exception_id
-            group by e.parse_exception_id
+            group by t.parse_exception_description
         </sql>
     </report>
 
@@ -1245,8 +1245,8 @@
             ca.num_common_tokens as NUM_COMMON_TOKENS_A,
             cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
             cb.num_common_tokens as NUM_COMMON_TOKENS_B,
-            ifnull(cb.num_common_tokens,0)-
-            ifnull(ca.num_common_tokens, 0) as NUM_COMMON_TOKENS_DIFF_IN_B,
+            coalesce(cb.num_common_tokens,0)-
+            coalesce(ca.num_common_tokens, 0) as NUM_COMMON_TOKENS_DIFF_IN_B,
             ca.top_n_tokens as TOP_N_TOKENS_A,
             cb.top_n_tokens as TOP_N_TOKENS_B,
             ca.unicode_char_blocks as UNICODE_CHAR_BLOCKS_A,
@@ -1295,8 +1295,8 @@
             ca.num_common_tokens as NUM_COMMON_TOKENS_A,
             cb.common_tokens_lang as COMMON_TOKENS_LANG_B,
             cb.num_common_tokens as NUM_COMMON_TOKENS_B,
-            ifnull(cb.num_common_tokens,0)-
-            ifnull(ca.num_common_tokens, 0) as NUM_COMMON_TOKENS_DIFF_IN_B,
+            coalesce(cb.num_common_tokens,0)-
+            coalesce(ca.num_common_tokens, 0) as NUM_COMMON_TOKENS_DIFF_IN_B,
             ca.top_n_tokens as TOP_N_TOKENS_A,
             cb.top_n_tokens as TOP_N_TOKENS_B,
             ca.unicode_char_blocks as UNICODE_CHAR_BLOCKS_A,
@@ -1332,7 +1332,7 @@
             num_tokens_a, num_tokens_b,
             num_alphabetic_tokens_a, num_alphabetic_tokens_b,
             num_common_tokens_a, num_common_tokens_b,
-            ifnull(num_common_tokens_b, 0)-ifnull(num_common_tokens_a, 0) as change_in_common_tokens_b
+            coalesce(num_common_tokens_b, 0)-coalesce(num_common_tokens_a, 0) as change_in_common_tokens_b
             from token_counts_compared tcc
             join mimes ma on tcc.mime_id_a = ma.mime_id
             join mimes mb on tcc.mime_id_b = mb.mime_id
