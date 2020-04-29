@@ -556,6 +556,12 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- TIKA-3095: Required for grib -->
+    <dependency>
+	  <groupId>net.jcip</groupId>
+	  <artifactId>jcip-annotations</artifactId>
+	  <version>1.0</version>
+	</dependency>
     <!-- TIKA-3052 -->
     <dependency>
       <groupId>com.beust</groupId>
