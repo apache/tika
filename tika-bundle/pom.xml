@@ -187,7 +187,7 @@
               vorbis-java-tika|
               isoparser|
               metadata-extractor|
-              xmpcore|
+              xmpcore-shaded|
               json-simple|
               boilerpipe|
               rome|
@@ -212,7 +212,9 @@
               jcip-annotations|
               jmatio|
               guava|
-              age-predictor-api</Embed-Dependency>
+              age-predictor-api|
+              SparseBitSet
+            </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Export-Package>
@@ -258,7 +260,6 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
-              com.zaxxer.sparsebits;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,

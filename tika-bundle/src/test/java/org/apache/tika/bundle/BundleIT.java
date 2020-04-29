@@ -282,4 +282,23 @@ public class BundleIT {
         assertTrue(content.contains("testXML.xml"));
         assertTrue(content.contains("Rida Benjelloun"));
     }
+    
+    @Test
+    public void testPoiTikaBundle() throws Exception {
+        Tika tika = new Tika();
+
+        // Package extraction
+        ContentHandler handler = new BodyContentHandler();
+
+        Parser parser = tika.getParser();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+
+        try (InputStream stream = TikaInputStream.get(Paths.get("src/test/resources/testPPT.pptx"))) {
+            parser.parse(stream, handler, new Metadata(), context);
+        }
+
+        String content = handler.toString();
+        assertTrue(content.contains("Attachment Test"));
+    }
 }
