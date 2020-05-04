@@ -122,6 +122,8 @@ public class FuzzingCLI {
 
             String[] args = new String[] {
                     "java",
+                    "-XX:-OmitStackTraceInFastThrow",
+                    "-Xmx"+config.xmx,
                     "-ea",
                     "-cp",
                     ProcessUtils.escapeCommandLine(cp),
@@ -210,7 +212,9 @@ public class FuzzingCLI {
                     LOG.info("hit maxfiles; file crawler is stopping early");
                     return FileVisitResult.TERMINATE;
                 }
-
+                if (!file.getFileName().toString().contains("sas7bdat")) {
+                    return FileVisitResult.CONTINUE;
+                }
                 try {
                     boolean offered = queue.offer(file, 10, TimeUnit.MINUTES);
                     if (offered) {

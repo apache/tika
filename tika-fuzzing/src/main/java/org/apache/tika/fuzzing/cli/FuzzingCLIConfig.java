@@ -37,6 +37,8 @@ public class FuzzingCLIConfig {
 
     private static final int DEFAULT_RETRIES = 2;
 
+    private static final String DEFAULT_XMX = "512m";
+
     static Options OPTIONS;
     static {
         //By the time this commandline is parsed, there should be both an extracts and an inputDir
@@ -81,6 +83,12 @@ public class FuzzingCLIConfig {
                         .hasArg(true)
                         .required(false)
                         .build())
+                .addOption(Option.builder("x")
+                        .longOpt("xmx")
+                        .desc("e.g. 1G, max heap appended to -Xmx in the child process")
+                        .hasArg(true)
+                        .required(false)
+                        .build())
                 .addOption(Option.builder("r")
                         .longOpt("retries")
                         .desc("number of times to retry a seed file if there's a catastrophic failure")
@@ -111,6 +119,9 @@ public class FuzzingCLIConfig {
         config.retries = (commandLine.hasOption("r")) ?
                 Integer.parseInt(commandLine.getOptionValue("r")) :
                 DEFAULT_RETRIES;
+        config.xmx = (commandLine.hasOption("x")) ?
+                commandLine.getOptionValue("x") :
+                DEFAULT_XMX;
         return config;
     }
 
@@ -126,6 +137,9 @@ public class FuzzingCLIConfig {
 
     //times to retry a seed file after a catastrophic failure
     int retries;
+
+    //xmx for child process, e.g. 512m or 1G
+    String xmx;
     Path inputDir;
     Path outputDir;
 
