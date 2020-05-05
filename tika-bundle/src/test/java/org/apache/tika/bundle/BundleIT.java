@@ -45,6 +45,8 @@ import javax.inject.Inject;
 import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -56,6 +58,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -67,6 +70,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
@@ -301,4 +305,57 @@ public class BundleIT {
         String content = handler.toString();
         assertTrue(content.contains("Attachment Test"));
     }
+
+    @Test
+    @Ignore
+    public void testAll() throws Exception {
+        Tika tika = new Tika();
+
+        // Package extraction
+        ContentHandler handler = new BodyContentHandler();
+
+        Parser parser = tika.getParser();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+        Metadata metadata = new Metadata();
+        Set<String> needToFix = new HashSet<>();
+        needToFix.add("testAccess2_encrypted.accdb");
+
+        Set<String> unknownProblem = new HashSet<>();
+        //these all trigger org.apache.tika.metadata.PropertyTypeException
+        //which for some reason we can't catch (?!)
+        //We don't see problems with these files in tika-parsers?!
+/*        unknownProblem.add("testPPT_embedded_two_slides.pptx");
+        unknownProblem.add("testWORD_multi_authors.docx");
+        unknownProblem.add("testEXCEL_embeded.xlsx");
+        unknownProblem.add("testVORBIS.ogg");
+        unknownProblem.add("testWORD_2006ml.docx");
+        unknownProblem.add("testRTFEmbeddedLink.rtf");*/
+        System.out.println(getTestDir());
+        for (File f : getTestDir().listFiles()) {
+            if (f.isDirectory()) {
+                continue;
+            }
+            if (needToFix.contains(f.getName()) || unknownProblem.contains(f.getName())) {
+                continue;
+            }
+            System.out.println("about to parse "+f);
+            try (InputStream is = TikaInputStream.get(f)) {
+                parser.parse(is, handler, metadata, context);
+            } catch (EncryptedDocumentException e) {
+                //swallow
+            } catch (SAXException e) {
+                //
+            } catch (TikaException e) {
+                System.err.println("tika Exception "+f.getName());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private File getTestDir() {
+        return new File("../tika-parsers/src/test/resources/test-documents");
+    }
+
+
 }
