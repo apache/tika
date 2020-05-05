@@ -178,7 +178,6 @@
               xmlbeans|
               jackcess|
               jackcess-encrypt|
-              commons-lang|
               commons-lang3|
               tagsoup|
               asm|
@@ -192,6 +191,7 @@
               boilerpipe|
               rome|
               rome-utils|
+              jdom2|
               sentiment-analysis-parser|
               opennlp-tools|
               geoapi|
@@ -372,6 +372,7 @@
               org.jaxen.dom4j;resolution:=optional,
               org.jaxen.pattern;resolution:=optional,
               org.jaxen.saxpath;resolution:=optional,
+              org.jaxen.util;resolution:=optional,
               org.jdom;resolution:=optional,
               org.jdom.input;resolution:=optional,
               org.jdom.output;resolution:=optional,
