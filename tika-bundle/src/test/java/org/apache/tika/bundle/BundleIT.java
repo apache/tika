@@ -24,6 +24,7 @@ import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.systemPackages;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -91,12 +92,14 @@ public class BundleIT {
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException, ClassNotFoundException {
     	File base = new File(TARGET, "test-bundles");
-        return options(
-        		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
-        		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
-        		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
-        		junitBundles(),
-        		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
+    	 return options(
+         		systemPackages("javax.xml.bind"),
+         		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
+         		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
+         		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+         		junitBundles(),
+         		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString())
+                 );
     }
 
     @Test
@@ -319,7 +322,7 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
         Set<String> needToFix = new HashSet<>();
-        needToFix.add("testAccess2_encrypted.accdb");
+        //needToFix.add("testAccess2_encrypted.accdb");
         System.out.println(getTestDir());
         for (File f : getTestDir().listFiles()) {
             if (f.isDirectory()) {
