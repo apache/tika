@@ -3315,6 +3315,7 @@
       <match value="bplist" type="string" offset="0"/>
     </magic>
   </mime-type>
+
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
@@ -3865,6 +3866,12 @@
     <_comment>LZMA compressed archive</_comment>
     <glob pattern="*.lzma"/>
   </mime-type>  
+
+  <mime-type type="application/x-memgraph">
+    <_comment>Apple Xcode Memgraph</_comment>
+	  <sub-class-of type="application/x-bplist"/>
+     <glob pattern="*.memgraph"/>
+  </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
     <acronym>MOBI</acronym>
