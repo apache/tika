@@ -3780,8 +3780,8 @@
 
   <mime-type type="application/x-memgraph">
     <_comment>Apple Xcode Memgraph</_comment>
-	  <sub-class-of type="application/x-bplist"/>
-     <glob pattern="*.memgraph"/>
+    <sub-class-of type="application/x-bplist"/>
+    <glob pattern="*.memgraph"/>
   </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
