@@ -160,6 +160,11 @@
       <version>${mime4j.version}</version>
     </dependency>
     <dependency>
+      <groupId>com.googlecode.plist</groupId>
+      <artifactId>dd-plist</artifactId>
+      <version>1.23</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>${commons.compress.version}</version>
