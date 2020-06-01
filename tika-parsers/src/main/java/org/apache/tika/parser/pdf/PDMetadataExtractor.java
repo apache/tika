@@ -36,6 +36,7 @@ import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.Property;
@@ -119,6 +120,8 @@ class PDMetadataExtractor {
         //add the elements from the basic schema if they haven't already
         //been extracted from dublin core
         setNotNull(XMP.CREATOR_TOOL, basic.getCreatorTool(), metadata);
+        setNotNull(DublinCore.TITLE, basic.getTitle(), metadata);
+        setNotNull(XMP.ABOUT, basic.getAbout(), metadata);
         setNotNull(XMP.LABEL, basic.getLabel(), metadata);
         try {
             setNotNull(XMP.CREATE_DATE, basic.getCreateDate(), metadata);
@@ -147,6 +150,8 @@ class PDMetadataExtractor {
         }
         setNotNull(XMP.NICKNAME, basic.getNickname(), metadata);
         setNotNull(XMP.RATING, basic.getRating(), metadata);
+        //TODO: find an example where basic.getThumbNail is not null
+        //and figure out how to add that info
     }
 
     private static void setNotNull(Property property, String value, Metadata metadata) {
