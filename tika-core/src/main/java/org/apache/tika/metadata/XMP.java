@@ -26,6 +26,14 @@ public interface XMP {
     String PREFIX_ = PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     /**
+     * An unordered array of text strings that unambiguously identify the resource
+     * within a given context. An array item may be qualified with xmpidq:Scheme
+     * (see 8.7, “xmpidq namespace”) to denote the formal identification system to
+     * which that identifier conforms.
+     */
+    Property ADVISORY = Property.externalTextBag(PREFIX_ + "Advisory");
+
+    /**
      * The date and time the resource was created. For a digital file, this need not
      * match a file-system creation time. For a freshly created resource, it should
      * be close to that time, modulo the time taken to write the file. Later file
@@ -49,7 +57,7 @@ public interface XMP {
     /**
      * A word or short phrase that identifies a resource as a member of a userdefined collection.
      */
-    Property LABEL = Property.externalDate(PREFIX_ + "Label");
+    Property LABEL = Property.externalText(PREFIX_ + "Label");
 
     /**
      * The date and time that any metadata for this resource was last changed. It
@@ -61,6 +69,11 @@ public interface XMP {
      * The date and time the resource was last modified.
      */
     Property MODIFY_DATE = Property.externalDate(PREFIX_ + "ModifyDate");
+
+    /**
+     * A word or short phrase that identifies a resource as a member of a userdefined collection.
+     */
+    Property NICKNAME = Property.externalText(PREFIX_ + "NickName");
 
     /**
      * A user-assigned rating for this file. The value shall be -1 or in the range
