@@ -1,5 +1,9 @@
 Release 1.24.1 - 4/17/2020
 
+   * Add a basic parser for plist files based on com.googlecode.plist:dd-plist (TIKA-3104).
+
+Release 1.24.1 - 4/17/2020
+
    * Allow gzip compression of input and output streams for tika-server (TIKA-3073).
 
 Release 1.24 - 3/11/2020

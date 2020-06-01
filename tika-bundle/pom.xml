@@ -199,6 +199,7 @@
               commons-io|
               commons-exec|
               commons-collections4|
+              dd-plist|
               junrar|
               pdfbox|
               pdfbox-tools|
@@ -280,6 +281,7 @@
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.impl;resolution:=optional,
               com.adobe.xmp.options;resolution:=optional,
+              com.dd.plist;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
