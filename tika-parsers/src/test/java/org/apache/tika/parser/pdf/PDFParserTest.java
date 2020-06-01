@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +57,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -1548,7 +1550,15 @@ public class PDFParserTest extends TikaTest {
         assertEquals(35, max);
     }
 
-
+    @Test
+    public void testXMPBasicSchema() throws Exception {
+        //TIKA-3101
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_XMPBasicSchema.pdf");
+        Metadata m = metadataList.get(0);
+        //these two fields derive from the basic schema in the XMP, not dublin core
+        assertEquals("Hewlett-Packard MFP", m.get(XMP.CREATOR_TOOL));
+        assertEquals("1998-08-29T13:53:15Z", m.get(XMP.CREATE_DATE));
+    }
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
@@ -1577,4 +1587,6 @@ public class PDFParserTest extends TikaTest {
             return true;
         }
     }
+
+
 }
