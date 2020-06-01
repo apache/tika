@@ -26,10 +26,12 @@ public interface XMP {
     String PREFIX_ = PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     /**
-     * An unordered array of text strings that unambiguously identify the resource
-     * within a given context. An array item may be qualified with xmpidq:Scheme
-     * (see 8.7, “xmpidq namespace”) to denote the formal identification system to
-     * which that identifier conforms.
+     * Unordered text strings of advisories.
+     */
+    Property ABOUT = Property.externalTextBag(PREFIX_ + "About");
+
+    /**
+     * Unordered text strings of advisories.
      */
     Property ADVISORY = Property.externalTextBag(PREFIX_ + "Advisory");
 
@@ -71,7 +73,7 @@ public interface XMP {
     Property MODIFY_DATE = Property.externalDate(PREFIX_ + "ModifyDate");
 
     /**
-     * A word or short phrase that identifies a resource as a member of a userdefined collection.
+     * A word or short phrase that represents the nick name fo the file
      */
     Property NICKNAME = Property.externalText(PREFIX_ + "NickName");
 
