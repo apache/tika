@@ -23,6 +23,8 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 
 public class PListParserTest extends TikaTest {
 
@@ -31,8 +33,12 @@ public class PListParserTest extends TikaTest {
         //test file is MIT licensed:
         // https://github.com/joeferner/node-bplist-parser/blob/master/test/iTunes-small.bplist
         List<Metadata> metadataList = getRecursiveMetadata("testBPList.bplist");
+        assertEquals(21, metadataList.size());
         Metadata m = metadataList.get(0);
         String content = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
-        assertContains("<div class=\"Application Version\">9.0.3</div>", content);
+        assertContains("<key>Application Version</key><string>9.0", content);
+
+        //TODO -- bad encoding right after this...smart quote?
+        assertContains("<string>90", content);
     }
 }

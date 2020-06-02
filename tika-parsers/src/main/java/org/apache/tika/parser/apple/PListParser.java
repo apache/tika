@@ -26,8 +26,9 @@ import com.dd.plist.NSSet;
 import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
-import com.lexicalscope.jewelcli.internal.cglib.asm.$MethodAdapter;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -41,30 +42,44 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Parser for Apple's plist and bplist.  This is a wrapper around
- *       <groupId>com.googlecode.plist</groupId>
- *       <artifactId>dd-plist</artifactId>
- *       <version>1.23</version>
+ *       com.googlecode.plist:dd-plist
  */
 public class PListParser extends AbstractParser {
 
+    private static final String ARR = "array";
+    private static final String DATA = "data";
+    private static final String DATE = "date";
+    private static final String DICT = "dict";
+    private static final String KEY = "key";
+    private static final String NUMBER = "number";
+    private static final String PLIST = "plist";
+    private static final String SET = "set";
+    private static final String STRING = "string";
+
+
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-bplist"));
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
 
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         NSObject rootObj = null;
         try {
             if (stream instanceof TikaInputStream && ((TikaInputStream) stream).hasFile()) {
@@ -76,47 +91,100 @@ public class PListParser extends AbstractParser {
             throw new TikaException("problem parsing root", e);
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        State state = new State(xhtml, metadata, embeddedDocumentExtractor, df);
         xhtml.startDocument();
-        parseObject(rootObj, xhtml, metadata);
+        xhtml.startElement(PLIST);
+        parseObject(rootObj, state);
+        xhtml.endElement(PLIST);
         xhtml.endDocument();
     }
 
-    private void parseObject(NSObject obj, XHTMLContentHandler handler, Metadata metadata)
-            throws SAXException {
+    private void parseObject(NSObject obj, State state)
+            throws SAXException, IOException {
 
         if (obj instanceof NSDictionary) {
-            parseDict((NSDictionary)obj, handler, metadata);
+            parseDict((NSDictionary)obj, state);
         } else if (obj instanceof NSArray) {
             NSArray nsArray = (NSArray)obj;
+            state.xhtml.startElement(ARR);
             for (NSObject child : nsArray.getArray()) {
-                parseObject(child, handler, metadata);
+                parseObject(child, state);
             }
+            state.xhtml.endElement(ARR);
         } else if (obj instanceof NSString) {
-            handler.characters(((NSString)obj).toString());
+            state.xhtml.startElement(STRING);
+            state.xhtml.characters(((NSString)obj).getContent());
+            state.xhtml.endElement(STRING);
         } else if (obj instanceof NSNumber) {
-            handler.characters(((NSNumber) obj).toString());
+            state.xhtml.startElement(NUMBER);
+            state.xhtml.characters(((NSNumber) obj).toString());
+            state.xhtml.endElement(NUMBER);
         } else if (obj instanceof NSData) {
-            handleData((NSData) obj, handler, metadata);
+            state.xhtml.startElement(DATA);
+            handleData((NSData) obj, state);
+            state.xhtml.endElement(DATA);
         } else if (obj instanceof NSDate) {
-            handler.characters(((NSDate)obj).toString());
-        } else{
-            throw new UnsupportedOperationException("don't know baout: "+obj.getClass());
-
+            state.xhtml.startElement(DATE);
+            String dateString = state.dateFormat.format(((NSDate)obj).getDate());
+            state.xhtml.characters(dateString);
+            state.xhtml.endElement(DATE);
+        } else if (obj instanceof NSSet) {
+            state.xhtml.startElement(SET);
+            parseSet((NSSet)obj, state);
+            state.xhtml.endElement(SET);
+        } else {
+            throw new UnsupportedOperationException("don't yet support this type of object: "+obj.getClass());
         }
     }
 
-    private void parseDict(NSDictionary obj, XHTMLContentHandler xhtml, Metadata metadata) throws SAXException {
+    private void parseSet(NSSet obj, State state)
+            throws SAXException, IOException {
+        state.xhtml.startElement(SET);
+        for (NSObject child : obj.allObjects()) {
+            parseObject(child, state);
+        }
+        state.xhtml.endElement(SET);
+    }
+
+    private void parseDict(NSDictionary obj, State state)
+            throws SAXException, IOException {
+        state.xhtml.startElement(DICT);
         for (Map.Entry<String, NSObject> mapEntry : obj.getHashMap().entrySet()) {
             String key = mapEntry.getKey();
             NSObject value = mapEntry.getValue();
-            xhtml.startElement("div", "class", key);
-            parseObject(value, xhtml, metadata);
-            xhtml.endElement("div");
+            state.xhtml.element(KEY, key);
+            parseObject(value, state);
+        }
+        state.xhtml.endElement(DICT);
+    }
+
+    private void handleData(NSData value, State state) throws IOException,
+            SAXException {
+        state.xhtml.characters(value.getBase64EncodedData());
+        Metadata embeddedMetadata = new Metadata();
+        if (! state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+            return;
+        }
+
+        try (TikaInputStream tis = TikaInputStream.get(value.bytes())) {
+            state.embeddedDocumentExtractor.parseEmbedded(tis, state.xhtml, embeddedMetadata, false);
         }
     }
 
-    private void handleData(NSData value, XHTMLContentHandler handler, Metadata metadata) {
-        byte[] bytes = value.bytes();
-        //TODO handle embedded file
+    private static class State {
+        final XHTMLContentHandler xhtml;
+        final Metadata metadata;
+        final EmbeddedDocumentExtractor embeddedDocumentExtractor;
+        final DateFormat dateFormat;
+
+        public State(XHTMLContentHandler xhtml,
+                     Metadata metadata,
+                     EmbeddedDocumentExtractor embeddedDocumentExtractor,
+                     DateFormat df) {
+            this.xhtml = xhtml;
+            this.metadata = metadata;
+            this.embeddedDocumentExtractor = embeddedDocumentExtractor;
+            this.dateFormat = df;
+        }
     }
 }
