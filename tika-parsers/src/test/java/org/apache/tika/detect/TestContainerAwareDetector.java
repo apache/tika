@@ -564,4 +564,11 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertEquals("application/vnd.oasis.opendocument.presentation",
                 metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
+
+    @Test
+    public void testBPList() throws Exception {
+        assertTypeByData("testMemgraph.memgraph", "application/x-memgraph");
+        assertTypeByData("testWEBARCHIVE.webarchive", "application/x-webarchive");
+        assertTypeByData("testBPList.bplist", "application/x-itunes-bplist");
+    }
 }

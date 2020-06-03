@@ -26,6 +26,7 @@ import com.dd.plist.NSSet;
 import com.dd.plist.NSString;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
+import com.dd.plist.UID;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -54,7 +55,7 @@ import java.util.Set;
  * Parser for Apple's plist and bplist.  This is a wrapper around
  *       com.googlecode.plist:dd-plist
  */
-public class PListParser extends AbstractParser {
+public class BPListParser extends AbstractParser {
 
     private static final String ARR = "array";
     private static final String DATA = "data";
@@ -65,6 +66,7 @@ public class PListParser extends AbstractParser {
     private static final String PLIST = "plist";
     private static final String SET = "set";
     private static final String STRING = "string";
+    private static final String UID = "uid";
 
 
     private static final Set<MediaType> SUPPORTED_TYPES =
@@ -82,14 +84,22 @@ public class PListParser extends AbstractParser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US);
         NSObject rootObj = null;
-        try {
-            if (stream instanceof TikaInputStream && ((TikaInputStream) stream).hasFile()) {
-                rootObj = PropertyListParser.parse(((TikaInputStream) stream).getFile());
-            } else {
-                rootObj = PropertyListParser.parse(stream);
+        //if this already went through the PListDetector,
+        //there should be an NSObject in the open container
+        if (stream instanceof TikaInputStream) {
+            rootObj = (NSObject) ((TikaInputStream)stream).getOpenContainer();
+        }
+
+        if (rootObj == null) {
+            try {
+                if (stream instanceof TikaInputStream && ((TikaInputStream) stream).hasFile()) {
+                    rootObj = PropertyListParser.parse(((TikaInputStream) stream).getFile());
+                } else {
+                    rootObj = PropertyListParser.parse(stream);
+                }
+            } catch (PropertyListFormatException | ParseException | ParserConfigurationException e) {
+                throw new TikaException("problem parsing root", e);
             }
-        } catch (PropertyListFormatException|ParseException|ParserConfigurationException e) {
-            throw new TikaException("problem parsing root", e);
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         State state = new State(xhtml, metadata, embeddedDocumentExtractor, df);
@@ -133,8 +143,13 @@ public class PListParser extends AbstractParser {
             state.xhtml.startElement(SET);
             parseSet((NSSet)obj, state);
             state.xhtml.endElement(SET);
+        } else if (obj instanceof UID) {
+            //do we want to do anything with obj.getBytes()
+            state.xhtml.element(UID, ((UID)obj).getName());
         } else {
-            throw new UnsupportedOperationException("don't yet support this type of object: "+obj.getClass());
+            throw new UnsupportedOperationException(
+                    "don't yet support this type of object: "+obj.getClass() +
+                    " Please open an issue on our tracker");
         }
     }
 

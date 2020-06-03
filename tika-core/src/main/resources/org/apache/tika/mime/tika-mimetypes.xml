@@ -3791,6 +3791,11 @@
     <glob pattern="*.iso"/>
   </mime-type>
 
+  <mime-type type="application/x-itunes-bplist">
+    <_comment>Apple iTunes Binary Property List</_comment>
+    <sub-class-of type="application/x-bplist"/>
+  </mime-type>
+
   <mime-type type="application/x-itunes-ipa">
     <sub-class-of type="application/zip"/>
     <_comment>Apple iOS IPA AppStore file</_comment>
