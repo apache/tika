@@ -146,6 +146,13 @@
     <glob pattern="*.cu"/>
   </mime-type>
   <mime-type type="application/cybercash"/>
+  <mime-type type="application/dash+xml">
+	  <glob pattern="*.mpd" />
+	    <magic>
+        <match value="&lt;MPD" type="string" offset="0"/>
+      </magic>
+      <sub-class-of type="application/xml"/>
+	</mime-type>
   <mime-type type="application/davmount+xml">
     <glob pattern="*.davmount"/>
   </mime-type>
@@ -1045,6 +1052,12 @@
     <root-XML localName="presentation" namespaceURI="http://developer.apple.com/namespaces/keynote2" />
     <sub-class-of type="application/vnd.apple.iwork" />
     <glob pattern="*.key"/>
+  </mime-type>
+  <mime-type type="application/vnd.apple.mpegurl">
+    <glob pattern="*.m3u8" />
+    <magic>
+      <match value="#EXTM3U" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.apple.pages">
     <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/sl" />
@@ -7229,6 +7242,10 @@
   <mime-type type="video/h263-2000"/>
   <mime-type type="video/h264">
     <glob pattern="*.h264"/>
+  </mime-type>
+  <mime-type type="video/iso.segment">
+    <glob pattern="*.m4s" />
+    <sub-class-of type="video/quicktime" />
   </mime-type>
   <mime-type type="video/jpeg">
     <glob pattern="*.jpgv"/>
