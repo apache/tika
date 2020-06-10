@@ -153,7 +153,7 @@ public class FuzzingCLI {
                 LOG.warn("problem starting process", e);
             }
             try {
-                long totalTime = 2*config.getTimeoutMs()+config.getPerFileIterations();
+                long totalTime = 2 * config.getTimeoutMs() * config.getPerFileIterations();
                 success = process.waitFor(totalTime, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 LOG.warn("problem waiting for process to finish", e);
