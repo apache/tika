@@ -206,6 +206,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             supportedTypes = embeddedParser.getSupportedTypes(context);
         }
 
+        if (supportedTypes == null || supportedTypes.size() == 0) {
+            return;
+        }
+
         if (supportedTypes.contains(XMP_MEDIA_TYPE)) {
             //try the main metadata
             if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
