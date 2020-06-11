@@ -6102,6 +6102,7 @@
         <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
         <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
         <match value="\nSubject:" type="string" offset="0:8192"/>
+        <match value="\nReceived:" type="string" offset="0:8192"/>
         <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
       </match>
       <match value="DKIM-" type="string" offset="0">
@@ -6109,6 +6110,15 @@
         <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
         <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
         <match value="\nSubject:" type="string" offset="0:8192"/>
+        <match value="\nReceived:" type="string" offset="0:8192"/>
+        <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
+      </match>
+      <match value="ARC-" type="string" offset="0">
+        <match value="\nMessage-ID:" type="string" offset="0:8192"/>
+        <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nSubject:" type="string" offset="0:8192"/>
+        <match value="\nReceived:" type="string" offset="0:8192"/>
         <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
       </match>
     </magic>
