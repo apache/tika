@@ -4099,7 +4099,12 @@
       <match value="0x43444601" type="string" offset="0"/>
     </magic>
   </mime-type>
-
+  <mime-type type="application/x-parquet">
+    <glob pattern="*.parquet"/>
+    <magic priority="50">
+      <match value="PAR1" type="string" offset="0" />
+    </magic>
+  </mime-type>
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
