@@ -758,9 +758,6 @@ public class TikaInputStream extends TaggedInputStream {
             skipBuffer = new byte[4096];
         }
         long n = IOUtils.skip(super.in, ln, skipBuffer);
-        if (n != ln) {
-            throw new IOException("tried to skip "+ln + " but actually skipped: "+n);
-        }
         position += n;
         return n;
     }
