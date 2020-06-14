@@ -649,5 +649,31 @@ public class WordParserTest extends TikaTest {
         //TIKA-2459
         assertContains("Paragraph one", getXML("testWORD_specialControlCharacter1415.doc").xml);
     }
+
+    @Test
+    public void testSuperscriptSubscript() throws Exception {
+        // TIKA-3008
+        // old Word format
+        String xml = getXML("testWORD_TIKA-3008.doc").xml;
+        // test proper sup/sub tags
+        assertContains("Article 5<sup>1</sup>", xml);
+        assertContains("water is H<sub>2</sub>O", xml);
+        assertContains("Article 7<sup>3</sup>", xml);
+        assertContains("oxygen is O<sub>2</sub>", xml);
+        // test against merged character runs
+        assertNotContained("H2O", xml);
+        assertNotContained("O2", xml);
+
+        // new Word format
+        xml = getXML("testWORD_TIKA-3008.docx").xml;
+        assertContains("Article 5<sup>1</sup>", xml);
+        assertContains("water is H<sub>2</sub>O", xml);
+        assertContains("Article 7<sup>3</sup>", xml);
+        assertContains("oxygen is O<sub>2</sub>", xml);
+        // test against merged character runs
+        assertNotContained("H2O", xml);
+        assertNotContained("O2", xml);
+    }
+
 }
 

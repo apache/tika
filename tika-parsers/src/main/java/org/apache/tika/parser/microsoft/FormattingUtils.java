@@ -19,7 +19,11 @@ package org.apache.tika.parser.microsoft;
 import org.apache.poi.wp.usermodel.CharacterRun;
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTStyle;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STVerticalAlignRun;
 import org.xml.sax.SAXException;
 
 import java.util.Deque;
@@ -83,10 +87,41 @@ public class FormattingUtils {
             if (xwpfRun.getUnderline() != UnderlinePatterns.NONE) {
                 tags.add(Tag.U);
             }
+            // Sup/Sub on style that is applied to the character run
+            XWPFStyles documentStyles = xwpfRun.getParent().getDocument().getStyles();
+            String crStyle = xwpfRun.getStyle();// can be empty string
+            XWPFStyle style = documentStyles.getStyle(crStyle);
+            if(style!=null) {
+                CTStyle crCTStyle = style.getCTStyle();
+                STVerticalAlignRun.Enum vertAlign = crCTStyle.getRPr().getVertAlign().getVal();
+                if (vertAlign == STVerticalAlignRun.SUPERSCRIPT) {
+                    tags.add(Tag.SUP);
+                }
+                if (vertAlign == STVerticalAlignRun.SUBSCRIPT) {
+                    tags.add(Tag.SUB);
+                }
+            }
+            // Sup/Sub on actual character run
+            if (xwpfRun.getVerticalAlignment() == STVerticalAlignRun.SUPERSCRIPT) {
+                tags.add(Tag.SUP);
+            }
+            if (xwpfRun.getVerticalAlignment() == STVerticalAlignRun.SUBSCRIPT) {
+                tags.add(Tag.SUB);
+            }
         } else if(run instanceof org.apache.poi.hwpf.usermodel.CharacterRun) {
             org.apache.poi.hwpf.usermodel.CharacterRun hwpfRun = (org.apache.poi.hwpf.usermodel.CharacterRun) run;
             if (hwpfRun.getUnderlineCode() != 0) {
                 tags.add(Tag.U);
+            }
+            // CHPAbstractType.java protected fields:
+            // protected final static byte ISS_NONE = 0;
+            // protected final static byte ISS_SUPERSCRIPTED = 1;
+            // protected final static byte ISS_SUBSCRIPTED = 2;
+            if (hwpfRun.getSubSuperScriptIndex() == 1) {
+                tags.add(Tag.SUP);
+            }
+            if (hwpfRun.getSubSuperScriptIndex() == 2) {
+                tags.add(Tag.SUB);
             }
         }
         return tags;
@@ -95,7 +130,7 @@ public class FormattingUtils {
     public enum Tag {
         // DON'T reorder elements to avoid breaking tests: EnumSet is iterated in natural order
         // as enum variants are declared
-        B, I, S, U;
+        B, I, S, U, SUP, SUB;
 
         public String tagName() {
             return name().toLowerCase(Locale.ROOT);
