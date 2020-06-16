@@ -339,9 +339,9 @@ public class XMLReaderUtils implements Serializable {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            LOG.warn("Transformer Attribute unsupported: {}", attribute, e);
+            LOG.log(Level.WARNING, "Transformer Attribute unsupported: " + attribute, e);
         } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set Transformer attribute because outdated XML parser in classpath: {}", attribute, ame);
+            LOG.log(Level.WARNING, attribute, ame);
         }
     }
 
