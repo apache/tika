@@ -22,7 +22,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 import java.io.ByteArrayInputStream;
@@ -38,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -150,11 +150,9 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
     public void read(Document document) throws MimeTypeException {
         try {
-            TransformerFactory factory = TransformerFactory.newInstance();
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            Transformer transformer = factory.newTransformer();
+            Transformer transformer = XMLReaderUtils.getTransformer();
             transformer.transform(new DOMSource(document), new SAXResult(this));
-        } catch (TransformerException e) {
+        } catch (TransformerException | TikaException e) {
             throw new MimeTypeException("Failed to parse type registry", e);
         }
     }
