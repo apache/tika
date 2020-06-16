@@ -7547,6 +7547,7 @@
     <magic priority="60">
        <match value="Windows Media Video" type="unicodeLE" offset="0:8192" />
        <match value="VC-1 Advanced Profile" type="unicodeLE" offset="0:8192" />
+       <match value="wmv2" type="unicodeLE" offset="0:8192" />
     </magic>
   </mime-type>
   <mime-type type="video/x-ms-wmx">
