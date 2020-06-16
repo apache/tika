@@ -53,6 +53,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 import org.apache.tika.parser.iwork.iwana.IWork13PackageParser;
+import org.apache.tika.parser.iwork.iwana.IWork18PackageParser;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -84,7 +85,7 @@ public class ZipContainerDetector implements Detector {
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
 
-
+    private static final String STAR_OFFICE_6_WRITER = "application/vnd.sun.xml.writer";
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
 
@@ -209,6 +210,9 @@ public class ZipContainerDetector implements Detector {
                 type = detectOpenDocument(zip);
 
                 if (type == null) {
+                    type = detectIWork18(zip);
+                }
+                if (type == null) {
                     type = detectIWork13(zip);
                 }
                 if (type == null) {
@@ -222,6 +226,9 @@ public class ZipContainerDetector implements Detector {
                 }
                 if (type == null) {
                     type = detectIpa(zip);
+                }
+                if (type == null) {
+                    type = detectStarOfficeX(zip);
                 }
                 if (type != null) {
                     return type;
@@ -255,7 +262,7 @@ public class ZipContainerDetector implements Detector {
     private static MediaType detectOpenDocument(ZipFile zip) {
         try {
             ZipArchiveEntry mimetype = zip.getEntry("mimetype");
-            if (mimetype != null) {
+            if (mimetype != null && mimetype.getSize() > 0) {
                 try (InputStream stream = zip.getInputStream(mimetype)) {
                     return MediaType.parse(IOUtils.toString(stream, UTF_8));
                 }
@@ -384,6 +391,10 @@ public class ZipContainerDetector implements Detector {
         return null;
     }
 
+    private static MediaType detectIWork18(ZipFile zip) {
+        return IWork18PackageParser.IWork18DocumentType.detect(zip);
+    }
+
     private static MediaType detectIWork(ZipFile zip) {
         if (zip.getEntry(IWorkPackageParser.IWORK_COMMON_ENTRY) != null) {
             // Locate the appropriate index file entry, and reads from that
@@ -456,6 +467,16 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
+
+    private static MediaType detectStarOfficeX(ZipFile zip) throws IOException {
+        ZipArchiveEntry zae = zip.getEntry("META-INF/manifest.xml");
+        if (zae == null) {
+            return null;
+        }
+        try (InputStream is = zip.getInputStream(zae)) {
+            return ZipContainerDetectorBase.detectStarOfficeX(is);
+        }
+    }
     /**
      * To be considered as an IPA file, it needs to match all of these
      */

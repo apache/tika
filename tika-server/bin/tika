@@ -1,0 +1,571 @@
+#!/usr/bin/env bash
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+TIKA_SCRIPT="$0"
+verbose=false
+THIS_OS=`uname -s`
+
+# What version of Java is required to run this version of Tika.
+JAVA_VER_REQ="8"
+
+stop_all=false
+
+# for now, we don't support running this script from cygwin due to problems
+# like not having lsof, ps auxww, curl, and awkward directory handling
+if [ "${THIS_OS:0:6}" == "CYGWIN" ]; then
+  echo -e "This script does not support cygwin due to severe limitations and lack of adherence\nto BASH standards, such as lack of lsof, curl, and ps options."
+  exit 1
+fi
+
+# Resolve symlinks to this script
+while [ -h "$TIKA_SCRIPT" ] ; do
+  ls=`ls -ld "$TIKA_SCRIPT"`
+  # Drop everything prior to ->
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    TIKA_SCRIPT="$link"
+  else
+    TIKA_SCRIPT=`dirname "$TIKA_SCRIPT"`/"$link"
+  fi
+done
+
+TIKA_TIP=`dirname "$TIKA_SCRIPT"`/..
+TIKA_TIP=`cd "$TIKA_TIP"; pwd`
+DEFAULT_SERVER_DIR="$TIKA_TIP/"
+
+# If an include wasn't specified in the environment, then search for one...
+if [ -z "$TIKA_INCLUDE" ]; then
+  # Locations (in order) to use when searching for an include file.
+  for include in "`dirname "$0"`/tika.in.sh" \
+               "$HOME/.tika.in.sh" \
+               /usr/share/tika/tika.in.sh \
+               /usr/local/share/tika/tika.in.sh \
+               /etc/default/tika.in.sh \
+               /opt/tika/tika.in.sh; do
+    if [ -r "$include" ]; then
+        TIKA_INCLUDE="$include"
+        . "$include"
+        break
+    fi
+  done
+elif [ -r "$TIKA_INCLUDE" ]; then
+  . "$TIKA_INCLUDE"
+fi
+
+if [ -z "$TIKA_PID_DIR" ]; then
+  TIKA_PID_DIR="$TIKA_TIP/bin"
+fi
+
+
+
+
+
+echo "Default server $DEFAULT_SERVER_DIR"
+
+if [ -n "$TIKA_JAVA_HOME" ]; then
+  JAVA="$TIKA_JAVA_HOME/bin/java"
+elif [ -n "$JAVA_HOME" ]; then
+  for java in "$JAVA_HOME"/bin/amd64/java "$JAVA_HOME"/bin/java; do
+    if [ -x "$java" ]; then
+      JAVA="$java"
+      break
+    fi
+  done
+  if [ -z "$JAVA" ]; then
+    echo >&2 "The currently defined JAVA_HOME ($JAVA_HOME) refers"
+    echo >&2 "to a location where Java could not be found.  Aborting."
+    echo >&2 "Either fix the JAVA_HOME variable or remove it from the"
+    echo >&2 "environment so that the system PATH will be searched."
+    exit 1
+  fi
+else
+  JAVA=java
+fi
+
+if [ -z "$TIKA_STOP_WAIT" ]; then
+  TIKA_STOP_WAIT=180
+fi
+# test that Java exists, is executable and correct version
+JAVA_VER=$("$JAVA" -version 2>&1)
+if [[ $? -ne 0 ]] ; then
+  echo >&2 "Java not found, or an error was encountered when running java."
+  echo >&2 "A working Java $JAVA_VER_REQ JRE is required to run Tika!"
+  echo >&2 "Please install latest version of Java $JAVA_VER_REQ or set JAVA_HOME properly."
+  echo >&2 "Command that we tried: '${JAVA} -version', with response:"
+  echo >&2 "${JAVA_VER}"
+  echo >&2
+  echo >&2 "Debug information:"
+  echo >&2 "JAVA_HOME: ${JAVA_HOME:-N/A}"
+  echo >&2 "Active Path:"
+  echo >&2 "${PATH}"
+  exit 1
+else
+  JAVA_VER_NUM=$(echo $JAVA_VER | head -1 | awk -F '"' '/version/ {print $2}' | sed -e's/^1\.//' | sed -e's/[._-].*$//')
+  if [[ "$JAVA_VER_NUM" -lt "$JAVA_VER_REQ" ]] ; then
+    echo >&2 "Your current version of Java is too old to run this version of Tika."
+    echo >&2 "We found major version $JAVA_VER_NUM, using command '${JAVA} -version', with response:"
+    echo >&2 "${JAVA_VER}"
+    echo >&2
+    echo >&2 "Please install latest version of Java $JAVA_VER_REQ or set JAVA_HOME properly."
+    echo >&2
+    echo >&2 "Debug information:"
+    echo >&2 "JAVA_HOME: ${JAVA_HOME:-N/A}"
+    echo >&2 "Active Path:"
+    echo >&2 "${PATH}"
+    exit 1
+  fi
+  JAVA_VENDOR="Oracle"
+  if [ "`echo $JAVA_VER | grep -i "IBM J9"`" != "" ]; then
+      JAVA_VENDOR="IBM J9"
+  fi
+fi
+
+
+function print_usage() {
+  CMD="$1"
+  ERROR_MSG="$2"
+
+  if [ "$ERROR_MSG" != "" ]; then
+    echo -e "\nERROR: $ERROR_MSG\n"
+  fi
+
+  if [ -z "$CMD" ]; then
+    echo ""
+    echo "Usage: tika COMMAND OPTIONS"
+    echo "       where COMMAND is one of: start, stop, status"
+    echo ""
+    echo "  Standalone server example (start Tika running in the background on port 9998):"
+    echo ""
+    echo "    ./tika start -p 9998"
+    echo ""
+    echo "Pass -help after any COMMAND to see command-specific usage information,"
+    echo "  such as:    ./tika start -help or ./tika stop -help"
+    echo ""
+  elif [ "$CMD" == "start" ]; then
+    echo ""
+    echo "Usage: tika $CMD [-f] [-h hostname] [-p port] [-d directory] [-V]"
+    echo ""
+    echo "  -f            Start Tika in foreground; default starts Tika in the background"
+    echo "                  and sends stdout / stderr to tika-PORT-console.log"
+    echo ""
+    echo "  -p <port>     Specify the port to start the Tika HTTP listener on; default is 9998"
+    echo ""
+    echo "  -d            Specify the Tika server directory; defaults to ../"
+    echo ""
+    echo "  -j/--jar      Specify the tika-server.jar; defaults to tika-server.jar"
+    echo ""
+    echo "  -V/--verbose   Verbose messages from this script"
+    echo ""
+
+  elif [ "$CMD" == "stop" ]; then
+    echo ""
+    echo "Usage: tika stop [-p port] [-V]"
+    echo ""
+    echo "  -p <port>     Specify the port the Tika HTTP listener is bound to"
+    echo ""
+    echo "  --all          Find and stop all running Tika servers on this host"
+    echo ""
+    echo "  -V/--verbose   Verbose messages from this script"
+    echo ""
+    echo "  NOTE: To see if any Tika servers are running, do: tika status"
+    echo ""
+  elif [ "$CMD" == "status" ]; then
+    echo ""
+    echo "Usage: tika status"
+    echo ""
+    echo "  This command will show the status of all running Tika servers."
+    echo "  It can only detect those Tika servers running on the current host."
+    echo ""
+  fi
+} # end print_usage
+
+# used to show the script is still alive when waiting on work to complete
+function spinner() {
+  local pid=$1
+  local delay=0.5
+  local spinstr='|/-\'
+  while [ "$(ps aux | awk '{print $2}' | grep -w $pid)" ]; do
+      local temp=${spinstr#?}
+      printf " [%c]  " "$spinstr"
+      local spinstr=$temp${spinstr%"$temp"}
+      sleep $delay
+      printf "\b\b\b\b\b\b"
+  done
+  printf "    \b\b\b\b"
+}
+
+# uses kill -9 to stop Tika process
+function stop_tika() {
+
+  DIR="$1"
+  TIKA_PID="$2"
+
+  if [ -z "$TIKA_PID" ]; then
+    echo "ERROR: No PID found for Tika running on port $TIKA_PORT ... script fails."
+    exit 1
+  fi
+  echo "Sending kill command to Tika running on port $TIKA_PORT with process $TIKA_PID"
+  kill -9 $TIKA_PID
+  rm -f "$TIKA_PID_DIR/tika-$TIKA_PORT.pid"
+  sleep 1
+
+  CHECK_PID=`ps auxww | awk '{print $2}' | grep -w $TIKA_PID | sort -r | tr -d ' '`
+  if [ "$CHECK_PID" != "" ]; then
+    echo "ERROR: Failed to kill previous Tika Java process $TIKA_PID ... script fails."
+    exit 1
+  fi
+} # end stop_tika
+
+
+if [ $# -eq 1 ]; then
+  case $1 in
+    -help|-usage|-h|--help)
+        print_usage ""
+        exit
+    ;;
+    -info|-i|status)
+        #get_info
+        echo "To be done"
+        exit $?
+    ;;
+  esac
+fi
+
+if [ $# -gt 0 ]; then
+  # if first arg starts with a dash (and it's not -help or -info),
+  # then assume they are starting Tika, such as: tika -f
+  if [[ $1 == -* ]]; then
+    SCRIPT_CMD="start"
+  else
+    SCRIPT_CMD="$1"
+    shift
+  fi
+else
+  # no args - just show usage and exit
+  print_usage ""
+  exit
+fi
+
+# verify the command given is supported
+if [ "$SCRIPT_CMD" != "stop" ] && [ "$SCRIPT_CMD" != "start" ]; then
+  print_usage "" "$SCRIPT_CMD is not a valid command!"
+  exit 1
+fi
+
+
+# Run in foreground (default is to run in the background)
+FG="false"
+
+if [ $# -gt 0 ]; then
+  while true; do
+    case "$1" in
+      -d|-dir)
+          if [[ -z "$2" || "${2:0:1}" == "-" ]]; then
+            print_usage "$SCRIPT_CMD" "Server directory is required when using the $1 option!"
+            exit 1
+          fi
+
+          if [[ "$2" == "." || "$2" == "./" || "$2" == ".." || "$2" == "../" ]]; then
+            TIKA_SERVER_DIR="$(pwd)/$2"
+          else
+            # see if the arg value is relative to the tip vs full path
+            if [[ "$2" != /* ]] && [[ -d "$TIKA_TIP/$2" ]]; then
+              TIKA_SERVER_DIR="$TIKA_TIP/$2"
+            else
+              TIKA_SERVER_DIR="$2"
+            fi
+          fi
+          # resolve it to an absolute path
+          TIKA_SERVER_DIR="$(cd "$TIKA_SERVER_DIR"; pwd)"
+          shift 2
+      ;;
+
+        -f|-foreground)
+            FG="true"
+            shift
+        ;;
+        -p|-port)
+            if [[ -z "$2" || "${2:0:1}" == "-" ]]; then
+              print_usage "$SCRIPT_CMD" "Port number is required when using the $1 option!"
+              exit 1
+            fi
+            TIKA_PORT="$2"
+            shift 2
+        ;;
+        -h|-host)
+            if [[ -z "$2" || "${2:0:1}" == "-" ]]; then
+              print_usage "$SCRIPT_CMD" "Hostname is required when using the $1 option!"
+              exit 1
+            fi
+            TIKA_HOST="$2"
+            shift 2
+        ;;
+        -j|--jar)
+            TIKA_SERVER_JAR="$2"
+            shift 2
+        ;;
+        -help|-usage)
+            print_usage "$SCRIPT_CMD"
+            exit 0
+        ;;
+        -V|--verbose)
+            verbose=true
+            shift
+        ;;
+        --all)
+            stop_all=true
+            shift
+        ;;
+        --)
+            shift
+            break
+        ;;
+        *)
+            if [ "${1:0:2}" == "-D" ]; then
+              # pass thru any opts that begin with -D (java system props)
+              TIKA_OPTS+=("$1")
+              PASS_TO_RUN_EXAMPLE+=" $1"
+              shift
+            else
+              if [ "$1" != "" ]; then
+                print_usage "$SCRIPT_CMD" "$1 is not supported by this script"
+                exit 1
+              else
+                break # out-of-args, stop looping
+              fi
+            fi
+        ;;
+    esac
+  done
+fi
+
+if [ -z "$TIKA_SPAWN_CHILD_OPTS" ]; then
+  TIKA_SPAWN_CHILD_OPTS="-spawnChild"
+fi
+
+if [ -z "$TIKA_SERVER_DIR" ]; then
+  TIKA_SERVER_DIR="$DEFAULT_SERVER_DIR"
+fi
+
+if [ ! -e "$TIKA_SERVER_DIR" ]; then
+  echo -e "\nTika server directory $TIKA_SERVER_DIR not found!\n"
+  exit 1
+fi
+
+############# start/stop logic below here ################
+
+if $verbose ; then
+  echo "Using Tika root directory: $TIKA_TIP"
+  echo "Using Java: $JAVA"
+  "$JAVA" -version
+fi
+
+# stop all if no port specified
+if [[ "$SCRIPT_CMD" == "stop" ]]; then
+  if $stop_all; then
+    none_stopped=true
+    find "$TIKA_PID_DIR" -name "tika-*.pid" -type f | while read PIDF
+      do
+        NEXT_PID=`cat "$PIDF"`
+        echo "About to tika port with $NEXT_PID"
+        stop_tika "$TIKA_SERVER_DIR" "$NEXT_PID"
+        none_stopped=false
+        rm -f "$PIDF"
+    done
+    # TODO: none_stopped doesn't get reflected across the subshell
+    # This can be uncommented once we find a clean way out of it
+    # if $none_stopped; then
+    #   echo -e "\nNo Tika servers found to stop.\n"
+    # fi
+  else
+    # not stopping all and don't have a port, but if we can find the pid file for the default port 9998, then use that
+    none_stopped=true
+    numTikas=`find "$TIKA_PID_DIR" -name "tika-*.pid" -type f | wc -l | tr -d ' '`
+    if [ -z "$TIKA_PORT" ]; then
+      if [ $numTikas -eq 1 ]; then
+        # only do this if there is only 1 server running, otherwise they must provide the -p or --all
+        PID="$(cat "$(find "$TIKA_PID_DIR" -name "tika-*.pid" -type f)")"
+        CHECK_PID=`ps auxww | awk '{print $2}' | grep -w $PID | sort -r | tr -d ' '`
+        if [ "$CHECK_PID" != "" ]; then
+          stop_tika "$TIKA_SERVER_DIR" "$CHECK_PID"
+          none_stopped=false
+        fi
+      fi
+    else
+      PID="$(cat "$(find "$TIKA_PID_DIR" -name "tika-$TIKA_PORT.pid" -type f)")"
+      stop_tika "$TIKA_SERVER_DIR" "$PID"
+      none_stopped=false
+    fi
+
+    if $none_stopped; then
+      if [ $numTikas -gt 0 ]; then
+        echo -e "\nFound $numTikas Tika servers running! Must either specify a port using -p or --all to stop all Tika servers on this host.\n"
+      else
+        echo -e "\nNo Tika servers found to stop.\n"
+      fi
+      exit 1
+    fi
+  fi
+  exit
+fi
+
+
+if [ -z "$TIKA_PORT" ]; then
+  TIKA_PORT=9998
+fi
+
+if [ -z "$TIKA_HOST" ]; then
+  TIKA_HOST='0.0.0.0'
+fi
+
+if [ -z "$TIKA_SERVER_JAR" ]; then
+  TIKA_SERVER_JAR=tika-server.jar
+fi
+
+if [ -z "$TIKA_LOGS_DIR" ]; then
+  TIKA_LOGS_DIR="$TIKA_SERVER_DIR/logs"
+fi
+
+# Launches Tika in foreground/background depending on parameters
+function start_tika() {
+
+  run_in_foreground="$1"
+  TIKA_ADDL_ARGS="$2"
+
+  # define default GC_TUNE
+  if [ -z ${GC_TUNE+x} ]; then
+      GC_TUNE=('-XX:+UseG1GC' \
+        '-XX:+PerfDisableSharedMem' \
+        '-XX:+ParallelRefProcEnabled' \
+        '-XX:MaxGCPauseMillis=250' \
+        '-XX:+UseLargePages' \
+        '-XX:+AlwaysPreTouch')
+  else
+    GC_TUNE=($GC_TUNE)
+  fi
+
+  if $verbose ; then
+    echo -e "\nStarting Tika using the following settings:"
+    echo -e "    JAVA            = $JAVA"
+    echo -e "    TIKA_SERVER_DIR = $TIKA_SERVER_DIR"
+    echo -e "    TIKA_SERVER_JAR = $TIKA_SERVER_JAR"
+    echo -e "    TIKA_HOST       = $TIKA_HOST"
+    echo -e "    TIKA_PORT       = $TIKA_PORT"
+    echo -e "    JAVA_MEM_OPTS   = ${JAVA_MEM_OPTS[@]}"
+    echo -e "    GC_TUNE         = ${GC_TUNE[@]}"
+    echo -e "    GC_LOG_OPTS     = ${GC_LOG_OPTS[@]}"
+    echo -e "    TIKA_SPAWN_CHILD_OPTS = $TIKA_SPAWN_CHILD_OPTS"
+
+    if [ "$TIKA_OPTS" != "" ]; then
+      echo -e "    TIKA_OPTS       = ${TIKA_OPTS[@]}"
+    fi
+
+    if [ "$TIKA_ADDL_ARGS" != "" ]; then
+      echo -e "    TIKA_ADDL_ARGS  = $TIKA_ADDL_ARGS"
+    fi
+
+    if [ "$TIKA_DATA_HOME" != "" ]; then
+      echo -e "    TIKA_DATA_HOME  = $TIKA_DATA_HOME"
+    fi
+
+    echo -e "\n"
+  fi
+
+  # need to launch tika from the server dir
+  cd "$TIKA_SERVER_DIR"
+  if [ ! -e "$TIKA_SERVER_DIR/$TIKA_SERVER_JAR" ]; then
+    echo -e "\nERROR: $TIKA_SERVER_JAR file not found in $TIKA_SERVER_DIR\nPlease check your -d and -j parameters to set the correct Tika server directory and jar.\n"
+    exit 1
+  fi
+
+  TIKA_START_OPTS=('-server' "${JAVA_MEM_OPTS[@]}" "${GC_TUNE[@]}" "${GC_LOG_OPTS[@]}" \
+    "${TIKA_HOST_ARG[@]}" \
+     "${LOG4J_CONFIG[@]}" "${TIKA_OPTS[@]}")
+
+  mkdir -p "$TIKA_LOGS_DIR" 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo -e "\nERROR: Logs directory $TIKA_LOGS_DIR could not be created. Exiting"
+    exit 1
+  fi
+  if [ ! -w "$TIKA_LOGS_DIR" ]; then
+    echo -e "\nERROR: Logs directory $TIKA_LOGS_DIR is not writable. Exiting"
+    exit 1
+  fi
+  case "$TIKA_LOGS_DIR" in
+    contexts|etc|lib|modules|resources|scripts|tika|tika-webapp)
+      echo -e "\nERROR: Logs directory $TIKA_LOGS_DIR is invalid. Reserved for the system. Exiting"
+      exit 1
+      ;;
+  esac
+
+
+  if [ "$run_in_foreground" == "true" ]; then
+    if $verbose ; then
+      echo "Startup command"
+      echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS"
+    fi
+    exec "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS
+  else
+    # run Tika in the background
+    if $verbose ; then
+      echo "Startup command"
+      echo "$JAVA ${TIKA_START_OPTS[@]} $TIKA_ADDL_ARGS -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS $TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log $TIKA_PID_DIR/tika-$TIKA_PORT.pid"
+    fi
+    nohup "$JAVA" "${TIKA_START_OPTS[@]}" $TIKA_ADDL_ARGS \
+	      -jar $TIKA_SERVER_JAR -p $TIKA_PORT -h $TIKA_HOST $TIKA_SPAWN_CHILD_OPTS \
+	1>"$TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log" 2>&1 & echo $! > "$TIKA_PID_DIR/tika-$TIKA_PORT.pid"
+
+    # no lsof on cygwin though
+    if hash lsof 2>/dev/null ; then  # hash returns true if lsof is on the path
+      echo -n "Waiting up to $TIKA_STOP_WAIT seconds to see Tika running on port $TIKA_PORT"
+      # Launch in a subshell to show the spinner
+      (loops=0
+      while true
+      do
+        running=`lsof -PniTCP:$TIKA_PORT -sTCP:LISTEN`
+        if [ -z "$running" ]; then
+	  slept=$((loops * 2))
+          if [ $slept -lt $TIKA_STOP_WAIT ]; then
+            sleep 2
+            loops=$[$loops+1]
+          else
+            echo -e "Still not seeing Tika listening on $TIKA_PORT after $TIKA_STOP_WAIT seconds!"
+            tail -30 "$TIKA_LOGS_DIR/tika-$TIKA_PORT-console.log"
+            exit # subshell!
+          fi
+        else
+          TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v "\-child" | grep -v grep | awk '{print $2}' | sort -r`
+          echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
+          exit # subshell!
+        fi
+      done) &
+      spinner $!
+    else
+      echo -e "NOTE: Please install lsof as this script needs it to determine if Tika is listening on port $TIKA_PORT."
+      sleep 10
+      TIKA_PID=`ps auxww | grep tika\-server | grep -w "\-p $TIKA_PORT" | grep -v "\-child" | grep -v grep | awk '{print $2}' | sort -r`
+      echo -e "\nStarted Tika server on port $TIKA_PORT (pid=$TIKA_PID). Happy extracting!\n"
+      return;
+    fi
+  fi
+} # end start_tika
+
+
+
+if [[ "$SCRIPT_CMD" == "start" ]]; then
+  start_tika "$FG" "$ADDITIONAL_CMD_OPTS"
+  exit 1
+fi

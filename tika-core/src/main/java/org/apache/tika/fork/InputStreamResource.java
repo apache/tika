@@ -37,7 +37,10 @@ class InputStreamResource implements ForkResource {
         try {
             m = stream.read(buffer);
         } catch (IOException e) {
-            return e;
+            // returning exception causes deadlock
+            // return e;
+            e.printStackTrace();
+            m = -1;
         }
         output.writeInt(m);
         if (m > 0) {

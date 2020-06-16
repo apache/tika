@@ -157,8 +157,16 @@ public class PackageParser extends AbstractParser {
                 "application/x-tika-ooxml",
                 "application/x-tika-ooxml-protected",
                 "application/x-tika-visio-ooxml",
+                "application/x-xliff+zip",
                 "application/x-xmind",
                 "model/vnd.dwfx+xps",
+                "application/vnd.sun.xml.calc",
+                "application/vnd.sun.xml.writer",
+                "application/vnd.sun.xml.writer.template",
+                "application/vnd.sun.xml.draw",
+                "application/vnd.sun.xml.impress",
+                "application/vnd.openofficeorg.autotext",
+
 
                 "application/x-gtar" //specialization of tar
         }) {

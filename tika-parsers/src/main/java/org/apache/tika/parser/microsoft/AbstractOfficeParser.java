@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -132,4 +133,21 @@ public abstract class AbstractOfficeParser extends AbstractParser {
         return defaultOfficeParserConfig.getExtractAllAlternativesFromMSG();
     }
 
+    /**
+     * <b>WARNING:</b> this sets a static variable in POI.
+     * This allows users to override POI's protection of the allocation
+     * of overly large byte arrays.  Use carefully; and please open up issues on
+     * POI's bugzilla to bump values for specific records.
+     *
+     * @param maxOverride
+     */
+    @Field
+    public void setByteArrayMaxOverride(int maxOverride) {
+        IOUtils.setByteArrayMaxOverride(maxOverride);
+    }
+
+    @Field
+    public void setDateFormatOverride(String format) {
+        defaultOfficeParserConfig.setDateOverrideFormat(format);
+    }
 }

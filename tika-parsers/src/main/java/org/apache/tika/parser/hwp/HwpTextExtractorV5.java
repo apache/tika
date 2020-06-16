@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import org.apache.commons.compress.compressors.deflate.DeflateParameters;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.poi.hpsf.Property;
 import org.apache.poi.hpsf.PropertySet;
@@ -51,6 +52,7 @@ import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -100,7 +102,7 @@ public class HwpTextExtractorV5 implements Serializable {
 
         POIFSFileSystem fs = null;
         try {
-            fs = new POIFSFileSystem(source);
+            fs = new POIFSFileSystem(new CloseShieldInputStream(source));
 
             DirectoryNode root = fs.getRoot();
             extract0(root, metadata, xhtml);
@@ -260,7 +262,6 @@ public class HwpTextExtractorV5 implements Serializable {
             if (entry.getName().startsWith("Section")
                     && entry instanceof DocumentEntry) {
                 LOG.debug("extract {}", entry.getName());
-
                 InputStream input = new DocumentInputStream(
                         (DocumentEntry) entry);
 
@@ -383,7 +384,7 @@ public class HwpTextExtractorV5 implements Serializable {
      */
     private void parse(HwpStreamReader reader, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
-        StringBuffer buf = new StringBuffer(1024);
+        StringBuilder buf = new StringBuilder();
         TagInfo tag = new TagInfo();
 
         while (true) {
@@ -420,7 +421,7 @@ public class HwpTextExtractorV5 implements Serializable {
      * @throws IOException
      */
     private void writeParaText(HwpStreamReader reader, long datasize,
-                               StringBuffer buf) throws IOException {
+                               StringBuilder buf) throws IOException {
         int[] chars = reader.uint16((int) (datasize / 2));
 
         for (int index = 0; index < chars.length; index++) {

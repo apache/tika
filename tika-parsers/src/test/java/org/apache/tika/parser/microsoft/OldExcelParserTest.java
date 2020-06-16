@@ -111,4 +111,12 @@ public class OldExcelParserTest extends TikaTest {
         assertContains("<p>(1)</p>", xml);
         assertContains("<p>5.0</p>", xml);
     }
+
+
+    @Test
+    public void testToXMLInOldExcelParser() throws Exception {
+        String xml = getXML("testEXCEL_5.xls").xml;
+        assertContains("Written and saved in Microsoft Excel X for Mac Service Release 1",
+                xml);
+    }
 }

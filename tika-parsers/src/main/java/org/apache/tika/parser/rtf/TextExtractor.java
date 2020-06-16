@@ -341,7 +341,7 @@ final class TextExtractor {
     private static Charset getCharset(String name) {
         try {
             return CharsetUtils.forName(name);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ASCII;
         }
     }

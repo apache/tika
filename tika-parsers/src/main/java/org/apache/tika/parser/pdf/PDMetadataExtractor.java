@@ -22,8 +22,10 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchema;
+import org.apache.jempbox.xmp.XMPSchemaBasic;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
 import org.apache.pdfbox.cos.COSArray;
@@ -34,10 +36,12 @@ import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
@@ -52,8 +56,12 @@ class PDMetadataExtractor {
 
     static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
+            metadata.set(PDF.HAS_XMP, "false");
             return;
         }
+        //this file has XMP...
+        //whether or not it is readable or throws an exception is another story...
+        metadata.set(PDF.HAS_XMP, "true");
         //now go for the XMP
         Document dom = loadDOM(pdMetadata, metadata, context);
 
@@ -62,20 +70,25 @@ class PDMetadataExtractor {
             xmp = new XMPMetadata(dom);
         }
         XMPSchemaDublinCore dcSchema = null;
-
+        XMPSchemaBasic basic = null;
         if (xmp != null) {
             try {
                 dcSchema = xmp.getDublinCoreSchema();
             } catch (IOException e) {
             }
-
+            try {
+                basic = xmp.getBasicSchema();
+            } catch (IOException e) {
+                //swallow
+            }
             JempboxExtractor.extractXMPMM(xmp, metadata);
         }
-
         extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
         extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, dcSchema);
         extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, dcSchema);
         extractMultilingualItems(metadata, TikaCoreProperties.TITLE, null, dcSchema);
+
+        extractBasic(basic, metadata);
 
         try {
             if (xmp != null) {
@@ -97,6 +110,65 @@ class PDMetadataExtractor {
             }
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed", "" + e);
+        }
+    }
+
+    private static void extractBasic(XMPSchemaBasic basic, Metadata metadata) {
+        if (basic == null) {
+            return;
+        }
+        //add the elements from the basic schema if they haven't already
+        //been extracted from dublin core
+        setNotNull(XMP.CREATOR_TOOL, basic.getCreatorTool(), metadata);
+        setNotNull(DublinCore.TITLE, basic.getTitle(), metadata);
+        setNotNull(XMP.ABOUT, basic.getAbout(), metadata);
+        setNotNull(XMP.LABEL, basic.getLabel(), metadata);
+        try {
+            setNotNull(XMP.CREATE_DATE, basic.getCreateDate(), metadata);
+        } catch (IOException e) {
+        }
+        try {
+            setNotNull(XMP.MODIFY_DATE, basic.getModifyDate(), metadata);
+        } catch (IOException e) {
+        }
+        try {
+            setNotNull(XMP.METADATA_DATE, basic.getMetadataDate(), metadata);
+        } catch (IOException e) {
+        }
+
+        List<String> identifiers = basic.getIdentifiers();
+        if (identifiers != null) {
+            for (String identifier : identifiers) {
+                metadata.add(XMP.IDENTIFIER, identifier);
+            }
+        }
+        List<String> advisories = basic.getAdvisories();
+        if (advisories != null) {
+            for (String advisory : advisories) {
+                metadata.add(XMP.ADVISORY, advisory);
+            }
+        }
+        setNotNull(XMP.NICKNAME, basic.getNickname(), metadata);
+        setNotNull(XMP.RATING, basic.getRating(), metadata);
+        //TODO: find an example where basic.getThumbNail is not null
+        //and figure out how to add that info
+    }
+
+    private static void setNotNull(Property property, String value, Metadata metadata) {
+        if (metadata.get(property) == null && ! StringUtils.isEmpty(value)) {
+            metadata.set(property, value);
+        }
+    }
+
+    private static void setNotNull(Property property, Calendar value, Metadata metadata) {
+        if (metadata.get(property) == null && value != null) {
+            metadata.set(property, value);
+        }
+    }
+
+    private static void setNotNull(Property property, Integer value, Metadata metadata) {
+        if (metadata.get(property) == null && value != null) {
+            metadata.set(property, value);
         }
     }
 
@@ -225,6 +297,7 @@ class PDMetadataExtractor {
         if (pdMetadata == null) {
             return null;
         }
+
         InputStream is = null;
         try {
             try {

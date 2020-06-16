@@ -24,13 +24,10 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,16 +36,13 @@ import org.xml.sax.ContentHandler;
 /**
  * Tests if the IWork parser parses the content and metadata properly of the supported formats.
  */
-public class IWorkParserTest {
+public class IWorkParserTest extends TikaTest {
 
     private IWorkPackageParser iWorkParser;
-    private ParseContext parseContext;
 
     @Before
     public void setUp() {
         iWorkParser = new IWorkPackageParser();
-        parseContext = new ParseContext();
-        parseContext.set(Parser.class, new AutoDetectParser());
     }
 
     /**
@@ -61,16 +55,14 @@ public class IWorkParserTest {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
+        iWorkParser.parse(input, handler, metadata);
         input.read();   // Will throw an Exception if the stream was already closed.
     }
 
     @Test
     public void testParseKeynote() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
         Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
+        String content = getText("testKeynote.key", iWorkParser, metadata);
 
         // Make sure enough keys came through
         // (Exact numbers will vary based on composites)
@@ -90,7 +82,6 @@ public class IWorkParserTest {
         assertEquals("Tika user", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Apache tika", metadata.get(TikaCoreProperties.TITLE));
 
-        String content = handler.toString();
         assertContains("A sample presentation", content);
         assertContains("For the Apache Tika project", content);
         assertContains("Slide 1", content);
@@ -113,36 +104,21 @@ public class IWorkParserTest {
     // TIKA-910
     @Test
     public void testKeynoteTextBoxes() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testTextBoxes.key");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
-        String content = handler.toString();
+        String content = getText("testTextBoxes.key", iWorkParser);
         assertTrue(content.replaceAll("\\s+", " ").contains("text1 text2 text3"));
     }
 
     // TIKA-910
     @Test
     public void testKeynoteBulletPoints() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testBulletPoints.key");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
-        String content = handler.toString();
+        String content = getText("testBulletPoints.key", iWorkParser);
         assertTrue(content.replaceAll("\\s+", " ").contains("bullet point 1 bullet point 2 bullet point 3"));
     }
 
     // TIKA-923
     @Test
     public void testKeynoteTables() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testTables.key");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
-        String content = handler.toString();
+        String content = getText("testTables.key", iWorkParser);
         content = content.replaceAll("\\s+", " ");
         assertContains("row 1 row 2 row 3", content);
     }
@@ -150,12 +126,7 @@ public class IWorkParserTest {
     // TIKA-923
     @Test
     public void testKeynoteMasterSlideTable() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testMasterSlideTable.key");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
-        String content = handler.toString();
+        String content = getText("testMasterSlideTable.key", iWorkParser);
         content = content.replaceAll("\\s+", " ");
         assertContains("master row 1", content);
         assertContains("master row 2", content);
@@ -164,11 +135,8 @@ public class IWorkParserTest {
 
     @Test
     public void testParsePages() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPages.pages");
         Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
+        String content = getText("testPages.pages", iWorkParser, metadata);
         // Make sure enough keys came through
         // (Exact numbers will vary based on composites)
         assertTrue("Insufficient metadata found " + metadata.size(), metadata.size() >= 50);
@@ -188,8 +156,6 @@ public class IWorkParserTest {
         assertEquals("2010-05-09T23:50:36+0200", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
         assertEquals("2", metadata.get(Office.PAGE_COUNT));
-
-        String content = handler.toString();
 
         // text on page 1
         assertContains("Sample pages document", content);
@@ -213,13 +179,7 @@ public class IWorkParserTest {
     // TIKA-904
     @Test
     public void testPagesLayoutMode() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesLayout.pages");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
-        String content = handler.toString();
+        String content = getText("testPagesLayout.pages");
         assertContains("text box 1 - here is some text", content);
         assertContains("created in a text box in layout mode", content);
         assertContains("text box 2 - more text!@!$@#", content);
@@ -229,11 +189,8 @@ public class IWorkParserTest {
 
     @Test
     public void testParseNumbers() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testNumbers.numbers");
         Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-
-        iWorkParser.parse(input, handler, metadata, parseContext);
+        String content = getText("testNumbers.numbers", iWorkParser, metadata);
 
         // Make sure enough keys came through
         // (Exact numbers will vary based on composites)
@@ -252,7 +209,6 @@ public class IWorkParserTest {
         assertEquals("Account checking", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("a comment", metadata.get(TikaCoreProperties.COMMENTS));
 
-        String content = handler.toString();
         assertContains("Category", content);
         assertContains("Home", content);
         assertContains("-226", content);
@@ -269,26 +225,17 @@ public class IWorkParserTest {
     // TIKA- 924
     @Test
     public void testParseNumbersTableNames() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/tableNames.numbers");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-        String content = handler.toString();
+        String content = getText("tableNames.numbers", iWorkParser);
         assertContains("This is the main table", content);
     }
         
     @Test
     public void testParseNumbersTableHeaders() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/tableHeaders.numbers");
-        Metadata metadata = new Metadata();
-        ContentHandler handler = new BodyContentHandler();
-        iWorkParser.parse(input, handler, metadata, parseContext);
-
-        String content = handler.toString();
-        for(int header=1;header<=5;header++) {
+        String content = getText("tableHeaders.numbers");
+        for(int header = 1;header <= 5;header++) {
           assertContains("header" + header, content);
         }
-        for(int row=1;row<=3;row++) {
+        for(int row = 1;row <= 3;row++) {
           assertContains("row" + row, content);
         }
     }
@@ -300,19 +247,13 @@ public class IWorkParserTest {
      */
     @Test
     public void testParsePagesPasswordProtected() throws Exception {
-       // Document password is "tika", but we can't use that yet...
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesPwdProtected.pages");
-       Metadata metadata = new Metadata();
-       ContentHandler handler = new BodyContentHandler();
-
-       iWorkParser.parse(input, handler, metadata, parseContext);
-
-       // Content will be empty
-       String content = handler.toString();
-       assertEquals("", content);
+        // Document password is "tika", but we can't use that yet...
+        Metadata metadata = new Metadata();
+        String content = getText("testPagesPwdProtected.pages", iWorkParser, metadata);
+        assertEquals("", content);
        
-       // Will have been identified as encrypted
-       assertEquals("application/x-tika-iworks-protected", metadata.get(Metadata.CONTENT_TYPE));
+        // Will have been identified as encrypted
+        assertEquals("application/x-tika-iworks-protected", metadata.get(Metadata.CONTENT_TYPE));
     }
     
     /**
@@ -320,28 +261,23 @@ public class IWorkParserTest {
      */
     @Test
     public void testParsePagesHeadersFootersFootnotes() throws Exception {
-       String footnote = "Footnote: Do a lot of people really use iWork?!?!";
-       String header = "THIS IS SOME HEADER TEXT";
-       String footer = "THIS IS SOME FOOTER TEXT\t1";
-       String footer2 = "THIS IS SOME FOOTER TEXT\t2";
-       
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersFootnotes.pages");
-       Metadata metadata = new Metadata();
-       ContentHandler handler = new BodyContentHandler();
+        String footnote = "Footnote: Do a lot of people really use iWork?!?!";
+        String header = "THIS IS SOME HEADER TEXT";
+        String footer = "THIS IS SOME FOOTER TEXT\t1";
+        String footer2 = "THIS IS SOME FOOTER TEXT\t2";
 
-       iWorkParser.parse(input, handler, metadata, parseContext);
-       String contents = handler.toString();
+        String content = getText("testPagesHeadersFootersFootnotes.pages", iWorkParser);
 
-       // Check regular text
-       assertContains("Both Pages 1.x", contents); // P1
-       assertContains("understanding the Pages document", contents); // P1
-       assertContains("should be page 2", contents); // P2
+        // Check regular text
+        assertContains("Both Pages 1.x", content); // P1
+        assertContains("understanding the Pages document", content); // P1
+        assertContains("should be page 2", content); // P2
        
-       // Check for headers, footers and footnotes
-       assertContains(header, contents);
-       assertContains(footer, contents);
-       assertContains(footer2, contents);
-       assertContains(footnote, contents);
+        // Check for headers, footers and footnotes
+        assertContains(header, content);
+        assertContains(footer, content);
+        assertContains(footer2, content);
+        assertContains(footnote, content);
     }
     
     /**
@@ -352,17 +288,13 @@ public class IWorkParserTest {
        String header = "THIS IS SOME HEADER TEXT";
        String footer = "THIS IS SOME FOOTER TEXT\tI";
        String footer2 = "THIS IS SOME FOOTER TEXT\tII";
-       
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersRomanUpper.pages");
-       ContentHandler handler = new BodyContentHandler();
 
-       iWorkParser.parse(input, handler, new Metadata(), parseContext);
-       String contents = handler.toString();
-       
+       String content = getText("testPagesHeadersFootersRomanUpper.pages", iWorkParser);
+
        // Check for headers, footers and footnotes
-       assertContains(header, contents);
-       assertContains(footer, contents);
-       assertContains(footer2, contents);
+       assertContains(header, content);
+       assertContains(footer, content);
+       assertContains(footer2, content);
     }
     
     /**
@@ -373,17 +305,13 @@ public class IWorkParserTest {
        String header = "THIS IS SOME HEADER TEXT";
        String footer = "THIS IS SOME FOOTER TEXT\ti";
        String footer2 = "THIS IS SOME FOOTER TEXT\tii";
-       
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersRomanLower.pages");
-       ContentHandler handler = new BodyContentHandler();
 
-       iWorkParser.parse(input, handler, new Metadata(), parseContext);
-       String contents = handler.toString();
-       
+       String content = getText("testPagesHeadersFootersRomanLower.pages", iWorkParser);
+
        // Check for headers, footers and footnotes
-       assertContains(header, contents);
-       assertContains(footer, contents);
-       assertContains(footer2, contents);
+       assertContains(header, content);
+       assertContains(footer, content);
+       assertContains(footer2, content);
     }
 
     /**
@@ -391,20 +319,16 @@ public class IWorkParserTest {
      */
     @Test
     public void testParsePagesHeadersAlphaUpper() throws Exception {
-       String header = "THIS IS SOME HEADER TEXT\tA";
-       String footer = "THIS IS SOME FOOTER TEXT\tA";
-       String footer2 = "THIS IS SOME FOOTER TEXT\tB";
-       
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersAlphaUpper.pages");
-       ContentHandler handler = new BodyContentHandler();
+        String header = "THIS IS SOME HEADER TEXT\tA";
+        String footer = "THIS IS SOME FOOTER TEXT\tA";
+        String footer2 = "THIS IS SOME FOOTER TEXT\tB";
 
-       iWorkParser.parse(input, handler, new Metadata(), parseContext);
-       String contents = handler.toString();
-       
-       // Check for headers, footers and footnotes
-       assertContains(header, contents);
-       assertContains(footer, contents);
-       assertContains(footer2, contents);
+        String content = getText("testPagesHeadersFootersAlphaUpper.pages", iWorkParser);
+
+        // Check for headers, footers and footnotes
+        assertContains(header, content);
+        assertContains(footer, content);
+        assertContains(footer2, content);
     }
  
     /**
@@ -412,20 +336,16 @@ public class IWorkParserTest {
      */
     @Test
     public void testParsePagesHeadersAlphaLower() throws Exception {
-       String header = "THIS IS SOME HEADER TEXT";
-       String footer = "THIS IS SOME FOOTER TEXT\ta";
-       String footer2 = "THIS IS SOME FOOTER TEXT\tb";
-       
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersAlphaLower.pages");
-       ContentHandler handler = new BodyContentHandler();
+        String header = "THIS IS SOME HEADER TEXT";
+        String footer = "THIS IS SOME FOOTER TEXT\ta";
+        String footer2 = "THIS IS SOME FOOTER TEXT\tb";
 
-       iWorkParser.parse(input, handler, new Metadata(), parseContext);
-       String contents = handler.toString();
-       
-       // Check for headers, footers and footnotes
-       assertContains(header, contents);
-       assertContains(footer, contents);
-       assertContains(footer2, contents);
+        String content = getText("testPagesHeadersFootersAlphaLower.pages", iWorkParser);
+
+        // Check for headers, footers and footnotes
+        assertContains(header, content);
+        assertContains(footer, content);
+        assertContains(footer2, content);
     }
     
     /**
@@ -433,36 +353,40 @@ public class IWorkParserTest {
      */
     @Test
     public void testParsePagesAnnotations() throws Exception {
-       String commentA = "comment about the APXL file";
-       String commentB = "comment about UIMA";
-       
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesComments.pages");
-       Metadata metadata = new Metadata();
-       ContentHandler handler = new BodyContentHandler();
+        String commentA = "comment about the APXL file";
+        String commentB = "comment about UIMA";
 
-       iWorkParser.parse(input, handler, metadata, parseContext);
-       String contents = handler.toString();
+        String content = getText("testPagesComments.pages", iWorkParser);
 
-       // Check regular text
-       assertContains("Both Pages 1.x", contents); // P1
-       assertContains("understanding the Pages document", contents); // P1
-       assertContains("should be page 2", contents); // P2
+        // Check regular text
+        assertContains("Both Pages 1.x", content); // P1
+        assertContains("understanding the Pages document", content); // P1
+        assertContains("should be page 2", content); // P2
        
-       // Check for comments
-       assertContains(commentA, contents);
-       assertContains(commentB, contents);
+        // Check for comments
+        assertContains(commentA, content);
+        assertContains(commentB, content);
     }
     
     // TIKA-918
     @Test
     public void testNumbersExtractChartNames() throws Exception {
-       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testNumbersCharts.numbers");
-       Metadata metadata = new Metadata();
-       ContentHandler handler = new BodyContentHandler();
-       iWorkParser.parse(input, handler, metadata, parseContext);
-       String contents = handler.toString();
-       assertContains("Expenditure by Category", contents);
-       assertContains("Currency Chart name", contents);
-       assertContains("Chart 2", contents);
+        String content = getText("testNumbersCharts.numbers");
+        assertContains("Expenditure by Category", content);
+        assertContains("Currency Chart name", content);
+        assertContains("Chart 2", content);
+    }
+
+    //TIKA-3020
+    @Test
+    public void testKeyNoteTableMarkup() throws Exception {
+        String expected = "<table><tr>\t<td>Cell one</td>\t<td>Cell two</td>\t<td>Cell three</td></tr>" +
+                "<tr>\t<td>Cell four</td>\t<td>Cell 5</td>\t<td>Cell six</td></tr>" +
+                "<tr>\t<td>7</td>\t<td>Cell eight</td>\t<td>5/5/1985</td></tr>" +
+                "</table>";
+        String xml = getXML("testKeynote.key", iWorkParser).xml;
+        xml = xml.replaceAll("[\r\n]", "");
+        assertContains(expected, xml);
+
     }
 }

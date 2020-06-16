@@ -50,7 +50,10 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -69,6 +72,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/unpack")
 public class UnpackerResource {
+    private static final long MAX_ATTACHMENT_BYTES = 100*1024*1024;
+
     public static final String TEXT_FILENAME = "__TEXT__";
     private static final String META_FILENAME = "__METADATA__";
 
@@ -96,7 +101,7 @@ public class UnpackerResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info
     ) throws Exception {
-        return process(TikaResource.getInputStream(is, httpHeaders), httpHeaders, info, false);
+        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders, info, false);
     }
 
     @Path("/all{id:(/.*)?}")
@@ -107,7 +112,7 @@ public class UnpackerResource {
             @Context HttpHeaders httpHeaders,
             @Context UriInfo info
     ) throws Exception {
-        return process(TikaResource.getInputStream(is, httpHeaders), httpHeaders, info, true);
+        return process(TikaResource.getInputStream(is, new Metadata(), httpHeaders), httpHeaders, info, true);
     }
 
     private Map<String, byte[]> process(
@@ -127,7 +132,9 @@ public class UnpackerResource {
         TikaResource.fillParseContext(pc, httpHeaders.getRequestHeaders(), null);
         TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
         TikaResource.logRequest(LOG, info, metadata);
-
+        //even though we aren't currently parsing embedded documents,
+        //we need to add this to allow for "inline" use of other parsers.
+        pc.set(Parser.class, parser);
         ContentHandler ch;
         ByteArrayOutputStream text = new ByteArrayOutputStream();
 
@@ -172,9 +179,15 @@ public class UnpackerResource {
             return true;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b)
+                throws SAXException, IOException {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(inputStream, bos);
+            BoundedInputStream bis = new BoundedInputStream(MAX_ATTACHMENT_BYTES, inputStream);
+            IOUtils.copy(bis, bos);
+            if (bis.hasHitBound()) {
+                throw new IOExceptionWithCause(
+                        new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES+1, MAX_ATTACHMENT_BYTES));
+            }
             byte[] data = bos.toByteArray();
 
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);

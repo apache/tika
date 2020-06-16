@@ -18,6 +18,7 @@ package org.apache.tika.utils;
 
 import static java.util.Locale.ENGLISH;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -56,7 +57,7 @@ public class CharsetUtils {
                 for (String alias : charset.aliases()) {
                     COMMON_CHARSETS.put(alias.toLowerCase(ENGLISH), charset);
                 }
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 // ignore
             }
         }
@@ -139,7 +140,7 @@ public class CharsetUtils {
     public static String clean(String charsetName) {
         try {
             return forName(charsetName).name();
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return null;
         }
     }
@@ -194,8 +195,8 @@ public class CharsetUtils {
                 if (cs != null) {
                     return cs;
                 }
-            } catch (Exception e) {
-                // ignore
+            } catch (IllegalArgumentException|IllegalAccessException|InvocationTargetException e) {
+                //ignore
             }
         }
 

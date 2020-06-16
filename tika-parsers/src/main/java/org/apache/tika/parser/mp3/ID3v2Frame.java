@@ -31,6 +31,8 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * be turned into useful data.
  */
 public class ID3v2Frame implements MP3Frame {
+
+    private static final int MAX_RECORD_SIZE = 1_000_000;
     private int majorVersion;
     private int minorVersion;
     private int flags;
@@ -180,6 +182,10 @@ public class ID3v2Frame implements MP3Frame {
     }
     protected static byte[] readFully(InputStream inp, int length, boolean shortDataIsFatal)
             throws IOException {
+        if (length > MAX_RECORD_SIZE) {
+            throw new IOException("Record size ("+length+
+                    " bytes) is larger than the allowed record size: "+MAX_RECORD_SIZE);
+        }
         byte[] b = new byte[length];
 
         int pos = 0;

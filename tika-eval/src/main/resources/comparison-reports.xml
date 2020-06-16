@@ -704,7 +704,7 @@
             group by mime_id_a, mime_id_b)
         </sql>
         <sql>
-            update parse_time_compared ptc set prcnt_increase=(
+            update parse_time_compared ptc set prcnt_increase=(100.0 *
             cast(total_b as decimal)/cast(total_a as decimal))
             where total_a > 0;
         </sql>
@@ -1722,6 +1722,7 @@
             from parse_time_compared ptc
             join mimes ma on ptc.mime_id_a=ma.mime_id
             join mimes mb on ptc.mime_id_b=mb.mime_id
+            where TOTAL_A &gt; 1000 AND TOTAL_B &gt; 1000 -- only show comparisons if &gt; a second
             order by prcnt_increase desc
         </sql>
     </report>

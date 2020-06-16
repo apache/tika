@@ -269,7 +269,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.13-beta-3</version>
+        <version>4.13</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -311,7 +311,7 @@
       <dependency>
         <groupId>org.jvnet.staxex</groupId>
         <artifactId>stax-ex</artifactId>
-        <version>1.8.1</version>
+        <version>1.8.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -322,37 +322,36 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <!-- plugin versions -->
-    <forbiddenapis.version>2.6</forbiddenapis.version>
+    <forbiddenapis.version>3.0</forbiddenapis.version>
     <groovy.maven.version>2.1</groovy.maven.version>
     <maven.antrun.version>1.8</maven.antrun.version>
     <maven.assembly.version>3.1.0</maven.assembly.version>
     <maven.bundle.version>4.1.0</maven.bundle.version>
     <maven.failsafe.version>2.22.1</maven.failsafe.version>
-    <maven.javadoc.version>3.0.1</maven.javadoc.version>
-    <maven.scr.version>1.7.4</maven.scr.version>
-    <maven.surefire.version>2.22.1</maven.surefire.version>
+    <maven.javadoc.version>3.1.1</maven.javadoc.version>
+    <maven.scr.version>1.26.0</maven.scr.version>
+    <maven.surefire.version>3.0.0-M4</maven.surefire.version>
     <maven.shade.version>3.2.1</maven.shade.version>
     <rat.version>0.13</rat.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>4.0.1</poi.version>
-    <commons.compress.version>1.18</commons.compress.version>
+    <poi.version>4.1.2</poi.version>
+    <commons.compress.version>1.20</commons.compress.version>
     <commons.io.version>2.6</commons.io.version>
-    <commons.lang3.version>3.9</commons.lang3.version>
-    <gson.version>2.8.5</gson.version>
-    <guava.version>28.0-jre</guava.version>
+    <commons.lang3.version>3.10</commons.lang3.version>
+    <gson.version>2.8.6</gson.version>
+    <guava.version>28.2-jre</guava.version>
     <osgi.core.version>6.0.0</osgi.core.version>
 
-    <cxf.version>3.3.2</cxf.version>
-    <slf4j.version>1.7.26</slf4j.version>
-    <jackson.version>2.9.9</jackson.version>
-    <jackson.databind.version>2.9.9.1</jackson.databind.version>
+    <cxf.version>3.3.6</cxf.version>
+    <slf4j.version>1.7.28</slf4j.version>
+    <jackson.version>2.10.3</jackson.version>
     <!-- when this is next upgraded, see if we can get rid of
          javax.activation dependency in tika-server -->
     <jaxb.version>2.3.2</jaxb.version>
     <cli.version>1.4</cli.version>
-    <lucene.version>8.1.1</lucene.version>
-    <mockito.version>3.0.0</mockito.version>
-    <opennlp.version>1.9.1</opennlp.version>
+    <lucene.version>8.5.0</lucene.version>
+    <mockito.version>3.3.3</mockito.version>
+    <opennlp.version>1.9.2</opennlp.version>
   </properties>
 
   <build>
@@ -380,7 +379,10 @@
       <plugin>
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
-        <version>3.0.4</version>
+        <version>3.1.0</version>
+        <configuration>
+          <fail>false</fail>
+        </configuration>
         <executions>
           <execution>
             <id>audit-dependencies</id>
@@ -402,15 +404,16 @@
                     </excludeCoordinates>
                 </configuration>
       -->
+
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <!-- if this version contains commons-io 2.6, remove hard-coded commons-io version below -->
         <version>${forbiddenapis.version}</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
-          <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
+          <ignoreSignaturesOfMissingClasses>true</ignoreSignaturesOfMissingClasses>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
+          <excludes>test-documents/*.class</excludes>
           <bundledSignatures>
             <bundledSignature>jdk-unsafe</bundledSignature>
             <bundledSignature>jdk-deprecated</bundledSignature>
@@ -446,6 +449,17 @@
         <artifactId>maven-shade-plugin</artifactId>
         <version>${maven.shade.version}</version>
       </plugin>
+      <!-- assembly must happen after shade so that
+        tika-server's -bin.tgz/zip includes the uber jar
+        -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>${maven.assembly.version}</version>
+        <configuration>
+          <tarLongFileMode>posix</tarLongFileMode>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
@@ -454,14 +468,19 @@
          <dependency>
            <groupId>org.apache.maven.scm</groupId>
            <artifactId>maven-scm-provider-gitexe</artifactId>
-           <version>1.9.5</version>
+           <version>1.11.2</version>
          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.scm</groupId>
+            <artifactId>maven-scm-api</artifactId>
+            <version>1.11.2</version>
+          </dependency>
        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.0.0-M2</version>
+        <version>3.0.0-M3</version>
         <executions>
           <execution>
             <id>enforce</id>
@@ -532,6 +551,23 @@
             <version>${maven.javadoc.version}</version>
             <configuration>
               <doclint>none</doclint>
+              <source>1.8</source>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>jdk9</id>
+      <activation>
+        <jdk>[1.9,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <release>8</release>
             </configuration>
           </plugin>
         </plugins>

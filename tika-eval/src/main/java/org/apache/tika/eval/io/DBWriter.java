@@ -50,8 +50,8 @@ public class DBWriter implements IDBWriter {
     private static final Logger LOG = LoggerFactory.getLogger(DBWriter.class);
 
     private static final AtomicInteger WRITER_ID = new AtomicInteger();
-    private final AtomicLong insertedRows = new AtomicLong();
-    private final Long commitEveryX = 1000L;
+    private final Long commitEveryXRows = 10000L;
+    //private final Long commitEveryXMS = 60000L;
 
     private final Connection conn;
     private final JDBCUtil dbUtil;
@@ -60,7 +60,7 @@ public class DBWriter implements IDBWriter {
 
     //<tableName, preparedStatement>
     private final Map<String, PreparedStatement> inserts = new HashMap<>();
-
+    private final Map<String, LastInsert> lastInsertMap = new HashMap<>();
     public DBWriter(Connection connection, List<TableInfo> tableInfos, JDBCUtil dbUtil, MimeBuffer mimeBuffer)
             throws IOException, SQLException {
 
@@ -71,6 +71,7 @@ public class DBWriter implements IDBWriter {
             try {
                 PreparedStatement st = createPreparedInsert(tableInfo);
                 inserts.put(tableInfo.getName(), st);
+                lastInsertMap.put(tableInfo.getName(), new LastInsert());
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -115,11 +116,19 @@ public class DBWriter implements IDBWriter {
                 throw new RuntimeException("Failed to create prepared statement for: "+
                         table.getName());
             }
-            dbUtil.insert(p, table, data);
-            long rows = insertedRows.incrementAndGet();
-            if (rows % commitEveryX == 0) {
-                LOG.debug("writer ({}) is committing after {} rows", myId, rows);
+            dbUtil.batchInsert(p, table, data);
+            LastInsert lastInsert = lastInsertMap.get(table.getName());
+            lastInsert.rowCount++;
+            long elapsed = System.currentTimeMillis()-lastInsert.lastInsert;
+            if (
+                    //elapsed > commitEveryXMS ||
+                lastInsert.rowCount % commitEveryXRows == 0) {
+                LOG.info("writer ({}) on table ({}) is committing after {} rows and {} ms", myId,
+                        table.getName(),
+                        lastInsert.rowCount, elapsed);
+                p.executeBatch();
                 conn.commit();
+                lastInsert.lastInsert = System.currentTimeMillis();
             }
         } catch (SQLException e) {
             throw new IOException(e);
@@ -127,6 +136,13 @@ public class DBWriter implements IDBWriter {
     }
 
     public void close() throws IOException {
+        for (PreparedStatement p : inserts.values()) {
+            try {
+                p.executeBatch();
+            } catch (SQLException e) {
+                throw new IOExceptionWithCause(e);
+            }
+        }
         try {
             conn.commit();
         } catch (SQLException e){
@@ -138,5 +154,10 @@ public class DBWriter implements IDBWriter {
             throw new IOExceptionWithCause(e);
         }
 
+    }
+
+    private class LastInsert {
+        private long lastInsert = System.currentTimeMillis();
+        private long rowCount = 0;
     }
 }

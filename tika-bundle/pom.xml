@@ -135,6 +135,45 @@
       <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
+    
+    <dependency>
+	    <groupId>org.glassfish.jaxb</groupId>
+	    <artifactId>jaxb-runtime</artifactId>
+	    <version>2.3.2</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>com.sun.istack</groupId>
+	    <artifactId>istack-commons-runtime</artifactId>
+	    <version>3.0.8</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>com.sun.xml.fastinfoset</groupId>
+	    <artifactId>FastInfoset</artifactId>
+	    <version>1.2.16</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+    <groupId>jakarta.activation</groupId>
+	  <artifactId>jakarta.activation-api</artifactId>
+	  <version>1.2.1</version>
+	  <scope>test</scope>
+	</dependency>
+	<dependency>
+	  <groupId>jakarta.xml.bind</groupId>
+	  <artifactId>jakarta.xml.bind-api</artifactId>
+	  <version>2.3.2</version>
+	  <scope>test</scope>
+	</dependency>
+    <dependency>
+	  <groupId>org.glassfish.jaxb</groupId>
+	  <artifactId>txw2</artifactId>
+	  <version>2.3.2</version>
+	  <scope>test</scope>
+	</dependency>
+	
+    
   </dependencies>
 
   <build>
@@ -160,10 +199,12 @@
               commons-io|
               commons-exec|
               commons-collections4|
+              dd-plist|
               junrar|
               pdfbox|
               pdfbox-tools|
               pdfbox-debugger|
+              pdfbox-preflight|
               fontbox|
               jempbox|
               bcmail-jdk15on|
@@ -172,11 +213,11 @@
               poi|poi-scratchpad|
               poi-ooxml|
               poi-ooxml-schemas|
+              commons-math3|
               curvesapi|
               xmlbeans|
               jackcess|
               jackcess-encrypt|
-              commons-lang|
               commons-lang3|
               tagsoup|
               asm|
@@ -185,11 +226,12 @@
               vorbis-java-tika|
               isoparser|
               metadata-extractor|
-              xmpcore|
+              xmpcore-shaded|
               json-simple|
               boilerpipe|
               rome|
               rome-utils|
+              jdom2|
               sentiment-analysis-parser|
               opennlp-tools|
               geoapi|
@@ -210,7 +252,9 @@
               jcip-annotations|
               jmatio|
               guava|
-              age-predictor-api</Embed-Dependency>
+              age-predictor-api|
+              SparseBitSet
+            </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Export-Package>
@@ -235,9 +279,15 @@
               org.apache.tika.fork,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
+              com.adobe.xmp.impl;resolution:=optional,
+              com.adobe.xmp.options;resolution:=optional,
+              com.dd.plist;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
+              com.github.jaiimageio.*;resolution:=optional,
+              com.google.appengine.api.*;resolution:=optional,
+              com.google.apphosting.api.*;resolution:=optional,
               com.google.common.util.concurrent.internal;resolution:=optional,
               com.google.errorprone.annotations;resolution:=optional,
               com.google.errorprone.annotations.concurrent;resolution:=optional,
@@ -251,6 +301,8 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
+              edu.mit.ll.mitie;resolution:=optional,
+              edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
               edu.wisc.ssec.mcidas.adde;resolution:=optional,
 	          edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
@@ -279,6 +331,18 @@
               opennlp.tools.namefind;resolution:=optional,
 	          opennlp.tools.authorage;resolution:=optional,
               net.didion.jwnl;resolution:=optional,
+              net.sf.saxon;resolution:=optional,
+              net.sf.saxon.dom;resolution:=optional,
+              net.sf.saxon.om;resolution:=optional,
+              net.sf.saxon.query;resolution:=optional,
+              net.sf.saxon.sxpath;resolution:=optional,
+              net.sf.saxon.value;resolution:=optional,
+              org.apache.batik.anim.dom;resolution:=optional,
+              org.apache.batik.bridge;resolution:=optional,
+              org.apache.batik.ext.awt;resolution:=optional,
+              org.apache.batik.ext.awt.image.renderable;resolution:=optional,
+              org.apache.batik.gvt;resolution:=optional,
+              org.apache.batik.util;resolution:=optional,
               org.apache.cxf.jaxrs.client;resolution:=optional,
               org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
               org.apache.commons.exec;resolution:=optional,
@@ -289,24 +353,34 @@
               org.apache.commons.httpclient.params;resolution:=optional,
               org.apache.commons.httpclient.protocol;resolution:=optional,
               org.apache.commons.httpclient.util;resolution:=optional,
-
-              org.apache.commons.math3.exception;resolution:=optional,
-              org.apache.commons.math3.linear;resolution:=optional,
-              org.apache.commons.math3.stat.regression;resolution:=optional,
               org.apache.commons.vfs2;resolution:=optional,
               org.apache.commons.vfs2.provider;resolution:=optional,
               org.apache.commons.vfs2.util;resolution:=optional,
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
+              org.apache.pdfbox.preflight.*;resolution:=optional,
               org.apache.sis;resolution:=optional,
+              org.apache.sis.coverage;resolution:=optional,
+              org.apache.sis.coverage.grid;resolution:=optional,
               org.apache.sis.distance;resolution:=optional,
               org.apache.sis.feature;resolution:=optional,
               org.apache.sis.geometry;resolution:=optional,
+              org.apache.sis.internal.coverage;resolution:=optional,
               org.apache.sis.internal.feature;resolution:=optional,
               org.apache.sis.internal.referencing;resolution:=optional,
+              org.apache.sis.internal.referencing.j2d;resolution:=optional,
+              org.apache.sis.internal.referencing.provider;resolution:=optional,
+              org.apache.sis.io.wkt;resolution:=optional,
               org.apache.sis.parameter;resolution:=optional,
               org.apache.sis.referencing;resolution:=optional,
+              org.apache.sis.referencing.crs;resolution:=optional,
+              org.apache.sis.referencing.cs;resolution:=optional,
+              org.apache.sis.referencing.datum;resolution:=optional,
+              org.apache.sis.referencing.operation;resolution:=optional,
+              org.apache.sis.referencing.operation.builder;resolution:=optional,
+              org.apache.sis.referencing.operation.matrix;resolution:=optional,
+              org.apache.sis.referencing.operation.transform;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
@@ -339,6 +413,7 @@
               org.jaxen.dom4j;resolution:=optional,
               org.jaxen.pattern;resolution:=optional,
               org.jaxen.saxpath;resolution:=optional,
+              org.jaxen.util;resolution:=optional,
               org.jdom;resolution:=optional,
               org.jdom.input;resolution:=optional,
               org.jdom.output;resolution:=optional,
@@ -457,6 +532,7 @@
               *
             </Import-Package>
           </instructions>
+          <createDependencyReducedPom>true</createDependencyReducedPom>
         </configuration>
       </plugin>
       <!-- TIKA-763: Workaround to avoid including LGPL classes -->
@@ -504,7 +580,9 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <descriptor>test-bundles.xml</descriptor>
+              <descriptors>
+                <descriptor>test-bundles.xml</descriptor>
+              </descriptors>
               <finalName>test</finalName>
               <attach>false</attach>
             </configuration>
@@ -524,6 +602,9 @@
           </execution>
         </executions>
         <configuration>
+          <additionalClasspathElements>
+          	<additionalClasspathElement>${project.build.directory}/test-bundles/jdk9plus</additionalClasspathElement>
+          </additionalClasspathElements>
           <systemPropertyVariables>
             <org.ops4j.pax.logging.DefaultServiceLog.level>
               INFO

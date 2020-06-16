@@ -46,10 +46,17 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED =
             Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 
+    //exception in embedded file
     public final static Property EMBEDDED_EXCEPTION = ParserUtils.EMBEDDED_EXCEPTION;
-
+    //exception in main file
+    public final static Property CONTAINER_EXCEPTION = Property.internalText(
+            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime");
     public final static Property EMBEDDED_RESOURCE_PATH =
             Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"embedded_resource_path");
+
+    public final static Property EMBEDDED_DEPTH =
+            Property.internalInteger(TikaCoreProperties.TIKA_META_PREFIX+"embedded_depth");
+
 
     private final ContentHandlerFactory contentHandlerFactory;
 
@@ -90,6 +97,7 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
         if (embeddedDepth >= MAX_DEPTH) {
             throw new SAXException("Max embedded depth reached: "+embeddedDepth);
         }
+        metadata.set(EMBEDDED_DEPTH, embeddedDepth);
     }
     /**
      * This is called after parsing each embedded document.  Override this
@@ -117,6 +125,7 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
         if (hasHitMaximumEmbeddedResources()) {
             metadata.set(EMBEDDED_RESOURCE_LIMIT_REACHED, "true");
         }
+        metadata.set(EMBEDDED_DEPTH, 0);
     }
 
     /**

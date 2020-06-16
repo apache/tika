@@ -87,9 +87,14 @@ public class OutlookPSTParser extends AbstractParser {
             metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
             boolean isValid = pstFile.getFileHandle().getFD().valid();
             metadata.set("isValid", valueOf(isValid));
+            if(pstFile.getPSTFileType() == PSTFile.PST_TYPE_2013_UNICODE) {
+                throw new TikaException("OST 2013 support not added yet. It will be when https://github.com/rjohnsondev/java-libpst/issues/60 is fixed.");
+            }
             if (isValid) {
                 parseFolder(xhtml, pstFile.getRootFolder(), embeddedExtractor);
             }
+        } catch (TikaException e) {
+            throw e;
         } catch (Exception e) {
             throw new TikaException(e.getMessage(), e);
         } finally {
@@ -260,7 +265,7 @@ public class OutlookPSTParser extends AbstractParser {
                 xhtml.endElement("div");
 
             } catch (Exception e) {
-                throw new TikaException("Unable to unpack document stream", e);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, mailMetadata);
             }
         }
     }

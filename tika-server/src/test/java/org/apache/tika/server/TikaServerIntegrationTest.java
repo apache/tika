@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -60,6 +61,8 @@ public class TikaServerIntegrationTest extends TikaTest {
     private static final String TEST_STDOUT_STDERR = "mock/testStdOutErr.xml";
     private static final String TEST_STATIC_STDOUT_STDERR = "mock/testStaticStdOutErr.xml";
     private static final String META_PATH = "/rmeta";
+
+    private static final long MAX_WAIT_MS = 60000;
 
     //running into conflicts on 9998 with the CXFTestBase tests
     //TODO: figure out why?!
@@ -323,7 +326,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100",
                                 "-tmpFilePrefix", "tika-server-stderr"
 
@@ -360,7 +363,7 @@ public class TikaServerIntegrationTest extends TikaTest {
                         new String[]{
                                 "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
-                                "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
+                                "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100"
                         });
             }
@@ -423,27 +426,29 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
 
     private void awaitServerStartup() throws Exception {
-
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
         WebClient client = WebClient.create(endPoint+"/tika").accept("text/plain");
-        while (elapsed < 30000) {
+        while (elapsed < MAX_WAIT_MS) {
             try {
                 Response response = client.get();
                 if (response.getStatus() == 200) {
+                    elapsed = Duration.between(started, Instant.now()).toMillis();
+                    LOG.info("client observes server successfully started after " +
+                            elapsed+ " ms");
                     return;
                 }
-                LOG.info("tika test client failed to connect to server with status: {}", response.getStatus());
+                LOG.debug("tika test client failed to connect to server with status: {}", response.getStatus());
 
             } catch (javax.ws.rs.ProcessingException e) {
-                LOG.info("tika test client failed to connect to server: {}", e.getMessage());
                 LOG.debug("tika test client failed to connect to server", e);
             }
 
             Thread.sleep(100);
             elapsed = Duration.between(started, Instant.now()).toMillis();
         }
-
+        throw new TimeoutException("couldn't connect to server after " +
+                elapsed + " ms");
     }
 
     @Test

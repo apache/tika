@@ -54,9 +54,12 @@ public interface TikaCoreProperties {
      *
      */
     public enum EmbeddedResourceType {
-        INLINE,
-        ATTACHMENT,
-        MACRO
+        INLINE, //image that is intended to be displayed in a rendering of the file
+        ATTACHMENT,//standard attachment as in email
+        MACRO, //any code that is intended to be run by the application
+        METADATA, //e.g. xmp, xfa
+        FONT,//embedded font files
+        THUMBNAIL;//TODO: set this in parsers that handle thumbnails
     };
 
     /**
@@ -222,7 +225,7 @@ public interface TikaCoreProperties {
       */
       Property CREATED = Property.composite(DublinCore.CREATED,
              new Property[] { 
-                     Office.CREATION_DATE, 
+                     Office.CREATION_DATE,
              });
      
      /** 
@@ -230,7 +233,7 @@ public interface TikaCoreProperties {
       * @see Office#SAVE_DATE
       */
       Property MODIFIED = Property.composite(DublinCore.MODIFIED,
-             new Property[] { 
+             new Property[] {
                      Office.SAVE_DATE,
                      Property.internalText("Last-Modified")
              });
@@ -284,5 +287,7 @@ public interface TikaCoreProperties {
                                                                      EmbeddedResourceType.ATTACHMENT.toString(),
                                                                      EmbeddedResourceType.INLINE.toString());
 
-    
+
+
+    Property HAS_SIGNATURE = Property.internalBoolean("hasSignature");
 }

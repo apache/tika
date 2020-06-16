@@ -1,6 +1,6 @@
-# Apache Tika JAX-RS Server
+# Apache Tika Server
 
-https://issues.apache.org/jira/browse/TIKA-593
+https://cwiki.apache.org/confluence/display/TIKA/TikaJAXRS
 
 Running
 -------
@@ -17,20 +17,30 @@ $ java -jar tika-server/target/tika-server.jar --help
 
 Running via Docker
 ------------------
-Assuming you have Docker installed, you can build you own local image using the:
+Assuming you have Docker installed, you can use a prebuilt image:
 
-`mvn dockerfile:build`
-
-The image will be named apache/tika with the tag being the version being built.
-For example, building Apache Tika Server 1.17 will result in an image of `apache/tika-server:1.17`
-
-You can then run this image by executing the following, replacing `1.17` with your build version:
-
-`docker run -d -p 9998:9998 apache/tika-server:1.17`
+`docker run -d -p 9998:9998 apache/tika`
 
 This will load Apache Tika Server and expose its interface on:
 
 `http://localhost:9998`
+
+You may also be interested in the https://github.com/apache/tika-docker project
+which provides prebuilt Docker images.
+
+Installing as a Service on Linux
+-----------------------
+To run as a service on Linux you need to run the `install_tika_service.sh` script.
+
+Assuming you have the binary distribution like `tika-server-1.24-bin.tgz`,
+then you can extract the install script via:
+
+`tar xzf tika-server-1.24-bin.tgz tika-server-1.24-bin/bin/install_tika_service.sh --strip-components=2`
+
+and then run the installation process via:
+
+`./install_tika_service.sh  ./tika-server-1.24-bin.tgz`
+
 
 Usage
 -----
@@ -59,4 +69,3 @@ HTTP Return Codes
 `415` - Unknown file type  
 `422` - Unparsable document of known type (password protected documents and unsupported versions like Biff5 Excel)  
 `500` - Internal error  
-

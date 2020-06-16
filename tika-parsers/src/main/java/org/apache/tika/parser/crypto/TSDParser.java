@@ -104,7 +104,7 @@ public class TSDParser extends AbstractParser {
             ris.rewind();
 
             //Try to parse embedded file in TSD file
-            this.parseTSDContent(ris, handler, TSDAndEmbeddedMetadata, context);
+            this.parseTSDContent(ris, xhtml, TSDAndEmbeddedMetadata, context);
             xhtml.endDocument();
         }
     }
@@ -128,6 +128,8 @@ public class TSDParser extends AbstractParser {
                 tsdMetasList.add(tsdMetas);
             }
 
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception ex) {
             LOG.error("Error in TSDParser.buildMetas {}", ex.getMessage());
             tsdMetasList.clear();
@@ -167,6 +169,8 @@ public class TSDParser extends AbstractParser {
                     edx.parseEmbedded(is, handler, metadata, false);
                 }
 
+            } catch (SecurityException e) {
+                throw e;
             } catch (Exception ex) {
                 LOG.error("Error in TSDParser.parseTSDContent {}", ex.getMessage());
             } finally {
@@ -179,7 +183,7 @@ public class TSDParser extends AbstractParser {
         if (cmsTimeStampedDataParser != null) {
             try {
                 cmsTimeStampedDataParser.close();
-            } catch (Exception ex) {
+            } catch (IOException ex) {
                 LOG.error("Error in TSDParser.closeCMSParser {}", ex.getMessage());
             }
         }

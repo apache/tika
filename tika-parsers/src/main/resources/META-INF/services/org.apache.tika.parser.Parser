@@ -14,6 +14,7 @@
 #  limitations under the License.
 
 org.apache.tika.parser.apple.AppleSingleFileParser
+org.apache.tika.parser.apple.BPListParser
 org.apache.tika.parser.asm.ClassParser
 org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
@@ -48,6 +49,7 @@ org.apache.tika.parser.microsoft.MSOwnerFileParser
 org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.OldExcelParser
 org.apache.tika.parser.microsoft.TNEFParser
+org.apache.tika.parser.microsoft.onenote.OneNoteParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser
 org.apache.tika.parser.microsoft.xml.WordMLParser
@@ -84,3 +86,5 @@ org.apache.tika.parser.external.CompositeExternalParser
 org.apache.tika.parser.journal.JournalParser
 org.apache.tika.parser.image.ICNSParser
 org.apache.tika.parser.dbf.DBFParser
+org.apache.tika.parser.xliff.XLIFF12Parser
+org.apache.tika.parser.xliff.XLZParser

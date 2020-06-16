@@ -98,6 +98,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         } else {
             formatter = new TikaExcelDataFormatter(locale);
         }
+        OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
+        if (officeParserConfig != null) {
+            ((TikaExcelDataFormatter)formatter).setDateFormatOverride(officeParserConfig.getDateFormatOverride());
+        }
     }
 
     protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
@@ -448,7 +452,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         public void cell(String cellRef, String formattedValue, XSSFComment comment) {
             try {
                 // Handle any missing cells
-                int colNum = (new CellReference(cellRef)).getCol();
+                int colNum = (cellRef == null) ? lastSeenCol+1 : (new CellReference(cellRef)).getCol();
                 for (int cn=lastSeenCol+1; cn<colNum; cn++) {
                     xhtml.startElement("td");
                     xhtml.endElement("td");

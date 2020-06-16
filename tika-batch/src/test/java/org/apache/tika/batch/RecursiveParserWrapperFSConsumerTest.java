@@ -39,6 +39,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 
 public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
@@ -130,7 +131,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
         assertEquals(2, results.size());
         assertContains("another null pointer",
-                results.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "runtime"));
+                results.get(0).get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         assertEquals("embeddedAuthor", results.get(1).get("author"));
         assertContains("some_embedded_content", results.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));

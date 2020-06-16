@@ -33,14 +33,18 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -87,12 +91,16 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.parser.sas.SAS7BDATParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -136,6 +144,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private final static TesseractOCRConfig DEFAULT_TESSERACT_CONFIG = new TesseractOCRConfig();
 
+    private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
+    private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
+
+    public static final String XMP_DOCUMENT_CATALOG_LOCATION = "documentCatalog";
+    public static final String XMP_PAGE_LOCATION_PREFIX = "page ";
+
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -150,12 +164,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
+    final TesseractOCRParser tesseractOCRParser;//can be null!
 
     //zero-based pageIndex
     int pageIndex = 0;
     int startPage = -1;//private in PDFTextStripper...must have own copy because we override processpages
     int unmappedUnicodeCharsPerPage = 0;
     int totalCharsPerPage = 0;
+
+    private final Set<String> fontNames = new HashSet<>();
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config) throws IOException {
@@ -165,6 +182,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.metadata = metadata;
         this.config = config;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (config.getOcrStrategy() == NO_OCR) {
+            tesseractOCRParser = null;
+        } else {
+            tesseractOCRParser = (TesseractOCRParser)EmbeddedDocumentUtil.tryToFindExistingLeafParser(TesseractOCRParser.class, context);
+        }
     }
 
     @Override
@@ -175,6 +197,93 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to start a page", e);
         }
         writeParagraphStart();
+    }
+
+    private void extractXMPXFA(PDDocument pdfDocument, Metadata parentMetadata, ParseContext context) throws IOException, SAXException {
+        Set<MediaType> supportedTypes = Collections.EMPTY_SET;
+        Parser embeddedParser = context.get(Parser.class);
+        if (embeddedParser != null) {
+            supportedTypes = embeddedParser.getSupportedTypes(context);
+        }
+
+        if (supportedTypes == null || supportedTypes.size() == 0) {
+            return;
+        }
+
+        if (supportedTypes.contains(XMP_MEDIA_TYPE)) {
+            //try the main metadata
+            if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
+                try (InputStream is = pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata()) {
+                    extractXMPAsEmbeddedFile(is, XMP_DOCUMENT_CATALOG_LOCATION);
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                }
+            }
+            //now iterate through the pages
+            int pageNumber = 1;
+            for (PDPage page : pdfDocument.getPages()) {
+                if (page.getMetadata() != null) {
+                    try (InputStream is = page.getMetadata().exportXMPMetadata()) {
+                        extractXMPAsEmbeddedFile(is, XMP_PAGE_LOCATION_PREFIX+pageNumber);
+                    } catch (IOException e) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    }
+                }
+                pageNumber++;
+            }
+        }
+
+        //now try the xfa
+        if (pdfDocument.getDocumentCatalog().getAcroForm() != null &&
+            pdfDocument.getDocumentCatalog().getAcroForm().getXFA() != null) {
+
+            Metadata xfaMetadata = new Metadata();
+            xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
+            xfaMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
+            if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata) &&
+                    supportedTypes.contains(XFA_MEDIA_TYPE)) {
+                byte[] bytes = null;
+                try {
+                    bytes = pdfDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes();
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                }
+                if (bytes != null) {
+                    try (InputStream is = new ByteArrayInputStream(bytes)) {
+                        parseMetadata(is, xfaMetadata);
+                    }
+                }
+            }
+        }
+    }
+
+    private void extractXMPAsEmbeddedFile(InputStream is, String location) throws IOException, SAXException {
+        if (is == null) {
+            return;
+        }
+        Metadata xmpMetadata = new Metadata();
+        xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
+        xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
+        xmpMetadata.set(PDF.XMP_LOCATION, location);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata)) {
+            try {
+                parseMetadata(is, xmpMetadata);
+            } finally {
+                org.apache.tika.io.IOUtils.closeQuietly(is);
+            }
+        }
+
+    }
+
+    private void parseMetadata(InputStream stream, Metadata embeddedMetadata) throws IOException, SAXException {
+        try {
+            embeddedDocumentExtractor.parseEmbedded(
+                    stream,
+                    new EmbeddedContentHandler(xhtml),
+                    embeddedMetadata, false);
+        } catch (IOException e) {
+            handleCatchableIOE(e);
+        }
     }
 
     private void extractEmbeddedDocuments(PDDocument document)
@@ -298,7 +407,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     void handleCatchableIOE(IOException e) throws IOException {
-        if (config.isCatchIntermediateIOExceptions()) {
+        if (config.getCatchIntermediateIOExceptions()) {
             if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
                     e.getCause().getMessage().contains("Your document contained more than")) {
                 //TODO -- is there a cleaner way of checking for:
@@ -322,9 +431,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         TesseractOCRConfig tesseractConfig =
-                context.get(TesseractOCRConfig.class, DEFAULT_TESSERACT_CONFIG);
+                context.get(TesseractOCRConfig.class, tesseractOCRParser.getDefaultConfig());
 
-        TesseractOCRParser tesseractOCRParser = new TesseractOCRParser();
         if (! tesseractOCRParser.hasTesseract(tesseractConfig)) {
             throw new TikaException("Tesseract is not available. "+
                     "Please set the OCR_STRATEGY to NO_OCR or configure Tesseract correctly");
@@ -334,12 +442,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         TemporaryResources tmp = new TemporaryResources();
         try {
 
-            BufferedImage image = renderer.renderImage(pageIndex, config.getOcrImageScale(), config.getOcrImageType());
+            int dpi = config.getOcrDPI();
+            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType());
             Path tmpFile = tmp.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
                 ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
-                        os, config.getOcrDPI(), config.getOcrImageQuality());
+                        os, dpi, config.getOcrImageQuality());
             }
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 tesseractOCRParser.parseInline(is, xhtml, tesseractConfig);
@@ -358,8 +467,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
         metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE,
                 unmappedUnicodeCharsPerPage);
-        totalCharsPerPage = 0;
-        unmappedUnicodeCharsPerPage = 0;
+
 
         try {
             for (PDAnnotation annotation : page.getAnnotations()) {
@@ -446,6 +554,22 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to end a page", e);
         } catch (IOException e) {
             handleCatchableIOE(e);
+        } finally {
+            totalCharsPerPage = 0;
+            unmappedUnicodeCharsPerPage = 0;
+        }
+
+        if (config.getExtractFontNames()) {
+
+            for (COSName n : page.getResources().getFontNames()) {
+                PDFont font = page.getResources().getFont(n);
+                if (font != null && font.getFontDescriptor() != null) {
+                    String fontName = font.getFontDescriptor().getFontName();
+                    if (fontName != null) {
+                        fontNames.add(fontName);
+                    }
+                }
+            }
         }
     }
 
@@ -555,6 +679,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 handleCatchableIOE(e);
             }
 
+            extractXMPXFA(pdf, metadata, context);
+
             //extract acroform data at end of doc
             if (config.getExtractAcroFormContent() == true) {
                 try {
@@ -574,6 +700,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOExceptionWithCause("Unable to end a document", e);
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
+        }
+        if (fontNames.size() > 0) {
+            for (String fontName : fontNames) {
+                metadata.add(Font.FONT_NAME, fontName);
+            }
         }
     }
 
@@ -759,6 +890,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         //if there is, process it
         if (nonNull > 0) {
+            metadata.set(TikaCoreProperties.HAS_SIGNATURE, "true");
             xhtml.startElement("li", parentAttributes);
 
             AttributesImpl attrs = new AttributesImpl();

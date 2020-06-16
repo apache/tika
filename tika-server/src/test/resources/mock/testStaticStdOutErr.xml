@@ -30,15 +30,15 @@
     <write element="p">hello world! </write>
     <!-- write something to System.out -->
     <print_out>writing to System.out</print_out>
-    <hang millis="100" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_out static="true" random="200000"/>
-    <hang millis="100" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_out static="true" random="200000"/>
-    <hang millis="100" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_out static="true" random="200000"/>
-    <hang millis="100" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_err static="true" random="200000"/>
-    <hang millis="100" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_err static="true" random="200000"/>
     <hang millis="10" heavy="false"  />
     <print_out>writing to System.out</print_out>
@@ -48,25 +48,25 @@
     <print_out>writing to System.out</print_out>
     <hang millis="60" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="200" heavy="false"  />
+    <hang millis="20" heavy="false"  />
     <print_out>writing to System.out</print_out>
     <hang millis="10" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="300" heavy="false"  />
+    <hang millis="30" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="101" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="110" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_out>writing to System.out</print_out>
     <hang millis="20" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="200" heavy="false"  />
+    <hang millis="20" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="300" heavy="false"  />
+    <hang millis="30" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="100" heavy="false"  />
+    <hang millis="10" heavy="false"  />
     <print_out>writing to System.out</print_out>
-    <hang millis="500" heavy="false"  />
+    <hang millis="50" heavy="false"  />
     <!-- write something to System.err -->
     <print_err>writing to System.err</print_err>
 

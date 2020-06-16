@@ -29,16 +29,20 @@ import opennlp.tools.util.normalizer.EmojiCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.NumberCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.ShrinkCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
-import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.eval.textstats.StringStatsCalculator;
 
-
-public class LanguageIDWrapper {
+/**
+ * The most efficient way to call this in a multithreaded environment
+ * is to call {@link LanguageIDWrapper#loadBuiltInModels()} before
+ * instantiating the
+ */
+public class LanguageIDWrapper implements StringStatsCalculator<List<Language>> {
 
     static LanguageDetectorModel LANG_MODEL;
 
     static int MAX_TEXT_LENGTH = 50000;
 
-    public static void loadBuiltInModels() throws IOException {
+    public static synchronized void loadBuiltInModels() throws IOException {
         try (InputStream is = LanguageIDWrapper.class.getResourceAsStream(
                 "/opennlp/model_20190626.bin"
         )) {
@@ -62,6 +66,13 @@ public class LanguageIDWrapper {
 
     private final opennlp.tools.langdetect.LanguageDetector detector;
     public LanguageIDWrapper() {
+        if (LANG_MODEL == null) {
+            try {
+                loadBuiltInModels();
+            } catch (IOException e) {
+                throw new RuntimeException("couldn't load built in lang models", e);
+            }
+        }
         detector = new ProbingLanguageDetector(LANG_MODEL);
     }
 
@@ -80,6 +91,11 @@ public class LanguageIDWrapper {
 
     public static void setMaxTextLength(int maxTextLength) {
         MAX_TEXT_LENGTH = maxTextLength;
+    }
+
+    @Override
+    public List<Language> calculate(String txt) {
+        return getProbabilities(txt);
     }
 
     private static class TikaUrlCharSequenceNormalizer implements CharSequenceNormalizer {

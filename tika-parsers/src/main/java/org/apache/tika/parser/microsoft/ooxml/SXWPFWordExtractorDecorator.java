@@ -129,6 +129,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFStylesShim styles = null;
         try {
             styles = loadStyles(documentPart);
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));

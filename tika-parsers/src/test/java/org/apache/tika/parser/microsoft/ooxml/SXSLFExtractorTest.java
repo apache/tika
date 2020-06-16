@@ -32,12 +32,9 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
-import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
@@ -168,12 +165,11 @@ public class SXSLFExtractorTest extends TikaTest {
             String extension = extensions[i];
             String filename = "testPPT." + extension;
 
-            Parser parser = new AutoDetectParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
 
             try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                parser.parse(input, handler, metadata, parseContext);
+                AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
 
                 assertEquals(
                         "Mime-type checking for " + filename,
@@ -235,8 +231,6 @@ public class SXSLFExtractorTest extends TikaTest {
         for (int i = 0; i < extensions.length; i++) {
             String extension = extensions[i];
             final String filename = "testPPT." + extension;
-
-            Parser parser = new AutoDetectParser();
             final Metadata metadata = new Metadata();
 
             // Allow the value to be access from the inner class
@@ -255,7 +249,7 @@ public class SXSLFExtractorTest extends TikaTest {
             };
 
             try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                parser.parse(input, handler, metadata, parseContext);
+                AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
             }
         }
     }
@@ -276,13 +270,12 @@ public class SXSLFExtractorTest extends TikaTest {
             String extension = extensions[i];
             String filename = "testPPT." + extension;
 
-            Parser parser = new AutoDetectParser();
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
             ContentHandler handler = new BodyContentHandler();
 
             try (InputStream input = getResourceAsStream("/test-documents/" + filename)) {
-                parser.parse(input, handler, metadata, parseContext);
+                AUTO_DETECT_PARSER.parse(input, handler, metadata, parseContext);
 
                 // Should get the metadata
                 assertEquals(
@@ -503,7 +496,6 @@ public class SXSLFExtractorTest extends TikaTest {
         tests.put("testPPT_protected_passtika.pptx",
                 "This is an encrypted PowerPoint 2007 slide.");
 
-        Parser parser = new AutoDetectParser();
         Metadata m = new Metadata();
         PasswordProvider passwordProvider = new PasswordProvider() {
             @Override
@@ -518,7 +510,7 @@ public class SXSLFExtractorTest extends TikaTest {
         for (Map.Entry<String, String> e : tests.entrySet()) {
             try (InputStream is = getResourceAsStream("/test-documents/"+e.getKey())) {
                 ContentHandler handler = new BodyContentHandler();
-                parser.parse(is, handler, m, passwordContext);
+                AUTO_DETECT_PARSER.parse(is, handler, m, passwordContext);
                 assertContains(e.getValue(), handler.toString());
             }
         }
@@ -529,7 +521,7 @@ public class SXSLFExtractorTest extends TikaTest {
             boolean exc = false;
             try (InputStream is = getResourceAsStream("/test-documents/"+e.getKey())) {
                 ContentHandler handler = new BodyContentHandler();
-                parser.parse(is, handler, m, context);
+                AUTO_DETECT_PARSER.parse(is, handler, m, context);
             } catch (EncryptedDocumentException ex) {
                 exc = true;
             }

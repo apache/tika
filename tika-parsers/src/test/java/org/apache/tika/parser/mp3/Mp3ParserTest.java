@@ -16,22 +16,16 @@
  */
 package org.apache.tika.parser.mp3;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Assume;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing mp3 files.
@@ -53,20 +47,14 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingID3v1() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
 
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v1.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        Metadata metadata = new Metadata();
+        String content = getText("testMP3id3v1.mp3", metadata);
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
-        String content = handler.toString();
         assertContains("Test Title", content);
         assertContains("Test Artist", content);
         assertContains("Test Album", content);
@@ -86,14 +74,8 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingID3v2() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v2.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        String content = getText("testMP3id3v2.mp3", metadata);
 
         // Check core properties
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
@@ -101,7 +83,6 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
         // Check the textual contents
-        String content = handler.toString();
         assertContains("Test Title", content);
         assertContains("Test Artist", content);
         assertContains("Test Album", content);
@@ -153,20 +134,13 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingID3v1v2() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v1_v2.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        String content = getText("testMP3id3v1_v2.mp3", metadata);
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
-        String content = handler.toString();
         assertContains("Test Title", content);
         assertContains("Test Artist", content);
         assertContains("Test Album", content);
@@ -186,20 +160,13 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingID3v24() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v24.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        String content = getText("testMP3id3v24.mp3", metadata);
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
-        String content = handler.toString();
         assertContains("Test Title", content);
         assertContains("Test Artist", content);
         assertContains("Test Album", content);
@@ -232,14 +199,8 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingID3i18n() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3i18n.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        Metadata metadata = new Metadata();
+        String content = getText("testMP3i18n.mp3", metadata);
 
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
@@ -264,14 +225,8 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingID3i18nTruncated() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3i18n_truncated.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        String content = getText("testMP3i18n_truncated.mp3", metadata);
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
@@ -296,24 +251,17 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testMp3ParsingLyrics() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
 
         // Note - our test file has a lyrics tag, but lacks any
         //  lyrics in the tags, so we can't test that bit
         // TODO Find a better sample file
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3lyrics.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        Metadata metadata = new Metadata();
+        String content = getText("testMP3lyrics.mp3", metadata);
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
-        String content = handler.toString();
         assertContains("Test Title", content);
         assertContains("Test Artist", content);
         assertContains("Test Album", content);
@@ -352,16 +300,8 @@ public class Mp3ParserTest extends TikaTest {
 
     @Test
     public void testTIKA1589_noId3ReturnsDurationCorrectly() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3noid3.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-
-        assertEquals("2455.510986328125", metadata.get(XMPDM.DURATION));
+        assertEquals("2455.510986328125",
+                getXML("testMP3noid3.mp3").metadata.get(XMPDM.DURATION));
     }
     
     /**
@@ -373,30 +313,21 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testTIKA424() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+        Assume.assumeTrue(Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/test2.mp3") != null);
 
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/test2.mp3")) {
-            if (stream == null) {
-                // You haven't downloaded the file
-                // Skip the test
-                return;
-            }
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        Metadata metadata = new Metadata();
+        String content = getText("test2.mp3", metadata);
 
-       assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("Plus loin vers l'ouest", metadata.get(TikaCoreProperties.TITLE));
-       assertEquals("Merzhin", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Plus loin vers l'ouest", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Merzhin", metadata.get(TikaCoreProperties.CREATOR));
 
-       String content = handler.toString();
-       assertContains("Plus loin vers l'ouest", content);
+        assertContains("Plus loin vers l'ouest", content);
        
-       assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-       assertEquals("44100", metadata.get("samplerate"));
-       assertEquals("2", metadata.get("channels"));
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("2", metadata.get("channels"));
     }
     
     /**
@@ -408,44 +339,30 @@ public class Mp3ParserTest extends TikaTest {
      */
     @Test
     public void testTIKA474() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+        Metadata metadata = new Metadata();
+        String content = getText("testMP3truncated.mp3", metadata);
 
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3truncated.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        // Check we could get the headers from the start
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Girl you have no faith in medicine", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("The White Stripes", metadata.get(TikaCoreProperties.CREATOR));
 
-       // Check we could get the headers from the start
-       assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("Girl you have no faith in medicine", metadata.get(TikaCoreProperties.TITLE));
-       assertEquals("The White Stripes", metadata.get(TikaCoreProperties.CREATOR));
-
-       String content = handler.toString();
-       assertContains("Girl you have no faith in medicine", content);
-       assertContains("The White Stripes", content);
-       assertContains("Elephant", content);
-       assertContains("2003", content);
+        assertContains("Girl you have no faith in medicine", content);
+        assertContains("The White Stripes", content);
+        assertContains("Elephant", content);
+        assertContains("2003", content);
        
-       // File lacks any audio frames, so we can't know these
-       assertEquals(null, metadata.get("version"));
-       assertEquals(null, metadata.get("samplerate"));
-       assertEquals(null, metadata.get("channels"));
+        // File lacks any audio frames, so we can't know these
+        assertEquals(null, metadata.get("version"));
+        assertEquals(null, metadata.get("samplerate"));
+        assertEquals(null, metadata.get("channels"));
     }
 
     // TIKA-1024
     @Test
     public void testNakedUTF16BOM() throws Exception {
-       Parser parser = new AutoDetectParser(); // Should auto-detect!
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
-
-        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testNakedUTF16BOM.mp3")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
-       assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("", metadata.get(XMPDM.GENRE));
+        Metadata metadata = getXML("testNakedUTF16BOM.mp3").metadata;
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("", metadata.get(XMPDM.GENRE));
     }
 }

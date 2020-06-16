@@ -39,8 +39,10 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReader;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
+import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.tokens.ContrastStatistics;
 import org.apache.tika.eval.tokens.TokenContraster;
+import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.eval.tokens.TokenIntPair;
 import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
@@ -276,6 +278,9 @@ public class ExtractComparer extends AbstractProfiler {
         List<Integer> numAttachmentsA = countAttachments(metadataListA);
         List<Integer> numAttachmentsB = countAttachments(metadataListB);
 
+        String sharedDigestKey = findSharedDigestKey(metadataListA, metadataListB);
+        Map<Class, Object> tokenStatsA = null;
+        Map<Class, Object> tokenStatsB = null;
         //now get that metadata
         if (metadataListA != null) {
             for (int i = 0; i < metadataListA.size(); i++) {
@@ -291,7 +296,8 @@ public class ExtractComparer extends AbstractProfiler {
 
                 writeProfileData(fpsA, i, contentTagsA, metadataA, fileId, containerID, numAttachmentsA, PROFILES_A);
                 writeExceptionData(fileId, metadataA, EXCEPTION_TABLE_A);
-                int matchIndex = getMatch(i, metadataListA, metadataListB);
+                int matchIndex = getMatch(i, sharedDigestKey,
+                        handledB, metadataListA, metadataListB);
 
                 if (matchIndex > -1 && ! handledB.contains(matchIndex)) {
                     metadataB = metadataListB.get(matchIndex);
@@ -304,32 +310,36 @@ public class ExtractComparer extends AbstractProfiler {
                     writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
                 }
                 writeEmbeddedFilePathData(i, fileId, metadataA, metadataB);
-                //prep the token counting
-                tokenCounter.clear(FIELD_A);
-                tokenCounter.clear(FIELD_B);
                 //write content
                 try {
-                    writeContentData(fileId, contentTagsA, FIELD_A, CONTENTS_TABLE_A);
-                    writeContentData(fileId, contentTagsB, FIELD_B, CONTENTS_TABLE_B);
+                    tokenStatsA = calcTextStats(contentTagsA);
+                    writeContentData(fileId, tokenStatsA, CONTENTS_TABLE_A);
+                    tokenStatsB = calcTextStats(contentTagsB);
+                    if (metadataB != null) {
+                        writeContentData(fileId, tokenStatsB, CONTENTS_TABLE_B);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+                if (metadataB != null) {
+                    TokenCounts tokenCountsA = (TokenCounts) tokenStatsA.get(BasicTokenCountStatsCalculator.class);
+                    TokenCounts tokenCountsB = (TokenCounts) tokenStatsB.get(BasicTokenCountStatsCalculator.class);
+                    //arbitrary decision...only run the comparisons if there are > 10 tokens total
+                    //We may want to bump that value a bit higher?
+                    //now run comparisons
+                    if (tokenCountsA.getTotalTokens()
+                            + tokenCountsB.getTotalTokens() > 10) {
+                        Map<Cols, String> data = new HashMap<>();
+                        data.put(Cols.ID, fileId);
 
-                //now run comparisons
-                if (tokenCounter.getTokenStatistics(FIELD_A).getTotalTokens() > 0
-                        && tokenCounter.getTokenStatistics(FIELD_B).getTotalTokens() > 0) {
-                    Map<Cols, String> data = new HashMap<>();
-                    data.put(Cols.ID, fileId);
+                        ContrastStatistics contrastStatistics =
+                                tokenContraster.calculateContrastStatistics(
+                                        tokenCountsA,
+                                        tokenCountsB);
 
-                    ContrastStatistics contrastStatistics =
-                            tokenContraster.calculateContrastStatistics(
-                            tokenCounter.getTokens(FIELD_A),
-                            tokenCounter.getTokenStatistics(FIELD_A),
-                            tokenCounter.getTokens(FIELD_B),
-                            tokenCounter.getTokenStatistics(FIELD_B));
-
-                    writeContrasts(data, contrastStatistics);
-                    writer.writeRow(CONTENT_COMPARISONS, data);
+                        writeContrasts(data, contrastStatistics);
+                        writer.writeRow(CONTENT_COMPARISONS, data);
+                    }
                 }
             }
         }
@@ -349,16 +359,43 @@ public class ExtractComparer extends AbstractProfiler {
                 writeEmbeddedFilePathData(i, fileId, null, metadataB);
                 writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
 
-                //prep the token counting
-                tokenCounter.clear(FIELD_B);
                 //write content
                 try {
-                    writeContentData(fileId, contentTagsB, FIELD_B, CONTENTS_TABLE_B);
+                    tokenStatsB = calcTextStats(contentTagsB);
+                    writeContentData(fileId, tokenStatsB, CONTENTS_TABLE_B);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+
+    /**
+     * Checks only the first item in each list. Returns the first
+     * digest key shared by both, if it exists, null otherwise.
+     * @param metadataListA
+     * @param metadataListB
+     * @return
+     */
+    private String findSharedDigestKey(List<Metadata> metadataListA, List<Metadata> metadataListB) {
+        if (metadataListB == null || metadataListB.size() == 0) {
+            return null;
+        }
+        Set<String> digestA = new HashSet<>();
+        if (metadataListA != null) {
+            for (String n : metadataListA.get(0).names()) {
+                if (n.startsWith(DIGEST_KEY_PREFIX)) {
+                    digestA.add(n);
+                }
+            }
+        }
+        Metadata bMain = metadataListB.get(0);
+        for (String n : bMain.names()) {
+            if (digestA.contains(n)) {
+                return n;
+            }
+        }
+        return null;
     }
 
     private void writeEmbeddedFilePathData(int i, String fileId, Metadata mA, Metadata mB) {
@@ -410,12 +447,12 @@ public class ExtractComparer extends AbstractProfiler {
      * Try to find the matching metadata based on the AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH
      * If you can't find it, return -1;
      *
-     * @param i                index for match in metadataListA
+     * @param aIndex                index for match in metadataListA
      * @param metadataListA
      * @param metadataListB
      * @return
      */
-    private int getMatch(int i,
+    private int getMatch(int aIndex, String sharedDigestKey, Set<Integer> handledB,
                          List<Metadata> metadataListA,
                          List<Metadata> metadataListB) {
         //TODO: could make this more robust
@@ -423,19 +460,19 @@ public class ExtractComparer extends AbstractProfiler {
             return -1;
         }
         //assume first is always the container file
-        if (i == 0) {
+        if (aIndex == 0) {
             return 0;
         }
 
-        //first try to find matching digests
-        //this does not elegantly handle multiple matching digests
-        int match = findMatchingDigests(metadataListA.get(i), metadataListB);
-        if (match > -1) {
-            return match;
+        if (sharedDigestKey != null) {
+            //first try to find matching digests
+            //this does not elegantly handle multiple matching digests
+            return findMatchingDigests(sharedDigestKey, handledB,
+                    metadataListA.get(aIndex), metadataListB);
         }
 
         //assume same embedded resource path.  Not always true!
-        Metadata thisMetadata = metadataListA.get(i);
+        Metadata thisMetadata = metadataListA.get(aIndex);
         String embeddedPath = thisMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
         if (embeddedPath != null) {
             for (int j = 0; j < metadataListB.size(); j++) {
@@ -450,22 +487,27 @@ public class ExtractComparer extends AbstractProfiler {
         //last resort, if lists are same size, guess the same index
         if (metadataListA.size() == metadataListB.size()) {
             //assume no rearrangments if lists are the same size
-            return i;
+            return aIndex;
         }
         return -1;
     }
 
-    private int findMatchingDigests(Metadata metadata, List<Metadata> metadataListB) {
-        Set<String> digestKeys = new HashSet<>();
-        for (String n : metadata.names()) {
-            if (n.startsWith(DIGEST_KEY_PREFIX)) {
-                String digestA = metadata.get(n);
-                for (int i = 0; i < metadataListB.size(); i++) {
-                    String digestB = metadataListB.get(i).get(n);
-                    if (digestA != null && digestA.equals(digestB)) {
-                        return i;
-                    }
-                }
+    private int findMatchingDigests(String sharedDigestKey,
+                                    Set<Integer> handledB,
+                                    Metadata metadata, List<Metadata> metadataListB) {
+        String digestA = metadata.get(sharedDigestKey);
+        if (digestA == null) {
+            return -1;
+        }
+
+        for (int i = 0; i < metadataListB.size(); i++)  {
+            if (handledB.contains(i)) {
+                continue;
+            }
+            Metadata mB = metadataListB.get(i);
+            String digestB = mB.get(sharedDigestKey);
+            if (digestA.equalsIgnoreCase(digestB)) {
+                return i;
             }
         }
         return -1;

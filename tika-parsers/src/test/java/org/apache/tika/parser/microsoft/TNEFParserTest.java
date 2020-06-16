@@ -95,4 +95,10 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
         assertEquals("quick.xml", handler.filenames.get(5));
         assertEquals(MediaType.application("xml"), handler.mediaTypes.get(5));
     }
+
+    @Test
+    public void testRTF() throws Exception {
+        String xml = getXML("testWINMAIL.dat").xml;
+        assertContains("Der schnelle braune", xml);
+    }
 }

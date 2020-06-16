@@ -35,6 +35,7 @@ import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
 import org.apache.poi.hssf.extractor.OldExcelExtractor;
+import org.apache.poi.hssf.model.InternalWorkbook;
 import org.apache.poi.hssf.record.BOFRecord;
 import org.apache.poi.hssf.record.BoundSheetRecord;
 import org.apache.poi.hssf.record.CellValueRecordInterface;
@@ -65,6 +66,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -92,7 +94,6 @@ import org.xml.sax.SAXException;
  */
 public class ExcelExtractor extends AbstractPOIFSExtractor {
 
-    private static final String WORKBOOK_ENTRY = "Workbook";
     private static final String BOOK_ENTRY = "Book";
     /**
      * <code>true</code> if the HSSFListener should be registered
@@ -147,7 +148,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             DirectoryNode root, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
-        if (!root.hasEntry(WORKBOOK_ENTRY)) {
+        String workbookEntryName = findWorkbookEntry(root);
+        if (workbookEntryName == null) {
             if (root.hasEntry(BOOK_ENTRY)) {
                 // Excel 5 / Excel 95 file
                 // Records are in a different structure so needs a
@@ -156,8 +158,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 OldExcelParser.parse(extractor, xhtml);
                 return;
             } else {
-                // Corrupt file / very old file, just skip text extraction
-                return;
+                // Corrupt file / very old file
+                throw new TikaException("Couldn't find workbook entry");
             }
         }
 
@@ -165,7 +167,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         Biff8EncryptionKey.setCurrentUserPassword(getPassword());
 
         // Have the file processed in event mode
-        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this, officeParserConfig);
+        TikaHSSFListener listener = new TikaHSSFListener(workbookEntryName,
+                xhtml, locale, this, officeParserConfig);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
 
@@ -179,6 +182,22 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 }
             }
         }
+    }
+
+    /**
+     * Looks for one of the variant names for the workbook entry;
+     * returns null if not found.
+     *
+     * @param root directory root to search
+     * @return workbook entry or null
+     */
+    private static String findWorkbookEntry(DirectoryNode root) {
+        for (String workbookDirEntryName : InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES) {
+            if (root.hasEntry(workbookDirEntryName)) {
+                return workbookDirEntryName;
+            }
+        }
+        return null;
     }
 
     // ======================================================================
@@ -222,6 +241,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          */
         private FormatTrackingHSSFListener formatListener;
         private final TikaExcelDataFormatter tikaExcelDataFormatter;
+        private final String workbookEntryName;
 
         /**
          * List of worksheet names.
@@ -255,13 +275,19 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          *
          * @param handler Destination to write the parsed output to
          */
-        private TikaHSSFListener(XHTMLContentHandler handler, Locale locale, AbstractPOIFSExtractor extractor, OfficeParserConfig officeParserConfig) {
+        private TikaHSSFListener(String workbookEntryName,
+                                 XHTMLContentHandler handler, Locale locale,
+                                 AbstractPOIFSExtractor extractor,
+                                 OfficeParserConfig officeParserConfig) {
+            this.workbookEntryName = workbookEntryName;
             this.handler = handler;
             this.extractor = extractor;
             this.format = NumberFormat.getInstance(locale);
             this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
             this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
             this.officeParserConfig = officeParserConfig;
+
+            this.tikaExcelDataFormatter.setDateFormatOverride(officeParserConfig.getDateFormatOverride());
         }
 
         /**
@@ -310,7 +336,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
 
             // Create event factory and process Workbook (fire events)
-            DocumentInputStream documentInputStream = root.createDocumentInputStream(WORKBOOK_ENTRY);
+            DocumentInputStream documentInputStream = root.createDocumentInputStream(
+                    workbookEntryName);
             HSSFEventFactory eventFactory = new HSSFEventFactory();
             try {
                 eventFactory.processEvents(hssfRequest, documentInputStream);
@@ -652,12 +679,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
         }
         private class TikaFormatTrackingHSSFListener extends FormatTrackingHSSFListener {
-            //TIKA-2025 -- use this to preserve large numbers in "General" format
-            //against the MS spec.
-            final TikaExcelGeneralFormat generalFormat;
             public TikaFormatTrackingHSSFListener(HSSFListener childListener, Locale locale) {
                 super(childListener, locale);
-                generalFormat = new TikaExcelGeneralFormat(locale);
             }
 
             @Override
@@ -669,9 +692,6 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             @Override
             public String formatNumberDateCell(CellValueRecordInterface cell) {
                 String formatString = this.getFormatString(cell);
-                if (formatString != null && ! formatString.equals("General")) {
-                    return super.formatNumberDateCell(cell);
-                }
 
                 double value;
                 if(cell instanceof NumberRecord) {
@@ -680,10 +700,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     if(!(cell instanceof FormulaRecord)) {
                         throw new IllegalArgumentException("Unsupported CellValue Record passed in " + cell);
                     }
-
                     value = ((FormulaRecord)cell).getValue();
                 }
-                return generalFormat.format(value);
+                if (DateUtil.isADateFormat(getFormatIndex(cell), formatString)) {
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell), formatString, false);
+                } else if ("general".equalsIgnoreCase(formatString)) {
+                    return tikaExcelDataFormatter.formatRawCellContents(value, getFormatIndex(cell), formatString, false);
+                }
+                return super.formatNumberDateCell(cell);
             }
         }
     }

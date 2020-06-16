@@ -71,7 +71,7 @@ public class IWork13PackageParser extends AbstractParser {
         /**
          * @return Specific type if this identifies one, otherwise null
          */
-        protected static MediaType detectIfPossible(ZipEntry entry) {
+        public static MediaType detectIfPossible(ZipEntry entry) {
            String name = entry.getName();
            if (! name.endsWith(".iwa")) return null;
 

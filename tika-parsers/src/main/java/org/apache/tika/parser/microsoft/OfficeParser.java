@@ -137,7 +137,7 @@ public class OfficeParser extends AbstractOfficeParser {
 
                 //We might consider not bothering to check for macros in root,
                 //if we know we're processing ppt based on content-type identified in metadata
-                extractMacros(root.getNFileSystem(), xhtml,
+                extractMacros(root.getFileSystem(), xhtml,
                             EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context));
 
             }
@@ -317,10 +317,9 @@ public class OfficeParser extends AbstractOfficeParser {
         try {
             reader = new VBAMacroReader(fs);
             macros = reader.readMacros();
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
-            if (e instanceof SecurityException) {
-                throw e;
-            }
             Metadata m = new Metadata();
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");

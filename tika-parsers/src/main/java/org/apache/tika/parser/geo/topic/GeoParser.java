@@ -19,6 +19,7 @@ package org.apache.tika.parser.geo.topic;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -50,7 +52,7 @@ public class GeoParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES = 
                                     Collections.singleton(MEDIA_TYPE);
     
-    private GeoParserConfig config = new GeoParserConfig();
+    private GeoParserConfig defaultConfig = new GeoParserConfig();
     private GeoGazetteerClient gazetteerClient;
     
     private boolean initialized;
@@ -65,9 +67,9 @@ public class GeoParser extends AbstractParser {
 
     /**
      * Initializes this parser
-     * @param modelUrl the URL to NER model
+     * @param geoParserConfig config to load the url model from and set the gazetteer client
      */
-    public void initialize(URL modelUrl) {
+    public void initialize(GeoParserConfig geoParserConfig) {
         try {
           if (this.modelUrl != null && this.modelUrl.toURI().equals(modelUrl.toURI())) {
               return;
@@ -76,8 +78,8 @@ public class GeoParser extends AbstractParser {
               throw new RuntimeException(e1.getMessage());
         }
         
-        this.modelUrl = modelUrl;
-        gazetteerClient = new GeoGazetteerClient(config);
+        this.modelUrl = geoParserConfig.getNerModelUrl();
+        gazetteerClient = new GeoGazetteerClient(geoParserConfig);
         
         // Check if the NER model is available, and if the
         //  lucene-geo-gazetteer is available
@@ -102,9 +104,9 @@ public class GeoParser extends AbstractParser {
 
         /*----------------configure this parser by ParseContext Object---------------------*/
 
-        this.config = context.get(GeoParserConfig.class, config);
-        initialize(this.config.getNerModelUrl());
-        if (!isAvailable()) {
+        GeoParserConfig geoParserConfig = context.get(GeoParserConfig.class, defaultConfig);
+        initialize(geoParserConfig);
+        if (!isAvailable(geoParserConfig)) {
             return;
         }
         NameEntityExtractor extractor = null;
@@ -149,10 +151,37 @@ public class GeoParser extends AbstractParser {
     	return gazetteerClient.getLocations(locationNameEntities);
     }
 
-    public boolean isAvailable() {
+    public boolean isAvailable(GeoParserConfig geoParserConfig) {
         if (!initialized) {
-            initialize(config.getNerModelUrl());
+            initialize(geoParserConfig);
         }
         return this.available;
+    }
+
+    @Field
+    public void setGazetteerRestEndpoint(String gazetteerRestEndpoint) {
+        defaultConfig.setGazetteerRestEndpoint(gazetteerRestEndpoint);
+    }
+
+    /**
+     *
+     * @param nerModelUrl url for the NER model
+     * @throws IllegalArgumentException for a malformed URL
+     */
+    @Field
+    public void setNerModelUrl(String nerModelUrl) {
+        try {
+            defaultConfig.setNerModelUrl(new URL(nerModelUrl));
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("malformed url "+nerModelUrl, e);
+        }
+    }
+
+    public String getGazetteerRestEndpoint() {
+        return defaultConfig.getGazetteerRestEndpoint();
+    }
+
+    public URL getNerModelUrl() {
+        return defaultConfig.getNerModelUrl();
     }
 }

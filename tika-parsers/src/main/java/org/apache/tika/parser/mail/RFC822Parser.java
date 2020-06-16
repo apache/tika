@@ -94,7 +94,7 @@ public class RFC822Parser extends AbstractParser {
                 extractAllAlternatives);
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
-        
+        xhtml.startDocument();
         TikaInputStream tstream = TikaInputStream.get(stream);
         try {
             parser.parse(tstream);
@@ -112,6 +112,7 @@ public class RFC822Parser extends AbstractParser {
                 throw new TikaException("Failed to parse an email message", e);
             }
         }
+        xhtml.endDocument();
     }
 
     /**

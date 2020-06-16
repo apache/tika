@@ -71,4 +71,5 @@ public class TiffParserTest extends TikaTest {
                 .metadata
                 .getInt(TIFF.EXIF_PAGE_COUNT));
     }
+
 }

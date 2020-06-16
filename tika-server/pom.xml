@@ -35,7 +35,7 @@
     <pluginRepository>
       <id>miredot</id>
       <name>MireDot Releases</name>
-      <url>https://nexus.qmino.com/content/repositories/miredot</url>
+      <url>http://nexus.qmino.com/content/repositories/miredot</url>
     </pluginRepository>
   </pluginRepositories>
 
@@ -264,18 +264,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.spotify</groupId>
-        <artifactId>dockerfile-maven-plugin</artifactId>
-        <version>1.4.10</version>
-        <configuration>
-          <repository>apache/tika-server</repository>
-          <tag>${project.version}</tag>
-          <buildArgs>
-            <JAR_FILE>tika-server-${project.version}.jar</JAR_FILE>
-          </buildArgs>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
@@ -305,6 +293,23 @@
           </excludes>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>assembly.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id> <!-- this is used for inheritance merges -->
+            <phase>package</phase> <!-- bind to the packaging phase -->
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -332,7 +337,7 @@
           <plugin>
             <groupId>com.qmino</groupId>
             <artifactId>miredot-plugin</artifactId>
-            <version>2.2-Java10</version>
+            <version>2.2</version>
             <executions>
               <execution>
                 <goals>
@@ -350,8 +355,10 @@
               <output>
                 <html />
               </output>
-              <!-- Free Miredot license key, valid until Jan 31st, 2020 https://issues.apache.org/jira/browse/TIKA-2253 -->
-              <licence>cHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAyMC0wMS0zMXx0cnVlfC0xI01Dd0NGRUV5QktCTlBJbXhwLzBvaWxuak1MYkxZQW5XQWhScWdwM0c5aFdWMGpOUFA5MlNFc2pVS1FKZStRPT0=</licence>
+              <!-- Free Miredot license key, valid until Jan 31st(?), 2025
+              https://issues.apache.org/jira/browse/TIKA-2253
+               https://issues.apache.org/jira/browse/TIKA-3038-->
+              <licence>cHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAyNS0wMy0wMXxmYWxzZXwtMSNNQ3dDRkdtemsraHJDdjNodXlhN0d1KzlQM1Y0bUNxMEFoUnRHc25DQ1VyMjhLQ2swU0R5RGp1WkVpcXVlZz09</licence>
               <!-- insert other configuration here (optional) -->
             </configuration>
           </plugin>

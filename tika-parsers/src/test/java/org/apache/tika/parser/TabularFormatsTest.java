@@ -20,12 +20,18 @@ package org.apache.tika.parser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.text.DateFormatSymbols;
+
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Ensure that our various Table-based formats produce consistent,
@@ -33,6 +39,8 @@ import org.junit.Test;
  * This is mostly focused on the XHTML output
  */
 public class TabularFormatsTest extends TikaTest {
+    private static final Logger LOG = LoggerFactory.getLogger(TabularFormatsTest.class);
+
     protected static final String[] columnNames = new String[] {
          "recnum","square","desc","pctdone","pctincr",
          "date","datetime","time"
@@ -41,6 +49,30 @@ public class TabularFormatsTest extends TikaTest {
         "Record Number","Square of the Record Number",
         "Description of the Row","Percent Done",
         "Percent Increment","date","datetime","time"    
+    };
+
+    // to prevent this build test from failing outside the english speaking world, we need to have
+    // both local and english month names (testCSV uses english names, the other tests local names)
+    private static final String[] SHORT_MONTHS_EXPR;
+    static {
+        String[] shortMonthsEnglish = new DateFormatSymbols(Locale.ENGLISH).getShortMonths();
+        String[] shortMonthsLocal = new DateFormatSymbols(Locale.getDefault()).getShortMonths();
+        List<String> shortMonthsExpr = new ArrayList();
+        for (int i = 0; i < 12; ++i)
+        {
+            String expr = shortMonthsEnglish[i].toUpperCase(Locale.ENGLISH) + 
+                          "|" +
+                          shortMonthsEnglish[i];
+            if (!shortMonthsEnglish[i].equals(shortMonthsLocal[i])) {
+                expr += "|" + 
+                        shortMonthsLocal[i].toUpperCase(Locale.getDefault()) +
+                        "|"  + 
+                        shortMonthsLocal[i];
+            }
+            LOG.info(expr);
+            shortMonthsExpr.add(expr);
+        }
+        SHORT_MONTHS_EXPR = shortMonthsExpr.toArray(new String[0]);
     };
 
     /**
@@ -77,17 +109,17 @@ public class TabularFormatsTest extends TikaTest {
                 Pattern.compile("19-05-1987"),
         },
         new Pattern[] {
-             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:00:01(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:00:10(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:01:40(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]00:16:40(.00)?"),
-             Pattern.compile("01(JAN|Jan)(60|1960)[:\\s]02:46:40(.00)?"),
-             Pattern.compile("02(JAN|Jan)(60|1960)[:\\s]03:46:40(.00)?"),
-             Pattern.compile("12(JAN|Jan)(60|1960)[:\\s]13:46:40(.00)?"),
-             Pattern.compile("25(APR|Apr)(60|1960)[:\\s]17:46:40(.00)?"),
-             Pattern.compile("03(MAR|Mar)(63|1963)[:\\s]09:46:40(.00)?"),
-             Pattern.compile("09(SEP|Sep)(91|1991)[:\\s]01:46:40(.00)?"),
-             Pattern.compile("19(NOV|Nov)(76|2276)[:\\s]17:46:40(.00)?")
+             Pattern.compile("01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:00:01(.00)?"),
+             Pattern.compile("01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:00:10(.00)?"),
+             Pattern.compile("01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:01:40(.00)?"),
+             Pattern.compile("01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]00:16:40(.00)?"),
+             Pattern.compile("01(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]02:46:40(.00)?"),
+             Pattern.compile("02(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]03:46:40(.00)?"),
+             Pattern.compile("12(" + SHORT_MONTHS_EXPR[0] + ")(60|1960)[:\\s]13:46:40(.00)?"),
+             Pattern.compile("25(" + SHORT_MONTHS_EXPR[3] + ")(60|1960)[:\\s]17:46:40(.00)?"),
+             Pattern.compile("03(" + SHORT_MONTHS_EXPR[2] + ")(63|1963)[:\\s]09:46:40(.00)?"),
+             Pattern.compile("09(" + SHORT_MONTHS_EXPR[8] + ")(91|1991)[:\\s]01:46:40(.00)?"),
+             Pattern.compile("19(" + SHORT_MONTHS_EXPR[10] + ")(76|2276)[:\\s]17:46:40(.00)?")
         },
         new Pattern[] {
              Pattern.compile("0?0:00:01(.\\d\\d)?"),

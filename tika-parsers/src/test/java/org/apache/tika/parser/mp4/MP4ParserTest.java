@@ -19,6 +19,7 @@ package org.apache.tika.parser.mp4;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.nio.file.Paths;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -26,10 +27,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -43,14 +43,8 @@ public class MP4ParserTest extends TikaTest {
      */
     @Test
     public void testMP4ParsingAudio() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
-        try (InputStream stream = MP4ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP4.m4a")) {
-            parser.parse(stream, handler, metadata, new ParseContext());
-        }
+        String content = getText("testMP4.m4a", metadata);
 
         // Check core properties
         assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
@@ -60,7 +54,6 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("2012-01-28T18:40:25Z", metadata.get(TikaCoreProperties.MODIFIED));
 
         // Check the textual contents
-        String content = handler.toString();
         assertContains("Test Title", content);
         assertContains("Test Artist", content);
         assertContains("Test Album", content);
@@ -93,11 +86,13 @@ public class MP4ParserTest extends TikaTest {
         TikaInputStream tstream = TikaInputStream.get(
               MP4ParserTest.class.getResourceAsStream("/test-documents/testMP4.m4a"));
         tstream.getFile();
+        ContentHandler handler = new BodyContentHandler();
         try {
-           parser.parse(tstream, handler, metadata, new ParseContext());
+           AUTO_DETECT_PARSER.parse(tstream, handler, metadata, new ParseContext());
         } finally {
            tstream.close();
         }
+        //TODO: why don't we check the output here?
     }
     
     // TODO Test a MP4 Video file

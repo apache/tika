@@ -409,11 +409,29 @@
   <mime-type type="application/marc">
     <glob pattern="*.mrc"/>
   </mime-type>
+
   <mime-type type="application/mathematica">
+    <_comment>Wolfram Mathematica</_comment>
     <glob pattern="*.ma"/>
     <glob pattern="*.nb"/>
     <glob pattern="*.mb"/>
+    <!-- Note - there is no Unique Magic for Mathematica files! -->
+    <!-- Check for a Mathematica-style opening comment as our best hope... -->
+    <magic priority="50">
+      <match value="(**" type="string" offset="0"/>
+      <match value="(* " type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="text/plain"/>
   </mime-type>
+  <mime-type type="application/vnd.wolfram.wl">
+    <_comment>Wolfram Language</_comment>
+    <glob pattern="*.wl"/>
+    <magic priority="50">
+      <match value="#!/usr/bin/env wolframscript" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/mathematica"/>
+  </mime-type>
+
   <mime-type type="application/mathml+xml">
     <glob pattern="*.mathml"/>
   </mime-type>
@@ -982,9 +1000,13 @@
     <glob pattern="*.aet"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xdp+xml">
+    <sub-class-of type="application/xml"/>
+    <root-XML localName="xdp" namespaceURI="http://ns.adobe.com/xdp/" />
     <glob pattern="*.xdp"/>
   </mime-type>
   <mime-type type="application/vnd.adobe.xfdf">
+    <sub-class-of type="application/xml"/>
+    <root-XML localName="xfdf" namespaceURI="http://ns.adobe.com/xfdf/" />
     <glob pattern="*.xfdf"/>
   </mime-type>
   <mime-type type="application/vnd.aether.imp"/>
@@ -1130,6 +1152,15 @@
   </mime-type>
   <mime-type type="application/vnd.denovo.fcselayout-link">
     <glob pattern="*.fe_launch"/>
+  </mime-type>
+  <mime-type type="application/vnd.digilite.prolights">
+    <tika:link>http://support.digilite.eu/?digilite=library</tika:link>
+    <_comment>digilite.eu Prolights configuration file</_comment>
+    <_comment>Note glob clash with Adobe's .fdf</_comment>
+    <!--<glob pattern="*.fdf"/>-->
+    <magic priority="50">
+      <match value="0x7F0C442B" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.dir-bi.plate-dl-nosuffix"/>
   <mime-type type="application/vnd.dna">
@@ -2322,6 +2353,11 @@
     <glob pattern="*.oxt"/>
   </mime-type>
 
+  <mime-type type="application/vnd.openofficeorg.autotext">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.bau"/>
+  </mime-type>
+
   <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation">
     <_comment>Office Open XML Presentation</_comment>
     <glob pattern="*.pptx"/>
@@ -2567,6 +2603,29 @@
     <sub-class-of type="application/x-tika-staroffice"/>
     <glob pattern="*.vor"/>
   </mime-type>
+  <mime-type type="application/vnd.sun.xml.writer">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxw"/>
+  </mime-type>
+  <!-- can't currently find any diff in contents btwn writer
+    and template. Must rely on extension -->
+  <mime-type type="application/vnd.sun.xml.writer.template">
+    <sub-class-of type="application/vnd.sun.xml.writer"/>
+    <glob pattern="*.stw"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.calc">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxc"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.draw">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxd"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.impress">
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.sxi"/>
+  </mime-type>
+
   <mime-type type="application/vnd.stardivision.writer-global">
     <glob pattern="*.sgl"/>
   </mime-type>
@@ -2903,6 +2962,16 @@
     <glob pattern="*.warc"/>
   </mime-type>
 
+  <mime-type type="application/wasm">
+    <acronym>Wasm</acronym>
+    <_comment>Web Assembly</_comment>
+    <magic priority="50">
+      <match value="0x6d736100" type="little32" offset="0" />
+      <match value="0x6d736100" type="big32" offset="0" />
+    </magic>
+    <glob pattern="*.wasm"/>
+  </mime-type>
+
   <mime-type type="application/watcherinfo+xml"/>
   <mime-type type="application/whoispp-query"/>
   <mime-type type="application/whoispp-response"/>
@@ -3226,6 +3295,17 @@
   </mime-type>
 
   <mime-type type="application/x-bplist">
+    <!-- Check for well-known bplist versions -->
+    <magic priority="70">
+      <match value="bplist\000\000" type="string" offset="0"/>
+      <match value="bplist\000\001" type="string" offset="0"/>
+      <match value="bplist\100\000" type="string" offset="0"/>
+      <match value="bplist00" type="string" offset="0"/>
+      <match value="bplist01" type="string" offset="0"/>
+      <match value="bplist10" type="string" offset="0"/>
+      <match value="bplist15" type="string" offset="0"/>
+      <match value="bplist16" type="string" offset="0"/>
+    </magic>
     <!-- The priority is 60, as .webarchive files often contain
          (X)HTML content. The bplist magic must trump the XHTML
          magics further within the file. This must also be
@@ -3235,6 +3315,7 @@
       <match value="bplist" type="string" offset="0"/>
     </magic>
   </mime-type>
+
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
@@ -3710,6 +3791,11 @@
     <glob pattern="*.iso"/>
   </mime-type>
 
+  <mime-type type="application/x-itunes-bplist">
+    <_comment>Apple iTunes Binary Property List</_comment>
+    <sub-class-of type="application/x-bplist"/>
+  </mime-type>
+
   <mime-type type="application/x-itunes-ipa">
     <sub-class-of type="application/zip"/>
     <_comment>Apple iOS IPA AppStore file</_comment>
@@ -3785,6 +3871,12 @@
     <_comment>LZMA compressed archive</_comment>
     <glob pattern="*.lzma"/>
   </mime-type>  
+
+  <mime-type type="application/x-memgraph">
+    <_comment>Apple Xcode Memgraph</_comment>
+    <sub-class-of type="application/x-bplist"/>
+    <glob pattern="*.memgraph"/>
+  </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
     <acronym>MOBI</acronym>
@@ -4007,7 +4099,12 @@
       <match value="0x43444601" type="string" offset="0"/>
     </magic>
   </mime-type>
-
+  <mime-type type="application/x-parquet">
+    <glob pattern="*.parquet"/>
+    <magic priority="50">
+      <match value="PAR1" type="string" offset="0" />
+    </magic>
+  </mime-type>
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
@@ -4108,7 +4205,20 @@
     </magic>
     <glob pattern="*.rar"/>
   </mime-type>
-
+  <mime-type type="application/x-rar-compressed;version=4">
+    <_comment>RAR archive</_comment>
+    <magic priority="60">
+      <match value="\x52\x61\x72\x21\x1a\x07\x00" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/x-rar-compressed"/>
+  </mime-type>
+  <mime-type type="application/x-rar-compressed;version=5">
+    <_comment>RAR archive</_comment>
+    <magic priority="60">
+      <match value="\x52\x61\x72\x21\x1a\x07\x01\x00" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/x-rar-compressed"/>
+  </mime-type>
   <mime-type type="application/x-roxio-toast">
     <glob pattern="*.toast"/>
     <sub-class-of type="application/x-iso9660-image"/>
@@ -5057,7 +5167,11 @@
      <_comment>Core Audio Format</_comment>
      <_comment>com.apple.coreaudio-format</_comment>
      <magic priority="60">
-        <match value="caff" type="string" offset="0" />
+        <match value="caff\000\000" type="string" offset="0" />
+        <match value="caff\000\001" type="string" offset="0" />
+        <match value="caff\000\002" type="string" offset="0" />
+        <match value="caff\100\000" type="string" offset="0" />
+        <match value="caff\200\000" type="string" offset="0" />
      </magic>
      <glob pattern="*.caf"/>
   </mime-type>
@@ -5302,6 +5416,46 @@
       <match value="GIF89a" type="string" offset="0"/>
     </magic>
     <glob pattern="*.gif"/>
+  </mime-type>
+
+  <mime-type type="image/heif">
+    <_comment>HEIF - High Efficiency Image File</_comment>
+    <acronym>HEIF</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
+    <magic priority="60">
+      <match value="ftypmif1" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heif"/>
+    <sub-class-of type="video/quicktime" />
+  </mime-type>
+  <mime-type type="image/heif-sequence">
+    <_comment>HEIF Sequence - High Efficiency Image Sequence</_comment>
+    <magic priority="60">
+      <match value="ftypmsf1" type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="video/quicktime" />
+  </mime-type>
+
+  <mime-type type="image/heic">
+    <alias   type="image/hevc"/>
+    <_comment>HEIF Image using HEVC Codec</_comment>
+    <acronym>HEIC</acronym>
+    <magic priority="60">
+      <match value="ftypheic" type="string" offset="4"/>
+      <match value="ftypheix" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.heic"/>
+    <sub-class-of type="image/heif" />
+  </mime-type>
+  <mime-type type="image/heic-sequence">
+    <alias   type="image/hevc-sequence"/>
+    <_comment>HEIF Sequence using HEVC Codec</_comment>
+    <acronym>HEVC</acronym>
+    <magic priority="60">
+      <match value="ftyphevc" type="string" offset="4"/>
+      <match value="ftyphevx" type="string" offset="4"/>
+    </magic>
+    <sub-class-of type="image/heif-sequence" />
   </mime-type>
 
   <mime-type type="image/icns">
@@ -5985,6 +6139,7 @@
         <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
         <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
         <match value="\nSubject:" type="string" offset="0:8192"/>
+        <match value="\nReceived:" type="string" offset="0:8192"/>
         <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
       </match>
       <match value="DKIM-" type="string" offset="0">
@@ -5992,6 +6147,15 @@
         <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
         <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
         <match value="\nSubject:" type="string" offset="0:8192"/>
+        <match value="\nReceived:" type="string" offset="0:8192"/>
+        <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
+      </match>
+      <match value="ARC-" type="string" offset="0">
+        <match value="\nMessage-ID:" type="string" offset="0:8192"/>
+        <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nSubject:" type="string" offset="0:8192"/>
+        <match value="\nReceived:" type="string" offset="0:8192"/>
         <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
       </match>
     </magic>
@@ -7389,7 +7553,11 @@
 
   <mime-type type="video/x-sgi-movie">
     <magic priority="50">
-      <match value="MOVI" type="string" offset="0"/>
+      <match value="MOVI\x00" type="string" offset="0"/>
+      <match value="MOVI\x01" type="string" offset="0"/>
+      <match value="MOVI\x02" type="string" offset="0"/>
+      <match value="MOVI\xfe" type="string" offset="0"/>
+      <match value="MOVI\xff" type="string" offset="0"/>
     </magic>
     <glob pattern="*.movie"/>
   </mime-type>
@@ -7459,6 +7627,20 @@
     <_comment>Haxe source code</_comment>
     <glob pattern="*.hx"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="application/x-xliff+xml">
+    <sub-class-of type="application/xml"/>
+    <_comment>XLIFF 1.2 document</_comment>
+    <root-XML namespaceURI="urn:oasis:names:tc:xliff:document:1.2" localName="xliff"/>
+    <glob pattern="*.xlf"/>
+    <glob pattern="*.xliff"/>
+  </mime-type>
+
+  <mime-type type="application/x-xliff+zip">
+    <sub-class-of type="application/zip"/>
+    <_comment>XLZ Archive</_comment>
+    <glob pattern="*.xlz"/>
   </mime-type>
 
   <mime-type type="text/x-rsrc">

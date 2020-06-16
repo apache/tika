@@ -33,10 +33,13 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.apache.tika.server.writer.ZipWriter;
+import org.junit.Assume;
 import org.junit.Test;
 
 public class UnpackerResourceTest extends CXFTestBase {
@@ -141,13 +144,13 @@ public class UnpackerResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void test415() throws Exception {
+    public void test204() throws Exception {
         Response response = WebClient.create(endPoint + UNPACKER_PATH)
                 .type("xxx/xxx")
                 .accept("*/*")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
-        assertEquals(415, response.getStatus());
+        assertEquals(204, response.getStatus());
     }
 
     @Test
@@ -205,6 +208,23 @@ public class UnpackerResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
         Map<String, String> results = readZipArchive((InputStream)response.getEntity());
         assertTrue(results.containsKey("image0.png"));
-        assertEquals("7c2f14acbb737672a1245f4ceb50622a", results.get("image0.png"));
+        String md5 = results.get("image0.png");
+        assertTrue(
+                //pre Java 11
+                md5.equals("7c2f14acbb737672a1245f4ceb50622a") ||
+                //Java 11 -- underlying image libraries generate a diff image in Java 11
+                md5.equals("58b8269d1a584b7e8c1adcb936123923"));
+    }
+
+    @Test
+    public void testPDFRenderOCR() throws Exception {
+        Assume.assumeTrue( new TesseractOCRParser().hasTesseract(new TesseractOCRConfig()));
+
+        Response response = WebClient.create(endPoint + ALL_PATH)
+                .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX+"ocrStrategy", "ocr_only")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
+        String txt = readArchiveText((InputStream)response.getEntity());
+        assertContains("Happy New Year", txt);
     }
 }

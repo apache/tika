@@ -70,7 +70,8 @@ public class EpubParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testEPUB.epub");
 
         //test attachments
-        assertEquals(3, metadataList.size());
+        assertEquals(2, metadataList.size());
+        assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
         int tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
         int ch1 = xml.indexOf("<h1>Chapter 1");
@@ -105,5 +106,14 @@ public class EpubParserTest extends TikaTest {
         int ch1 = xml.indexOf("<h1>Chapter 1");
         int ch2 = xml.indexOf("<h1>Chapter 2");
         assert(ch1 < ch2);
+    }
+
+    @Test
+    public void testContentsWXMLExtensions() throws Exception {
+        //TIKA-2310
+        List<Metadata> metadataList = getRecursiveMetadata("testEPUB_xml_ext.epub");
+        assertEquals(1, metadataList.size());
+        assertContains("It was a bright cold day in April",
+                metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 }

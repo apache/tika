@@ -75,7 +75,7 @@ class UniversalEncodingListener implements CharsetListener {
         }
         try {
             this.charset = CharsetUtils.forName(name);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             // ignore
         }
     }

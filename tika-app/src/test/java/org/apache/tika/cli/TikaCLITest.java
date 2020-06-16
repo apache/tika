@@ -49,7 +49,9 @@ public class TikaCLITest {
 
     /* Test members */
     private ByteArrayOutputStream outContent = null;
+    private ByteArrayOutputStream errContent = null;
     private PrintStream stdout = null;
+    private PrintStream stderr = null;
     private File testDataFile = new File("src/test/resources/test-data");
     private URI testDataURI = testDataFile.toURI();
     private String resourcePrefix;
@@ -57,9 +59,12 @@ public class TikaCLITest {
     @Before
     public void setUp() throws Exception {
         outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
         resourcePrefix = testDataURI.toString();
         stdout = System.out;
+        stderr = System.err;
         System.setOut(new PrintStream(outContent, true, UTF_8.name()));
+        System.setErr(new PrintStream(errContent, true, UTF_8.name()));
     }
 
     /**
@@ -258,11 +263,12 @@ public class TikaCLITest {
     }
 
     /**
-     * Tears down the test. Returns the System.out
+     * Tears down the test. Returns the System.out and System.err
      */
     @After
     public void tearDown() throws Exception {
         System.setOut(stdout);
+        System.setErr(stderr);
     }
 
     @Test

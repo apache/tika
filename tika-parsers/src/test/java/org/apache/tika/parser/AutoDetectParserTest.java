@@ -403,7 +403,7 @@ public class AutoDetectParserTest extends TikaTest {
             Metadata m = new Metadata();
             m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "file." + exts[i]);
             try {
-                getXML(TikaInputStream.get(new byte[0]), new AutoDetectParser(), m);
+                getXML(TikaInputStream.get(new byte[0]), AUTO_DETECT_PARSER, m);
                 fail("should have thrown zero byte exception");
             } catch (ZeroByteFileException e) {
 

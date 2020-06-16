@@ -18,6 +18,8 @@
 package org.apache.tika.server;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -30,12 +32,17 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -81,6 +88,50 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
+        assertTrue(responseMsg.contains("test"));
+    }
+
+    @Test
+    public void testWordGzipIn() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .type("application/msword")
+                .accept("text/plain")
+                .encoding("gzip")
+                .put(gzip(ClassLoader.getSystemResourceAsStream(TEST_DOC)));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("test"));
+    }
+
+    @Test
+    public void testLongGzipOut() throws Exception {
+        //if the output is long enough, jax-rs will compress it, otherwise it won't
+        //this output is long enough, and should be compressed
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .acceptEncoding("gzip")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        assertTrue(response.getHeaders().containsKey(CONTENT_ENCODING));
+        assertEquals("gzip", response.getHeaderString(CONTENT_ENCODING));
+        String responseMsg = getStringFromInputStream(
+                new GzipCompressorInputStream((InputStream) response
+                        .getEntity()));
+        assertTrue(responseMsg.contains("Course of human"));
+    }
+
+    @Test
+    public void testShortGzipOut() throws Exception {
+        //if the output is long enough, jax-rs will compress it, otherwise it won't
+        //this output is short enough, and should not be compressed
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .acceptEncoding("gzip")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        assertFalse(response.getHeaders().containsKey(CONTENT_ENCODING));
+
+        String responseMsg = getStringFromInputStream(
+                (InputStream) response
+                        .getEntity());
         assertTrue(responseMsg.contains("test"));
     }
 
@@ -286,7 +337,7 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("text/plain")
                 .header(TikaResource.X_TIKA_PDF_HEADER_PREFIX + "OcrStrategy", "non-sense-value")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
     }
 
     //TIKA-2669
@@ -385,7 +436,7 @@ public class TikaResourceTest extends CXFTestBase {
                                 "trustedPageSeparator",
                         "\u0020")
                 .put(ClassLoader.getSystemResourceAsStream("testOCR.pdf"));
-        assertEquals(500, response.getStatus());
+        assertEquals(400, response.getStatus());
 
     }
 
@@ -442,7 +493,6 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    @Ignore("until we understand what's going on")
     public void testUnicodePasswordProtectedUnicode() throws Exception {
         //TIKA-2858
         final String password = "  ! < > \" \\ \u20AC \u0153 \u00A4 \u0031\u2044\u0034 \u0031\u2044\u0032 \uD841\uDF0E \uD867\uDD98 \uD83D\uDE00  ";
