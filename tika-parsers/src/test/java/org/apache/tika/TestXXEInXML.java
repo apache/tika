@@ -228,7 +228,7 @@ public class TestXXEInXML extends XMLTestBase {
         //tests the DOM reader in TikaConfig
         //if the safeguards aren't in place, this throws a FNFE
         try (InputStream is =
-                getResourceAsStream("/org/apache/tika/config/TIKA-1558-blacklist.xml") ) {
+                getResourceAsStream("/org/apache/tika/config/TIKA-1558-exclude.xml") ) {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             IOUtils.copy(is, bos);
             byte[] injected = injectXML(bos.toByteArray(), XXE);

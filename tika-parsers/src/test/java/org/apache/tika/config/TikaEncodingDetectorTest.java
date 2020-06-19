@@ -58,8 +58,8 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
     }
 
     @Test
-    public void testBlackList() throws Exception {
-        TikaConfig config = getConfig("TIKA-2273-blacklist-encoding-detector-default.xml");
+    public void testExcludeList() throws Exception {
+        TikaConfig config = getConfig("TIKA-2273-exclude-encoding-detector-default.xml");
         EncodingDetector detector = config.getEncodingDetector();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();

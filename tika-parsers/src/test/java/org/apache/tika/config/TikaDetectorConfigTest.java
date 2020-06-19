@@ -41,7 +41,7 @@ import org.junit.Test;
 public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
     @Test
     public void testDetectorExcludeFromDefault() throws Exception {
-        TikaConfig config = getConfig("TIKA-1702-detector-blacklist.xml");
+        TikaConfig config = getConfig("TIKA-1702-detector-exclude.xml");
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         CompositeDetector detector = (CompositeDetector)config.getDetector();
