@@ -1100,7 +1100,7 @@ Release 1.8 - 4/13/2015
 
   * MediaTypeRegistry support for returning known child types.
 
-  * Support for excluding (blacklisting) certain Parsers from being
+  * Support for excluding certain Parsers from being
     used by DefaultParser via the Tika Config file, using the new
     parser-exclude tag (TIKA-1558).
 

@@ -60,7 +60,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     private int headerCharOffset;
     private List<RecordedElement> elements;
     private TextDocument td;
-    private Set<Character> whitelistCharSet = Sets.newHashSet(' ', '\n', '\r');
+    private Set<Character> allowableCharSet = Sets.newHashSet(' ', '\n', '\r');
     /**
      * Creates a new boilerpipe-based content extractor, using the
      * {@link DefaultExtractor} extraction rules and "delegate" as the content handler.
@@ -241,7 +241,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                             // https://issues.apache.org/jira/projects/TIKA/issues/TIKA-2683
                             // Allow exempted characters to be written
                             if (isValidCharacterRun ||
-                                    (chars.length == 1 && whitelistCharSet.contains(chars[0]))) {
+                                    (chars.length == 1 && allowableCharSet.contains(chars[0]))) {
                                 delegate.characters(chars, 0, chars.length);
                             }
 

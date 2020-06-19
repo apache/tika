@@ -43,7 +43,7 @@ import org.junit.Test;
 public class TikaParserConfigTest extends AbstractTikaConfigTest {
     @Test
     public void testMimeExcludeInclude() throws Exception {
-        TikaConfig config = getConfig("TIKA-1558-blacklist.xml");
+        TikaConfig config = getConfig("TIKA-1558-exclude.xml");
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         Parser parser = config.getParser();
@@ -82,7 +82,7 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
     
     @Test
     public void testParserExcludeFromDefault() throws Exception {
-        TikaConfig config = getConfig("TIKA-1558-blacklist.xml");
+        TikaConfig config = getConfig("TIKA-1558-exclude.xml");
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
         CompositeParser parser = (CompositeParser)config.getParser();
@@ -128,7 +128,7 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
      * DefaultParser.
      */
     @Test
-    public void defaultParserBlacklist() throws Exception {
+    public void defaultParserExclude() throws Exception {
         TikaConfig config = new TikaConfig();
         assertNotNull(config.getParser());
         assertNotNull(config.getDetector());
@@ -145,7 +145,7 @@ public class TikaParserConfigTest extends AbstractTikaConfigTest {
         assertTrue("Default config should include an XMLParser.", hasXML);
 
         // This custom TikaConfig should exclude XMLParser and all of its subclasses.
-        config = getConfig("TIKA-1558-blacklistsub.xml");
+        config = getConfig("TIKA-1558-excludesub.xml");
         cp = (CompositeParser) config.getParser();
         parsers = cp.getAllComponentParsers();
 
