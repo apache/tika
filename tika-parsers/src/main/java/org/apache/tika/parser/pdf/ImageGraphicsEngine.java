@@ -41,14 +41,19 @@ import org.apache.pdfbox.util.Matrix;
 import org.apache.pdfbox.util.Vector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -97,6 +102,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     private final Metadata parentMetadata;
     private final XHTMLContentHandler xhtml;
     private final ParseContext parseContext;
+    private final boolean extractInlineImageMetadataOnly;
 
     //TODO: this is an embarrassment of an initializer...fix
     protected ImageGraphicsEngine(PDPage page, EmbeddedDocumentExtractor embeddedDocumentExtractor,
@@ -111,6 +117,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
+        this.extractInlineImageMetadataOnly = pdfParserConfig.getExtractInlineImageMetadataOnly();
     }
 
     void run() throws IOException {
@@ -289,6 +296,11 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
+        if (extractInlineImageMetadataOnly) {
+            extractInlineImageMetadataOnly(pdImage, metadata);
+            return;
+        }
+
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             if (pdImage instanceof PDImageXObject) {
@@ -313,6 +325,28 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             }
         }
 
+    }
+
+    private void extractInlineImageMetadataOnly(PDImage pdImage, Metadata metadata) throws IOException, SAXException {
+        if (pdImage instanceof PDImageXObject) {
+            PDMetadataExtractor.extract(((PDImageXObject) pdImage).getMetadata(),
+                    metadata, parseContext);
+        }
+        metadata.set(Metadata.IMAGE_WIDTH, pdImage.getWidth());
+        metadata.set(Metadata.IMAGE_LENGTH, pdImage.getHeight());
+        //TODO: what else can we extract from the PDImage without rendering?
+        ZeroByteFileException.IgnoreZeroByteFileException before =
+                parseContext.get(ZeroByteFileException.IgnoreZeroByteFileException.class);
+        try {
+            parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class,
+                    ZeroByteFileException.IGNORE_ZERO_BYTE_FILE_EXCEPTION);
+            embeddedDocumentExtractor.parseEmbedded(TikaInputStream.get(new byte[0]),
+                    new EmbeddedContentHandler(xhtml), metadata, false);
+        } finally {
+            //replace whatever was there before
+            parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class,
+                    before);
+        }
     }
 
     private String getSuffix(PDImage pdImage, Metadata metadata) throws IOException {
