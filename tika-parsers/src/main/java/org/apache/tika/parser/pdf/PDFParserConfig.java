@@ -105,6 +105,10 @@ public class PDFParserConfig implements Serializable {
     //True if inline PDXImage objects should be extracted
     private boolean extractInlineImages = false;
 
+    //True if inline images should only have their metadata
+    //extracted.
+    private boolean extractInlineImageMetadataOnly = false;
+
     //True if inline images (as identified by their object id within
     //a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
@@ -211,6 +215,10 @@ public class PDFParserConfig implements Serializable {
         setExtractUniqueInlineImagesOnly(
                 getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
                         getExtractUniqueInlineImagesOnly()));
+        setExtractInlineImageMetadataOnly(
+                getBooleanProp(props.getProperty("extractInlineImageMetadataOnly"),
+                        getExtractInlineImageMetadataOnly())
+        );
         setExtractFontNames(
                 getBooleanProp(props.getProperty("extractFontNames"),
                         getExtractFontNames()));
@@ -255,6 +263,29 @@ public class PDFParserConfig implements Serializable {
 
         maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
         detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
+    }
+
+    /**
+     * Use this when you want to know how many images of what formats are in a PDF
+     * but you don't need to render the images (e.g. for OCR).  This is far
+     * faster than {@link #extractInlineImages} because it doesn't have to render the
+     * images, which can be very slow.  This does not extract metadata from
+     * within each image, rather it extracts the XMP that may be stored
+     * external to an image in PDImageXObjects.
+     *
+     * @param extractInlineImageMetadataOnly
+     * @since 1.25
+     */
+    void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
+        this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
+    }
+
+    /**
+     *
+     * @return whether or not to extract only inline image metadata and not render the images
+     */
+    boolean getExtractInlineImageMetadataOnly() {
+        return extractInlineImageMetadataOnly;
     }
 
     /**

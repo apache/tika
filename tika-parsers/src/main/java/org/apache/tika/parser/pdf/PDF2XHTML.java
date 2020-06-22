@@ -147,7 +147,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     }
 
     void extractImages(PDPage page) throws SAXException, IOException {
-        if (config.getExtractInlineImages() == false) {
+        if (config.getExtractInlineImages() == false
+                && config.getExtractInlineImageMetadataOnly() == false) {
             return;
         }
 

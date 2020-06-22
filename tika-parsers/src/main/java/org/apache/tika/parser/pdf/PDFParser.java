@@ -504,6 +504,11 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     @Field
+    void setExtractInlineImageMetadataOnly(boolean extractInlineImageMetadataOnly) {
+        defaultConfig.setExtractInlineImageMetadataOnly(extractInlineImageMetadataOnly);
+    }
+
+    @Field
     void setAverageCharTolerance(float averageCharTolerance) {
         defaultConfig.setAverageCharTolerance(averageCharTolerance);
     }

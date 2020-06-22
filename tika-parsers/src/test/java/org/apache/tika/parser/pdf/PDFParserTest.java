@@ -26,7 +26,6 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +46,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -491,7 +491,7 @@ public class PDFParserTest extends TikaTest {
         // Column text is now interleaved:
         assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
 
-        //now try setting autodetect via parsecontext        
+        //now try setting autodetect via parsecontext
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
         context.set(PDFParserConfig.class, config);
@@ -1564,6 +1564,22 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Hewlett-Packard MFP", m.get(XMP.CREATOR_TOOL));
         assertEquals("1998-08-29T13:53:15Z", m.get(XMP.CREATE_DATE));
     }
+
+    @Test
+    public void testExtractInlineImageMetadata() throws Exception {
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImageMetadataOnly(true);
+        context.set(PDFParserConfig.class, config);
+        List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf", context);
+        assertNull(context.get(ZeroByteFileException.IgnoreZeroByteFileException.class));
+        assertEquals(2, metadataList.size());
+        assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("/image0.png", metadataList.get(1).get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+        assertEquals(261, (int)metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
+        assertEquals(934, (int)metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
+        assertEquals("image0.png", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
     /**
      * Simple class to count end of document events.  If functionality is useful,
      * move to org.apache.tika in src/test
@@ -1592,6 +1608,5 @@ public class PDFParserTest extends TikaTest {
             return true;
         }
     }
-
 
 }
