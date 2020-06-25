@@ -3308,6 +3308,7 @@
   </mime-type>
 
   <mime-type type="application/x-bplist">
+    <!-- this is the binary verision of x-plist -->
     <!-- Check for well-known bplist versions -->
     <magic priority="70">
       <match value="bplist\000\000" type="string" offset="0"/>
@@ -3327,6 +3328,12 @@
     <magic priority="60">
       <match value="bplist" type="string" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-plist">
+    <!-- this is the xml version of x-plist -->
+    <root-XML localName="plist"/>
+    <sub-class-of type="application/xml"/>
   </mime-type>
 
   <mime-type type="application/x-gtar">

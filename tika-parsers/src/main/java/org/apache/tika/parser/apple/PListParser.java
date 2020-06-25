@@ -46,16 +46,23 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Parser for Apple's plist and bplist.  This is a wrapper around
+ * Parser for Apple's plist and bplist. This is a wrapper around
  *       com.googlecode.plist:dd-plist
+ *
+ * As of 1.25, Tika does not have detection for the text based plist,
+ * so those files will not be directed to this parser
+ *
+ * @since 1.25
  */
-public class BPListParser extends AbstractParser {
+public class PListParser extends AbstractParser {
 
     private static final String ARR = "array";
     private static final String DATA = "data";
@@ -70,7 +77,13 @@ public class BPListParser extends AbstractParser {
 
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("x-bplist"));
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                    BPListDetector.BITUNES,
+                    BPListDetector.BMEMGRAPH,
+                    BPListDetector.BPLIST,
+                    BPListDetector.BWEBARCHIVE,
+                    BPListDetector.PLIST)));
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -99,6 +112,13 @@ public class BPListParser extends AbstractParser {
                 }
             } catch (PropertyListFormatException | ParseException | ParserConfigurationException e) {
                 throw new TikaException("problem parsing root", e);
+            }
+        }
+        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        if (BPListDetector.PLIST.toString().equals(contentType)) {
+            if (rootObj instanceof NSDictionary) {
+                MediaType subtype = BPListDetector.detectXMLOnKeys(((NSDictionary) rootObj).keySet());
+                metadata.set(Metadata.CONTENT_TYPE, subtype.toString());
             }
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

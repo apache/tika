@@ -567,8 +567,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testBPList() throws Exception {
-        assertTypeByData("testMemgraph.memgraph", "application/x-memgraph");
-        assertTypeByData("testWEBARCHIVE.webarchive", "application/x-webarchive");
-        assertTypeByData("testBPList.bplist", "application/x-itunes-bplist");
+        assertTypeByData("testMemgraph.memgraph", "application/x-bplist-memgraph");
+        assertTypeByData("testWEBARCHIVE.webarchive", "application/x-bplist-webarchive");
+        assertTypeByData("testBPList.bplist", "application/x-bplist-itunes");
     }
 }

@@ -17,9 +17,7 @@
 package org.apache.tika.parser.apple;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Test;
 
@@ -28,7 +26,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 
-public class BPListParserTest extends TikaTest {
+public class PListParserTest extends TikaTest {
 
     @Test
     public void testBasicBinaryPList() throws Exception {
@@ -37,7 +35,7 @@ public class BPListParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testBPList.bplist");
         assertEquals(21, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals("application/x-itunes-bplist", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-bplist-itunes", m.get(Metadata.CONTENT_TYPE));
         String content = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("<key>Application Version</key><string>9.0", content);
 
@@ -50,11 +48,12 @@ public class BPListParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testWEBARCHIVE.webarchive");
         assertEquals(12, metadataList.size());
         Metadata m0 = metadataList.get(0);
-        assertEquals("application/x-webarchive", m0.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-bplist-webarchive", m0.get(Metadata.CONTENT_TYPE));
         Metadata m1 = metadataList.get(1);
         String content = m1.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
         assertContains("December 2008: Apache Tika Release", content);
     }
 
     //TODO -- add unit tests for memgraph
+    //TODO -- convert existing unit tests to xml plist and add unit tests.
 }

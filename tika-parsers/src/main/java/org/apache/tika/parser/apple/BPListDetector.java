@@ -32,19 +32,41 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
- * Parser that wraps com.dd.plist's PList parser to handle
- * binary property lists
+ * Detector for BPList with utility functions for PList.
+ *
+ * Without significant refactoring, this can't easily work as a true
+ * detector on plist subtypes.  Rather, for now, we require the file to be
+ * parsed and then the parser adds the subtype for xml-based plists.
+ * @since 1.25
  */
 public class BPListDetector implements Detector {
 
+    //xml versions
+    static MediaType MEMGRAPH = MediaType.application("x-plist-memgraph");
+    static MediaType WEBARCHIVE = MediaType.application("x-plist-webarchive");
+    static MediaType PLIST = MediaType.application("x-plist");
+    static MediaType ITUNES = MediaType.application("x-plist-itunes");
 
-    MediaType MEMGRAPH = MediaType.application("x-memgraph");
-    MediaType WEBARCHIVE = MediaType.application("x-webarchive");
-    MediaType BPLIST = MediaType.application("x-bplist");
-    MediaType ITUNES = MediaType.application("x-itunes-bplist");
+
+    //binary versions
+    static MediaType BMEMGRAPH = MediaType.application("x-bplist-memgraph");
+    static MediaType BWEBARCHIVE = MediaType.application("x-bplist-webarchive");
+    static MediaType BPLIST = MediaType.application("x-bplist");
+    static MediaType BITUNES = MediaType.application("x-bplist-itunes");
+
+    private static Map<MediaType, MediaType> BINARY_TO_XML = new HashMap<>();
+
+    static {
+        BINARY_TO_XML.put(BMEMGRAPH, MEMGRAPH);
+        BINARY_TO_XML.put(BWEBARCHIVE, WEBARCHIVE);
+        BINARY_TO_XML.put(BPLIST, PLIST);
+        BINARY_TO_XML.put(BITUNES, ITUNES);
+    }
 
     /**
      * @param input    input stream must support reset
@@ -97,18 +119,20 @@ public class BPListDetector implements Detector {
         return BPLIST;
     }
 
-    private MediaType detectOnKeys(Set<String> keySet) {
+    static MediaType detectOnKeys(Set<String> keySet) {
         if (keySet.contains("nodes") && keySet.contains("edges")
                 && keySet.contains("graphEncodingVersion")) {
-            return MEMGRAPH;
-        } else if (keySet.contains("WebMainResource") //&& keySet.contains("WebSubresources") should we require this?
-        ) {
-            return WEBARCHIVE;
+            return BMEMGRAPH;
+        } else if (keySet.contains("WebMainResource")){ //&& keySet.contains("WebSubresources") should we require this?
+            return BWEBARCHIVE;
         } else if (keySet.contains("Playlists") && keySet.contains("Tracks")
                 && keySet.contains("Music Folder")) {
-            return ITUNES;
+            return BITUNES;
         } //if it contains $archiver and $objects, it is a bplist inside a webarchive
-
         return BPLIST;
+    }
+
+    static MediaType detectXMLOnKeys(Set<String> keySet) {
+        return BINARY_TO_XML.get(detectOnKeys(keySet));
     }
 }
