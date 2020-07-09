@@ -139,7 +139,7 @@ paths:
           description: If successful, this operation returns HTTP status code 200, with the body being a string of the 2 character identified language.
         '500':
           description: An error occurred processing the call.
-      summary: 'PUT a UTF-8 text file to the LanguageIdentifier to identify its language.'
+      summary: 'POST a UTF-8 text file to the LanguageIdentifier to identify its language.'
       tags:
       - Language Resource
     put:
@@ -225,7 +225,7 @@ paths:
         name: metadata_key
         required: true
         schema:
-          example: 
+          example:
           type: string
         style: simple
       operationId: put_document_meta_get_key_value
@@ -324,6 +324,167 @@ paths:
       summary: GET all the available parsers, along with what mimetypes they support.
       tags:
       - Information Services
+  /rmeta:
+    put:
+        description: 'Returns an InputStream that can be deserialized as a list of {@link Metadata} objects. The first in the list represents the main document, and the rest represent metadata for the embedded objects. This works recursively through all descendants of the main document, not just the immediate children. The extracted text content is stored with the key {@link RecursiveParserWrapper#TIKA_CONTENT}.'
+        operationId: put_rmeta
+        responses:
+          '200':
+            content:
+              text/plain:
+                schema:
+                  example: ''
+                  type: string
+            description: 'Returns a JSONified list of Metadata objects for the container document and all embedded documents.'
+            headers:
+              Content-Type:
+                schema:
+                  example: text/plain
+                  default: text/plain
+                  type: string
+                description: Content-type served to client.
+          '500':
+            description: An error occurred processing the call.
+        summary: 'Returns a JSONified list of Metadata objects for the container document and all embedded documents.'
+        tags:
+        - Recursive Metadata and Content
+  /tika:
+    get:
+        description: 'HTTP GET returns a greeting stating the server is up. Followed by a PUT request to extract text.'
+        operationId: get_tika
+        responses:
+          '200':
+            content:
+              text/plain:
+                schema:
+                  example: ''
+                  type: string
+            description: If successful, this operation returns HTTP status code 200, with a greeting to indicate the server is up and you may PUT a file.
+            headers:
+              Content-Type:
+                schema:
+                  example: text/plain
+                  default: text/plain
+                  type: string
+                description: Content-type served to client.
+          '500':
+            description: An error occurred processing the call.
+        summary: GET returns a greeting stating the server is up.
+        tags:
+        - Tika Resource
+    put:
+        description: 'HTTP PUTs a document to the /tika service and you get back the extracted text.'
+        operationId: put_tika
+        responses:
+          '200':
+            content:
+              text/plain:
+                schema:
+                  example: ''
+                  type: string
+            description: If successful, this operation returns HTTP status code 200, with the extraacted text.
+            headers:
+              Content-Type:
+                schema:
+                  example: text/plain
+                  default: text/plain
+                  type: string
+                description: Content-type served to client.
+          '500':
+            description: An error occurred processing the call.
+        summary: GET returns a greeting stating the server is up.
+        tags:
+        - Tika Resource
+  /translate/all/src/dest:
+    post:
+      description: 'POST a document and translates from the *src* language to the *dest*. <b>NOTE</b>:  *translator* should be a fully qualified Tika class name (with package) and *dest* should be the 2 character short code for the source language.'
+      operationId: post_translate_all_src_dest
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the translated string, else it will return the original string back.
+        '500':
+          description: An error occurred processing the call.
+      summary: 'POST a document and auto-detects the *src* language and translates to *dest*'
+      tags:
+      - Translate Resource
+    put:
+      description: 'PUT a document and translates from the *src* language to the *dest*. <b>NOTE</b>:  *translator* should be a fully qualified Tika class name (with package) and *dest* should be the 2 character short code for the source language.'
+      operationId: put_translate_all_src_dest
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the translated string, else it will return the original string back.
+        '500':
+          description: An error occurred processing the call.
+      summary: 'PUT a document and auto-detects the *src* language and translates to *dest*'
+      tags:
+      - Translate Resource
+  /translate/all/translator/src/dest:
+    post:
+      description: 'POST a document and translates from the *src* language to the *dest*. <b>NOTE</b>:  *translator* should be a fully qualified Tika class name (with package), *src* and *dest* should be the 2 character short code for the source language and dest language respectively.'
+      operationId: post_translate_all_translator_src_dest
+      responses:
+        '200':
+          content:
+            text/plain:
+              schema:
+                example: 'en'
+                type: string
+          description: If successful, this operation returns HTTP status code 200, with the translated string, else it will return the original string back.
+        '500':
+          description: An error occurred processing the call.
+      summary: 'POST a document and translates from the *src* language to the *dest*'
+      tags:
+      - Translate Resource
+    put:
+        description: 'PUT a document and translates from the *src* language to the *dest*. <b>NOTE</b>:  *translator* should be a fully qualified Tika class name (with package), *src* and *dest* should be the 2 character short code for the source language and dest language respectively.'
+        operationId: put_translate_all_translator_src_dest
+        responses:
+          '200':
+            content:
+              text/plain:
+                schema:
+                  example: 'en'
+                  type: string
+            description: If successful, this operation returns HTTP status code 200, with the translated string, else it will return the original string back.
+          '500':
+            description: An error occurred processing the call.
+        summary: 'PUT a document and translates from the *src* language to the *dest*'
+        tags:
+        - Translate Resource
+  /unpack:
+    put:
+        description: 'PUT an embedded document and unpack it to get back the raw bytes of embedded files. Default return type is ZIP <b>NOTE</b>: this does not operate recursively'
+        operationId: put_unpack
+        responses:
+          '200':
+            content:
+              text/plain:
+                schema:
+                  example: ''
+                  type: string
+            description: If sucessful, this operation returns HTTP status code 200, with a zip file containing the ray bytes of embedded files.
+            headers:
+              Content-Type:
+                schema:
+                  example: text/plain
+                  default: text/plain
+                  type: string
+                description: Content-type served to client.
+          '500':
+            description: An error occurred processing the call.
+        summary: PUT an embedded document and unpack it to get back the raw bytes of embedded files.
+        tags:
+        - Unpack Resource
 components:
   #parameters:
   schemas:
