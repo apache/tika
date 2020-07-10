@@ -79,6 +79,7 @@ public class TikaServerCli {
     public static final String DEFAULT_HOST = "localhost";
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerCli.class);
+    static TikaServerWatchDog watchDog = null;
 
     private static final String FILE_URL_WARNING =
             "WARNING: You have chosen to run tika-server with fileUrl enabled.\n"+
@@ -124,6 +125,13 @@ public class TikaServerCli {
         return options;
     }
 
+    private static Options getStopOptions()
+    {
+        Options options = new Options();
+        options.addOption("preventSystemExit", false, "Prevent the stop method from calling system.exit, which will terminate the JVM. This is useful for integration tests.");
+        return options;
+    }
+
     public static void main(String[] args) {
         LOG.info("Starting {} server", new Tika());
         try {
@@ -133,6 +141,28 @@ public class TikaServerCli {
             LOG.error("Can't start: ", e);
             System.exit(-1);
         }
+    }
+
+    public static void stop(String [] args) {
+        // process service stop function
+        if(watchDog != null)
+        {
+            watchDog.close();
+        }
+        try{
+            Options options = getStopOptions();
+            CommandLineParser cliParser = new GnuParser();
+            CommandLine line = cliParser.parse(options, args);
+            if (line.hasOption("preventSystemExit")) {
+                return;
+            }
+        }       
+        catch (org.apache.commons.cli.ParseException e){
+            e.printStackTrace();
+            LOG.error("Can't parse stop arguments: ", e);
+            System.exit(-1);
+        }  
+        System.exit(0);
     }
 
     private static void execute(String[] args) throws Exception {
@@ -145,7 +175,7 @@ public class TikaServerCli {
         //and they won't be needed in legacy.
         CommandLine line = cliParser.parse(options, stripChildArgs(args));
         if (line.hasOption("spawnChild")) {
-            TikaServerWatchDog watchDog = new TikaServerWatchDog();
+            watchDog = new TikaServerWatchDog();
             watchDog.execute(args, configureServerTimeouts(line));
         } else {
             if (! line.hasOption("child")) {

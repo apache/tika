@@ -99,6 +99,16 @@ public class TikaServerWatchDog {
         }
     }
 
+    public void close()
+    {
+        setChildStatus(CHILD_STATUS.SHUTTING_DOWN);
+        LOG.debug("about to shutdown");
+        if (childProcess != null) {
+            LOG.info("about to shutdown process");
+            childProcess.close();
+        }
+    }
+
     private void startPingTimer(ServerTimeouts serverTimeouts) {
         //if the child thread is in stop-the-world mode, and isn't
         //reading the ping, this thread checks to make sure
