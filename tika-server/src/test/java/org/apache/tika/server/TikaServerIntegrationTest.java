@@ -234,6 +234,8 @@ public class TikaServerIntegrationTest extends TikaTest {
                         });
             }
             //Add custom implementation of the destroy method
+            //This method was never implemented in the super class, and gives us an easy way to invoke our stop command.
+            //We pass in the prevent system exit, so stop the call to System.Exit, which terminates the JVM and causes a test failure.
             @Override            
             public void destroy()  {
                 TikaServerCli.stop(new String []{"-preventSystemExit"});    
