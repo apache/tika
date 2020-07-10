@@ -119,11 +119,11 @@ public class PDFParserConfig implements Serializable {
 
     //The character width-based tolerance value used to estimate where spaces in text should be added
     //Default taken from PDFBox.
-    private Float averageCharTolerance = 0.5f;
+    private Float averageCharTolerance = 0.3f;
 
     //The space width-based tolerance value used to estimate where spaces in text should be added
     //Default taken from PDFBox.
-    private Float spacingTolerance = 0.3f;
+    private Float spacingTolerance = 0.5f;
 
     // The multiplication factor for line height to decide when a new paragraph starts.
     //Default taken from PDFBox.
