@@ -67,7 +67,7 @@ paths:
           headers:
             Content-Type:
               schema:
-                enum: [application/json]
+                enum: [json]
                 example: application/json
                 default: application/json
                 type: string
@@ -91,7 +91,7 @@ paths:
           headers:
             Content-Type:
               schema:
-                enum: [application/json, text/plain, text/html]
+                enum: [json, txt, html]
                 example: application/json
                 default: application/json
                 type: string
@@ -225,7 +225,7 @@ paths:
         name: metadata_key
         required: true
         schema:
-          example:
+          example: ""
           type: string
         style: simple
       operationId: put_document_meta_get_key_value
@@ -252,7 +252,7 @@ paths:
       summary: PUT a document to the metadata extraction resource and get a specific metadata key's value.
       tags:
       - Metadata Resource
-  /mime-types:
+  /mime_types:
     get:
       description: Mime types, their aliases, their supertype, and the parser. Available as plain text, json or human readable HTML.
       operationId: get_mimetypes
@@ -266,7 +266,7 @@ paths:
           headers:
             Content-Type:
               schema:
-                enum: [application/json]
+                enum: [json]
                 example: application/json
                 default: application/json
                 type: string
@@ -290,7 +290,7 @@ paths:
           headers:
             Content-Type:
               schema:
-                enum: [application/json]
+                enum: [json]
                 example: application/json
                 default: application/json
                 type: string
@@ -314,7 +314,7 @@ paths:
           headers:
             Content-Type:
               schema:
-                enum: [application/json]
+                enum: [json]
                 example: application/json
                 default: application/json
                 type: string
