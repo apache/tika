@@ -52,13 +52,7 @@ public class HeifParser extends AbstractParser {
 
     @Override
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-        TemporaryResources tmp = new TemporaryResources();
-        try {
-            TikaInputStream tis = TikaInputStream.get(stream, tmp);
-            new ImageMetadataExtractor(metadata).parseHeif(tis.getFile());
-        } finally {
-            tmp.dispose();
-        }
+        new ImageMetadataExtractor(metadata).parseHeif(stream);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();

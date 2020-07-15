@@ -56,6 +56,7 @@ import com.drew.metadata.jpeg.JpegDirectory;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -156,13 +157,10 @@ public class ImageMetadataExtractor {
         }
     }
 
-    public void parseHeif(File file) throws IOException, TikaException {
+    public void parseHeif(InputStream is) throws IOException, TikaException {
         try {
-            com.drew.metadata.Metadata heifMetadata = new com.drew.metadata.Metadata();
-            heifMetadata = HeifMetadataReader.readMetadata(new FileInputStream(file));
+            com.drew.metadata.Metadata heifMetadata = HeifMetadataReader.readMetadata(is);
             handle(heifMetadata);
-        } catch (IOException e) {
-            throw e;
         } catch (MetadataException e) {
             throw new TikaException("Can't process Heif data", e);
         }
