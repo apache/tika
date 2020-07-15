@@ -18,6 +18,7 @@
 package org.apache.tika.server;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -25,8 +26,6 @@ import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.core.Response;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -34,12 +33,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -323,4 +320,60 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertNull(metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 
+    @Test
+    public void testEmbeddedResourceLimit() throws Exception {
+        for (int i : new int[]{0,1,5}) {
+            Response response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .header("maxEmbeddedResources", Integer.toString(i))
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+            assertEquals(200, response.getStatus());
+            // Check results
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(i+1, metadataList.size());
+        }
+    }
+
+    @Test
+    public void testWriteLimit() throws Exception {
+        int writeLimit = 10;
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        assertEquals(200, response.getStatus());
+        // Check results
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        assertEquals("true", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+
+        //now try with a write limit of 100
+        writeLimit = 100;
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .header("writeLimit", Integer.toString(writeLimit))
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        assertEquals(200, response.getStatus());
+        // Check results
+        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(12, metadataList.size());
+        assertEquals("true", metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+        assertContains("When in the Course of human events it becomes necessary for one people",
+                metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNotContained("to dissolve",
+                metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+
+    }
 }
