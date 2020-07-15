@@ -49,6 +49,7 @@ import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.ExifThumbnailDirectory;
 import com.drew.metadata.exif.GpsDirectory;
+import com.drew.metadata.icc.IccDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
@@ -77,6 +78,9 @@ public class ImageMetadataExtractor {
     //TODO: add this to the signatures from the actual parse
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######"; // 6 dp seems to be reasonable
+
+    private static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
 
@@ -308,6 +312,8 @@ public class ImageMetadataExtractor {
                         }
                         if (directory instanceof ExifDirectoryBase) {
                             metadata.set(directory.getName() + ":" + name, value);
+                        } else if (directory instanceof IccDirectory) {
+                            metadata.set(ICC_NS+name, value);
                         } else {
                             metadata.set(name, value);
                         }
