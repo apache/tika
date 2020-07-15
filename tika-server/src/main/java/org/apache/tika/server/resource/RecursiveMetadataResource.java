@@ -139,10 +139,20 @@ public class RecursiveMetadataResource {
 		TikaResource.fillParseContext(context, httpHeaders, null);
 		TikaResource.logRequest(LOG, info, metadata);
 
-        BasicContentHandlerFactory.HANDLER_TYPE type =
+    int writeLimit = -1;
+    if (httpHeaders.containsKey("writeLimit")) {
+      writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+    }
+
+    int maxEmbeddedResources = -1;
+    if (httpHeaders.containsKey("maxEmbeddedResources")) {
+      writeLimit = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+    }
+
+    BasicContentHandlerFactory.HANDLER_TYPE type =
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
 		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-		        new BasicContentHandlerFactory(type, -1), -1);
+		        new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources);
 		try {
             TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
         } catch (SecurityException e) {
