@@ -99,7 +99,7 @@ public class PDFParserConfig implements Serializable {
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
 
-	//True if bookmarks content should be extracted
+    //True if bookmarks content should be extracted
     private boolean extractBookmarksText = true;
 
     //True if inline PDXImage objects should be extracted
@@ -158,6 +158,10 @@ public class PDFParserConfig implements Serializable {
 
     private boolean detectAngles = false;
 
+    private int totalCharsPerPage = 10;
+
+    private int unmappedUnicodeCharsPerPage = 10;
+
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
@@ -193,35 +197,35 @@ public class PDFParserConfig implements Serializable {
             }
         }
         setEnableAutoSpace(
-                getBooleanProp(props.getProperty("enableAutoSpace"), getEnableAutoSpace()));
+            getBooleanProp(props.getProperty("enableAutoSpace"), getEnableAutoSpace()));
         setSuppressDuplicateOverlappingText(
-                getBooleanProp(props.getProperty("suppressDuplicateOverlappingText"),
-                        getSuppressDuplicateOverlappingText()));
+            getBooleanProp(props.getProperty("suppressDuplicateOverlappingText"),
+                getSuppressDuplicateOverlappingText()));
         setExtractAnnotationText(
-                getBooleanProp(props.getProperty("extractAnnotationText"),
-                        getExtractAnnotationText()));
+            getBooleanProp(props.getProperty("extractAnnotationText"),
+                getExtractAnnotationText()));
         setSortByPosition(
-                getBooleanProp(props.getProperty("sortByPosition"),
-                        getSortByPosition()));
+            getBooleanProp(props.getProperty("sortByPosition"),
+                getSortByPosition()));
         setExtractAcroFormContent(
-                getBooleanProp(props.getProperty("extractAcroFormContent"),
-                        getExtractAcroFormContent()));
-		setExtractBookmarksText(
-				getBooleanProp(props.getProperty("extractBookmarksText"),
-						getExtractBookmarksText()));
+            getBooleanProp(props.getProperty("extractAcroFormContent"),
+                getExtractAcroFormContent()));
+        setExtractBookmarksText(
+            getBooleanProp(props.getProperty("extractBookmarksText"),
+                getExtractBookmarksText()));
         setExtractInlineImages(
-                getBooleanProp(props.getProperty("extractInlineImages"),
-                        getExtractInlineImages()));
+            getBooleanProp(props.getProperty("extractInlineImages"),
+                getExtractInlineImages()));
         setExtractUniqueInlineImagesOnly(
-                getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
-                        getExtractUniqueInlineImagesOnly()));
+            getBooleanProp(props.getProperty("extractUniqueInlineImagesOnly"),
+                getExtractUniqueInlineImagesOnly()));
         setExtractInlineImageMetadataOnly(
                 getBooleanProp(props.getProperty("extractInlineImageMetadataOnly"),
                         getExtractInlineImageMetadataOnly())
         );
         setExtractFontNames(
-                getBooleanProp(props.getProperty("extractFontNames"),
-                        getExtractFontNames()));
+            getBooleanProp(props.getProperty("extractFontNames"),
+                getExtractFontNames()));
 
 
         setIfXFAExtractOnlyXFA(
@@ -229,7 +233,7 @@ public class PDFParserConfig implements Serializable {
                 getIfXFAExtractOnlyXFA()));
 
         setCatchIntermediateIOExceptions(
-                getBooleanProp(props.getProperty("catchIntermediateIOExceptions"),
+            getBooleanProp(props.getProperty("catchIntermediateIOExceptions"),
                 isCatchIntermediateIOExceptions()));
 
         setOcrStrategy(OCR_STRATEGY.parse(props.getProperty("ocrStrategy")));
@@ -263,6 +267,9 @@ public class PDFParserConfig implements Serializable {
 
         maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
         detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
+
+        setTotalCharsPerPage(getIntProp(props.getProperty("totalCharsPerPage"), getTotalCharsPerPage()));
+        setUnmappedUnicodeCharsPerPage(getIntProp(props.getProperty("unmappedUnicodeCharsPerPage"), getUnmappedUnicodeCharsPerPage()));
     }
 
     /**
@@ -366,35 +373,35 @@ public class PDFParserConfig implements Serializable {
         this.ifXFAExtractOnlyXFA = ifXFAExtractOnlyXFA;
     }
 
-	/**
-	 * @see #setExtractBookmarksText(boolean)
-	 */
-	public boolean getExtractBookmarksText() {
-		return extractBookmarksText;
-	}
+    /**
+     * @see #setExtractBookmarksText(boolean)
+     */
+    public boolean getExtractBookmarksText() {
+        return extractBookmarksText;
+    }
 
-	/**
-	 * If true, extract bookmarks (document outline) text.
-	 * <p/>
-	 * Te default is <code>true</code>
-	 * @param extractBookmarksText
-	 */
-	public void setExtractBookmarksText(boolean extractBookmarksText) {
-		this.extractBookmarksText = extractBookmarksText;
-	}
+    /**
+     * If true, extract bookmarks (document outline) text.
+     * <p/>
+     * Te default is <code>true</code>
+     * @param extractBookmarksText
+     */
+    public void setExtractBookmarksText(boolean extractBookmarksText) {
+        this.extractBookmarksText = extractBookmarksText;
+    }
 
     /**
      * Extract font names into a metadata field
      * @param extractFontNames
      */
-	public void setExtractFontNames(boolean extractFontNames) {
-	    this.extractFontNames = extractFontNames;
+    public void setExtractFontNames(boolean extractFontNames) {
+        this.extractFontNames = extractFontNames;
     }
 
     public boolean getExtractFontNames() {
-	    return extractFontNames;
+        return extractFontNames;
     }
-	/**
+    /**
      * @see #setExtractInlineImages(boolean)
      */
     public boolean getExtractInlineImages() {
@@ -485,7 +492,7 @@ public class PDFParserConfig implements Serializable {
      * duplicated (PDFBOX-1155).  By default this is disabled.
      */
     public void setSuppressDuplicateOverlappingText(
-            boolean suppressDuplicateOverlappingText) {
+        boolean suppressDuplicateOverlappingText) {
         this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
     }
 
@@ -704,7 +711,7 @@ public class PDFParserConfig implements Serializable {
     /**
      * Image type used to render the page image for OCR.
      * @see #setOcrImageType(ImageType)
-    */
+     */
     public void setOcrImageType(String ocrImageTypeString) {
         this.ocrImageType = parseImageType(ocrImageTypeString);
     }
@@ -838,6 +845,22 @@ public class PDFParserConfig implements Serializable {
         return detectAngles;
     }
 
+    public void setTotalCharsPerPage( int totalCharsPerPage ) {
+        this.totalCharsPerPage = totalCharsPerPage;
+    }
+
+    public int getTotalCharsPerPage() {
+        return totalCharsPerPage;
+    }
+
+    public void setUnmappedUnicodeCharsPerPage( int unmappedUnicodeCharsPerPage ) {
+        this.unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage;
+    }
+
+    public int getUnmappedUnicodeCharsPerPage() {
+        return unmappedUnicodeCharsPerPage;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -850,7 +873,7 @@ public class PDFParserConfig implements Serializable {
         if (getExtractAnnotationText() != config.getExtractAnnotationText()) return false;
         if (getSortByPosition() != config.getSortByPosition()) return false;
         if (getExtractAcroFormContent() != config.getExtractAcroFormContent()) return false;
-		if (getExtractBookmarksText() != config.getExtractBookmarksText()) return false;
+        if (getExtractBookmarksText() != config.getExtractBookmarksText()) return false;
         if (getExtractInlineImages() != config.getExtractInlineImages()) return false;
         if (getExtractUniqueInlineImagesOnly() != config.getExtractUniqueInlineImagesOnly()) return false;
         if (getIfXFAExtractOnlyXFA() != config.getIfXFAExtractOnlyXFA()) return false;
@@ -864,6 +887,8 @@ public class PDFParserConfig implements Serializable {
         if (!getOcrImageFormatName().equals(config.getOcrImageFormatName())) return false;
         if (getExtractActions() != config.getExtractActions()) return false;
         if (!getAccessChecker().equals(config.getAccessChecker())) return false;
+        if (getTotalCharsPerPage() != config.getTotalCharsPerPage()) return false;
+        if (getUnmappedUnicodeCharsPerPage() != config.getUnmappedUnicodeCharsPerPage()) return false;
         return getMaxMainMemoryBytes() == config.getMaxMainMemoryBytes();
     }
 
@@ -874,7 +899,7 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + (getExtractAnnotationText() ? 1 : 0);
         result = 31 * result + (getSortByPosition() ? 1 : 0);
         result = 31 * result + (getExtractAcroFormContent() ? 1 : 0);
-		result = 31 * result + (getExtractBookmarksText() ? 1 : 0);
+        result = 31 * result + (getExtractBookmarksText() ? 1 : 0);
         result = 31 * result + (getExtractInlineImages() ? 1 : 0);
         result = 31 * result + (getExtractUniqueInlineImagesOnly() ? 1 : 0);
         result = 31 * result + getAverageCharTolerance().hashCode();
@@ -889,32 +914,36 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + (getCatchIntermediateIOExceptions() ? 1 : 0);
         result = 31 * result + (getExtractActions() ? 1 : 0);
         result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
+        result = 31 * result + getTotalCharsPerPage();
+        result = 31 * result + getUnmappedUnicodeCharsPerPage();
         return result;
     }
 
     @Override
     public String toString() {
         return "PDFParserConfig{" +
-                "enableAutoSpace=" + enableAutoSpace +
-                ", suppressDuplicateOverlappingText=" + suppressDuplicateOverlappingText +
-                ", extractAnnotationText=" + extractAnnotationText +
-                ", sortByPosition=" + sortByPosition +
-                ", extractAcroFormContent=" + extractAcroFormContent +
-				", extractBookmarksText=" + extractBookmarksText +
-                ", extractInlineImages=" + extractInlineImages +
-                ", extractUniqueInlineImagesOnly=" + extractUniqueInlineImagesOnly +
-                ", averageCharTolerance=" + averageCharTolerance +
-                ", spacingTolerance=" + spacingTolerance +
-                ", dropThreshold=" + dropThreshold +
-                ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA +
-                ", ocrStrategy=" + ocrStrategy +
-                ", ocrDPI=" + ocrDPI +
-                ", ocrImageType=" + ocrImageType +
-                ", ocrImageFormatName='" + ocrImageFormatName + '\'' +
-                ", accessChecker=" + accessChecker +
-                ", extractActions=" + extractActions +
-                ", catchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
-                ", maxMainMemoryBytes=" + maxMainMemoryBytes +
-                '}';
+            "enableAutoSpace=" + enableAutoSpace +
+            ", suppressDuplicateOverlappingText=" + suppressDuplicateOverlappingText +
+            ", extractAnnotationText=" + extractAnnotationText +
+            ", sortByPosition=" + sortByPosition +
+            ", extractAcroFormContent=" + extractAcroFormContent +
+            ", extractBookmarksText=" + extractBookmarksText +
+            ", extractInlineImages=" + extractInlineImages +
+            ", extractUniqueInlineImagesOnly=" + extractUniqueInlineImagesOnly +
+            ", averageCharTolerance=" + averageCharTolerance +
+            ", spacingTolerance=" + spacingTolerance +
+            ", dropThreshold=" + dropThreshold +
+            ", ifXFAExtractOnlyXFA=" + ifXFAExtractOnlyXFA +
+            ", ocrStrategy=" + ocrStrategy +
+            ", ocrDPI=" + ocrDPI +
+            ", ocrImageType=" + ocrImageType +
+            ", ocrImageFormatName='" + ocrImageFormatName + '\'' +
+            ", accessChecker=" + accessChecker +
+            ", extractActions=" + extractActions +
+            ", catchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
+            ", maxMainMemoryBytes=" + maxMainMemoryBytes +
+            ", totalCharsPerPage=" + totalCharsPerPage +
+            ", unmappedUnicodeCharsPerPage=" + unmappedUnicodeCharsPerPage +
+            '}';
     }
 }
