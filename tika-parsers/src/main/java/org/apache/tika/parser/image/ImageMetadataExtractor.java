@@ -80,7 +80,7 @@ public class ImageMetadataExtractor {
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######"; // 6 dp seems to be reasonable
 
-    private static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    private static final String ICC_NS = "ICC" + Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     private final Metadata metadata;
     private DirectoryHandler[] handlers;

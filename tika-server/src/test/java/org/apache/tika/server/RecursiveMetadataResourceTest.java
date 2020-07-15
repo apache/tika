@@ -370,7 +370,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
         assertEquals("true", metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
-        assertContains("When in the Course of human events it becomes necessary for one people",
+        assertContains("When in the Course of human events it becomes",// necessary for one people"
                 metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
         assertNotContained("to dissolve",
                 metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
