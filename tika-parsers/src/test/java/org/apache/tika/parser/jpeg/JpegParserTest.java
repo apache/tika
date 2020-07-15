@@ -18,6 +18,7 @@ package org.apache.tika.parser.jpeg;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
@@ -204,6 +205,11 @@ public class JpegParserTest {
         assertEquals("300.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
         assertEquals("300.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+
+        //ICC
+        assertEquals("IEC", metadata.get("ICC:Device manufacturer").trim());
+        assertNull(metadata.get("Device manufacturer"));
+
     }
 
     @Test
