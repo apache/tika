@@ -16,7 +16,10 @@
  */
 package org.apache.tika.sax;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.utils.ParserUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -40,12 +43,13 @@ import java.util.List;
 public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrapperHandler {
 
     protected final List<Metadata> metadataList = new LinkedList<>();
+    private final MetadataFilter metadataFilter;
 
     /**
      * Create a handler with no limit on the number of embedded resources
      */
     public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory) {
-        super(contentHandlerFactory);
+        this(contentHandlerFactory, -1, NoOpFilter.NOOP_FILTER);
     }
 
     /**
@@ -54,7 +58,13 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * @param maxEmbeddedResources number of embedded resources that will be parsed
      */
     public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources) {
+        this(contentHandlerFactory, maxEmbeddedResources, NoOpFilter.NOOP_FILTER);
+    }
+
+    public RecursiveParserWrapperHandler(ContentHandlerFactory contentHandlerFactory, int maxEmbeddedResources,
+                                         MetadataFilter metadataFilter) {
         super(contentHandlerFactory, maxEmbeddedResources);
+        this.metadataFilter = metadataFilter;
     }
 
     /**
@@ -79,7 +89,15 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
     public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         super.endEmbeddedDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
-        metadataList.add(ParserUtils.cloneMetadata(metadata));
+        try {
+            metadataFilter.filter(metadata);
+        } catch (TikaException e) {
+            throw new SAXException(e);
+        }
+
+        if (metadata.size() > 0) {
+            metadataList.add(ParserUtils.cloneMetadata(metadata));
+        }
     }
 
     /**
@@ -92,8 +110,15 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
     public void endDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
         super.endDocument(contentHandler, metadata);
         addContent(contentHandler, metadata);
+        try {
+            metadataFilter.filter(metadata);
+        } catch (TikaException e) {
+            throw new SAXException(e);
+        }
 
-        metadataList.add(0, ParserUtils.cloneMetadata(metadata));
+        if (metadata.size() > 0) {
+            metadataList.add(0, ParserUtils.cloneMetadata(metadata));
+        }
     }
 
     /**

@@ -32,6 +32,8 @@ import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -50,6 +52,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
     private final Parser parser;
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
+    private final MetadataFilter metadataFilter;
     private String outputEncoding = "UTF-8";
 
     /**
@@ -62,11 +65,12 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
     public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
                                             Parser parser,
                                             ContentHandlerFactory contentHandlerFactory,
-                                            OutputStreamFactory fsOSFactory) {
+                                            OutputStreamFactory fsOSFactory, MetadataFilter metadataFilter) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
         this.parser = parser;
+        this.metadataFilter = metadataFilter;
     }
 
     @Override
@@ -95,7 +99,8 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
         Throwable thrown = null;
         List<Metadata> metadataList = null;
         Metadata containerMetadata = fileResource.getMetadata();
-        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory, -1);
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory,
+                -1, metadataFilter);
         try {
             parse(fileResource.getResourceId(), parser, is, handler,
                     containerMetadata, context);
