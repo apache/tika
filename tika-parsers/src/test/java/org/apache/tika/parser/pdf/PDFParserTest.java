@@ -1141,8 +1141,8 @@ public class PDFParserTest extends TikaTest {
         config.setIfXFAExtractOnlyXFA(true);
         context.set(PDFParserConfig.class, config);
         String xml = getXML("testPDF_XFA_govdocs1_258578.pdf", context).xml;
+        assertContains("<body><div class=\"xfa_content\">", xml);
         assertContains("<li fieldName=\"Room_1\">Room [1]: my_room1</li>", xml);
-        assertContains("</xfa_content></body></html>", xml);
 
         assertNotContained("Mount Rushmore National Memorial", xml);
     }
