@@ -90,7 +90,8 @@ public abstract class CXFTestBase {
 
     @Before
     public void setUp() throws Exception {
-        this.tika = new TikaConfig(getClass().getResourceAsStream("tika-config-for-server-tests.xml"));
+
+        this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaResource.init(tika,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
                 new DefaultInputStreamFactory(), new ServerStatus(true));
@@ -118,6 +119,10 @@ public abstract class CXFTestBase {
                 factory
         );
         server = sf.create();
+    }
+
+    protected InputStream getTikaConfigInputStream() {
+        return getClass().getResourceAsStream("tika-config-for-server-tests.xml");
     }
 
     /**
