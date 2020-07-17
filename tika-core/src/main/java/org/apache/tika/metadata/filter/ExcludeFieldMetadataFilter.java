@@ -21,33 +21,32 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ExcludeFieldMetadataFilter implements MetadataFilter {
-    private final Set<String> exclude;
+    private final Set<String> excludeSet;
 
     public ExcludeFieldMetadataFilter() {
         this(new HashSet<>());
     }
     public ExcludeFieldMetadataFilter(Set<String> exclude) {
-        this.exclude = exclude;
+        this.excludeSet = exclude;
     }
 
     @Override
     public void filter(Metadata metadata) throws TikaException {
-        for (String field : exclude) {
+        for (String field : excludeSet) {
             metadata.remove(field);
         }
     }
 
     /**
      *
-     * @param excludeString comma-delimited list of fields to exclude
+     * @param exclude list of fields to exclude
      */
     @Field
-    public void setExclude(String excludeString) {
-        for (String include : excludeString.split(",")) {
-            exclude.add(include);
-        }
+    public void setExclude(List<String> exclude) {
+        this.excludeSet.addAll(exclude);
     }
 }

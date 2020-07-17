@@ -573,8 +573,8 @@ public class TikaConfig {
         abstract CT createDefault(MimeTypes mimeTypes, ServiceLoader loader);
         abstract CT createComposite(List<T> loaded, MimeTypes mimeTypes, ServiceLoader loader);
         abstract T createComposite(Class<? extends T> compositeClass, 
-                List<T> children, Set<Class<? extends T>> excludeChildren, 
-                MimeTypes mimeTypes, ServiceLoader loader) 
+                List<T> children, Set<Class<? extends T>> excludeChildren,
+                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException, InstantiationException;
         abstract T decorate(T created, Element element) 
                 throws IOException, TikaException; // eg explicit mime types 
@@ -632,6 +632,14 @@ public class TikaConfig {
                 loaded = preLoadOne(loadedClass, name, mimeTypes);
                 if (loaded != null) return loaded;
                 
+                // Get any parameters / settings for the parser
+                Map<String, Param> params = null;
+                try {
+                    params = getParams(element);
+                } catch (Exception e) {
+                    throw new TikaConfigException(e.getMessage(), e);
+                }
+                
                 // Is this a composite or decorated class? If so, support recursion
                 if (isComposite(loadedClass)) {
                     // Get the child objects for it
@@ -657,7 +665,7 @@ public class TikaConfig {
                     }
                     
                     // Create the Composite
-                    loaded = createComposite(loadedClass, children, excludeChildren, mimeTypes, loader);
+                    loaded = createComposite(loadedClass, children, excludeChildren, params, mimeTypes, loader);
 
                     // Default constructor fallback
                     if (loaded == null) {
@@ -670,7 +678,6 @@ public class TikaConfig {
                     // See the thread "Configuring parsers and translators" for details 
                 }
 
-                Map<String, Param> params = getParams(element);
                 //Assigning the params to bean fields/setters
                 AnnotationUtils.assignFieldParams(loaded, params);
                 if (loaded instanceof Initializable) {
@@ -791,7 +798,7 @@ public class TikaConfig {
         @Override
         Parser createComposite(Class<? extends Parser> parserClass,
                 List<Parser> childParsers, Set<Class<? extends Parser>> excludeParsers,
-                MimeTypes mimeTypes, ServiceLoader loader) 
+                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader) 
                 throws InvocationTargetException, IllegalAccessException, InstantiationException {
             Parser parser = null;
             Constructor<? extends Parser> c = null;
@@ -817,6 +824,12 @@ public class TikaConfig {
                 try {
                     c = parserClass.getConstructor(MediaTypeRegistry.class, List.class, Collection.class);
                     parser = c.newInstance(registry, childParsers, excludeParsers);
+                } catch (NoSuchMethodException me) {}
+            }
+            if (parser == null) {
+                try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class, Collection.class, Map.class);
+                    parser = c.newInstance(registry, childParsers, params);
                 } catch (NoSuchMethodException me) {}
             }
             if (parser == null) {
@@ -914,7 +927,7 @@ public class TikaConfig {
         Detector createComposite(Class<? extends Detector> detectorClass,
                 List<Detector> childDetectors,
                 Set<Class<? extends Detector>> excludeDetectors,
-                MimeTypes mimeTypes, ServiceLoader loader)
+                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException,
                 InstantiationException {
             Detector detector = null;
@@ -987,7 +1000,7 @@ public class TikaConfig {
         Translator createComposite(Class<? extends Translator> compositeClass,
                 List<Translator> children,
                 Set<Class<? extends Translator>> excludeChildren,
-                MimeTypes mimeTypes, ServiceLoader loader)
+                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException,
                 InstantiationException {
             throw new InstantiationException("Only one translator supported");
@@ -1004,7 +1017,7 @@ public class TikaConfig {
                 Class<? extends ConfigurableThreadPoolExecutor> compositeClass,
                 List<ConfigurableThreadPoolExecutor> children,
                 Set<Class<? extends ConfigurableThreadPoolExecutor>> excludeChildren,
-                MimeTypes mimeTypes, ServiceLoader loader)
+                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException,
                 InstantiationException {
             throw new InstantiationException("Only one executor service supported");
@@ -1127,7 +1140,7 @@ public class TikaConfig {
         EncodingDetector createComposite(Class<? extends EncodingDetector> encodingDetectorClass,
                                          List<EncodingDetector> childEncodingDetectors,
                                          Set<Class<? extends EncodingDetector>> excludeDetectors,
-                                         MimeTypes mimeTypes, ServiceLoader loader)
+                                         Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException,
                 InstantiationException {
             EncodingDetector encodingDetector = null;
