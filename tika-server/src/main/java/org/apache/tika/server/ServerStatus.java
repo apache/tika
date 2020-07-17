@@ -81,6 +81,8 @@ public class ServerStatus {
     private final boolean isLegacy;
     private STATUS status = STATUS.OPERATING;
 
+    private volatile long lastStarted = Instant.now().toEpochMilli();
+
     public ServerStatus() {
         isLegacy = false;
     }
@@ -91,7 +93,9 @@ public class ServerStatus {
 
     public synchronized long start(TASK task, String fileName) {
         long taskId = counter.incrementAndGet();
-        tasks.put(taskId, new TaskStatus(task, Instant.now(), fileName));
+        Instant now = Instant.now();
+        lastStarted = now.toEpochMilli();
+        tasks.put(taskId, new TaskStatus(task, now, fileName));
         return taskId;
     }
 
@@ -126,6 +130,9 @@ public class ServerStatus {
         return counter.get();
     }
 
+    public long getMillisSinceLastParseStarted() {
+        return Instant.now().toEpochMilli()-lastStarted;
+    }
     /**
      *
      * @return true if this is legacy, otherwise whether or not status == OPERATING.
