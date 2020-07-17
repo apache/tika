@@ -59,6 +59,7 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
     protected InputStream getTikaConfigInputStream() {
         return getClass().getResourceAsStream("TIKA-3137-include.xml");
     }
+
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);

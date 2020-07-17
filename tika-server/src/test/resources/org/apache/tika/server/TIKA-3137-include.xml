@@ -19,12 +19,19 @@
   <metadataFilters>
     <metadataFilter class="org.apache.tika.metadata.filter.IncludeFieldMetadataFilter">
       <params>
-        <param name="include" type="string">X-TIKA:content,extended-properties:Application,Content-Type</param>
+        <param name="include" type="list">
+          <string>X-TIKA:content</string>
+          <string>extended-properties:Application</string>
+          <string>Content-Type</string>
+        </param>
       </params>
     </metadataFilter>
     <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
       <params>
-        <param name="mimes" type="string">image/emf,text/plain</param>
+        <param name="mimes" type="list">
+          <string>image/emf</string>
+          <string>text/plain</string>
+        </param>
       </params>
     </metadataFilter>
   </metadataFilters>
