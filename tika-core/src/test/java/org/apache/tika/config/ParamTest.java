@@ -24,8 +24,10 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -34,7 +36,12 @@ public class ParamTest {
     @Test
     public void testSaveAndLoad() throws Exception {
 
+        List<String> list = new ArrayList<>();
+        list.add("quick");
+        list.add("brown");
+        list.add("fox");
         Object objects [] =  {
+                list,
                 Integer.MAX_VALUE,
                 2.5f,
                 4000.57576,

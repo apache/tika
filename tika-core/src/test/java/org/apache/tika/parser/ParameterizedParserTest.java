@@ -99,12 +99,11 @@ public class ParameterizedParserTest {
 
     @Test
     public void testBadType() throws Exception {
-        //TODO: should this be a TikaConfigException instead of Runtime?
         boolean ex = false;
         try {
             Metadata m = getMetadata("TIKA-1986-bad-types.xml");
             fail("should have thrown exception");
-        } catch (RuntimeException e) {
+        } catch (TikaConfigException e) {
             ex = true;
         }
         assertTrue("No RuntimeException", ex);
