@@ -634,7 +634,12 @@ public class TikaConfig {
                 if (loaded != null) return loaded;
                 
                 // Get any parameters / settings for the parser
-                Map<String, Param> params = getParams(element);
+                Map<String, Param> params = null;
+                try {
+                    params = getParams(element);
+                } catch (Exception e) {
+                    throw new TikaConfigException(e.getMessage(), e);
+                }
                 
                 // Is this a composite or decorated class? If so, support recursion
                 if (isComposite(loadedClass)) {

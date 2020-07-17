@@ -24,7 +24,10 @@
     </metadataFilter>
     <metadataFilter class="org.apache.tika.metadata.filter.ClearByMimeMetadataFilter">
       <params>
-        <param name="mimes" type="string">image/emf,text/plain</param>
+        <param name="mimes" type="list">
+          <string>image/emf</string>
+          <string>text/plain</string>
+        </param>
       </params>
     </metadataFilter>
   </metadataFilters>

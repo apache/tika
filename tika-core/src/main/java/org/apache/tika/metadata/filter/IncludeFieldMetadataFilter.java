@@ -37,13 +37,11 @@ public class IncludeFieldMetadataFilter implements MetadataFilter {
 
     /**
      *
-     * @param includeString comma-delimited list of fields to include
+     * @param include comma-delimited list of fields to include
      */
     @Field
-    public void setInclude(String includeString) {
-        for (String include : includeString.split(",")) {
-            includeSet.add(include);
-        }
+    public void setInclude(List<String> include) {
+        includeSet.addAll(include);
     }
 
     @Override

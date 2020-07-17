@@ -63,12 +63,10 @@ public class ClearByMimeMetadataFilter implements MetadataFilter {
 
     /**
      *
-     * @param mimesString comma-delimited list of mimes that will trigger complete removal of metadata
+     * @param mimes list of mimes that will trigger complete removal of metadata
      */
     @Field
-    public void setMimes(String mimesString) {
-        for (String include : mimesString.split(",")) {
-            mimes.add(include);
-        }
+    public void setMimes(List<String> mimes) {
+            this.mimes.addAll(mimes);
     }
 }
