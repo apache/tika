@@ -38,7 +38,7 @@ import java.util.Map;
 
 public class TikaEvalMetadataFilter implements MetadataFilter {
 
-    public static String TIKA_EVAL_NS = "tika-eval"+ TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static String TIKA_EVAL_NS = "tika-eval" + Metadata.NAMESPACE_PREFIX_DELIMITER;
 
     public static Property NUM_TOKENS = Property.externalInteger(TIKA_EVAL_NS+"numTokens");
 
