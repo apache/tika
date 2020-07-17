@@ -17,6 +17,8 @@
 package org.apache.tika.eval.metadata;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.DefaultMetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Test;
 
@@ -26,26 +28,31 @@ public class TikaEvalMetadataFilterTest {
 
     @Test
     public void testBasic() throws Exception {
-        Metadata metadata = new Metadata();
-        String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog";
-        metadata.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, content);
-        TikaEvalMetadataFilter filter = new TikaEvalMetadataFilter();
-        filter.filter(metadata);
-        assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
-        assertEquals(12, (int)metadata.getInt(TikaEvalMetadataFilter.NUM_TOKENS));
-        assertEquals(11, (int)metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_TOKENS));
-        assertEquals(10, (int)metadata.getInt(TikaEvalMetadataFilter.NUM_ALPHA_TOKENS));
-        assertEquals(9, (int)metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_ALPHA_TOKENS));
+        for (MetadataFilter filter : new MetadataFilter[]{
+                new TikaEvalMetadataFilter(),
+                //make sure that the TikaEvalMetadataFilter is loaded automatically
+                new DefaultMetadataFilter()
+        }) {
+            Metadata metadata = new Metadata();
+            String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog";
+            metadata.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, content);
+
+            filter.filter(metadata);
+            assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
+            assertEquals(12, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_TOKENS));
+            assertEquals(11, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_TOKENS));
+            assertEquals(10, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_ALPHA_TOKENS));
+            assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_ALPHA_TOKENS));
 
 
-        assertEquals(0.0999,
-                Double.parseDouble(metadata.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY)),
-                0.1);
-        assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
+            assertEquals(0.0999,
+                    Double.parseDouble(metadata.get(TikaEvalMetadataFilter.OUT_OF_VOCABULARY)),
+                    0.1);
+            assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
 
-        assertEquals(0.0196,
-                Double.parseDouble(metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE)),
-                0.1);
-
+            assertEquals(0.0196,
+                    Double.parseDouble(metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE)),
+                    0.1);
+        }
     }
 }
