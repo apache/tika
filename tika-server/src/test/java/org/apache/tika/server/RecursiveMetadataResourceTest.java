@@ -101,6 +101,14 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        String[] parsedBy = metadataList.get(0).getValues("X-Parsed-By");
+        //make sure the CompressorParser doesn't show up here
+        assertEquals(3, parsedBy.length);
+        assertEquals("org.apache.tika.parser.CompositeParser", parsedBy[0]);
+        assertEquals("org.apache.tika.parser.DefaultParser", parsedBy[1]);
+        assertEquals("org.apache.tika.parser.microsoft.ooxml.OOXMLParser", parsedBy[2]);
+
+        //test that the rest is as it should be
         assertEquals(12, metadataList.size());
         assertEquals("Microsoft Office Word", metadataList.get(0).get(OfficeOpenXMLExtended.APPLICATION));
         assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
