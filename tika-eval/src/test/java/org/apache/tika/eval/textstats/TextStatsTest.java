@@ -71,4 +71,35 @@ public class TextStatsTest {
                 DigestUtils.sha256(txtCleaned.getBytes(StandardCharsets.UTF_8))),
                 stats.get(TextSha256Signature.class));
     }
+
+    @Test
+    public void testCJK() throws Exception {
+        String txt = "普林斯顿大学";
+        List<TextStatsCalculator> calcs = new ArrayList<>();
+        calcs.add(new TextProfileSignature());
+        CompositeTextStatsCalculator calc = new CompositeTextStatsCalculator(calcs);
+
+        Map<Class, Object> stats = calc.calculate(txt);
+        String textProfileSignature = (String)stats.get(TextProfileSignature.class);
+        assertEquals("XKXLY6FNIGK2KGEF6HOSKSVGYDLLOFIAGO73RLMJ22PZVXBTXFFA====", textProfileSignature);
+
+        //now test that if a user accidentally sets mintoken length > 2
+        //the output will the be same as empty text
+        calcs.clear();
+        calcs.add(new TextProfileSignature());
+        calc = new CompositeTextStatsCalculator(calcs);
+
+        stats = calc.calculate("");
+        String emptyStringSignature = (String)stats.get(TextProfileSignature.class);
+
+        calcs.clear();
+        TextProfileSignature tPs = new TextProfileSignature();
+        tPs.setMinTokenLength(3);
+        calcs.add(tPs);
+        calc = new CompositeTextStatsCalculator(calcs);
+
+        stats = calc.calculate(txt);
+        assertEquals(emptyStringSignature, (String)stats.get(TextProfileSignature.class));
+
+    }
 }

@@ -47,7 +47,7 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
     public String calculate(TokenCounts tokenCounts) {
         int maxFreq = -1;
         for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()){
-            if (e.getKey().length() > minTokenLength) {
+            if (e.getKey().length() >= minTokenLength) {
                 if (e.getValue().intValue() > maxFreq) {
                     maxFreq = e.getValue().intValue();
                 }
@@ -64,8 +64,11 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
         }
 
         List<Token> profile = new ArrayList<>();
-        for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()){
-            profile.add(new Token((e.getValue().intValue()/quant)*quant, e.getKey()));
+        for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
+            String token = e.getKey();
+            if (token.length() >= minTokenLength) {
+                profile.add(new Token((e.getValue().intValue() / quant) * quant, e.getKey()));
+            }
         }
         Collections.sort(profile, new TokenComparator());
         StringBuffer newText = new StringBuffer();
@@ -79,6 +82,13 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
         return base32.encodeAsString(DigestUtils.sha256(newText.toString()));
     }
 
+    /**
+     * Be careful -- for CJK languages, the default analyzer uses character
+     * bigrams.  You will "ignore" all cjk language tokens if you set
+     * minTokenLength > 2!
+     *
+     * @param minTokenLength -- include tokens of this length or greater.
+     */
     public void setMinTokenLength(int minTokenLength) {
         this.minTokenLength = minTokenLength;
     }
