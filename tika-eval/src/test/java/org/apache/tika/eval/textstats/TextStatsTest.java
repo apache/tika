@@ -16,11 +16,14 @@
  */
 package org.apache.tika.eval.textstats;
 
+import org.apache.commons.codec.binary.Base32;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.tokens.CommonTokenResult;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +34,14 @@ public class TextStatsTest {
 
     @Test
     public void testBasic() throws Exception {
-        String txt = "the quick brown fox &&^&%@! 8675309 jumped over the lazy wombat";
+        String txt = "The quick brown fox &&^&%@! 8675309 jumped over tHe lazy wombat";
+        String txtCleaned = "the quick brown fox 8675309 jumped over the lazy wombat";
         List<TextStatsCalculator> calcs = new ArrayList<>();
         calcs.add(new TextProfileSignature());
         calcs.add(new ContentLengthCalculator());
         calcs.add(new TokenEntropy());
         calcs.add(new CommonTokens());
+        calcs.add(new TextSha256Signature());
         CompositeTextStatsCalculator calc = new CompositeTextStatsCalculator(calcs);
 
         Map<Class, Object> stats = calc.calculate(txt);
@@ -60,6 +65,10 @@ public class TextStatsTest {
         assertEquals(0.01, probabilities.get(1).getConfidence(), 0.01);
 
         String textProfileSignature = (String)stats.get(TextProfileSignature.class);
-        assertEquals("aKhbjS6iV87VBbf/12OfDCWMBg5aS3Atktl2n4ypg14=", textProfileSignature);
+        assertEquals("NCUFXDJOUJL45VIFW775OY47BQSYYBQOLJFXALMS3F3J7DFJQNPA====", textProfileSignature);
+
+        assertEquals(new Base32().encodeAsString(
+                DigestUtils.sha256(txtCleaned.getBytes(StandardCharsets.UTF_8))),
+                stats.get(TextSha256Signature.class));
     }
 }

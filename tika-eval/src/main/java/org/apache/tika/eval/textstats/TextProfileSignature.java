@@ -16,7 +16,7 @@
  */
 package org.apache.tika.eval.textstats;
 
-import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tika.eval.tokens.TokenCounts;
@@ -32,6 +32,8 @@ import java.util.Map;
  * https://github.com/apache/nutch/blob/master/src/java/org/apache/nutch/crawl/TextProfileSignature.java
  *
  * See documentation: https://nutch.apache.org/apidocs/apidocs-2.0/org/apache/nutch/crawl/TextProfileSignature.html
+ *
+ * This returns the base32 encoded sha256
  */
 public class TextProfileSignature implements TokenCountStatsCalculator<String> {
 
@@ -39,7 +41,7 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
     float quantRate = 0.01f;
     boolean secondaryLexicographicSorting = true;
 
-    Base64 base64 = new Base64();
+    Base32 base32 = new Base32();
 
     @Override
     public String calculate(TokenCounts tokenCounts) {
@@ -74,7 +76,7 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
             }
             newText.append(t.val);
         }
-        return base64.encodeAsString(DigestUtils.sha256(newText.toString()));
+        return base32.encodeAsString(DigestUtils.sha256(newText.toString()));
     }
 
     public void setMinTokenLength(int minTokenLength) {
