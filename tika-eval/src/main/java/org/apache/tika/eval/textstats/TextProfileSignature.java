@@ -67,6 +67,10 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
         for (Map.Entry<String, MutableInt> e : tokenCounts.getTokens().entrySet()) {
             String token = e.getKey();
             if (token.length() >= minTokenLength) {
+                int quantCnt = (e.getValue().intValue() / quant) * quant;
+                if (quantCnt < quant) {
+                    continue;
+                }
                 profile.add(new Token((e.getValue().intValue() / quant) * quant, e.getKey()));
             }
         }

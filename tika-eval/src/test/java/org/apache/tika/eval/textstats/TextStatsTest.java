@@ -65,7 +65,7 @@ public class TextStatsTest {
         assertEquals(0.02, probabilities.get(1).getConfidence(), 0.01);
 
         String textProfileSignature = (String)stats.get(TextProfileSignature.class);
-        assertEquals("NCUFXDJOUJL45VIFW775OY47BQSYYBQOLJFXALMS3F3J7DFJQNPA====", textProfileSignature);
+        assertEquals("XF3W27O7IWOJVVNQ4HLKYYPCPPX3L2M72YSEMZ3WADL4VTXVITIA====", textProfileSignature);
 
         assertEquals(new Base32().encodeAsString(
                 DigestUtils.sha256(txtCleaned.getBytes(StandardCharsets.UTF_8))),
