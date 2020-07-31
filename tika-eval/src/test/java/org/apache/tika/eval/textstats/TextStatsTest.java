@@ -34,7 +34,7 @@ public class TextStatsTest {
 
     @Test
     public void testBasic() throws Exception {
-        String txt = "The quick brown fox &&^&%@! 8675309 jumped over tHe lazy wombat";
+        String txt = "The quick brown fox &&^&%@! ; ; ; ;;; ;;; 8675309 jumped over tHe lazy wombat";
         String txtCleaned = "the quick brown fox 8675309 jumped over the lazy wombat";
         List<TextStatsCalculator> calcs = new ArrayList<>();
         calcs.add(new TextProfileSignature());
@@ -56,16 +56,16 @@ public class TextStatsTest {
         assertEquals( 0.11, ctr.getOOV(), 0.02);
 
 
-        assertEquals(63, (int)stats.get(ContentLengthCalculator.class));
+        assertEquals(77, (int)stats.get(ContentLengthCalculator.class));
 
         assertEquals(3.12, (double)stats.get(TokenEntropy.class), 0.01);
 
         List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
         assertEquals("eng", probabilities.get(0).getLanguage());
-        assertEquals(0.01, probabilities.get(1).getConfidence(), 0.01);
+        assertEquals(0.02, probabilities.get(1).getConfidence(), 0.01);
 
         String textProfileSignature = (String)stats.get(TextProfileSignature.class);
-        assertEquals("NCUFXDJOUJL45VIFW775OY47BQSYYBQOLJFXALMS3F3J7DFJQNPA====", textProfileSignature);
+        assertEquals("XF3W27O7IWOJVVNQ4HLKYYPCPPX3L2M72YSEMZ3WADL4VTXVITIA====", textProfileSignature);
 
         assertEquals(new Base32().encodeAsString(
                 DigestUtils.sha256(txtCleaned.getBytes(StandardCharsets.UTF_8))),
@@ -77,9 +77,16 @@ public class TextStatsTest {
         String txt = "普林斯顿大学";
         List<TextStatsCalculator> calcs = new ArrayList<>();
         calcs.add(new TextProfileSignature());
+        calcs.add(new CommonTokens());
         CompositeTextStatsCalculator calc = new CompositeTextStatsCalculator(calcs);
 
         Map<Class, Object> stats = calc.calculate(txt);
+
+        List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
+        assertEquals("cmn", probabilities.get(0).getLanguage());
+        assertEquals(0.009, probabilities.get(1).getConfidence(), 0.01);
+
+
         String textProfileSignature = (String)stats.get(TextProfileSignature.class);
         assertEquals("XKXLY6FNIGK2KGEF6HOSKSVGYDLLOFIAGO73RLMJ22PZVXBTXFFA====", textProfileSignature);
 
