@@ -308,9 +308,8 @@ public class PackageParser extends AbstractParser {
         } finally {
             ais.close();
             tmp.close();
+            xhtml.endDocument();
         }
-
-        xhtml.endDocument();
     }
 
     private void updateMediaType(ArchiveInputStream ais, Metadata metadata) {
