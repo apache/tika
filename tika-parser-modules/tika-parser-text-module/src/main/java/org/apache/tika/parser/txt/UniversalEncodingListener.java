@@ -59,7 +59,8 @@ class UniversalEncodingListener implements CharsetListener {
             if (hint != null) {
                 // Use the encoding hint when available
                 name = hint;
-            } else if (statistics.count('\r') == 0) {
+            } else if (hasNonexistentHexInCharsetWindows1252() || statistics.count('\r') == 0) {
+                // If it has nonexistent hex value in charset windows-1252 or
                 // If there are no CR(LF)s, then the encoding is more
                 // likely to be ISO-8859-1(5) than windows-1252
                 if (statistics.count(0xa4) > 0) { // currency/euro sign
@@ -95,6 +96,18 @@ class UniversalEncodingListener implements CharsetListener {
             report(Constants.CHARSET_WINDOWS_1252);
         }
         return charset;
+    }
+
+    /*
+    * hex value 0x81, 0x8d, 0x8f, 0x90, 0x9d don't exist in charset windows-1252.
+    * If these value's count > 0, return true
+    * */
+    private Boolean hasNonexistentHexInCharsetWindows1252() {
+        return (statistics.count(0x81) > 0 ||
+                statistics.count(0x8d) > 0 ||
+                statistics.count(0x8f) > 0 ||
+                statistics.count(0x90) > 0 ||
+                statistics.count(0x9d) > 0);
     }
 
 }
