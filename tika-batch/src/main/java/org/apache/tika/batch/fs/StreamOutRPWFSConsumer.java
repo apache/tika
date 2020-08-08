@@ -20,12 +20,15 @@ package org.apache.tika.batch.fs;
 
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.Tika;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -53,17 +56,19 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
     private final Parser parser;
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
+    private final MetadataFilter metadataFilter;
     private String outputEncoding = "UTF-8";
 
 
     public StreamOutRPWFSConsumer(ArrayBlockingQueue<FileResource> queue,
                                   Parser parser,
                                   ContentHandlerFactory contentHandlerFactory,
-                                  OutputStreamFactory fsOSFactory) {
+                                  OutputStreamFactory fsOSFactory, MetadataFilter metadataFilter) {
         super(queue);
         this.contentHandlerFactory = contentHandlerFactory;
         this.fsOSFactory = fsOSFactory;
         this.parser = parser;
+        this.metadataFilter = metadataFilter;
     }
 
     @Override
@@ -93,7 +98,8 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
         JsonStreamingSerializer writer = new JsonStreamingSerializer(
                 new OutputStreamWriter(os, StandardCharsets.UTF_8));
 
-        WriteoutRPWHandler handler = new WriteoutRPWHandler(contentHandlerFactory, writer);
+        WriteoutRPWHandler handler = new WriteoutRPWHandler(contentHandlerFactory,
+                writer, metadataFilter);
         Throwable thrown = null;
         try {
             parse(fileResource.getResourceId(), parser, is, handler,
@@ -137,15 +143,23 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
     //be written straight to disk.
     private class WriteoutRPWHandler extends AbstractRecursiveParserWrapperHandler {
         private final JsonStreamingSerializer jsonWriter;
+        private final MetadataFilter metadataFilter;
 
-        public WriteoutRPWHandler(ContentHandlerFactory contentHandlerFactory, JsonStreamingSerializer writer) {
+        public WriteoutRPWHandler(ContentHandlerFactory contentHandlerFactory, JsonStreamingSerializer writer,
+                                  MetadataFilter metadataFilter) {
             super(contentHandlerFactory);
             this.jsonWriter = writer;
+            this.metadataFilter = metadataFilter;
         }
 
         @Override
         public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
             metadata.add(RecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
+            try {
+                metadataFilter.filter(metadata);
+            } catch (TikaException e) {
+                throw new SAXException(e);
+            }
             try {
                 jsonWriter.add(metadata);
             } catch (IOException e) {

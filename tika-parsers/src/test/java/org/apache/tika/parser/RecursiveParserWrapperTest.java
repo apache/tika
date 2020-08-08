@@ -21,6 +21,7 @@ package org.apache.tika.parser;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,6 +31,7 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.ClosedInputStream;
 import org.apache.tika.io.ProxyInputStream;
@@ -363,6 +365,47 @@ public class RecursiveParserWrapperTest extends TikaTest {
             IOUtils.closeQuietly(stream);
         }
 
+    }
+
+    @Test
+    public void testIncludeFilter() throws Exception {
+        //TIKA-3137
+        ParseContext context = new ParseContext();
+        Metadata metadata = new Metadata();
+        TikaConfig tikaConfig = new TikaConfig(getClass().getResourceAsStream("TIKA-3137-include.xml"));
+        Parser p = new AutoDetectParser(tikaConfig);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, true);
+        String path = "/test-documents/test_recursive_embedded.docx";
+        ContentHandlerFactory contentHandlerFactory =
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                        -1);
+
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory,
+                -1, tikaConfig.getMetadataFilter());
+        try (InputStream is = getClass().getResourceAsStream(path)) {
+            wrapper.parse(is, handler, metadata, context);
+        }
+        List<Metadata> metadataList = handler.getMetadataList();
+        assertEquals(5, metadataList.size());
+
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("X-TIKA:content");
+        expectedKeys.add("extended-properties:Application");
+        expectedKeys.add("Content-Type");
+        for (Metadata m : metadataList) {
+            if (m.get(Metadata.CONTENT_TYPE).equals("image/emf")) {
+                fail("emf should have been filtered out");
+            }
+            if (m.get(Metadata.CONTENT_TYPE).startsWith("text/plain")) {
+                fail("text/plain should have been filtered out");
+            }
+            assertTrue(m.names().length >= 2);
+            for (String n : m.names()) {
+                if (! expectedKeys.contains(n)) {
+                    fail("didn't expect "+n);
+                }
+            }
+        }
     }
 
     private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory,

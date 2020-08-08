@@ -106,7 +106,7 @@ class XFAExtractor {
         }
 
         if (namedFields.size() == 0) {
-            xhtml.endElement("xfa_content");
+            xhtml.endElement("div");
             return;
         }
         //now dump fields and values
@@ -135,7 +135,7 @@ class XFAExtractor {
         }
         xhtml.endElement("ol");
         xhtml.endElement("div");
-        xhtml.endElement("xfa_content");
+        xhtml.endElement("div");
     }
 
     //try to scrape the text until the endElement

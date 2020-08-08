@@ -411,7 +411,7 @@ public class OpenDocumentContentParser extends AbstractParser {
                 // to incoming handler
                 if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
                     final String el = headingStack.pop();
-                    handler.endElement(XHTMLContentHandler.XHTML, el, el);
+                    handler.endElement(namespaceURI, el, el);
                 } else if (TEXT_NS.equals(namespaceURI) && "list".equals(localName)) {
                     endList();
                 } else if (TEXT_NS.equals(namespaceURI) && "span".equals(localName)) {
@@ -422,7 +422,7 @@ public class OpenDocumentContentParser extends AbstractParser {
                 } else if ("annotation".equals(localName) || "note".equals(localName) ||
                         "notes".equals(localName)) {
                         closeStyleTags();
-                        handler.endElement("", localName, localName);
+                        handler.endElement(namespaceURI, localName, localName);
                 } else {
                     super.endElement(namespaceURI, localName, qName);
                 }

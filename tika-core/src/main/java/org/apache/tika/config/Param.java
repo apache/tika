@@ -22,6 +22,7 @@ import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -40,7 +41,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -52,6 +55,7 @@ import java.util.Map;
  */
 public class Param<T> implements Serializable {
 
+    private static final String LIST = "list";
     private static final Map<Class<?>, String> map = new HashMap<>();
     private static final Map<String, Class<?>> reverseMap = new HashMap<>();
     private static final Map<String, Class<?>> wellKnownMap = new HashMap<>();
@@ -69,6 +73,7 @@ public class Param<T> implements Serializable {
         map.put(File.class, "file");
         map.put(URI.class, "uri");
         map.put(URL.class, "url");
+        map.put(ArrayList.class, LIST);
         for (Map.Entry<Class<?>, String> entry : map.entrySet()) {
             reverseMap.put(entry.getValue(), entry.getKey());
         }
@@ -79,18 +84,22 @@ public class Param<T> implements Serializable {
 
     private String name;
 
-    private String value;
+    private List<String> valueStrings = new ArrayList<>();
 
     private T actualValue;
 
     public Param(){
     }
 
-    public Param(String name, Class<T> type, T value){
+    public Param(String name, Class<T> type, T value) {
         this.name = name;
         this.type = type;
-        this.value = value.toString();
-        
+        this.actualValue = value;
+        if (List.class.isAssignableFrom(value.getClass())) {
+            this.valueStrings.addAll((List)value);
+        } else {
+            this.valueStrings.add(value.toString());
+        }
         if (this.type == null) {
             this.type = (Class<T>)wellKnownMap.get(name);
         }
@@ -120,6 +129,9 @@ public class Param<T> implements Serializable {
         if (type == null) {
             return null;
         }
+        if (List.class.isAssignableFrom(type)) {
+            return LIST;
+        }
         if (map.containsKey(type)){
             return map.get(type);
         }
@@ -136,9 +148,6 @@ public class Param<T> implements Serializable {
     }
 
     public T getValue(){
-        if (actualValue == null) {
-            actualValue = getTypedValue(type, value);
-        }
         return actualValue;
     }
 
@@ -146,7 +155,7 @@ public class Param<T> implements Serializable {
     public String toString() {
         return "Param{" +
                 "name='" + name + '\'' +
-                ", value='" + value + '\'' +
+                ", valueStrings='" + valueStrings + '\'' +
                 ", actualValue=" + actualValue +
                 '}';
     }
@@ -159,13 +168,13 @@ public class Param<T> implements Serializable {
         Element paramEl = doc.createElement("param");
         doc.appendChild(paramEl);
         
-        save(paramEl);
+        save(doc, paramEl);
         
         Transformer transformer = XMLReaderUtils.getTransformer();
         transformer.transform(new DOMSource(paramEl), new StreamResult(stream));
     }
 
-    public void save(Node node) {
+    public void save(Document doc, Node node) {
 
         if ( !(node instanceof Element) ) {
             throw new IllegalArgumentException("Not an Element : " + node);
@@ -175,7 +184,17 @@ public class Param<T> implements Serializable {
         
         el.setAttribute("name",  getName());
         el.setAttribute("type", getTypeString());
-        el.setTextContent(value);
+        if (List.class.isAssignableFrom(actualValue.getClass())) {
+            for (int i = 0; i < valueStrings.size(); i++) {
+                String val = valueStrings.get(i);
+                String typeString = map.get(((List)actualValue).get(i).getClass());
+                Node item = doc.createElement(typeString);
+                item.setTextContent(val);
+                el.appendChild(item);
+            }
+        } else {
+            el.setTextContent(valueStrings.get(0));
+        }
     }
 
     public static <T> Param<T> load(InputStream stream) throws SAXException, IOException, TikaException {
@@ -186,12 +205,15 @@ public class Param<T> implements Serializable {
         return load(document.getFirstChild());
     }
 
-    public static <T> Param<T> load(Node node)  {
+    public static <T> Param<T> load(Node node) {
         
         Node nameAttr = node.getAttributes().getNamedItem("name");
         Node typeAttr = node.getAttributes().getNamedItem("type");
         Node valueAttr = node.getAttributes().getNamedItem("value");
         Node value = node.getFirstChild();
+        if (value instanceof NodeList && valueAttr != null) {
+            throw new IllegalArgumentException("can't specify a value attr _and_ a node list");
+        }
         if (valueAttr != null && (value == null || value.getTextContent() == null)) {
             value = valueAttr;
         }
@@ -203,11 +225,29 @@ public class Param<T> implements Serializable {
         } else {
             ret.type = (Class<T>)wellKnownMap.get(ret.name);
         }
-        ret.value = value.getTextContent();
-        
+
+        if (List.class.isAssignableFrom(ret.type)) {
+            loadList(ret, node);
+        } else {
+            ret.actualValue = getTypedValue(ret.type, value.getTextContent());
+            ret.valueStrings.add(value.getTextContent());
+        }
         return ret;
     }
-    
+
+    private static <T> void loadList(Param<T> ret, Node root) {
+        Node child = root.getFirstChild();
+        ret.actualValue = (T)new ArrayList<>();
+        while (child != null) {
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                Class type = classFromType(child.getLocalName());
+                ((List) ret.actualValue).add(getTypedValue(type, child.getTextContent()));
+                ret.valueStrings.add(child.getTextContent());
+            }
+            child = child.getNextSibling();
+        }
+    }
+
     private static <T> Class<T> classFromType(String type) {
         if (reverseMap.containsKey(type)){
             return (Class<T>) reverseMap.get(type);

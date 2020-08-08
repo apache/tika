@@ -42,6 +42,9 @@ import org.apache.tika.batch.fs.FSUtil;
 import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.batch.fs.StreamOutRPWFSConsumer;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.NoOpFilter;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -145,15 +148,19 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
                 contentHandlerFactory, recursiveParserWrapper);
         Parser parser = parserFactory.getParser(config);
         if (recursiveParserWrapper) {
+            MetadataFilter metadataFilter = config.getMetadataFilter();
             parser = new RecursiveParserWrapper(parser);
+
             for (int i = 0; i < numConsumers; i++) {
                 FileResourceConsumer c = null;
                 if (streamOut){
                     c = new StreamOutRPWFSConsumer(queue,
-                            parser, contentHandlerFactory, outputStreamFactory);
+                            parser, contentHandlerFactory,
+                            outputStreamFactory, metadataFilter);
                 } else {
                     c = new RecursiveParserWrapperFSConsumer(queue,
-                            parser, contentHandlerFactory, outputStreamFactory);
+                            parser, contentHandlerFactory,
+                            outputStreamFactory, metadataFilter);
                 }
                 consumers.add(c);
             }

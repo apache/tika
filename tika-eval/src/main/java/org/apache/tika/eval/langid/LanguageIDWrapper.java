@@ -56,8 +56,9 @@ public class LanguageIDWrapper implements StringStatsCalculator<List<Language>> 
 
     private static CharSequenceNormalizer[] getNormalizers() {
         return new CharSequenceNormalizer[]{
-                EmojiCharSequenceNormalizer.getInstance(),
                 TikaUrlCharSequenceNormalizer.getInstance(),
+                AlphaIdeographSequenceNormalizer.getInstance(),
+                EmojiCharSequenceNormalizer.getInstance(),
                 TwitterCharSequenceNormalizer.getInstance(),
                 NumberCharSequenceNormalizer.getInstance(),
                 ShrinkCharSequenceNormalizer.getInstance()
@@ -73,7 +74,7 @@ public class LanguageIDWrapper implements StringStatsCalculator<List<Language>> 
                 throw new RuntimeException("couldn't load built in lang models", e);
             }
         }
-        detector = new ProbingLanguageDetector(LANG_MODEL);
+        detector = new ProbingLanguageDetector(LANG_MODEL, getNormalizers());
     }
 
     public List<Language> getProbabilities(String s) {
@@ -116,6 +117,23 @@ public class LanguageIDWrapper implements StringStatsCalculator<List<Language>> 
         public CharSequence normalize(CharSequence charSequence) {
             String modified = URL_REGEX.matcher(charSequence).replaceAll(" ");
             return MAIL_REGEX.matcher(modified).replaceAll(" ");
+        }
+    }
+
+    private static class AlphaIdeographSequenceNormalizer implements CharSequenceNormalizer {
+        private static final Pattern REGEX = Pattern.compile("[^\\p{IsAlphabetic}\\p{IsIdeographic}]+");
+        private static final AlphaIdeographSequenceNormalizer INSTANCE = new AlphaIdeographSequenceNormalizer();
+
+        public static AlphaIdeographSequenceNormalizer getInstance() {
+            return INSTANCE;
+        }
+
+        private AlphaIdeographSequenceNormalizer() {
+        }
+
+        @Override
+        public CharSequence normalize(CharSequence charSequence) {
+            return REGEX.matcher(charSequence).replaceAll(" ");
         }
     }
 }

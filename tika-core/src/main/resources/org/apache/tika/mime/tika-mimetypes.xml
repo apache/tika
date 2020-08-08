@@ -392,7 +392,21 @@
     </magic>
     <glob pattern="*.jnilib"/>
   </mime-type>
-
+  <mime-type type="application/vnd.java.hprof ">
+    <_comment>Java hprof text file</_comment>
+    <magic priority="50">
+      <match value="JAVA PROFILE \\d\\.\\d\\.\\d\\u0000" type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.hprof"/>
+  </mime-type>
+  <mime-type type="application/vnd.java.hprof.text">
+    <_comment>Java hprof text file</_comment>
+    <magic priority="50">
+      <match value="JAVA PROFILE \\d\\.\\d\\.\\d," type="regex" offset="0"/>
+    </magic>
+    <glob pattern="*.hprof.txt"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
   <mime-type type="application/kpml-request+xml"/>
   <mime-type type="application/kpml-response+xml"/>
   <mime-type type="application/lost+xml">

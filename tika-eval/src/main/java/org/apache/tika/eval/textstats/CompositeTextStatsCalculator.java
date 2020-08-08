@@ -17,29 +17,38 @@
 package org.apache.tika.eval.textstats;
 
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.BytesTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
+import org.apache.lucene.util.BytesRef;
 import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.TokenCounts;
+import org.apache.tika.metadata.Message;
 
 
 public class CompositeTextStatsCalculator {
 
     private static final String FIELD = "f";
     private static final int DEFAULT_MAX_TOKENS = 10_000_000;
+    private final byte[] whitespace = new byte[]{' '};
     private final Analyzer analyzer;
     private final LanguageIDWrapper languageIDWrapper;
     private final List<LanguageAwareTokenCountStats> languageAwareTokenCountStats = new ArrayList<>();
     private final List<TokenCountStatsCalculator> tokenCountStatCalculators = new ArrayList<>();
     private final List<StringStatsCalculator> stringStatCalculators = new ArrayList<>();
+    private final List<BytesRefCalculator> bytesRefCalculators = new ArrayList<>();
 
     public CompositeTextStatsCalculator(List<TextStatsCalculator> calculators) {
         this(calculators,
@@ -68,6 +77,14 @@ public class CompositeTextStatsCalculator {
                                     "a TokenCountStats: "+t.getClass()
                     );
                 }
+            } else if (t instanceof BytesRefCalculator) {
+                bytesRefCalculators.add((BytesRefCalculator)t);
+                if (analyzer == null) {
+                    throw new IllegalArgumentException(
+                            "Analyzer must not be null if you are using "+
+                                    "a BytesRefCalculator: "+t.getClass()
+                    );
+                }
             } else {
                 throw new IllegalArgumentException(
                         "I regret I don't yet handle: "+t.getClass()
@@ -83,9 +100,11 @@ public class CompositeTextStatsCalculator {
         }
 
         TokenCounts tokenCounts = null;
-        if (tokenCountStatCalculators.size() > 0 || languageAwareTokenCountStats.size() > 0) {
+        if (tokenCountStatCalculators.size() > 0
+                || languageAwareTokenCountStats.size() > 0
+                || bytesRefCalculators.size() > 0) {
             try {
-                tokenCounts = tokenize(txt);
+                tokenCounts = tokenize(txt, results);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -106,20 +125,51 @@ public class CompositeTextStatsCalculator {
         return results;
     }
 
-    private TokenCounts tokenize(String txt) throws IOException  {
+    private TokenCounts tokenize(String txt, Map<Class, Object> results) throws IOException  {
         TokenCounts counts = new TokenCounts();
         TokenStream ts = analyzer.tokenStream(FIELD, txt);
-        try {
-            CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
-            ts.reset();
-            while (ts.incrementToken()) {
-                String token = termAtt.toString();
-                counts.increment(token);
+        if (bytesRefCalculators.size() == 0) {
+            try {
+                CharTermAttribute termAtt = ts.getAttribute(CharTermAttribute.class);
+                ts.reset();
+                while (ts.incrementToken()) {
+                    String token = termAtt.toString();
+                    counts.increment(token);
+                }
+            } finally {
+                ts.close();
+                ts.end();
             }
-        } finally {
-            ts.close();
-            ts.end();
+        } else {
+            List<BytesRefCalculator.BytesRefCalcInstance> brcis = new ArrayList<>();
+            for (BytesRefCalculator brf : bytesRefCalculators) {
+                brcis.add(brf.getInstance());
+            }
+            try {
+                TermToBytesRefAttribute termAtt = ts.getAttribute(TermToBytesRefAttribute.class);
+                ts.reset();
+                int i = 0;
+                while (ts.incrementToken()) {
+                    final BytesRef bytesRef = termAtt.getBytesRef();
+                    String token = termAtt.toString();
+                    counts.increment(token);
+                    for (BytesRefCalculator.BytesRefCalcInstance brci : brcis) {
+                        if (i > 0) {
+                            brci.update(whitespace, 0, 1);
+                        }
+                        brci.update(bytesRef.bytes, bytesRef.offset, bytesRef.length);
+                    }
+                    i++;
+                }
+                for (BytesRefCalculator.BytesRefCalcInstance brc : brcis) {
+                    results.put(brc.getOuterClass(), brc.finish());
+                }
+            } finally {
+                ts.close();
+                ts.end();
+            }
         }
+
         return counts;
     }
 }

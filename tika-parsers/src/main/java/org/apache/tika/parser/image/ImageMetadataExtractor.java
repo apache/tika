@@ -49,12 +49,14 @@ import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.ExifThumbnailDirectory;
 import com.drew.metadata.exif.GpsDirectory;
+import com.drew.metadata.icc.IccDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -77,6 +79,9 @@ public class ImageMetadataExtractor {
     //TODO: add this to the signatures from the actual parse
     private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######"; // 6 dp seems to be reasonable
+
+    private static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
 
@@ -152,13 +157,10 @@ public class ImageMetadataExtractor {
         }
     }
 
-    public void parseHeif(File file) throws IOException, TikaException {
+    public void parseHeif(InputStream is) throws IOException, TikaException {
         try {
-            com.drew.metadata.Metadata heifMetadata = new com.drew.metadata.Metadata();
-            heifMetadata = HeifMetadataReader.readMetadata(new FileInputStream(file));
+            com.drew.metadata.Metadata heifMetadata = HeifMetadataReader.readMetadata(is);
             handle(heifMetadata);
-        } catch (IOException e) {
-            throw e;
         } catch (MetadataException e) {
             throw new TikaException("Can't process Heif data", e);
         }
@@ -308,6 +310,8 @@ public class ImageMetadataExtractor {
                         }
                         if (directory instanceof ExifDirectoryBase) {
                             metadata.set(directory.getName() + ":" + name, value);
+                        } else if (directory instanceof IccDirectory) {
+                            metadata.set(ICC_NS+name, value);
                         } else {
                             metadata.set(name, value);
                         }

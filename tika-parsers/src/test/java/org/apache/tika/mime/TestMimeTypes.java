@@ -1229,6 +1229,11 @@ public class TestMimeTypes {
         assertTypeByData("application/x-ms-nls", "testNLS2.nls");
     }
 
+    @Test
+    public void testHPROF() throws Exception {
+        assertTypeByData("application/vnd.java.hprof", "testJavaHprofBinary");
+        assertTypeByData("application/vnd.java.hprof.text", "testJavaHprofText");
+    }
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
