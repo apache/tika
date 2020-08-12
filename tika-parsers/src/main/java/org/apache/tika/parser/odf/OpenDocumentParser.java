@@ -31,6 +31,8 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -44,7 +46,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -206,7 +210,7 @@ public class OpenDocumentParser extends AbstractParser {
         }
     }
     private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata,
-                                ParseContext context, EndDocumentShieldingContentHandler handler)
+                                ParseContext context, ContentHandler handler)
             throws IOException, SAXException, TikaException {
         if (entry == null) return;
 
@@ -234,6 +238,10 @@ public class OpenDocumentParser extends AbstractParser {
             //scrape everything under Thumbnails/ and Pictures/
             if (embeddedName.contains("Thumbnails/") ||
                     embeddedName.contains("Pictures/")) {
+                if (ignoreScriptFile(embeddedName)) {
+                    return;
+                }
+
                 EmbeddedDocumentExtractor embeddedDocumentExtractor =
                         EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
                 Metadata embeddedMetadata = new Metadata();
@@ -246,12 +254,51 @@ public class OpenDocumentParser extends AbstractParser {
                     embeddedMetadata.set(TikaMetadataKeys.EMBEDDED_RESOURCE_TYPE,
                             TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
                 }
+
                 if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
                     embeddedDocumentExtractor.parseEmbedded(zip,
                             new EmbeddedContentHandler(handler), embeddedMetadata, false);
                 }
+            } else if (embeddedName.contains("Basic/")) {
+                Metadata embeddedMetadata = new Metadata();
+                embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
+                String name = getMacroName(embeddedName);
+                if (!StringUtils.isAllBlank(name)) {
+                    embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+                }
+                handler = new OpenDocumentMacroHandler(handler, context);
+                XMLReaderUtils.parseSAX(
+                        new CloseShieldInputStream(zip),
+                        new OfflineContentHandler(new EmbeddedContentHandler(
+                                handler)), context);
             }
 
         }
     }
+
+    private String getMacroName(String embeddedName) {
+
+        if (embeddedName == null) {
+            return null;
+        }
+        int lastSlash = embeddedName.lastIndexOf("/");
+        if (lastSlash > -1) {
+            return embeddedName.substring(lastSlash+1).replaceFirst("\\.xml$", "");
+        }
+        return null;
+    }
+
+    private boolean ignoreScriptFile(String embeddedName) {
+        if (embeddedName.contains("Basic/")) {
+            if (embeddedName.contains("script-lb.xml")) {
+                return true;
+            } else if (embeddedName.contains("script-lc.xml")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
 }

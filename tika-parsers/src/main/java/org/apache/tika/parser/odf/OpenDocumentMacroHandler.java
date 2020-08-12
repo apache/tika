@@ -34,82 +34,30 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 
-class OpenDocumentMacroHandler extends ContentHandlerDecorator {
-
-    private static String MODULE = "module";
-    private static String SOURCE_CODE = "source-code";
-    private static String NAME = "name";
-
-    private final ContentHandler contentHandler;
-    private final ParseContext parseContext;
-    private EmbeddedDocumentExtractor embeddedDocumentExtractor;
-    private final StringBuilder macroBuffer = new StringBuilder();
-    private String macroName = null;
-    private boolean inMacro = false;
+class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
 
     OpenDocumentMacroHandler(ContentHandler contentHandler, ParseContext parseContext) {
-        super(contentHandler);
-        this.contentHandler = contentHandler;
-        this.parseContext = parseContext;
+        super(contentHandler, parseContext);
     }
 
     @Override
     public void startElement(
             String namespaceURI, String localName, String qName,
             Attributes attrs) throws SAXException {
-        if (MODULE.equals(localName)) {
-            macroName = XMLReaderUtils.getAttrValue(NAME, attrs);
-        } else if (SOURCE_CODE.equals(localName)) {
-            inMacro = true;
-        }
+        inMacro = true;
+        macroName = XMLReaderUtils.getAttrValue(NAME, attrs);
     }
 
-    @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        if (inMacro) {
-            macroBuffer.append(ch, start, length);
-        }
-    }
 
     @Override
     public void endElement(
             String namespaceURI, String localName, String qName) throws SAXException {
-        if (SOURCE_CODE.equals(localName)) {
+        if (MODULE.equals(localName)) {
             try {
                 handleMacro();
             } catch (IOException e) {
                 throw new SAXException(e);
             }
         }
-    }
-
-    private void handleMacro() throws IOException, SAXException {
-
-        byte[] bytes = macroBuffer.toString().getBytes(StandardCharsets.UTF_8);
-
-        if (embeddedDocumentExtractor == null) {
-            embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
-        }
-        Metadata embeddedMetadata = new Metadata();
-        if (! StringUtils.isBlank(macroName)) {
-            embeddedMetadata.set(Metadata.RESOURCE_NAME_KEY, macroName);
-        }
-        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
-
-        //reset state before parse
-        macroBuffer.setLength(0);
-        macroName = null;
-        inMacro = false;
-
-        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            try (InputStream is = TikaInputStream.get(bytes)) {
-                embeddedDocumentExtractor.parseEmbedded(
-                        is, contentHandler, embeddedMetadata, false
-                );
-            }
-        }
-
     }
 }

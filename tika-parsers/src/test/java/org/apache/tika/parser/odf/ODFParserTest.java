@@ -431,6 +431,75 @@ public class ODFParserTest extends TikaTest {
     }
 
     @Test
+    public void testMacroODT() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.odt");
+        assertEquals(4, metadataList.size());
+        Metadata parent = metadataList.get(0);
+
+        assertContains("<p>Hello dear user,</p>",
+                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("application/vnd.oasis.opendocument.text",
+                parent.get(Metadata.CONTENT_TYPE));
+
+        //make sure metadata came through
+        assertEquals("LibreOffice/6.4.3.2$MacOSX_X86_64 LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                parent.get("generator"));
+        assertEquals(1, parent.getInt(PagedText.N_PAGES).intValue());
+
+        Metadata macro = metadataList.get(1);
+        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+        Metadata image = metadataList.get(2);
+        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testMacroODS() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.ods");
+        assertEquals(4, metadataList.size());
+        Metadata parent = metadataList.get(0);
+
+        assertContains("<tr>",
+                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("application/vnd.oasis.opendocument.spreadsheet",
+                parent.get(Metadata.CONTENT_TYPE));
+
+        Metadata macro = metadataList.get(1);
+        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test1", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+        Metadata image = metadataList.get(2);
+        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testMacroODP() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.odp");
+        assertEquals(3, metadataList.size());
+        Metadata parent = metadataList.get(0);
+
+        assertContains("<p",
+                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("application/vnd.oasis.opendocument.presentation",
+                parent.get(Metadata.CONTENT_TYPE));
+        //make sure metadata came through
+        assertEquals("LibreOffice/6.4.3.2$MacOSX_X86_64 LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                parent.get("generator"));
+
+        assertEquals("2", parent.get("editing-cycles"));
+
+        Metadata macro = metadataList.get(1);
+        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("testmodule", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("testmodule", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+    }
+
+    @Test
     public void testMacroFODT() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.fodt");
         assertEquals(3, metadataList.size());

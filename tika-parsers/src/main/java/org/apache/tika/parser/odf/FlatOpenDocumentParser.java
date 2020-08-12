@@ -41,6 +41,8 @@ import java.util.Set;
 
 public class FlatOpenDocumentParser extends AbstractParser {
 
+    private static final long serialVersionUID = -8739250869531737584L;
+
     static final MediaType FLAT_OD = MediaType.application("vnd.oasis.opendocument.tika.flat.document");
 
     static final MediaType FLAT_ODT = MediaType.application("vnd.oasis.opendocument.flat.text");
@@ -115,7 +117,7 @@ public class FlatOpenDocumentParser extends AbstractParser {
             this.parseContext = parseContext;
             this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler), parseContext);
             this.metadataHandler = OpenDocumentMetaParser.getContentHandler(metadata, parseContext);
-            this.macroHandler = new OpenDocumentMacroHandler(baseHandler, parseContext);
+            this.macroHandler = new FlatOpenDocumentMacroHandler(baseHandler, parseContext);
         }
 
         MediaType getDetectedType() {

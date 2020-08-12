@@ -1,5 +1,27 @@
 Release 1.24.1 - 4/17/2020
 
+   * Add detection and a parser for flat ODF files (TIKA-3159).
+
+   * Add extraction of macros from ODF files (TIKA-3161).
+
+   * Add mime detection for hprof and hprof text files (TIKA-3144).
+
+   * Add TextSignature and TextProfileSignature to tika-eval (TIKA-3145 and TIKA-3146)
+
+   * Create a metadata filter to trigger tika-eval stats post parsing (TIKA-3140)
+
+   * Add a configurable metadata-filter for the RecursiveParserWrapper (TIKA-3137)
+
+   * Add status endpoint to tika-server (TIKA-3129).
+
+   * Remove whitelist/blacklist terminology (TIKA-3120)
+
+   * Add detection for parquet files (TIKA-3115).
+
+   * Add detection and parsing for bplist (TIKA-3104).
+
+   * Enable metadata value filtering
+
    * Add a basic parser for plist files based on com.googlecode.plist:dd-plist (TIKA-3104).
 
 Release 1.24.1 - 4/17/2020
