@@ -28,11 +28,13 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -426,6 +428,74 @@ public class ODFParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             parser.parse(tis, handler, metadata, new ParseContext());
         }
+    }
+
+    @Test
+    public void testMacroFODT() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.fodt");
+        assertEquals(3, metadataList.size());
+        Metadata parent = metadataList.get(0);
+
+        assertContains("<p>Hello dear user,</p>",
+                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("application/vnd.oasis.opendocument.flat.text",
+                parent.get(Metadata.CONTENT_TYPE));
+
+        //make sure metadata came through
+        assertEquals("LibreOffice/6.4.3.2$MacOSX_X86_64 LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                parent.get("generator"));
+        assertEquals(1, parent.getInt(PagedText.N_PAGES).intValue());
+
+        Metadata macro = metadataList.get(1);
+        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test", macro.get(Metadata.RESOURCE_NAME_KEY));
+
+        Metadata image = metadataList.get(2);
+        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testMacroFODS() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.fods");
+        assertEquals(3, metadataList.size());
+        Metadata parent = metadataList.get(0);
+
+        assertContains("<tr>",
+                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("application/vnd.oasis.opendocument.flat.spreadsheet",
+                parent.get(Metadata.CONTENT_TYPE));
+
+        Metadata macro = metadataList.get(1);
+        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test1", macro.get(Metadata.RESOURCE_NAME_KEY));
+
+        Metadata image = metadataList.get(2);
+        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testMacroFODP() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.fodp");
+        assertEquals(2, metadataList.size());
+        Metadata parent = metadataList.get(0);
+
+        assertContains("<p",
+                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("application/vnd.oasis.opendocument.flat.presentation",
+                parent.get(Metadata.CONTENT_TYPE));
+        //make sure metadata came through
+        assertEquals("LibreOffice/6.4.3.2$MacOSX_X86_64 LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+                parent.get("generator"));
+
+        assertEquals("3", parent.get("editing-cycles"));
+
+        Metadata macro = metadataList.get(1);
+        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test", macro.get(Metadata.RESOURCE_NAME_KEY));
+
     }
 
     private ParseContext getNonRecursingParseContext() {
