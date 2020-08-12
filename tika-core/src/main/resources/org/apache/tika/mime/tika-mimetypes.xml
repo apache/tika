@@ -5951,9 +5951,11 @@
   <mime-type type="message/imdn+xml"/>
 
   <mime-type type="message/news">
-    <magic priority="50">
+    <magic priority="60">
       <match value="Path:" type="string" offset="0" />
       <match value="Xref:" type="string" offset="0" />
+    </magic>
+    <magic priority="50">
       <match value="Article" type="string" offset="0" />
     </magic>
     <sub-class-of type="text/x-tika-text-based-message"/>
@@ -5963,50 +5965,65 @@
 
   <mime-type type="message/rfc822">
     <magic priority="50">
-      <match value="Delivered-To:" type="string" offset="0"/>
-      <match value="Status:" type="string" offset="0"/>
+      <!-- these should be 100% hits...if you see this at offset=0 -->
       <match value="Relay-Version:" type="stringignorecase" offset="0"/>
       <match value="#!\ rnews" type="string" offset="0"/>
       <match value="N#!\ rnews" type="string" offset="0"/>
       <match value="Forward\ to" type="string" offset="0"/>
       <match value="Pipe\ to" type="string" offset="0"/>
       <match value="Return-Path:" type="stringignorecase" offset="0"/>
-      <match value="From:" type="stringignorecase" offset="0"/>
-      <match value="Received:" type="stringignorecase" offset="0"/>
       <match value="Message-ID:" type="stringignorecase" offset="0"/>
-      <match value="\nReturn-Path:" type="stringignorecase" offset="0:1000"/>
-      <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:1000"/>
-      <match value="\nReceived:" type="stringignorecase" offset="0:1000"/>
-      <match value="Date:" type="string" offset="0"/>
-      <match value="User-Agent:" type="string" offset="0"/>
-      <match value="MIME-Version:" type="stringignorecase" offset="0"/>
       <match value="X-Mailer:" type="string" offset="0"/>
       <match value="X-Notes-Item:" type="string" offset="0">
         <match value="Message-ID:" type="string" offset="0:8192"/>
       </match>
-      <match value="X-" type="stringignorecase" offset="0">
-        <match value="\nMessage-ID:" type="string" offset="0:8192"/>
-        <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nSubject:" type="string" offset="0:8192"/>
-        <match value="\nReceived:" type="string" offset="0:8192"/>
-        <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
+      <!-- be a bit more flexible, but require two of these -->
+      <match minShouldMatch="2">
+        <match value="Date:" type="stringignorecase" offset="0"/>
+        <match value="Delivered-To:" type="string" offset="0"/>
+        <match value="From:" type="stringignorecase" offset="0"/>
+        <match value="Message-ID:" type="stringignorecase" offset="0"/>
+        <match value="MIME-Version:" type="stringignorecase" offset="0"/>
+        <match value="Received:" type="stringignorecase" offset="0"/>
+        <match value="Relay-Version:" type="stringignorecase" offset="0"/>
+        <match value="Return-Path:" type="stringignorecase" offset="0"/>
+        <match value="Sent:" type="string" offset="0"/>
+        <match value="Status:" type="string" offset="0"/>
+        <match value="User-Agent:" type="string" offset="0"/>
+        <match value="X-Mailer:" type="string" offset="0"/>
+        <match value="X-Originating-IP:" type="stringignorecase" offset="0"/>
+
+        <match value="\nDate:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nDelivered-To:" type="string" offset="0:1024"/>
+        <match value="\nFrom:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nMIME-Version:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nReceived:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nRelay-Version:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nReturn-Path:" type="stringignorecase" offset="0:1024"/>
+        <match value="\nSent:" type="string" offset="0:1024"/>
+        <match value="\nStatus:" type="string" offset="0:1024"/>
+        <match value="\nSubject:" type="string" offset="0:1024"/>
+        <match value="\nTo:" type="string" offset="0:1024"/>
+        <match value="\nUser-Agent:" type="string" offset="0:1024"/>
+        <match value="\nX-Mailer:" type="string" offset="0:1024"/>
+        <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:1024"/>
       </match>
-      <match value="DKIM-" type="string" offset="0">
-        <match value="\nMessage-ID:" type="string" offset="0:8192"/>
+      <!-- match X- DKIM- ARC- at start of file and then require at least one
+           of the usual: from, received, date...but look farther into the file
+           because of the X|DKIM|ARC headers-->
+      <match value="(X|DKIM|ARC)-" type="regex" offset="0">
+        <match value="\nDate:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nDelivered-To:" type="string" offset="0:8192"/>
         <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nSubject:" type="string" offset="0:8192"/>
-        <match value="\nReceived:" type="string" offset="0:8192"/>
+        <match value="\nMessage-ID:" type="stringignorecase" offset="0:8192"/>
         <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
-      </match>
-      <match value="ARC-" type="string" offset="0">
-        <match value="\nMessage-ID:" type="string" offset="0:8192"/>
-        <match value="\nFrom:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nTo:" type="stringignorecase" offset="0:8192"/>
-        <match value="\nSubject:" type="string" offset="0:8192"/>
-        <match value="\nReceived:" type="string" offset="0:8192"/>
-        <match value="\nMIME-Version:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nReceived:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nRelay-Version:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nReturn-Path:" type="stringignorecase" offset="0:8192"/>
+        <match value="\nStatus:" type="string" offset="0:8192"/>
+        <match value="\nUser-Agent:" type="string" offset="0:8192"/>
+        <match value="\nX-Mailer:" type="string" offset="0:8192"/>
+        <match value="\nX-Originating-IP:" type="stringignorecase" offset="0:8192"/>
       </match>
     </magic>
     <magic priority="40">

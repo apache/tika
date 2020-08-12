@@ -289,7 +289,7 @@ public class RFC822ParserTest extends TikaTest {
                     "really really really really really really long name ");
         }
         String name = inputBuilder.toString();
-        byte[] data = ("From: " + name + "\r\n\r\n").getBytes(US_ASCII);
+        byte[] data = ("Status: 520\r\nFrom: " + name + "\r\n\r\n").getBytes(US_ASCII);
 
         ContentHandler handler = new DefaultHandler();
         Metadata metadata = new Metadata();
