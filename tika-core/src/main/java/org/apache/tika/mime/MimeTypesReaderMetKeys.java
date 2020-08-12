@@ -63,6 +63,8 @@ public interface MimeTypesReaderMetKeys {
 
     String MATCH_MASK_ATTR = "mask";
 
+    String MATCH_MINSHOULDMATCH_ATTR = "minShouldMatch";
+
     String NS_URI_ATTR = "namespaceURI";
 
     String LOCAL_NAME_ATTR = "localName";
