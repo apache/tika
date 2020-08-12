@@ -105,10 +105,10 @@ public class OpenDocumentMetaParser extends XMLParser {
         return new TeeContentHandler(ch, branch);
     }
 
-    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md, ParseContext context) {
+    static ContentHandler getContentHandler(Metadata md, ParseContext context, ContentHandler ... handlers) {
         // We can no longer extend DcXMLParser due to the handling of dc:subject and dc:date
-        // Process the Dublin Core Attributes 
-        ch = new TeeContentHandler(super.getContentHandler(ch, md, context),
+        // Process the Dublin Core Attributes
+        ContentHandler ch = new TeeContentHandler(
                 getDublinCoreHandler(md, TikaCoreProperties.TITLE, "title"),
                 getDublinCoreHandler(md, TikaCoreProperties.CREATOR, "creator"),
                 getDublinCoreHandler(md, TikaCoreProperties.DESCRIPTION, "description"),
@@ -152,10 +152,19 @@ public class OpenDocumentMetaParser extends XMLParser {
         ch = getStatistic(ch, md, Office.WORD_COUNT, "word-count");
         ch = getStatistic(ch, md, Office.CHARACTER_COUNT, "character-count");
 
-
+        if (handlers != null && handlers.length > 0) {
+            ContentHandler[] newHandlers = new ContentHandler[handlers.length+1];
+            newHandlers[0] = ch;
+            System.arraycopy(handlers, 0, newHandlers, 1, handlers.length);
+            ch = new TeeContentHandler(newHandlers);
+        }
         // Normalise the rest
         ch = new NSNormalizerContentHandler(ch);
         return ch;
+    }
+
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md, ParseContext context) {
+        return getContentHandler(md, context, super.getContentHandler(ch, md, context));
     }
 
     @Override

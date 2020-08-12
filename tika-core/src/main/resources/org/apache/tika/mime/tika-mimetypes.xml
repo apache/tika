@@ -2302,6 +2302,34 @@
     <glob pattern="*.odt"/>
   </mime-type>
 
+  <!-- can't tell from the root element whether this is fodt, fodp, etc.
+     This is a made up general mime to cover the open office flat formats.
+      Subtype detection can be done with the document:mime attribute in the root
+      element and/or file extensions fodt...-->
+  <mime-type type="application/vnd.oasis.opendocument.tika.flat.document">
+    <_comment>OpenDocument v1.0: Flat Text document</_comment>
+    <root-XML namespaceURI="urn:oasis:names:tc:opendocument:xmlns:office:1.0" localName="document"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.oasis.opendocument.flat.text">
+    <_comment>OpenDocument v1.0: Flat Text document</_comment>
+    <glob pattern="*.fodt"/>
+    <sub-class-of type="application/vnd.oasis.opendocument.tika.flat.document"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.oasis.opendocument.flat.presentation">
+    <_comment>OpenDocument v1.0: Flat Presentation document</_comment>
+    <glob pattern="*.fodp"/>
+    <sub-class-of type="application/vnd.oasis.opendocument.tika.flat.document"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.oasis.opendocument.flat.spreadsheet">
+    <_comment>OpenDocument v1.0: Flat Spreadsheet document</_comment>
+    <glob pattern="*.fods"/>
+    <sub-class-of type="application/vnd.oasis.opendocument.tika.flat.document"/>
+  </mime-type>
+
   <mime-type type="application/vnd.oasis.opendocument.text-master">
     <alias type="application/x-vnd.oasis.opendocument.text-master"/>
     <_comment>OpenDocument v1.0: Global Text document</_comment>

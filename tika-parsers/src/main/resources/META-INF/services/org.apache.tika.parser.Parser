@@ -58,6 +58,7 @@ org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.mp4.MP4Parser
 org.apache.tika.parser.hdf.HDFParser
 org.apache.tika.parser.netcdf.NetCDFParser
+org.apache.tika.parser.odf.FlatOpenDocumentParser
 org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.pdf.PDFParser
 org.apache.tika.parser.pkg.CompressorParser
