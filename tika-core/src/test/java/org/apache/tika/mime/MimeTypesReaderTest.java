@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -58,6 +59,8 @@ public class MimeTypesReaderTest {
     private MimeTypes mimeTypes;
     private List<Magic> magics;
 
+    private String customMimeTypes;
+
     @SuppressWarnings("unchecked")
     @Before
     public void setUp() throws NoSuchFieldException, SecurityException,
@@ -67,6 +70,17 @@ public class MimeTypesReaderTest {
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
         magicsField.setAccessible(true);
         magics = (List<Magic>)magicsField.get(mimeTypes);
+        //ensure reset of custom mimes path
+        customMimeTypes = System.getProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP);
+    }
+
+    @After
+    public void tearDown() {
+        if (customMimeTypes == null) {
+            System.clearProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP);
+        } else {
+            System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP, customMimeTypes);
+        }
     }
     
     @Test
