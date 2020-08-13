@@ -82,6 +82,6 @@ public interface XMP {
      * [0..5], where -1 indicates “rejected” and 0 indicates “unrated”. If xmp:Rating
      * is not present, a value of 0 should be assumed.
      */
-    Property RATING = Property.externalReal(PREFIX_ + "Rating");
+    Property RATING = Property.externalInteger(PREFIX_ + "Rating");
 
 }
