@@ -24,20 +24,25 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class ODFParserTest extends TikaTest {
     /**
@@ -49,6 +54,14 @@ public class ODFParserTest extends TikaTest {
              new OpenDocumentParser(),
              new OpenOfficeParser()
        };
+    }
+
+    private static Parser MACRO_PARSER;
+
+    @BeforeClass
+    public static void setUp() throws IOException, TikaException, SAXException {
+        MACRO_PARSER = new AutoDetectParser(new TikaConfig
+                (ODFParserTest.class.getResourceAsStream("tika-config-macros.xml")));
     }
 
     @Test
@@ -432,8 +445,8 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testMacroODT() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.odt");
-        assertEquals(4, metadataList.size());
+        List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.odt", MACRO_PARSER);
+        assertEquals(5, metadataList.size());
         Metadata parent = metadataList.get(0);
 
         assertContains("<p>Hello dear user,</p>",
@@ -442,22 +455,44 @@ public class ODFParserTest extends TikaTest {
                 parent.get(Metadata.CONTENT_TYPE));
 
         //make sure metadata came through
-        assertEquals("LibreOffice/6.4.3.2$MacOSX_X86_64 LibreOffice_project/747b5d0ebf89f41c860ec2a39efd7cb15b54f2d8",
+        assertEquals("LibreOffice/6.4.4.2$Linux_X86_64 LibreOffice_project/40$Build-2",
                 parent.get("generator"));
         assertEquals(1, parent.getInt(PagedText.N_PAGES).intValue());
 
-        Metadata macro = metadataList.get(1);
-        assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        Metadata macro1 = metadataList.get(1);
+        assertEquals("MACRO", macro1.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 2 Then", macro1.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test", macro1.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
-        Metadata image = metadataList.get(2);
+        Metadata macro2 = metadataList.get(2);
+        assertEquals("MACRO", macro2.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
+        assertContains("If WsGQFM Or 1 Then", macro2.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals("test2", macro2.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+
+        Metadata image = metadataList.get(3);
         assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
+    public void testMacroODTandXMLHandler() throws Exception {
+        String xml = getXML("testODTMacro.odt", MACRO_PARSER).xml;
+        assertContains("Hello dear user", xml);
+        assertContains("If WsGQFM Or 1", xml);
+        assertContains("If WsGQFM Or 2 Then", xml);
+    }
+
+    @Test
+    public void testMacroODTandXMLHandlerDefault() throws Exception {
+        //test to make sure that macros aren't extracted by the default AutoDetectParser
+        String xml = getXML("testODTMacro.odt").xml;
+        assertContains("Hello dear user", xml);
+        assertNotContained("If WsGQFM Or 1", xml);
+        assertNotContained("If WsGQFM Or 2 Then", xml);
+    }
+
+    @Test
     public void testMacroODS() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.ods");
+        List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.ods", MACRO_PARSER);
         assertEquals(4, metadataList.size());
         Metadata parent = metadataList.get(0);
 
@@ -477,7 +512,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testMacroODP() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.odp");
+        List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.odp", MACRO_PARSER);
         assertEquals(3, metadataList.size());
         Metadata parent = metadataList.get(0);
 
@@ -501,7 +536,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testMacroFODT() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.fodt");
+        List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.fodt", MACRO_PARSER);
         assertEquals(3, metadataList.size());
         Metadata parent = metadataList.get(0);
 
@@ -524,9 +559,17 @@ public class ODFParserTest extends TikaTest {
         assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
+
+    @Test
+    public void testMacroFODTandXMLOutput() throws Exception {
+        String xml = getXML("testODTMacro.fodt", MACRO_PARSER).xml;
+        assertContains("Hello dear user", xml);
+        assertContains("If WsGQFM Or 2", xml);
+    }
+
     @Test
     public void testMacroFODS() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.fods");
+        List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.fods", MACRO_PARSER);
         assertEquals(3, metadataList.size());
         Metadata parent = metadataList.get(0);
 
@@ -546,7 +589,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testMacroFODP() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.fodp");
+        List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.fodp", MACRO_PARSER);
         assertEquals(2, metadataList.size());
         Metadata parent = metadataList.get(0);
 

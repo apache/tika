@@ -17,6 +17,7 @@
 package org.apache.tika.parser.odf;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -58,6 +59,8 @@ public class FlatOpenDocumentParser extends AbstractParser {
                     FLAT_OD, FLAT_ODT, FLAT_ODP, FLAT_ODS
                   )));
 
+    private boolean extractMacros = false;
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -88,9 +91,14 @@ public class FlatOpenDocumentParser extends AbstractParser {
         }
     }
 
+    @Field
+    public void setExtractMacros(boolean extractMacros) {
+        this.extractMacros = extractMacros;
+    }
+
     private ContentHandler getContentHandler(ContentHandler handler,
                                              Metadata metadata, ParseContext context) {
-        return new FlatOpenDocumentParserHandler(handler, metadata, context);
+        return new FlatOpenDocumentParserHandler(handler, metadata, context, extractMacros);
     }
 
     private static class FlatOpenDocumentParserHandler extends ContentHandlerDecorator {
@@ -99,8 +107,6 @@ public class FlatOpenDocumentParser extends AbstractParser {
         private static final String SCRIPTS = "scripts";
         private static final String DOCUMENT = "document";
 
-        private final Metadata metadata;
-        private final ParseContext parseContext;
 
         private final ContentHandler defaultHandler = new DefaultHandler();
 
@@ -111,13 +117,31 @@ public class FlatOpenDocumentParser extends AbstractParser {
         private ContentHandler currentHandler = defaultHandler;
 
         private MediaType detectedType = null;
+        private final boolean extractMacros;
 
-        private FlatOpenDocumentParserHandler(ContentHandler baseHandler, Metadata metadata, ParseContext parseContext) {
-            this.metadata = metadata;
-            this.parseContext = parseContext;
-            this.bodyHandler = new OpenDocumentBodyHandler(new NSNormalizerContentHandler(baseHandler), parseContext);
-            this.metadataHandler = OpenDocumentMetaParser.getContentHandler(metadata, parseContext);
-            this.macroHandler = new FlatOpenDocumentMacroHandler(baseHandler, parseContext);
+        private FlatOpenDocumentParserHandler(ContentHandler baseHandler,
+                                              Metadata metadata,
+                                              ParseContext parseContext, boolean extractMacros) {
+            this.extractMacros = extractMacros;
+
+            this.bodyHandler =
+                    new OfflineContentHandler(
+                            new OpenDocumentBodyHandler(
+                                    new NSNormalizerContentHandler(baseHandler), parseContext));
+
+            this.metadataHandler = new OfflineContentHandler(
+                    new NSNormalizerContentHandler(
+                            OpenDocumentMetaParser.getContentHandler(metadata, parseContext)
+                    )
+            );
+
+            if (extractMacros) {
+                this.macroHandler = new OfflineContentHandler(
+                        new FlatOpenDocumentMacroHandler(baseHandler, parseContext)
+                );
+            } else {
+                this.macroHandler = null;
+            }
         }
 
         MediaType getDetectedType() {
@@ -132,7 +156,7 @@ public class FlatOpenDocumentParser extends AbstractParser {
                 currentHandler = metadataHandler;
             } else if (BODY.equals(localName)) {
                 currentHandler = bodyHandler;
-            } else if (SCRIPTS.equals(localName)) {
+            } else if (extractMacros && SCRIPTS.equals(localName)) {
                 currentHandler = macroHandler;
             }
 
@@ -165,7 +189,7 @@ public class FlatOpenDocumentParser extends AbstractParser {
                 currentHandler = defaultHandler;
             } else if (BODY.equals(localName)) {
                 currentHandler = defaultHandler;
-            } else if (SCRIPTS.equals(localName)) {
+            } else if (extractMacros && SCRIPTS.equals(localName)) {
                 currentHandler = defaultHandler;
             }
             currentHandler.endElement(namespaceURI, localName, qName);

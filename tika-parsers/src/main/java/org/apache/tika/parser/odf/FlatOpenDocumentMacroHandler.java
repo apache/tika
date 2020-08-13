@@ -33,7 +33,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-
+/**
+ * Handler for macros in flat open documents
+ */
 class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
 
     static String MODULE = "module";
@@ -80,10 +82,17 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
                 handleMacro();
             } catch (IOException e) {
                 throw new SAXException(e);
+            } finally {
+                resetMacroState();
             }
         }
     }
 
+    protected void resetMacroState() {
+        macroBuffer.setLength(0);
+        macroName = null;
+        inMacro = false;
+    }
     protected void handleMacro() throws IOException, SAXException {
 
         byte[] bytes = macroBuffer.toString().getBytes(StandardCharsets.UTF_8);
@@ -97,11 +106,6 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         }
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
-
-        //reset state before parse
-        macroBuffer.setLength(0);
-        macroName = null;
-        inMacro = false;
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
             try (InputStream is = TikaInputStream.get(bytes)) {
