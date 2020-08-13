@@ -462,12 +462,12 @@ public class ODFParserTest extends TikaTest {
         Metadata macro1 = metadataList.get(1);
         assertEquals("MACRO", macro1.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
         assertContains("If WsGQFM Or 2 Then", macro1.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertEquals("test", macro1.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("test", macro1.get(Metadata.RESOURCE_NAME_KEY));
 
         Metadata macro2 = metadataList.get(2);
         assertEquals("MACRO", macro2.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
         assertContains("If WsGQFM Or 1 Then", macro2.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertEquals("test2", macro2.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("test2", macro2.get(Metadata.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(3);
         assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
@@ -504,7 +504,7 @@ public class ODFParserTest extends TikaTest {
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
         assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertEquals("test1", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("test1", macro.get(Metadata.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
         assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
@@ -529,8 +529,8 @@ public class ODFParserTest extends TikaTest {
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
         assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertEquals("testmodule", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("testmodule", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("testmodule", macro.get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("testmodule", macro.get(Metadata.RESOURCE_NAME_KEY));
 
     }
 

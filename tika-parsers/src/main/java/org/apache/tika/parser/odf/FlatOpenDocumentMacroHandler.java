@@ -102,7 +102,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         }
         Metadata embeddedMetadata = new Metadata();
         if (! StringUtils.isBlank(macroName)) {
-            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, macroName);
+            embeddedMetadata.set(Metadata.RESOURCE_NAME_KEY, macroName);
         }
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
