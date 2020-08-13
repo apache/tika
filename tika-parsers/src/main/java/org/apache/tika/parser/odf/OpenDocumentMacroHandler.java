@@ -16,22 +16,13 @@
  */
 package org.apache.tika.parser.odf;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 
 class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
@@ -44,8 +35,11 @@ class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
     public void startElement(
             String namespaceURI, String localName, String qName,
             Attributes attrs) throws SAXException {
-        inMacro = true;
-        macroName = XMLReaderUtils.getAttrValue(NAME, attrs);
+        //in the compressed odf, there should only be one element in this file.
+        if (MODULE.equalsIgnoreCase(localName)) {
+            inMacro = true;
+            macroName = XMLReaderUtils.getAttrValue(NAME, attrs);
+        }
     }
 
 
@@ -57,6 +51,9 @@ class OpenDocumentMacroHandler extends FlatOpenDocumentMacroHandler {
                 handleMacro();
             } catch (IOException e) {
                 throw new SAXException(e);
+            } finally {
+                //this shouldn't be necessary in the compressed odf files
+                resetMacroState();
             }
         }
     }
