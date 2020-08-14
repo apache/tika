@@ -20,7 +20,7 @@ org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
 org.apache.tika.parser.crypto.Pkcs7Parser
 org.apache.tika.parser.crypto.TSDParser
-org.apache.tika.parser.csv.TextAndCSVParser
+org.apache.tika.parser.csv.csv.csv.TextAndCSVParser
 org.apache.tika.parser.dwg.DWGParser
 org.apache.tika.parser.envi.EnviHeaderParser
 org.apache.tika.parser.epub.EpubParser
@@ -38,7 +38,7 @@ org.apache.tika.parser.image.WebPParser
 org.apache.tika.parser.image.HeifParser
 org.apache.tika.parser.iptc.IptcAnpaParser
 org.apache.tika.parser.iwork.IWorkPackageParser
-org.apache.tika.parser.jpeg.JpegParser
+org.apache.tika.parser.image.JpegParser
 org.apache.tika.parser.mail.RFC822Parser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.mbox.OutlookPSTParser

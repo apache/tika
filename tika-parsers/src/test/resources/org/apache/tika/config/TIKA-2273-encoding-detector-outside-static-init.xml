@@ -20,15 +20,15 @@
          and confirm that correct charset detector was added -->
     <parsers>
         <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.txt.TXTParser"/>
+            <parser-exclude class="TXTParser"/>
         </parser>
-            <parser class="org.apache.tika.parser.txt.TXTParser">
+            <parser class="TXTParser">
         </parser>
     </parsers>
     <encodingDetectors>
         <!-- All detectors except Icu4jEncodingDetector-->
         <encodingDetector class="org.apache.tika.detect.DefaultEncodingDetector">
-            <encodingDetector-exclude class="org.apache.tika.parser.txt.Icu4jEncodingDetector"/>
+            <encodingDetector-exclude class="Icu4jEncodingDetector"/>
         </encodingDetector>
     </encodingDetectors>
 </properties>

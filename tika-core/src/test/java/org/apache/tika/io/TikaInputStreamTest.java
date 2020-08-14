@@ -65,7 +65,7 @@ public class TikaInputStreamTest {
 
     @Test
     public void testStreamBased() throws IOException {
-        InputStream input = IOUtils.toInputStream("Hello, World!", UTF_8.name());
+        InputStream input = IOUtils.toInputStream("Hello, World!", UTF_8);
         TikaInputStream stream = TikaInputStream.get(input);
         assertFalse(stream.hasFile());
         assertNull(stream.getOpenContainer());
@@ -99,7 +99,7 @@ public class TikaInputStreamTest {
         TikaInputStream stream = TikaInputStream.get(new InputStreamFactory() {
             @Override
             public InputStream getInputStream() throws IOException {
-                return IOUtils.toInputStream("Hello, World!", UTF_8.name());
+                return IOUtils.toInputStream("Hello, World!", UTF_8);
             }
         });
         assertFalse(stream.hasFile());
@@ -124,7 +124,7 @@ public class TikaInputStreamTest {
     }
 
     private String readStream(InputStream stream) throws IOException {
-        return IOUtils.toString(stream, UTF_8.name());
+        return IOUtils.toString(stream, UTF_8);
     }
 
     @Test

@@ -21,7 +21,7 @@
     <encodingDetectors>
         <!-- All detectors except Icu4jEncodingDetector-->
         <encodingDetector class="org.apache.tika.detect.DefaultEncodingDetector">
-            <encodingDetector-exclude class="org.apache.tika.parser.txt.Icu4jEncodingDetector"/>
+            <encodingDetector-exclude class="Icu4jEncodingDetector"/>
         </encodingDetector>
     </encodingDetectors>
 </properties>

@@ -21,7 +21,7 @@
   <detectors>
     <!-- All detectors except built-in container ones -->
     <detector class="org.apache.tika.detect.DefaultDetector">
-      <detector-exclude class="org.apache.tika.parser.pkg.ZipContainerDetector"/>
+      <detector-exclude class="ZipContainerDetector"/>
       <detector-exclude class="org.apache.tika.parser.microsoft.POIFSContainerDetector"/>
     </detector>
     <!-- One other detector, to check ordering -->

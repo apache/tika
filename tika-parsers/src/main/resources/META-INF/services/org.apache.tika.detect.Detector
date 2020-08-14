@@ -15,5 +15,5 @@
 
 org.apache.tika.detect.OverrideDetector
 org.apache.tika.parser.microsoft.POIFSContainerDetector
-org.apache.tika.parser.pkg.ZipContainerDetector
+ZipContainerDetector
 org.apache.tika.parser.apple.BPListDetector

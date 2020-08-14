@@ -20,7 +20,7 @@
     <parsers/>
     <encodingDetectors>
         <!-- One other detector, to check ordering -->
-        <encodingDetector class="org.apache.tika.parser.txt.Icu4jEncodingDetector">
+        <encodingDetector class="Icu4jEncodingDetector">
             <params>
                 <param name="stripMarkup" type="bool">true</param>
             </params>

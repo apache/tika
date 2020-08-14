@@ -30,7 +30,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.mbox.OutlookPSTParser;
 import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**

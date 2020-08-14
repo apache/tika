@@ -45,7 +45,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.csv.TextAndCSVParser;
+import org.apache.tika.parser.csv.csv.TextAndCSVParser;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.TXTParser;

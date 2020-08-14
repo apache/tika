@@ -358,37 +358,6 @@ public class Tika {
         }
     }
 
-    /**
-     * Translate the given text InputStream to and from the given languages.
-     * @see org.apache.tika.language.translate.Translator
-     * @param text The text to translate.
-     * @param sourceLanguage The input text language (for example, "hi").
-     * @param targetLanguage The desired output language (for example, "fr").
-     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
-     */
-    public String translate(InputStream text, String sourceLanguage, String targetLanguage){
-        try {
-            return translator.translate(IOUtils.toString(text), sourceLanguage, targetLanguage);
-        } catch (Exception e){
-            throw new IllegalStateException("Error translating data.", e);
-        }
-    }
-
-    /**
-     * Translate the given text InputStream to the given language, attempting to auto-detect the source language.
-     * This does not close the stream, so the caller has the responsibility of closing it.
-     * @see org.apache.tika.language.translate.Translator
-     * @param text The text to translate.
-     * @param targetLanguage The desired output language (for example, "en").
-     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
-     */
-    public String translate(InputStream text, String targetLanguage){
-        try {
-            return translator.translate(IOUtils.toString(text), targetLanguage);
-        } catch (Exception e){
-            throw new IllegalStateException("Error translating data.", e);
-        }
-    }
 
     /**
      * Parses the given document and returns the extracted text content.

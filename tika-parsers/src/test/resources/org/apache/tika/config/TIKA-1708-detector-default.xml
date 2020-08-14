@@ -19,7 +19,7 @@
   <parsers/>
   <detectors>
     <detector class="org.apache.tika.detect.DefaultDetector">
-      <detector-exclude class="org.apache.tika.parser.pkg.ZipContainerDetector"/>
+      <detector-exclude class="ZipContainerDetector"/>
     </detector>
   </detectors>
   <translator class="org.apache.tika.language.translate.DefaultTranslator"/>

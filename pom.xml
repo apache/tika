@@ -38,6 +38,7 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
+    <module>tika-parser-modules</module>
     <module>tika-bundle</module>
     <module>tika-xmp</module>
     <module>tika-serialization</module>
@@ -52,6 +53,7 @@
     <module>tika-eval</module>
     <module>tika-dl</module>
     <module>tika-nlp</module>
+    <module>tika-parser-zip-commons</module>
   </modules>
 
   <profiles>

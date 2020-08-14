@@ -14,5 +14,5 @@
 #  limitations under the License.
 
 org.apache.tika.parser.html.HtmlEncodingDetector
-org.apache.tika.parser.txt.UniversalEncodingDetector
-org.apache.tika.parser.txt.Icu4jEncodingDetector
+UniversalEncodingDetector
+Icu4jEncodingDetector

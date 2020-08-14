@@ -41,10 +41,7 @@
     https://issues.apache.org/jira/browse/CODEC-263?focusedCommentId=17043716&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-17043716
     -->
     <codec.version>1.13</codec.version>
-    <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-    <tukaani.version>1.8</tukaani.version>
-    <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
-    <brotli.version>0.1.2</brotli.version>
+
     <mime4j.version>0.8.3</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.20</pdfbox.version>
@@ -169,33 +166,15 @@
       <artifactId>commons-compress</artifactId>
       <version>${commons.compress.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.tukaani</groupId>
-      <artifactId>xz</artifactId>
-      <version>${tukaani.version}</version>
-    </dependency>
+
     <dependency>
       <groupId>com.epam</groupId>
       <artifactId>parso</artifactId>
       <version>${parso.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.brotli</groupId>
-      <artifactId>dec</artifactId>
-      <version>${brotli.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.luben</groupId>
-      <artifactId>zstd-jni</artifactId>
-      <version>1.4.5-4</version>
-      <scope>provided</scope>
-    </dependency>
 
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>${codec.version}</version>
-    </dependency>
+
+
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
@@ -246,73 +225,6 @@
       <version>${bouncycastle.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>${poi.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-codec</groupId>
-          <artifactId>commons-codec</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi-scratchpad</artifactId>
-      <version>${poi.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi-ooxml</artifactId>
-      <version>${poi.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>stax</groupId>
-          <artifactId>stax-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>xml-apis</groupId>
-          <artifactId>xml-apis</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-compress</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.healthmarketscience.jackcess</groupId>
-      <artifactId>jackcess</artifactId>
-      <version>3.0.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-lang3</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.healthmarketscience.jackcess</groupId>
-      <artifactId>jackcess-encrypt</artifactId>
-      <version>3.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcprov-jdk15on</artifactId>
-        </exclusion>
-        <!-- to avoid maven-enforcer convergence error,
-          let's make this explicit -->
-        <exclusion>
-          <groupId>com.healthmarketscience.jackcess</groupId>
-          <artifactId>jackcess</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.ccil.cowan.tagsoup</groupId>
       <artifactId>tagsoup</artifactId>
       <version>1.2.1</version>
@@ -326,11 +238,7 @@
       <artifactId>asm</artifactId>
       <version>8.0.1</version>
     </dependency>
-    <dependency>
-      <groupId>org.tallison</groupId>
-      <artifactId>isoparser</artifactId>
-      <version>1.9.41.2</version>
-    </dependency>
+
     <!-- this is a fork of com.drewnoakes
       metadata extractor that shade/relocates com.adobe.internal
       to com.adobe for backwards compatibility
@@ -381,26 +289,6 @@
       <groupId>com.pff</groupId>
       <artifactId>java-libpst</artifactId>
       <version>0.9.3</version>
-    </dependency>
-    <dependency>
-      <groupId>com.github.junrar</groupId>
-      <artifactId>junrar</artifactId>
-      <version>4.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging-api</artifactId>
-        </exclusion>
-        <!-- TIKA-2504 exclude to avoid vulnerability in plexus-utils -->
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-vfs2</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
@@ -925,18 +813,9 @@
     </dependency>
 
 
-    <dependency>
-      <groupId>org.apache.pdfbox</groupId>
-      <artifactId>jbig2-imageio</artifactId>
-      <version>3.0.3</version>
-    </dependency>
 
-    <!-- jai-imageio-core is allowed since LEGAL-304 -->
-    <dependency>
-      <groupId>com.github.jai-imageio</groupId>
-      <artifactId>jai-imageio-core</artifactId>
-      <version>1.4.0</version>
-    </dependency>
+
+
     <!-- For legal reasons (incompatible license), jai-imageio-jpeg2000 is to be used
      only in the tests and may not be distributed. See also LEGAL-195 -->
     <dependency>

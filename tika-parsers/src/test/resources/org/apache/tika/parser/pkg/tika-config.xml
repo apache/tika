@@ -19,9 +19,9 @@
     <parsers/>
     <detectors>
         <detector class="org.apache.tika.detect.DefaultDetector">
-            <detector-exclude class="org.apache.tika.parser.pkg.ZipContainerDetector"/>
+            <detector-exclude class="ZipContainerDetector"/>
         </detector>
-        <detector class="org.apache.tika.parser.pkg.ZipContainerDetector">
+        <detector class="ZipContainerDetector">
             <params>
                 <param name="markLimit" type="int">100000</param>
             </params>

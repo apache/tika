@@ -24,12 +24,12 @@
                 <param name="markLimit" type="int">64000</param>
             </params>
         </encodingDetector>
-        <encodingDetector class="org.apache.tika.parser.txt.UniversalEncodingDetector">
+        <encodingDetector class="UniversalEncodingDetector">
             <params>
                 <param name="markLimit" type="int">64001</param>
             </params>
         </encodingDetector>
-        <encodingDetector class="org.apache.tika.parser.txt.Icu4jEncodingDetector">
+        <encodingDetector class="Icu4jEncodingDetector">
             <params>
                 <param name="markLimit" type="int">64002</param>
             </params>
