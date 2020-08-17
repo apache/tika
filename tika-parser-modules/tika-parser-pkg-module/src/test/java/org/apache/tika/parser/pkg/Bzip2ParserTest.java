@@ -31,39 +31,6 @@ import org.xml.sax.ContentHandler;
  */
 public class Bzip2ParserTest extends AbstractPkgTest {
 
-    @Test
-    public void testBzip2Parsing() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = Bzip2ParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tbz2")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
-        }
-
-        assertEquals("application/x-bzip2", metadata.get(Metadata.CONTENT_TYPE));
-        String content = handler.toString();
-        assertContains("test-documents/testEXCEL.xls", content);
-        assertContains("Sample Excel Worksheet", content);
-        assertContains("test-documents/testHTML.html", content);
-        assertContains("Test Indexation Html", content);
-        assertContains("test-documents/testOpenOffice2.odt", content);
-        assertContains("This is a sample Open Office document", content);
-        assertContains("test-documents/testPDF.pdf", content);
-        assertContains("Apache Tika", content);
-        assertContains("test-documents/testPPT.ppt", content);
-        assertContains("Sample Powerpoint Slide", content);
-        assertContains("test-documents/testRTF.rtf", content);
-        assertContains("indexation Word", content);
-        assertContains("test-documents/testTXT.txt", content);
-        assertContains("Test d'indexation de Txt", content);
-        assertContains("test-documents/testWORD.doc", content);
-        assertContains("This is a sample Microsoft Word Document", content);
-        assertContains("test-documents/testXML.xml", content);
-        assertContains("Rida Benjelloun", content);
-    }
-
-
     /**
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.

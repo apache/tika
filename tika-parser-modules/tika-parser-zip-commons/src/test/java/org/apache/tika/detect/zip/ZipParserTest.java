@@ -16,21 +16,30 @@
  */
 package org.apache.tika.detect.zip;
 
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.mime.MediaType;
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Metadata;
+import org.junit.Test;
 
-import java.io.IOException;
+import java.util.List;
 
-public interface ZipDetector {
+import static org.junit.Assert.assertEquals;
 
-    /**
-     * If detection is successful, the ZipDetector should set the zip
-     * file or OPCPackage in TikaInputStream.setOpenContainer()
-     * @param zipFile
-     * @param tis
-     * @return
-     * @throws IOException
-     */
-    MediaType detect(ZipFile zipFile, TikaInputStream tis) throws IOException;
+/**
+ * Test case for parsing zip files.
+ */
+public class ZipParserTest extends TikaTest {
+
+
+    @Test
+    public void testKMZDetection() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testKMZ.kmz");
+        assertEquals("application/vnd.google-earth.kmz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testJARDetection() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testJAR.jar");
+        assertEquals("application/java-archive", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+    }
 }

@@ -16,13 +16,19 @@
  */
 package org.apache.tika.detect.zip;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-public class JarDetector implements ZipDetector {
+public class JarDetector implements ZipContainerDetector {
+
+    private static SeenManifest SEEN_MANIFEST = new SeenManifest();
+
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
         if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
@@ -52,4 +58,46 @@ public class JarDetector implements ZipDetector {
             return null;
         }
     }
+
+    @Override
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae,
+                                           InputStream zis,
+                                           StreamingDetectContext detectContext) {
+
+        String name = zae.getName();
+        if (name.equals("AndroidManifest.xml")) {
+            return MediaType.application("vnd.android.package-archive");
+        } else if (name.equals("META-INF/MANIFEST.MF")) {
+            // It's a Jar file, or something based on Jar
+            detectContext.set(SeenManifest.class, SEEN_MANIFEST);
+        }
+        SeenManifest seenManifest = detectContext.get(SeenManifest.class);
+
+        if (seenManifest != null) {
+            if (name.equals("AndroidManifest.xml")) {
+                // Is it an Android APK?
+                return MediaType.application("vnd.android.package-archive");
+            } else if (name.equals("WEB-INF/")) {
+                // Check for WAR and EAR
+                return MediaType.application("x-tika-java-web-archive");
+            }
+            if (name.equals("META-INF/application.xml")) {
+                return MediaType.application("x-tika-java-enterprise-archive");
+            }
+        }
+        return null;
+
+    }
+
+    @Override
+    public MediaType streamingDetectFinal(StreamingDetectContext detectContext) {
+        if (detectContext.get(SeenManifest.class) != null) {
+            // Looks like a regular Jar Archive
+            return MediaType.application("java-archive");
+
+        }
+        return null;
+    }
+
+    private static class SeenManifest { }
 }

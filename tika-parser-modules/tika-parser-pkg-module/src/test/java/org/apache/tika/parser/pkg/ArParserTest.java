@@ -29,34 +29,7 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class ArParserTest extends AbstractPkgTest {
-    @Test
-    public void testArParsing() throws Exception {
 
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofText.ar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
-        }
-
-        assertEquals("application/x-archive",
-                metadata.get(Metadata.CONTENT_TYPE));
-        String content = handler.toString();
-        assertContains("testTXT.txt", content);
-        assertContains("Test d'indexation de Txt", content);
-        assertContains("http://www.apache.org", content);
-
-        try (InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofSND.ar")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
-        }
-
-        assertEquals("application/x-archive",
-                     metadata.get(Metadata.CONTENT_TYPE));
-        content = handler.toString();
-        assertContains("testAU.au", content);
-    }
 
     /**
      * Tests that the ParseContext parser is correctly fired for all the

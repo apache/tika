@@ -17,14 +17,18 @@
 package org.apache.tika.detect.zip;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Enumeration;
 
-public class KMZDetector implements ZipDetector {
+import static org.apache.tika.detect.zip.PackageConstants.KMZ;
+
+public class KMZDetector implements ZipContainerDetector {
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
         boolean kmlFound = false;
@@ -47,6 +51,48 @@ public class KMZDetector implements ZipDetector {
             return MediaType.application("vnd.google-earth.kmz");
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae,
+                                           InputStream zis, StreamingDetectContext detectContext) {
+        String name = zae.getName();
+
+        if (name.indexOf('/') != -1
+                || name.indexOf('\\') != -1) {
+            return null;
+        }
+        if (name.endsWith(".kml")) {
+            KMLCounter counter = detectContext.get(KMLCounter.class);
+            if (counter == null) {
+                counter = new KMLCounter();
+                detectContext.set(KMLCounter.class, counter);
+            }
+            counter.increment();
+        }
+        return null;
+    }
+
+    @Override
+    public MediaType streamingDetectFinal(StreamingDetectContext detectContext) {
+        if (detectContext.get(KMLCounter.class) != null) {
+            if (detectContext.get(KMLCounter.class).getCount() == 1) {
+                return KMZ;
+            }
+        }
+        return null;
+    }
+
+    private static class KMLCounter {
+        private int cnt = 0;
+
+        int getCount() {
+            return cnt;
+        }
+
+        void increment() {
+            cnt++;
         }
     }
 }

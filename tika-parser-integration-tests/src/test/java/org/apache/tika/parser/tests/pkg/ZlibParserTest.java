@@ -14,45 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.pkg;
-
-import static org.junit.Assert.assertEquals;
-
-import java.io.InputStream;
+package org.apache.tika.parser.tests.pkg;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.pkg.AbstractPkgTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import java.io.InputStream;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test case for parsing zlib compressed
  */
 public class ZlibParserTest extends AbstractPkgTest {
-
-    /**
-     * Tests that the ParseContext parser is correctly
-     *  fired for all the embedded entries.
-     */
     @Test
-    public void testEmbedded() throws Exception {
-       ContentHandler handler = new BodyContentHandler();
-       Metadata metadata = new Metadata();
+    public void testZlibParsing() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
 
         try (InputStream stream = ZipParserTest.class.getResourceAsStream(
                 "/test-documents/testTXT.zlib")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
-       
-       // Should have found a single text document inside
-       assertEquals(1, tracker.filenames.size());
-       assertEquals(1, tracker.mediatypes.size());
-       assertEquals(1, tracker.modifiedAts.size());
-       
-       // Won't have names, dates or types, as zlib doesn't have that 
-       assertEquals(null, tracker.filenames.get(0));
-       assertEquals(null, tracker.mediatypes.get(0));
-       assertEquals(null, tracker.createdAts.get(0));
-       assertEquals(null, tracker.modifiedAts.get(0));
+
+        assertEquals("application/zlib", metadata.get(Metadata.CONTENT_TYPE));
+        String content = handler.toString();
+        assertContains("Test d'indexation de Txt", content);
+        assertContains("http://www.apache.org", content);
     }
 }

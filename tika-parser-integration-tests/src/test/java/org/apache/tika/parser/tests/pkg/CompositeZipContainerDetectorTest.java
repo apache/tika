@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.pkg;
+package org.apache.tika.parser.tests.pkg;
 
 
 import static org.junit.Assert.assertEquals;
@@ -34,8 +34,8 @@ import java.util.Set;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.zip.StreamingZipContainerDetector;
-import org.apache.tika.detect.zip.ZipContainerDetector;
+import org.apache.tika.detect.zip.DeprecatedStreamingZipContainerDetector;
+import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -43,26 +43,27 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class ZipContainerDetectorTest extends TikaTest {
+public class CompositeZipContainerDetectorTest extends TikaTest {
     private static MediaType ODT_TEXT = MediaType.application("vnd.oasis.opendocument.text");
     private static MediaType TIFF = MediaType.image("tiff");
-    ZipContainerDetector zipContainerDetector = new ZipContainerDetector();
-    StreamingZipContainerDetector streamingZipDetector = new StreamingZipContainerDetector();
-/*
+    DefaultZipContainerDetector compositeZipContainerDetector = new DefaultZipContainerDetector();
+    DeprecatedStreamingZipContainerDetector streamingZipDetector = new DeprecatedStreamingZipContainerDetector();
+
     @Test
     public void testTiffWorkaround() throws Exception {
         //TIKA-2591
         Metadata metadata = new Metadata();
         try (InputStream is = TikaInputStream.get(getResourceAsStream("/test-documents/testTIFF.tif"))) {
-            MediaType mt = zipContainerDetector.detect(is, metadata);
+            MediaType mt = compositeZipContainerDetector.detect(is, metadata);
             assertEquals(TIFF, mt);
         }
         metadata = new Metadata();
         try (InputStream is = TikaInputStream.get(getResourceAsStream("/test-documents/testTIFF_multipage.tif"))) {
-            MediaType mt = zipContainerDetector.detect(is, metadata);
+            MediaType mt = compositeZipContainerDetector.detect(is, metadata);
             assertEquals(TIFF, mt);
         }
     }
+/* TODO these tests!
 
     @Test
     public void testODT() throws Exception {

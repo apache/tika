@@ -8,7 +8,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.util.ZipEntrySource;
 import org.apache.poi.openxml4j.util.ZipFileZipEntrySource;
-import org.apache.tika.detect.zip.ZipDetector;
+import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-public class OPCPackageDetector implements ZipDetector {
+public class OPCPackageDetector implements ZipContainerDetector {
 
 
     private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);

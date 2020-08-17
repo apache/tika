@@ -31,10 +31,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
-import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
@@ -272,7 +270,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
             InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
-                "/test-documents/moby.zip");
+                    "/test-documents/moby.zip");
             ParseContext context = new ParseContext();
             parser.parse(stream, output, new Metadata(), context);
             assertContains("Moby Dick", output.toString());

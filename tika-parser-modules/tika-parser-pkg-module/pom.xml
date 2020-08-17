@@ -45,14 +45,6 @@
             <artifactId>junrar</artifactId>
             <version>4.0.0</version>
             <exclusions>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging-api</artifactId>
-                </exclusion>
                 <!-- TIKA-2504 exclude to avoid vulnerability in plexus-utils -->
                 <exclusion>
                     <groupId>org.apache.commons</groupId>

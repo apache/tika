@@ -40,7 +40,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class StreamingZipContainerDetector extends ZipContainerDetectorBase implements Detector {
+public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetectorBase implements Detector {
 
     private static final int MAX_MIME_TYPE = 1024;
     private static final int MAX_MANIFEST = 20 * 1024 * 1024;

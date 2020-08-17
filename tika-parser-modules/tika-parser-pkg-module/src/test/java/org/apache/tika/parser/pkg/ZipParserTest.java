@@ -47,38 +47,6 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class ZipParserTest extends AbstractPkgTest {
 
-    @Test
-    public void testZipParsing() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.zip")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
-        }
-
-        assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
-        String content = handler.toString();
-        assertContains("testEXCEL.xls", content);
-        assertContains("Sample Excel Worksheet", content);
-        assertContains("testHTML.html", content);
-        assertContains("Test Indexation Html", content);
-        assertContains("testOpenOffice2.odt", content);
-        assertContains("This is a sample Open Office document", content);
-        assertContains("testPDF.pdf", content);
-        assertContains("Apache Tika", content);
-        assertContains("testPPT.ppt", content);
-        assertContains("Sample Powerpoint Slide", content);
-        assertContains("testRTF.rtf", content);
-        assertContains("indexation Word", content);
-        assertContains("testTXT.txt", content);
-        assertContains("Test d'indexation de Txt", content);
-        assertContains("testWORD.doc", content);
-        assertContains("This is a sample Microsoft Word Document", content);
-        assertContains("testXML.xml", content);
-        assertContains("Rida Benjelloun", content);
-    }
-
     /**
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.
@@ -137,43 +105,6 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("README", content);
     }
 
-    private class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
-        public Set<String> allRelIDs = new HashSet<String>();
-        public boolean shouldParseEmbedded(Metadata metadata) {      
-            String relID = metadata.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID);
-            if (relID != null) {
-                allRelIDs.add(relID);
-            }
-            return false;
-        }
-
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) {
-            throw new UnsupportedOperationException("should never be called");
-        }
-    }
-
-    // TIKA-1036
-    @Test
-    public void testPlaceholders() throws Exception {
-        String xml = getXML("testEmbedded.zip").xml;
-        assertContains("<div class=\"embedded\" id=\"test1.txt\" />", xml);
-        assertContains("<div class=\"embedded\" id=\"test2.txt\" />", xml);
-
-        // Also make sure EMBEDDED_RELATIONSHIP_ID was
-        // passed when parsing the embedded docs:
-        ParseContext context = new ParseContext();
-        GatherRelIDsDocumentExtractor relIDs = new GatherRelIDsDocumentExtractor();
-        context.set(EmbeddedDocumentExtractor.class, relIDs);
-        try (InputStream input = getResourceAsStream("/test-documents/testEmbedded.zip")) {
-            AUTO_DETECT_PARSER.parse(input,
-                    new BodyContentHandler(),
-                    new Metadata(),
-                    context);
-        }
-
-        assertTrue(relIDs.allRelIDs.contains("test1.txt"));
-        assertTrue(relIDs.allRelIDs.contains("test2.txt"));
-    }
 
     @Test // TIKA-936
     public void testCustomEncoding() throws Exception {
@@ -195,31 +126,6 @@ public class ZipParserTest extends AbstractPkgTest {
         assertEquals(
                 "\u65E5\u672C\u8A9E\u30E1\u30E2.txt",
                 tracker.filenames.get(0));
-    }
-
-    @Test
-    public void testZipEncrypted() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testZipEncrypted.zip");
-        assertEquals(2, metadataList.size());
-        String[] values = metadataList.get(0).getValues(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM);
-        assertNotNull(values);
-        assertEquals(1, values.length);
-        assertContains("EncryptedDocumentException: stream (encrypted.txt) is encrypted", values[0]);
-
-
-        assertContains("hello world", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testKMZDetection() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testKMZ.kmz");
-        assertEquals("application/vnd.google-earth.kmz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
-    }
-
-    @Test
-    public void testJARDetection() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testJAR.jar");
-        assertEquals("application/java-archive", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

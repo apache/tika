@@ -17,6 +17,7 @@
 package org.apache.tika.detect.zip;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -24,10 +25,11 @@ import org.apache.tika.mime.MediaType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class OpenDocumentDetector implements ZipDetector {
+public class OpenDocumentDetector implements ZipContainerDetector {
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
         try {
@@ -42,5 +44,23 @@ public class OpenDocumentDetector implements ZipDetector {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    @Override
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
+        String name = zae.getName();
+        if ("mimetype".equals(name)) {
+            try {
+                return MediaType.parse(IOUtils.toString(zis, UTF_8));
+            } catch (IOException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public MediaType streamingDetectFinal(StreamingDetectContext detectContext) {
+        return null;
     }
 }

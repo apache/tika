@@ -31,38 +31,6 @@ import org.xml.sax.ContentHandler;
  */
 public class GzipParserTest extends AbstractPkgTest {
 
-    @Test
-    public void testGzipParsing() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = GzipParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tgz")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
-        }
-
-        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
-        String content = handler.toString();
-        assertContains("test-documents/testEXCEL.xls", content);
-        assertContains("Sample Excel Worksheet", content);
-        assertContains("test-documents/testHTML.html", content);
-        assertContains("Test Indexation Html", content);
-        assertContains("test-documents/testOpenOffice2.odt", content);
-        assertContains("This is a sample Open Office document", content);
-        assertContains("test-documents/testPDF.pdf", content);
-        assertContains("Apache Tika", content);
-        assertContains("test-documents/testPPT.ppt", content);
-        assertContains("Sample Powerpoint Slide", content);
-        assertContains("test-documents/testRTF.rtf", content);
-        assertContains("indexation Word", content);
-        assertContains("test-documents/testTXT.txt", content);
-        assertContains("Test d'indexation de Txt", content);
-        assertContains("test-documents/testWORD.doc", content);
-        assertContains("This is a sample Microsoft Word Document", content);
-        assertContains("test-documents/testXML.xml", content);
-        assertContains("Rida Benjelloun", content);
-    }
-
     /**
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.
@@ -76,12 +44,12 @@ public class GzipParserTest extends AbstractPkgTest {
                 "/test-documents/test-documents.tgz")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
-       
+
        // Should find a single entry, for the (compressed) tar file
        assertEquals(1, tracker.filenames.size());
        assertEquals(1, tracker.mediatypes.size());
        assertEquals(1, tracker.modifiedAts.size());
-       
+
        assertEquals(null, tracker.filenames.get(0));
        assertEquals(null, tracker.mediatypes.get(0));
        assertEquals(null, tracker.modifiedAts.get(0));
@@ -89,20 +57,4 @@ public class GzipParserTest extends AbstractPkgTest {
        // Tar file starts with the directory name
        assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, US_ASCII));
     }
-    
-    @Test
-    public void testSvgzParsing() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-
-        try (InputStream stream = GzipParserTest.class.getResourceAsStream(
-                "/test-documents/testSVG.svgz")) {
-            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
-        }
-
-        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
-        String content = handler.toString();
-        assertContains("Test SVG image", content);
-    }
-
 }
