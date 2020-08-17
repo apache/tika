@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.microsoft.ooxml.xps;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.opc.PackagePart;

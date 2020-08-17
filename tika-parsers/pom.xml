@@ -42,7 +42,6 @@
     -->
     <codec.version>1.13</codec.version>
 
-    <mime4j.version>0.8.3</mime4j.version>
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.20</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
@@ -224,11 +223,6 @@
       <artifactId>bcprov-jdk15on</artifactId>
       <version>${bouncycastle.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.ccil.cowan.tagsoup</groupId>
-      <artifactId>tagsoup</artifactId>
-      <version>1.2.1</version>
-    </dependency>
     <!-- WARNING: when you upgrade asm make sure that you update the
       OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
       See TIKA-2992.
@@ -247,11 +241,6 @@
       <groupId>org.tallison</groupId>
       <artifactId>metadata-extractor</artifactId>
       <version>2.14.0</version>
-    </dependency>
-    <dependency>
-      <groupId>de.l3s.boilerpipe</groupId>
-      <artifactId>boilerpipe</artifactId>
-      <version>1.1.0</version>
     </dependency>
     <dependency>
       <groupId>com.rometools</groupId>

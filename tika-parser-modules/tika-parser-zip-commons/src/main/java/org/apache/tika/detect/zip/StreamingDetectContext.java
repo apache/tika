@@ -3,7 +3,7 @@ package org.apache.tika.detect.zip;
 import java.util.HashMap;
 import java.util.Map;
 
-class StreamingDetectContext {
+public class StreamingDetectContext {
 
     /** Serial version UID. */
     private static final long serialVersionUID = -5921436862145826534L;

@@ -66,8 +66,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.parser.mbox.MboxParser;
-import org.apache.tika.parser.rtf.RTFParser;
+import org.apache.tika.parser.mailcommons.MailDateParser;
+import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
@@ -197,7 +197,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
                                 // See if we can parse it as a normal mail date
                                 try {
-                                    Date d = MboxParser.parseDate(date);
+                                    Date d = MailDateParser.parseDate(date);
                                     metadata.set(TikaCoreProperties.CREATED, d);
                                     metadata.set(TikaCoreProperties.MODIFIED, d);
                                 } catch (ParseException e) {

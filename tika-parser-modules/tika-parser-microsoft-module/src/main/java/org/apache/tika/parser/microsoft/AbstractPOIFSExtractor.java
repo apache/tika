@@ -29,6 +29,8 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.zip.DefaultZipContainerDetector;
+import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -41,7 +43,6 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
-import org.apache.tika.parser.pkg.ZipContainerDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -161,7 +162,7 @@ abstract class AbstractPOIFSExtractor {
 
             try (TikaInputStream stream = TikaInputStream.get(
                     new DocumentInputStream((DocumentEntry) ooxml))) {
-                ZipContainerDetector detector = new ZipContainerDetector();
+                Detector detector = new DefaultZipContainerDetector();
                 MediaType type = null;
                 try {
                     //if there's a stream error while detecting...

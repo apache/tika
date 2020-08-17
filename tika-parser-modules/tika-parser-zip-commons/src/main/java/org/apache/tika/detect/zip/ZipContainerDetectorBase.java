@@ -36,66 +36,11 @@ import org.xml.sax.helpers.DefaultHandler;
 abstract class ZipContainerDetectorBase {
 
 
-    static final MediaType TIKA_OOXML = MediaType.application("x-tika-ooxml");
-    static final MediaType DOCX =
-            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
-    static final MediaType DOCM =
-            MediaType.application("vnd.ms-word.document.macroEnabled.12");
-    static final MediaType DOTM =
-            MediaType.application("vnd.ms-word.template.macroenabled.12");
-    static final MediaType DOTX =
-            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template");
-    static final MediaType PPTX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
-    static final MediaType PPSM =
-            MediaType.application("vnd.ms-powerpoint.slideshow.macroEnabled.12");
-    static final MediaType PPSX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow");
-    static final MediaType PPTM =
-            MediaType.application("vnd.ms-powerpoint.presentation.macroEnabled.12");
-    static final MediaType POTM =
-            MediaType.application("vnd.ms-powerpoint.template.macroenabled.12");
-    static final MediaType POTX =
-            MediaType.application("vnd.openxmlformats-officedocument.presentationml.template");
-    static final MediaType THMX =
-            MediaType.application("vnd.openxmlformats-officedocument");
-    static final MediaType XLSB =
-            MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12");
-    static final MediaType XLSX =
-            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    static final MediaType XLSM =
-            MediaType.application("vnd.ms-excel.sheet.macroEnabled.12");
-    static final MediaType XLTM =
-            MediaType.application("vnd.ms-excel.template.macroenabled.12");
-    static final MediaType XLTX =
-            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template");
-    static final MediaType XLAM =
-            MediaType.application("vnd.ms-excel.addin.macroEnabled.12");
-    static final MediaType XPS =
-            MediaType.application("vnd.ms-xpsdocument");
-
-
-    static final Set<String> OOXML_HINTS = fillSet(
-            "word/document.xml",
-            "_rels/.rels",
-            "[Content_Types].xml",
-            "ppt/presentation.xml",
-            "ppt/slides/slide1.xml",
-            "xl/workbook.xml",
-            "xl/sharedStrings.xml",
-            "xl/worksheets/sheet1.xml"
-    );
 
 
 
 
-    private static Set<String> fillSet(String ... args) {
-        Set<String> tmp = new HashSet<>();
-        for (String arg : args) {
-            tmp.add(arg);
-        }
-        return Collections.unmodifiableSet(tmp);
-    }
+
 
     static MediaType detectJar(Set<String> entryNames) {
         if (entryNames.contains("META-INF/MANIFEST.MF")) {

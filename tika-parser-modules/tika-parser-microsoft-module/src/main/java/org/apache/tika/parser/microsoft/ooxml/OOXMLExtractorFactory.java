@@ -42,6 +42,7 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
+import org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -54,9 +55,8 @@ import org.apache.tika.parser.microsoft.ooxml.xps.XPSExtractorDecorator;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
-import org.apache.tika.parser.pkg.ZipContainerDetector;
-import org.apache.tika.parser.utils.ZipSalvager;
 import org.apache.tika.utils.RereadableInputStream;
+import org.apache.tika.zip.utils.ZipSalvager;
 import org.apache.xmlbeans.XmlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,7 +141,7 @@ public class OOXMLExtractorFactory {
 
             if (type == null || ! OOXMLParser.SUPPORTED_TYPES.contains(type)) {
                 // Get the type, and ensure it's one we handle
-                type = ZipContainerDetector.detectOfficeOpenXML(pkg);
+                type = OPCPackageDetector.detectOfficeOpenXML(pkg);
             }
 
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {

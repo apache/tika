@@ -45,44 +45,6 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
     private static final int MAX_MIME_TYPE = 1024;
     private static final int MAX_MANIFEST = 20 * 1024 * 1024;
 /*
-    static Map<String, MediaType> OOXML_CONTENT_TYPES = new ConcurrentHashMap<>();
-    static {
-        OOXML_CONTENT_TYPES.put(XWPFRelation.DOCUMENT.getContentType(), DOCX);
-        OOXML_CONTENT_TYPES.put(XWPFRelation.MACRO_DOCUMENT.getContentType(), DOCM);
-        OOXML_CONTENT_TYPES.put(XWPFRelation.MACRO_TEMPLATE_DOCUMENT.getContentType(), DOTM);
-        OOXML_CONTENT_TYPES.put(XWPFRelation.TEMPLATE.getContentType(), DOTX);
-
-        OOXML_CONTENT_TYPES.put(XSSFRelation.WORKBOOK.getContentType(), XLSX);
-        OOXML_CONTENT_TYPES.put(XSSFRelation.MACROS_WORKBOOK.getContentType(), XLSM);
-        OOXML_CONTENT_TYPES.put(XSSFRelation.XLSB_BINARY_WORKBOOK.getContentType(), XLSB);
-        OOXML_CONTENT_TYPES.put(XSSFRelation.TEMPLATE_WORKBOOK.getContentType(), XLTX);
-        OOXML_CONTENT_TYPES.put(XSSFRelation.MACRO_TEMPLATE_WORKBOOK.getContentType(), XLTM);
-        OOXML_CONTENT_TYPES.put(XSSFRelation.MACRO_ADDIN_WORKBOOK.getContentType(), XLAM);
-
-        OOXML_CONTENT_TYPES.put(XSLFRelation.MAIN.getContentType(), PPTX);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.MACRO.getContentType(), PPSM);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.MACRO_TEMPLATE.getContentType(), POTM);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML_TEMPLATE.getContentType(), PPTM);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML.getContentType(), PPSX);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.PRESENTATION_MACRO.getContentType(), PPTM);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.PRESENTATIONML_TEMPLATE.getContentType(), POTX);
-        OOXML_CONTENT_TYPES.put(XSLFRelation.THEME_MANAGER.getContentType(), THMX);
-
-        OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.drawing.macroEnabled.main+xml",
-                MediaType.application("vnd.ms-visio.drawing.macroEnabled.12"));
-        OOXML_CONTENT_TYPES.put(XDGFRelation.DOCUMENT.getContentType(), MediaType.application("vnd.ms-visio.drawing"));
-        OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.stencil.macroEnabled.main+xml",
-                MediaType.application("vnd.ms-visio.stencil.macroenabled.12"));
-        OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.stencil.main+xml",
-                MediaType.application("vnd.ms-visio.stencil"));
-        OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.template.macroEnabled.main+xml",
-                MediaType.application("vnd.ms-visio.template.macroenabled.12"));
-        OOXML_CONTENT_TYPES.put("application/vnd.ms-visio.template.main+xml",
-                MediaType.application("vnd.ms-visio.template"));
-
-        OOXML_CONTENT_TYPES.put("application/vnd.ms-package.xps-fixeddocumentsequence+xml", XPS);
-
-    }
 */
     /**
      *
@@ -203,72 +165,6 @@ public class DeprecatedStreamingZipContainerDetector extends ZipContainerDetecto
     }
 
 
-    public static Set<String> parseOOXMLRels(InputStream is) {
-        RelsHandler relsHandler = new RelsHandler();
-        try {
-            XMLReaderUtils.parseSAX(is, relsHandler, new ParseContext());
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            //swallow
-        }
-        return relsHandler.rels;
-    }
-
-    private static class RelsHandler extends DefaultHandler {
-        Set<String> rels = new HashSet<>();
-        private MediaType mediaType = null;
-        @Override
-        public void startElement(String uri, String localName,
-                                 String name, Attributes attrs) throws SAXException {
-            for (int i = 0; i < attrs.getLength(); i++) {
-                String attrName = attrs.getLocalName(i);
-                if (attrName.equals("Type")) {
-                    String contentType = attrs.getValue(i);
-                    rels.add(contentType);
-                    if (OOXML_CONTENT_TYPES.containsKey(contentType)) {
-                        mediaType = OOXML_CONTENT_TYPES.get(contentType);
-                    }
-                }
-            }
-        }
-    }
-
-    public static MediaType parseOOXMLContentTypes(InputStream is) {
-        ContentTypeHandler contentTypeHandler = new ContentTypeHandler();
-        try {
-            XMLReaderUtils.parseSAX(is,
-                    new OfflineContentHandler(contentTypeHandler),
-                    new ParseContext());
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            //swallow
-        }
-        return contentTypeHandler.mediaType;
-    }
-
-
-    private static class ContentTypeHandler extends DefaultHandler {
-
-        private MediaType mediaType = null;
-
-        @Override
-        public void startElement(String uri, String localName,
-                                 String name, Attributes attrs) throws SAXException {
-            for (int i = 0; i < attrs.getLength(); i++) {
-                String attrName = attrs.getLocalName(i);
-                if (attrName.equals("ContentType")) {
-                    String contentType = attrs.getValue(i);
-                    if (OOXML_CONTENT_TYPES.containsKey(contentType)) {
-                        mediaType = OOXML_CONTENT_TYPES.get(contentType);
-                        throw new StoppingEarlyException();
-                    }
-
-                }
-            }
-        }
-    }
 */
 
 }

@@ -17,7 +17,7 @@
 -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.rtf.RTFParser">
+        <parser class="org.apache.tika.parser.microsoft.rtf.RTFParser">
             <params>
                 <param name="ignoreListMarkup" type="bool">true</param>
             </params>

@@ -71,10 +71,6 @@ public class MboxParser extends AbstractParser {
     private final Map<Integer, Metadata> trackingMetadata = new HashMap<Integer, Metadata>();
     private boolean tracking = false;
 
-    public static Date parseDate(String headerContent) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
-        return dateFormat.parse(headerContent);
-    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;

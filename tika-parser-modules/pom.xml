@@ -37,6 +37,7 @@
     <properties>
         <codec.version>1.13</codec.version>
         <jempbox.version>1.8.16</jempbox.version>
+        <mime4j.version>0.8.3</mime4j.version>
         <pdfbox.version>2.0.20</pdfbox.version>
     </properties>
 
@@ -64,11 +65,15 @@
         <module>tika-parser-xmp-commons</module>
         <module>tika-parser-zip-commons</module>
         <module>tika-parser-audiovideo-module</module>
+        <module>tika-parser-html-module</module>
         <module>tika-parser-image-module</module>
         <module>tika-parser-text-module</module>
         <module>tika-parser-font-module</module>
         <module>tika-parser-microsoft-module</module>
         <module>tika-parser-pkg-module</module>
+        <module>tika-parser-rtf-module</module>
+        <module>tika-parser-mail-commons</module>
+        <module>tika-parser-xml-module</module>
     </modules>
 
 </project>
