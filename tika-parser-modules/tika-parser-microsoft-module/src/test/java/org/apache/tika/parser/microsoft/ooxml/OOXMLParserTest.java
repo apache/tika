@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.StringWriter;
-import java.nio.file.Path;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1263,25 +1262,10 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
 
-    @Test
-    public void testEmbeddedPDFInPPTX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
-        Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
-        Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(RecursiveParserWrapper.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testEmbeddedPDFInXLSX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xlsx");
-        Metadata pdfMetadata = metadataList.get(1);
-        assertContains("Hello World", pdfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
-    }
 
     @Test
     public void testOrigSourcePath() throws Exception {
-        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx").get(11);
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx").get(2);
         assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
@@ -1741,11 +1725,6 @@ public class OOXMLParserTest extends TikaTest {
                 xlsx.get(Metadata.CONTENT_TYPE));
     }
 
-    @Test(expected = org.apache.tika.exception.TikaException.class)
-    public void testCorruptedZip() throws Exception {
-        //TIKA_2446
-        getRecursiveMetadata("testZIP_corrupted_oom.zip");
-    }
 
     @Test
     public void testSigned() throws Exception {
@@ -1787,11 +1766,6 @@ public class OOXMLParserTest extends TikaTest {
         assertEquals(OfficeOpenXMLExtended.SECURITY_READ_ONLY_ENFORCED,
                 getRecursiveMetadata("testWORD_docSecurity.docx")
                         .get(0).get(OfficeOpenXMLExtended.DOC_SECURITY_STRING));
-    }
-
-    @Test
-    public void oneOff() throws Exception {
-        debug(getRecursiveMetadata("CVLKRA-KYC_Download_File_Structure_V3.1.xlsx"));
     }
 }
 

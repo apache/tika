@@ -34,8 +34,6 @@ public class OneNoteParserTest extends TikaTest {
      */
     @Test
     public void testOneNote2013Doc1() throws Exception {
-//        List<Metadata> metadataList = getRecursiveMetadata("testOneNote1.one");
-  //      debug(metadataList);
         Metadata metadata = new Metadata();
         String txt = getText("testOneNote1.one", metadata);
         assertNoJunk(txt);

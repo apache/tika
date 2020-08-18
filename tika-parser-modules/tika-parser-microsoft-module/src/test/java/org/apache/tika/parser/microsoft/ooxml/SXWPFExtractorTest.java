@@ -674,7 +674,7 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testOrigSourcePath() throws Exception {
-        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx", parseContext).get(11);
+        Metadata embed1_zip_metadata = getRecursiveMetadata("test_recursive_embedded.docx", parseContext).get(2);
         assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip",
                 Arrays.asList(embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
         assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",

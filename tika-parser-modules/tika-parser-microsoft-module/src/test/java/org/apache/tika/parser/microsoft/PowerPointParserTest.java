@@ -292,15 +292,6 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     @Test
-    public void testEmbeddedPDF() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.ppt");
-        assertContains("Apache Tika project", metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("3.pdf", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("Hello World", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("4.pdf", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-    }
-
-    @Test
     public void testMacros() throws  Exception {
         Metadata minExpected = new Metadata();
         minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");

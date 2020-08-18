@@ -46,6 +46,12 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>tika-parser-microsoft-module</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>tika-parser-pkg-module</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -74,6 +80,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tika-parser-xml-module</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tika-parser-microsoft-module</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>

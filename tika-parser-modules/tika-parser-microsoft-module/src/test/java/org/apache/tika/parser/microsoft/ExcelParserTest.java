@@ -474,11 +474,7 @@ public class ExcelParserTest extends TikaTest {
 //        assertContains("<a href=\"http://tika.apache.org/1.12/gettingstarted.html\">", xml);
     }
 
-    @Test
-    public void testEmbeddedPDF() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xls");
-        assertContains("Hello World!", metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-    }
+
 
     @Test
     public void testBigIntegersWGeneralFormat() throws Exception {
