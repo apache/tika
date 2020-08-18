@@ -39,9 +39,14 @@
         <jempbox.version>1.8.16</jempbox.version>
         <mime4j.version>0.8.3</mime4j.version>
         <pdfbox.version>2.0.20</pdfbox.version>
+        <jempbox.version>1.8.16</jempbox.version>
+
+        <commons.exec.version>1.3</commons.exec.version>
         <commons.logging.version>1.2</commons.logging.version>
         <!-- used by POI, PDFBox and Jackcess ...try to sync -->
         <bouncycastle.version>1.65</bouncycastle.version>
+
+        <log4j.version>1.2.17</log4j.version>
 
     </properties>
 
@@ -77,6 +82,8 @@
         <module>tika-parser-pkg-module</module>
         <module>tika-parser-mail-commons</module>
         <module>tika-parser-xml-module</module>
+        <module>tika-parser-ocr-module</module>
+        <module>tika-parser-pdf-module</module>
     </modules>
 
 </project>

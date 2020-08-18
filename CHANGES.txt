@@ -1,6 +1,8 @@
 Release 2.0.0 - ???
    BREAKING CHANGES in 2.0.0
 
+   * RTFParser was moved to org.apache.tika.parser.microsoft.rtf
+
    * Remove deprecated Metadata keys/properties (TIKA-1974).
 
    * Removed dangerous calls to read an inputstream or convert to bytes without specifying a charset
