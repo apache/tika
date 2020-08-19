@@ -395,7 +395,6 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     /**
      * @see #setEnableAutoSpace(boolean)
-     * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getEnableAutoSpace() {
         return defaultConfig.getEnableAutoSpace();
@@ -406,9 +405,8 @@ public class PDFParser extends AbstractParser implements Initializable {
      * where spaces should be inserted between words.  For
      * many PDFs this is necessary as they do not include
      * explicit whitespace characters.
-     *
-     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
+    @Field
     public void setEnableAutoSpace(boolean v) {
         defaultConfig.setEnableAutoSpace(v);
     }
@@ -425,8 +423,6 @@ public class PDFParser extends AbstractParser implements Initializable {
     /**
      * If true (the default), text in annotations will be
      * extracted.
-     *
-     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setExtractAnnotationText(boolean v) {
         defaultConfig.setExtractAnnotationText(v);
@@ -448,9 +444,8 @@ public class PDFParser extends AbstractParser implements Initializable {
      * slow down extraction substantially (PDFBOX-956) and
      * sometimes remove characters that were not in fact
      * duplicated (PDFBOX-1155).  By default this is disabled.
-     *
-     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
+    @Field
     public void setSuppressDuplicateOverlappingText(boolean v) {
         defaultConfig.setSuppressDuplicateOverlappingText(v);
     }
@@ -470,8 +465,6 @@ public class PDFParser extends AbstractParser implements Initializable {
      * order"), while for other PDFs it can produce the
      * wrong result (for example if there are 2 columns,
      * the text will be interleaved).  Default is false.
-     *
-     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     @Field
     public void setSortByPosition(boolean v) {
