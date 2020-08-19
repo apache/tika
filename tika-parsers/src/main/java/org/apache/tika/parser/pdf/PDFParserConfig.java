@@ -157,6 +157,10 @@ public class PDFParserConfig implements Serializable {
 
     private boolean detectAngles = false;
 
+	private int totalCharsPerPage = 10;
+	
+    private int unmappedUnicodeCharsPerPage = 10;
+	
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
@@ -262,6 +266,14 @@ public class PDFParserConfig implements Serializable {
 
         maxMainMemoryBytes = getLongProp(props.getProperty("maxMainMemoryBytes"), -1);
         detectAngles = getBooleanProp(props.getProperty("detectAngles"), false);
+		
+		setTotalCharsPerPage(
+			getIntProp(props.getProperty("totalCharsPerPage"),
+				getTotalCharsPerPage()));
+			
+		setUnmappedUnicodeCharsPerPage(
+			getIntProp(props.getProperty("unmappedUnicodeCharsPerPage"), 
+				getUnmappedUnicodeCharsPerPage()));
     }
 
     /**
@@ -837,6 +849,22 @@ public class PDFParserConfig implements Serializable {
         return detectAngles;
     }
 
+	public void setTotalCharsPerPage(int totalCharsPerPage) {
+        this.totalCharsPerPage = totalCharsPerPage;
+    }
+
+    public int getTotalCharsPerPage() {
+        return totalCharsPerPage;
+    }
+
+    public void setUnmappedUnicodeCharsPerPage(int unmappedUnicodeCharsPerPage) {
+        this.unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage;
+    }
+
+    public int getUnmappedUnicodeCharsPerPage() {
+        return unmappedUnicodeCharsPerPage;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -863,6 +891,8 @@ public class PDFParserConfig implements Serializable {
         if (!getOcrImageFormatName().equals(config.getOcrImageFormatName())) return false;
         if (getExtractActions() != config.getExtractActions()) return false;
         if (!getAccessChecker().equals(config.getAccessChecker())) return false;
+		if (getTotalCharsPerPage() != config.getTotalCharsPerPage()) return false;
+        if (getUnmappedUnicodeCharsPerPage() != config.getUnmappedUnicodeCharsPerPage()) return false;
         return getMaxMainMemoryBytes() == config.getMaxMainMemoryBytes();
     }
 
@@ -888,6 +918,8 @@ public class PDFParserConfig implements Serializable {
         result = 31 * result + (getCatchIntermediateIOExceptions() ? 1 : 0);
         result = 31 * result + (getExtractActions() ? 1 : 0);
         result = 31 * result + Long.valueOf(getMaxMainMemoryBytes()).hashCode();
+		result = 31 * result + getTotalCharsPerPage();
+        result = 31 * result + getUnmappedUnicodeCharsPerPage();
         return result;
     }
 
@@ -914,6 +946,8 @@ public class PDFParserConfig implements Serializable {
                 ", extractActions=" + extractActions +
                 ", catchIntermediateIOExceptions=" + catchIntermediateIOExceptions +
                 ", maxMainMemoryBytes=" + maxMainMemoryBytes +
+				", totalCharsPerPage=" + totalCharsPerPage +
+                ", unmappedUnicodeCharsPerPage=" + unmappedUnicodeCharsPerPage +
                 '}';
     }
 }
