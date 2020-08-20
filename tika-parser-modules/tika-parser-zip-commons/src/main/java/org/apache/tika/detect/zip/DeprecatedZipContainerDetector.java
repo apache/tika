@@ -29,35 +29,7 @@ public class DeprecatedZipContainerDetector {
 
 /*
 TODO: move this to the apple module
-    private static MediaType detectIWork13(ZipFile zip) {
-        if (zip.getEntry(IWork13PackageParser.IWORK13_COMMON_ENTRY) != null) {
-            return IWork13PackageParser.IWork13DocumentType.detect(zip);
-        }
-        return null;
-    }
 
-    private static MediaType detectIWork18(ZipFile zip) {
-        return IWork18PackageParser.IWork18DocumentType.detect(zip);
-    }
-
-    private static MediaType detectIWork(ZipFile zip) {
-        if (zip.getEntry(IWorkPackageParser.IWORK_COMMON_ENTRY) != null) {
-            // Locate the appropriate index file entry, and reads from that
-            // the root element of the document. That is used to the identify
-            // the correct type of the keynote container.
-            for (String entryName : IWorkPackageParser.IWORK_CONTENT_ENTRIES) {
-               IWORKDocumentType type = IWORKDocumentType.detectType(zip.getEntry(entryName), zip); 
-               if (type != null) {
-                  return type.getType();
-               }
-            }
-            
-            // Not sure, fallback to the container type
-            return MediaType.application("vnd.apple.iwork");
-        } else {
-            return null;
-        }
-    }
     */
 
 

@@ -25,3 +25,5 @@ org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser
 org.apache.tika.parser.microsoft.xml.WordMLParser
 org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
+org.apache.tika.parser.microsoft.chm.ChmParser
+org.apache.tika.parser.microsoft.pst.OutlookPSTParser

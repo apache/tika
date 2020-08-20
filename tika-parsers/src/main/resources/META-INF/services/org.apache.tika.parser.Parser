@@ -41,7 +41,7 @@ org.apache.tika.parser.iwork.IWorkPackageParser
 org.apache.tika.parser.image.JpegParser
 org.apache.tika.parser.mail.RFC822Parser
 org.apache.tika.parser.mbox.MboxParser
-org.apache.tika.parser.mbox.OutlookPSTParser
+org.apache.tika.parser.microsoft.pst.OutlookPSTParser
 org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.mp4.MP4Parser
 org.apache.tika.parser.hdf.HDFParser
@@ -67,7 +67,7 @@ org.apache.tika.parser.ocr.TesseractOCRParser
 org.apache.tika.parser.gdal.GDALParser
 org.apache.tika.parser.pot.PooledTimeSeriesParser
 org.apache.tika.parser.grib.GribParser
-org.apache.tika.parser.jdbc.SQLite3Parser
+org.apache.tika.parser.sqlite.SQLite3Parser
 org.apache.tika.parser.isatab.ISArchiveParser
 org.apache.tika.parser.geoinfo.GeographicInformationParser
 org.apache.tika.parser.geo.topic.GeoParser

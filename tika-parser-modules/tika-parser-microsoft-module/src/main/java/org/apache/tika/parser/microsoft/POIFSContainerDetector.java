@@ -137,15 +137,7 @@ public class POIFSContainerDetector implements Detector {
      * SolidWorks CAD file
      */
     public static final MediaType SLDWORKS = application("sldworks");
-    /**
-     * Hangul Word Processor (Korean)
-     */
-    public static final MediaType HWP = application("x-hwp-v5");
 
-    /**
-     * Base QuattroPro mime
-     */
-    public static final MediaType QUATTROPRO = application("x-quattro-pro");
     /**
      * Serial version UID
      */
@@ -252,9 +244,6 @@ public class POIFSContainerDetector implements Detector {
             } else {
                 return processCompObjFormatType(root);
             }
-        } else if (names.contains("\u0005HwpSummaryInformation")) {
-            // Hangul Word Processor v5+ (previous aren't OLE2-based)
-            return HWP;
         } else if (names.contains("WksSSWorkBook")) {
             // This check has to be before names.contains("Workbook")
             // Works 7.0 spreadsheet files contain both
@@ -322,14 +311,6 @@ public class POIFSContainerDetector implements Detector {
                     return MPP;
                 }
             }
-        } else if (names.contains("PerfectOffice_MAIN")) {
-            if (names.contains("SlideShow")) {
-                return MediaType.application("x-corelpresentations"); // .shw
-            } else if (names.contains("PerfectOffice_OBJECTS")) {
-                return new MediaType(QUATTROPRO, "version", "7-8"); // .wb?
-            }
-        } else if (names.contains("NativeContent_MAIN")) {
-            return new MediaType(QUATTROPRO, "version", "9"); // .qpw
         } else if (names.contains("Equation Native")) {
             return MS_EQUATION;
         } else {

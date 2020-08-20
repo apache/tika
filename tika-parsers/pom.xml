@@ -45,11 +45,9 @@
     <vorbis.version>0.8</vorbis.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>1.0</sis.version>
-    <parso.version>2.0.11</parso.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.65</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
-    <httpcomponents.version>4.5.12</httpcomponents.version>
   </properties>
 
   <!-- Note: as of the 1.23 release, we're waiting for external changes or fixes
@@ -138,39 +136,17 @@
     </dependency>
 
     <!-- Upstream parser libraries -->
-    <dependency>
-      <groupId>org.tallison</groupId>
-      <artifactId>jmatio</artifactId>
-      <version>1.5</version>
-    </dependency>
-    <dependency>
-      <groupId>com.googlecode.plist</groupId>
-      <artifactId>dd-plist</artifactId>
-      <version>1.23</version>
-    </dependency>
+
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>${commons.compress.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>com.epam</groupId>
-      <artifactId>parso</artifactId>
-      <version>${parso.version}</version>
-    </dependency>
 
 
 
-    <!-- WARNING: when you upgrade asm make sure that you update the
-      OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
-      See TIKA-2992.
-    -->
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm</artifactId>
-      <version>8.0.1</version>
-    </dependency>
+
 
     <!-- this is a fork of com.drewnoakes
       metadata extractor that shade/relocates com.adobe.internal
@@ -202,33 +178,9 @@
       <artifactId>juniversalchardet</artifactId>
       <version>1.0.3</version>
     </dependency>
-    <dependency>
-      <groupId>org.codelibs</groupId>
-      <artifactId>jhighlight</artifactId>
-      <version>1.0.3</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.pff</groupId>
-      <artifactId>java-libpst</artifactId>
-      <version>0.9.3</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cxf</groupId>
-      <artifactId>cxf-rt-rs-client</artifactId>
-      <version>${cxf.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.annotation</groupId>
-          <artifactId>javax.annotation-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+
+
+
     <!-- TIKA-2021: Tesseract OCR Parser dependencies,
     used for executing image processing script -->
     <dependency>
@@ -258,28 +210,14 @@
       <version>${commons.io.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>com.googlecode.json-simple</groupId>
-      <artifactId>json-simple</artifactId>
-      <version>1.1.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
+
 
 <!--    <dependency>
       <groupId>com.tdunning</groupId>
       <artifactId>json</artifactId>
       <version>1.8</version>
     </dependency> -->
-    <dependency>
-      <groupId>com.github.openjson</groupId>
-      <artifactId>openjson</artifactId>
-      <version>1.0.12</version>
-    </dependency>
+
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
@@ -305,12 +243,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
+
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
@@ -499,26 +432,7 @@
       </exclusions>
     </dependency>
     <!-- add back in for edu.ucar for httpservices -->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>${httpcomponents.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-          <exclusion>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-          </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpmime</artifactId>
-      <version>${httpcomponents.version}</version>
-    </dependency>
+
 
     <!-- Apache Commons CSV -->
     <dependency>

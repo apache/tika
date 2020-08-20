@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="windows-1252" ?>
+<TABLE>
+   <TESTXML>
+      <recnum>0</recnum>
+      <square>0</square>
+      <desc>This is row            0 of           10</desc>
+      <pctdone>0</pctdone>
+      <pctincr missing="M" />
+      <date>0</date>
+      <datetime>1960-01-01T00:00:01</datetime>
+      <time>00:00:01</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>1</recnum>
+      <square>1</square>
+      <desc>This is row            1 of           10</desc>
+      <pctdone>0.1</pctdone>
+      <pctincr>0</pctincr>
+      <date>1</date>
+      <datetime>1960-01-01T00:00:10</datetime>
+      <time>00:00:03</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>2</recnum>
+      <square>4</square>
+      <desc>This is row            2 of           10</desc>
+      <pctdone>0.2</pctdone>
+      <pctincr>0.5</pctincr>
+      <date>16</date>
+      <datetime>1960-01-01T00:01:40</datetime>
+      <time>00:00:09</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>3</recnum>
+      <square>9</square>
+      <desc>This is row            3 of           10</desc>
+      <pctdone>0.3</pctdone>
+      <pctincr>0.6666666667</pctincr>
+      <date>81</date>
+      <datetime>1960-01-01T00:16:40</datetime>
+      <time>00:00:27</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>4</recnum>
+      <square>16</square>
+      <desc>This is row            4 of           10</desc>
+      <pctdone>0.4</pctdone>
+      <pctincr>0.75</pctincr>
+      <date>256</date>
+      <datetime>1960-01-01T02:46:40</datetime>
+      <time>00:01:21</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>5</recnum>
+      <square>25</square>
+      <desc>This is row            5 of           10</desc>
+      <pctdone>0.5</pctdone>
+      <pctincr>0.8</pctincr>
+      <date>625</date>
+      <datetime>1960-01-02T03:46:40</datetime>
+      <time>00:04:03</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>6</recnum>
+      <square>36</square>
+      <desc>This is row            6 of           10</desc>
+      <pctdone>0.6</pctdone>
+      <pctincr>0.8333333333</pctincr>
+      <date>1296</date>
+      <datetime>1960-01-12T13:46:40</datetime>
+      <time>00:12:09</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>7</recnum>
+      <square>49</square>
+      <desc>This is row            7 of           10</desc>
+      <pctdone>0.7</pctdone>
+      <pctincr>0.8571428571</pctincr>
+      <date>2401</date>
+      <datetime>1960-04-25T17:46:40</datetime>
+      <time>00:36:27</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>8</recnum>
+      <square>64</square>
+      <desc>This is row            8 of           10</desc>
+      <pctdone>0.8</pctdone>
+      <pctincr>0.875</pctincr>
+      <date>4096</date>
+      <datetime>1963-03-03T09:46:40</datetime>
+      <time>01:49:21</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>9</recnum>
+      <square>81</square>
+      <desc>This is row            9 of           10</desc>
+      <pctdone>0.9</pctdone>
+      <pctincr>0.8888888889</pctincr>
+      <date>6561</date>
+      <datetime>1991-09-09T01:46:40</datetime>
+      <time>05:28:03</time>
+   </TESTXML>
+   <TESTXML>
+      <recnum>10</recnum>
+      <square>100</square>
+      <desc>This is row           10 of           10</desc>
+      <pctdone>1</pctdone>
+      <pctincr>0.9</pctincr>
+      <date>10000</date>
+      <datetime>2276-11-19T17:46:40</datetime>
+      <time>16:24:09</time>
+   </TESTXML>
+</TABLE>

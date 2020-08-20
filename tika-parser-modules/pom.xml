@@ -40,14 +40,17 @@
         <mime4j.version>0.8.3</mime4j.version>
         <pdfbox.version>2.0.20</pdfbox.version>
         <jempbox.version>1.8.16</jempbox.version>
-
+        <tagsoup.version>1.2.1</tagsoup.version>
         <commons.exec.version>1.3</commons.exec.version>
         <commons.logging.version>1.2</commons.logging.version>
+        <commons.collections4.version>4.4</commons.collections4.version>
         <!-- used by POI, PDFBox and Jackcess ...try to sync -->
         <bouncycastle.version>1.65</bouncycastle.version>
-
-        <log4j.version>1.2.17</log4j.version>
-
+        <parso.version>2.0.11</parso.version>
+        <httpcomponents.version>4.5.12</httpcomponents.version>
+        <openjson.version>1.0.12</openjson.version>
+        <javax.annotation.version>1.3.2</javax.annotation.version>
+        <json.simple.version>1.1.1</json.simple.version>
     </properties>
 
     <dependencies>
@@ -71,19 +74,33 @@
         </dependency>
     </dependencies>
     <modules>
+        <module>tika-parser-digest-commons</module>
+        <module>tika-parser-mail-commons</module>
         <module>tika-parser-xmp-commons</module>
         <module>tika-parser-zip-commons</module>
+
+        <module>tika-parser-ocr-module</module>
         <module>tika-parser-audiovideo-module</module>
+        <module>tika-parser-code-module</module>
         <module>tika-parser-html-module</module>
         <module>tika-parser-image-module</module>
         <module>tika-parser-text-module</module>
         <module>tika-parser-font-module</module>
         <module>tika-parser-microsoft-module</module>
         <module>tika-parser-pkg-module</module>
-        <module>tika-parser-mail-commons</module>
         <module>tika-parser-xml-module</module>
-        <module>tika-parser-ocr-module</module>
         <module>tika-parser-pdf-module</module>
+        <module>tika-parser-math-module</module>
+        <module>tika-parser-apple-module</module>
+        <module>tika-parser-cad-module</module>
+        <module>tika-parser-mail-module</module>
+        <module>tika-parser-miscoffice-module</module>
+        <module>tika-parser-news-module</module>
+        <module>tika-parser-advancedmedia-module</module>
+        <module>tika-parser-nlp-module</module>
+        <module>tika-parser-scientific-module</module>
+        <module>tika-parser-db-module</module>
+        <module>tika-parser-crypto-module</module>
     </modules>
 
 </project>

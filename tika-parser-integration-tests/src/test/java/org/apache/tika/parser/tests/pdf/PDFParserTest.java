@@ -1,5 +1,7 @@
 package org.apache.tika.parser.tests.pdf;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -12,11 +14,15 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.xml.XMLProfiler;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -30,7 +36,30 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 public class PDFParserTest extends TikaTest {
+    public static Level PDFBOX_LOG_LEVEL = Level.INFO;
 
+    private static Boolean hasTesseract = null;
+
+    public static boolean canRunOCR() {
+        if (hasTesseract != null) {
+            return hasTesseract;
+        }
+        hasTesseract = new TesseractOCRParser().hasTesseract(new TesseractOCRConfig());
+        return hasTesseract;
+    }
+
+    @BeforeClass
+    public static void setup() {
+        //remember default logging level, but turn off for PDFParserTest
+        PDFBOX_LOG_LEVEL = Logger.getLogger("org.apache.pdfbox").getLevel();
+        Logger.getLogger("org.apache.pdfbox").setLevel(Level.OFF);
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        //return to regular logging level
+        Logger.getLogger("org.apache.pdfbox").setLevel(PDFBOX_LOG_LEVEL);
+    }
     public static final MediaType TYPE_TEXT = MediaType.TEXT_PLAIN;
     public static final MediaType TYPE_EMF = MediaType.image("emf");
     public static final MediaType TYPE_PDF = MediaType.application("pdf");

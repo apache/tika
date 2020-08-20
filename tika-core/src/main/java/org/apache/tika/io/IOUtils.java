@@ -942,6 +942,25 @@ public class IOUtils {
     }
 
     /**
+     * Reads bytes from an input stream.
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link InputStream}.
+     *
+     * @param input where to read input from
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &gt;= 0
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IOException if a read error occurs
+     * @since 2.2
+     */
+    public static int read(final InputStream input, final byte[] buffer)
+            throws IOException {
+        return read(input, buffer, 0, buffer.length);
+    }
+
+    /**
      * Wrapper around {@link #read(InputStream, byte[], int, int)}.
      *
      *
