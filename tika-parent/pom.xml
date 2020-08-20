@@ -352,6 +352,13 @@
     <lucene.version>8.5.1</lucene.version>
     <mockito.version>3.3.3</mockito.version>
     <opennlp.version>1.9.2</opennlp.version>
+    <httpcomponents.version>4.5.12</httpcomponents.version>
+    <commons.exec.version>1.3</commons.exec.version>
+    <javax.annotation.version>1.3.2</javax.annotation.version>
+    <codec.version>1.13</codec.version>
+    <json.simple.version>1.1.1</json.simple.version>
+    <openjson.version>1.0.12</openjson.version>
+
   </properties>
 
   <build>

@@ -16,4 +16,6 @@
 org.apache.tika.parser.asm.ClassParser
 org.apache.tika.parser.code.SourceCodeParser
 org.apache.tika.parser.executable.ExecutableParser
+org.apache.tika.parser.mat.MatParser
+org.apache.tika.parser.sas.SAS7BDATParser
 

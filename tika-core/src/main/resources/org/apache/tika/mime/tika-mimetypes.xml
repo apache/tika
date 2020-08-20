@@ -1058,7 +1058,9 @@
   <mime-type type="application/vnd.apple.installer+xml">
     <glob pattern="*.mpkg"/>
   </mime-type>
-
+  <mime-type type="application/vnd.apple.unknown.13">
+    <sub-class-of type="application/zip"/>
+  </mime-type>
   <mime-type type="application/vnd.apple.iwork">
     <sub-class-of type="application/zip"/>
   </mime-type>
@@ -4199,6 +4201,8 @@
     <glob pattern="*.wb1"/>
     <glob pattern="*.wb2"/>
     <glob pattern="*.wb3"/>
+    <!-- this is true of qp2 and wb3; not for wb2 and wb1 -->
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
   <mime-type type="application/x-quattro-pro;version=1-4">

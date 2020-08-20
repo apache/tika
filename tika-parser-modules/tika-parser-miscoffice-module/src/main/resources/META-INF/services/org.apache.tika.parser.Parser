@@ -17,3 +17,6 @@ org.apache.tika.parser.odf.FlatOpenDocumentParser
 org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.wordperfect.QuattroProParser
 org.apache.tika.parser.wordperfect.WordPerfectParser
+org.apache.tika.parser.epub.EpubParser
+org.apache.tika.parser.dif.DIFParser
+org.apache.tika.parser.dbf.DBFParser

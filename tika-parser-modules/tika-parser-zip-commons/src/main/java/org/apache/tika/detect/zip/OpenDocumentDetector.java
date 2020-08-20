@@ -19,10 +19,12 @@ package org.apache.tika.detect.zip;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +32,8 @@ import java.nio.charset.StandardCharsets;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class OpenDocumentDetector implements ZipContainerDetector {
+    private static final int MAX_MIME_TYPE = 1024;
+
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
         try {
@@ -47,13 +51,19 @@ public class OpenDocumentDetector implements ZipContainerDetector {
     }
 
     @Override
-    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) {
+    public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
+                                           StreamingDetectContext detectContext) throws IOException {
         String name = zae.getName();
         if ("mimetype".equals(name)) {
-            try {
-                return MediaType.parse(IOUtils.toString(zis, UTF_8));
-            } catch (IOException e) {
-                return null;
+            //can't rely on zae.getSize to determine if there is any
+            //content here. :(
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            BoundedInputStream bis = new BoundedInputStream(MAX_MIME_TYPE, zis);
+            IOUtils.copy(bis, bos);
+            //do anything with an inputstream > MAX_MIME_TYPE?
+            if (bos.toByteArray().length > 0)  {
+                //odt -- TODO -- check that the results are valid
+                return MediaType.parse(new String(bos.toByteArray(), UTF_8));
             }
         }
         return null;

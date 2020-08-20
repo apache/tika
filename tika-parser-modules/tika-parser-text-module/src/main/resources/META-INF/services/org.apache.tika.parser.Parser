@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 
-org.apache.tika.parser.txt.TXTParser
+org.apache.tika.parser.csv.TextAndCSVParser
 #org.apache.tika.parser.strings.Latin1StringsParser
 #org.apache.tika.parser.strings.StringsParser
 #org.apache.tika.parser.xml.DcXMLParser

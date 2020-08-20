@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.dbf;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;

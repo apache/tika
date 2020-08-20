@@ -24,6 +24,7 @@ import org.apache.tika.mime.MediaType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 /**
  * Classes that implement this must be able to detect on a ZipFile and in streaming mode.
@@ -33,7 +34,7 @@ import java.io.InputStream;
  *
  * During streaming detection, state is stored in the StreamingDetectContext
  */
-public interface ZipContainerDetector {
+public interface ZipContainerDetector extends Serializable {
 
     /**
      * If detection is successful, the ZipDetector should set the zip
@@ -52,7 +53,7 @@ public interface ZipContainerDetector {
      * @param zae
      * @return
      */
-    MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext);
+    MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis, StreamingDetectContext detectContext) throws IOException;
 
     /**
      * After we've finished streaming the zip archive entries,

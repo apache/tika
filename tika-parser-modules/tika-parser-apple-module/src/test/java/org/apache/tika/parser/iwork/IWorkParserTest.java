@@ -179,7 +179,6 @@ public class IWorkParserTest extends TikaTest {
     // TIKA-904
     @Test
     public void testPagesLayoutMode() throws Exception {
-        debug(getRecursiveMetadata("testPagesLayout.pages"));
         String content = getText("testPagesLayout.pages");
         assertContains("text box 1 - here is some text", content);
         assertContains("created in a text box in layout mode", content);

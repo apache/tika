@@ -19,6 +19,8 @@ package org.apache.tika.detect.zip;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -29,12 +31,16 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class StarOfficeDetector implements ZipContainerDetector {
+
+    private static final int MAX_MANIFEST = 20 * 1024 * 1024;
 
     static final Map<String, MediaType> STAR_OFFICE_X = new HashMap<>();
 
@@ -68,13 +74,20 @@ public class StarOfficeDetector implements ZipContainerDetector {
 
     @Override
     public MediaType streamingDetectUpdate(ZipArchiveEntry zae, InputStream zis,
-                                           StreamingDetectContext detectContext) {
+                                           StreamingDetectContext detectContext) throws IOException {
         String name = zae.getName();
         if (! "META-INF/manifest.xml".equals(name)) {
             return null;
         }
+        //for an unknown reason, passing in the zipArchiveInputStream
+        //"as is" can cause the iteration of the entries to stop early
+        //without exception or warning.  So, copy the full stream, then
+        //process.  TIKA-3061
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        BoundedInputStream bis = new BoundedInputStream(MAX_MANIFEST, zis);
+        IOUtils.copy(bis, bos);
 
-        return detectStarOfficeX(zis);
+        return detectStarOfficeX(new ByteArrayInputStream(bos.toByteArray()));
 
     }
 

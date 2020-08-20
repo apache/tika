@@ -11,7 +11,7 @@
 
     <artifactId>tika-advanced-parser-modules</artifactId>
 
-
+    <packaging>pom</packaging>
     <modules>
         <module>tika-dl</module>
         <module>tika-nlp</module>

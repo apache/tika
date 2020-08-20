@@ -28,9 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tika-parser-text-module</artifactId>
-    <properties>
-        <csv.version>1.8</csv.version>
-    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.googlecode.juniversalchardet</groupId>
@@ -45,7 +43,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
-            <version>${csv.version}</version>
+            <version>${commons.csv.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>

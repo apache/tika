@@ -44,8 +44,8 @@ public class DefaultZipContainerDetector implements Detector {
     //as tar files.  We need this ugly workaround to rule out TIFF.
     //If commons-compress ever chooses to take over TIFF detection
     //we can remove all of this. See TIKA-2591.
-    private final static MediaType TIFF = MediaType.image("tiff");
-    private final static byte[][] TIFF_SIGNATURES = new byte[3][];
+    final static MediaType TIFF = MediaType.image("tiff");
+    final static byte[][] TIFF_SIGNATURES = new byte[3][];
     static {
         TIFF_SIGNATURES[0] = new byte[]{'M','M',0x00,0x2a};
         TIFF_SIGNATURES[1] = new byte[]{'I','I',0x2a, 0x00};
@@ -185,7 +185,7 @@ public class DefaultZipContainerDetector implements Detector {
         return true;
     }
 
-    private static MediaType detectArchiveFormat(byte[] prefix, int length) {
+    static MediaType detectArchiveFormat(byte[] prefix, int length) {
         if (isTiff(prefix)) {
             return TIFF;
         }
@@ -197,7 +197,7 @@ public class DefaultZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectCompressorFormat(byte[] prefix, int length) {
+    static MediaType detectCompressorFormat(byte[] prefix, int length) {
         try {
             String type = CompressorStreamFactory.detect(new ByteArrayInputStream(prefix, 0, length));
             return CompressorConstants.getMediaType(type);
@@ -206,7 +206,7 @@ public class DefaultZipContainerDetector implements Detector {
         }
     }
 
-    private MediaType detectStreaming(InputStream input, Metadata metadata) throws IOException {
+    MediaType detectStreaming(InputStream input, Metadata metadata) throws IOException {
         StreamingDetectContext detectContext = new StreamingDetectContext();
         try (
                 ZipArchiveInputStream zis =
@@ -219,12 +219,18 @@ public class DefaultZipContainerDetector implements Detector {
                 }
                 zae = zis.getNextZipEntry();
             }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            //swallow
         }
+
         return finalDetect(detectContext);
     }
 
 
-    private MediaType detect(ZipArchiveEntry zae, ZipArchiveInputStream zis, StreamingDetectContext detectContext) {
+    private MediaType detect(ZipArchiveEntry zae, ZipArchiveInputStream zis,
+                             StreamingDetectContext detectContext) throws IOException {
         for (ZipContainerDetector d : zipDetectors) {
             MediaType mt = d.streamingDetectUpdate(zae, zis, detectContext);
             if (mt != null) {

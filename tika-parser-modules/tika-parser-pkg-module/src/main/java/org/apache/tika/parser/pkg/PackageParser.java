@@ -114,6 +114,7 @@ public class PackageParser extends AbstractParser {
                 "application/vnd.apple.keynote",
                 "application/vnd.apple.numbers",
                 "application/vnd.apple.pages",
+                "application/vnd.apple.unknown.13",
                 "application/vnd.etsi.asic-e+zip",
                 "application/vnd.etsi.asic-s+zip",
                 "application/vnd.google-earth.kmz",
