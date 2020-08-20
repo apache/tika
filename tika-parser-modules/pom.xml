@@ -96,11 +96,10 @@
         <module>tika-parser-mail-module</module>
         <module>tika-parser-miscoffice-module</module>
         <module>tika-parser-news-module</module>
-        <module>tika-parser-advancedmedia-module</module>
-        <module>tika-parser-nlp-module</module>
         <module>tika-parser-scientific-module</module>
         <module>tika-parser-db-module</module>
         <module>tika-parser-crypto-module</module>
+        <module>tika-parser-integration-tests</module>
     </modules>
 
 </project>
