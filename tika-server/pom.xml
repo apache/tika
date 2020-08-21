@@ -50,6 +50,7 @@
       <artifactId>tika-translate</artifactId>
       <version>${project.version}</version>
     </dependency>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-langdetect</artifactId>
@@ -182,6 +183,11 @@
               <createDependencyReducedPom>
                 false
               </createDependencyReducedPom>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.apache.tika:tika-parsers:jar:</exclude>
+                </excludes>
+              </artifactSet>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>

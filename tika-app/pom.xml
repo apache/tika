@@ -115,6 +115,11 @@
               <createDependencyReducedPom>
                 false
               </createDependencyReducedPom>
+              <artifactSet>
+                <excludes>
+                  <exclude>org.apache.tika:tika-parsers:jar:</exclude>
+                </excludes>
+              </artifactSet>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
