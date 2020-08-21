@@ -139,13 +139,7 @@
     <dependency>
 	    <groupId>org.glassfish.jaxb</groupId>
 	    <artifactId>jaxb-runtime</artifactId>
-	    <version>2.3.2</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>com.sun.istack</groupId>
-	    <artifactId>istack-commons-runtime</artifactId>
-	    <version>3.0.8</version>
+	    <version>${jaxb.version}</version>
 	    <scope>test</scope>
 	</dependency>
 	<dependency>
@@ -160,19 +154,7 @@
 	  <version>1.2.1</version>
 	  <scope>test</scope>
 	</dependency>
-	<dependency>
-	  <groupId>jakarta.xml.bind</groupId>
-	  <artifactId>jakarta.xml.bind-api</artifactId>
-	  <version>2.3.2</version>
-	  <scope>test</scope>
-	</dependency>
-    <dependency>
-	  <groupId>org.glassfish.jaxb</groupId>
-	  <artifactId>txw2</artifactId>
-	  <version>2.3.2</version>
-	  <scope>test</scope>
-	</dependency>
-	
+
     
   </dependencies>
 
