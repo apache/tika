@@ -37,7 +37,7 @@
     <properties>
         <jempbox.version>1.8.16</jempbox.version>
         <mime4j.version>0.8.3</mime4j.version>
-        <pdfbox.version>2.0.20</pdfbox.version>
+        <pdfbox.version>2.0.21</pdfbox.version>
         <jempbox.version>1.8.16</jempbox.version>
         <tagsoup.version>1.2.1</tagsoup.version>
         <commons.logging.version>1.2</commons.logging.version>
