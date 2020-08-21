@@ -310,7 +310,6 @@
         </dependency>
 
         <!-- Externally Maintained Parsers -->
-        <!-- TODO make sure this is included in whatever we're calling tika-parsers -->
         <dependency>
             <groupId>org.gagravarr</groupId>
             <artifactId>vorbis-java-tika</artifactId>

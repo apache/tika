@@ -31,9 +31,11 @@ import com.google.gson.GsonBuilder;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.detect.microsoft.POIFSContainerDetector;
+import org.apache.tika.detect.zip.DefaultZipContainerDetector;
+import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.parser.microsoft.POIFSContainerDetector;
-import org.apache.tika.parser.pkg.ZipContainerDetector;
+
 import org.apache.tika.server.resource.TikaDetectors;
 import org.gagravarr.tika.OggDetector;
 import org.junit.Test;
@@ -70,7 +72,7 @@ public class TikaDetectorsTest extends CXFTestBase {
         assertContains("org.apache.tika.detect.DefaultDetector (Composite Detector)", text);
         assertContains(OggDetector.class.getName(), text);
         assertContains(POIFSContainerDetector.class.getName(), text);
-        assertContains(ZipContainerDetector.class.getName(), text);
+        assertContains(DefaultZipContainerDetector.class.getName(), text);
         assertContains(MimeTypes.class.getName(), text);
     }
 
@@ -92,7 +94,7 @@ public class TikaDetectorsTest extends CXFTestBase {
 
         assertContains(OggDetector.class.getName(), text);
         assertContains(POIFSContainerDetector.class.getName(), text);
-        assertContains(ZipContainerDetector.class.getName(), text);
+        assertContains(DefaultZipContainerDetector.class.getName(), text);
         assertContains(MimeTypes.class.getName(), text);
     }
 
@@ -133,7 +135,7 @@ public class TikaDetectorsTest extends CXFTestBase {
             if (POIFSContainerDetector.class.getName().equals(name)) {
                 hasPOIFS = true;
             }
-            if (ZipContainerDetector.class.getName().equals(name)) {
+            if (DefaultZipContainerDetector.class.getName().equals(name)) {
                 hasZIP = true;
             }
             if (MimeTypes.class.getName().equals(name)) {

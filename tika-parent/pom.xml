@@ -358,6 +358,7 @@
     <codec.version>1.13</codec.version>
     <json.simple.version>1.1.1</json.simple.version>
     <openjson.version>1.0.12</openjson.version>
+    <vorbis.version>0.8</vorbis.version>
 
   </properties>
 

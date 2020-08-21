@@ -46,7 +46,6 @@
         <!-- used by POI, PDFBox and Jackcess ...try to sync -->
         <bouncycastle.version>1.65</bouncycastle.version>
         <parso.version>2.0.11</parso.version>
-        <vorbis.version>0.8</vorbis.version>
     </properties>
 
     <dependencies>

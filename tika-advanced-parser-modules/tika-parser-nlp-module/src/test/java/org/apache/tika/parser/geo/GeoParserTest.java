@@ -97,7 +97,7 @@ public class GeoParserTest extends TikaTest {
 		TikaConfig config = new TikaConfig(getResourceAsStream(
 				"/org/apache/tika/config/TIKA-3078-geo.topic.GeoParser.xml"));
 		Parser p = config.getParser();
-		GeoParser geoParser = (GeoParser)findParser(p, org.apache.tika.parser.geo.topic.GeoParser.class);
+		GeoParser geoParser = (GeoParser)findParser(p, org.apache.tika.parser.geo.GeoParser.class);
 		assertNotNull(geoParser);
 		assertEquals("http://localhost/gazetteerRestEndpoint", geoParser.getGazetteerRestEndpoint());
 		assertEquals(new URL("file:/ner/model/url"), geoParser.getNerModelUrl());

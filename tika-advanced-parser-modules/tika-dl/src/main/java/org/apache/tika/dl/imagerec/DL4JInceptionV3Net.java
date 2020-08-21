@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -303,7 +304,7 @@ public class DL4JInceptionV3Net implements ObjectRecogniser {
      */
     public Map<Integer, String> loadClassIndex(InputStream stream)
             throws IOException, ParseException {
-        String content = IOUtils.toString(stream);
+        String content = IOUtils.toString(stream, StandardCharsets.UTF_8);
         JSONObject jIndex = (JSONObject) new JSONParser().parse(content);
         Map<Integer, String> classMap = new HashMap<>();
         for (Object key : jIndex.keySet()) {

@@ -22,6 +22,7 @@ import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.detect.LanguageWriter;
 import org.junit.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +41,9 @@ public class TextLangDetectorTest {
         LanguageDetector detector = new TextLangDetector();
         LanguageWriter writer = new LanguageWriter(detector);
 
-        List<String> lines = IOUtils.readLines(TextLangDetectorTest.class.getResourceAsStream("text-test.tsv"));
+        List<String> lines = IOUtils.readLines(
+                TextLangDetectorTest.class.getResourceAsStream("text-test.tsv"),
+                StandardCharsets.UTF_8);
         for (String line : lines) {
             String[] data = line.split("\t");
             if (data.length != 2) continue;

@@ -28,10 +28,11 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.tika.parser.geo.topic.GeoParserConfig;
+
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import org.apache.tika.parser.geo.GeoParserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

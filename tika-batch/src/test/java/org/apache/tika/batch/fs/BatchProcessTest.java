@@ -32,8 +32,10 @@ import java.util.Map;
 
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class BatchProcessTest extends FSBatchTestBase {
 
     @Test(timeout = 15000)
