@@ -13,9 +13,10 @@ Release 2.0.0 - ???
 
 Release 1.25 - ???
 
+
    * Add detection and a parser for flat ODF files (TIKA-3159).
 
-   * Add extraction of macros from ODF files (TIKA-3161).
+   * Add extraction of macros from ODF files  (TIKA-3161).
 
    * Add mime detection for hprof and hprof text files (TIKA-3144).
 
