@@ -37,7 +37,6 @@
       <includes>
       	<include>org.glassfish.jaxb:jaxb-runtime</include>
         <include>com.sun.istack:istack-commons-runtime</include>
-        <include>jakarta.activation:jakarta.activation-api</include>
         <include>com.sun.xml.fastinfoset:FastInfoset</include>
         <include>jakarta.xml.bind:jakarta.xml.bind-api</include>
         <include>org.glassfish.jaxb:txw2</include>
