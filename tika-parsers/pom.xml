@@ -30,9 +30,9 @@
   </parent>
 
   <artifactId>tika-parsers</artifactId>
-  <packaging>bundle</packaging>
   <name>Apache Tika parsers</name>
   <url>http://tika.apache.org/</url>
+
 
     <dependencies>
         <dependency>
