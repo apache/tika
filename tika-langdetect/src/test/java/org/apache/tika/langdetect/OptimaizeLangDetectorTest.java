@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -243,7 +244,9 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
     
 	private Map<String, String> getTestLanguages(String resourceName) throws IOException {
 		Map<String, String> result = new HashMap<>();
-		List<String> languages = IOUtils.readLines(OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName));
+		List<String> languages = IOUtils.readLines(
+				OptimaizeLangDetectorTest.class.getResourceAsStream(resourceName),
+				StandardCharsets.UTF_8);
         for (String line : languages) {
         	line = line.trim();
         	if (line.isEmpty() || line.startsWith("#")) {

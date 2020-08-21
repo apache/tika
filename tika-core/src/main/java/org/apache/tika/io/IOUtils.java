@@ -21,6 +21,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -208,148 +209,6 @@ public class IOUtils {
     }
 
     /**
-     * Get the contents of a <code>Reader</code> as a <code>byte[]</code>
-     * using the default character encoding of the platform.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedReader</code>.
-     * 
-     * @param input  the <code>Reader</code> to read from
-     * @return the requested byte array
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     */
-    public static byte[] toByteArray(Reader input) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        copy(input, output);
-        return output.toByteArray();
-    }
-
-    /**
-     * Get the contents of a <code>Reader</code> as a <code>byte[]</code>
-     * using the specified character encoding.
-     * <p>
-     * Character encoding names can be found at
-     * <a href="http://www.iana.org/assignments/character-sets">IANA</a>.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedReader</code>.
-     * 
-     * @param input  the <code>Reader</code> to read from
-     * @param encoding  the encoding to use, null means platform default
-     * @return the requested byte array
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 1.1
-     */
-    public static byte[] toByteArray(Reader input, String encoding)
-            throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        copy(input, output, encoding);
-        return output.toByteArray();
-    }
-
-    /**
-     * Get the contents of a <code>String</code> as a <code>byte[]</code>
-     * using the default character encoding of the platform.
-     * <p>
-     * This is the same as {@link String#getBytes()}.
-     * 
-     * @param input  the <code>String</code> to convert
-     * @return the requested byte array
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs (never occurs)
-     * @deprecated Use {@link String#getBytes()}
-     */
-    @Deprecated
-    public static byte[] toByteArray(String input) throws IOException {
-        return input.getBytes(UTF_8);
-    }
-
-    // read char[]
-    //-----------------------------------------------------------------------
-    /**
-     * Get the contents of an <code>InputStream</code> as a character array
-     * using the default character encoding of the platform.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedInputStream</code>.
-     * 
-     * @param is  the <code>InputStream</code> to read from
-     * @return the requested character array
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 1.1
-     */
-    public static char[] toCharArray(InputStream is) throws IOException {
-        CharArrayWriter output = new CharArrayWriter();
-        copy(is, output);
-        return output.toCharArray();
-    }
-
-    /**
-     * Get the contents of an <code>InputStream</code> as a character array
-     * using the specified character encoding.
-     * <p>
-     * Character encoding names can be found at
-     * <a href="http://www.iana.org/assignments/character-sets">IANA</a>.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedInputStream</code>.
-     * 
-     * @param is  the <code>InputStream</code> to read from
-     * @param encoding  the encoding to use, null means platform default
-     * @return the requested character array
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 1.1
-     */
-    public static char[] toCharArray(InputStream is, String encoding)
-            throws IOException {
-        CharArrayWriter output = new CharArrayWriter();
-        copy(is, output, encoding);
-        return output.toCharArray();
-    }
-
-    /**
-     * Get the contents of a <code>Reader</code> as a character array.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedReader</code>.
-     * 
-     * @param input  the <code>Reader</code> to read from
-     * @return the requested character array
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 1.1
-     */
-    public static char[] toCharArray(Reader input) throws IOException {
-        CharArrayWriter sw = new CharArrayWriter();
-        copy(input, sw);
-        return sw.toCharArray();
-    }
-
-    // read toString
-    //-----------------------------------------------------------------------
-    /**
-     * Get the contents of an <code>InputStream</code> as a String
-     * using the default character encoding of the platform.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedInputStream</code>.
-     * 
-     * @param input  the <code>InputStream</code> to read from
-     * @return the requested String
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     */
-    public static String toString(InputStream input) throws IOException {
-        StringWriter sw = new StringWriter();
-        copy(input, sw);
-        return sw.toString();
-    }
-
-    /**
      * Get the contents of an <code>InputStream</code> as a String
      * using the specified character encoding.
      * <p>
@@ -360,15 +219,15 @@ public class IOUtils {
      * <code>BufferedInputStream</code>.
      * 
      * @param input  the <code>InputStream</code> to read from
-     * @param encoding  the encoding to use, null means platform default
+     * @param charset  the encoding to use, null means platform default
      * @return the requested String
      * @throws NullPointerException if the input is null
      * @throws IOException if an I/O error occurs
      */
-    public static String toString(InputStream input, String encoding)
+    public static String toString(InputStream input, Charset charset)
             throws IOException {
         StringWriter sw = new StringWriter();
-        copy(input, sw, encoding);
+        copy(new InputStreamReader(input, charset), sw);
         return sw.toString();
     }
 
@@ -404,30 +263,6 @@ public class IOUtils {
         return new String(input, UTF_8);
     }
 
-    /**
-     * Get the contents of a <code>byte[]</code> as a String
-     * using the specified character encoding.
-     * <p>
-     * Character encoding names can be found at
-     * <a href="http://www.iana.org/assignments/character-sets">IANA</a>.
-     * 
-     * @param input the byte array to read from
-     * @param encoding  the encoding to use, null means platform default
-     * @return the requested String
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs (never occurs)
-     * @deprecated Use {@link String#String(byte[],String)}
-     */
-    @Deprecated
-    public static String toString(byte[] input, String encoding)
-            throws IOException {
-        // If no encoding is specified, default to UTF-8.
-        if (encoding == null) {
-            return new String(input, UTF_8);
-        } else {
-            return new String(input, encoding);
-        }
-    }
 
     // readLines
     //-----------------------------------------------------------------------
@@ -444,36 +279,11 @@ public class IOUtils {
      * @throws IOException if an I/O error occurs
      * @since Commons IO 1.1
      */
-    public static List<String> readLines(InputStream input) throws IOException {
-        InputStreamReader reader = new InputStreamReader(input, UTF_8);
+    public static List<String> readLines(InputStream input, Charset charset) throws IOException {
+        InputStreamReader reader = new InputStreamReader(input, charset);
         return readLines(reader);
     }
 
-    /**
-     * Get the contents of an <code>InputStream</code> as a list of Strings,
-     * one entry per line, using the specified character encoding.
-     * <p>
-     * Character encoding names can be found at
-     * <a href="http://www.iana.org/assignments/character-sets">IANA</a>.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedInputStream</code>.
-     *
-     * @param input  the <code>InputStream</code> to read from, not null
-     * @param encoding  the encoding to use, null means platform default
-     * @return the list of Strings, never null
-     * @throws NullPointerException if the input is null
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 1.1
-     */
-    public static List<String> readLines(InputStream input, String encoding) throws IOException {
-        if (encoding == null) {
-            return readLines(input);
-        } else {
-            InputStreamReader reader = new InputStreamReader(input, encoding);
-            return readLines(reader);
-        }
-    }
 
     /**
      * Get the contents of a <code>Reader</code> as a list of Strings,
@@ -499,67 +309,7 @@ public class IOUtils {
         return list;
     }
 
-    //-----------------------------------------------------------------------
-    /**
-     * Convert the specified CharSequence to an input stream, encoded as bytes
-     * using the default character encoding of the platform.
-     *
-     * @param input the CharSequence to convert
-     * @return an input stream
-     * @since IO 2.0
-     */
-    public static InputStream toInputStream(CharSequence input) {
-        return toInputStream(input.toString());
-    }
 
-    /**
-     * Convert the specified CharSequence to an input stream, encoded as bytes
-     * using the specified character encoding.
-     * <p>
-     * Character encoding names can be found at
-     * <a href="http://www.iana.org/assignments/character-sets">IANA</a>.
-     *
-     * @param input the CharSequence to convert
-     * @param encoding the encoding to use, null means platform default
-     * @throws IOException if the encoding is invalid
-     * @return an input stream
-     * @since IO 2.0
-     */
-    public static InputStream toInputStream(CharSequence input, String encoding) throws IOException {
-        return toInputStream(input.toString(), encoding);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     * Convert the specified string to an input stream, encoded as bytes
-     * using the default character encoding of the platform.
-     *
-     * @param input the string to convert
-     * @return an input stream
-     * @since Commons IO 1.1
-     */
-    public static InputStream toInputStream(String input) {
-        byte[] bytes = input.getBytes(UTF_8);
-        return new ByteArrayInputStream(bytes);
-    }
-
-    /**
-     * Convert the specified string to an input stream, encoded as bytes
-     * using the specified character encoding.
-     * <p>
-     * Character encoding names can be found at
-     * <a href="http://www.iana.org/assignments/character-sets">IANA</a>.
-     *
-     * @param input the string to convert
-     * @param encoding the encoding to use, null means platform default
-     * @throws IOException if the encoding is invalid
-     * @return an input stream
-     * @since Commons IO 1.1
-     */
-    public static InputStream toInputStream(String input, String encoding) throws IOException {
-        byte[] bytes = encoding != null ? input.getBytes(encoding) : input.getBytes(UTF_8);
-        return new ByteArrayInputStream(bytes);
-    }
 
     // write byte[]
     //-----------------------------------------------------------------------
@@ -947,26 +697,6 @@ public class IOUtils {
         return count;
     }
 
-    /**
-     * Copy bytes from an <code>InputStream</code> to chars on a
-     * <code>Writer</code> using the default character encoding of the platform.
-     * <p>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedInputStream</code>.
-     * <p>
-     * This method uses {@link InputStreamReader}.
-     *
-     * @param input  the <code>InputStream</code> to read from
-     * @param output  the <code>Writer</code> to write to
-     * @throws NullPointerException if the input or output is null
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 1.1
-     */
-    public static void copy(InputStream input, Writer output)
-            throws IOException {
-        InputStreamReader in = new InputStreamReader(input, UTF_8);
-        copy(in, output);
-    }
 
     /**
      * Copy bytes from an <code>InputStream</code> to chars on a
@@ -987,14 +717,10 @@ public class IOUtils {
      * @throws IOException if an I/O error occurs
      * @since Commons IO 1.1
      */
-    public static void copy(InputStream input, Writer output, String encoding)
+    public static void copy(InputStream input, Writer output, Charset charset)
             throws IOException {
-        if (encoding == null) {
-            copy(input, output);
-        } else {
-            InputStreamReader in = new InputStreamReader(input, encoding);
-            copy(in, output);
-        }
+        InputStreamReader in = new InputStreamReader(input, charset);
+        copy(in, output);
     }
 
     // copy from Reader
@@ -1096,22 +822,17 @@ public class IOUtils {
      *
      * @param input  the <code>Reader</code> to read from
      * @param output  the <code>OutputStream</code> to write to
-     * @param encoding  the encoding to use, null means platform default
+     * @param charset  the charset to use
      * @throws NullPointerException if the input or output is null
      * @throws IOException if an I/O error occurs
      * @since Commons IO 1.1
      */
-    public static void copy(Reader input, OutputStream output, String encoding)
+    public static void copy(InputStream input, StringWriter output, Charset charset)
             throws IOException {
-        if (encoding == null) {
-            copy(input, output);
-        } else {
-            OutputStreamWriter out = new OutputStreamWriter(output, encoding);
-            copy(input, out);
+        copy(new InputStreamReader(input, charset), output);
             // XXX Unless anyone is planning on rewriting OutputStreamWriter,
             // we have to flush here.
-            out.flush();
-        }
+        output.flush();
     }
 
     // content equals
@@ -1221,6 +942,46 @@ public class IOUtils {
     }
 
     /**
+     * Reads bytes from an input stream.
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link InputStream}.
+     *
+     * @param input where to read input from
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &gt;= 0
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IOException if a read error occurs
+     * @since 2.2
+     */
+    public static int read(final InputStream input, final byte[] buffer)
+            throws IOException {
+        return read(input, buffer, 0, buffer.length);
+    }
+
+    /**
+     * Wrapper around {@link #read(InputStream, byte[], int, int)}.
+     *
+     *
+     * @param input
+     * @param buffer
+     * @throws IOException on IOException or EOFException if the
+     *  read length != buffer.length
+     */
+    public static void readFully(final InputStream input, final byte[] buffer) throws IOException {
+        readFully(input, buffer, 0, buffer.length);
+    }
+
+    public static void readFully(final InputStream input, final byte[] buffer,
+                                 int start, int length) throws IOException {
+        int read = read(input, buffer, 0, buffer.length);
+        if (read != buffer.length) {
+            throw new EOFException("expected "+buffer.length + " but only read: "+read);
+        }
+    }
+
+    /**
      * Skips bytes from an input byte stream.
      * This implementation guarantees that it will read as many bytes
      * as possible before giving up; this may not always be the case for
@@ -1283,5 +1044,16 @@ public class IOUtils {
             remain -= n;
         }
         return toSkip - remain;
+    }
+
+    public static void skipFully(InputStream is, long toSkip) throws IOException {
+        long skipped = skip(is, toSkip);
+        if (skipped < toSkip) {
+            throw new EOFException("tried to skip "+toSkip+" but skipped "+skipped);
+        }
+    }
+
+    public static InputStream toInputStream(String s, Charset charset) {
+        return new ByteArrayInputStream(s.getBytes(charset));
     }
 }

@@ -29,7 +29,7 @@
     </constructor-arg>
   </bean>
 
-  <bean id="txt" class="org.apache.tika.parser.txt.TXTParser"/>
+  <bean id="txt" class="TXTParser"/>
   <bean id="pdf" class="org.apache.tika.parser.pdf.PDFParser"/>
 <!--<end id="spring"/>-->
 

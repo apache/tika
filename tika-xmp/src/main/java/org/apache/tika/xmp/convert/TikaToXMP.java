@@ -27,8 +27,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
+import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.odf.OpenDocumentParser;
-import org.apache.tika.parser.rtf.RTFParser;
 
 import com.adobe.xmp.XMPException;
 import com.adobe.xmp.XMPMeta;

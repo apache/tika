@@ -1,0 +1,111 @@
+MIME-Version: 1.0
+Sender: digitalpebble@googlemail.com
+Received: by 10.231.31.200 with HTTP; Mon, 27 Sep 2010 06:29:16 -0700 (PDT)
+Date: Mon, 27 Sep 2010 14:29:16 +0100
+Delivered-To: digitalpebble@gmail.com
+X-Google-Sender-Auth: it4o8JYLKcQ5bHJbTpqDhZv46vk
+Message-ID: <AANLkTim+Ci7cg_me+vgQ8YjKEKyKt+nRi3riHPZKuHRF@mail.gmail.com>
+Subject: Test Multi Part Message
+From: DigitalPebble <julien@digitalpebble.com>
+To: lists.digitalpebble@gmail.com
+Content-Type: multipart/mixed; boundary=0016e64606800312ee04913db790
+
+--0016e64606800312ee04913db790
+Content-Type: multipart/alternative; boundary=0016e64606800312ea04913db78e
+
+--0016e64606800312ea04913db78e
+Content-Type: text/plain; charset=UTF-8
+
+This is a test for parsing multi-part mails. With some funky HTML code an a
+picture attached.
+
+Text specific to body 1.
+
+-- 
+**
+*
+Open Source Solutions for Text Engineering
+
+http://digitalpebble.blogspot.com
+http://www.digitalpebble.com*
+
+--0016e64606800312ea04913db78e
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+This is a test for parsing multi-part mails. With<span style=3D"color: rgb(=
+204, 0, 0);"> some funky HTML code</span> an a picture attached.<br clear=
+=3D"all"><br>-- <br><font face=3D"arial, helvetica, sans-serif"><b><span st=
+yle=3D"font-family: arial; font-weight: normal;"><b style=3D"color: rgb(0, =
+0, 0); font-family: arial,helvetica,sans-serif;"><img src=3D"http://digital=
+pebble.com/img/logo.gif" height=3D"38" width=3D"200"></b></span></b></font>=
+<div>
+<font face=3D"arial, helvetica, sans-serif"><b><span style=3D"font-family: =
+arial; font-weight: normal;"><b style=3D"color: rgb(0, 0, 0); font-family: =
+arial,helvetica,sans-serif;"><span style=3D"font-size: x-small;">=C2=A0</sp=
+an><br style=3D"font-family: arial,helvetica,sans-serif;">
+</b><span style=3D"color: rgb(102, 102, 102); font-family: arial,helvetica,=
+sans-serif;"><span style=3D"color: rgb(51, 51, 51);">Open Source Solutions =
+for Text Engineering</span><br>
+<span style=3D"font-size: x-small;">=C2=A0</span><br>
+</span></span><span style=3D"color: rgb(102, 102, 102);"><span style=3D"fon=
+t-weight: normal;"><a href=3D"http://digitalpebble.blogspot.com" target=3D"=
+_blank">http://digitalpebble.blogspot.com</a></span></span><span style=3D"f=
+ont-weight: normal;"><br style=3D"color: rgb(102, 102, 102);">
+</span>Text specific to body 2.
+<span style=3D"color: rgb(102, 102, 102);"><span style=3D"font-weight: norm=
+al;"><a href=3D"http://www.digitalpebble.com" target=3D"_blank">http://www.=
+digitalpebble.com</a></span></span></b></font></div><br>
+
+--0016e64606800312ea04913db78e--
+--0016e64606800312ee04913db790
+Content-Type: image/gif; name="logo.gif"
+Content-Disposition: attachment; filename="logo.gif"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_geldjvqq0
+
+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
+--0016e64606800312ee04913db790--

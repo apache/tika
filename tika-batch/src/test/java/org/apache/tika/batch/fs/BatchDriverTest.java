@@ -31,7 +31,6 @@ import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.junit.Ignore;
 import org.junit.Test;
 
-
 public class BatchDriverTest extends FSBatchTestBase {
 
     //for debugging, turn logging off/on via resources/log4j.properties for the driver

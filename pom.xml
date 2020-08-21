@@ -37,8 +37,9 @@
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>
-    <module>tika-parsers</module>
-    <module>tika-bundle</module>
+    <module>tika-parser-modules</module>
+
+<!--    <module>tika-bundle</module> turn this off for now -->
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
@@ -50,8 +51,8 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-eval</module>
-    <module>tika-dl</module>
-    <module>tika-nlp</module>
+    <module>tika-advanced-parser-modules</module>
+    <module>tika-parsers</module>
   </modules>
 
   <profiles>

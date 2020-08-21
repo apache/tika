@@ -32,8 +32,14 @@ import java.util.Map;
 
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
+import org.junit.Ignore;
 import org.junit.Test;
 
+/**
+ * This runs a single process.  This was useful during development,
+ * but we don't need it because it is duplicative of {@link BatchDriverTest}
+ */
+@Ignore("Batch Driver is the integration test")
 public class BatchProcessTest extends FSBatchTestBase {
 
     @Test(timeout = 15000)

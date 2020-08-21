@@ -19,7 +19,6 @@ package org.apache.tika.extractor;
 
 import org.apache.tika.batch.DigestingAutoDetectParserFactory;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;

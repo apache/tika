@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +34,9 @@ public abstract class LanguageDetectorTest {
     protected String[] getTestLanguages() throws IOException {
     	List<String> result = new ArrayList<>();
     	
-    	List<String> lines = IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("language-codes.txt"));
+    	List<String> lines = IOUtils.readLines(
+    	        LanguageDetectorTest.class.getResourceAsStream("language-codes.txt"),
+                UTF_8);
     	for (String line : lines) {
     		line = line.trim();
     		if (line.isEmpty() || line.startsWith("#")) {
