@@ -23,9 +23,8 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-parent</artifactId>
+    <artifactId>tika-advanced-parser-modules</artifactId>
     <version>2.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
   <artifactId>tika-dl</artifactId>
