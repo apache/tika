@@ -93,6 +93,7 @@ public class XMLTestBase extends TikaTest {
             outZip.write(bytes);
             outZip.closeEntry();
         }
+        input.close();
         outZip.flush();
         outZip.close();
 
