@@ -19,9 +19,9 @@
     <!-- Explicitly request default parsers -->
     <parsers/>
     <encodingDetectors>
-        <!-- All detectors except HtmlEncodingDetector -->
+        <!-- All detectors except StandardHtmlEncodingDetector -->
         <encodingDetector class="org.apache.tika.detect.DefaultEncodingDetector">
-            <encodingDetector-exclude class="org.apache.tika.parser.html.HtmlEncodingDetector"/>
+            <encodingDetector-exclude class="org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector"/>
         </encodingDetector>
         <!-- One other detector, to check ordering -->
         <encodingDetector class="org.apache.tika.detect.NonDetectingEncodingDetector"/>
