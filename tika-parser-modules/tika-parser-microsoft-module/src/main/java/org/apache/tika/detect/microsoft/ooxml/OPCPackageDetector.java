@@ -43,6 +43,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
@@ -107,11 +108,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
     );
 
     private static Set<String> fillSet(String ... args) {
-        Set<String> tmp = new HashSet<>();
-        for (String arg : args) {
-            tmp.add(arg);
-        }
-        return Collections.unmodifiableSet(tmp);
+        return Collections.unmodifiableSet(new HashSet<>((Arrays.asList(args))));
     }
 
     static Map<String, MediaType> OOXML_CONTENT_TYPES = new ConcurrentHashMap<>();
