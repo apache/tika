@@ -28,7 +28,7 @@ public abstract class AbstractConsumersBuilder {
 
   public static int getDefaultNumConsumers(){
     int n = Runtime.getRuntime().availableProcessors()-1;
-    return (n < 1) ? 1 : n;
+    return Math.max(n, 1);
   }
 
   public abstract ConsumersManager build(Node node, Map<String, String> runtimeAttributes,
