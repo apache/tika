@@ -12,8 +12,6 @@
     <artifactId>tika-parser-scientific-module</artifactId>
 
     <properties>
-        <netcdf-java.version>4.5.5</netcdf-java.version>
-        <sis.version>1.0</sis.version>
 
     </properties>
 
@@ -42,7 +40,7 @@
         <dependency>
             <groupId>org.opengis</groupId>
             <artifactId>geoapi</artifactId>
-            <version>3.0.1</version>
+            <version>${geoapi.version}</version>
         </dependency>
         <!-- edu.ucar dependencies -->
         <dependency>

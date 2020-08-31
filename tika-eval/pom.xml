@@ -54,7 +54,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.6.1</version>
+            <version>${commons.math3.version}</version>
         </dependency>
 
         <!-- check if exclusion from oss-index check
@@ -62,7 +62,7 @@
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>1.4.200</version>
+            <version>${h2.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

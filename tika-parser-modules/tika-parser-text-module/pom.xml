@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.googlecode.juniversalchardet</groupId>
             <artifactId>juniversalchardet</artifactId>
-            <version>1.0.3</version>
+            <version>${juniversalchardet.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>

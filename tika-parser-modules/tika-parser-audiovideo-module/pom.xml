@@ -11,10 +11,6 @@
 
     <artifactId>tika-parser-audiovideo-module</artifactId>
 
-    <properties>
-        <isoparser.version>1.9.41.2</isoparser.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.tallison</groupId>

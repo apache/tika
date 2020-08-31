@@ -97,7 +97,7 @@
     <dependency>
       <groupId>org.tallison.xmp</groupId>
       <artifactId>xmpcore-shaded</artifactId>
-      <version>6.1.10</version>
+      <version>${xmpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
