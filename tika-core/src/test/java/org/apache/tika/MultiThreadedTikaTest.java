@@ -103,7 +103,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         for (Path testFile : truth.keySet()) {
             testFiles[j++] = testFile;
         }
-        int actualThreadCount = numThreads + ((randomlyResizeSAXPool > 0) ? randomlyResizeSAXPool : 0);
+        int actualThreadCount = numThreads + Math.max(randomlyResizeSAXPool, 0);
         ExecutorService ex = Executors.newFixedThreadPool(actualThreadCount);
         try {
             _testDetectorOnAll(detector, testFiles, numThreads, numIterations, truth, ex, randomlyResizeSAXPool);
