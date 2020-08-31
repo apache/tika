@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -18,211 +17,82 @@
   specific language governing permissions and limitations
   under the License.
 -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>tika-parent</artifactId>
+        <groupId>org.apache.tika</groupId>
+        <version>2.0.0-SNAPSHOT</version>
+        <relativePath>../tika-parent/pom.xml</relativePath>
+    </parent>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.apache.tika</groupId>
-    <artifactId>tika-parent</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
-  </parent>
+    <artifactId>tika-parser-modules</artifactId>
+    <packaging>pom</packaging>
+    <name>Apache Tika parser modules</name>
+    <url>http://tika.apache.org/</url>
 
-  <artifactId>tika-parsers</artifactId>
-  <name>Apache Tika parsers</name>
-  <url>http://tika.apache.org/</url>
-
+    <properties>
+        <jempbox.version>1.8.16</jempbox.version>
+        <mime4j.version>0.8.3</mime4j.version>
+        <pdfbox.version>2.0.21</pdfbox.version>
+        <jempbox.version>1.8.16</jempbox.version>
+        <tagsoup.version>1.2.1</tagsoup.version>
+        <commons.logging.version>1.2</commons.logging.version>
+        <commons.collections4.version>4.4</commons.collections4.version>
+        <commons.csv.version>1.8</commons.csv.version>
+        <!-- used by POI, PDFBox and Jackcess ...try to sync -->
+        <bouncycastle.version>1.65</bouncycastle.version>
+        <parso.version>2.0.11</parso.version>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-apple-module</artifactId>
+            <artifactId>tika-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- test dependencies -->
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-audiovideo-module</artifactId>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
             <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-cad-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-code-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-crypto-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <!-- skip db -->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-digest-commons</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-font-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-html-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-image-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-mail-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-microsoft-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-miscoffice-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <!-- news? -->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-ocr-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-pdf-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-pkg-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <!--skip scientific -->
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-text-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parser-xml-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- externally maintained parsers -->
-        <dependency>
-            <groupId>org.gagravarr</groupId>
-            <artifactId>vorbis-java-tika</artifactId>
-            <version>${vorbis.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.tika</groupId>
-                    <artifactId>tika-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.gagravarr</groupId>
-            <artifactId>vorbis-java-core</artifactId>
-            <version>${vorbis.version}</version>
-        </dependency>
-
     </dependencies>
+    <modules>
+        <module>tika-parser-jdbc-commons</module>
+        <module>tika-parser-digest-commons</module>
+        <module>tika-parser-mail-commons</module>
+        <module>tika-parser-xmp-commons</module>
+        <module>tika-parser-zip-commons</module>
 
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shade.version}</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <createDependencyReducedPom>
-                                false
-                            </createDependencyReducedPom>
-                            <filters>
-                                <filter>
-                                    <artifact>*:*</artifact>
-                                    <excludes>
-                                        <exclude>META-INF/*.SF</exclude>
-                                        <exclude>META-INF/*.DSA</exclude>
-                                        <exclude>META-INF/*.RSA</exclude>
-                                    </excludes>
-                                </filter>
-                            </filters>
-                            <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer">
-                                    <addHeader>false</addHeader>
-                                </transformer>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                                    <resource>META-INF/LICENSE</resource>
-                                    <file>target/classes/META-INF/LICENSE</file>
-                                </transformer>
-                                <!--                                <transformer
-                                                                        implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                                                                    <resource>META-INF/DEPENDENCIES</resource>
-                                                                    <file>target/classes/META-INF/DEPENDENCIES</file>
-                                                                </transformer> -->
-                            </transformers>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <Automatic-Module-Name>org.apache.tika.app</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>test-jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.rat</groupId>
-                <artifactId>apache-rat-plugin</artifactId>
-                <version>${rat.version}</version>
-                <configuration>
-                    <excludes>
-                        <exclude>src/test/resources/test-data/**</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+        <module>tika-parser-ocr-module</module>
+        <module>tika-parser-audiovideo-module</module>
+        <module>tika-parser-code-module</module>
+        <module>tika-parser-html-module</module>
+        <module>tika-parser-image-module</module>
+        <module>tika-parser-text-module</module>
+        <module>tika-parser-font-module</module>
+        <module>tika-parser-microsoft-module</module>
+        <module>tika-parser-pkg-module</module>
+        <module>tika-parser-xml-module</module>
+        <module>tika-parser-pdf-module</module>
+        <module>tika-parser-apple-module</module>
+        <module>tika-parser-cad-module</module>
+        <module>tika-parser-mail-module</module>
+        <module>tika-parser-miscoffice-module</module>
+        <module>tika-parser-news-module</module>
+        <module>tika-parser-crypto-module</module>
+        <module>tika-parser-integration-tests</module>
+    </modules>
 
 </project>
