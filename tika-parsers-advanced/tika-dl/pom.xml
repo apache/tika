@@ -33,12 +33,6 @@
   <name>Apache Tika Deep Learning (powered by DL4J)</name>
   <url>http://maven.apache.org</url>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <dl4j.version>1.0.0-beta6</dl4j.version>
-    <twelvemonkeys.version>3.5</twelvemonkeys.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

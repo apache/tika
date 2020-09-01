@@ -209,7 +209,7 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>${codec.version}</version>
+            <version>${commons.codec.version}</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
