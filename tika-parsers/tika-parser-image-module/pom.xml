@@ -11,12 +11,6 @@
 
     <artifactId>tika-parser-image-module</artifactId>
 
-    <properties>
-        <imageio.version>1.4.0</imageio.version>
-        <jbig2.version>3.0.3</jbig2.version>
-        <metadata.extractor.version>2.14.0</metadata.extractor.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.tallison</groupId>

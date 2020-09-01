@@ -20,7 +20,7 @@
         <dependency>
             <groupId>org.codelibs</groupId>
             <artifactId>jhighlight</artifactId>
-            <version>1.0.3</version>
+            <version>${jhighlight.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-io</groupId>

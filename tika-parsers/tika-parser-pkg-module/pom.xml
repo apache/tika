@@ -12,12 +12,6 @@
     <artifactId>tika-parser-pkg-module</artifactId>
 
 
-    <properties>
-        <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
-        <tukaani.version>1.8</tukaani.version>
-        <!-- NOTE: sync brotli version with commons-compress in tika-parent-->
-        <brotli.version>0.1.2</brotli.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.tukaani</groupId>

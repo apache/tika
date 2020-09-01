@@ -56,12 +56,12 @@
         <dependency>
             <groupId>com.github.openjson</groupId>
             <artifactId>openjson</artifactId>
-            <version>1.0.12</version>
+            <version>${openjson.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.1.1</version>
+            <version>${javax.rest.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
