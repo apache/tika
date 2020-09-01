@@ -29,24 +29,11 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-parser-modules</artifactId>
+    <artifactId>tika-parsers</artifactId>
     <packaging>pom</packaging>
     <name>Apache Tika parser modules</name>
     <url>http://tika.apache.org/</url>
 
-    <properties>
-        <jempbox.version>1.8.16</jempbox.version>
-        <mime4j.version>0.8.3</mime4j.version>
-        <pdfbox.version>2.0.21</pdfbox.version>
-        <jempbox.version>1.8.16</jempbox.version>
-        <tagsoup.version>1.2.1</tagsoup.version>
-        <commons.logging.version>1.2</commons.logging.version>
-        <commons.collections4.version>4.4</commons.collections4.version>
-        <commons.csv.version>1.8</commons.csv.version>
-        <!-- used by POI, PDFBox and Jackcess ...try to sync -->
-        <bouncycastle.version>1.65</bouncycastle.version>
-        <parso.version>2.0.11</parso.version>
-    </properties>
 
     <dependencies>
         <dependency>
