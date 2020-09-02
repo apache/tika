@@ -36,10 +36,14 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parsers</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons.io.version}</version>
     </dependency>
     <!-- AgePredictor client for Tika -->
     <dependency>  

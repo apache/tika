@@ -82,11 +82,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>biz.aQute</groupId>
       <artifactId>bndlib</artifactId>
       <scope>provided</scope>
