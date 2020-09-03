@@ -40,17 +40,6 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-app</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>tika-parsers</artifactId>
-          <groupId>org.apache.tika</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parsers</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -70,7 +59,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-langdetect</artifactId>
+      <artifactId>tika-langdetect-optimaize</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

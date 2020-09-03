@@ -104,8 +104,8 @@ def agePrefixPath = "src/test/resources/org/apache/tika/parser/recognition/"
 // detecting proper path for test resources
 if (new File("tika-parsers").exists() && new File("tika-app").exists()  ) {
     // running from parent maven project, but resources should go to sub-module
-    prefixPath = "tika-parsers/" + prefixPath
-    agePrefixPath = "tika-parsers/" + agePrefixPath
+    prefixPath = "tika-parsers-advanced/tika-parser-nlp-module/" + prefixPath
+    agePrefixPath = "tika-parsers-advanced/tika-nlp/" + agePrefixPath
 }
 
 def modelFiles = //filePath : url
