@@ -22,10 +22,10 @@ import java.util.Map;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.util.FastMath;
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.tokens.LangModel;
 import org.apache.tika.eval.tokens.TokenCounts;
+import org.apache.tika.language.detect.LanguageResult;
 
 public class CommonTokensBhattacharyya implements LanguageAwareTokenCountStats<Double> {
 
@@ -36,7 +36,7 @@ public class CommonTokensBhattacharyya implements LanguageAwareTokenCountStats<D
     }
 
     @Override
-    public Double calculate(List<Language> languages, TokenCounts tokenCounts) {
+    public Double calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
         Pair<String, LangModel> pair = commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
         LangModel model = pair.getValue();
         double sum = 0.0;

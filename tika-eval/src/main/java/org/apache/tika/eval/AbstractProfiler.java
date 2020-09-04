@@ -48,7 +48,6 @@ import org.apache.tika.eval.db.Cols;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.ExtractReaderException;
 import org.apache.tika.eval.io.IDBWriter;
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.textstats.CommonTokens;
@@ -68,6 +67,7 @@ import org.apache.tika.eval.util.ContentTagParser;
 import org.apache.tika.eval.util.ContentTags;
 import org.apache.tika.eval.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -586,17 +586,17 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     }
 
     void langid(Map<Class, Object> stats, Map<Cols, String> data) {
-        List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities = (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
 
         if (probabilities.size() > 0) {
             data.put(Cols.LANG_ID_1, probabilities.get(0).getLanguage());
             data.put(Cols.LANG_ID_PROB_1,
-                    Double.toString(probabilities.get(0).getConfidence()));
+                    Double.toString(probabilities.get(0).getRawScore()));
         }
         if (probabilities.size() > 1) {
             data.put(Cols.LANG_ID_2, probabilities.get(1).getLanguage());
             data.put(Cols.LANG_ID_PROB_2,
-                    Double.toString(probabilities.get(1).getConfidence()));
+                    Double.toString(probabilities.get(1).getRawScore()));
         }
     }
 

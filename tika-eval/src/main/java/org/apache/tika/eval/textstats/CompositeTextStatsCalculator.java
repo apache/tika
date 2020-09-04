@@ -17,25 +17,20 @@
 package org.apache.tika.eval.textstats;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.BytesTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.util.BytesRef;
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.tokens.AnalyzerManager;
 import org.apache.tika.eval.tokens.TokenCounts;
-import org.apache.tika.metadata.Message;
+import org.apache.tika.language.detect.LanguageResult;
 
 
 public class CompositeTextStatsCalculator {
@@ -111,7 +106,7 @@ public class CompositeTextStatsCalculator {
         }
 
         if (languageAwareTokenCountStats.size() > 0) {
-            List<Language> langs = results.containsKey(LanguageIDWrapper.class) ?
+            List<LanguageResult> langs = results.containsKey(LanguageIDWrapper.class) ?
                     (List)results.get(LanguageIDWrapper.class) : languageIDWrapper.calculate(txt);
             results.put(LanguageIDWrapper.class, langs);
             for (LanguageAwareTokenCountStats calc : languageAwareTokenCountStats) {

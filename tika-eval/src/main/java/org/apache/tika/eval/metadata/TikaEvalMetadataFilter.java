@@ -17,7 +17,6 @@
 package org.apache.tika.eval.metadata;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.textstats.CommonTokens;
@@ -26,6 +25,7 @@ import org.apache.tika.eval.textstats.TextStatsCalculator;
 import org.apache.tika.eval.tokens.CommonTokenResult;
 import org.apache.tika.eval.tokens.TokenCounts;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -94,10 +94,10 @@ public class TikaEvalMetadataFilter implements MetadataFilter {
         }
 
         //languages
-        List<Language> probabilities = (List<Language>) results.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities = (List<LanguageResult>) results.get(LanguageIDWrapper.class);
         if (probabilities.size() > 0) {
             metadata.set(LANGUAGE, probabilities.get(0).getLanguage());
-            metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getConfidence());
+            metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());
         }
     }
 

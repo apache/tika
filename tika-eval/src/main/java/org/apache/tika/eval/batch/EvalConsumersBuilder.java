@@ -57,18 +57,6 @@ public class EvalConsumersBuilder extends AbstractConsumersBuilder {
         String jdbcConnectionString = localAttrs.get("jdbc");
 
 
-        Path langModelDir = getPath(localAttrs, "langModelDir");
-
-        try {
-            if (langModelDir == null) {
-                LanguageIDWrapper.loadBuiltInModels();
-            } else {
-                LanguageIDWrapper.loadModels(langModelDir);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
         Path commonTokens = getPath(localAttrs, "commonTokens");
         String defaultLangCode = localAttrs.get("defaultLangCode");
         if (defaultLangCode == null) {

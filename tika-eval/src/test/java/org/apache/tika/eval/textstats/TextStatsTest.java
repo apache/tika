@@ -18,9 +18,9 @@ package org.apache.tika.eval.textstats;
 
 import org.apache.commons.codec.binary.Base32;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
 import org.apache.tika.eval.tokens.CommonTokenResult;
+import org.apache.tika.language.detect.LanguageResult;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
@@ -60,9 +60,9 @@ public class TextStatsTest {
 
         assertEquals(3.12, (double)stats.get(TokenEntropy.class), 0.01);
 
-        List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities = (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
         assertEquals("eng", probabilities.get(0).getLanguage());
-        assertEquals(0.02, probabilities.get(1).getConfidence(), 0.01);
+        assertEquals(0.02, probabilities.get(1).getRawScore(), 0.01);
 
         String textProfileSignature = (String)stats.get(TextProfileSignature.class);
         assertEquals("XF3W27O7IWOJVVNQ4HLKYYPCPPX3L2M72YSEMZ3WADL4VTXVITIA====", textProfileSignature);
@@ -82,9 +82,9 @@ public class TextStatsTest {
 
         Map<Class, Object> stats = calc.calculate(txt);
 
-        List<Language> probabilities = (List<Language>) stats.get(LanguageIDWrapper.class);
+        List<LanguageResult> probabilities = (List<LanguageResult>) stats.get(LanguageIDWrapper.class);
         assertEquals("cmn", probabilities.get(0).getLanguage());
-        assertEquals(0.009, probabilities.get(1).getConfidence(), 0.01);
+        assertEquals(0.009, probabilities.get(1).getRawScore(), 0.01);
 
 
         String textProfileSignature = (String)stats.get(TextProfileSignature.class);

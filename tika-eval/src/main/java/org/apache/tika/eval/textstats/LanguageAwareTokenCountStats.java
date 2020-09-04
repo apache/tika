@@ -18,13 +18,13 @@ package org.apache.tika.eval.textstats;
 
 import java.util.List;
 
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.tokens.TokenCounts;
+import org.apache.tika.language.detect.LanguageResult;
 
 /**
  * Interface for calculators that require language probabilities and token stats
  * @param <T>
  */
 public interface LanguageAwareTokenCountStats<T> extends TextStatsCalculator {
-    T calculate(List<Language> languages, TokenCounts tokenCounts);
+    T calculate(List<LanguageResult> languages, TokenCounts tokenCounts);
 }

@@ -93,7 +93,8 @@
                commonTokens="resources/common_tokens"
     />
 
-    <!--               langModelDir="resources/langmodels" -->
+    <!--  this is no longer implemented
+        langModelDir="resources/langmodels" -->
 
     <!-- reporter and interrupter are optional -->
     <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" sleepMillis="1000"

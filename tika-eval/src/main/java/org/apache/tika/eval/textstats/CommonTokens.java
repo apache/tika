@@ -22,12 +22,12 @@ import java.util.Set;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.tokens.AlphaIdeographFilterFactory;
 import org.apache.tika.eval.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.tokens.CommonTokenResult;
 import org.apache.tika.eval.tokens.LangModel;
 import org.apache.tika.eval.tokens.TokenCounts;
+import org.apache.tika.language.detect.LanguageResult;
 
 public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenResult> {
 
@@ -41,8 +41,9 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
     }
 
     @Override
-    public CommonTokenResult calculate(List<Language> languages, TokenCounts tokenCounts) {
-        Pair<String, LangModel> pair = commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
+    public CommonTokenResult calculate(List<LanguageResult> languages, TokenCounts tokenCounts) {
+        Pair<String, LangModel> pair = commonTokenCountManager.getLangTokens(languages.get(0)
+                .getLanguage());
         String actualLangCode = pair.getKey();
         Set<String> commonTokens = pair.getValue().getTokens();
         int numUniqueCommonTokens = 0;

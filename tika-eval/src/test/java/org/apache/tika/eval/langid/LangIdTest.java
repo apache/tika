@@ -28,10 +28,6 @@ import org.junit.Test;
 
 public class LangIdTest {
 
-    @BeforeClass
-    public static void init() throws Exception {
-        LanguageIDWrapper.loadBuiltInModels();
-    }
 
     @Test
     public void testCommonTokensCoverage() throws Exception {
@@ -39,6 +35,7 @@ public class LangIdTest {
         //language
         LanguageIDWrapper wrapper = new LanguageIDWrapper();
         CommonTokenCountManager commonTokens = new CommonTokenCountManager(null, "eng");
+
         for (String lang : wrapper.getSupportedLanguages()) {
             Set<String> tokens = commonTokens.getTokens(lang);
             if (tokens.size() == 0) {

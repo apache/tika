@@ -1,4 +1,4 @@
-package org.apache.tika.eval.langid;
+package org.apache.tika.langdetect.opennlp;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -26,12 +26,6 @@ import opennlp.tools.langdetect.LanguageDetector;
 import opennlp.tools.langdetect.LanguageDetectorModel;
 import opennlp.tools.util.normalizer.AggregateCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.CharSequenceNormalizer;
-import opennlp.tools.util.normalizer.EmojiCharSequenceNormalizer;
-import opennlp.tools.util.normalizer.NumberCharSequenceNormalizer;
-import opennlp.tools.util.normalizer.ShrinkCharSequenceNormalizer;
-import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
-import opennlp.tools.util.normalizer.UrlCharSequenceNormalizer;
-import org.apache.commons.lang3.mutable.MutableInt;
 
 /**
  * Implements learnable Language Detector.
@@ -102,6 +96,7 @@ class ProbingLanguageDetector implements LanguageDetector {
     private CharSequenceNormalizer normalizer;
 
     private LanguageDetectorModel model;
+
     /**
      * Initializes the current instance with a language detector model. Default feature
      * generation is used.
@@ -426,6 +421,21 @@ class ProbingLanguageDetector implements LanguageDetector {
             if (buffer.length >= minGram) {
                 next = new String(buffer, 0, minGram);
             }
+        }
+    }
+
+    private static class MutableInt {
+        private int i;
+        MutableInt() {
+            this(0);
+        }
+
+        MutableInt(int i) {
+            this.i = i;
+        }
+
+        void increment() {
+            i++;
         }
     }
 }

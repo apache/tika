@@ -19,8 +19,8 @@ package org.apache.tika.eval.util;
 import java.util.List;
 
 
-import org.apache.tika.eval.langid.Language;
 import org.apache.tika.eval.langid.LanguageIDWrapper;
+import org.apache.tika.language.detect.LanguageResult;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,9 +32,8 @@ public class LanguageIdTest {
         for (int i = 0; i < 50000; i++) {
             sb.append("a");
         }
-        LanguageIDWrapper.loadBuiltInModels();
         LanguageIDWrapper wrapper = new LanguageIDWrapper();
-        List<Language> languages = wrapper.getProbabilities(sb.toString());
+        List<LanguageResult> languages = wrapper.calculate(sb.toString());
         Assert.assertEquals("mri", languages.get(0).getLanguage());
     }
 }

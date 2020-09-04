@@ -60,7 +60,6 @@ public class SimpleComparerTest extends TikaTest {
         WRITER = new MockDBWriter();
         AbstractProfiler.loadCommonTokens(
                 Paths.get(SimpleComparerTest.class.getResource("/common_tokens").toURI()), "en");
-        LanguageIDWrapper.loadBuiltInModels();
     }
 
     @Before

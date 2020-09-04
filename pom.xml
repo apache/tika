@@ -40,7 +40,6 @@
     <module>tika-parser-modules</module>
     <module>tika-parsers</module>
     <module>tika-parsers-extended</module>
-
 <!--    <module>tika-bundle</module> turn this off for now -->
     <module>tika-xmp</module>
     <module>tika-serialization</module>
