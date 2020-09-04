@@ -25,7 +25,7 @@
     <version>2.0.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tika-nlp</artifactId>
+  <artifactId>tika-age-recogniser</artifactId>
   <packaging>jar</packaging>
 
   <name>Apache Tika Natural Language Processing</name>
@@ -280,8 +280,8 @@
                             <copy failonerror="false" file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-pos-maxent.bin" todir="${basedir}/model/opennlp/" />
                             <copy failonerror="false" file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-sent.bin" todir="${basedir}/model/opennlp/" />
 			                <copy failonerror="false" file="${basedir}/../tika-parser-nlp-module/src/test/resources/org/apache/tika/parser/ner/opennlp/en-token.bin" todir="${basedir}/model/opennlp/" />
-			                <copy failonerror="false" file="${basedir}/../tika-nlp/src/test/resources/org/apache/tika/parser/recognition/classify-bigram.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/" />
-			                <copy failonerror="false" file="${basedir}/../tika-nlp/src/test/resources/org/apache/tika/parser/recognition/regression-global.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/" />
+			                <copy failonerror="false" file="${basedir}/../tika-age-recogniser/src/test/resources/org/apache/tika/parser/recognition/classify-bigram.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/" />
+			                <copy failonerror="false" file="${basedir}/../tika-age-recogniser/src/test/resources/org/apache/tika/parser/recognition/regression-global.bin" todir="${basedir}/model/org/apache/tika/parser/recognition/" />
                         </target>
                     </configuration>
                 </execution>

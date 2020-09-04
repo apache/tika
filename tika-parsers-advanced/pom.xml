@@ -36,7 +36,7 @@
         <module>tika-parser-nlp-module</module>
         <!-- needs to come after tika-parser-nlp-module because tika-parser-nlp-module
              downloads model files -->
-        <module>tika-nlp</module>
+        <module>tika-age-recogniser</module>
         <module>tika-parser-advancedmedia-module</module>
         <module>tika-dl</module>
     </modules>
