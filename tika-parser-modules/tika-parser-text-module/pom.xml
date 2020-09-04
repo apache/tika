@@ -73,8 +73,15 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>${rat.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
+                        <exclude>src/test/resources/test-documents/**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
