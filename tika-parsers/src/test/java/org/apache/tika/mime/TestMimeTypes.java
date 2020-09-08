@@ -430,6 +430,14 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testAVIFDetection() throws Exception {
+        // The test file is an avif header fragment only, not a complete image.
+        assertType("image/avif", "testAVIF.avif");
+        assertTypeByData("image/avif", "testAVIF.avif");
+        assertTypeByName("image/avif", "testAVIF.avif");
+    }
+
+    @Test
     public void testHeifDetection() throws Exception {
         // HEIF image using the HEVC Codec == HEIC
         //  created using https://compare.rokka.io/_compare on testJPEG_GEO.jpg

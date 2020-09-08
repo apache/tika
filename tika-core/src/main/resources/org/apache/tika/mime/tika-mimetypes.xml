@@ -5643,7 +5643,17 @@
     </magic>
     <glob pattern="*.webp"/>
   </mime-type>
-
+  <mime-type type="image/avif">
+    <!-- According to https://github.com/libvips/libvips/pull/1657
+      older avif used to use the the heif 'ftypmif1' as well -->
+    <_comment>AV1 Image File</_comment>
+    <acronym>AVIF</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/AV1#AV1_Image_File_Format_(AVIF)</tika:link>
+    <magic priority="60">
+      <match value="ftypavif" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.avif"/>
+  </mime-type>
   <mime-type type="image/heic">
     <tika:link>https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format</tika:link>
     <magic priority="50">
