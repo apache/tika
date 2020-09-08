@@ -27,6 +27,7 @@ import java.util.Set;
 import com.healthmarketscience.jackcess.CryptCodecProvider;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
+import com.healthmarketscience.jackcess.DateTimeType;
 import com.healthmarketscience.jackcess.util.LinkResolver;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -97,6 +98,7 @@ public class JackcessParser extends AbstractParser {
                         .setCodecProvider(new CryptCodecProvider(password))
                         .setReadOnly(true).open();
             }
+            db.setDateTimeType(DateTimeType.DATE);
             db.setLinkResolver(IGNORE_LINK_RESOLVER);//just in case
             JackcessExtractor ex = new JackcessExtractor(metadata, context, locale);
             ex.parse(db, xhtml);

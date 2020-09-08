@@ -23,7 +23,6 @@ import java.util.Set;
 
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
-import com.github.junrar.impl.FileVolumeManager;
 import com.github.junrar.rarfile.FileHeader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -72,7 +71,7 @@ public class RarParser extends AbstractParser {
         Archive rar = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
-            rar = new Archive(new FileVolumeManager(tis.getFile()));
+            rar = new Archive(tis.getFile());
 
             if (rar.isEncrypted()) {
                 throw new EncryptedDocumentException();

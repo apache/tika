@@ -100,7 +100,7 @@
     <dependency>
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-jcr-server</artifactId>
-      <version>2.21.1</version>
+      <version>2.21.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.tika</groupId>
@@ -127,7 +127,7 @@
     <dependency>
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-core</artifactId>
-      <version>2.21.1</version>
+      <version>2.21.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.apache.tika</groupId>
@@ -156,7 +156,7 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
-      <version>5.2.7.RELEASE</version>
+      <version>5.2.8.RELEASE</version>
       <exclusions>
         <exclusion>
           <groupId>commons-logging</groupId>
