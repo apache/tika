@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,6 +37,7 @@ import java.util.Set;
 import com.healthmarketscience.jackcess.Column;
 import com.healthmarketscience.jackcess.DataType;
 import com.healthmarketscience.jackcess.Database;
+import com.healthmarketscience.jackcess.DateTimeType;
 import com.healthmarketscience.jackcess.PropertyMap;
 import com.healthmarketscience.jackcess.Row;
 import com.healthmarketscience.jackcess.Table;
@@ -98,7 +100,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         if (pw != null) {
             parentMetadata.set(JackcessParser.MDB_PW, pw);
         }
-
+        db.setDateTimeType(DateTimeType.DATE);
         PropertyMap dbp = db.getDatabaseProperties();
         for (PropertyMap.Property p : dbp) {
             parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
