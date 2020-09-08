@@ -329,13 +329,13 @@
     <pdfbox.version>2.0.21</pdfbox.version>
     <objenesis.version>3.1</objenesis.version>
     <openjson.version>1.0.12</openjson.version>
-    <opennlp.version>1.9.2</opennlp.version>
+    <opennlp.version>1.9.3</opennlp.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.core.version>6.0.0</osgi.core.version>
-    <parso.version>2.0.11</parso.version>
+    <parso.version>2.0.12</parso.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
     <poi.version>4.1.2</poi.version>
-    <rome.version>1.13.1</rome.version>
+    <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
     <slf4j.version>1.7.28</slf4j.version>
     <spring.version>5.2.8.RELEASE</spring.version>
