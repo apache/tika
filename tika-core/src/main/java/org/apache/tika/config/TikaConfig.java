@@ -248,11 +248,11 @@ public class TikaConfig {
     public TikaConfig() throws TikaException, IOException {
 
         String config = System.getProperty("tika.config");
-        if (config == null) {
+        if (config == null || config.trim().equals("")) {
             config = System.getenv("TIKA_CONFIG");
         }
 
-        if (config == null) {
+        if (config == null || config.trim().equals("")) {
             this.serviceLoader = new ServiceLoader();
             this.mimeTypes = getDefaultMimeTypes(getContextClassLoader());
             this.encodingDetector = getDefaultEncodingDetector(serviceLoader);
