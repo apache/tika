@@ -24,8 +24,9 @@ import java.nio.file.Path;
 import java.util.LinkedList;
 
 import org.apache.tika.exception.TikaException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility class for tracking and ultimately closing or otherwise disposing
@@ -37,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TemporaryResources implements Closeable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TemporaryResources.class);
+    private static final Logger LOG = Logger.getLogger(TemporaryResources.class.getName());
 
     /**
      * Tracked resources in LIFO order.
@@ -89,7 +90,7 @@ public class TemporaryResources implements Closeable {
                     Files.delete(path);
                 } catch (IOException e) {
                     // delete when exit if current delete fail
-                    LOG.warn("delete tmp file fail, will delete it on exit");
+                    LOG.log(Level.WARNING, "delete tmp file failed; will delete it on exit");
                     path.toFile().deleteOnExit();
                 }
             }
