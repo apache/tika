@@ -254,6 +254,99 @@
     </contributor>
   </contributors>
 
+  <properties>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
+
+    <!-- plugin versions -->
+    <forbiddenapis.version>3.0.1</forbiddenapis.version>
+    <groovy.maven.version>2.1</groovy.maven.version>
+    <maven.antrun.version>1.8</maven.antrun.version>
+    <maven.assembly.version>3.1.0</maven.assembly.version>
+    <maven.bundle.version>4.1.0</maven.bundle.version>
+    <maven.failsafe.version>2.22.1</maven.failsafe.version>
+    <maven.javadoc.version>3.1.1</maven.javadoc.version>
+    <maven.scr.version>1.26.0</maven.scr.version>
+    <maven.surefire.version>3.0.0-M4</maven.surefire.version>
+    <maven.shade.version>3.2.1</maven.shade.version>
+    <rat.version>0.13</rat.version>
+
+    <!-- dependency versions -->
+    <boilerpipe.version>1.1.0</boilerpipe.version>
+    <!-- used by POI, PDFBox and Jackcess ...try to sync -->
+    <bouncycastle.version>1.65</bouncycastle.version>
+    <!-- NOTE: sync brotli version with commons-compress-->
+    <brotli.version>0.1.2</brotli.version>
+    <commons.cli.version>1.4</commons.cli.version>
+    <commons.codec.version>1.13</commons.codec.version>
+    <commons.collections4.version>4.4</commons.collections4.version>
+    <commons.compress.version>1.20</commons.compress.version>
+    <commons.csv.version>1.8</commons.csv.version>
+    <commons.exec.version>1.3</commons.exec.version>
+    <commons.io.version>2.7</commons.io.version>
+    <commons.lang3.version>3.10</commons.lang3.version>
+    <commons.logging.version>1.2</commons.logging.version>
+    <commons.math3.version>3.6.1</commons.math3.version>
+    <ctakes.version>4.0.0</ctakes.version>
+    <cxf.version>3.3.7</cxf.version>
+    <ddplist.version>1.23</ddplist.version>
+    <dl4j.version>1.0.0-beta6</dl4j.version>
+    <geoapi.version>3.0.1</geoapi.version>
+    <gson.version>2.8.6</gson.version>
+    <guava.version>29.0-jre</guava.version>
+    <h2.version>1.4.200</h2.version>
+    <httpcomponents.version>4.5.12</httpcomponents.version>
+    <imageio.version>1.4.0</imageio.version>
+    <isoparser.version>1.9.41.2</isoparser.version>
+    <jackrabbit.version>2.21.1</jackrabbit.version>
+    <jackson.version>2.11.0</jackson.version>
+    <javax.annotation.version>1.3.2</javax.annotation.version>
+    <javax.jcr.version>2.0</javax.jcr.version>
+    <javax.rest.version>2.1.1</javax.rest.version>
+    <jaxb.version>2.3.3</jaxb.version>
+    <jbig2.version>3.0.3</jbig2.version>
+    <jdom2.version>2.0.6</jdom2.version>
+    <jempbox.version>1.8.16</jempbox.version>
+    <jhighlight.version>1.0.3</jhighlight.version>
+    <joda.time.version>2.10.5</joda.time.version>
+    <json.simple.version>1.1.1</json.simple.version>
+    <juniversalchardet.version>1.0.3</juniversalchardet.version>
+    <libpst.version>0.9.3</libpst.version>
+    <log4j.version>1.2.17</log4j.version>
+    <lombok.version>1.18.12</lombok.version>
+    <lucene.version>8.5.1</lucene.version>
+    <metadata.extractor.version>2.14.0</metadata.extractor.version>
+    <microsoft.translator.version>0.6.2</microsoft.translator.version>
+    <mime4j.version>0.8.3</mime4j.version>
+    <mockito.version>3.3.3</mockito.version>
+    <netcdf-java.version>4.5.5</netcdf-java.version>
+    <opencsv.version>2.3</opencsv.version>
+    <pdfbox.version>2.0.21</pdfbox.version>
+    <objenesis.version>3.1</objenesis.version>
+    <openjson.version>1.0.12</openjson.version>
+    <opennlp.version>1.9.2</opennlp.version>
+    <optimaize.version>0.6</optimaize.version>
+    <osgi.core.version>6.0.0</osgi.core.version>
+    <parso.version>2.0.11</parso.version>
+    <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
+    <poi.version>4.1.2</poi.version>
+    <rome.version>1.13.1</rome.version>
+    <sis.version>1.0</sis.version>
+    <slf4j.version>1.7.28</slf4j.version>
+    <spring.version>5.2.7.RELEASE</spring.version>
+    <sqlite.version>3.31.1</sqlite.version>
+    <tagsoup.version>1.2.1</tagsoup.version>
+    <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
+    <tukaani.version>1.8</tukaani.version>
+    <twelvemonkeys.version>3.5</twelvemonkeys.version>
+    <uima.version>3.1.0</uima.version>
+    <vorbis.version>0.8</vorbis.version>
+    <xerces.version>2.12.0</xerces.version>
+    <xmpcore.version>6.1.10</xmpcore.version>
+  </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -316,43 +409,7 @@
     </dependencies>
   </dependencyManagement>
 
-  <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <!-- plugin versions -->
-    <forbiddenapis.version>2.7</forbiddenapis.version>
-    <groovy.maven.version>2.1</groovy.maven.version>
-    <maven.antrun.version>1.8</maven.antrun.version>
-    <maven.assembly.version>3.1.0</maven.assembly.version>
-    <maven.bundle.version>4.1.0</maven.bundle.version>
-    <maven.failsafe.version>2.22.1</maven.failsafe.version>
-    <maven.javadoc.version>3.1.1</maven.javadoc.version>
-    <maven.scr.version>1.26.0</maven.scr.version>
-    <maven.surefire.version>3.0.0-M4</maven.surefire.version>
-    <maven.shade.version>3.2.1</maven.shade.version>
-    <rat.version>0.13</rat.version>
-    <!-- NOTE: sync tukaani version with commons-compress in tika-parsers -->
-    <poi.version>4.1.2</poi.version>
-    <commons.compress.version>1.20</commons.compress.version>
-    <commons.io.version>2.6</commons.io.version>
-    <commons.lang3.version>3.9</commons.lang3.version>
-    <gson.version>2.8.6</gson.version>
-    <guava.version>28.2-jre</guava.version>
-    <osgi.core.version>6.0.0</osgi.core.version>
 
-    <cxf.version>3.3.5</cxf.version>
-    <slf4j.version>1.7.28</slf4j.version>
-    <jackson.version>2.10.3</jackson.version>
-    <!-- when this is next upgraded, see if we can get rid of
-         javax.activation dependency in tika-server -->
-    <jaxb.version>2.3.2</jaxb.version>
-    <cli.version>1.4</cli.version>
-    <lucene.version>8.4.1</lucene.version>
-    <mockito.version>3.3.0</mockito.version>
-    <opennlp.version>1.9.2</opennlp.version>
-  </properties>
 
   <build>
     <plugins>
@@ -380,6 +437,9 @@
         <groupId>org.sonatype.ossindex.maven</groupId>
         <artifactId>ossindex-maven-plugin</artifactId>
         <version>3.1.0</version>
+        <configuration>
+          <fail>false</fail>
+        </configuration>
         <executions>
           <execution>
             <id>audit-dependencies</id>
@@ -405,11 +465,10 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <!-- if this version contains commons-io 2.6, remove hard-coded commons-io version below -->
         <version>${forbiddenapis.version}</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
-          <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
+          <ignoreSignaturesOfMissingClasses>true</ignoreSignaturesOfMissingClasses>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
           <excludes>test-documents/*.class</excludes>
           <bundledSignatures>
@@ -417,7 +476,8 @@
             <bundledSignature>jdk-deprecated</bundledSignature>
             <bundledSignature>jdk-non-portable</bundledSignature>
             <bundledSignature>jdk-internal</bundledSignature>
-            <bundledSignature>commons-io-unsafe-${commons.io.version}</bundledSignature>
+            <!-- replace with ${commons.io.version} when available -->
+            <bundledSignature>commons-io-unsafe-2.7</bundledSignature>
           </bundledSignatures>
         </configuration>
         <executions>
@@ -439,7 +499,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.version}</version> <!-- versions greater than this don't like System.exit calls in tika-batch -->
         <configuration>
-          <argLine>-Xmx3072m -Duser.timezone=UTC</argLine>
+          <argLine>-Xmx3072m -Duser.timezone=UTC -Djava.awt.headless=true</argLine>
         </configuration>
       </plugin>
       <plugin>

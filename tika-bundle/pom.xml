@@ -135,6 +135,33 @@
       <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
+    
+    <dependency>
+	    <groupId>org.glassfish.jaxb</groupId>
+	    <artifactId>jaxb-runtime</artifactId>
+	    <version>2.3.2</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>com.sun.istack</groupId>
+	    <artifactId>istack-commons-runtime</artifactId>
+	    <version>3.0.8</version>
+	    <scope>test</scope>
+	</dependency>
+	<dependency>
+	    <groupId>com.sun.xml.fastinfoset</groupId>
+	    <artifactId>FastInfoset</artifactId>
+	    <version>1.2.16</version>
+	    <scope>test</scope>
+	</dependency>
+    <dependency>
+	  <groupId>org.glassfish.jaxb</groupId>
+	  <artifactId>txw2</artifactId>
+	  <version>2.3.2</version>
+	  <scope>test</scope>
+	</dependency>
+	
+    
   </dependencies>
 
   <build>
@@ -160,6 +187,7 @@
               commons-io|
               commons-exec|
               commons-collections4|
+              dd-plist|
               junrar|
               pdfbox|
               pdfbox-tools|
@@ -178,7 +206,6 @@
               xmlbeans|
               jackcess|
               jackcess-encrypt|
-              commons-lang|
               commons-lang3|
               tagsoup|
               asm|
@@ -187,11 +214,12 @@
               vorbis-java-tika|
               isoparser|
               metadata-extractor|
-              xmpcore|
+              xmpcore-shaded|
               json-simple|
               boilerpipe|
               rome|
               rome-utils|
+              jdom2|
               sentiment-analysis-parser|
               opennlp-tools|
               geoapi|
@@ -212,7 +240,9 @@
               jcip-annotations|
               jmatio|
               guava|
-              age-predictor-api</Embed-Dependency>
+              age-predictor-api|
+              SparseBitSet
+            </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Export-Package>
@@ -239,6 +269,7 @@
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.impl;resolution:=optional,
               com.adobe.xmp.options;resolution:=optional,
+              com.dd.plist;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
               com.github.openjson;resolution:=optional,
@@ -258,13 +289,11 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
-              com.zaxxer.sparsebits;resolution:=optional,
               edu.mit.ll.mitie;resolution:=optional,
               edu.stanford.nlp.*;resolution:=optional,
               edu.wisc.ssec.mcidas;resolution:=optional,
               edu.wisc.ssec.mcidas.adde;resolution:=optional,
 	          edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
-              javax.activation;resolution:=optional,
               javax.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
@@ -371,6 +400,7 @@
               org.jaxen.dom4j;resolution:=optional,
               org.jaxen.pattern;resolution:=optional,
               org.jaxen.saxpath;resolution:=optional,
+              org.jaxen.util;resolution:=optional,
               org.jdom;resolution:=optional,
               org.jdom.input;resolution:=optional,
               org.jdom.output;resolution:=optional,
@@ -559,6 +589,9 @@
           </execution>
         </executions>
         <configuration>
+          <additionalClasspathElements>
+          	<additionalClasspathElement>${project.build.directory}/test-bundles/jdk9plus</additionalClasspathElement>
+          </additionalClasspathElements>
           <systemPropertyVariables>
             <org.ops4j.pax.logging.DefaultServiceLog.level>
               INFO

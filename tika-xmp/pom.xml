@@ -86,13 +86,18 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
+      <artifactId>tika-parser-microsoft-module</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-miscoffice-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.tallison.xmp</groupId>
       <artifactId>xmpcore-shaded</artifactId>
-      <version>6.1.10</version>
+      <version>${xmpcore.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

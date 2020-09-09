@@ -23,7 +23,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.concurrent.Executors;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,14 +59,28 @@ public class MimeTypesReaderTest {
     private MimeTypes mimeTypes;
     private List<Magic> magics;
 
+    private String customMimeTypes;
+
     @SuppressWarnings("unchecked")
     @Before
-    public void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
+    public void setUp() throws NoSuchFieldException, SecurityException,
+            IllegalArgumentException, IllegalAccessException{
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
 
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
         magicsField.setAccessible(true);
         magics = (List<Magic>)magicsField.get(mimeTypes);
+        //ensure reset of custom mimes path
+        customMimeTypes = System.getProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP);
+    }
+
+    @After
+    public void tearDown() {
+        if (customMimeTypes == null) {
+            System.clearProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP);
+        } else {
+            System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP, customMimeTypes);
+        }
     }
     
     @Test
@@ -301,5 +318,73 @@ public class MimeTypesReaderTest {
         for (int i = 0; i < 500 & !stop; i++) {
             mimeTypes.getMediaTypeRegistry().getAliases(MediaType.APPLICATION_ZIP);
         }
+    }
+
+    @Test
+    public void testMinShouldMatch() throws Exception {
+        System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
+                "src/test/resources/org/apache/tika/mime/custom-mimetypes-minShouldMatch.xml");
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+
+        //matches one
+        assertEquals("hello/world-min-file",
+                getTypeAsString(mimeTypes, "Hello World!", new Metadata()));
+
+        //matches two
+        assertEquals("hello/world-min-file",
+                getTypeAsString(mimeTypes, "Hello Welt!", new Metadata()));
+
+        //matches two
+        assertEquals("hello/world-min-file",
+                getTypeAsString(mimeTypes, "Hallo Welt!", new Metadata()));
+
+        //missing !
+        assertEquals("text/plain",
+                getTypeAsString(mimeTypes, "Hello World", new Metadata()));
+
+        //Hello requires world, welt or hallo; monde requires bonjour le
+        assertEquals("text/plain",
+                getTypeAsString(mimeTypes, "Hello Monde", new Metadata()));
+
+        //this matcher is treated as "or" with minshouldmatch clause
+        assertEquals("hello/world-min-file",
+                getTypeAsString(mimeTypes, "Bonjour le Monde!", new Metadata()));
+
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadMinShouldMatch1() throws Exception {
+        System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
+                "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch1.xml");
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadMinShouldMatch2() throws Exception {
+        System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
+                "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch2.xml");
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void testBadMinShouldMatch3() throws Exception {
+        System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
+                "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch3.xml");
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBadMinShouldMatch4() throws Exception {
+        System.setProperty(MimeTypesFactory.CUSTOM_MIMES_SYS_PROP,
+                "src/test/resources/org/apache/tika/mime/custom-mimetypes-badMinShouldMatch4.xml");
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes(new CustomClassLoader());
+    }
+
+    private static String getTypeAsString(MimeTypes mimeTypes, String text, Metadata metadata) throws IOException {
+        return mimeTypes.detect(
+                new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)),
+                        metadata
+        ).toString();
+
     }
 }

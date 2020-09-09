@@ -56,7 +56,9 @@ public class CountingInputStream extends ProxyInputStream {
     @Override
     public int read(byte[] b) throws IOException {
         int found = super.read(b);
-        this.count += (found >= 0) ? found : 0;
+        if (found != -1) {
+            this.count += found;
+        }
         return found;
     }
 
@@ -74,7 +76,9 @@ public class CountingInputStream extends ProxyInputStream {
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         int found = super.read(b, off, len);
-        this.count += (found >= 0) ? found : 0;
+        if (found != -1) {
+            this.count += found;
+        }
         return found;
     }
 

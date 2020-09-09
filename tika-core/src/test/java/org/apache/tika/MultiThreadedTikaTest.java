@@ -25,7 +25,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -104,7 +103,7 @@ public class MultiThreadedTikaTest extends TikaTest {
         for (Path testFile : truth.keySet()) {
             testFiles[j++] = testFile;
         }
-        int actualThreadCount = numThreads + ((randomlyResizeSAXPool > 0) ? randomlyResizeSAXPool : 0);
+        int actualThreadCount = numThreads + Math.max(randomlyResizeSAXPool, 0);
         ExecutorService ex = Executors.newFixedThreadPool(actualThreadCount);
         try {
             _testDetectorOnAll(detector, testFiles, numThreads, numIterations, truth, ex, randomlyResizeSAXPool);

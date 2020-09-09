@@ -333,6 +333,18 @@ public class XMLReaderUtils implements Serializable {
         return factory;
     }
 
+    private static void trySetTransformerAttribute(TransformerFactory transformerFactory, String attribute, String value) {
+        try {
+            transformerFactory.setAttribute(attribute, value);
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.warn("Transformer Attribute unsupported: {}", attribute, e);
+        } catch (AbstractMethodError ame) {
+            LOG.warn("Cannot set Transformer attribute because outdated XML parser in classpath: {}", attribute, ame);
+        }
+    }
+
     private static void trySetSAXFeature(SAXParserFactory saxParserFactory, String feature, boolean enabled) {
         try {
             saxParserFactory.setFeature(feature, enabled);
@@ -377,6 +389,8 @@ public class XMLReaderUtils implements Serializable {
         try {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
             return transformerFactory.newTransformer();
         } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);

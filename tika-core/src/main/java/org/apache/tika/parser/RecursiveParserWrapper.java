@@ -19,6 +19,7 @@ package org.apache.tika.parser;
 
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -398,7 +399,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } catch(CorruptedFileException e) {
                 throw e;
             } catch (TikaException e) {
-                if (catchEmbeddedExceptions) {
+                if (context.get(ZeroByteFileException.IgnoreZeroByteFileException.class) != null
+                        && e instanceof ZeroByteFileException) {
+                    //do nothing
+                } else if (catchEmbeddedExceptions) {
                     ParserUtils.recordParserFailure(this, e, metadata);
                 } else {
                     throw e;

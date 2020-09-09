@@ -34,6 +34,7 @@ import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -75,7 +76,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         Parser p = new RecursiveParserWrapper(new AutoDetectParserFactory().getParser(new TikaConfig()));
         RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
                 queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                mockOSFactory);
+                mockOSFactory, NoOpFilter.NOOP_FILTER);
 
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
@@ -123,7 +124,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         Parser p = new RecursiveParserWrapper(new AutoDetectParserFactory().getParser(new TikaConfig()));
         RecursiveParserWrapperFSConsumer consumer = new RecursiveParserWrapperFSConsumer(
                 queue, p, new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                mockOSFactory);
+                mockOSFactory, NoOpFilter.NOOP_FILTER);
 
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();

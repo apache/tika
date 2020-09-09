@@ -43,8 +43,8 @@ import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
-import org.apache.tika.parser.utils.BouncyCastleDigester;
-import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.parser.digestutils.BouncyCastleDigester;
+import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.MetadataResource;
@@ -53,12 +53,14 @@ import org.apache.tika.server.resource.TikaDetectors;
 import org.apache.tika.server.resource.TikaMimeTypes;
 import org.apache.tika.server.resource.TikaParsers;
 import org.apache.tika.server.resource.TikaResource;
+import org.apache.tika.server.resource.TikaServerStatus;
 import org.apache.tika.server.resource.TikaVersion;
 import org.apache.tika.server.resource.TikaWelcome;
 import org.apache.tika.server.resource.TranslateResource;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.apache.tika.server.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.writer.JSONObjWriter;
 import org.apache.tika.server.writer.MetadataListMessageBodyWriter;
 import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.writer.TextMessageBodyWriter;
@@ -102,6 +104,7 @@ public class TikaServerCli {
         options.addOption("dml", "digestMarkLimit", true, "max number of bytes to mark on stream for digest");
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
+        options.addOption("status", false, "enable the status endpoint");
         options.addOption("?", "help", false, "this help message");
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
         options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
@@ -305,6 +308,9 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaParsers()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
+            if (line.hasOption("status")) {
+                rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+            }
             List<ResourceProvider> rAllProviders = new ArrayList<>(rCoreProviders);
             rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(rCoreProviders)));
             sf.setResourceProviders(rAllProviders);
@@ -318,6 +324,9 @@ public class TikaServerCli {
             providers.add(new XMPMessageBodyWriter());
             providers.add(new TextMessageBodyWriter());
             providers.add(new TikaServerParseExceptionMapper(returnStackTrace));
+            if (line.hasOption("status")) {
+                providers.add(new JSONObjWriter());
+            }
             if (logFilter != null) {
                 providers.add(logFilter);
             }

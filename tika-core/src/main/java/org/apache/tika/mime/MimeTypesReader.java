@@ -22,7 +22,6 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
 import java.io.ByteArrayInputStream;
@@ -38,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -150,11 +150,9 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
     public void read(Document document) throws MimeTypeException {
         try {
-            TransformerFactory factory = TransformerFactory.newInstance();
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            Transformer transformer = factory.newTransformer();
+            Transformer transformer = XMLReaderUtils.getTransformer();
             transformer.transform(new DOMSource(document), new SAXResult(this));
-        } catch (TransformerException e) {
+        } catch (TransformerException | TikaException e) {
             throw new MimeTypeException("Failed to parse type registry", e);
         }
     }
@@ -206,15 +204,22 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
             String name = attributes.getValue(LOCAL_NAME_ATTR);
             type.addRootXML(namespace, name);
         } else if (MATCH_TAG.equals(qName)) {
-            String kind = attributes.getValue(MATCH_TYPE_ATTR);
-            String offset = attributes.getValue(MATCH_OFFSET_ATTR);
-            String value = attributes.getValue(MATCH_VALUE_ATTR);
-            String mask = attributes.getValue(MATCH_MASK_ATTR);
-            if (kind == null) {
-                kind = "string";
+            if (attributes.getValue(MATCH_MINSHOULDMATCH_ATTR) != null) {
+                current = new ClauseRecord(
+                        new MinShouldMatchVal(
+                            Integer.parseInt(
+                                    attributes.getValue(MATCH_MINSHOULDMATCH_ATTR))));
+            } else {
+                String kind = attributes.getValue(MATCH_TYPE_ATTR);
+                String offset = attributes.getValue(MATCH_OFFSET_ATTR);
+                String value = attributes.getValue(MATCH_VALUE_ATTR);
+                String mask = attributes.getValue(MATCH_MASK_ATTR);
+                if (kind == null) {
+                    kind = "string";
+                }
+                current = new ClauseRecord(
+                        new MagicMatch(type.getType(), kind, offset, value, mask));
             }
-            current = new ClauseRecord(
-                    new MagicMatch(type.getType(), kind, offset, value, mask));
         } else if (MAGIC_TAG.equals(qName)) {
             String value = attributes.getValue(MAGIC_PRIORITY_ATTR);
             if (value != null && value.length() > 0) {
@@ -290,7 +295,9 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         }
 
         public void stop() {
-            if (subclauses != null) {
+            if (clause instanceof MinShouldMatchVal) {
+                clause = new MinShouldMatchClause(((MinShouldMatchVal)clause).getVal(), subclauses);
+            } else if (subclauses != null) {
                 Clause subclause;
                 if (subclauses.size() == 1) {
                     subclause = subclauses.get(0);
@@ -299,6 +306,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                 }
                 clause = new AndClause(clause, subclause);
             }
+
             if (parent.subclauses == null) {
                 parent.subclauses = Collections.singletonList(clause);
             } else {
@@ -315,6 +323,35 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
             return subclauses;
         }
 
+    }
+
+    /**
+     * Shim class used during building of actual classes.
+     * This temporarily holds the value of the minShouldMatchClause
+     * so that the actual MinShouldMatchClause can have a cleaner/immutable
+     * initialization.
+     */
+    private static class MinShouldMatchVal implements Clause {
+
+        private final int val;
+
+        MinShouldMatchVal(int val) {
+            this.val = val;
+        }
+
+        int getVal() {
+            return val;
+        }
+        @Override
+        public boolean eval(byte[] data) {
+            throw new IllegalStateException("This should never be used " +
+                    "on this placeholder class");
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
     }
     /**
      * Acquire a SAXParser from the pool; create one if it
@@ -393,7 +430,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                     XMLConstants.FEATURE_SECURE_PROCESSING, true);
             return factory.newSAXParser();
         } catch (ParserConfigurationException|SAXException e) {
-            throw new TikaException("prooblem creating SAX parser factory", e);
+            throw new TikaException("problem creating SAX parser factory", e);
         }
     }
 }

@@ -45,14 +45,12 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.interceptor.Interceptor;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.message.Message;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.junit.After;
@@ -90,7 +88,8 @@ public abstract class CXFTestBase {
 
     @Before
     public void setUp() throws Exception {
-        this.tika = new TikaConfig(getClass().getResourceAsStream("tika-config-for-server-tests.xml"));
+
+        this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaResource.init(tika,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
                 new DefaultInputStreamFactory(), new ServerStatus(true));
@@ -118,6 +117,10 @@ public abstract class CXFTestBase {
                 factory
         );
         server = sf.create();
+    }
+
+    protected InputStream getTikaConfigInputStream() {
+        return getClass().getResourceAsStream("tika-config-for-server-tests.xml");
     }
 
     /**

@@ -59,7 +59,7 @@ import org.apache.tika.utils.ProcessUtils;
  * The CommmonTokensAnalyzer intentionally drops tokens shorter than 4 characters,
  * but includes bigrams for cjk.
  *
- * It also has a white list for __email__ and __url__ and a black list
+ * It also has a include list for __email__ and __url__ and a skip list
  * for common html markup terms.
  */
 public class TopCommonTokenCounter {
@@ -85,7 +85,7 @@ public class TopCommonTokenCounter {
     private static int TOP_N = 30000;
     private static int MIN_DOC_FREQ = 10;
     //these should exist in every list
-    static Set<String> WHITE_LIST = new HashSet<>(Arrays.asList(
+    static Set<String> INCLUDE_LIST = new HashSet<>(Arrays.asList(
             new String[] {
                     URLEmailNormalizingFilterFactory.URL,
                     URLEmailNormalizingFilterFactory.EMAIL
@@ -96,7 +96,7 @@ public class TopCommonTokenCounter {
     //these are common 4 letter html markup words that we do
     //not want to count in case of failed markup processing.
     //see: https://issues.apache.org/jira/browse/TIKA-2267?focusedCommentId=15872055&page=com.atlassian.jira.plugin.system.issuetabpanels:comment-tabpanel#comment-15872055
-    static Set<String> BLACK_LIST = new HashSet<>(Arrays.asList(
+    static Set<String> SKIP_LIST = new HashSet<>(Arrays.asList(
             "span",
             "table",
             "href",
@@ -213,7 +213,7 @@ public class TopCommonTokenCounter {
                     if (queue.top() == null || queue.size() < TOP_N ||
                             df >= queue.top().df) {
                         String t = bytesRef.utf8ToString();
-                        if (! BLACK_LIST.contains(t)) {
+                        if (! SKIP_LIST.contains(t)) {
                             queue.insertWithOverflow(new TokenDFTF(t, df, tf));
                         }
 
@@ -260,7 +260,7 @@ public class TopCommonTokenCounter {
         writer.write("#UNIQUE_TERMS\t"+uniqueTerms+"\n");
         writer.write("#TOKEN\tDOCFREQ\tTERMFREQ\n");
         //add these tokens no matter what
-        for (String t : WHITE_LIST) {
+        for (String t : INCLUDE_LIST) {
             writer.write(t);
             writer.newLine();
         }

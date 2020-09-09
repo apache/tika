@@ -528,7 +528,7 @@ public class TikaCLITest {
         TikaCLI.main(params);
         String content = outContent.toString(UTF_8.name());
         //make sure at least one detector is there
-        assertTrue(content.contains("<detector class=\"org.apache.tika.parser.microsoft.POIFSContainerDetector\"/>"));
+        assertTrue(content.contains("<detector class=\"org.apache.tika.detect.microsoft.POIFSContainerDetector\"/>"));
         //make sure Executable is there because follow on tests of custom config
         //test that it has been turned off.
         assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
@@ -537,7 +537,7 @@ public class TikaCLITest {
         TikaCLI.main(params);
         content = outContent.toString(UTF_8.name());
         //make sure at least one detector is there
-        assertTrue(content.contains("<detector class=\"org.apache.tika.parser.microsoft.POIFSContainerDetector\"/>"));
+        assertTrue(content.contains("<detector class=\"org.apache.tika.detect.microsoft.POIFSContainerDetector\"/>"));
         //and at least one parser
         assertTrue(content.contains("<parser class=\"org.apache.tika.parser.executable.ExecutableParser\"/>"));
     }

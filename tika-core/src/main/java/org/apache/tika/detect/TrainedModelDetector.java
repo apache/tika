@@ -118,7 +118,7 @@ public abstract class TrainedModelDetector implements Detector {
                     } else {
                         histogram[idx]++;
                     }
-                    max = max < histogram[idx] ? histogram[idx] : max;
+                    max = Math.max(max, histogram[idx]);
                 }
 
                 buf.clear(); // make buffer ready for writing

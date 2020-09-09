@@ -31,5 +31,18 @@
         <include>org.apache.tika:tika-bundle</include>
       </includes>
     </dependencySet>
+    <dependencySet>
+      <outputDirectory>jdk9plus</outputDirectory>
+      <outputFileNameMapping>${artifact.artifactId}.jar</outputFileNameMapping>
+      <includes>
+      	<include>org.glassfish.jaxb:jaxb-runtime</include>
+        <include>com.sun.istack:istack-commons-runtime</include>
+        <include>com.sun.xml.fastinfoset:FastInfoset</include>
+        <include>jakarta.xml.bind:jakarta.xml.bind-api</include>
+        <include>org.glassfish.jaxb:txw2</include>
+        <include>org.jvnet.staxex:stax-ex</include>
+      </includes>
+      <scope>test</scope>
+    </dependencySet>
   </dependencySets>
 </assembly>

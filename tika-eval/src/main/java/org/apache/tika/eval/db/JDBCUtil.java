@@ -140,6 +140,10 @@ public class JDBCUtil {
         return tables;
     }
 
+    @Deprecated
+    /**
+     * @deprecated use {@link #batchInsert(PreparedStatement, TableInfo, Map)}
+     */
     public static int insert(PreparedStatement insertStatement,
                              TableInfo table,
                              Map<Cols, String> data) throws SQLException {
@@ -165,6 +169,28 @@ public class JDBCUtil {
         }
     }
 
+    public static void batchInsert(PreparedStatement insertStatement,
+                             TableInfo table,
+                             Map<Cols, String> data) throws SQLException {
+
+        try {
+            int i = 1;
+            for (ColInfo colInfo : table.getColInfos()) {
+                updateInsertStatement(i, insertStatement, colInfo, data.get(colInfo.getName()));
+                i++;
+            }
+            for (Cols c : data.keySet()) {
+                if (!table.containsColumn(c)) {
+                    throw new IllegalArgumentException("Can't add data to " + c +
+                            " because it doesn't exist in the table: " + table.getName());
+                }
+            }
+            insertStatement.addBatch();
+        } catch (SQLException e) {
+            LOG.warn("couldn't insert data for this row: {}", e.getMessage());
+        }
+    }
+
     public static void updateInsertStatement(int dbColOffset, PreparedStatement st,
                                              ColInfo colInfo, String value) throws SQLException {
         if (value == null) {
@@ -178,9 +204,13 @@ public class JDBCUtil {
                         value = value.substring(0, colInfo.getPrecision());
                         LOG.warn("truncated varchar value in {} : {}", colInfo.getName(), value);
                     }
+                    //postgres doesn't allow \0000
+                    value = value.replaceAll("\u0000", " ");
                     st.setString(dbColOffset, value);
                     break;
                 case Types.CHAR:
+                    //postgres doesn't allow \0000
+                    value = value.replaceAll("\u0000", " ");
                     st.setString(dbColOffset, value);
                     break;
                 case Types.DOUBLE:

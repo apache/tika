@@ -122,6 +122,8 @@ public class FuzzingCLI {
 
             String[] args = new String[] {
                     "java",
+                    "-XX:-OmitStackTraceInFastThrow",
+                    "-Xmx"+config.xmx,
                     "-ea",
                     "-cp",
                     ProcessUtils.escapeCommandLine(cp),
@@ -151,7 +153,7 @@ public class FuzzingCLI {
                 LOG.warn("problem starting process", e);
             }
             try {
-                long totalTime = 2*config.getTimeoutMs()+config.getPerFileIterations();
+                long totalTime = 2 * config.getTimeoutMs() * config.getPerFileIterations();
                 success = process.waitFor(totalTime, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 LOG.warn("problem waiting for process to finish", e);
@@ -210,7 +212,9 @@ public class FuzzingCLI {
                     LOG.info("hit maxfiles; file crawler is stopping early");
                     return FileVisitResult.TERMINATE;
                 }
-
+                if (!file.getFileName().toString().contains("sas7bdat")) {
+                    return FileVisitResult.CONTINUE;
+                }
                 try {
                     boolean offered = queue.offer(file, 10, TimeUnit.MINUTES);
                     if (offered) {

@@ -24,6 +24,7 @@ import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 import static org.ops4j.pax.exam.CoreOptions.options;
+import static org.ops4j.pax.exam.CoreOptions.systemPackages;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -45,6 +46,8 @@ import javax.inject.Inject;
 import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -57,6 +60,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -68,6 +72,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
@@ -87,12 +92,14 @@ public class BundleIT {
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException, ClassNotFoundException {
     	File base = new File(TARGET, "test-bundles");
-        return options(
-        		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
-        		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
-        		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
-        		junitBundles(),
-        		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
+    	 return options(
+         		systemPackages("javax.xml.bind"),
+         		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
+         		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
+         		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+         		junitBundles(),
+         		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString())
+                 );
     }
 
     @Test
@@ -283,4 +290,65 @@ public class BundleIT {
         assertTrue(content.contains("testXML.xml"));
         assertTrue(content.contains("Rida Benjelloun"));
     }
+    
+    @Test
+    public void testPoiTikaBundle() throws Exception {
+        Tika tika = new Tika();
+
+        // Package extraction
+        ContentHandler handler = new BodyContentHandler();
+
+        Parser parser = tika.getParser();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+
+        try (InputStream stream = TikaInputStream.get(Paths.get("src/test/resources/testPPT.pptx"))) {
+            parser.parse(stream, handler, new Metadata(), context);
+        }
+
+        String content = handler.toString();
+        assertTrue(content.contains("Attachment Test"));
+    }
+
+    @Test
+    @Ignore
+    public void testAll() throws Exception {
+        Tika tika = new Tika();
+
+        // Package extraction
+        ContentHandler handler = new BodyContentHandler();
+
+        Parser parser = tika.getParser();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+        Set<String> needToFix = new HashSet<>();
+        //needToFix.add("testAccess2_encrypted.accdb");
+        System.out.println(getTestDir());
+        for (File f : getTestDir().listFiles()) {
+            if (f.isDirectory()) {
+                continue;
+            }
+            if (needToFix.contains(f.getName())) {
+                continue;
+            }
+            System.out.println("about to parse "+f);
+            Metadata metadata = new Metadata();
+            try (InputStream is = TikaInputStream.get(f)) {
+                parser.parse(is, handler, metadata, context);
+            } catch (EncryptedDocumentException e) {
+                //swallow
+            } catch (SAXException e) {
+                //
+            } catch (TikaException e) {
+                System.err.println("tika Exception "+f.getName());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private File getTestDir() {
+        return new File("../tika-parsers/src/test/resources/test-documents");
+    }
+
+
 }

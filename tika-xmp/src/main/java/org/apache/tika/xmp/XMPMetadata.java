@@ -88,7 +88,7 @@ public class XMPMetadata extends Metadata {
      *            the Metadata information from Tika-core
      * @param mimetype
      *            mimetype information
-     * @throws In
+     * @throws TikaException
      *             case an error occured during conversion
      */
     public XMPMetadata(Metadata meta, String mimetype) throws TikaException {
@@ -114,7 +114,7 @@ public class XMPMetadata extends Metadata {
      *            the Metadata information from Tika-core
      * @param mimetype
      *            mimetype information
-     * @throws In
+     * @throws TikaException
      *             case an error occured during conversion
      */
     public void process(Metadata meta, String mimetype) throws TikaException {
