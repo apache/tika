@@ -51,9 +51,9 @@ public class SentimentAnalysisParser extends AbstractParser implements Initializ
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.application("sentiment"));
-    private static final Logger LOG = LoggerFactory
-            .getLogger(SentimentAnalysisParser.class);
-    public static final String DEF_MODEL = "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/en-netflix-sentiment.bin";
+    private static final Logger LOG = LoggerFactory.getLogger(SentimentAnalysisParser.class);
+
+    public static final String DEF_MODEL = "https://raw.githubusercontent.com/USCDataScience/SentimentAnalysisParser/master/sentiment-models/src/main/resources/edu/usc/irds/sentiment/en-netflix-sentiment.bin";
 
     private SentimentME classifier;
 
