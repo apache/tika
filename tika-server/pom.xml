@@ -25,7 +25,7 @@
         <relativePath>../tika-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>tika-server</artifactId>
+    <artifactId>tika-server-legacy</artifactId>
     <name>Apache Tika server</name>
     <url>http://tika.apache.org/</url>
 

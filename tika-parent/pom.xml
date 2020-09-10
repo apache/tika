@@ -290,7 +290,7 @@
     <commons.logging.version>1.2</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <ctakes.version>4.0.0</ctakes.version>
-    <cxf.version>3.3.7</cxf.version>
+    <cxf.version>3.4.0</cxf.version>
     <ddplist.version>1.23</ddplist.version>
     <dl4j.version>1.0.0-beta6</dl4j.version>
     <geoapi.version>3.0.1</geoapi.version>
@@ -301,7 +301,7 @@
     <imageio.version>1.4.0</imageio.version>
     <isoparser.version>1.9.41.2</isoparser.version>
     <jackrabbit.version>2.21.1</jackrabbit.version>
-    <jackson.version>2.11.0</jackson.version>
+    <jackson.version>2.11.2</jackson.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
     <javax.rest.version>2.1.1</javax.rest.version>

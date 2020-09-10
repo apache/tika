@@ -18,7 +18,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <swagger-core-version>1.5.24</swagger-core-version>
+    <swagger-core-version>1.6.2</swagger-core-version>
     <jetty-version>9.2.9.v20150224</jetty-version>
     <logback-version>1.2.3</logback-version>
     <beanvalidation-version>1.1.0.Final</beanvalidation-version>
@@ -236,17 +236,17 @@
         <artifactId>jackson-jaxrs-json-provider</artifactId>
         <version>${jackson.version}</version>
         <scope>compile</scope>
+        <exclusions>
+            <exclusion>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
         <groupId>com.fasterxml.jackson.datatype</groupId>
         <artifactId>jackson-datatype-joda</artifactId>
         <version>${jackson.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>joda-time</groupId>
-          <artifactId>joda-time</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 
