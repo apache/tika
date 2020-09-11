@@ -263,20 +263,22 @@ public class PackageParser extends AbstractParser {
         xhtml.startDocument();
 
         try {
-            ArchiveEntry entry = ais.getNextEntry();
-            while (entry != null) {
-                if (!entry.isDirectory()) {
-                    parseEntry(ais, entry, extractor, metadata, xhtml);
-                }
-                entry = ais.getNextEntry();
-            }
+            readEntries(metadata, ais, extractor, xhtml);
         } catch (UnsupportedZipFeatureException zfe) {
             // If it's an encrypted document of unknown password, report as such
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
             }
-            // Otherwise throw the exception
-            throw new TikaException("UnsupportedZipFeature", zfe);
+            else if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
+                ArchiveInputStream dataDescriptorEnabledZipArchiveInputStream = new ZipArchiveInputStream(new CloseShieldInputStream(stream), "UTF8", true, true);
+                try {
+                    readEntries(metadata, dataDescriptorEnabledZipArchiveInputStream, extractor, xhtml);
+                } finally {
+                    dataDescriptorEnabledZipArchiveInputStream.close();
+                }
+            } else {
+                throw new TikaException("UnsupportedZipFeature", zfe);
+            }
         } catch (PasswordRequiredException pre) {
             throw new EncryptedDocumentException(pre);
         } finally {
@@ -285,6 +287,16 @@ public class PackageParser extends AbstractParser {
         }
 
         xhtml.endDocument();
+    }
+
+    private void readEntries(Metadata metadata, ArchiveInputStream ais, EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
+        ArchiveEntry entry = ais.getNextEntry();
+        while (entry != null) {
+            if (!entry.isDirectory()) {
+                parseEntry(ais, entry, extractor, metadata, xhtml);
+            }
+            entry = ais.getNextEntry();
+        }
     }
 
     private void updateMediaType(ArchiveInputStream ais, Metadata metadata) {
