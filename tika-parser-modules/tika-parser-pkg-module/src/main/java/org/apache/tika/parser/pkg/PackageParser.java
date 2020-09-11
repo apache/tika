@@ -262,29 +262,37 @@ public class PackageParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
+        parseEntries(metadata, tmp, ais, extractor, xhtml);
+
+        xhtml.endDocument();
+    }
+
+    private void parseEntries(Metadata metadata, TemporaryResources tmp, ArchiveInputStream archiveInputStream, EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
         try {
-            ArchiveEntry entry = ais.getNextEntry();
+            ArchiveEntry entry = archiveInputStream.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    parseEntry(ais, entry, extractor, metadata, xhtml);
+                    parseEntry(archiveInputStream, entry, extractor, metadata, xhtml);
                 }
-                entry = ais.getNextEntry();
+                entry = archiveInputStream.getNextEntry();
             }
         } catch (UnsupportedZipFeatureException zfe) {
             // If it's an encrypted document of unknown password, report as such
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
             }
+            if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
+                ArchiveInputStream dataDescriptorEnabledZipArchiveInputStream = new ZipArchiveInputStream(archiveInputStream, "UTF8", true, true);
+                parseEntries(metadata, tmp, dataDescriptorEnabledZipArchiveInputStream, extractor, xhtml);
+            }
             // Otherwise throw the exception
             throw new TikaException("UnsupportedZipFeature", zfe);
         } catch (PasswordRequiredException pre) {
             throw new EncryptedDocumentException(pre);
         } finally {
-            ais.close();
+            archiveInputStream.close();
             tmp.close();
         }
-
-        xhtml.endDocument();
     }
 
     private void updateMediaType(ArchiveInputStream ais, Metadata metadata) {
