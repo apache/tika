@@ -154,7 +154,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
         BrokenParser brokenParser = new BrokenParser();
         ForkParser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
         InputStream stream = getClass().getResourceAsStream("/test-documents/testTXT.txt");
-        
+
         // With a serializable error, we'll get that back
         try {
             ContentHandler output = new BodyContentHandler();
@@ -165,6 +165,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
             assertEquals(brokenParser.err, e.getCause());
         } finally {
             parser.close();
+            stream.close();
         }
         
         // With a non serializable one, we'll get something else

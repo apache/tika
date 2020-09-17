@@ -81,17 +81,18 @@ public class EpubParserTest extends TikaTest {
         assert(tocIndex < ch2);
         assert(ch1 < ch2);
 
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml");
-        assertNotNull(is);
-        Parser p = new AutoDetectParser(new TikaConfig(is));
-        xml = getXML("testEPUB.epub", p).xml;
-        tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
-        ch1 = xml.indexOf("<h1>Chapter 1");
-        ch2 = xml.indexOf("<h1>Chapter 2");
-        assert(tocIndex > -1 && ch1 > -1 && ch2 > -1);
-        assert(tocIndex > ch1);
-        assert(tocIndex > ch2);
-        assert(ch1 < ch2);
+        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml")) {
+            assertNotNull(is);
+            Parser p = new AutoDetectParser(new TikaConfig(is));
+            xml = getXML("testEPUB.epub", p).xml;
+            tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
+            ch1 = xml.indexOf("<h1>Chapter 1");
+            ch2 = xml.indexOf("<h1>Chapter 2");
+            assert(tocIndex > -1 && ch1 > -1 && ch2 > -1);
+            assert(tocIndex > ch1);
+            assert(tocIndex > ch2);
+            assert(ch1 < ch2);
+        }
     }
 
 

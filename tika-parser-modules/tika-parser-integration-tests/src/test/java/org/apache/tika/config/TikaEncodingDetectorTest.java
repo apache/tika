@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -128,8 +129,10 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testNonDetectingDetectorParams() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(
-                getResourceAsStream("/org/apache/tika/config/TIKA-2273-non-detecting-params.xml"));
+        TikaConfig tikaConfig = null;
+        try (InputStream is = getResourceAsStream("/org/apache/tika/config/TIKA-2273-non-detecting-params.xml")) {
+            tikaConfig = new TikaConfig(is);
+        }
         AutoDetectParser p = new AutoDetectParser(tikaConfig);
         List<Parser> parsers = new ArrayList<>();
         findEncodingDetectionParsers(p, parsers);
@@ -147,9 +150,9 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
 
     @Test
     public void testNonDetectingDetectorParamsBadCharset() throws Exception {
-        try {
-            TikaConfig tikaConfig = new TikaConfig(
-                    getResourceAsStream("/org/apache/tika/config/TIKA-2273-non-detecting-params-bad-charset.xml"));
+        try (InputStream is =
+                     getResourceAsStream("/org/apache/tika/config/TIKA-2273-non-detecting-params-bad-charset.xml")){
+            TikaConfig tikaConfig = new TikaConfig(is);
             fail("should have thrown TikaConfigException");
         } catch (TikaConfigException e) {
 

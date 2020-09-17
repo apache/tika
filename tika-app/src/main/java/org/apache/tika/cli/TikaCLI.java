@@ -129,7 +129,9 @@ public class TikaCLI {
         TikaCLI cli = new TikaCLI();
 
         if (!isConfigured()) {
-            PropertyConfigurator.configure(cli.getClass().getResourceAsStream("/log4j.properties"));
+            try (InputStream is = cli.getClass().getResourceAsStream("/log4j.properties")) {
+                PropertyConfigurator.configure(is);
+            }
         }
 
         if (cli.testForHelp(args)) {
