@@ -57,7 +57,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-langdetect</artifactId>
+      <artifactId>tika-langdetect-optimaize</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
