@@ -25,17 +25,6 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <!-- From OpenAPI Generator-->
-  <!--repositories>
-    <repository>
-      <id>sonatype-snapshots</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories-->
-
   <pluginRepositories>
     <pluginRepository>
       <id>miredot</id>
@@ -73,13 +62,27 @@
     <dependency>
       <groupId>net.sf.opencsv</groupId>
       <artifactId>opencsv</artifactId>
-      <version>2.0</version>
+      <version>${opencsv.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.cxf</groupId>
-      <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-      <version>${cxf.version}</version>
-    </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+            <version>${cxf.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.annotation</groupId>
+                    <artifactId>javax.annotation-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.glassfish.jaxb</groupId>
+                    <artifactId>jaxb-runtime</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-service-description</artifactId>
@@ -96,26 +99,27 @@
       <artifactId>cxf-rt-rs-security-cors</artifactId>
       <version>${cxf.version}</version>
     </dependency>
-    <dependency>
-      <groupId>javax.mail</groupId>
-      <artifactId>mail</artifactId>
-      <version>1.4.4</version>
-    </dependency>
+
     <dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
-      <version>1.2</version>
+      <version>${commons.cli.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.6</version> <!-- should sync with Jackcess in tika-parsers -->
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons.lang3.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons.io.version}</version>
     </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-rs-client</artifactId>
+            <version>${cxf.version}</version>
+        </dependency>
     <!-- logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -133,13 +137,6 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
@@ -198,13 +195,6 @@
         <version>${beanvalidation-version}</version>
         <scope>provided</scope>
     </dependency>
-    <!-- CXF Client -->
-    <dependency>
-        <groupId>org.apache.cxf</groupId>
-        <artifactId>cxf-rt-rs-client</artifactId>
-        <version>${cxf.version}</version>
-        <scope>test</scope>
-    </dependency>
 
      <!-- CXF server -->
     <dependency>
@@ -250,308 +240,240 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <sourceDirectory>src/main/java</sourceDirectory>
-    <plugins>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          <argLine>-da -XX:+HeapDumpOnOutOfMemoryError -Xmx512m</argLine>
-          <systemPropertyVariables>
-            <java.util.logging.config.file>
-              ${basedir}/src/main/resources/commons-logging.properties
-            </java.util.logging.config.file>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <createDependencyReducedPom>
-                false
-              </createDependencyReducedPom>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                    <exclude>META-INF/*.txt</exclude>
-                    <exclude>META-INF/ASL2.0</exclude>
-                    <exclude>META-INF/DEPENDENCIES</exclude>
-                    <exclude>META-INF/LICENSE</exclude>
-                    <exclude>META-INF/NOTICE</exclude>
-                    <exclude>META-INF/README</exclude>
-                    <exclude>LICENSE.txt</exclude>
-                    <exclude>NOTICE.txt</exclude>
-                    <exclude>CHANGES</exclude>
-                    <exclude>README</exclude>
-                    <exclude>builddef.lst</exclude>
-                    <!-- clutter not needed in jar -->
-                    <exclude>resources/grib1/nasa/README*.pdf</exclude>
-                    <exclude>resources/grib1/**/readme*.txt</exclude>
-                    <exclude>resources/grib2/**/readme*.txt</exclude>
-                    <!-- TIKA-763: Workaround to avoid including LGPL classes -->
-                    <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
-                    <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
-                    <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
-                  </excludes>
-                </filter>
-              </filters>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/LICENSE</resource>
-                  <file>target/classes/META-INF/LICENSE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/NOTICE</resource>
-                  <file>target/classes/META-INF/NOTICE</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
-                  <resource>META-INF/DEPENDENCIES</resource>
-                  <file>target/classes/META-INF/DEPENDENCIES</file>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.handlers</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.schemas</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/cxf/cxf.extension</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/extensions.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/cxf/extensions.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/cxf/bus-extensions.txt</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/cxf/bus-extensions.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/wsdl.plugin.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/tools.service.validator.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/cxf/java2wsbeans.xml</resource>
-                </transformer>
-              </transformers>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>src/main/resources/tikaserver-version.properties</exclude>
-            <exclude>src/test/resources/*</exclude>
-            <exclude>README.md</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-
-      <!--From OpenAPI Generator-->
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-
-      </plugin>
-      <!--plugin>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-maven-plugin</artifactId>
-        <version>${jetty-version}</version>
-        <configuration>
-          <webApp>
-            <contextPath>/</contextPath>
-          </webApp>
-          <webAppSourceDirectory>target/${project.artifactId}-${project.version}</webAppSourceDirectory>
-          <stopPort>8079</stopPort>
-          <stopKey>stopit</stopKey>
-          <httpConnector>
-            <port>9998</port>
-            <idleTimeout>60000</idleTimeout>
-          </httpConnector>
-        </configuration>
-        <dependencies>
-          <dependency>
-              <groupId>javax.validation</groupId>
-              <artifactId>validation-api</artifactId>
-              <version>${beanvalidation-version}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <id>start-jetty</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>start</goal>
-            </goals>
-            <configuration>
-              <scanIntervalSeconds>0</scanIntervalSeconds>
-              <daemon>true</daemon>
-            </configuration>
-          </execution>
-          <execution>
-            <id>stop-jetty</id>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>stop</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin-->
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.9.1</version>
-        <executions>
-          <execution>
-            <id>add-source</id>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>add-source</goal>
-            </goals>
-            <configuration>
-              <sources>
-                <source>src/gen/java</source>
-              </sources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- build WAR file -->
-      <plugin>
-        <artifactId>maven-war-plugin</artifactId>
-        <configuration>
-           <failOnMissingWebXml>false</failOnMissingWebXml>
-        </configuration>
-    </plugin>
-    </plugins>
-    <pluginManagement>
+    <build>
         <plugins>
-            <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
             <plugin>
-                <groupId>org.eclipse.m2e</groupId>
-                <artifactId>lifecycle-mapping</artifactId>
-                <version>1.0.0</version>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <lifecycleMappingMetadata>
-                        <pluginExecutions>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>org.codehaus.mojo</groupId>
-                                    <artifactId>
-                                        build-helper-maven-plugin
-                                    </artifactId>
-                                    <versionRange>
-                                        [1.9.1,)
-                                    </versionRange>
-                                    <goals>
-                                        <goal>add-source</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <ignore></ignore>
-                                </action>
-                            </pluginExecution>
-                        </pluginExecutions>
-                    </lifecycleMappingMetadata>
+                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                    <argLine>-da -XX:+HeapDumpOnOutOfMemoryError -Xmx512m</argLine>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>
+                            ${basedir}/src/main/resources/commons-logging.properties
+                        </java.util.logging.config.file>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
-        </plugins>
-    </pluginManagement>
-  </build>
-
-  <profiles>
-    <profile>
-      <id>server</id>
-      <build>
-        <defaultGoal>test</defaultGoal>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>test</phase>
-                <goals>
-                  <goal>java</goal>
-                </goals>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>${maven.shade.version}</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>
+                                false
+                            </createDependencyReducedPom>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.apache.tika:tika-parsers:jar:</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/*.txt</exclude>
+                                        <exclude>META-INF/ASL2.0</exclude>
+                                        <exclude>META-INF/DEPENDENCIES</exclude>
+                                        <exclude>META-INF/LICENSE</exclude>
+                                        <exclude>META-INF/NOTICE</exclude>
+                                        <exclude>META-INF/README</exclude>
+                                        <exclude>LICENSE.txt</exclude>
+                                        <exclude>NOTICE.txt</exclude>
+                                        <exclude>CHANGES</exclude>
+                                        <exclude>README</exclude>
+                                        <exclude>builddef.lst</exclude>
+                                        <!-- clutter not needed in jar -->
+                                        <exclude>resources/grib1/nasa/README*.pdf</exclude>
+                                        <exclude>resources/grib1/**/readme*.txt</exclude>
+                                        <exclude>resources/grib2/**/readme*.txt</exclude>
+                                        <!-- TIKA-763: Workaround to avoid including LGPL classes -->
+                                        <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
+                                        <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
+                                        <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/LICENSE</resource>
+                                    <file>target/classes/META-INF/LICENSE</file>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/NOTICE</resource>
+                                    <file>target/classes/META-INF/NOTICE</file>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                                    <resource>META-INF/DEPENDENCIES</resource>
+                                    <file>target/classes/META-INF/DEPENDENCIES</file>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.handlers</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.schemas</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/cxf/cxf.extension</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                    <resource>META-INF/extensions.xml</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                    <resource>META-INF/cxf/extensions.xml</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/cxf/bus-extensions.txt</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                    <resource>META-INF/cxf/bus-extensions.xml</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                    <resource>META-INF/wsdl.plugin.xml</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                    <resource>META-INF/tools.service.validator.xml</resource>
+                                </transformer>
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                                    <resource>META-INF/cxf/java2wsbeans.xml</resource>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                  <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
+                    <archive>
+                        <manifestEntries>
+                            <Automatic-Module-Name>org.apache.tika.server</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>com.qmino</groupId>
-            <artifactId>miredot-plugin</artifactId>
-            <version>2.0.3</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>restdoc</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <organizationId>c579ca2e-c194-4a14-a7f0-f39ef4ec3c2d</organizationId>
-              <restModel>
-                <restFramework>
-                  <name>jax-rs</name>
-                </restFramework>
-              </restModel>
-              <output>
-                <html />
-              </output>
-              <!-- Free Miredot license key, valid until Jan 31st, 2020 https://issues.apache.org/jira/browse/TIKA-2253 -->
-              <licence>cHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAyMC0wMS0zMXx0cnVlfC0xI01Dd0NGRUV5QktCTlBJbXhwLzBvaWxuak1MYkxZQW5XQWhScWdwM0c5aFdWMGpOUFA5MlNFc2pVS1FKZStRPT0=</licence>
-              <!-- insert other configuration here (optional) -->
-            </configuration>
-          </plugin>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>${rat.version}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>src/main/resources/tikaserver-version.properties</exclude>
+                        <exclude>src/test/resources/*</exclude>
+                        <exclude>README.md</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
-      </build>
-    </profile>
-  </profiles>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>server</id>
+            <build>
+                <defaultGoal>test</defaultGoal>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.6.0</version>
+                        <executions>
+                            <execution>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.qmino</groupId>
+                        <artifactId>miredot-plugin</artifactId>
+                        <version>2.2</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>restdoc</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <organizationId>c579ca2e-c194-4a14-a7f0-f39ef4ec3c2d</organizationId>
+                            <restModel>
+                                <restFramework>
+                                    <name>jax-rs</name>
+                                </restFramework>
+                            </restModel>
+                            <output>
+                                <html/>
+                            </output>
+                            <!-- Free Miredot license key, valid until Jan 31st(?), 2025
+                            https://issues.apache.org/jira/browse/TIKA-2253
+                             https://issues.apache.org/jira/browse/TIKA-3038-->
+                            <licence>
+                                cHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAyNS0wMy0wMXxmYWxzZXwtMSNNQ3dDRkdtemsraHJDdjNodXlhN0d1KzlQM1Y0bUNxMEFoUnRHc25DQ1VyMjhLQ2swU0R5RGp1WkVpcXVlZz09
+                            </licence>
+                            <!-- insert other configuration here (optional) -->
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
   <organization>
     <name>The Apache Software Foundation</name>
