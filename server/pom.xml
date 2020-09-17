@@ -26,7 +26,7 @@
   </properties>
 
   <!-- From OpenAPI Generator-->
-  <repositories>
+  <!--repositories>
     <repository>
       <id>sonatype-snapshots</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
@@ -34,7 +34,7 @@
         <enabled>true</enabled>
       </snapshots>
     </repository>
-  </repositories>
+  </repositories-->
 
   <pluginRepositories>
     <pluginRepository>
