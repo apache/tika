@@ -100,8 +100,6 @@ public class TikaResourceApiTest {
         //String response = api.putTika();
         //assertNotNull(response);
         // TODO: test validations
-        
-        
     }
     
 }

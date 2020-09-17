@@ -64,7 +64,7 @@ public class MetadataResourceApiTest {
         List providers = new ArrayList();
         providers.add(provider);
         
-        api = JAXRSClientFactory.create("https://localhost:9998", MetadataResourceApi.class, providers);
+        api = JAXRSClientFactory.create("http://localhost:9998", MetadataResourceApi.class, providers);
         org.apache.cxf.jaxrs.client.Client client = WebClient.client(api);
         
         ClientConfiguration config = WebClient.getConfig(client); 
@@ -81,9 +81,9 @@ public class MetadataResourceApiTest {
      */
     @Test
     public void putDocumentGetMetaValueTest() {
-        String metadataKey = null;
-        //Map<String, String> response = api.putDocumentGetMetaValue(metadataKey);
-        //assertNotNull(response);
+        String metadataKey = "date";
+        Map<String, String> response = api.putDocumentGetMetaValue(metadataKey);
+        assertNotNull(response);
         // TODO: test validations
         
         
@@ -99,8 +99,8 @@ public class MetadataResourceApiTest {
      */
     @Test
     public void putDocumentMetaTest() {
-        //Map<String, String> response = api.putDocumentMeta();
-        //assertNotNull(response);
+        Map<String, String> response = api.putDocumentMeta();
+        assertNotNull(response);
         // TODO: test validations
         
         

@@ -63,7 +63,7 @@ public class LanguageResourceApiTest {
         List providers = new ArrayList();
         providers.add(provider);
         
-        api = JAXRSClientFactory.create("https://localhost:9998", LanguageResourceApi.class, providers);
+        api = JAXRSClientFactory.create("http://localhost:9998", LanguageResourceApi.class, providers);
         org.apache.cxf.jaxrs.client.Client client = WebClient.client(api);
         
         ClientConfiguration config = WebClient.getConfig(client); 
@@ -80,8 +80,8 @@ public class LanguageResourceApiTest {
      */
     @Test
     public void postLanguageStreamTest() {
-        //String response = api.postLanguageStream();
-        //assertNotNull(response);
+        String response = api.postLanguageStream();
+        assertNotNull(response);
         // TODO: test validations
         
         
@@ -97,8 +97,8 @@ public class LanguageResourceApiTest {
      */
     @Test
     public void postLanguageStringTest() {
-        //String response = api.postLanguageString();
-        //assertNotNull(response);
+        String response = api.postLanguageString();
+        assertNotNull(response);
         // TODO: test validations
         
         
@@ -114,8 +114,8 @@ public class LanguageResourceApiTest {
      */
     @Test
     public void putLanguageStreamTest() {
-        //String response = api.putLanguageStream();
-        //assertNotNull(response);
+        String response = api.putLanguageStream();
+        assertNotNull(response);
         // TODO: test validations
         
         
@@ -131,8 +131,8 @@ public class LanguageResourceApiTest {
      */
     @Test
     public void putLanguageStringTest() {
-        //String response = api.putLanguageString();
-        //assertNotNull(response);
+        String response = api.putLanguageString();
+        assertNotNull(response);
         // TODO: test validations
         
         
