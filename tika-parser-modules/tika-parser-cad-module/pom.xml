@@ -35,6 +35,12 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
             <version>${poi.version}</version>
+            <exclusions>
+        		<exclusion>
+          			<groupId>commons-codec</groupId>
+          			<artifactId>commons-codec</artifactId>
+        		</exclusion>
+        	</exclusions>
         </dependency>
     </dependencies>
     <build>
