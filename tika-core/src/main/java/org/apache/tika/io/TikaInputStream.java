@@ -237,6 +237,14 @@ public class TikaInputStream extends TaggedInputStream {
         return new TikaInputStream(path);
     }
 
+    public static TikaInputStream get(Path path, Metadata metadata, TemporaryResources tmp)
+            throws IOException {
+        long length = Files.size(path);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        return new TikaInputStream(path, tmp, length);
+    }
+
     /**
      * Creates a TikaInputStream from the given file.
      * <p>
@@ -525,6 +533,13 @@ public class TikaInputStream extends TaggedInputStream {
         this.path = path;
         this.tmp = new TemporaryResources();
         this.length = Files.size(path);
+    }
+
+    private TikaInputStream(Path path, TemporaryResources tmp, long length) throws IOException {
+        super(new BufferedInputStream(Files.newInputStream(path)));
+        this.path = path;
+        this.tmp = tmp;
+        this.length = length;
     }
 
     /**
