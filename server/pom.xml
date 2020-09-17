@@ -106,7 +106,7 @@
       <version>${commons.cli.version}</version>
     </dependency>
     <dependency>
-      <groupId>commons-lang</groupId>
+      <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>${commons.lang3.version}</version>
     </dependency>
