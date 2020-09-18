@@ -56,7 +56,7 @@ import org.apache.tika.server.api.UnpackResourceApi;
 import org.junit.After;
 import org.junit.Before;
 
-public abstract class CXFApiTestBase {
+public abstract class CXFTestBase {
     private final static int DIGESTER_READ_LIMIT = 20*1024*1024;
 
     protected static final String endPoint =

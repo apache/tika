@@ -27,13 +27,13 @@ package org.apache.tika.server.api;
 
 import org.junit.Test;
 import org.junit.Before;
-import static org.junit.Assert.*;
 
 import javax.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.server.api.LanguageResourceApi;
+import org.apache.tika.server.api.impl.LanguageResourceApiServiceImpl;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
@@ -41,6 +41,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import javax.ws.rs.core.Response;
+
+import java.io.InputStream;
+
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.server.writer.TarWriter;
+import org.apache.tika.server.writer.ZipWriter;
+import org.junit.Test;
 
 
 
@@ -52,10 +65,15 @@ import java.util.Map;
  *
  * API tests for LanguageResourceApi 
  */
-public class LanguageResourceApiTest {
+public class LanguageResourceApiTest extends CXFTestBase {
 
 
     private LanguageResourceApi api;
+    private static final String LANG_PATH = "/language";
+    private static final String LANG_STREAM_PATH = LANG_PATH + "/stream";
+    private static final String LANG_STRING_PATH = LANG_PATH + "/string";
+    private static final String ENGLISH_STRING = "This is English!";
+    private static final String FRENCH_STRING = "c’est comme ci comme ça";
     
     @Before
     public void setup() {
@@ -67,6 +85,68 @@ public class LanguageResourceApiTest {
         org.apache.cxf.jaxrs.client.Client client = WebClient.client(api);
         
         ClientConfiguration config = WebClient.getConfig(client); 
+    }
+
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(LanguageResourceApiServiceImpl.class);
+        sf.setResourceProvider(LanguageResourceApiServiceImpl.class,
+                new SingletonResourceProvider(new LanguageResourceApiServiceImpl()));
+
+    }
+
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new TarWriter());
+        providers.add(new ZipWriter());
+        providers.add(new TikaServerParseExceptionMapper(false));
+        sf.setProviders(providers);
+
+    }
+
+    @Test
+    public void testDetectEnglishString() throws Exception {
+        String url = endPoint + LANG_STRING_PATH;
+        Response response = WebClient.create(url).type("text/plain")
+                .accept("text/plain").put(ENGLISH_STRING);
+        assertNotNull(response);
+        String readLang = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertEquals("en", readLang);
+    }
+
+    @Test
+    public void testDetectFrenchString() throws Exception {
+        String url = endPoint + LANG_STRING_PATH;
+        Response response = WebClient.create(url).type("text/plain")
+                .accept("text/plain").put(FRENCH_STRING);
+        assertNotNull(response);
+        String readLang = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertEquals("fr", readLang);
+    }
+
+    @Test
+    public void testDetectEnglishFile() throws Exception {
+        String url = endPoint + LANG_STREAM_PATH;
+        Response response = WebClient.create(url).type("text/plain")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream("english.txt"));
+        assertNotNull(response);
+        String readLang = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertEquals("en", readLang);
+    }
+
+    @Test
+    public void testDetectFrenchFile() throws Exception {
+        String url = endPoint + LANG_STREAM_PATH;
+        Response response = WebClient.create(url).type("text/plain")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream("french.txt"));
+        assertNotNull(response);
+        String readLang = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertEquals("fr", readLang);
     }
 
     

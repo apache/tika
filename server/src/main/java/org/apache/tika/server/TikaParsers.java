@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.resource;
+package org.apache.tika.server;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -35,7 +35,7 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.server.HTMLHelper;
+import org.apache.tika.server.api.impl.TikaResourceApiServiceImpl;
 
 /**
  * <p>Provides details of all the {@link Parser}s registered with
@@ -66,7 +66,7 @@ public class TikaParsers {
     }
 
     protected String getParsersHTML(boolean withMimeTypes) {
-        ParserDetails p = new ParserDetails(TikaResource.getConfig().getParser());
+        ParserDetails p = new ParserDetails(TikaResourceApiServiceImpl.getConfig().getParser());
 
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Parsers available to Apache Tika");
@@ -128,7 +128,7 @@ public class TikaParsers {
 
     protected String getParsersJSON(boolean withMimeTypes) {
         Map<String, Object> details = new HashMap<String, Object>();
-        parserAsMap(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, details);
+        parserAsMap(new ParserDetails(TikaResourceApiServiceImpl.getConfig().getParser()), withMimeTypes, details);
 
         return GSON.toJson(details);
     }
@@ -170,7 +170,7 @@ public class TikaParsers {
 
     protected String getParsersPlain(boolean withMimeTypes) {
         StringBuffer text = new StringBuffer();
-        renderParser(new ParserDetails(TikaResource.getConfig().getParser()), withMimeTypes, text, "");
+        renderParser(new ParserDetails(TikaResourceApiServiceImpl.getConfig().getParser()), withMimeTypes, text, "");
         return text.toString();
     }
     private void renderParser(ParserDetails p, boolean withMimeTypes, StringBuffer text, String indent) {

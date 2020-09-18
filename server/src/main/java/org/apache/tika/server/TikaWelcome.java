@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.resource;
+package org.apache.tika.server;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.tika.Tika;
 import org.apache.tika.server.HTMLHelper;
+import org.apache.tika.server.api.impl.TikaResourceApiServiceImpl;
 
 /**
  * <p>Provides a basic welcome to the Apache Tika Server.</p>
@@ -67,7 +68,7 @@ public class TikaWelcome {
     private List<Class<?>> endpoints = new LinkedList<Class<?>>();
 
     public TikaWelcome(List<ResourceProvider> rCoreProviders) {
-        this.tika = new Tika(TikaResource.getConfig());
+        this.tika = new Tika(TikaResourceApiServiceImpl.getConfig());
         this.html = new HTMLHelper();
         for (ResourceProvider rp : rCoreProviders) {
             this.endpoints.add(rp.getResourceClass());
@@ -137,7 +138,7 @@ public class TikaWelcome {
     @GET
     @Produces("text/html")
     public String getWelcomeHTML() {
-        TikaResource.checkIsOperating();
+        TikaResourceApiServiceImpl.checkIsOperating();
 
         StringBuffer h = new StringBuffer();
         String tikaVersion = tika.toString();
@@ -194,7 +195,7 @@ public class TikaWelcome {
     @GET
     @Produces("text/plain")
     public String getWelcomePlain() {
-        TikaResource.checkIsOperating();
+        TikaResourceApiServiceImpl.checkIsOperating();
         StringBuffer text = new StringBuffer();
 
         text.append(tika.toString());

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.resource;
+package org.apache.tika.server;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,7 +28,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.server.HTMLHelper;
+import org.apache.tika.server.api.impl.TikaResourceApiServiceImpl;
+
 
 /**
  * <p>Provides details of all the {@link Detector}s registered with
@@ -50,7 +51,7 @@ public class TikaDetectors {
     public String getDectorsHTML() {
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Detectors available to Apache Tika");
-        detectorAsHTML(TikaResource.getConfig().getDetector(), h, 2);
+        detectorAsHTML(TikaResourceApiServiceImpl.getConfig().getDetector(), h, 2);
         html.generateFooter(h);
         return h.toString();
     }
@@ -79,7 +80,7 @@ public class TikaDetectors {
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getDetectorsJSON() {
         Map<String, Object> details = new HashMap<String, Object>();
-        detectorAsMap(TikaResource.getConfig().getDetector(), details);
+        detectorAsMap(TikaResourceApiServiceImpl.getConfig().getDetector(), details);
         return GSON.toJson(details);
     }
 
@@ -103,7 +104,7 @@ public class TikaDetectors {
     @Produces("text/plain")
     public String getDetectorsPlain() {
         StringBuffer text = new StringBuffer();
-        renderDetector(TikaResource.getConfig().getDetector(), text, 0);
+        renderDetector(TikaResourceApiServiceImpl.getConfig().getDetector(), text, 0);
         return text.toString();
     }
     private void renderDetector(Detector d, StringBuffer text, int indent) {

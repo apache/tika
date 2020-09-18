@@ -29,7 +29,7 @@ import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
@@ -45,19 +45,13 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
-import org.apache.tika.server.resource.DetectorResource;
-import org.apache.tika.server.resource.LanguageResource;
-import org.apache.tika.server.resource.MetadataResource;
-import org.apache.tika.server.resource.RecursiveMetadataResource;
-import org.apache.tika.server.resource.TikaDetectors;
-import org.apache.tika.server.resource.TikaMimeTypes;
-import org.apache.tika.server.resource.TikaParsers;
-import org.apache.tika.server.resource.TikaResource;
-import org.apache.tika.server.resource.TikaServerStatus;
-import org.apache.tika.server.resource.TikaVersion;
-import org.apache.tika.server.resource.TikaWelcome;
-import org.apache.tika.server.resource.TranslateResource;
-import org.apache.tika.server.resource.UnpackerResource;
+import org.apache.tika.server.api.impl.DetectorResourceApiServiceImpl;
+import org.apache.tika.server.api.impl.LanguageResourceApiServiceImpl;
+import org.apache.tika.server.api.impl.MetadataResourceApiServiceImpl;
+import org.apache.tika.server.api.impl.RecursiveMetadataAndContentApiServiceImpl;
+import org.apache.tika.server.api.impl.TikaResourceApiServiceImpl;
+import org.apache.tika.server.api.impl.TranslateResourceApiServiceImpl;
+import org.apache.tika.server.api.impl.UnpackResourceApiServiceImpl;
 import org.apache.tika.server.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.writer.JSONObjWriter;
@@ -141,7 +135,7 @@ public class TikaServerCli {
     private static void execute(String[] args) throws Exception {
         Options options = getOptions();
 
-        CommandLineParser cliParser = new GnuParser();
+        CommandLineParser cliParser = new DefaultParser();
 
         //need to strip out -J (child jvm opts) from this parse
         //they'll be processed correctly in args in the watch dog
@@ -293,21 +287,21 @@ public class TikaServerCli {
             } else {
                 serverStatus = new ServerStatus(true);
             }
-            TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
+            TikaResourceApiServiceImpl.init(tika, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
             List<ResourceProvider> rCoreProviders = new ArrayList<>();
-            rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
-            rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-            rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus)));
-            rCoreProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            rCoreProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
-            rCoreProviders.add(new SingletonResourceProvider(new TikaResource()));
-            rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource()));
+            rCoreProviders.add(new SingletonResourceProvider(new DetectorResourceApiServiceImpl(serverStatus)));
+            rCoreProviders.add(new SingletonResourceProvider(new LanguageResourceApiServiceImpl()));
+            rCoreProviders.add(new SingletonResourceProvider(new MetadataResourceApiServiceImpl()));
+            rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataAndContentApiServiceImpl()));
+            rCoreProviders.add(new SingletonResourceProvider(new TranslateResourceApiServiceImpl(serverStatus)));
+            rCoreProviders.add(new SingletonResourceProvider(new TikaResourceApiServiceImpl()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaMimeTypes()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaParsers()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
+            rCoreProviders.add(new SingletonResourceProvider(new UnpackResourceApiServiceImpl()));
             if (line.hasOption("status")) {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }

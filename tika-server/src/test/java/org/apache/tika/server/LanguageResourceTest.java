@@ -34,7 +34,7 @@ import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.writer.ZipWriter;
 import org.junit.Test;
 
-public class LanguageResourceTest extends CXFTestBase {
+public class LanguageResourceTest extends CXFApiTestBase {
 
 	private static final String LANG_PATH = "/language";
 	private static final String LANG_STREAM_PATH = LANG_PATH + "/stream";

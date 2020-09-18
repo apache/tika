@@ -17,6 +17,7 @@
 package org.apache.tika.server;
 
 import javax.ws.rs.core.HttpHeaders;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -52,7 +53,7 @@ public class URLEnabledInputStreamFactory implements InputStreamFactory {
     @Override
     @Deprecated
     public InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException {
-        String fileUrl = httpHeaders.getHeaderString("fileUrl");
+        String fileUrl = httpHeaders.getRequestHeader("fileUrl").toString(); 
         if(fileUrl != null && !"".equals(fileUrl)){
             return TikaInputStream.get(new URL(fileUrl));
         }
@@ -61,7 +62,7 @@ public class URLEnabledInputStreamFactory implements InputStreamFactory {
 
     @Override
     public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException {
-        String fileUrl = httpHeaders.getHeaderString("fileUrl");
+        String fileUrl = httpHeaders.getRequestHeader("fileUrl").toString(); 
         if(fileUrl != null && !"".equals(fileUrl)){
             return TikaInputStream.get(new URL(fileUrl), metadata);
         }

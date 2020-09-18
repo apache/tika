@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.resource;
+package org.apache.tika.server;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -32,7 +32,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.server.HTMLHelper;
+import org.apache.tika.server.api.impl.TikaResourceApiServiceImpl;
 
 /**
  * <p>Provides details of all the mimetypes known to Apache Tika,
@@ -147,8 +147,8 @@ public class TikaMimeTypes {
     }
 
     protected List<MediaTypeDetails> getMediaTypes() {
-        MediaTypeRegistry registry = TikaResource.getConfig().getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser) TikaResource.getConfig().getParser()).getParsers();
+        MediaTypeRegistry registry = TikaResourceApiServiceImpl.getConfig().getMediaTypeRegistry();
+        Map<MediaType, Parser> parsers = ((CompositeParser) TikaResourceApiServiceImpl.getConfig().getParser()).getParsers();
         List<MediaTypeDetails> types =
                 new ArrayList<TikaMimeTypes.MediaTypeDetails>(registry.getTypes().size());
 
