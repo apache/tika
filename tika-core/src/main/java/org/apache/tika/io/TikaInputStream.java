@@ -706,7 +706,10 @@ public class TikaInputStream extends TaggedInputStream {
                     }
                 };
 
+                // Update length to file size. Update position, mark
                 length = Files.size(path);
+                position = 0;
+                mark = -1;
             }
         }
         return path;
