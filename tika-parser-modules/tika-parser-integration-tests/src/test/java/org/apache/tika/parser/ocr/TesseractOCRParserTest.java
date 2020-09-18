@@ -304,17 +304,19 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testConfig() throws Exception {
-        TikaConfig config = new TikaConfig(getResourceAsStream("/org/apache/tika/config/TIKA-2705-tesseract.xml"));
-        Parser p = config.getParser();
-        Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
-        assertNotNull(tesseractOCRParser);
+        try (InputStream is = getResourceAsStream("/org/apache/tika/config/TIKA-2705-tesseract.xml")) {
+            TikaConfig config = new TikaConfig(is);
+            Parser p = config.getParser();
+            Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+            assertNotNull(tesseractOCRParser);
 
-        TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser)tesseractOCRParser).getDefaultConfig();
-        Assert.assertEquals(241, tesseractOCRConfig.getTimeout());
-        Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
-        Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
-        Assert.assertEquals(false, tesseractOCRConfig.getApplyRotation());
-        assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
+            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser)tesseractOCRParser).getDefaultConfig();
+            Assert.assertEquals(241, tesseractOCRConfig.getTimeout());
+            Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
+            Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
+            Assert.assertEquals(false, tesseractOCRConfig.getApplyRotation());
+            assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
+        }
     }
 
 }

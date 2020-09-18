@@ -61,9 +61,9 @@ public class JpegParserTest {
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         // Core EXIF/TIFF tags
         assertEquals("3888", metadata.get(Metadata.IMAGE_WIDTH));
@@ -107,9 +107,9 @@ public class JpegParserTest {
     public void testJPEGGeo() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_GEO.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_GEO.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         // Geo tags
         assertEquals("12.54321", metadata.get(Metadata.LATITUDE));
@@ -153,9 +153,9 @@ public class JpegParserTest {
     public void testJPEGGeo2() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         // Geo tags should be there with 5dp, and not rounded
         assertEquals("51.575762", metadata.get(Metadata.LATITUDE));
@@ -166,9 +166,9 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescription() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_commented.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         // embedded comments with non-ascii characters
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
@@ -209,9 +209,10 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescriptionPhotoshop() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream =
+                     getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         // embedded comments with non-ascii characters
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
@@ -225,9 +226,10 @@ public class JpegParserTest {
     public void testJPEGTitleAndDescriptionXnviewmp() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream =
+                     getClass().getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         // XnViewMp's default comment dialog has only comment, not headline.
         // Comment is embedded only if "Write comments in XMP" is enabled in settings
@@ -244,9 +246,9 @@ public class JpegParserTest {
     public void testJPEGoddTagComponent() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
         assertEquals(null, metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -258,9 +260,10 @@ public class JpegParserTest {
     public void testJPEGEmptyEXIFDateTime() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream =
+                     getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
         assertEquals("300.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
     }
@@ -269,9 +272,10 @@ public class JpegParserTest {
     public void testJPEGXMPMM() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream =
+                     getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
 
         //TODO: when jempbox is fixed/xmpbox is used
         //add tests for history...currently not extracted

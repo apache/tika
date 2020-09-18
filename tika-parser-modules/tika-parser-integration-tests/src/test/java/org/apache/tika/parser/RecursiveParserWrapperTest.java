@@ -372,8 +372,12 @@ public class RecursiveParserWrapperTest extends TikaTest {
         //TIKA-3137
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
-        TikaConfig tikaConfig = new TikaConfig(getClass().getResourceAsStream("TIKA-3137-include.xml"));
-        Parser p = new AutoDetectParser(tikaConfig);
+        TikaConfig tikaConfig = null;
+        Parser p = null;
+        try (InputStream is = getClass().getResourceAsStream("TIKA-3137-include.xml")) {
+            tikaConfig = new TikaConfig(is);
+            p = new AutoDetectParser(tikaConfig);
+        }
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, true);
         String path = "/test-documents/test_recursive_embedded.docx";
         ContentHandlerFactory contentHandlerFactory =

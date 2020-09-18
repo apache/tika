@@ -67,8 +67,9 @@ public class TestXXEInXML extends XMLTestBase {
 
     @Test
     public void testXML() throws Exception {
-        parse("testXXE.xml", getResourceAsStream("/test-documents/testXXE.xml"),
-                AUTO_DETECT_PARSER, new ParseContext());
+        try (InputStream is = getResourceAsStream("/test-documents/testXXE.xml")) {
+            parse("testXXE.xml", is, AUTO_DETECT_PARSER, new ParseContext());
+        }
     }
 
     @Test

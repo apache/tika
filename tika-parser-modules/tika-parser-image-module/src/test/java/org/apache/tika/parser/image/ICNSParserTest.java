@@ -40,9 +40,9 @@ public class ICNSParserTest {
         metadata.set("Icons details", "512x512 (JPEG 2000 or PNG format)");
               
         
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testICNS_basic.icns");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testICNS_basic.icns")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
     }
     
     /**
@@ -58,8 +58,8 @@ public class ICNSParserTest {
         metadata.set("Masked icon details", "16x16 (8 bpp), 32x32 (8 bpp)");
         
         
-        InputStream stream =
-                getClass().getResourceAsStream("/test-documents/testICNS.icns");
-        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testICNS.icns")) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        }
     }
 }
