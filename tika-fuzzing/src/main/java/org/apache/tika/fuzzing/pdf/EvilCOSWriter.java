@@ -32,7 +32,6 @@ import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.cos.COSUpdateInfo;
 import org.apache.pdfbox.cos.ICOSVisitor;
-import org.apache.pdfbox.filter.DecodeResult;
 import org.apache.pdfbox.filter.Filter;
 import org.apache.pdfbox.filter.FilterFactory;
 import org.apache.pdfbox.io.IOUtils;
@@ -51,7 +50,6 @@ import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface
 import org.apache.pdfbox.util.Hex;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.fuzzing.general.GeneralTransformer;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -192,7 +190,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     // the current object number
     private long number = 0;
 
-    private int roughtNumberOfObjects = 0;
+    private int roughNumberOfObjects = 0;
 
     // maps the object to the keys generated in the writer
     // these are used for indirect references in other objects
@@ -406,7 +404,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         COSDictionary root = trailer.getCOSDictionary(COSName.ROOT);
         COSDictionary info = trailer.getCOSDictionary(COSName.INFO);
         COSDictionary encrypt = trailer.getCOSDictionary(COSName.ENCRYPT);
-        roughtNumberOfObjects = doc.getObjects().size();
+        roughNumberOfObjects = doc.getObjects().size();
         if (root != null) {
             addObjectToWrite(root);
         }
@@ -476,7 +474,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // write the object
 
         long objectNumber = currentObjectKey.getNumber();
-        if (config.getRandomizeObjectNumbers() > -1.0f && random.nextFloat() <
+        if (config.getRandomizeObjectNumbers() > 0.0f && random.nextFloat() <
             config.getRandomizeObjectNumbers()) {
                 objectNumber = random.nextInt(((int)objectNumber)*2);
         }
@@ -506,16 +504,16 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
 
         COSObject cosObject = (COSObject)obj;
         COSBase underlyingObject = cosObject.getObject();
-        if (underlyingObject instanceof COSStream && config.getRawStreamTransformer() != null) {
+        if (underlyingObject instanceof COSStream && config.getUnfilteredStreamTransformer() != null) {
             COSStream cosStream = (COSStream)underlyingObject;
-            Transformer rawStreamTransformer = config.getRawStreamTransformer();
+            Transformer unfilteredStreamTransformer = config.getUnfilteredStreamTransformer();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             try (InputStream is = cosStream.createRawInputStream()) {
                 IOUtils.copy(is, bos);
             }
             ByteArrayOutputStream transformed = new ByteArrayOutputStream();
             try {
-                rawStreamTransformer.transform(new ByteArrayInputStream(bos.toByteArray()), transformed);
+                unfilteredStreamTransformer.transform(new ByteArrayInputStream(bos.toByteArray()), transformed);
             } catch (TikaException e) {
                 throw new IOExceptionWithCause(e);
             }
@@ -609,10 +607,10 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     }
 
     private TikaInputStream transformRawStream(TikaInputStream is) throws IOException {
-        if (config.getRawStreamTransformer() != null) {
+        if (config.getUnfilteredStreamTransformer() != null) {
             if (is.getLength() < 10000000) {
                 try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-                    config.getRawStreamTransformer().transform(is, bos);
+                    config.getUnfilteredStreamTransformer().transform(is, bos);
                     bos.flush();
                     bos.close();
                     return TikaInputStream.get(bos.toByteArray());
@@ -623,7 +621,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                 TemporaryResources tmp = new TemporaryResources();
                 Path p = tmp.createTempFile();
                 try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(p))) {
-                    config.getRawStreamTransformer().transform(is, os);
+                    config.getUnfilteredStreamTransformer().transform(is, os);
                     os.flush();
                 } catch (TikaException e) {
                     throw new IOExceptionWithCause(e);
@@ -1232,7 +1230,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         float r = random.nextFloat();
         if (randomThreshold > 0.0f &&
                 r < randomThreshold) {
-            long num = random.nextInt(roughtNumberOfObjects);
+            long num = random.nextInt(roughNumberOfObjects);
             LOG.debug("corrupting ref number: "+key.getNumber() + " -> "+num);
             getStandardOutput().write(String.valueOf(num).getBytes(StandardCharsets.ISO_8859_1));
         } else {

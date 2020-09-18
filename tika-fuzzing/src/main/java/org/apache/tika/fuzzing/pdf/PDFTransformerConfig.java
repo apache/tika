@@ -19,7 +19,6 @@ package org.apache.tika.fuzzing.pdf;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
-import org.apache.pdfbox.cos.COSObject;
 import org.apache.tika.fuzzing.Transformer;
 import org.apache.tika.fuzzing.general.ByteDeleter;
 import org.apache.tika.fuzzing.general.ByteFlipper;
@@ -53,7 +52,7 @@ public class PDFTransformerConfig {
             new ByteDeleter(),
             new ByteFlipper(), new ByteInjector(), new SpanSwapper(), new Truncator());
 
-    private Transformer rawStreamTransformer = new GeneralTransformer(1,
+    private Transformer unfilteredStreamTransformer = new GeneralTransformer(1,
             new ByteDeleter(),
             new ByteFlipper(), new ByteInjector(), new SpanSwapper(), new Truncator());
 
@@ -61,10 +60,20 @@ public class PDFTransformerConfig {
         return randomizeObjectNumbers;
     }
 
+    /**
+     *
+     * @param randomizeObjectNumbers probability that a given object number will be randomized.
+     *                               If < 0, this will be ignored.
+     */
     public void setRandomizeObjectNumbers(float randomizeObjectNumbers) {
         this.randomizeObjectNumbers = randomizeObjectNumbers;
     }
 
+    /**
+     *
+     * @param randomizeRefNumbers probability that a given reference number will be randomized.
+     *                            If < 0, this will be ignored.
+     */
     public void setRandomizeRefNumbers(float randomizeRefNumbers) {
         this.randomizeRefNumbers = randomizeRefNumbers;
     }
@@ -73,26 +82,44 @@ public class PDFTransformerConfig {
         return randomizeRefNumbers;
     }
 
-    public Transformer getRawStreamTransformer() {
-        return rawStreamTransformer;
+    public Transformer getUnfilteredStreamTransformer() {
+        return unfilteredStreamTransformer;
     }
 
     public Transformer getStreamTransformer() {
         return streamTransformer;
     }
 
+    /**
+     * This transformer is applied to the stream _after_ each filter has been applied.
+     *
+     * @param transformer
+     */
     public void setStreamTransformer(Transformer transformer) {
         this.streamTransformer = transformer;
     }
 
-    public void setRawStreamTransformer(Transformer transformer) {
-        this.rawStreamTransformer = transformer;
+    /**
+     * This transformer is applied to the stream _before_ any filters
+     * are applied.
+     * @param transformer
+     */
+    public void setUnfilteredStreamTransformer(Transformer transformer) {
+        this.unfilteredStreamTransformer = transformer;
     }
 
+    /**
+     *
+     * @param maxFilters maximum number of filters to apply
+     */
     public void setMaxFilters(int maxFilters) {
         this.maxFilters = maxFilters;
     }
 
+    /**
+     * Which filters are allowed
+     * @return
+     */
     public Set<COSName> getAllowableFilters() {
         return allowableFilters;
     }
@@ -101,6 +128,14 @@ public class PDFTransformerConfig {
         this.allowableFilters = allowableFilters;
     }
 
+    /**
+     * If {@link #maxFilters} &gt; 0, this will randomly select filters given
+     * the {@link #maxFilters} and {@link #minFilters}.  If {@link #maxFilters} < 0,
+     * this will return the existing filters.
+     *
+     * @param existingFilters
+     * @return
+     */
     public List<COSName> getFilters(COSBase existingFilters) {
         if (maxFilters < 0) {
             List<COSName> ret = new ArrayList<>();
@@ -132,6 +167,11 @@ public class PDFTransformerConfig {
         return filters;
     }
 
+    /**
+     * Minimum number of filters to apply to streams.
+     *
+     * @param minFilters
+     */
     public void setMinFilters(int minFilters) {
         this.minFilters = minFilters;
     }
@@ -140,6 +180,13 @@ public class PDFTransformerConfig {
         return maxFilteredStreamLength;
     }
 
+    /**
+     * Maximum filtered stream length.  AsciiHex doubles the size of the stream with
+     * each encoding.  This is used as a circuit breaker to stop adding filters
+     * if the stream goes above a given length.
+     *
+     * @param maxFilteredStreamLength
+     */
     public void setMaxFilteredStreamLength(long maxFilteredStreamLength) {
         this.maxFilteredStreamLength = maxFilteredStreamLength;
     }
