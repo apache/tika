@@ -151,14 +151,6 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
     }
 
-
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes
-    private static final String VISIO_DOCUMENT =
-            "http://schemas.microsoft.com/visio/2010/relationships/document";
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes
-    private static final String STRICT_CORE_DOCUMENT =
-            "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument";
-
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
 
@@ -206,10 +198,10 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
         // Otherwise check for some other Office core document types
         if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(STRICT_CORE_DOCUMENT);
+            core = pkg.getRelationshipsByType(PackageRelationshipTypes.STRICT_CORE_DOCUMENT);
         }
         if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(VISIO_DOCUMENT);
+            core = pkg.getRelationshipsByType(PackageRelationshipTypes.VISIO_CORE_DOCUMENT);
         }
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(XPS_DOCUMENT);
