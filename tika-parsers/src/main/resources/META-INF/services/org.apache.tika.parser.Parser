@@ -79,6 +79,7 @@ org.apache.tika.parser.gdal.GDALParser
 org.apache.tika.parser.pot.PooledTimeSeriesParser
 org.apache.tika.parser.grib.GribParser
 org.apache.tika.parser.jdbc.SQLite3Parser
+org.apache.tika.parser.indesign.IDMLParser
 org.apache.tika.parser.isatab.ISArchiveParser
 org.apache.tika.parser.geoinfo.GeographicInformationParser
 org.apache.tika.parser.geo.topic.GeoParser

@@ -60,7 +60,6 @@
 	  <sub-class-of type="application/xml"/>
    </mime-type>
 
-
   <mime-type type="application/atom+xml">
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
     <root-XML localName="feed" namespaceURI="http://www.w3.org/2005/Atom"/>
@@ -280,6 +279,13 @@
   </mime-type>
 
   <mime-type type="application/im-iscomposing+xml"/>
+
+  <mime-type type="application/vnd.adobe.indesign-idml-package">
+    <sub-class-of type="application/zip"/>
+    <_comment>IDML</_comment>
+    <glob pattern="*.idml"/>
+  </mime-type>
+
   <mime-type type="application/index"/>
   <mime-type type="application/index.cmd"/>
   <mime-type type="application/index.obj"/>

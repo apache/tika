@@ -49,6 +49,7 @@
     <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>2.0.21</pdfbox.version>
     <jempbox.version>1.8.16</jempbox.version>
+    <xmpbox.version>2.0.21</xmpbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>1.0</sis.version>
     <parso.version>2.0.12</parso.version>
@@ -212,6 +213,11 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>jempbox</artifactId>
       <version>${jempbox.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>xmpbox</artifactId>
+      <version>${xmpbox.version}</version>
     </dependency>
     <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
          as optional, but we prefer to have them always to avoid
