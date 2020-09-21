@@ -179,6 +179,7 @@
               pdfbox-tools|
               pdfbox-debugger|
               pdfbox-preflight|
+              xmpbox|
               fontbox|
               jempbox|
               bcmail-jdk15on|
