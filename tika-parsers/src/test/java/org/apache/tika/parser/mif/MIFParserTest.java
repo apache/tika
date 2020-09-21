@@ -18,6 +18,7 @@
 package org.apache.tika.parser.mif;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
@@ -50,6 +51,12 @@ public class MIFParserTest extends TikaTest {
         assertEquals("1", metadata.get("PageCount"));
         assertContains("<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit", xml);
         assertContains("<meta name=\"Content-Type\" content=\"application/x-mif\" />", xml);
+    }
+
+    @Test(expected = TikaException.class)
+    public void testParserVersionCheck() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("testMIF.mif", parser, metadata);
     }
 
 }

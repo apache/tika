@@ -17,6 +17,7 @@
 package org.apache.tika.parser.mif;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
@@ -37,14 +38,19 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MIFParser extends AbstractEncodingDetectorParser {
+
+    private static final Pattern versionPattern = Pattern.compile("<MIFFile (\\d*)");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
                     MediaType.application("vnd.mif"),
                     MediaType.application("x-maker"),
                     MediaType.application("x-mif"))));
+
 
     public MIFParser() {
         super();
@@ -65,6 +71,14 @@ public class MIFParser extends AbstractEncodingDetectorParser {
 
         try (AutoDetectReader reader = new AutoDetectReader(
                 new CloseShieldInputStream(stream), metadata, getEncodingDetector(context))) {
+
+            String version = reader.readLine();
+            version = StringUtils.substringBefore(version, ">");
+            Matcher versionCheck = versionPattern.matcher(version);
+            if (!versionCheck.matches() || Double.parseDouble(versionCheck.group(1)) < 8) {
+                throw new TikaException("Unsupported MIF File. Tika supports MIF version 8 and above.");
+            }
+            reader.reset();
 
             Charset charset = reader.getCharset();
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
