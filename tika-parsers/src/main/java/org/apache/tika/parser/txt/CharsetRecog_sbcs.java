@@ -905,7 +905,7 @@ abstract class CharsetRecog_sbcs extends CharsetRecognizer {
 
         public CharsetMatch match(CharsetDetector det) {
             int confidence = match(det, ngrams, byteMap);
-            return confidence == 0 ? null : new CharsetMatch(det, this, confidence, getName(), "tr");
+            return confidence == 0 ? null : new CharsetMatch(det, this, confidence, getName(), "ru");
         }
     }
 
