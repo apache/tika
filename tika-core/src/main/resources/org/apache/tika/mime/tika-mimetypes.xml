@@ -479,6 +479,13 @@
   <mime-type type="application/mediaservercontrol+xml">
     <glob pattern="*.mscml"/>
   </mime-type>
+
+  <mime-type type="application/vnd.mif">
+    <_comment>Adobe MIF File</_comment>
+    <glob pattern="*.mif"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="application/mikey"/>
   <mime-type type="application/moss-keys"/>
   <mime-type type="application/moss-signature"/>

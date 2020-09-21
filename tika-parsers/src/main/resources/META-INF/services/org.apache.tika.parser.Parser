@@ -53,6 +53,7 @@ org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.microsoft.ooxml.xwpf.ml2006.Word2006MLParser
 org.apache.tika.parser.microsoft.xml.WordMLParser
 org.apache.tika.parser.microsoft.xml.SpreadsheetMLParser
+org.apache.tika.parser.mif.MIFParser
 org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.mp4.MP4Parser
 org.apache.tika.parser.hdf.HDFParser
