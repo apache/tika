@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.api;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
@@ -51,8 +51,13 @@ import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.digestutils.CommonsDigester;
+import org.apache.tika.server.DefaultInputStreamFactory;
+import org.apache.tika.server.ServerStatus;
+import org.apache.tika.server.TikaServerCli;
 import org.apache.tika.server.api.TikaResourceApi;
 import org.apache.tika.server.api.UnpackResourceApi;
+import org.apache.tika.server.api.impl.TikaResourceApiServiceImpl;
+import org.apache.tika.server.api.impl.UnpackResourceApiServiceImpl;
 import org.junit.After;
 import org.junit.Before;
 
@@ -163,9 +168,9 @@ public abstract class CXFTestBase {
     protected String readArchiveText(InputStream inputStream) throws IOException {
         Path tempFile = writeTemporaryArchiveFile(inputStream, "zip");
         ZipFile zip = new ZipFile(tempFile.toFile());
-        zip.getEntry(UnpackerResource.TEXT_FILENAME);
+        zip.getEntry(UnpackResourceApiServiceImpl.TEXT_FILENAME);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
+        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackResourceApiServiceImpl.TEXT_FILENAME)), bos);
 
         zip.close();
         Files.delete(tempFile);

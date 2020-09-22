@@ -57,6 +57,7 @@ public class TikaResourceApiTest {
 
     private TikaResourceApi api;
     
+    
     @Before
     public void setup() {
         JacksonJsonProvider provider = new JacksonJsonProvider();

@@ -32,6 +32,7 @@ import javax.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.server.TikaServerParseExceptionMapper;
 import org.apache.tika.server.api.LanguageResourceApi;
 import org.apache.tika.server.api.impl.LanguageResourceApiServiceImpl;
 

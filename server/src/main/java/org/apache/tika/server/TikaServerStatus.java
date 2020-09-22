@@ -16,8 +16,6 @@
  */
 package org.apache.tika.server;
 
-import org.apache.tika.server.ServerStatus;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
