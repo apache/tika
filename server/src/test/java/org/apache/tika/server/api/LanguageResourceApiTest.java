@@ -22,7 +22,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.tika.server.api;
 
 import org.junit.Test;
@@ -49,9 +48,6 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.writer.ZipWriter;
 
-
-
-
 /**
  * Tika JAX-RS Server
  *
@@ -60,7 +56,6 @@ import org.apache.tika.server.writer.ZipWriter;
  * API tests for LanguageResourceApi 
  */
 public class LanguageResourceApiTest extends CXFTestBase {
-
 
     private LanguageResourceApi api;
     private static final String LANG_PATH = "/language";
@@ -177,7 +172,7 @@ public class LanguageResourceApiTest extends CXFTestBase {
         
         
     }
-    
+
     /**
      * PUT a UTF-8 text file to the LanguageIdentifier to identify its language.
      *
@@ -194,7 +189,7 @@ public class LanguageResourceApiTest extends CXFTestBase {
         
         
     }
-    
+
     /**
      * PUT a text string to the LanguageIdentifier to identify its language.
      *
