@@ -439,6 +439,14 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testAVIFDetection() throws Exception {
+        // The test file is an avif header fragment only, not a complete image.
+        assertType("image/avif", "testAVIF.avif");
+        assertTypeByData("image/avif", "testAVIF.avif");
+        assertTypeByName("image/avif", "testAVIF.avif");
+    }
+
+    @Test
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");
         assertTypeByData("image/jpeg", "testJPEG.jpg");

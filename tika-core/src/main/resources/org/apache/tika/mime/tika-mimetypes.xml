@@ -501,6 +501,11 @@
   <mime-type type="application/mediaservercontrol+xml">
     <glob pattern="*.mscml"/>
   </mime-type>
+  <mime-type type="application/vnd.mif">
+    <_comment>Adobe MIF File</_comment>
+    <glob pattern="*.mif"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
   <mime-type type="application/mikey"/>
   <mime-type type="application/moss-keys"/>
   <mime-type type="application/moss-signature"/>
@@ -5483,7 +5488,17 @@
     </magic>
     <glob pattern="*.gif"/>
   </mime-type>
-
+  <mime-type type="image/avif">
+    <!-- According to https://github.com/libvips/libvips/pull/1657
+      older avif used to use the the heif 'ftypmif1' as well -->
+    <_comment>AV1 Image File</_comment>
+    <acronym>AVIF</acronym>
+    <tika:link>https://en.wikipedia.org/wiki/AV1#AV1_Image_File_Format_(AVIF)</tika:link>
+    <magic priority="60">
+      <match value="ftypavif" type="string" offset="4"/>
+    </magic>
+    <glob pattern="*.avif"/>
+  </mime-type>
   <mime-type type="image/heif">
     <_comment>HEIF - High Efficiency Image File</_comment>
     <acronym>HEIF</acronym>

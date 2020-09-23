@@ -16,9 +16,9 @@
  */
 package org.apache.tika.fuzzing.general;
 
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,12 +75,12 @@ public class GeneralTransformer implements Transformer {
         int transformerCount = (maxTransforms == 1) ? 1 : 1 + random.nextInt(maxTransforms);
         int[] transformerIndices = new int[transformerCount];
         for (int i = 0; i < transformerCount; i++) {
-            transformerIndices[i] = random.nextInt(transformerCount);
+            transformerIndices[i] = random.nextInt(transformers.length);
         }
         //TODO -- make this actually streaming
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         IOUtils.copy(is, bos);
-        for (int i = 0; i < transformerIndices.length-1; i++) {
+        for (int i = 0; i < transformerIndices.length; i++) {
             byte[] bytes = bos.toByteArray();
             bos = new ByteArrayOutputStream();
             transformers[transformerIndices[i]].transform(

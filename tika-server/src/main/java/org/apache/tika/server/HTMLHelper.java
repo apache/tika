@@ -37,15 +37,16 @@ public class HTMLHelper {
     private String POST_BODY;
 
     public HTMLHelper() {
-        InputStream htmlStr = getClass().getResourceAsStream(PATH);
-        if (htmlStr == null) {
-            throw new IllegalArgumentException("Template Not Found - " + PATH);
-        }
-        try {
+        try (InputStream htmlStr = getClass().getResourceAsStream(PATH)) {
+            if (htmlStr == null) {
+                throw new IllegalArgumentException("Template Not Found - " + PATH);
+            }
+
             String html = IOUtils.toString(htmlStr, UTF_8);
             int bodyAt = html.indexOf(BODY_VAR);
             PRE_BODY = html.substring(0, bodyAt);
             POST_BODY = html.substring(bodyAt + BODY_VAR.length());
+
         } catch (IOException e) {
             throw new IllegalStateException("Unable to read template");
         }

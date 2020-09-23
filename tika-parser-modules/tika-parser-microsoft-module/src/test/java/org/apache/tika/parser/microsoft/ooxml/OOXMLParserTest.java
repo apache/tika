@@ -1348,10 +1348,11 @@ public class OOXMLParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", context));
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-dom-macros.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", parser));
-
+        try (InputStream is = this.getClass().getResourceAsStream("tika-config-dom-macros.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+            assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", parser));
+        }
     }
 
     @Test
@@ -1380,10 +1381,11 @@ public class OOXMLParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", context));
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-dom-macros.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
-
+        try (InputStream is = this.getClass().getResourceAsStream("tika-config-dom-macros.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+            assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
+        }
     }
 
     @Test
@@ -1413,10 +1415,11 @@ public class OOXMLParserTest extends TikaTest {
                 getRecursiveMetadata("testEXCEL_macro.xlsm", context));
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-dom-macros.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
-
+        try (InputStream is = this.getClass().getResourceAsStream("tika-config-dom-macros.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+            assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
+        }
     }
 
     //@Test //use this for lightweight benchmarking to compare xwpf options
@@ -1450,13 +1453,14 @@ public class OOXMLParserTest extends TikaTest {
         //NOTE: this test relies on a bug in the DOM extractor that
         //is passing over the title information.
         //once we fix that, this test will no longer be meaningful!
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
-        XMLResult xml = getXML("testWORD_2006ml.docx", p, new Metadata());
-        assertContains("engaging title", xml.xml);
-
+        try (InputStream is =
+                     getClass().getResourceAsStream("/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser p = new AutoDetectParser(tikaConfig);
+            XMLResult xml = getXML("testWORD_2006ml.docx", p, new Metadata());
+            assertContains("engaging title", xml.xml);
+        }
     }
 
     @Test
@@ -1750,12 +1754,13 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testDateFormat() throws Exception {
-        TikaConfig tikaConfig = new TikaConfig(
-                this.getClass().getResourceAsStream("tika-config-custom-date-override.xml"));
-        Parser p = new AutoDetectParser(tikaConfig);
-        String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
-        assertContains("2018-09-20", xml);
-        assertContains("1996-08-10", xml);
+        try (InputStream is = this.getClass().getResourceAsStream("tika-config-custom-date-override.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;
+            assertContains("2018-09-20", xml);
+            assertContains("1996-08-10", xml);
+        }
     }
 
     @Test

@@ -25,6 +25,7 @@ import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,50 +43,51 @@ public class NamedEntityParserTest extends TikaTest {
     public void testParse() throws Exception {
 
         //test config is added to resources directory
-        TikaConfig config = new TikaConfig(getClass().getResourceAsStream(CONFIG_FILE));
-        Tika tika = new Tika(config);
-        String text = "I am student at University of Southern California (USC)," +
-                " located in Los Angeles . USC's football team is called by name Trojans." +
-                " Mr. John McKay was a head coach of the team from 1960 - 1975";
-        Metadata md = new Metadata();
-        tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
+        try (InputStream is = getClass().getResourceAsStream(CONFIG_FILE)) {
+            TikaConfig config = new TikaConfig(is);
+            Tika tika = new Tika(config);
+            String text = "I am student at University of Southern California (USC)," +
+                    " located in Los Angeles . USC's football team is called by name Trojans." +
+                    " Mr. John McKay was a head coach of the team from 1960 - 1975";
+            Metadata md = new Metadata();
+            tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
 
-        HashSet<String> set = new HashSet<String>();
-        set.addAll(Arrays.asList(md.getValues("X-Parsed-By")));
-        assumeTrue(set.contains(NamedEntityParser.class.getName()));
+            HashSet<String> set = new HashSet<String>();
+            set.addAll(Arrays.asList(md.getValues("X-Parsed-By")));
+            assumeTrue(set.contains(NamedEntityParser.class.getName()));
 
-        set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_PERSON")));
-        assumeTrue(set.contains("John McKay"));
+            set.clear();
+            set.addAll(Arrays.asList(md.getValues("NER_PERSON")));
+            assumeTrue(set.contains("John McKay"));
 
-        set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_LOCATION")));
-        assumeTrue(set.contains("Los Angeles"));
+            set.clear();
+            set.addAll(Arrays.asList(md.getValues("NER_LOCATION")));
+            assumeTrue(set.contains("Los Angeles"));
 
-        set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_ORGANIZATION")));
-        assumeTrue(set.contains("University of Southern California"));
+            set.clear();
+            set.addAll(Arrays.asList(md.getValues("NER_ORGANIZATION")));
+            assumeTrue(set.contains("University of Southern California"));
 
-        set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_DATE")));
-        assumeTrue(set.contains("1960 - 1975"));
-
+            set.clear();
+            set.addAll(Arrays.asList(md.getValues("NER_DATE")));
+            assumeTrue(set.contains("1960 - 1975"));
+        }
     }
 
     @Test
     public void testNerChain() throws Exception {
-        String classNames = OpenNLPNERecogniser.class.getName()
-                + "," + RegexNERecogniser.class.getName();
+        String classNames = OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
-        TikaConfig config = new TikaConfig(getClass().getResourceAsStream(CONFIG_FILE));
-        Tika tika = new Tika(config);
-        String text = "University of Southern California (USC), is located in Los Angeles ." +
-                " Campus is busy from monday to saturday";
-        Metadata md = new Metadata();
-        tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
-        HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
-        assumeTrue(keys.contains("NER_WEEK_DAY"));
-        assumeTrue(keys.contains("NER_LOCATION"));
-
+        try (InputStream is = getClass().getResourceAsStream(CONFIG_FILE)) {
+            TikaConfig config = new TikaConfig(is);
+            Tika tika = new Tika(config);
+            String text = "University of Southern California (USC), is located in Los Angeles ." +
+                    " Campus is busy from monday to saturday";
+            Metadata md = new Metadata();
+            tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
+            HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
+            assumeTrue(keys.contains("NER_WEEK_DAY"));
+            assumeTrue(keys.contains("NER_LOCATION"));
+        }
     }
 }

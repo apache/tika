@@ -86,14 +86,31 @@ public class TabularFormatsTest extends TikaTest {
              "0","1","4","9","16","25","36","49","64","81","100"
         },
         new String[] {}, // Generated later
-        new String[] {
-                "0%","10%","20%","30%","40%","50%",
-                "60%","70%","80%","90%","100%"
+        new Pattern[] {
+                Pattern.compile("0%|0.00%"),
+                Pattern.compile("10%|10.00%"),
+                Pattern.compile("20%|20.00%"),
+                Pattern.compile("30%|30.00%"),
+                Pattern.compile("40%|40.00%"),
+                Pattern.compile("50%|50.00%"),
+                Pattern.compile("60%|60.00%"),
+                Pattern.compile("70%|70.00%"),
+                Pattern.compile("80%|80.00%"),
+                Pattern.compile("90%|90.00%"),
+                Pattern.compile("100%|100.00%"),
         },
-        new String[] {
-                "","0.0%","50.0%","66.7%",
-                "75.0%","80.0%","83.3%","85.7%",
-                "87.5%","88.9%","90.0%"
+        new Pattern[] {
+                Pattern.compile(""),
+                Pattern.compile("0.0%|0.00%"),
+                Pattern.compile("50.0%|50.00%"),
+                Pattern.compile("66.7%|66.67%"),
+                Pattern.compile("75.0%|75.00%"),
+                Pattern.compile("80.0%|80.00%"),
+                Pattern.compile("83.3%|83.33%"),
+                Pattern.compile("85.7%|85.71%"),
+                Pattern.compile("87.5%|87.50%"),
+                Pattern.compile("88.9%|88.89%"),
+                Pattern.compile("90.0%|90.00%"),
         },
         new Pattern[] {
                 Pattern.compile("0?1-01-1960"),
@@ -144,8 +161,7 @@ public class TabularFormatsTest extends TikaTest {
     }
     // Which columns hold percentages? Not all parsers
     //  correctly format these...
-    protected static final List<Integer> percentageColumns = 
-            Arrays.asList(new Integer[] { 3, 4 });
+    protected static final List<Integer> percentageColumns = Arrays.asList(3, 4);
     
     protected static String[] toCells(String row, boolean isTH) {
         // Split into cells, ignoring stuff before first cell
@@ -249,30 +265,28 @@ public class TabularFormatsTest extends TikaTest {
         XMLResult result = getXML("test-columnar.sas7bdat");
         String xml = result.xml;
         assertHeaders(xml, true, true, true);
-        // TODO Wait for https://github.com/epam/parso/issues/28 to be fixed
-        //  then check the % formats again
-        assertContents(xml, true, false);
+        assertContents(xml, true, true);
     }
     @Test
     public void testXLS() throws Exception {
         XMLResult result = getXML("test-columnar.xls");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        assertContents(xml, true, false);
+        assertContents(xml, true, true);
     }
     @Test
     public void testXLSX() throws Exception {
         XMLResult result = getXML("test-columnar.xlsx");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        assertContents(xml, true, false);
+        assertContents(xml, true, true);
     }
     @Test
     public void testXLSB() throws Exception {
         XMLResult result = getXML("test-columnar.xlsb");
         String xml = result.xml;
         assertHeaders(xml, false, true, false);
-        assertContents(xml, true, false);
+        assertContents(xml, true, true);
     }
 
     // TODO Fix the ODS test - currently failing with

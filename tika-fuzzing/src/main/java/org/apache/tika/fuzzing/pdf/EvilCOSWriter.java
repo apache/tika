@@ -32,6 +32,8 @@ import org.apache.pdfbox.cos.COSStream;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.cos.COSUpdateInfo;
 import org.apache.pdfbox.cos.ICOSVisitor;
+import org.apache.pdfbox.filter.Filter;
+import org.apache.pdfbox.filter.FilterFactory;
 import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.io.RandomAccessInputStream;
 import org.apache.pdfbox.io.RandomAccessRead;
@@ -40,12 +42,23 @@ import org.apache.pdfbox.pdfwriter.COSStandardOutputStream;
 import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdfwriter.COSWriterXRefEntry;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.common.PDStream;
 import org.apache.pdfbox.pdmodel.encryption.SecurityHandler;
 import org.apache.pdfbox.pdmodel.fdf.FDFDocument;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.COSFilterInputStream;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface;
 import org.apache.pdfbox.util.Hex;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.fuzzing.Transformer;
+import org.apache.tika.io.IOExceptionWithCause;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -53,6 +66,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -73,6 +88,9 @@ import java.util.Random;
 import java.util.Set;
 
 public class EvilCOSWriter implements ICOSVisitor, Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EvilCOSWriter.class);
+
     /**
      * The dictionary open token.
      */
@@ -172,6 +190,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     // the current object number
     private long number = 0;
 
+    private int roughNumberOfObjects = 0;
+
     // maps the object to the keys generated in the writer
     // these are used for indirect references in other objects
     //A hashtable is used on purpose over a hashmap
@@ -216,6 +236,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     private SignatureInterface signatureInterface;
     private byte[] incrementPart;
     private COSArray byteRangeArray;
+
+    private FilterFactory filterFactory = FilterFactory.INSTANCE;
 
     private final PDFTransformerConfig config;
     private final Random random = new Random();
@@ -382,6 +404,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         COSDictionary root = trailer.getCOSDictionary(COSName.ROOT);
         COSDictionary info = trailer.getCOSDictionary(COSName.INFO);
         COSDictionary encrypt = trailer.getCOSDictionary(COSName.ENCRYPT);
+        roughNumberOfObjects = doc.getObjects().size();
         if (root != null) {
             addObjectToWrite(root);
         }
@@ -451,11 +474,9 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // write the object
 
         long objectNumber = currentObjectKey.getNumber();
-        if (config.getRandomizeObjectNumbers()) {
-            if (random.nextFloat() < 0.99) {
-                long orig = objectNumber;
-                objectNumber = 1;//random.nextInt(((int)objectNumber)*2);
-            }
+        if (config.getRandomizeObjectNumbers() > 0.0f && random.nextFloat() <
+            config.getRandomizeObjectNumbers()) {
+                objectNumber = random.nextInt(((int)objectNumber)*2);
         }
         getStandardOutput().write(String.valueOf(objectNumber).getBytes(StandardCharsets.ISO_8859_1));
         getStandardOutput().write(SPACE);
@@ -468,18 +489,186 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
         // fail with an NPE
         mutate(obj);
         if (obj != null) {
-            obj.accept(this);
+            writeObjContents(obj);
         }
         getStandardOutput().writeEOL();
         getStandardOutput().write(ENDOBJ);
         getStandardOutput().writeEOL();
     }
 
-    private void mutate(COSBase obj) {
+    private void writeObjContents(COSBase obj) throws IOException {
+        if (! (obj instanceof COSObject)) {
+            obj.accept(this);
+            return;
+        }
+
+        COSObject cosObject = (COSObject)obj;
+        COSBase underlyingObject = cosObject.getObject();
+        if (underlyingObject instanceof COSStream && config.getUnfilteredStreamTransformer() != null) {
+            COSStream cosStream = (COSStream)underlyingObject;
+            Transformer unfilteredStreamTransformer = config.getUnfilteredStreamTransformer();
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            try (InputStream is = cosStream.createRawInputStream()) {
+                IOUtils.copy(is, bos);
+            }
+            ByteArrayOutputStream transformed = new ByteArrayOutputStream();
+            try {
+                unfilteredStreamTransformer.transform(new ByteArrayInputStream(bos.toByteArray()), transformed);
+            } catch (TikaException e) {
+                throw new IOExceptionWithCause(e);
+            }
+            try (OutputStream os = cosStream.createRawOutputStream()) {
+                IOUtils.copy(new ByteArrayInputStream(transformed.toByteArray()), os);
+            }
+            //stream automatically sets the length correctly
+            obj.accept(this);
+        } else {
+            obj.accept(this);
+        }
+    }
+
+    private void mutate(COSBase obj) throws IOException {
+
         //stub
         if (obj instanceof COSStream) {
             COSStream stream = (COSStream)obj;
-            //manipulate filters and stream length
+            //get the raw unfiltered bytes
+            byte[] bytes = new PDStream(stream).toByteArray();
+            //transform the underlying stream _before_ filters are applied
+            if (config.getStreamTransformer() != null) {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                try {
+                    config.getStreamTransformer().transform(new ByteArrayInputStream(bytes), bos);
+                } catch (TikaException e) {
+                    throw new IOExceptionWithCause(e);
+                }
+                bytes = bos.toByteArray();
+            }
+            COSBase filters = getFilters(stream.getFilters());
+            if (filters instanceof COSNull) {
+                stream.removeItem(COSName.FILTER);
+            } else {
+                List<COSName> usedFilters = new ArrayList<>();
+                long length = -1;
+                try (TikaInputStream rawBytes = TikaInputStream.get(bytes)) {
+                    try (TikaInputStream filtered = runFilters(filters, rawBytes, usedFilters)) {
+                        //rewrite raw bytes after running own filters
+                        try (OutputStream streamOut = stream.createRawOutputStream()) {
+                            IOUtils.copy(filtered, streamOut);
+                        }
+                        length = filtered.getLength();
+                    }
+                }
+                Collections.reverse(usedFilters);
+                COSArray actualFilters = new COSArray();
+                for (COSName f : usedFilters) {
+                    actualFilters.add(f);
+                }
+                //TODO: parameterize wonkifying length and filters
+                stream.setLong(COSName.LENGTH, length);
+                stream.setItem(COSName.FILTER, actualFilters);
+            }
+        } else if (obj instanceof COSObject) {
+                COSBase underlyingObject = ((COSObject)obj).getObject();
+                mutate(underlyingObject);
+
+        }
+    }
+
+    private TikaInputStream runFilters(COSBase filters, TikaInputStream is, List<COSName> usedFilters) throws IOException {
+        if (filters instanceof COSNull) {
+        } else if (filters instanceof COSName) {
+            is = runFilter((COSName)filters, is, new COSDictionary(), 0);
+            usedFilters.add((COSName)filters);
+            LOG.debug("filter:" + filters.toString() +" "+0 + " : " + is.getLength() );
+        } else if (filters instanceof COSArray) {
+            COSArray filterArray = (COSArray)filters;
+            //need to apply them in reverse order!
+            boolean transformed = false;
+            for (int i = filterArray.size()-1; i >= 0; i--) {
+                COSName filter = (COSName)filterArray.get(i);
+                is = runFilter(filter, is, new COSDictionary(), 0);
+                if (random.nextFloat() > 0.1 && transformed == false) {
+                    is = transformRawStream(is);
+                    transformed = true;
+                }
+                usedFilters.add(filter);
+                LOG.debug("filter:" + filter.toString() +" "+i + " : " +  is.getLength());
+                if (is.getLength() > config.getMaxFilteredStreamLength()) {
+                    LOG.debug("stopping early");
+                    return is;
+                }
+            }
+            return is;
+        } else {
+            throw new IllegalArgumentException("Can't handle this class here: "+filters.getClass());
+        }
+        return transformRawStream(is);
+    }
+
+    private TikaInputStream transformRawStream(TikaInputStream is) throws IOException {
+        if (config.getUnfilteredStreamTransformer() != null) {
+            if (is.getLength() < 10000000) {
+                try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                    config.getUnfilteredStreamTransformer().transform(is, bos);
+                    bos.flush();
+                    bos.close();
+                    return TikaInputStream.get(bos.toByteArray());
+                } catch (TikaException e) {
+                    throw new IOExceptionWithCause(e);
+                }
+            } else {
+                TemporaryResources tmp = new TemporaryResources();
+                Path p = tmp.createTempFile();
+                try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(p))) {
+                    config.getUnfilteredStreamTransformer().transform(is, os);
+                    os.flush();
+                } catch (TikaException e) {
+                    throw new IOExceptionWithCause(e);
+                }
+                return TikaInputStream.get(p, new Metadata(), tmp);
+            }
+        }
+        return is;
+    }
+
+    private TikaInputStream runFilter(COSName filterCOSName, TikaInputStream tis, COSDictionary filterParameters,
+                             int filterIndex) throws IOException {
+
+        Filter filter = filterFactory.getFilter(filterCOSName);
+        if (tis.getLength() < 100000000) {
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+                filter.encode(tis, bos, filterParameters, filterIndex);
+                bos.flush();
+                bos.close();
+                return TikaInputStream.get(bos.toByteArray());
+            } finally {
+                tis.close();
+            }
+        } else {
+            TemporaryResources tmp = new TemporaryResources();
+            Path p = tmp.createTempFile();
+            try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(p))) {
+                filter.encode(tis, os, filterParameters, filterIndex);
+            } finally {
+                tis.close();
+            }
+            return TikaInputStream.get(p, new Metadata(), tmp);
+        }
+    }
+
+    private COSBase getFilters(COSBase existingFilters) {
+        List<COSName> filters = config.getFilters(existingFilters);
+        if (filters.size() == 0) {
+            return COSNull.NULL;
+        } else if (filters.size() == 1) {
+            return filters.get(0);
+        } else {
+            COSArray arr = new COSArray();
+            for (COSName n : filters) {
+                arr.add(n);
+            }
+            return arr;
         }
     }
 
@@ -1037,7 +1226,17 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
      */
     public void writeReference(COSBase obj) throws IOException {
         COSObjectKey key = getObjectKey(obj);
-        getStandardOutput().write(String.valueOf(key.getNumber()).getBytes(StandardCharsets.ISO_8859_1));
+        float randomThreshold = config.getRandomizeRefNumbers();
+        float r = random.nextFloat();
+        if (randomThreshold > 0.0f &&
+                r < randomThreshold) {
+            long num = random.nextInt(roughNumberOfObjects);
+            LOG.debug("corrupting ref number: "+key.getNumber() + " -> "+num);
+            getStandardOutput().write(String.valueOf(num).getBytes(StandardCharsets.ISO_8859_1));
+        } else {
+            getStandardOutput().write(String.valueOf(key.getNumber()).getBytes(StandardCharsets.ISO_8859_1));
+
+        }
         getStandardOutput().write(SPACE);
         getStandardOutput().write(String.valueOf(key.getGeneration()).getBytes(StandardCharsets.ISO_8859_1));
         getStandardOutput().write(SPACE);
@@ -1070,8 +1269,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                 input.close();
             }
         }
-    }
 
+    }
     @Override
     public Object visitFromString(COSString obj) throws IOException {
         if (willEncrypt) {
@@ -1085,7 +1284,8 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
     }
 
     /**
-     * This will write the pdf document.
+     * This will write the pdf document.  }
+     *
      *
      * @param doc The document to write.
      * @throws IOException If an error occurs while generating the data.

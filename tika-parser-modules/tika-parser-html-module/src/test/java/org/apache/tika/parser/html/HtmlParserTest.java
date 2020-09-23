@@ -1303,17 +1303,16 @@ public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testConfigExtractScript() throws Exception {
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        Parser p = new AutoDetectParser(tikaConfig);
-        List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html", p);
-        assertEquals(2, metadataList.size());
-        assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertContains("cool",
-                metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertNotContained("cool", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-
+        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html", p);
+            assertEquals(2, metadataList.size());
+            assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            assertContains("cool", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+            assertNotContained("cool", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        }
     }
 
 
@@ -1426,15 +1425,14 @@ public class HtmlParserTest extends TikaTest {
                 metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
 
         //make sure to include it if a user wants scripts to be extracted
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        Parser p = new AutoDetectParser(tikaConfig);
-        metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html", p);
-        assertEquals(2, metadataList.size());
-        assertContains("alert( 'Hello, world!' );",
-                metadataList.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
-
-
+        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html", p);
+            assertEquals(2, metadataList.size());
+            assertContains("alert( 'Hello, world!' );",
+                    metadataList.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        }
     }
 }

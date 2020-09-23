@@ -18,20 +18,18 @@ package org.apache.tika.batch.fs;
  */
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -81,11 +79,16 @@ public abstract class FSBatchTestBase extends TikaTest {
         //not ideal, but should be ok for testing
         //see caveat in TikaCLITest's textExtract
 
+        File outputDir = outputRoot.toFile();
         try {
-
-            FileUtils.deleteDirectory(outputRoot.toFile());
-        } catch (IOException e) {
-            e.printStackTrace();
+            FileUtils.deleteDirectory(outputDir);
+        } catch (IOException e1) {
+            // Delete on exit if delete fail
+            try {
+                FileUtils.forceDeleteOnExit(outputDir);
+            } catch (IOException e2) {
+                e2.printStackTrace();
+            }
         }
     }
 
@@ -190,10 +193,8 @@ public abstract class FSBatchTestBase extends TikaTest {
 
         commandLine.add("-bc");
         commandLine.add(configFile);
+        commandLine.addAll(Arrays.asList(args));
 
-        for (String s : args) {
-            commandLine.add(s);
-        }
         return commandLine.toArray(new String[commandLine.size()]);
     }
 
@@ -218,9 +219,7 @@ public abstract class FSBatchTestBase extends TikaTest {
 
         commandLine.add(configFile);
 
-        for (String s : args) {
-            commandLine.add(s);
-        }
+        commandLine.addAll(Arrays.asList(args));
 
         BatchProcessDriverCLI driver = new BatchProcessDriverCLI(
           commandLine.toArray(new String[commandLine.size()]));
@@ -243,10 +242,8 @@ public abstract class FSBatchTestBase extends TikaTest {
     public static int countChildren(Path p) throws IOException {
         int i = 0;
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(p)) {
-            Iterator<Path> it = ds.iterator();
-            while (it.hasNext()) {
+            for (Path d : ds) {
                 i++;
-                it.next();
             }
         }
         return i;
@@ -274,9 +271,8 @@ public abstract class FSBatchTestBase extends TikaTest {
     public static List<Path> listPaths(Path p) throws IOException {
         List<Path> list = new ArrayList<>();
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(p)) {
-            Iterator<Path> it = ds.iterator();
-            while (it.hasNext()) {
-                list.add(it.next());
+            for (Path d : ds) {
+                list.add(d);
             }
         }
         return list;

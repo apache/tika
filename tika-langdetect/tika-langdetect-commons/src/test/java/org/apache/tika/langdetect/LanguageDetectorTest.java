@@ -33,23 +33,22 @@ public abstract class LanguageDetectorTest {
     protected String[] getTestLanguages() throws IOException {
     	List<String> result = new ArrayList<>();
     	
-    	List<String> lines = IOUtils.readLines(
-    	        this.getClass().getResourceAsStream("language-codes.txt"),
-                UTF_8);
-    	for (String line : lines) {
-    		line = line.trim();
-    		if (line.isEmpty() || line.startsWith("#")) {
-    			continue;
-    		}
-    		
-    		String[] parsed = line.split("\t");
-    		String language = parsed[0];
-    		if (hasTestLanguage(language)) {
-    			result.add(language);
-    		}
-    	}
-    	
-    	return result.toArray(new String[result.size()]);
+    	try (InputStream is = this.getClass().getResourceAsStream("language-codes.txt")) {
+            List<String> lines = IOUtils.readLines(is, UTF_8);
+            for (String line : lines) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+
+                String[] parsed = line.split("\t");
+                String language = parsed[0];
+                if (hasTestLanguage(language)) {
+                    result.add(language);
+                }
+            }
+            return result.toArray(new String[result.size()]);
+        }
     }
     
 

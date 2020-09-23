@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 
 import org.apache.tika.Tika;
@@ -58,17 +59,22 @@ public class AgeRecogniserTest extends TikaTest {
     public void testAgeRecogniser() throws Exception {
 
         //test config is added to resources directory
-        TikaConfig config = new TikaConfig(getClass().getResourceAsStream(CONFIG_FILE));
-        Tika tika = new Tika(config);
-        
-        Metadata md = new Metadata();
-        tika.parse(new ByteArrayInputStream(TEST_TEXT.getBytes(Charset.defaultCharset())), md);
-        
-        Assert.assertArrayEquals("Age Parser not invoked.",new String[] {CompositeParser.class.getCanonicalName(), 
-        		AgeRecogniser.class.getCanonicalName()} , md.getValues("X-Parsed-By"));
-        Assert.assertArrayEquals("Wrong age predicted.", new String[] {Double.toString(TEST_AGE)} , md.getValues(AgeRecogniser.MD_KEY_ESTIMATED_AGE));
-        
-        
+        try (InputStream is = getClass().getResourceAsStream(CONFIG_FILE);
+             InputStream bis = new ByteArrayInputStream(TEST_TEXT.getBytes(Charset.defaultCharset()));
+        ) {
+            TikaConfig config = new TikaConfig(is);
+            Tika tika = new Tika(config);
+
+            Metadata md = new Metadata();
+            tika.parse(bis, md);
+
+            Assert.assertArrayEquals("Age Parser not invoked.",
+                    new String[] {CompositeParser.class.getCanonicalName(), AgeRecogniser.class.getCanonicalName()},
+                    md.getValues("X-Parsed-By"));
+            Assert.assertArrayEquals("Wrong age predicted.",
+                    new String[] {Double.toString(TEST_AGE)},
+                    md.getValues(AgeRecogniser.MD_KEY_ESTIMATED_AGE));
+        }
     }
 
 }

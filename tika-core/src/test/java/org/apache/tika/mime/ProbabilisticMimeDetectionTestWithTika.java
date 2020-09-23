@@ -150,15 +150,16 @@ public class ProbabilisticMimeDetectionTestWithTika {
         testStream(expected, url, in);
     }
 
-    private void testUrl(String expected, String url, String file)
-            throws IOException {
-        InputStream in = getClass().getResourceAsStream(file);
-        testStream(expected, url, in);
+    private void testUrl(String expected, String url, String file) throws IOException {
+        try (InputStream in = getClass().getResourceAsStream(file)) {
+            testStream(expected, url, in);
+        }
     }
 
     private void testFile(String expected, String filename) throws IOException {
-        InputStream in = getClass().getResourceAsStream(filename);
-        testStream(expected, filename, in);
+        try (InputStream in = getClass().getResourceAsStream(filename)) {
+            testStream(expected, filename, in);
+        }
     }
 
     private void testStream(String expected, String urlOrFileName,

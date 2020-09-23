@@ -13,6 +13,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 org.apache.tika.parser.hwp.HwpV5Parser
+org.apache.tika.parser.mif.MIFParser
 org.apache.tika.parser.odf.FlatOpenDocumentParser
 org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.wordperfect.QuattroProParser
