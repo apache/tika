@@ -33,20 +33,14 @@ import org.apache.cxf.jaxrs.client.JAXRSClientFactory;
 import org.apache.cxf.jaxrs.client.ClientConfiguration;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.server.TikaServerParseExceptionMapper;
-import org.apache.tika.server.api.LanguageResourceApi;
 import org.apache.tika.server.api.impl.LanguageResourceApiServiceImpl;
 
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
-import javax.ws.rs.core.Response;
 
 import java.io.InputStream;
 
@@ -54,7 +48,6 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.writer.ZipWriter;
-import org.junit.Test;
 
 
 
@@ -79,7 +72,7 @@ public class LanguageResourceApiTest extends CXFTestBase {
     @Before
     public void setup() {
         JacksonJsonProvider provider = new JacksonJsonProvider();
-        List providers = new ArrayList();
+        ArrayList<JacksonJsonProvider> providers = new ArrayList<JacksonJsonProvider>();
         providers.add(provider);
         
         api = JAXRSClientFactory.create("http://localhost:9998", LanguageResourceApi.class, providers);
