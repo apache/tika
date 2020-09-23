@@ -91,14 +91,16 @@ public class PDFParserTest extends TikaTest {
 
         //test that it is triggered when added to the default parser
         //via the config, tesseract should skip this file because it is too large
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-xml-profiler-config.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        Parser p = new AutoDetectParser(tikaConfig);
+        try (InputStream is =
+                     getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-xml-profiler-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
 
-        metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf", p);
-        assertEquals(3, metadataList.size());
+            metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf", p);
+            assertEquals(3, metadataList.size());
 
+        }
         int xmlProfilers = 0;
         for (Metadata metadata : metadataList) {
             String[] parsedBy = metadata.getValues("X-Parsed-By");

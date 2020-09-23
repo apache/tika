@@ -131,7 +131,7 @@ public class BatchProcessBuilder {
         //build crawler
         crawler = buildCrawler(queue, keyNodes.get("crawler"), runtimeAttributes);
 
-        if (keyNodes.containsKey(reporter)) {
+        if (keyNodes.containsKey("reporter")) {
             reporter = buildReporter(crawler, consumersManager, keyNodes.get("reporter"), runtimeAttributes);
         }
 

@@ -1180,47 +1180,50 @@ public class PDFParserTest extends TikaTest {
         assumeTrue("can run OCR", canRunOCR());
 
         //via the config, tesseract should skip this file because it is too large
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        Parser p = new AutoDetectParser(tikaConfig);
-        String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
-        assertTrue(StringUtils.isAllBlank(text));
+        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
+            assertTrue(StringUtils.isAllBlank(text));
 
-        //now override the max file size to ocr, and you should get text
-        ParseContext pc = new ParseContext();
-        TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
-        pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
-        text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
-        assertContains("Happy", text);
+            //now override the max file size to ocr, and you should get text
+            ParseContext pc = new ParseContext();
+            TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+            pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
+            text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
+            assertContains("Happy", text);
+        }
     }
 
     @Test
     public void testInitializationViaConfig() throws Exception {
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        Parser p = new AutoDetectParser(tikaConfig);
-        String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
-        text = text.replaceAll("\\s+", " ");
+        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            String text = getText(getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf"), p);
+            text = text.replaceAll("\\s+", " ");
 
-        // Column text is now interleaved:
-        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+            // Column text is now interleaved:
+            assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", text);
+        }
     }
 
     @Test
     public void testInitializationOfNonPrimitivesViaConfig() throws Exception {
-        InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml");
-        assertNotNull(is);
-        TikaConfig tikaConfig = new TikaConfig(is);
-        AutoDetectParser p = new AutoDetectParser(tikaConfig);
-        Map<MediaType, Parser> parsers = p.getParsers();
-        Parser composite = parsers.get(MediaType.application("pdf"));
-        Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
-        assertEquals("org.apache.tika.parser.pdf.PDFParser", pdfParser.getClass().getName());
-        assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY, ((PDFParser)pdfParser).getPDFParserConfig().getOcrStrategy());
-        assertEquals(ImageType.RGB, ((PDFParser)pdfParser).getPDFParserConfig().getOcrImageType());
-
+        try (InputStream is =
+                     getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser p = new AutoDetectParser(tikaConfig);
+            Map<MediaType, Parser> parsers = p.getParsers();
+            Parser composite = parsers.get(MediaType.application("pdf"));
+            Parser pdfParser = ((CompositeParser)composite).getParsers().get(MediaType.application("pdf"));
+            assertEquals("org.apache.tika.parser.pdf.PDFParser", pdfParser.getClass().getName());
+            assertEquals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY, ((PDFParser)pdfParser).getPDFParserConfig().getOcrStrategy());
+            assertEquals(ImageType.RGB, ((PDFParser)pdfParser).getPDFParserConfig().getOcrImageType());
+        }
     }
 
     @Test

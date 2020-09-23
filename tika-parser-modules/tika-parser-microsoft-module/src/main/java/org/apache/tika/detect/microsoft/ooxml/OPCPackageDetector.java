@@ -43,6 +43,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
@@ -107,11 +108,7 @@ public class OPCPackageDetector implements ZipContainerDetector {
     );
 
     private static Set<String> fillSet(String ... args) {
-        Set<String> tmp = new HashSet<>();
-        for (String arg : args) {
-            tmp.add(arg);
-        }
-        return Collections.unmodifiableSet(tmp);
+        return Collections.unmodifiableSet(new HashSet<>((Arrays.asList(args))));
     }
 
     static Map<String, MediaType> OOXML_CONTENT_TYPES = new ConcurrentHashMap<>();
@@ -153,14 +150,6 @@ public class OPCPackageDetector implements ZipContainerDetector {
         OOXML_CONTENT_TYPES.put("application/vnd.ms-package.xps-fixeddocumentsequence+xml", XPS);
 
     }
-
-
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes
-    private static final String VISIO_DOCUMENT =
-            "http://schemas.microsoft.com/visio/2010/relationships/document";
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes
-    private static final String STRICT_CORE_DOCUMENT =
-            "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument";
 
     private static final String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
@@ -209,10 +198,10 @@ public class OPCPackageDetector implements ZipContainerDetector {
                 pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
         // Otherwise check for some other Office core document types
         if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(STRICT_CORE_DOCUMENT);
+            core = pkg.getRelationshipsByType(PackageRelationshipTypes.STRICT_CORE_DOCUMENT);
         }
         if (core.size() == 0) {
-            core = pkg.getRelationshipsByType(VISIO_DOCUMENT);
+            core = pkg.getRelationshipsByType(PackageRelationshipTypes.VISIO_CORE_DOCUMENT);
         }
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(XPS_DOCUMENT);

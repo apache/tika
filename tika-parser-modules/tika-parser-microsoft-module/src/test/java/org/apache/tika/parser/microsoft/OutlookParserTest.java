@@ -309,25 +309,27 @@ public class OutlookParserTest extends TikaTest {
         //now try extracting all bodies
         //they should each appear as standalone attachments
         //with no content in the body of the msg level
-        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("tika-config-extract-all-alternatives-msg.xml"));
-        Parser p = new AutoDetectParser(tikaConfig);
+        try (InputStream is = getResourceAsStream("tika-config-extract-all-alternatives-msg.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
 
-        metadataList = getRecursiveMetadata("testMSG.msg", p);
-        assertEquals(3, metadataList.size());
+            metadataList = getRecursiveMetadata("testMSG.msg", p);
+            assertEquals(3, metadataList.size());
 
-        assertNotContained("breaking your application",
-                metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("application/vnd.ms-outlook",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+            assertNotContained("breaking your application",
+                    metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+            assertEquals("application/vnd.ms-outlook",
+                    metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
-        assertContains("breaking your application",
-                metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertEquals("application/rtf",
-                metadataList.get(1).get(Metadata.CONTENT_TYPE));
+            assertContains("breaking your application",
+                    metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+            assertEquals("application/rtf",
+                    metadataList.get(1).get(Metadata.CONTENT_TYPE));
 
-        assertContains("breaking your application",
-                metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
+            assertContains("breaking your application",
+                    metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+            assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
+        }
 
     }
 }

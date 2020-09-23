@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -736,12 +737,13 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsAtLeast(parsedBy, metadataList);
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-sax-macros.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
-        metadataList = getRecursiveMetadata("testWORD_macros.docm", parser);
-        assertContainsAtLeast(minExpected, metadataList);
-        assertContainsAtLeast(parsedBy, metadataList);
-
+        try (InputStream is = this.getClass().getResourceAsStream("tika-config-sax-macros.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+            metadataList = getRecursiveMetadata("testWORD_macros.docm", parser);
+            assertContainsAtLeast(minExpected, metadataList);
+            assertContainsAtLeast(parsedBy, metadataList);
+        }
     }
 
     @Test

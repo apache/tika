@@ -597,11 +597,13 @@ public class WordParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, metadataList);
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(this.getClass().getResourceAsStream("tika-config-macros.xml"));
-        AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+        try (InputStream is = this.getClass().getResourceAsStream("tika-config-macros.xml")) {
+            TikaConfig tikaConfig = new TikaConfig(is);
+            AutoDetectParser parser = new AutoDetectParser(tikaConfig);
 
-        metadataList = getRecursiveMetadata("testWORD_macros.doc", parser);
-        assertContainsAtLeast(minExpected, metadataList);
+            metadataList = getRecursiveMetadata("testWORD_macros.doc", parser);
+            assertContainsAtLeast(minExpected, metadataList);
+        }
     }
 
     @Test

@@ -58,10 +58,14 @@ public class SQLite3ParserTest extends TikaTest {
         try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
             _testBasic(stream);
         }
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        IOUtils.copy(getResourceAsStream(TEST_FILE1), bos);
-        try (InputStream stream = new ByteArrayInputStream(bos.toByteArray())) {
-            _testBasic(stream);
+
+        try (InputStream is = getResourceAsStream(TEST_FILE1);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ) {
+            IOUtils.copy(is, bos);
+            try (InputStream stream = new ByteArrayInputStream(bos.toByteArray())) {
+                _testBasic(stream);
+            }
         }
         try (TikaInputStream outer = TikaInputStream.get(getResourceAsStream(TEST_FILE1))) {
             try (TikaInputStream inner = TikaInputStream.get(outer.getFile())) {

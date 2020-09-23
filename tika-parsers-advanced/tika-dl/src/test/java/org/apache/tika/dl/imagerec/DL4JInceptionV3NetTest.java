@@ -24,13 +24,15 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
+import java.io.InputStream;
+
 public class DL4JInceptionV3NetTest {
 
     @Test
     public void recognise() throws Exception {
         TikaConfig config = null;
-        try {
-            config = new TikaConfig(getClass().getResourceAsStream("dl4j-inception3-config.xml"));
+        try (InputStream is = getClass().getResourceAsStream("dl4j-inception3-config.xml")) {
+            config = new TikaConfig(is);
         } catch (Exception e) {
             if (e.getMessage() != null
                     && (e.getMessage().contains("Connection refused")
@@ -42,12 +44,15 @@ public class DL4JInceptionV3NetTest {
         assumeTrue("something went wrong loading tika config", config != null);
         Tika tika = new Tika(config);
         Metadata md = new Metadata();
-        tika.parse(getClass().getResourceAsStream("cat.jpg"), md);
+        try (InputStream is = getClass().getResourceAsStream("cat.jpg")) {
+            tika.parse(is, md);
+        }
         String[] objects = md.getValues("OBJECT");
         boolean found = false;
         for (String object : objects) {
             if (object.contains("_cat")) {
                 found = true;
+                break;
             }
         }
         assertTrue(found);
