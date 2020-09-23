@@ -32,7 +32,6 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -70,6 +69,26 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("This is a sample Microsoft Word Document", content);
         assertContains("testXML.xml", content);
         assertContains("Rida Benjelloun", content);
+    }
+
+    @Test
+    public void testZipWithDataDescriptorParsing() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream("/test-documents/zip-with-dd-on-second-entry.zip")) {
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
+        }
+
+        assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
+        String content = handler.toString();
+
+        // Verify the contents are read and there are no duplicates
+        assertContainsCount("zipFile.txt", content, 1);
+        assertContainsCount("Zipped file without data descriptor", content, 1);
+
+        assertContainsCount("zipFileWithDataDescriptor.txt", content, 1);
+        assertContainsCount("This file has a data descriptor", content, 1);
     }
 
     private class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {

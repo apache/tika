@@ -22,19 +22,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.zip.PackageConstants;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
+import org.xml.sax.ContentHandler;
 
-public class PackageParserTest {
+public class PackageParserTest extends TikaTest {
 
     @Test
     public void testCoverage() throws Exception {
@@ -77,5 +82,39 @@ public class PackageParserTest {
             assertTrue("missing: "+mediaType, PackageParser.PACKAGE_SPECIALIZATIONS.contains(mediaType));
         }
         assertEquals(currentSpecializations.size(), PackageParser.PACKAGE_SPECIALIZATIONS.size());
+    }
+
+    @Test
+    public void testZipWithStoredDataDescriptorOnFirstZipEntry() {
+        InputStream inputStream = getResourceAsStream("/test-documents/zip-with-dd-on-first-entry.zip");
+        ContentHandler contentHandler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        PackageParser packageParser = new PackageParser();
+
+        try {
+            packageParser.parse(inputStream, contentHandler, metadata, new ParseContext());
+            String content = contentHandler.toString();
+            assertContainsCount("zipFileWithDataDescriptor.txt", content, 1);
+            assertContainsCount("zipFile.txt", content, 1);
+        } catch(Exception e) {
+            fail("Parsing zip with stored data descriptors failed. Cause: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testzipWithStoredDataDescriptorOnSecondZipEntry() {
+        InputStream inputStream = getResourceAsStream("/test-documents/zip-with-dd-on-second-entry.zip");
+        ContentHandler contentHandler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        PackageParser packageParser = new PackageParser();
+
+        try {
+            packageParser.parse(inputStream, contentHandler, metadata, new ParseContext());
+            String content = contentHandler.toString();
+            assertContainsCount("zipFile.txt", content, 1);
+            assertContainsCount("zipFileWithDataDescriptor.txt", content, 1);
+        } catch(Exception e) {
+            fail("Parsing zip with stored data descriptors failed. Cause: " + e.getMessage());
+        }
     }
 }

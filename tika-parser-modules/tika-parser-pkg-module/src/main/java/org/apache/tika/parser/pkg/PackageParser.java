@@ -218,7 +218,10 @@ public class PackageParser extends AbstractParser {
             // should not be closed
 
             ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
-            
+            if (ais instanceof ZipArchiveInputStream) {
+                // Update ZipArchiveInputStream to support data descriptors if necessary
+                ais = updateZipArchiveInputStream(ais, metadata, stream, factory.getEntryEncoding());
+            }
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
@@ -263,19 +266,11 @@ public class PackageParser extends AbstractParser {
         xhtml.startDocument();
 
         try {
-            readEntries(metadata, ais, extractor, xhtml);
+            readEntries(metadata, ais, extractor, xhtml, true);
         } catch (UnsupportedZipFeatureException zfe) {
             // If it's an encrypted document of unknown password, report as such
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
-            }
-            else if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
-                ArchiveInputStream dataDescriptorEnabledZipArchiveInputStream = new ZipArchiveInputStream(new CloseShieldInputStream(stream), "UTF8", true, true);
-                try {
-                    readEntries(metadata, dataDescriptorEnabledZipArchiveInputStream, extractor, xhtml);
-                } finally {
-                    dataDescriptorEnabledZipArchiveInputStream.close();
-                }
             } else {
                 throw new TikaException("UnsupportedZipFeature", zfe);
             }
@@ -289,10 +284,29 @@ public class PackageParser extends AbstractParser {
         xhtml.endDocument();
     }
 
-    private void readEntries(Metadata metadata, ArchiveInputStream ais, EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml) throws IOException, SAXException, TikaException {
+    private ZipArchiveInputStream updateZipArchiveInputStream(ArchiveInputStream ais, Metadata metadata, InputStream stream, String entryEncoding) throws IOException {
+        boolean allowStoredEntriesWithDataDescriptor = false;
+        ZipArchiveInputStream zais;
+        try {
+            readEntries(metadata, ais, null, null, false);
+        } catch (UnsupportedZipFeatureException zfe) {
+            if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
+                allowStoredEntriesWithDataDescriptor = true;
+            }
+        } catch (Exception ignored) {}
+        finally {
+            ais.close();
+            stream.reset();
+            zais = new ZipArchiveInputStream(stream, entryEncoding, true, allowStoredEntriesWithDataDescriptor);
+        }
+
+        return zais;
+    }
+
+    private void readEntries(Metadata metadata, ArchiveInputStream ais, EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml, boolean parseEntries) throws IOException, SAXException, TikaException {
         ArchiveEntry entry = ais.getNextEntry();
         while (entry != null) {
-            if (!entry.isDirectory()) {
+            if (!entry.isDirectory() && parseEntries) {
                 parseEntry(ais, entry, extractor, metadata, xhtml);
             }
             entry = ais.getNextEntry();
