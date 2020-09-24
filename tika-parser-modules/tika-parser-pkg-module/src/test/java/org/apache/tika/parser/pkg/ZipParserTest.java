@@ -21,22 +21,22 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Arrays;
+import java.util.zip.ZipEntry;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -143,4 +143,25 @@ public class ZipParserTest extends AbstractPkgTest {
         getXML("droste.zip");
     }
 
+    @Test
+    public void testZipUsingStoredWithDataDescriptor() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/testZip_with_DataDescriptor.zip")) {
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+
+            assertEquals(5, tracker.filenames.size());
+            assertEquals("en0", tracker.filenames.get(0));
+            assertEquals("en1", tracker.filenames.get(1));
+            assertEquals("en2", tracker.filenames.get(2));
+            assertEquals("en3", tracker.filenames.get(3));
+            assertEquals("en4", tracker.filenames.get(4));
+            assertEquals(1, tracker.lastSeenStart[0]);
+            assertEquals(2, tracker.lastSeenStart[1]);
+            assertEquals(3, tracker.lastSeenStart[2]);
+            assertEquals(4, tracker.lastSeenStart[3]);
+        }
+    }
 }
