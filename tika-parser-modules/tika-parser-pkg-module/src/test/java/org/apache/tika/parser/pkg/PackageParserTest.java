@@ -36,6 +36,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -101,7 +102,7 @@ public class PackageParserTest extends TikaTest {
         }
     }
 
-    @Test
+    @Test @Ignore
     public void testzipWithStoredDataDescriptorOnSecondZipEntry() {
         InputStream inputStream = getResourceAsStream("/test-documents/zip-with-dd-on-second-entry.zip");
         ContentHandler contentHandler = new BodyContentHandler();

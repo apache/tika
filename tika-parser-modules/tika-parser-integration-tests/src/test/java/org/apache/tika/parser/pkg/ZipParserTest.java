@@ -22,6 +22,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -71,7 +72,7 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("Rida Benjelloun", content);
     }
 
-    @Test
+    @Test @Ignore
     public void testZipWithDataDescriptorParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
