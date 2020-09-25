@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.zip.ZipEntry;
 
 import org.apache.commons.compress.PasswordRequiredException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -100,6 +101,12 @@ public class PackageParser extends AbstractParser {
     //keep this list updated.
     static final Set<MediaType> PACKAGE_SPECIALIZATIONS =
             loadPackageSpecializations();
+
+    // the mark limit used for stream
+    private static final int MARK_LIMIT = 100 * 1024 * 1024; // 100M
+
+    // count of the entries in the archive, this is used for zip requires Data Descriptor
+    private int entryCnt = 0;
 
     static final Set<MediaType> loadPackageSpecializations() {
         Set<MediaType> zipSpecializations = new HashSet<>();
@@ -211,8 +218,10 @@ public class PackageParser extends AbstractParser {
         
         TemporaryResources tmp = new TemporaryResources();
         ArchiveInputStream ais = null;
+        String encoding = null;
         try {
             ArchiveStreamFactory factory = context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
+            encoding = factory.getEntryEncoding();
             // At the end we want to close the archive stream to release
             // any associated resources, but the underlying document stream
             // should not be closed
@@ -262,29 +271,87 @@ public class PackageParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
+        // mark before we start parsing entries for potential reset
+        stream.mark(MARK_LIMIT);
+        entryCnt = 0;
+        try {
+            parseEntries(false, ais, metadata, extractor, xhtml);
+        } catch (UnsupportedZipFeatureException zfe) {
+            // If this is a zip archive which requires a data descriptor, parse it again
+            if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
+                // Close archive input stream and create a new one that could handle data descriptor
+                ais.close();
+                // An exception would be thrown if MARK_LIMIT is not big enough
+                stream.reset();
+                ais = new ZipArchiveInputStream(new CloseShieldInputStream(stream), encoding, true, true);
+                parseEntries(true, ais, metadata, extractor, xhtml);
+            }
+        } finally {
+            ais.close();
+            tmp.close();
+            // reset the entryCnt
+            entryCnt = 0;
+        }
+
+        xhtml.endDocument();
+    }
+
+    /**
+     * Parse the entries of the zip archive
+     *
+     * @param shouldUseDataDescriptor indicates if a data descriptor is required or not
+     * @param ais archive input stream
+     * @param metadata document metadata (input and output)
+     * @param extractor the delegate parser
+     * @param xhtml the xhtml handler
+     * @throws TikaException if the document could not be parsed
+     * @throws IOException if a UnsupportedZipFeatureException is met
+     * @throws SAXException if the SAX events could not be processed
+     */
+    private void parseEntries(boolean shouldUseDataDescriptor, ArchiveInputStream ais, Metadata metadata,
+                              EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml)
+            throws TikaException, IOException, SAXException {
         try {
             ArchiveEntry entry = ais.getNextEntry();
             while (entry != null) {
+                if (shouldUseDataDescriptor && entryCnt > 0) {
+                    // With shouldUseDataDescriptor being true, we are reading
+                    // the zip once again. The number of entryCnt entries have
+                    // already been parsed in the last time, so we can just
+                    // skip these entries.
+                    entryCnt--;
+                    entry = ais.getNextEntry();
+                    continue;
+                }
+
                 if (!entry.isDirectory()) {
                     parseEntry(ais, entry, extractor, metadata, xhtml);
                 }
+
+                if (!shouldUseDataDescriptor) {
+                    // Record the number of entries we have read, this is used
+                    // for zip archives using Data Descriptor. It's used for
+                    // skipping the entries we have already read
+                    entryCnt++;
+                }
+
                 entry = ais.getNextEntry();
             }
         } catch (UnsupportedZipFeatureException zfe) {
+
             // If it's an encrypted document of unknown password, report as such
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
+            }
+
+            if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
+                throw zfe;
             }
             // Otherwise throw the exception
             throw new TikaException("UnsupportedZipFeature", zfe);
         } catch (PasswordRequiredException pre) {
             throw new EncryptedDocumentException(pre);
-        } finally {
-            ais.close();
-            tmp.close();
         }
-
-        xhtml.endDocument();
     }
 
     private void updateMediaType(ArchiveInputStream ais, Metadata metadata) {
@@ -337,10 +404,18 @@ public class PackageParser extends AbstractParser {
         } else {
             name = (name == null) ? "" : name;
             if (entry instanceof ZipArchiveEntry) {
-                boolean usesEncryption = ((ZipArchiveEntry) entry).getGeneralPurposeBit().usesEncryption();
+                ZipArchiveEntry zipArchiveEntry = (ZipArchiveEntry) entry;
+                boolean usesEncryption = zipArchiveEntry.getGeneralPurposeBit().usesEncryption();
                 if (usesEncryption) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(
                             new EncryptedDocumentException("stream ("+name+") is encrypted"), parentMetadata);
+                }
+
+                // do not write to the handler if UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR
+                // is met, we will catch this exception and read the zip archive once again
+                boolean usesDataDescriptor = zipArchiveEntry.getGeneralPurposeBit().usesDataDescriptor();
+                if (usesDataDescriptor && zipArchiveEntry.getMethod() == ZipEntry.STORED) {
+                    throw new UnsupportedZipFeatureException(UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR, zipArchiveEntry);
                 }
             } else {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(
