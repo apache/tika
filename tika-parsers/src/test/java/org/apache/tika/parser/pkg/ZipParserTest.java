@@ -237,4 +237,43 @@ public class ZipParserTest extends AbstractPkgTest {
         getXML("droste.zip");
     }
 
+    @Test
+    public void testZipUsingStoredWithDataDescriptor() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/testZip_with_DataDescriptor.zip")) {
+            AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
+
+            assertEquals(5, tracker.filenames.size());
+            assertEquals("en0", tracker.filenames.get(0));
+            assertEquals("en1", tracker.filenames.get(1));
+            assertEquals("en2", tracker.filenames.get(2));
+            assertEquals("en3", tracker.filenames.get(3));
+            assertEquals("en4", tracker.filenames.get(4));
+            assertEquals(1, tracker.lastSeenStart[0]);
+            assertEquals(2, tracker.lastSeenStart[1]);
+            assertEquals(3, tracker.lastSeenStart[2]);
+            assertEquals(4, tracker.lastSeenStart[3]);
+        }
+    }
+
+    @Test
+    public void testDataDescriptorWithEmptyEntry() throws Exception {
+
+        //test that an empty first entry does not cause problems
+        List<Metadata> results = getRecursiveMetadata("testZip_with_DataDescriptor2.zip");
+        assertEquals(5, results.size());
+
+        //mime is 0 bytes
+        assertContains("InputStream must have > 0 bytes",
+                results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
+        //source.xml is binary, not xml
+        assertContains("TikaException: XML parse error",
+                results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
+        //manifest.xml has malformed xml
+        assertContains("TikaException: XML parse error",
+                results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
+    }
 }
