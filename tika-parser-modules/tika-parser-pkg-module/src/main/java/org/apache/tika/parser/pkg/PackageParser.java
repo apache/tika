@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 
 import org.apache.commons.compress.PasswordRequiredException;
@@ -105,8 +106,6 @@ public class PackageParser extends AbstractParser {
     // the mark limit used for stream
     private static final int MARK_LIMIT = 100 * 1024 * 1024; // 100M
 
-    // count of the entries in the archive, this is used for zip requires Data Descriptor
-    private int entryCnt = 0;
 
     static final Set<MediaType> loadPackageSpecializations() {
         Set<MediaType> zipSpecializations = new HashSet<>();
@@ -273,9 +272,11 @@ public class PackageParser extends AbstractParser {
 
         // mark before we start parsing entries for potential reset
         stream.mark(MARK_LIMIT);
-        entryCnt = 0;
+        //needed for mutable int by ref, not for thread safety.
+        //this keeps track of how many entries were processed.
+        AtomicInteger entryCnt = new AtomicInteger();
         try {
-            parseEntries(false, ais, metadata, extractor, xhtml);
+            parseEntries(ais, metadata, extractor, xhtml, false, entryCnt);
         } catch (UnsupportedZipFeatureException zfe) {
             // If this is a zip archive which requires a data descriptor, parse it again
             if (zfe.getFeature() == Feature.DATA_DESCRIPTOR) {
@@ -283,14 +284,13 @@ public class PackageParser extends AbstractParser {
                 ais.close();
                 // An exception would be thrown if MARK_LIMIT is not big enough
                 stream.reset();
-                ais = new ZipArchiveInputStream(new CloseShieldInputStream(stream), encoding, true, true);
-                parseEntries(true, ais, metadata, extractor, xhtml);
+                ais = new ZipArchiveInputStream(new CloseShieldInputStream(stream), encoding,
+                        true, true);
+                parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
         } finally {
             ais.close();
             tmp.close();
-            // reset the entryCnt
-            entryCnt = 0;
         }
 
         xhtml.endDocument();
@@ -299,27 +299,29 @@ public class PackageParser extends AbstractParser {
     /**
      * Parse the entries of the zip archive
      *
-     * @param shouldUseDataDescriptor indicates if a data descriptor is required or not
      * @param ais archive input stream
      * @param metadata document metadata (input and output)
      * @param extractor the delegate parser
      * @param xhtml the xhtml handler
+     * @param shouldUseDataDescriptor indicates if a data descriptor is required or not
+     * @param entryCnt index of the entry
      * @throws TikaException if the document could not be parsed
      * @throws IOException if a UnsupportedZipFeatureException is met
      * @throws SAXException if the SAX events could not be processed
      */
-    private void parseEntries(boolean shouldUseDataDescriptor, ArchiveInputStream ais, Metadata metadata,
-                              EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml)
+    private void parseEntries(ArchiveInputStream ais, Metadata metadata,
+                              EmbeddedDocumentExtractor extractor, XHTMLContentHandler xhtml,
+                              boolean shouldUseDataDescriptor, AtomicInteger entryCnt)
             throws TikaException, IOException, SAXException {
         try {
             ArchiveEntry entry = ais.getNextEntry();
             while (entry != null) {
-                if (shouldUseDataDescriptor && entryCnt > 0) {
+                if (shouldUseDataDescriptor && entryCnt.get() > 0) {
                     // With shouldUseDataDescriptor being true, we are reading
                     // the zip once again. The number of entryCnt entries have
                     // already been parsed in the last time, so we can just
                     // skip these entries.
-                    entryCnt--;
+                    entryCnt.decrementAndGet();
                     entry = ais.getNextEntry();
                     continue;
                 }
@@ -332,7 +334,7 @@ public class PackageParser extends AbstractParser {
                     // Record the number of entries we have read, this is used
                     // for zip archives using Data Descriptor. It's used for
                     // skipping the entries we have already read
-                    entryCnt++;
+                    entryCnt.incrementAndGet();
                 }
 
                 entry = ais.getNextEntry();
