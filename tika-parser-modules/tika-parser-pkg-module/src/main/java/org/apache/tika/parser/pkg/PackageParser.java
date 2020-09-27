@@ -246,7 +246,7 @@ public class PackageParser extends AbstractParser {
                     if (password == null) {
                         sevenz = new SevenZFile(tstream.getFile());
                     } else {
-                        sevenz = new SevenZFile(tstream.getFile(), password.getBytes("UnicodeLittleUnmarked"));
+                        sevenz = new SevenZFile(tstream.getFile(), password.toCharArray());
                     }
                 }catch(PasswordRequiredException e){
                     throw new EncryptedDocumentException(e);
