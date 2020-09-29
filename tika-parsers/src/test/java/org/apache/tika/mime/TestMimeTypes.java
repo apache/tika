@@ -1143,6 +1143,17 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testCertificatesKeys() throws Exception {
+        assertType("application/x-x509-cert", "testCERT.pem");
+        assertType("application/x-x509-cert", "testCERT.der");
+        assertTypeByData("application/x-x509-cert", "testCERT.pem");
+        assertTypeByData("application/x-x509-cert", "testCERT.der");
+        // Keys need the data to identify, name isn't enough
+        assertTypeByData("application/x-x509-key", "testRSAKEY.pem");
+        assertTypeByData("application/x-x509-key", "testRSAKEY.der");
+    }
+
+    @Test
     public void testVandICalendars() throws Exception {
         assertType("text/calendar", "testICalendar.ics");
         assertType("text/x-vcalendar", "testVCalendar.vcs");

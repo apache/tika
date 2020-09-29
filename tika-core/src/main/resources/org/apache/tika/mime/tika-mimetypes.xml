@@ -4546,10 +4546,16 @@
       <match value="-----BEGIN CERTIFICATE-----" type="string" offset="0"/>
       <!-- DER encoded -->
       <match value="0x3080" type="string"
-              mask="0xFFFC" offset="0">
-         <!-- TODO other algs -->
-         <match value="0x300d06092a864886f70d01010b0500" 
-                type="string" offset="10:50" />
+              mask="0xFFF8" offset="0">
+         <!-- SHA with RSA Encryption -->
+         <match value="0x300d06092a864886f70d01010b0500" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFFFFFF00FFFF" offset="10:50" />
+         <!-- SHA with DSA Encryption -->
+         <match value="0x300b0609608648016503040301" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFFFFFF00" offset="10:50" />
+         <!-- SHA with ECDSA Encryption -->
+         <match value="0x300a06082a8648ce3d040301" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFFFF00" offset="10:50" />
       </match>
     </magic>
   </mime-type>
@@ -4557,8 +4563,20 @@
     <magic priority="50">
       <!-- PEM encoded -->
       <match value="-----BEGIN PRIVATE KEY-----" type="string" offset="0"/>
+      <match value="-----BEGIN PUBLIC KEY-----" type="string" offset="0"/>
+      <match value="-----BEGIN KEY-----" type="string" offset="0"/>
+      <match value="-----BEGIN RSA KEY-----" type="string" offset="0"/>
+      <match value="-----BEGIN RSA PRIVATE KEY-----" type="string" offset="0"/>
+      <match value="-----BEGIN DSA KEY-----" type="string" offset="0"/>
+      <match value="-----BEGIN DSA PRIVATE KEY-----" type="string" offset="0"/>
       <!-- DER encoded -->
-      <!-- TODO -->
+      <match value="0x3082025e0201" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-x509-dsa-parameters">
+    <magic priority="50">
+      <!-- PEM encoded -->
+      <match value="-----BEGIN DSA PARAMETERS-----" type="string" offset="0"/>
     </magic>
   </mime-type>
 
