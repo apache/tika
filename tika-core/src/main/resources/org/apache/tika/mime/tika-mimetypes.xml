@@ -4538,13 +4538,19 @@
   <mime-type type="application/x-x509-cert">
     <alias type="application/x-x509-ca-cert"/>
     <alias type="application/x-x509-user-cert"/>
-    <glob pattern="*.der"/>
-    <glob pattern="*.pem"/>
     <glob pattern="*.crt"/>
+  </mime-type>
+  <mime-type type="application/x-x509-cert;format=pem">
+    <sub-class-of type="application/x-x509-cert"/>
+    <glob pattern="*.pem"/>
     <magic priority="50">
-      <!-- PEM encoded -->
       <match value="-----BEGIN CERTIFICATE-----" type="string" offset="0"/>
-      <!-- DER encoded -->
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-x509-cert;format=der">
+    <sub-class-of type="application/x-x509-cert"/>
+    <glob pattern="*.der"/>
+    <magic priority="50">
       <match value="0x3080" type="string"
               mask="0xFFF8" offset="0">
          <!-- SHA with RSA Encryption -->
@@ -4559,9 +4565,12 @@
       </match>
     </magic>
   </mime-type>
+
   <mime-type type="application/x-x509-key">
+  </mime-type>
+  <mime-type type="application/x-x509-key;format=pem">
+    <sub-class-of type="application/x-x509-key"/>
     <magic priority="50">
-      <!-- PEM encoded -->
       <match value="-----BEGIN PRIVATE KEY-----" type="string" offset="0"/>
       <match value="-----BEGIN PUBLIC KEY-----" type="string" offset="0"/>
       <match value="-----BEGIN KEY-----" type="string" offset="0"/>
@@ -4569,14 +4578,30 @@
       <match value="-----BEGIN RSA PRIVATE KEY-----" type="string" offset="0"/>
       <match value="-----BEGIN DSA KEY-----" type="string" offset="0"/>
       <match value="-----BEGIN DSA PRIVATE KEY-----" type="string" offset="0"/>
-      <!-- DER encoded -->
-      <match value="0x3082025e0201" type="string" offset="0"/>
     </magic>
   </mime-type>
+  <mime-type type="application/x-x509-key;format=der">
+    <sub-class-of type="application/x-x509-key"/>
+    <!-- These are just a bunch of magic integers as defined by the key format... -->
+    <!-- Always seem to have an integer=01 as their first entry, check for that -->
+    <magic priority="40">
+      <match value="0x3081FF0201" type="string"
+              mask="0xFFFF00FFFF" offset="0"/>
+      <match value="0x3082FFFF0201" type="string"
+              mask="0xFFFF0000FFFF" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-x509-dsa-parameters">
     <magic priority="50">
-      <!-- PEM encoded -->
+      <!-- PEM encoded only -->
       <match value="-----BEGIN DSA PARAMETERS-----" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-x509-ec-parameters">
+    <magic priority="50">
+      <!-- PEM encoded only -->
+      <match value="-----BEGIN EC PARAMETERS-----" type="string" offset="0"/>
     </magic>
   </mime-type>
 
