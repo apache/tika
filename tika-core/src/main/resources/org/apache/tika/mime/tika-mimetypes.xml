@@ -4583,12 +4583,13 @@
   <mime-type type="application/x-x509-key;format=der">
     <sub-class-of type="application/x-x509-key"/>
     <!-- These are just a bunch of magic integers as defined by the key format... -->
-    <!-- Always seem to have an integer=01 as their first entry, check for that -->
+    <!-- Always seem to have a version integer as their first entry, -->
+    <!--  normally 00, 01 or 02, check for that -->
     <magic priority="40">
-      <match value="0x3081FF0201" type="string"
-              mask="0xFFFF00FFFF" offset="0"/>
-      <match value="0x3082FFFF0201" type="string"
-              mask="0xFFFF0000FFFF" offset="0"/>
+      <match value="0x3081FF020100" type="string"
+              mask="0xFFFF00FFFFFC" offset="0"/>
+      <match value="0x3082FFFF020100" type="string"
+              mask="0xFFFF0000FFFFFC" offset="0"/>
     </magic>
   </mime-type>
 
