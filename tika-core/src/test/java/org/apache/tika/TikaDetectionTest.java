@@ -624,8 +624,9 @@ public class TikaDetectionTest {
         assertEquals("application/x-texinfo", tika.detect("x.texi"));
         assertEquals("application/x-ustar", tika.detect("x.ustar"));
         assertEquals("application/x-wais-source", tika.detect("x.src"));
-        assertEquals("application/x-x509-ca-cert", tika.detect("x.der"));
-        assertEquals("application/x-x509-ca-cert", tika.detect("x.crt"));
+        // Differ from httpd - use a common parent for CA and User certs
+        //assertEquals("application/x-x509-ca-cert", tika.detect("x.der"));
+        //assertEquals("application/x-x509-ca-cert", tika.detect("x.crt"));
         assertEquals("application/x-xfig", tika.detect("x.fig"));
         assertEquals("application/x-xpinstall", tika.detect("x.xpi"));
         assertEquals("application/xenc+xml", tika.detect("x.xenc"));

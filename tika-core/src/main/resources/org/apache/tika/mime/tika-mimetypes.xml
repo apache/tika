@@ -4534,10 +4534,34 @@
     <sub-class-of type="application/x-bplist"/>
     <glob pattern="*.webarchive"/>
   </mime-type>
-  <mime-type type="application/x-x509-ca-cert">
+
+  <mime-type type="application/x-x509-cert">
+    <alias type="application/x-x509-ca-cert"/>
+    <alias type="application/x-x509-user-cert"/>
     <glob pattern="*.der"/>
+    <glob pattern="*.pem"/>
     <glob pattern="*.crt"/>
+    <magic priority="50">
+      <!-- PEM encoded -->
+      <match value="-----BEGIN CERTIFICATE-----" type="string" offset="0"/>
+      <!-- DER encoded -->
+      <match value="0x3080" type="string"
+              mask="0xFFFC" offset="0">
+         <!-- TODO other algs -->
+         <match value="0x300d06092a864886f70d01010b0500" 
+                type="string" offset="10:50" />
+      </match>
+    </magic>
   </mime-type>
+  <mime-type type="application/x-x509-key">
+    <magic priority="50">
+      <!-- PEM encoded -->
+      <match value="-----BEGIN PRIVATE KEY-----" type="string" offset="0"/>
+      <!-- DER encoded -->
+      <!-- TODO -->
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-xfig">
     <glob pattern="*.fig"/>
   </mime-type>
