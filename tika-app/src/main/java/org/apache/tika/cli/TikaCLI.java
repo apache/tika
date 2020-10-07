@@ -107,6 +107,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -264,7 +265,15 @@ public class TikaCLI {
             return new BoilerpipeContentHandler(getOutputWriter(output, encoding));
         }
     };
-    
+
+    private final OutputType CONTENT = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(
+            OutputStream output, Metadata metadata) throws Exception {
+            return new WriteOutContentHandler(getOutputWriter(output, encoding));
+        }
+    };
+
     private final OutputType METADATA = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(
@@ -440,6 +449,8 @@ public class TikaCLI {
             type = TEXT;
         } else if (arg.equals("-T") || arg.equals("--text-main")) {
             type = TEXT_MAIN;
+        } else if (arg.equals("-C") || arg.equals("--content")) {
+            type = CONTENT;
         } else if (arg.equals("-m") || arg.equals("--metadata")) {
             type = METADATA;
         } else if (arg.equals("-l") || arg.equals("--language")) {
@@ -567,6 +578,7 @@ public class TikaCLI {
         out.println("    -h  or --html          Output HTML content");
         out.println("    -t  or --text          Output plain text content");
         out.println("    -T  or --text-main     Output plain text content (main content only)");
+        out.println("    -C  or --content       Output all text content");
         out.println("    -m  or --metadata      Output only metadata");
         out.println("    -j  or --json          Output metadata in JSON");
         out.println("    -y  or --xmp           Output metadata in XMP");
