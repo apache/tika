@@ -50,14 +50,14 @@ public class DetectorResource {
     public String detect(final InputStream is,
                          @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
         Metadata met = new Metadata();
-        TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders));
-        String filename = TikaResource.detectFilename(httpHeaders
-                .getRequestHeaders());
+
+        String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
         LOG.info("Detecting media type for Filename: {}", filename);
         met.add(Metadata.RESOURCE_NAME_KEY, filename);
         TikaResource.checkIsOperating();
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
-        try {
+
+        try (TikaInputStream tis = TikaInputStream.get(TikaResource.getInputStream(is, met, httpHeaders))) {
             return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})",
