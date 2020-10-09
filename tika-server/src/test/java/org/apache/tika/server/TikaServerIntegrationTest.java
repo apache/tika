@@ -220,6 +220,42 @@ public class TikaServerIntegrationTest extends TikaTest {
     }
 
     @Test
+    public void testSystemExitViaStopMethod() throws Exception {
+ 
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-tmpFilePrefix", "tika-server-systemexitstopmethod"
+
+                        });
+            }
+            //Add custom implementation of the destroy method
+            //This method was never implemented in the super class, and gives us an easy way to invoke our stop command.
+            //We pass in the preventSystemExit option to stop the call to System.Exit, which would terminate the JVM and cause a test failure.
+            @Override            
+            public void destroy()  {
+                TikaServerCli.stop(new String []{"-preventSystemExit"});    
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+        serverThread.destroy();
+
+        //give some time for the server to crash/kill itself
+        Thread.sleep(2000);
+
+        try {
+            testBaseline();
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
     public void testTimeoutOk() throws Exception {
         //test that there's enough time for this file.
         Thread serverThread = new Thread() {
