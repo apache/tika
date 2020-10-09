@@ -128,7 +128,6 @@ public class MP4Parser extends AbstractParser {
         TikaInputStream tstream = TikaInputStream.get(stream, tmp);
 
         try (IsoFile isoFile = new IsoFile(tstream.getFile())) {
-            tmp.addResource(isoFile);
 
             // Grab the file type box
             FileTypeBox fileType = getOrNull(isoFile, FileTypeBox.class);

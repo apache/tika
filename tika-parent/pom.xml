@@ -299,7 +299,7 @@
     <h2.version>1.4.200</h2.version>
     <httpcomponents.version>4.5.12</httpcomponents.version>
     <imageio.version>1.4.0</imageio.version>
-    <isoparser.version>1.9.41.2</isoparser.version>
+    <isoparser.version>1.9.41.4</isoparser.version>
     <jackcess.version>3.5.0</jackcess.version>
     <jackcess.encrypt.version>3.0.0</jackcess.encrypt.version>
     <jackrabbit.version>2.21.3</jackrabbit.version>
