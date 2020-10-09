@@ -247,9 +247,9 @@ public class TesseractOCRConfig implements Serializable {
      * e.g. "chi_tra+chi_sim"
      */
     public void setLanguage(String language) {
-        if (!language.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4})?(\\+?))+")
+        if (!language.matches("([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2}(\\+?))+")
                 || language.endsWith("+")) {
-            throw new IllegalArgumentException("Invalid language code");
+            throw new IllegalArgumentException("Invalid language code: "+language);
         }
         this.language = language;
     }
