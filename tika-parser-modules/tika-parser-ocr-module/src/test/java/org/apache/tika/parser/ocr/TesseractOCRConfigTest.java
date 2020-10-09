@@ -99,7 +99,8 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testValidateValidLanguage() {
         List<String> validLanguages = Arrays.asList(
-                "eng", "slk_frak", "chi_tra", "eng+fra", "tgk+chi_tra+slk_frak");
+                "eng", "slk_frak", "chi_tra", "eng+fra", "tgk+chi_tra+slk_frak",
+                "chi_tra_vert", "tgk+chi_tra_vert+slk_frak");
 
         TesseractOCRConfig config = new TesseractOCRConfig();
 
