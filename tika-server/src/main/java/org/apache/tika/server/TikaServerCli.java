@@ -167,9 +167,9 @@ public class TikaServerCli {
 
     private static String[] stripChildArgs(String[] args) {
         List<String> ret = new ArrayList<>();
-        for (int i = 0; i < args.length; i++) {
-            if (! args[i].startsWith("-J")) {
-                ret.add(args[i]);
+        for (String arg : args) {
+            if (!arg.startsWith("-J")) {
+                ret.add(arg);
             }
         }
         return ret.toArray(new String[ret.size()]);

@@ -169,54 +169,54 @@ public class GrobidNERecogniser implements NERecogniser{
                 String result = response.readEntity(String.class);
                 JSONObject jsonObject = convertToJSONObject(result);
                 JSONArray measurements = convertToJSONArray(jsonObject, "measurements");
-                for(int i=0; i<measurements.size(); i++){
-                	
-                	StringBuffer measurementString = new StringBuffer();
-                	StringBuffer normalizedMeasurementString = new StringBuffer();
-                	
-                	JSONObject quantity = (JSONObject) convertToJSONObject(measurements.get(i).toString()).get("quantity");
-                	if(quantity!=null) {
-						if (quantity.containsKey("rawValue")) {
-							String measurementNumber = (String) convertToJSONObject(quantity.toString()).get("rawValue");
-							measurementString.append(measurementNumber);
-							measurementString.append(" ");
-							measurementNumberSet.add(measurementNumber);
-						}
+                for (Object measurement : measurements) {
 
-						if (quantity.containsKey("normalizedQuantity")) {
-							String normalizedMeasurementNumber = convertToJSONObject(quantity.toString()).get("normalizedQuantity").toString();
-							normalizedMeasurementString.append(normalizedMeasurementNumber);
-							normalizedMeasurementString.append(" ");
-						}
-						
-						if (quantity.containsKey("type")) {
-							String measurementType = (String) convertToJSONObject(quantity.toString()).get("type");
-							measurementTypeSet.add(measurementType);
-						}
+                    StringBuffer measurementString = new StringBuffer();
+                    StringBuffer normalizedMeasurementString = new StringBuffer();
 
-						JSONObject jsonObj = (JSONObject) convertToJSONObject(quantity.toString());
-						if (jsonObj.containsKey("rawUnit")) {
-							JSONObject rawUnit = (JSONObject) jsonObj.get("rawUnit");
-							String unitName = (String) convertToJSONObject(rawUnit.toString()).get("name");
-							unitSet.add(unitName);
-							measurementString.append(unitName);
-						}
+                    JSONObject quantity = (JSONObject) convertToJSONObject(measurement.toString()).get("quantity");
+                    if (quantity != null) {
+                        if (quantity.containsKey("rawValue")) {
+                            String measurementNumber = (String) convertToJSONObject(quantity.toString()).get("rawValue");
+                            measurementString.append(measurementNumber);
+                            measurementString.append(" ");
+                            measurementNumberSet.add(measurementNumber);
+                        }
 
-						if (jsonObj.containsKey("normalizedUnit")) {
-							JSONObject normalizedUnit = (JSONObject) jsonObj.get("normalizedUnit");
-							String normalizedUnitName = (String) convertToJSONObject(normalizedUnit.toString()).get("name");
-							normalizedMeasurementString.append(normalizedUnitName);
-						}
+                        if (quantity.containsKey("normalizedQuantity")) {
+                            String normalizedMeasurementNumber = convertToJSONObject(quantity.toString()).get("normalizedQuantity").toString();
+                            normalizedMeasurementString.append(normalizedMeasurementNumber);
+                            normalizedMeasurementString.append(" ");
+                        }
 
-						if (!measurementString.toString().equals("")) {
-							measurementSet.add(measurementString.toString());
-						}
+                        if (quantity.containsKey("type")) {
+                            String measurementType = (String) convertToJSONObject(quantity.toString()).get("type");
+                            measurementTypeSet.add(measurementType);
+                        }
 
-						if (!normalizedMeasurementString.toString().equals("")) {
-							normalizedMeasurementSet.add(normalizedMeasurementString.toString());
-						}
-					}
-                	
+                        JSONObject jsonObj = (JSONObject) convertToJSONObject(quantity.toString());
+                        if (jsonObj.containsKey("rawUnit")) {
+                            JSONObject rawUnit = (JSONObject) jsonObj.get("rawUnit");
+                            String unitName = (String) convertToJSONObject(rawUnit.toString()).get("name");
+                            unitSet.add(unitName);
+                            measurementString.append(unitName);
+                        }
+
+                        if (jsonObj.containsKey("normalizedUnit")) {
+                            JSONObject normalizedUnit = (JSONObject) jsonObj.get("normalizedUnit");
+                            String normalizedUnitName = (String) convertToJSONObject(normalizedUnit.toString()).get("name");
+                            normalizedMeasurementString.append(normalizedUnitName);
+                        }
+
+                        if (!measurementString.toString().equals("")) {
+                            measurementSet.add(measurementString.toString());
+                        }
+
+                        if (!normalizedMeasurementString.toString().equals("")) {
+                            normalizedMeasurementSet.add(normalizedMeasurementString.toString());
+                        }
+                    }
+
                 }
                 
                 entities.put("MEASUREMENT_NUMBERS",measurementNumberSet);

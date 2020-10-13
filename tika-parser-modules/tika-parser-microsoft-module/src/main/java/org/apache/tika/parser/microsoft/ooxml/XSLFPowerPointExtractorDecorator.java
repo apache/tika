@@ -142,27 +142,26 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             List<XSLFComment> comments = slide.getComments();
             if (comments != null) {
                 StringBuilder authorStringBuilder = new StringBuilder();
-                for (int i = 0; i < comments.size(); i++) {
+                for (XSLFComment comment : comments) {
                     authorStringBuilder.setLength(0);
-                    XSLFComment comment = comments.get(i);
                     xhtml.startElement("p", "class", "slide-comment");
-                        if (comment.getAuthor() != null) {
-                            authorStringBuilder.append(comment.getAuthor());
-                        }
-                        if (comment.getAuthorInitials() != null) {
-                            if (authorStringBuilder.length() > 0) {
-                                authorStringBuilder.append(" ");
-                            }
-                            authorStringBuilder.append("("+comment.getAuthorInitials()+")");
-                        }
-                        if (comment.getText() != null && authorStringBuilder.length() > 0) {
-                            authorStringBuilder.append(" - ");
-                        }
+                    if (comment.getAuthor() != null) {
+                        authorStringBuilder.append(comment.getAuthor());
+                    }
+                    if (comment.getAuthorInitials() != null) {
                         if (authorStringBuilder.length() > 0) {
-                            xhtml.startElement("b");
-                            xhtml.characters(authorStringBuilder.toString());
-                            xhtml.endElement("b");
+                            authorStringBuilder.append(" ");
                         }
+                        authorStringBuilder.append("(" + comment.getAuthorInitials() + ")");
+                    }
+                    if (comment.getText() != null && authorStringBuilder.length() > 0) {
+                        authorStringBuilder.append(" - ");
+                    }
+                    if (authorStringBuilder.length() > 0) {
+                        xhtml.startElement("b");
+                        xhtml.characters(authorStringBuilder.toString());
+                        xhtml.endElement("b");
+                    }
 
                     xhtml.characters(comment.getText());
                     xhtml.endElement("p");

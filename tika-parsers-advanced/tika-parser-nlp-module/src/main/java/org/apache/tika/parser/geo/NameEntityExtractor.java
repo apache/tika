@@ -90,12 +90,12 @@ public class NameEntityExtractor {
         if (this.locationNameEntities.size() == 0)
             return;
 
-        for (int i = 0; i < this.locationNameEntities.size(); ++i) {
-            if (tf.containsKey(this.locationNameEntities.get(i)))
-                tf.put(this.locationNameEntities.get(i),
-                        tf.get(this.locationNameEntities.get(i)) + 1);
-            else
-                tf.put(this.locationNameEntities.get(i), 1);
+        for (String locationNameEntity : this.locationNameEntities) {
+            if (tf.containsKey(locationNameEntity)) {
+                tf.put(locationNameEntity, tf.get(locationNameEntity) + 1);
+            } else {
+                tf.put(locationNameEntity, 1);
+            }
         }
         int max = 0;
         List<Map.Entry<String, Integer>> list = new ArrayList<Map.Entry<String, Integer>>(

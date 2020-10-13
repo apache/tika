@@ -415,9 +415,9 @@ public class LanguageProfilerBuilder {
         NGramEntry[] entries = ngrams.values().toArray(
                 new NGramEntry[ngrams.size()]);
         for (int i = minLength; i <= maxLength; i++) {
-            for (int j = 0; j < entries.length; j++) {
-                if (entries[j].getSeq().length() == i) {
-                    sublist.add(entries[j]);
+            for (NGramEntry entry : entries) {
+                if (entry.getSeq().length() == i) {
+                    sublist.add(entry);
                 }
             }
             Collections.sort(sublist);
@@ -427,8 +427,7 @@ public class LanguageProfilerBuilder {
             list.addAll(sublist);
             sublist.clear();
         }
-        for (int i = 0; i < list.size(); i++) {
-            NGramEntry e = list.get(i);
+        for (NGramEntry e : list) {
             String line = e.toString() + " " + e.getCount() + "\n";
             os.write(line.getBytes(UTF_8));
         }

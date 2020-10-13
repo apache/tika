@@ -505,9 +505,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     public int hashCode() {
         int h = 0;
-        for (Iterator<Entry<String,String[]>> i = metadata.entrySet().iterator();
-             i.hasNext();) {
-            h += getMetadataEntryHashCode(i.next());
+        for (Entry<String, String[]> stringEntry : metadata.entrySet()) {
+            h += getMetadataEntryHashCode(stringEntry);
         }
         return h;
     }
@@ -534,9 +533,9 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         }
 
         String[] names = names();
-        for (int i = 0; i < names.length; i++) {
-            String[] otherValues = other._getValues(names[i]);
-            String[] thisValues = _getValues(names[i]);
+        for (String name : names) {
+            String[] otherValues = other._getValues(name);
+            String[] thisValues = _getValues(name);
             if (otherValues.length != thisValues.length) {
                 return false;
             }
@@ -552,13 +551,13 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     public String toString() {
         StringBuffer buf = new StringBuffer();
         String[] names = names();
-        for (int i = 0; i < names.length; i++) {
-            String[] values = _getValues(names[i]);
-            for (int j = 0; j < values.length; j++) {
-            	if (buf.length() > 0) {
-            		buf.append(" ");
-            	}
-                buf.append(names[i]).append("=").append(values[j]);
+        for (String name : names) {
+            String[] values = _getValues(name);
+            for (String value : values) {
+                if (buf.length() > 0) {
+                    buf.append(" ");
+                }
+                buf.append(name).append("=").append(value);
             }
         }
         return buf.toString();

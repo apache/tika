@@ -151,8 +151,7 @@ public class ExtractReader {
                         metadataList.size() > 1) {
                     StringBuilder sb = new StringBuilder();
                     Metadata containerMetadata = metadataList.get(0);
-                    for (int i = 0; i < metadataList.size(); i++) {
-                        Metadata m = metadataList.get(i);
+                    for (Metadata m : metadataList) {
                         String c = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
                         if (c != null) {
                             sb.append(c);

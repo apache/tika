@@ -139,9 +139,7 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
             metadata.add(CTAKES_META_PREFIX + "schema", config.getAnnotationPropsAsString());
             CTAKESAnnotationProperty[] annotationPros = config.getAnnotationProps();
             Collection<IdentifiedAnnotation> collection = JCasUtil.select(jcas, IdentifiedAnnotation.class);
-            Iterator<IdentifiedAnnotation> iterator = collection.iterator();
-            while (iterator.hasNext()) {
-                IdentifiedAnnotation annotation = iterator.next();
+            for (IdentifiedAnnotation annotation : collection) {
                 StringBuilder annotationBuilder = new StringBuilder();
                 annotationBuilder.append(annotation.getCoveredText());
                 if (annotationPros != null) {

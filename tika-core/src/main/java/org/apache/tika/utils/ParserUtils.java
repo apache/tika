@@ -48,8 +48,8 @@ public class ParserUtils {
                 clone.set(n, m.get(n));
             } else {
                 String[] vals = m.getValues(n);
-                for (int i = 0; i < vals.length; i++) {
-                    clone.add(n, vals[i]);
+                for (String val : vals) {
+                    clone.add(n, val);
                 }
             }
         }

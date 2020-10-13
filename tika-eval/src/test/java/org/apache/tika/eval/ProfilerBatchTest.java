@@ -86,9 +86,7 @@ public class ProfilerBatchTest {
 
 
         DirectoryStream<Path> dStream = Files.newDirectoryStream(dbDir);
-        Iterator<Path> it = dStream.iterator();
-        while (it.hasNext()) {
-            Path p = it.next();
+        for (Path p : dStream) {
             Files.delete(p);
         }
         dStream.close();

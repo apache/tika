@@ -445,8 +445,8 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setDepth(int depth) {
         int[] allowedValues = {2, 4, 8, 16, 32, 64, 256, 4096};
-        for (int i = 0; i < allowedValues.length; i++) {
-            if (depth == allowedValues[i]) {
+        for (int allowedValue : allowedValues) {
+            if (depth == allowedValue) {
                 this.depth = depth;
                 return;
             }
@@ -493,8 +493,8 @@ public class TesseractOCRConfig implements Serializable {
         }
 
         String[] allowedFilters = {"Point", "Hermite", "Cubic", "Box", "Gaussian", "Catrom", "Triangle", "Quadratic", "Mitchell"};
-        for (int i = 0; i < allowedFilters.length; i++) {
-            if (filter.equalsIgnoreCase(allowedFilters[i])) {
+        for (String allowedFilter : allowedFilters) {
+            if (filter.equalsIgnoreCase(allowedFilter)) {
                 this.filter = filter;
                 return;
             }

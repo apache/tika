@@ -146,8 +146,8 @@ public class TikaCLI {
         }
 
         if (args.length > 0) {
-            for (int i = 0; i < args.length; i++) {
-                cli.process(args[i]);
+            for (String arg : args) {
+                cli.process(arg);
             }
             if (cli.pipeMode) {
                 cli.process("-");

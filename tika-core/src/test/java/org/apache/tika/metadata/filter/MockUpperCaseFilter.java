@@ -31,8 +31,8 @@ public class MockUpperCaseFilter implements MetadataFilter {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             metadata.remove(n);
-            for (int i = 0; i < vals.length; i++) {
-                metadata.add(n, vals[i].toUpperCase(Locale.US));
+            for (String val : vals) {
+                metadata.add(n, val.toUpperCase(Locale.US));
             }
         }
     }

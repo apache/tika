@@ -560,10 +560,8 @@ public final class MimeTypes implements Detector, Serializable {
         if (possibleTypes == null || possibleTypes.isEmpty()) {
             return Collections.singletonList(hint);
         } else {
-            for (int i=0; i<possibleTypes.size(); i++) {
-                final MimeType type = possibleTypes.get(i);
-                if (hint.equals(type) ||
-                    registry.isSpecializationOf(hint.getType(), type.getType())) {
+            for (final MimeType type : possibleTypes) {
+                if (hint.equals(type) || registry.isSpecializationOf(hint.getType(), type.getType())) {
                     // Use just this type
                     return Collections.singletonList(hint);
                 }

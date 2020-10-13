@@ -126,9 +126,8 @@ public class NLTKNERecogniser implements NERecogniser {
                 String result = response.readEntity(String.class);
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
-                Iterator<?> keys = j.keySet().iterator();
-                while( keys.hasNext() ) {
-                    String key = (String)keys.next();
+                for (Object o : j.keySet()) {
+                    String key = (String) o;
                     if ( !key.equals("result") ) {
                         ENTITY_TYPES.add(key);
                         entities.put(key.toUpperCase(Locale.ENGLISH), new HashSet((Collection) j.get(key)));

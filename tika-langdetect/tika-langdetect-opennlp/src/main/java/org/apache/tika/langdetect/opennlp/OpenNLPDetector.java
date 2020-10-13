@@ -155,9 +155,9 @@ public class OpenNLPDetector extends LanguageDetector {
     public List<LanguageResult> detectAll() {
         Language[] langs = detector.predictLanguages(buffer.toString());
         List<LanguageResult> results = new ArrayList<>();
-        for (int i = 0; i < langs.length; i++) {
-            LanguageResult r = new LanguageResult(langs[i].getLang(), getConfidence(langs[i].getConfidence()),
-                    (float)langs[i].getConfidence());
+        for (Language lang : langs) {
+            LanguageResult r = new LanguageResult(lang.getLang(), getConfidence(lang.getConfidence()),
+                    (float) lang.getConfidence());
             results.add(r);
         }
         return results;

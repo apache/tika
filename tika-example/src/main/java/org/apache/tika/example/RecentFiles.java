@@ -71,8 +71,8 @@ public class RecentFiles {
             TopScoreDocCollector collector = TopScoreDocCollector.create(20,10000);
             searcher.search(query, collector);
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
-            for (int i = 0; i < hits.length; i++) {
-                Document doc = searcher.doc(hits[i].doc);
+            for (ScoreDoc hit : hits) {
+                Document doc = searcher.doc(hit.doc);
                 output.append(getRSSItem(doc));
             }
 
