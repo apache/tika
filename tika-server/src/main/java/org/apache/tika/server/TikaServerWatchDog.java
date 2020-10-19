@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static java.nio.file.StandardOpenOption.READ;
@@ -66,23 +67,24 @@ public class TikaServerWatchDog {
 
 
     public void execute(String[] args, ServerTimeouts serverTimeouts) throws Exception {
+        args = addIdIfMissing(args);
         LOG.info("server watch dog is starting up");
         startPingTimer(serverTimeouts);
         try {
-            childProcess = new ChildProcess(args, serverTimeouts);
-            setChildStatus(CHILD_STATUS.RUNNING);
             int restarts = 0;
+            childProcess = new ChildProcess(args, restarts, serverTimeouts);
+            setChildStatus(CHILD_STATUS.RUNNING);
             while (true) {
                 if (!childProcess.ping()) {
                     LOG.debug("bad ping, initializing");
+                    restarts++;
                     setChildStatus(CHILD_STATUS.INITIALIZING);
                     lastPing = null;
                     childProcess.close();
                     LOG.debug("About to restart the child process");
-                    childProcess = new ChildProcess(args, serverTimeouts);
+                    childProcess = new ChildProcess(args, restarts, serverTimeouts);
                     LOG.info("Successfully restarted child process -- {} restarts so far)", restarts);
                     setChildStatus(CHILD_STATUS.RUNNING);
-                    restarts++;
                     if (serverTimeouts.getMaxRestarts() > -1 && restarts >= serverTimeouts.getMaxRestarts()) {
                         LOG.warn("hit max restarts: "+restarts+". Stopping now");
                         break;
@@ -100,6 +102,21 @@ public class TikaServerWatchDog {
                 childProcess.close();
             }
         }
+    }
+
+    private String[] addIdIfMissing(String[] args) {
+        for (String arg : args) {
+            //id is already specified, leave the array as is
+            if (arg.equals("-i") || arg.equals("--id")) {
+                return args;
+            }
+        }
+
+        String[] newArgs = new String[args.length+2];
+        System.arraycopy(args, 0, newArgs, 0, args.length);
+        newArgs[args.length] = "--id";
+        newArgs[args.length+1] = UUID.randomUUID().toString();
+        return newArgs;
     }
 
     private void startPingTimer(ServerTimeouts serverTimeouts) {
@@ -222,7 +239,7 @@ public class TikaServerWatchDog {
         private final Path childStatusFile;
         private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
 
-        private ChildProcess(String[] args, ServerTimeouts serverTimeouts) throws Exception {
+        private ChildProcess(String[] args, int numRestarts, ServerTimeouts serverTimeouts) throws Exception {
             String prefix = DEFAULT_CHILD_STATUS_FILE_PREFIX;
             for (int i = 0; i < args.length; i++) {
                 if (args[i].equals("-tmpFilePrefix")) {
@@ -232,7 +249,7 @@ public class TikaServerWatchDog {
 
             this.childStatusFile = Files.createTempFile(prefix, "");
             this.serverTimeouts = serverTimeouts;
-            this.process = startProcess(args, childStatusFile);
+            this.process = startProcess(args, numRestarts, childStatusFile);
 
             //wait for file to be written/initialized by child process
             Instant start = Instant.now();
@@ -368,7 +385,7 @@ public class TikaServerWatchDog {
 
         }
 
-        private Process startProcess(String[] args, Path childStatusFile) throws IOException {
+        private Process startProcess(String[] args, int numRestarts, Path childStatusFile) throws IOException {
 
             ProcessBuilder builder = new ProcessBuilder();
             builder.redirectError(ProcessBuilder.Redirect.INHERIT);
@@ -391,7 +408,9 @@ public class TikaServerWatchDog {
             argList.add("org.apache.tika.server.TikaServerCli");
             argList.addAll(childArgs);
             argList.add("-child");
-            LOG.debug("child process commandline: " +argList.toString());
+            argList.add("--numRestarts");
+            argList.add(Integer.toString(numRestarts));
+            LOG.info("child process commandline: " +argList.toString());
             builder.command(argList);
             Process process = builder.start();
             //redirect stdout to parent stderr to avoid error msgs

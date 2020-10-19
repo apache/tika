@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -92,6 +93,7 @@ public class TikaServerCli {
     private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
             Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
             "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
+                    "numRestarts",
             "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix"});
 
     private static Options getOptions() {
@@ -104,6 +106,7 @@ public class TikaServerCli {
         options.addOption("dml", "digestMarkLimit", true, "max number of bytes to mark on stream for digest");
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
+        options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("status", false, "enable the status endpoint");
         options.addOption("?", "help", false, "this help message");
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
@@ -123,7 +126,7 @@ public class TikaServerCli {
         options.addOption("childStatusFile", true, "Only in spawn child mode: temporary file used as mmap to communicate " +
                 "with parent process -- do not use this! Should only be invoked by parent process.");
         options.addOption("tmpFilePrefix", true, "Only in spawn child mode: prefix for temp file - for debugging only");
-
+        options.addOption("numRestarts", true, "Only in spawn child mode: number of times that the child has had to be restarted.");
         return options;
     }
 
@@ -269,10 +272,13 @@ public class TikaServerCli {
                 inputStreamFactory = new DefaultInputStreamFactory();
             }
 
+            String serverId = line.hasOption("i") ? line.getOptionValue("i") : UUID.randomUUID().toString();
+            LOG.debug("SERVER ID:" +serverId);
             ServerStatus serverStatus;
             //if this is a child process
             if (line.hasOption("child")) {
-                serverStatus = new ServerStatus();
+                serverStatus = new ServerStatus(serverId, Integer.parseInt(line.getOptionValue("numRestarts")),
+                        false);
                 //redirect!!!
                 InputStream in = System.in;
                 System.setIn(new ByteArrayInputStream(new byte[0]));
@@ -291,7 +297,7 @@ public class TikaServerCli {
 
                 serverThread.start();
             } else {
-                serverStatus = new ServerStatus(true);
+                serverStatus = new ServerStatus(serverId, 0, true);
             }
             TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
