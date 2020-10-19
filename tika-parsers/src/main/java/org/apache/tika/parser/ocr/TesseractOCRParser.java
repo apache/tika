@@ -442,6 +442,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                         if (config.getOutputType().equals(TesseractOCRConfig.OUTPUT_TYPE.HOCR)) {
                             extractHOCROutput(is, parseContext, xhtml);
                         } else {
+                        	// for output type txt and pdf it should be the same extract method
                             extractOutput(is, xhtml);
                         }
                     }
