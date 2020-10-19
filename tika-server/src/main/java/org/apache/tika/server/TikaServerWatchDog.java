@@ -407,7 +407,7 @@ public class TikaServerWatchDog {
             argList.add("-child");
             argList.add("--numRestarts");
             argList.add(Integer.toString(numRestarts));
-            LOG.info("child process commandline: " +argList.toString());
+            LOG.debug("child process commandline: " +argList.toString());
             builder.command(argList);
             Process process = builder.start();
             //redirect stdout to parent stderr to avoid error msgs
