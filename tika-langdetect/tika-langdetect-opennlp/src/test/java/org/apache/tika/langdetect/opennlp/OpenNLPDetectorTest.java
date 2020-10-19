@@ -16,7 +16,7 @@ package org.apache.tika.langdetect.opennlp;
  * limitations under the License.
  */
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.langdetect.LanguageDetectorTest;
 import org.apache.tika.language.detect.LanguageResult;
 import org.junit.BeforeClass;

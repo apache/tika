@@ -17,8 +17,8 @@
 
 package org.apache.tika.parser.html;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 

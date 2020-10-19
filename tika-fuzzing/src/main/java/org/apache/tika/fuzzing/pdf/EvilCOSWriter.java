@@ -16,6 +16,7 @@
  */
 package org.apache.tika.fuzzing.pdf;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSBoolean;
@@ -50,7 +51,6 @@ import org.apache.pdfbox.pdmodel.interactive.digitalsignature.SignatureInterface
 import org.apache.pdfbox.util.Hex;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;

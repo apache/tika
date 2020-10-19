@@ -16,8 +16,8 @@
  */
 package org.apache.tika.fuzzing.general;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.mime.MediaType;
 
 import java.io.IOException;

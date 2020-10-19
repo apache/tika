@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.parser.ner.NERecogniser;
 import com.github.openjson.JSONException;
 import com.github.openjson.JSONObject;

@@ -83,11 +83,6 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <artifactId>commons-io</artifactId>
-      <groupId>commons-io</groupId>
-      <version>${commons.io.version}</version>
-    </dependency>
   </dependencies>
 
   <build>

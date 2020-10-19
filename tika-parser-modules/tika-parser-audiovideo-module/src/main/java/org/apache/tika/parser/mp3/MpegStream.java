@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.mp3;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 import java.io.EOFException;
 import java.io.IOException;

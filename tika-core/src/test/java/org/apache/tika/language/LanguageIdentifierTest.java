@@ -28,7 +28,7 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Locale;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 

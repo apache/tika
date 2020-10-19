@@ -28,11 +28,4 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tika-parser-jdbc-commons</artifactId>
-    <dependencies>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons.io.version}</version>
-        </dependency>
-    </dependencies>
 </project>

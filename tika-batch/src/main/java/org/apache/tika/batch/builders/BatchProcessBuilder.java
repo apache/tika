@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResource;
@@ -32,7 +33,6 @@ import org.apache.tika.batch.FileResourceCrawler;
 import org.apache.tika.batch.Interrupter;
 import org.apache.tika.batch.StatusReporter;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.util.ClassLoaderUtil;
 import org.apache.tika.util.XMLDOMUtil;

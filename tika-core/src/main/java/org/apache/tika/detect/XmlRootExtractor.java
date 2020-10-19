@@ -22,8 +22,8 @@ import java.io.InputStream;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.SAXParser;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;

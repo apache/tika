@@ -16,7 +16,7 @@
  */
 package org.apache.tika.sax;
 
-import org.apache.tika.io.ClosedInputStream;
+import org.apache.commons.io.input.ClosedInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 
