@@ -76,6 +76,8 @@ public class ServerStatus {
     };
     private static final Logger LOG = LoggerFactory.getLogger(ServerStatus.class);
 
+    private final String serverId;
+    private final int numRestarts;
     private AtomicLong counter = new AtomicLong(0);
     private Map<Long, TaskStatus> tasks = new HashMap<>();
     private final boolean isLegacy;
@@ -83,11 +85,13 @@ public class ServerStatus {
 
     private volatile long lastStarted = Instant.now().toEpochMilli();
 
-    public ServerStatus() {
-        isLegacy = false;
+    public ServerStatus(String serverId, int numRestarts) {
+        this(serverId, numRestarts, false);
     }
 
-    public ServerStatus(boolean isLegacy) {
+    public ServerStatus(String serverId, int numRestarts, boolean isLegacy) {
+        this.serverId = serverId;
+        this.numRestarts = numRestarts;
         this.isLegacy = isLegacy;
     }
 
@@ -144,4 +148,11 @@ public class ServerStatus {
         return status == STATUS.OPERATING;
     }
 
+    public String getServerId() {
+        return serverId;
+    }
+
+    public int getNumRestarts() {
+        return numRestarts;
+    }
 }

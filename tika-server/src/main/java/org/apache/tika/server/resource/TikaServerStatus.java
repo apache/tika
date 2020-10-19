@@ -36,9 +36,11 @@ public class TikaServerStatus {
     @Produces("application/json")
     public Map<String, Object> getStatus() {
         Map<String, Object> map = new LinkedHashMap<>();
+        map.put("server_id", serverStatus.getServerId());
         map.put("status", serverStatus.getStatus());
         map.put("millis_since_last_parse_started", serverStatus.getMillisSinceLastParseStarted());
         map.put("files_processed", serverStatus.getFilesProcessed());
+        map.put("num_restarts", serverStatus.getNumRestarts());
         return map;
     }
 }

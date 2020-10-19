@@ -16,6 +16,8 @@
  */
 package org.apache.tika.server;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.TikaTest;
@@ -61,6 +63,7 @@ public class TikaServerIntegrationTest extends TikaTest {
     private static final String TEST_STDOUT_STDERR = "mock/testStdOutErr.xml";
     private static final String TEST_STATIC_STDOUT_STDERR = "mock/testStaticStdOutErr.xml";
     private static final String META_PATH = "/rmeta";
+    private static final String STATUS_PATH = "/status";
 
     private static final long MAX_WAIT_MS = 60000;
 
@@ -181,6 +184,112 @@ public class TikaServerIntegrationTest extends TikaTest {
         } finally {
             serverThread.interrupt();
         }
+    }
+
+    @Test
+    public void testSameServerIdAfterOOM() throws Exception {
+
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild", "-JXmx256m",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-pingPulseMillis", "100",
+                                "--status",
+                                "-tmpFilePrefix", "tika-server-oom"
+
+                        });
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+        String serverId = getServerId();
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
+        //give some time for the server to crash/kill itself
+        Thread.sleep(2000);
+        try {
+            testBaseline();
+            assertEquals(serverId, getServerId());
+            assertEquals(1, getNumRestarts());
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    @Test
+    public void testSameDeclaredServerIdAfterOOM() throws Exception {
+        String serverId = "qwertyuiop";
+        Thread serverThread = new Thread() {
+            @Override
+            public void run() {
+                TikaServerCli.main(
+                        new String[]{
+                                "-spawnChild", "-JXmx256m",
+                                "-p", INTEGRATION_TEST_PORT,
+                                "-pingPulseMillis", "100",
+                                "--status",
+                                "--id",
+                                serverId,
+                                "-tmpFilePrefix", "tika-server-oom"
+
+                        });
+            }
+        };
+        serverThread.start();
+        awaitServerStartup();
+        Response response = null;
+        try {
+            response = WebClient
+                    .create(endPoint + META_PATH)
+                    .accept("application/json")
+                    .put(ClassLoader
+                            .getSystemResourceAsStream(TEST_OOM));
+        } catch (Exception e) {
+            //oom may or may not cause an exception depending
+            //on the timing
+        }
+        //give some time for the server to crash/kill itself
+        Thread.sleep(2000);
+        try {
+            testBaseline();
+            assertEquals(serverId, getServerId());
+        } finally {
+            serverThread.interrupt();
+        }
+    }
+
+    private String getServerId() throws Exception {
+        Response response = WebClient
+                    .create(endPoint + STATUS_PATH)
+                    .accept("application/json")
+                    .get();
+        String jsonString =
+                CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
+        JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
+        return root.get("server_id").getAsJsonPrimitive().getAsString();
+    }
+
+    private int getNumRestarts() throws Exception {
+        Response response = WebClient
+                .create(endPoint + STATUS_PATH)
+                .accept("application/json")
+                .get();
+        String jsonString =
+                CXFTestBase.getStringFromInputStream((InputStream) response.getEntity());
+        JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
+        return root.get("num_restarts").getAsJsonPrimitive().getAsInt();
     }
 
     @Test

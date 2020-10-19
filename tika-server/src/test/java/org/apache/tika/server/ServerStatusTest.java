@@ -33,7 +33,7 @@ public class ServerStatusTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testBadId() throws Exception {
-        ServerStatus status = new ServerStatus();
+        ServerStatus status = new ServerStatus("", 0);
         status.complete(2);
     }
 
@@ -44,7 +44,7 @@ public class ServerStatusTest {
         int filesToProcess = 20;
         ExecutorService service = Executors.newFixedThreadPool(numThreads);
         ExecutorCompletionService<Integer> completionService = new ExecutorCompletionService<>(service);
-        ServerStatus serverStatus = new ServerStatus();
+        ServerStatus serverStatus = new ServerStatus("", 0);
         for (int i = 0; i < numThreads; i++) {
             completionService.submit(new MockTask(serverStatus, filesToProcess));
         }

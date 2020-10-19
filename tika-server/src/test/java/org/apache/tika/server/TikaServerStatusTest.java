@@ -33,6 +33,7 @@ import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,12 +41,12 @@ import static org.junit.Assert.assertTrue;
 public class TikaServerStatusTest extends CXFTestBase {
 
     private final static String STATUS_PATH = "/status";
-
+    private final static String SERVER_ID = UUID.randomUUID().toString();
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaServerStatus.class);
         sf.setResourceProvider(TikaServerStatus.class,
-                new SingletonResourceProvider(new TikaServerStatus(new ServerStatus())));
+                new SingletonResourceProvider(new TikaServerStatus(new ServerStatus(SERVER_ID, 0))));
     }
 
     @Override
@@ -61,6 +62,7 @@ public class TikaServerStatusTest extends CXFTestBase {
         String jsonString =
                 getStringFromInputStream((InputStream) response.getEntity());
         JsonObject root = JsonParser.parseString(jsonString).getAsJsonObject();
+        assertTrue(root.has("server_id"));
         assertTrue(root.has("status"));
         assertTrue(root.has("millis_since_last_parse_started"));
         assertTrue(root.has("files_processed"));
@@ -68,5 +70,6 @@ public class TikaServerStatusTest extends CXFTestBase {
         assertEquals(0, root.getAsJsonPrimitive("files_processed").getAsInt());
         long millis = root.getAsJsonPrimitive("millis_since_last_parse_started").getAsInt();
         assertTrue(millis > 0 && millis < 360000);
+        assertEquals(SERVER_ID, root.getAsJsonPrimitive("server_id").getAsString());
     }
 }
