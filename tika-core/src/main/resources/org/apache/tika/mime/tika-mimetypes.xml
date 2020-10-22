@@ -694,36 +694,30 @@
     <glob pattern="*.p10"/>
   </mime-type>
 
+  <mime-type type="application/pkcs7-signature">
+    <glob pattern="*.p7s"/>
+    <sub-class-of type="application/pkcs7-mime"/>
+  </mime-type>
+
   <mime-type type="application/pkcs7-mime">
     <glob pattern="*.p7m"/>
     <glob pattern="*.p7c"/>
-  </mime-type>
-
-  <mime-type type="application/pkcs7-signature">
-    <glob pattern="*.p7s"/>
+    <glob pattern="*.p7z"/>
     <magic priority="50">
       <!-- PEM encoded -->
-      <match value="-----BEGIN PKCS7" type="string" offset="0"/>
-      <!-- DER encoded, sequence+length, object=pkcs7-signedData -->
-      <match value="0x3080" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="2"/>
+      <match value="-----BEGIN PKCS7-----" type="string" offset="0"/>
+      <!-- DER encoded, sequence+length(short), object=id-smime-ct-compressedData -->
+      <match value="0x3000" mask="0xFF80" offset="0">
+         <match value="0x060b2a864886f70d0109100109a0" type="string" offset="2"/>
       </match>
-      <match value="0x3081" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="3"/>
-      </match>
-      <match value="0x3082" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="4"/>
-      </match>
-      <match value="0x3083" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="5"/>
-      </match>
-      <match value="0x3084" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="6"/>
+      <!-- DER encoded, sequence+length(long/indefinite) -->
+      <match value="0x3080" mask="0xFFF8" offset="0">
+         <!-- object=id-smime-ct-compressedData -->
+         <match value="0x060b2a864886f70d0109100109a0" type="string" offset="2:6"/>
+         <!-- object=pkcs7-signedData -->
+         <match value="0x06092a864886f70d010702a0" type="string" offset="2:6"/>
+         <!-- object=pkcs7-envelopedData -->
+         <match value="0x06092a864886f70d010703a0" type="string" offset="2:6"/>
       </match>
     </magic>
   </mime-type>
@@ -4132,9 +4126,11 @@
   <mime-type type="application/x-pkcs7-certificates">
     <glob pattern="*.p7b"/>
     <glob pattern="*.spc"/>
+    <sub-class-of type="application/pkcs7-mime"/>
   </mime-type>
   <mime-type type="application/x-pkcs7-certreqresp">
     <glob pattern="*.p7r"/>
+    <sub-class-of type="application/pkcs7-mime"/>
   </mime-type>
 
   <mime-type type="application/x-prt">
