@@ -49,9 +49,7 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
 
     public CompositeEncodingDetector(List<EncodingDetector> detectors) {
         this.detectors = new LinkedList<>();
-        for (EncodingDetector encodingDetector : detectors) {
-            this.detectors.add(encodingDetector);
-        }
+        this.detectors.addAll(detectors);
     }
 
     /**

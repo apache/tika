@@ -23,6 +23,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -161,10 +162,6 @@ public class TestMetadataFilter extends AbstractTikaConfigTest {
     }
 
     private static Set<String> set(String ... items) {
-        Set<String> set = new HashSet<>();
-        for (String item : items) {
-            set.add(item);
-        }
-        return set;
+        return new HashSet<>(Arrays.asList(items));
     }
 }

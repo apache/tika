@@ -331,9 +331,7 @@ public class ExternalEmbedder implements Embedder {
             }
             if (commandSegment.indexOf(METADATA_COMMAND_ARGUMENTS_TOKEN) != -1) {
                 if (hasMetadataCommandArguments) {
-                    for (String commandMetadataSegment : commandMetadataSegments) {
-                        cmd.add(commandMetadataSegment);
-                    }
+                    cmd.addAll(commandMetadataSegments);
                 }
                 replacedMetadataCommandArgumentsToken = true;
             } else {

@@ -686,10 +686,7 @@ public class PDFParserTest extends TikaTest {
         }
         //now test full 11.x
         XMLResult r = getXML("testPDF_Version.11.x.PDFA-1b.pdf");
-        Set<String> versions = new HashSet<String>();
-        for (String fmt : r.metadata.getValues("dc:format")) {
-            versions.add(fmt);
-        }
+        Set<String> versions = new HashSet<>(Arrays.asList(r.metadata.getValues("dc:format")));
 
         for (String hit : new String[]{"application/pdf; version=1.7",
                 "application/pdf; version=\"A-1b\"",

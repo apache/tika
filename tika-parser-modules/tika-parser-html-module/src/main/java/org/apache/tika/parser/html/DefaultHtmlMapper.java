@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.html;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -106,11 +107,7 @@ public class DefaultHtmlMapper implements HtmlMapper {
     }};
 
     private static Set<String> attrSet(String... attrs) {
-        Set<String> result = new HashSet<String>();
-        for (String attr : attrs) {
-            result.add(attr);
-        }
-        return result;
+        return new HashSet<>(Arrays.asList(attrs));
     }
 
     public String mapSafeElement(String name) {
