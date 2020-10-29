@@ -203,7 +203,7 @@ public class StringsParser extends AbstractParser {
 		}
 		cmdList.add(input.getPath());
 		
-		String[] cmd = cmdList.toArray(new String[cmdList.size()]);
+		String[] cmd = cmdList.toArray(new String[0]);
 		
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		final Process process = pb.start();
@@ -305,7 +305,7 @@ public class StringsParser extends AbstractParser {
 		}
 		cmdList.add(input.getPath());
 		
-		String[] cmd = cmdList.toArray(new String[cmdList.size()]);
+		String[] cmd = cmdList.toArray(new String[0]);
 
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		final Process process = pb.start();

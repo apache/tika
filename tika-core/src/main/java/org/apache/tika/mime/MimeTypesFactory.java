@@ -186,6 +186,6 @@ public class MimeTypesFactory {
             urls.add(externalURL);
         }
         
-        return create( urls.toArray(new URL[urls.size()]) );
+        return create(urls.toArray(new URL[0]));
     }
 }

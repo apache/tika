@@ -96,7 +96,7 @@ class BatchCommandLineBuilder {
                 fullCommand.add(commandLineSafe(e.getValue()));
             }
         }
-        return fullCommand.toArray(new String[fullCommand.size()]);
+        return fullCommand.toArray(new String[0]);
     }
 
     protected static String commandLineSafe(String arg) {

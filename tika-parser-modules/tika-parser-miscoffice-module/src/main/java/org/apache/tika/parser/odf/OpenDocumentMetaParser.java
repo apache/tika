@@ -193,7 +193,7 @@ public class OpenDocumentMetaParser extends XMLParser {
 
         if (subjects.size() > 0) {
             metadata.set(TikaCoreProperties.SUBJECT,
-            subjects.toArray(new String[subjects.size()]));
+            subjects.toArray(new String[0]));
         }
     }
 

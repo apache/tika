@@ -65,7 +65,7 @@ public class TikaEvalCLI {
     private void handleStartDB(String[] args) throws SQLException {
         List<String> argList = new ArrayList<>();
         argList.add("-web");
-        Console.main(argList.toArray(new String[argList.size()]));
+        Console.main(argList.toArray(new String[0]));
         while(true) {
             try {
                 Thread.sleep(1000);
@@ -147,7 +147,7 @@ public class TikaEvalCLI {
                 argList.add(tmpBCConfig.toAbsolutePath().toString());
             }
 
-            String[] updatedArgs = argList.toArray(new String[argList.size()]);
+            String[] updatedArgs = argList.toArray(new String[0]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
                 CommandLine commandLine = defaultCLIParser.parse(ExtractProfiler.OPTIONS, updatedArgs);
@@ -238,7 +238,7 @@ public class TikaEvalCLI {
                 argList.add(tmpBCConfig.toAbsolutePath().toString());
 
             }
-            String[] updatedArgs = argList.toArray(new String[argList.size()]);
+            String[] updatedArgs = argList.toArray(new String[0]);
             DefaultParser defaultCLIParser = new DefaultParser();
             try {
                 CommandLine commandLine = defaultCLIParser.parse(ExtractComparer.OPTIONS, updatedArgs);

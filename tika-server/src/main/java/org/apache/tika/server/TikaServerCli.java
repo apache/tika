@@ -175,7 +175,7 @@ public class TikaServerCli {
                 ret.add(args[i]);
             }
         }
-        return ret.toArray(new String[ret.size()]);
+        return ret.toArray(new String[0]);
     }
 
     private static void executeLegacy(CommandLine line, Options options) throws Exception {

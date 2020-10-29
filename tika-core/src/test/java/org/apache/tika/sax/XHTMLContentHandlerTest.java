@@ -214,7 +214,7 @@ public class XHTMLContentHandlerTest {
             }
         }
         
-        return words.toArray(new String[words.size()]);
+        return words.toArray(new String[0]);
     }
 
 }
