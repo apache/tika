@@ -634,7 +634,11 @@ public class XMLReaderUtils implements Serializable {
      * @param parser parser to return
      */
     private static void releaseParser(PoolSAXParser parser) {
-        parser.reset();
+        try {
+            parser.reset();
+        } catch (UnsupportedOperationException e) {
+            //TIKA-3009 -- we really shouldn't have to do this... :(
+        }
         //if this is a different generation, don't put it back
         //in the pool
         if (parser.getGeneration() != POOL_GENERATION.get()) {
