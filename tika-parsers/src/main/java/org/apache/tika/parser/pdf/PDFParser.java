@@ -50,8 +50,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.OfficeOpenXMLCore;
+
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
@@ -462,7 +461,7 @@ public class PDFParser extends AbstractParser implements Initializable {
      * If true, sort text tokens by their x/y position
      * before extracting text.  This may be necessary for
      * some PDFs (if the text tokens are not rendered "in
-     * order"), while for other PDFs it can produce the
+     * order"), while for othe6 -- Add FileProfilerr PDFs it can produce the
      * wrong result (for example if there are 2 columns,
      * the text will be interleaved).  Default is false.
      */
@@ -597,6 +596,11 @@ public class PDFParser extends AbstractParser implements Initializable {
 
     public void setInitializableProblemHandler(InitializableProblemHandler initializableProblemHandler) {
         this.initializableProblemHandler = initializableProblemHandler;
+    }
+
+    @Field
+    public void setDropThreshold(float dropThreshold) {
+        defaultConfig.setDropThreshold(dropThreshold);
     }
 
     @Field

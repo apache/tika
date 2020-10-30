@@ -26,8 +26,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.ProcessUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -38,6 +36,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -57,7 +57,7 @@ public class FileCommandDetector implements Detector {
     //TODO: file has some diff mimes names for some very common mimes
     //should we map file mimes to Tika mimes, e.g. text/xml -> application/xml??
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FileCommandDetector.class);
+    private static final Logger LOGGER = Logger.getLogger(FileCommandDetector.class.getName());
     private static boolean HAS_WARNED = false;
     private static final long DEFAULT_TIMEOUT_MS = 6000;
     private static String DEFAULT_FILE_COMMAND_PATH = "file";
@@ -85,7 +85,8 @@ public class FileCommandDetector implements Detector {
         }
         if (!hasFileCommand) {
             if (! HAS_WARNED) {
-                LOGGER.warn("'file' command isn't working: '"+fileCommandPath+"'");
+                LOGGER.log(Level.WARNING,
+                        "'file' command isn't working: '"+fileCommandPath+"'");
                 HAS_WARNED = true;
             }
             return MediaType.OCTET_STREAM;
