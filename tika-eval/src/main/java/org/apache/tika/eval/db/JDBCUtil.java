@@ -51,6 +51,7 @@ public class JDBCUtil {
 
     private final String connectionString;
     private String driverClass;
+    private Connection connection = null;
 
     public JDBCUtil(String connectionString, String driverClass) {
         this.connectionString = connectionString;
@@ -65,7 +66,7 @@ public class JDBCUtil {
                     Properties properties = new Properties();
                     properties.load(is);
                     for (String k : properties.stringPropertyNames()) {
-                        Matcher m = Pattern.compile("(?i)jdbc:"+k).matcher(connectionString);
+                        Matcher m = Pattern.compile("(?i)jdbc:" + k).matcher(connectionString);
                         if (m.find()) {
                             this.driverClass = properties.getProperty(k);
                         }
@@ -86,8 +87,10 @@ public class JDBCUtil {
      * @throws IOException
      */
     public Connection getConnection() throws SQLException {
+        if (connection != null) {
+            return connection;
+        }
         String connectionString = getConnectionString();
-        Connection conn = null;
         String jdbcDriver = getJDBCDriverClass();
         if (jdbcDriver != null) {
             try {
@@ -96,14 +99,15 @@ public class JDBCUtil {
                 throw new RuntimeException(e);
             }
         }
-        conn = DriverManager.getConnection(connectionString);
-        conn.setAutoCommit(false);
+        connection = DriverManager.getConnection(connectionString);
+        connection.setAutoCommit(false);
 
-        return conn;
+        return connection;
     }
 
     /**
      * JDBC driver class.  Override as necessary.
+     *
      * @return
      */
     public String getJDBCDriverClass() {
@@ -170,8 +174,8 @@ public class JDBCUtil {
     }
 
     public static void batchInsert(PreparedStatement insertStatement,
-                             TableInfo table,
-                             Map<Cols, String> data) throws SQLException {
+                                   TableInfo table,
+                                   Map<Cols, String> data) throws SQLException {
 
         try {
             int i = 1;
@@ -244,34 +248,35 @@ public class JDBCUtil {
 
     public void createTables(List<TableInfo> tableInfos, CREATE_TABLE createTable) throws SQLException, IOException {
 
-        try (Connection conn = getConnection ()) {
-            for (TableInfo tableInfo : tableInfos) {
+        Connection conn = getConnection();
+        for (TableInfo tableInfo : tableInfos) {
 
-                if (createTable.equals(CREATE_TABLE.DROP_IF_EXISTS)) {
-                    dropTableIfExists(conn, tableInfo.getName());
-                } else if (createTable.equals(CREATE_TABLE.SKIP_IF_EXISTS)) {
-                    if (containsTable(tableInfo.getName())) {
-                        continue;
-                    }
+            if (createTable.equals(CREATE_TABLE.DROP_IF_EXISTS)) {
+                dropTableIfExists(conn, tableInfo.getName());
+            } else if (createTable.equals(CREATE_TABLE.SKIP_IF_EXISTS)) {
+                if (containsTable(tableInfo.getName())) {
+                    continue;
                 }
-                createTable(conn, tableInfo);
             }
-            conn.commit();
+            createTable(conn, tableInfo);
         }
+        conn.commit();
+
     }
 
     public boolean containsTable(String tableName) throws SQLException {
-        try (Connection connection = getConnection()) {
-            Set<String> tables = getTables(connection);
-            if (tables.contains(normalizeTableName(tableName))) {
-                return true;
-            }
+        Connection connection = getConnection();
+        Set<String> tables = getTables(connection);
+        if (tables.contains(normalizeTableName(tableName))) {
+            return true;
         }
+
         return false;
     }
 
     /**
      * Override for custom behavior
+     *
      * @param tableName
      * @return
      */

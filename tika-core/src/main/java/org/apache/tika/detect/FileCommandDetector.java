@@ -66,12 +66,12 @@ public class FileCommandDetector implements Detector {
     private int maxBytes = 1_000_000;
     private long timeoutMs = DEFAULT_TIMEOUT_MS;
 
-    static boolean checkHasFile() {
+    public static boolean checkHasFile() {
         return checkHasFile(DEFAULT_FILE_COMMAND_PATH);
     }
 
 
-    static boolean checkHasFile(String fileCommandPath) {
+    public static boolean checkHasFile(String fileCommandPath) {
         String[] commandline = new String[]{
             fileCommandPath, "-v"
         };

@@ -135,6 +135,11 @@ public class DBWriter implements IDBWriter {
         }
     }
 
+    /**
+     * This closes the writer by executing batch and
+     * committing changes.  This DOES NOT close the connection
+     * @throws IOException
+     */
     public void close() throws IOException {
         for (PreparedStatement p : inserts.values()) {
             try {
@@ -148,12 +153,6 @@ public class DBWriter implements IDBWriter {
         } catch (SQLException e){
             throw new IOExceptionWithCause(e);
         }
-        try {
-            conn.close();
-        } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
-        }
-
     }
 
     private class LastInsert {

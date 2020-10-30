@@ -72,7 +72,6 @@ public class MimeBuffer extends AbstractDBBuffer {
     public void close() throws SQLException {
         st.close();
         connection.commit();
-        connection.close();
     }
 
     private static class MimeUtil {

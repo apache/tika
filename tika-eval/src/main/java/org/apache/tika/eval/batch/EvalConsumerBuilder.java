@@ -104,7 +104,8 @@ public abstract class EvalConsumerBuilder {
 
     public void populateRefTables() throws IOException, SQLException {
         boolean refTablesPopulated = true;
-        try (Connection connection = dbUtil.getConnection()) {
+        try{
+            Connection connection = dbUtil.getConnection();
             for (TableInfo tableInfo : getRefTableInfos()) {
                 int rows = 0;
                 try (ResultSet rs = connection.createStatement().executeQuery("select * from "+

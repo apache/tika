@@ -63,7 +63,6 @@ public class XMLErrorLogUpdater {
         writer.update(connection, ExtractComparer.EXTRACT_EXCEPTION_TABLE_A, xmlLogFileA);
         writer.update(connection, ExtractComparer.EXTRACT_EXCEPTION_TABLE_B, xmlLogFileB);
         connection.commit();
-        connection.close();
     }
 
     public void update(Connection connection, TableInfo tableInfo, Path xmlLogFile) throws Exception {

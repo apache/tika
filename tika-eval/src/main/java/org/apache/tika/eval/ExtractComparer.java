@@ -82,7 +82,7 @@ public class ExtractComparer extends AbstractProfiler {
                 .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
                 .addOption("tablePrefixA", true, "EXPERT: optional prefix for table names for A")
                 .addOption("tablePrefixB", true, "EXPERT: optional prefix for table names for B")
-                .addOption("drop", true, "drop tables if they exist")
+                .addOption("drop", false, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
                 .addOption("maxTokens", true, "maximum tokens to process, default=200000")
                 .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
