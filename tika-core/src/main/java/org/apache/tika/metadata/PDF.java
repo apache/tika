@@ -66,6 +66,8 @@ public interface PDF {
 
     Property IS_ENCRYPTED = Property.internalBoolean(PDF_PREFIX+"encrypted");
 
+    Property PRODUCER = Property.internalText(PDF_PREFIX+"producer");
+
     /**
      * This specifies where an action or destination would be found/triggered
      * in the document: on document open, before close, etc.

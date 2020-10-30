@@ -283,6 +283,7 @@ public class PDFParser extends AbstractParser implements Initializable {
         PDMetadataExtractor.addMetadata(metadata, Office.KEYWORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_KEY_WORDS, info.getKeywords());
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_PRODUCER, info.getProducer());
+        PDMetadataExtractor.addMetadata(metadata, PDF.PRODUCER, info.getProducer());
 
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_SUBJECT, info.getSubject());
 

@@ -26,6 +26,7 @@ import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchema;
 import org.apache.jempbox.xmp.XMPSchemaBasic;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
+import org.apache.jempbox.xmp.XMPSchemaPDF;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
@@ -37,6 +38,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -63,34 +65,26 @@ class PDMetadataExtractor {
         metadata.set(PDF.HAS_XMP, "true");
         //now go for the XMP
         Document dom = loadDOM(pdMetadata, metadata, context);
-
-        XMPMetadata xmp = null;
-        if (dom != null) {
-            xmp = new XMPMetadata(dom);
+        if (dom == null) {
+            return;
         }
+        XMPMetadata xmp = new XMPMetadata(dom);
         XMPSchemaDublinCore dcSchema = null;
-        XMPSchemaBasic basic = null;
-        if (xmp != null) {
-            try {
-                dcSchema = xmp.getDublinCoreSchema();
-            } catch (IOException e) {
-            }
-            try {
-                basic = xmp.getBasicSchema();
-            } catch (IOException e) {
-                //swallow
-            }
-            JempboxExtractor.extractXMPMM(xmp, metadata);
+        try {
+            dcSchema = xmp.getDublinCoreSchema();
+        } catch (IOException e) {
         }
-        extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
-        extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, dcSchema);
-        extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, dcSchema);
-        extractMultilingualItems(metadata, TikaCoreProperties.TITLE, null, dcSchema);
-
-        extractBasic(basic, metadata);
+        if (dcSchema != null) {
+            extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, dcSchema);
+            extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, dcSchema);
+            extractMultilingualItems(metadata, TikaCoreProperties.TITLE, null, dcSchema);
+        }
+        extractBasic(xmp, metadata);
+        extractPDF(xmp, metadata);
+        JempboxExtractor.extractXMPMM(xmp, metadata);
 
         try {
-            if (xmp != null) {
                 xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
                 XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
                 if (pdfaxmp != null) {
@@ -106,13 +100,41 @@ class PDMetadataExtractor {
                     }
                 }
                 // TODO WARN if this XMP version is inconsistent with document header version?
-            }
         } catch (IOException e) {
             metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed", "" + e);
         }
     }
 
-    private static void extractBasic(XMPSchemaBasic basic, Metadata metadata) {
+    private static void extractPDF(XMPMetadata xmp, Metadata metadata) {
+        if (xmp == null) {
+            return;
+        }
+
+        XMPSchemaPDF pdf = null;
+        try {
+            pdf = xmp.getPDFSchema();
+        } catch (IOException e) {
+            return;
+        }
+        if (pdf == null) {
+            return;
+        }
+        setNotNull(PDF.PRODUCER, pdf.getProducer(), metadata);
+        setNotNull(Office.KEYWORDS, pdf.getKeywords(), metadata);
+        setNotNull(PDF.PDF_VERSION, pdf.getPDFVersion(), metadata);
+    }
+
+    private static void extractBasic(XMPMetadata xmp, Metadata metadata) {
+        if (xmp == null) {
+            return;
+        }
+
+        XMPSchemaBasic basic = null;
+        try {
+            basic = xmp.getBasicSchema();
+        } catch (IOException e) {
+            return;
+        }
         if (basic == null) {
             return;
         }
@@ -155,7 +177,7 @@ class PDMetadataExtractor {
 
     private static void setNotNull(Property property, String value, Metadata metadata) {
         if (metadata.get(property) == null && value != null && value.trim().length() > 0) {
-            metadata.set(property, value);
+            metadata.set(property, decode(value));
         }
     }
 

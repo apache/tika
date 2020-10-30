@@ -26,6 +26,7 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1382,6 +1383,14 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testXMPPDFSchema() throws Exception {
+        //as of this writing, we don't currently have any pdfs in our
+        //test suite with data that is different btwn pdf doc info and xmp. :(
+        Metadata metadata = getXML("testPopupAnnotation.pdf").metadata;
+        assertEquals("IBM Lotus Symphony 3.0", metadata.get(PDF.PRODUCER));
+    }
+
+    @Test
     public void testExtractInlineImageMetadata() throws Exception {
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
@@ -1424,5 +1433,4 @@ public class PDFParserTest extends TikaTest {
             return true;
         }
     }
-
 }
