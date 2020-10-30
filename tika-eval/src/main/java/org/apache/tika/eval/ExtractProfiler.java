@@ -66,7 +66,7 @@ public class ExtractProfiler extends AbstractProfiler {
                 .addOption("jdbc", true, "EXPERT: full jdbc connection string. Must specify this or -db <h2db>")
                 .addOption("jdbcDriver", true, "EXPERT: jdbc driver, or specify via -Djdbc.driver")
                 .addOption("tablePrefix", true, "EXPERT: optional prefix for table names")
-                .addOption("drop", true, "drop tables if they exist")
+                .addOption("drop", false, "drop tables if they exist")
                 .addOption("maxFilesToAdd", true, "maximum number of files to add to the crawler")
                 .addOption("maxTokens", true, "maximum tokens to process, default=200000")
                 .addOption("maxContentLength", true, "truncate content beyond this length for calculating 'contents' stats, default=1000000")
