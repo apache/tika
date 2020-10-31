@@ -27,8 +27,8 @@ import org.apache.tika.config.ServiceLoader;
  */
 public class ServiceLoaderUtils {
     /**
-     * Sorts a list of loaded classes, so that non-Tika ones come
-     *  before Tika ones, and otherwise in reverse alphabetical order
+     * Sorts a list of loaded classes, so that Tika ones come
+     * before non-Tika ones, and otherwise in alphabetical order
      */
     public static <T> void sortLoadedClasses(List<T> loaded) {
         Collections.sort(loaded, new Comparator<T>() {
