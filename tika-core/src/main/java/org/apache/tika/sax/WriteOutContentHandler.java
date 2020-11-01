@@ -182,7 +182,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
             if (maxParseTime > -1 && System.currentTimeMillis() - parseStartedMs > maxParseTime) {
                 throw new MaxParseTimeReachedException(
                     "Your document took more than " + maxParseTime
-                        + " to parse. To receive the full text of the document,"
+                        + " ms to parse. To receive the full text of the document,"
                         + " increase your max parse limit. (Text up to the limit is"
                         + " however available).", tag);
             }
