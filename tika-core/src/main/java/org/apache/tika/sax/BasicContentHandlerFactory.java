@@ -104,7 +104,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         } else if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
         }
-        if (writeLimit > -1) {
+        if (writeLimit > -1 || maxParseTime > -1L) {
             switch(type) {
                 case HTML:
                     return new WriteOutContentHandler(new ToHTMLContentHandler(), writeLimit, maxParseTime);
@@ -140,7 +140,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
             return new DefaultHandler();
         }
         try {
-            if (writeLimit > -1) {
+            if (writeLimit > -1 || maxParseTime > -1L) {
                 switch (type) {
                     case BODY:
                         return new WriteOutContentHandler(
