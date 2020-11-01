@@ -95,7 +95,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * @param handler content handler to be decorated
      * @param writeLimit write limit
      * @param maxParseTime if > -1, stop writing characters to handler if this many milliseconds has elapsed since 
-     *      *                     first characters were written.
+     *                     first characters were written.
      */
     public WriteOutContentHandler(ContentHandler handler, int writeLimit, long maxParseTime) {
         super(handler);
