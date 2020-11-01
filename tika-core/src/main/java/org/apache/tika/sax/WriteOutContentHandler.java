@@ -220,7 +220,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
      * Checks whether the given exception (or any of it's root causes) was
      * thrown by this handler as a signal of reaching the write limit.
      *
-     * @since Apache Tika 1.25
+     * @since Apache Tika 0.7
      * @param t throwable
      * @return <code>true</code> if the write limit was reached,
      *         <code>false</code> otherwise
