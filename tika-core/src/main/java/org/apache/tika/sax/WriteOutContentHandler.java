@@ -269,7 +269,7 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * The exception used as a signal when the write limit has been reached.
+     * The exception used as a signal when the max parse time has been reached.
      */
     private static class MaxParseTimeReachedException extends SAXException {
 
