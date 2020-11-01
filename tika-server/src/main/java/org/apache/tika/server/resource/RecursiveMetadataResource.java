@@ -31,7 +31,6 @@ import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
 
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -139,20 +138,25 @@ public class RecursiveMetadataResource {
 		TikaResource.fillParseContext(context, httpHeaders, null);
 		TikaResource.logRequest(LOG, info, metadata);
 
-        int writeLimit = -1;
-        if (httpHeaders.containsKey("writeLimit")) {
-            writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
-        }
+    int writeLimit = -1;
+    if (httpHeaders.containsKey("writeLimit")) {
+      writeLimit = Integer.parseInt(httpHeaders.getFirst("writeLimit"));
+    }
 
-        int maxEmbeddedResources = -1;
-        if (httpHeaders.containsKey("maxEmbeddedResources")) {
-        maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
-        }
+    int maxEmbeddedResources = -1;
+    if (httpHeaders.containsKey("maxEmbeddedResources")) {
+      maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+    }
 
-        BasicContentHandlerFactory.HANDLER_TYPE type =
+    long maxParseTime = -1L;
+    if (httpHeaders.containsKey("maxParseTime")) {
+      maxParseTime = Long.parseLong(httpHeaders.getFirst("maxParseTime"));
+    }
+
+    BasicContentHandlerFactory.HANDLER_TYPE type =
                 BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
 		RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-		        new BasicContentHandlerFactory(type, writeLimit), maxEmbeddedResources,
+		        new BasicContentHandlerFactory(type, writeLimit, maxParseTime), maxEmbeddedResources,
                 TikaResource.getConfig().getMetadataFilter());
 		try {
             TikaResource.parse(wrapper, LOG, info.getPath(), is, handler, metadata, context);
