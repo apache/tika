@@ -99,7 +99,7 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
         if (crawlOrder == CRAWL_ORDER.RANDOM) {
             Collections.shuffle(files);
         } else if (crawlOrder == CRAWL_ORDER.SORTED) {
-            Collections.sort(files, pathComparator);
+            files.sort(pathComparator);
         }
 
         int numFiles = 0;

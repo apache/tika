@@ -121,7 +121,7 @@ public class TikaWelcome {
                 }
             }
         }
-        Collections.sort(found, new Comparator<Endpoint>() {
+        found.sort(new Comparator<Endpoint>() {
             @Override
             public int compare(Endpoint e1, Endpoint e2) {
                 int res = e1.path.compareTo(e2.path);

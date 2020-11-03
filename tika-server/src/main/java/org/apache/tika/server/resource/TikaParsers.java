@@ -232,11 +232,7 @@ public class TikaParsers {
                         ((CompositeParser) p).getParsers(EMPTY_PC).values());
                 // Sort it by class name
                 childParsers = new ArrayList<Parser>(children);
-                Collections.sort(childParsers, new Comparator<Parser>() {                    @Override
-                    public int compare(Parser p1, Parser p2) {
-                        return p1.getClass().getName().compareTo(p2.getClass().getName());
-                    }
-                });
+                childParsers.sort(Comparator.comparing(parser -> parser.getClass().getName()));
             } else {
                 supportedTypes = p.getSupportedTypes(EMPTY_PC);
             }

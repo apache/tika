@@ -319,7 +319,7 @@ class XPSPageContentHandler extends DefaultHandler {
                 //in most xps files in our test corpus, this is never triggered
                 //because the runs are already ordered correctly
                 if (maxY > -1.0f && addedNewRow && glyphRun.originY < maxY) {
-                    Collections.sort(rows, ROW_SORTER);
+                    rows.sort(ROW_SORTER);
                 }
                 if (glyphRun.originY > maxY) {
                     maxY = glyphRun.originY;

@@ -568,12 +568,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
         for (Map.Entry<String, MutableInt> e : blocks.entrySet()) {
             pairs.add(Pair.of(e.getKey(), e.getValue().intValue()));
         }
-        Collections.sort(pairs, new Comparator<Pair<String, Integer>>() {
-            @Override
-            public int compare(Pair<String, Integer> o1, Pair<String, Integer> o2) {
-                return o2.getValue().compareTo(o1.getValue());
-            }
-        });
+        pairs.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
         StringBuilder sb = new StringBuilder();
 
         for (int i = 0; i < 20 && i < pairs.size(); i++) {
