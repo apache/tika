@@ -17,13 +17,12 @@
 package org.apache.tika.language.detect;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.utils.CompareUtils;
 
 // We should use the IANA registry for primary language names...see
 // http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
@@ -73,22 +72,7 @@ public abstract class LanguageDetector {
 	
 	public static List<LanguageDetector> getLanguageDetectors(ServiceLoader loader) {
         List<LanguageDetector> detectors = loader.loadStaticServiceProviders(LanguageDetector.class);
-        Collections.sort(detectors, new Comparator<LanguageDetector>() {
-            public int compare(LanguageDetector d1, LanguageDetector d2) {
-                String n1 = d1.getClass().getName();
-                String n2 = d2.getClass().getName();
-                boolean tika1 = n1.startsWith("org.apache.tika.");
-                boolean tika2 = n2.startsWith("org.apache.tika.");
-                if (tika1 == tika2) {
-                    return n1.compareTo(n2);
-                } else if (tika1) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            }
-        });
-        
+        detectors.sort(CompareUtils::compareClassName);
         return detectors;
 	}
 	
