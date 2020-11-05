@@ -328,9 +328,7 @@ public class CharsetDetector {
         }
         Collections.sort(matches);      // CharsetMatch compares on confidence
         Collections.reverse(matches);   //  Put best match first.
-        CharsetMatch[] resultArray = new CharsetMatch[matches.size()];
-        resultArray = matches.toArray(resultArray);
-        return resultArray;
+        return matches.toArray(new CharsetMatch[0]);
     }
 
     /**
@@ -547,7 +545,7 @@ public class CharsetDetector {
                 csnames.add(rcinfo.recognizer.getName());
             }
         }
-        return csnames.toArray(new String[csnames.size()]);
+        return csnames.toArray(new String[0]);
     }
 
     /**

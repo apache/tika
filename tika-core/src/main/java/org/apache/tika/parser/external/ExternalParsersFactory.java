@@ -55,7 +55,7 @@ public class ExternalParsersFactory {
                      "/" + filename;
       Enumeration<URL> files = loader.findServiceResources(filepath);
       ArrayList<URL> list = Collections.list(files);
-      URL[] urls = list.toArray(new URL[list.size()]);
+      URL[] urls = list.toArray(new URL[0]);
       return create(urls);
    }
    

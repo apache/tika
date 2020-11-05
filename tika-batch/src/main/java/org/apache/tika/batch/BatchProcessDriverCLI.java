@@ -100,7 +100,7 @@ public class BatchProcessDriverCLI {
                 args.add(arg);
             }
         }
-        return args.toArray(new String[args.size()]);
+        return args.toArray(new String[0]);
     }
 
     public void execute() throws Exception {

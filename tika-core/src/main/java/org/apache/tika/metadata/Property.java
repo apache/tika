@@ -329,8 +329,7 @@ public final class Property implements Comparable<Property> {
         }
         String[] choices = null;
         if (primaryProperty.getChoices() != null) {
-            choices = primaryProperty.getChoices().toArray(
-                    new String[primaryProperty.getChoices().size()]);
+            choices = primaryProperty.getChoices().toArray(new String[0]);
         }
         return new Property(primaryProperty.getName(),
                 primaryProperty.isInternal(), PropertyType.COMPOSITE,

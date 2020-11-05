@@ -117,7 +117,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @return Metadata names
      */
     public String[] names() {
-        return metadata.keySet().toArray(new String[metadata.keySet().size()]);
+        return metadata.keySet().toArray(new String[0]);
     }
 
     /**

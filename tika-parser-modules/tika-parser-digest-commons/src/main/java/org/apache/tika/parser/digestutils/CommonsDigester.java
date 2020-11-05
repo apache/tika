@@ -114,7 +114,7 @@ public class CommonsDigester extends CompositeDigester {
         for (String algoString : s.split(",")) {
             ret.add(getDigestAlgorithm(algoString));
         }
-        return ret.toArray(new DigestAlgorithm[ret.size()]);
+        return ret.toArray(new DigestAlgorithm[0]);
     }
 
     private static DigestAlgorithm getDigestAlgorithm(String algoString) {

@@ -553,7 +553,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         //convert to array
         for (Map.Entry<String, List<String>> e : headers.entrySet()) {
-            ret.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
+            ret.put(e.getKey(), e.getValue().toArray(new String[0]));
         }
         return ret;
 

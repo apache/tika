@@ -137,7 +137,7 @@ public abstract class FSBatchTestBase extends TikaTest {
                 args.add(e.getValue());
             }
         }
-        return args.toArray(new String[args.size()]);
+        return args.toArray(new String[0]);
     }
 
 
@@ -165,8 +165,7 @@ public abstract class FSBatchTestBase extends TikaTest {
             argList.add(e.getValue());
         }
 
-        String[] fullCommandLine = commandLine(testConfig, loggerProps,
-                argList.toArray(new String[argList.size()]));
+        String[] fullCommandLine = commandLine(testConfig, loggerProps, argList.toArray(new String[0]));
         return new ProcessBuilder(fullCommandLine);
     }
 
@@ -195,7 +194,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.add(configFile);
         commandLine.addAll(Arrays.asList(args));
 
-        return commandLine.toArray(new String[commandLine.size()]);
+        return commandLine.toArray(new String[0]);
     }
 
     public BatchProcessDriverCLI getNewDriver(String testConfig,
@@ -221,8 +220,7 @@ public abstract class FSBatchTestBase extends TikaTest {
 
         commandLine.addAll(Arrays.asList(args));
 
-        BatchProcessDriverCLI driver = new BatchProcessDriverCLI(
-          commandLine.toArray(new String[commandLine.size()]));
+        BatchProcessDriverCLI driver = new BatchProcessDriverCLI(commandLine.toArray(new String[0]));
         driver.setRedirectChildProcessToStdOut(false);
         return driver;
     }

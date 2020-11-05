@@ -811,7 +811,7 @@ public class TikaCLI {
 
     private Parser[] sortParsers(Map<Parser, Set<MediaType>> parsers) {
         // Get a nicely sorted list of the parsers
-        Parser[] sortedParsers = parsers.keySet().toArray(new Parser[parsers.size()]);
+        Parser[] sortedParsers = parsers.keySet().toArray(new Parser[0]);
         Arrays.sort(sortedParsers, new Comparator<Parser>() {
             public int compare(Parser p1, Parser p2) {
                 String name1 = p1.getClass().getName();

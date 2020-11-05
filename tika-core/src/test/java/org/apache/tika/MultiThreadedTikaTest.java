@@ -242,7 +242,7 @@ public class MultiThreadedTikaTest extends TikaTest {
                 return FileVisitResult.CONTINUE;
             }
         });
-        return files.toArray(new Path[files.size()]);
+        return files.toArray(new Path[0]);
     }
 
     private static ConcurrentHashMap<Path, MediaType> getBaselineDetection(Detector detector, Path[] files) {

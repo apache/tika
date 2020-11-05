@@ -78,7 +78,7 @@ class DBFFileHeader {
             }
         }
 
-        header.cols = headers.toArray(new DBFColumnHeader[headers.size()]);
+        header.cols = headers.toArray(new DBFColumnHeader[0]);
 
         int endOfHeader = is.read();
         if (endOfHeader != 13) {

@@ -412,8 +412,7 @@ public class LanguageProfilerBuilder {
         // size of ngram)
         List<NGramEntry> list = new ArrayList<>();
         List<NGramEntry> sublist = new ArrayList<>();
-        NGramEntry[] entries = ngrams.values().toArray(
-                new NGramEntry[ngrams.size()]);
+        NGramEntry[] entries = ngrams.values().toArray(new NGramEntry[0]);
         for (int i = minLength; i <= maxLength; i++) {
             for (int j = 0; j < entries.length; j++) {
                 if (entries[j].getSeq().length() == i) {

@@ -241,7 +241,7 @@ public class Mp3Parser extends AbstractParser {
        ID3TagsAndAudio ret = new ID3TagsAndAudio();
        ret.audio = firstAudio;
        ret.lyrics = lyrics;
-       ret.tags = tags.toArray(new ID3Tags[tags.size()]);
+       ret.tags = tags.toArray(new ID3Tags[0]);
        ret.duration = duration;
        return ret;
     }

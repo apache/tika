@@ -238,7 +238,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         for (int i = 0; i < totalThreads; i++) {
             StrawManTikaAppDriver driver =
                     new StrawManTikaAppDriver(inputDir, outputDir, totalThreads, fileList,
-                            commandLine.toArray(new String[commandLine.size()]));
+                            commandLine.toArray(new String[0]));
             completionService.submit(driver);
         }
 
