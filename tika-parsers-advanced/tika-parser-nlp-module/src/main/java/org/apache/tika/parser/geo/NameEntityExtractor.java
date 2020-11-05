@@ -98,16 +98,9 @@ public class NameEntityExtractor {
                 tf.put(this.locationNameEntities.get(i), 1);
         }
         int max = 0;
-        List<Map.Entry<String, Integer>> list = new ArrayList<Map.Entry<String, Integer>>(
-                tf.entrySet());
+        List<Map.Entry<String, Integer>> list = new ArrayList<>(tf.entrySet());
         Collections.shuffle(list);
-        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
-            public int compare(Map.Entry<String, Integer> o1,
-                    Map.Entry<String, Integer> o2) {
-                // Descending Order
-                return o2.getValue().compareTo(o1.getValue());
-            }
-        });
+        list.sort((o1, o2) -> o2.getValue().compareTo(o1.getValue()));
 
         this.locationNameEntities.clear();// update so that they are in
                                           // descending order

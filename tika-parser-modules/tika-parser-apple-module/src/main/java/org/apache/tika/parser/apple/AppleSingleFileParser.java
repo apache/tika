@@ -160,7 +160,7 @@ public class AppleSingleFileParser extends AbstractParser {
             throw new TikaException("AppleSingleFile missing field info");
         }
         //make absolutely sure these are in order!
-        Collections.sort(fieldInfoList, new FieldInfoComparator());
+        fieldInfoList.sort(Comparator.comparingLong(fieldInfo -> fieldInfo.offset));
         return fieldInfoList;
     }
 
@@ -189,14 +189,4 @@ public class AppleSingleFileParser extends AbstractParser {
             this.length = length;
         }
     }
-
-    private static class FieldInfoComparator implements Comparator<FieldInfo> {
-
-        @Override
-        public int compare(FieldInfo o1, FieldInfo o2) {
-            return (o1.offset > o2.offset) ? 1 :
-                    (o1.offset == o2.offset) ? 0 : -1 ;
-        }
-    }
-
 }

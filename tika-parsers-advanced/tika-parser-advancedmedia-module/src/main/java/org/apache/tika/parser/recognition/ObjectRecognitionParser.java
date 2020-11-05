@@ -73,13 +73,6 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
     public static final String MD_KEY_IMG_CAP = "CAPTION";
     public static final String MD_REC_IMPL_KEY =
             ObjectRecognitionParser.class.getPackage().getName() + ".object.rec.impl";
-    private static final Comparator<RecognisedObject> DESC_CONFIDENCE_SORTER =
-            new Comparator<RecognisedObject>() {
-                @Override
-                public int compare(RecognisedObject o1, RecognisedObject o2) {
-                    return Double.compare(o2.getConfidence(), o1.getConfidence());
-                }
-            };
 
     private ObjectRecogniser recogniser;
 
@@ -126,7 +119,7 @@ public class ObjectRecognitionParser extends AbstractParser implements Initializ
             List<String> xhtmlIds = new ArrayList<String>();
             String xhtmlStartVal = null;
             count = 0;
-            Collections.sort(objects, DESC_CONFIDENCE_SORTER);
+            objects.sort((o1, o2) -> Double.compare(o2.getConfidence(), o1.getConfidence()));
             // first process all the MD objects
             for (RecognisedObject object : objects) {
                 if (object instanceof CaptionObject) {

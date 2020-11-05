@@ -61,11 +61,7 @@ public class RollbackSoftware {
         List<Link> links = handler.getLinks();
         if (links.size() < 2)
             throw new IOException("Must have installed at least 2 versions!");
-        Collections.sort(links, new Comparator<Link>() {
-            public int compare(Link o1, Link o2) {
-                return o1.getText().compareTo(o2.getText());
-            }
-        });
+        links.sort(Comparator.comparing(Link::getText));
 
         this.updateVersion(links.get(links.size() - 2).getText());
     }

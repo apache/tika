@@ -74,7 +74,7 @@ public class TextProfileSignature implements TokenCountStatsCalculator<String> {
                 profile.add(new Token((e.getValue().intValue() / quant) * quant, e.getKey()));
             }
         }
-        Collections.sort(profile, new TokenComparator());
+        profile.sort(new TokenComparator());
         StringBuffer newText = new StringBuffer();
         int i = 0;
         for (Token t : profile) {

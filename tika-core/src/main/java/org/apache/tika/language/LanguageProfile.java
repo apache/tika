@@ -262,12 +262,7 @@ public class LanguageProfile {
         private List<Map.Entry<String, Counter>> getSortedNgrams() {
             List<Map.Entry<String, Counter>> entries = new ArrayList<Map.Entry<String, Counter>>(ngrams.size());
             entries.addAll(ngrams.entrySet());
-            Collections.sort(entries, new Comparator<Map.Entry<String, Counter>>() {
-                @Override
-                public int compare(Map.Entry<String, Counter> o1, Map.Entry<String, Counter> o2) {
-                    return o1.getKey().compareTo(o2.getKey());
-                }
-            });
+            entries.sort(Map.Entry.comparingByKey());
             return entries;
         }
         
