@@ -38,6 +38,8 @@ Release 1.25 - ???
 
    * Add a basic parser for plist files based on com.googlecode.plist:dd-plist (TIKA-3104).
 
+   * Read hyperlinked images from ODT files (TIKA-3156).
+
 Release 1.24.1 - 4/17/2020
 
    * Allow gzip compression of input and output streams for tika-server (TIKA-3073).

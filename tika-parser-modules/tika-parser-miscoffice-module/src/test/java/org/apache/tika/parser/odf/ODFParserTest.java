@@ -374,6 +374,14 @@ public class ODFParserTest extends TikaTest {
         assertEquals(3, metadataList.size());
     }
 
+    @Test
+    public void testEmbeddedImageAndLink() throws Exception {
+        String xml = getXML("testODTEmbeddedImageLink.odt").xml;
+        assertContains("<a href=\"https://tika.apache.org/\">" +
+                "<img src=\"embedded:Pictures/10000201000001240000006457F5B1D1243E0671.png\" />" +
+                "<span>Visit Tika</span></a>", xml);
+    }
+
     @Test(expected = IOException.class)
     public void testInvalidFromStream() throws Exception {
         try (InputStream is = this.getClass().getResource(
