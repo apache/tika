@@ -160,6 +160,9 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         MAPPINGS.put(
                 new QName(TEXT_NS, "a"),
                 new TargetElement(XHTML, "a", aAttsMapping));
+        MAPPINGS.put(
+                new QName(DRAW_NS, "a"),
+                new TargetElement(XHTML, "a", aAttsMapping));
 
         // create HTML tables from table:-tags
         MAPPINGS.put(
@@ -431,6 +434,16 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     public void startElement(
             String namespaceURI, String localName, String qName,
             Attributes attrs) throws SAXException {
+
+        if (DRAW_NS.equals(namespaceURI) && "image".equals(localName)) {
+            String link = attrs.getValue(XLINK_NS, "href");
+            AttributesImpl attr = new AttributesImpl();
+            if (!StringUtils.isEmpty(link)) {
+                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + link);
+            }
+            handler.startElement(XHTMLContentHandler.XHTML, "img", "img", attr);
+            handler.endElement(XHTMLContentHandler.XHTML, "img", "img");
+        }
 
         if (BINARY_DATA.equals(localName)) {
             inBinaryData = true;
