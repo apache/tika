@@ -16,6 +16,8 @@
  */
 package org.apache.tika.sax.xpath;
 
+import java.util.Objects;
+
 /**
  * Intermediate evaluation state of a <code>.../name...</code> XPath
  * expression. Matches nothing, but specifies the evaluation state
@@ -34,15 +36,10 @@ public class NamedElementMatcher extends ChildMatcher {
     }
 
     public Matcher descend(String namespace, String name) {
-        if (equals(namespace, this.namespace) && name.equals(this.name)) {
+        if (Objects.equals(namespace, this.namespace) && name.equals(this.name)) {
             return super.descend(namespace, name);
         } else {
             return FAIL;
         }
     }
-
-    private static boolean equals(String a, String b) {
-        return (a == null) ? (b == null) : a.equals(b);
-    }
-
 }

@@ -18,6 +18,7 @@ package org.apache.tika.eval.db;
 
 
 import java.sql.Types;
+import java.util.Objects;
 
 public class ColInfo {
     private final Cols name;
@@ -93,15 +94,25 @@ public class ColInfo {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ColInfo colInfo = (ColInfo) o;
 
-        if (type != colInfo.type) return false;
-        if (name != colInfo.name) return false;
-        if (precision != null ? !precision.equals(colInfo.precision) : colInfo.precision != null) return false;
-        return !(constraints != null ? !constraints.equals(colInfo.constraints) : colInfo.constraints != null);
+        if (type != colInfo.type) {
+            return false;
+        }
+        if (name != colInfo.name) {
+            return false;
+        }
+        if (!Objects.equals(precision, colInfo.precision)) {
+            return false;
+        }
+        return Objects.equals(constraints, colInfo.constraints);
 
     }
 

@@ -22,6 +22,7 @@ import static org.apache.tika.eval.AbstractProfiler.NON_EXISTENT_FILE_LENGTH;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * Simple struct to keep track of relative path of source file (
@@ -74,16 +75,25 @@ class EvalFilePaths {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EvalFilePaths that = (EvalFilePaths) o;
 
-        if (sourceFileLength != that.sourceFileLength) return false;
-        if (extractFileLength != that.extractFileLength) return false;
-        if (relativeSourceFilePath != null ? !relativeSourceFilePath.equals(that.relativeSourceFilePath) : that.relativeSourceFilePath != null)
+        if (sourceFileLength != that.sourceFileLength) {
             return false;
-        return extractFile != null ? extractFile.equals(that.extractFile) : that.extractFile == null;
+        }
+        if (extractFileLength != that.extractFileLength) {
+            return false;
+        }
+        if (!Objects.equals(relativeSourceFilePath, that.relativeSourceFilePath)) {
+            return false;
+        }
+        return Objects.equals(extractFile, that.extractFile);
 
     }
 
