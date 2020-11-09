@@ -231,14 +231,14 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
 
     private static void handleText(Reader reader, XHTMLContentHandler xhtml)
             throws SAXException, IOException {
-        xhtml.startElement("p");
+        xhtml.startElement("pre");
         char[] buffer = new char[4096];
         int n = reader.read(buffer);
         while (n != -1) {
             xhtml.characters(buffer, 0, n);
             n = reader.read(buffer);
         }
-        xhtml.endElement("p");
+        xhtml.endElement("pre");
 
     }
 
@@ -306,7 +306,6 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
 
         String delimiterString = mediaType.getParameters().get(DELIMITER);
         if (delimiterString == null) {
-            return new CSVParams(mediaType, charset);
         }
         if (STRING_TO_CHAR_DELIMITER_MAP.containsKey(delimiterString)) {
             return new CSVParams(mediaType, charset, (char) STRING_TO_CHAR_DELIMITER_MAP.get(delimiterString));
