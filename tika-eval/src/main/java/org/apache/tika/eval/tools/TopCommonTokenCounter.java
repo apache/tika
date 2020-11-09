@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -333,14 +334,22 @@ public class TopCommonTokenCounter {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             TokenDFTF tokenDFTF = (TokenDFTF) o;
 
-            if (df != tokenDFTF.df) return false;
-            if (tf != tokenDFTF.tf) return false;
-            return token != null ? token.equals(tokenDFTF.token) : tokenDFTF.token == null;
+            if (df != tokenDFTF.df) {
+                return false;
+            }
+            if (tf != tokenDFTF.tf) {
+                return false;
+            }
+            return Objects.equals(token, tokenDFTF.token);
         }
 
         @Override

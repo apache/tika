@@ -495,13 +495,19 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             HtmlTag htmlTag = (HtmlTag) o;
 
-            if (tag != null ? !tag.equals(htmlTag.tag) : htmlTag.tag != null) return false;
-            return clazz != null ? clazz.equals(htmlTag.clazz) : htmlTag.clazz == null;
+            if (!Objects.equals(tag, htmlTag.tag)) {
+                return false;
+            }
+            return Objects.equals(clazz, htmlTag.clazz);
         }
 
         @Override

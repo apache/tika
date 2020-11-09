@@ -16,6 +16,8 @@
  */
 package org.apache.tika.sax.xpath;
 
+import java.util.Objects;
+
 /**
  * Final evaluation state of a <code>.../@name</code> XPath expression.
  * Matches the named attributes of the current element.
@@ -32,11 +34,6 @@ public class NamedAttributeMatcher extends Matcher {
     }
 
     public boolean matchesAttribute(String namespace, String name) {
-        return equals(namespace, this.namespace) && name.equals(this.name);
+        return Objects.equals(namespace, this.namespace) && name.equals(this.name);
     }
-
-    private static boolean equals(String a, String b) {
-        return (a == null) ? (b == null) : a.equals(b);
-    }
-
 }
