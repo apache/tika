@@ -42,6 +42,8 @@ Release 1.25 - ???
 
    * Read hyperlinked images from ODT files (TIKA-3156).
 
+   * Updated GrobidRESTParser to use new API location (TIKA-3191).
+
 Release 1.24.1 - 4/17/2020
 
    * Allow gzip compression of input and output streams for tika-server (TIKA-3073).

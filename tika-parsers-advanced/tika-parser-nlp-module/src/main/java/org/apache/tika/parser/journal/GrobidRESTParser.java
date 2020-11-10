@@ -29,6 +29,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.slf4j.Logger;
@@ -39,14 +40,15 @@ public class GrobidRESTParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
 
-
     private static final String GROBID_REST_HOST = "http://localhost:8080";
 
-    private static final String GROBID_ISALIVE_PATH = "/grobid"; // isalive
-    // doesn't work
-    // nfc why
+    private Boolean legacyMode = null;
 
-    private static final String GROBID_PROCESSHEADER_PATH = "/processHeaderDocument";
+    private static final String GROBID_ISALIVE_PATH = "/api/isalive";
+    private static final String GROBID_PROCESSHEADER_PATH = "/api/processHeaderDocument";
+
+    private static final String GROBID_LEGACY_ISALIVE_PATH = "/grobid";
+    private static final String GROBID_LEGACY_PROCESSHEADER_PATH = "/processHeaderDocument";
 
     private String restHostUrlStr;
 
@@ -58,8 +60,7 @@ public class GrobidRESTParser {
             LOG.warn("can't read rest url", e);
         }
 
-        if (restHostUrlStr == null
-                || (restHostUrlStr != null && restHostUrlStr.equals(""))) {
+        if (restHostUrlStr == null || restHostUrlStr.equals("")) {
             this.restHostUrlStr = GROBID_REST_HOST;
         } else {
             this.restHostUrlStr = restHostUrlStr;
@@ -75,12 +76,15 @@ public class GrobidRESTParser {
         Attachment att = new Attachment("input", new FileInputStream(pdfFile), cd);
         MultipartBody body = new MultipartBody(att);
 
-        Response response = WebClient
-                .create(restHostUrlStr + GROBID_PROCESSHEADER_PATH)
-                .accept(MediaType.APPLICATION_XML).type(MediaType.MULTIPART_FORM_DATA)
-                .post(body);
-
         try {
+            checkMode();
+            Response response = WebClient
+                    .create(restHostUrlStr
+                            + (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
+                    .accept(MediaType.APPLICATION_XML).type(MediaType.MULTIPART_FORM_DATA)
+                    .post(body);
+
+
             String resp = response.readEntity(String.class);
             Metadata teiMet = new TEIDOMParser().parse(resp, context);
             for (String key : teiMet.names()) {
@@ -99,14 +103,29 @@ public class GrobidRESTParser {
         return grobidProperties.getProperty("grobid.server.url");
     }
 
+    private void checkMode() throws TikaException {
+        if (legacyMode != null) {
+            return;
+        }
+        Response response = WebClient.create(restHostUrlStr + GROBID_ISALIVE_PATH).head();
+        if (response.getStatus() == 200) {
+            legacyMode = false;
+            return;
+        }
+        response = WebClient.create(restHostUrlStr + GROBID_LEGACY_ISALIVE_PATH).head();
+        if (response.getStatus() == 200) {
+            legacyMode = true;
+            return;
+        }
+        throw new TikaException("Cannot connect to Grobid Service");
+    }
+
     protected static boolean canRun() {
         Response response = null;
-
         try {
-            response = WebClient.create(readRestUrl() + GROBID_ISALIVE_PATH)
-                    .accept(MediaType.TEXT_HTML).get();
+            response = WebClient.create(readRestUrl() + GROBID_ISALIVE_PATH).get();
             String resp = response.readEntity(String.class);
-            return resp != null && !resp.equals("") && resp.startsWith("<h4>");
+            return resp != null && !resp.equals("") && resp.startsWith("true");
         } catch (Exception e) {
             //swallow...can't run
             return false;
