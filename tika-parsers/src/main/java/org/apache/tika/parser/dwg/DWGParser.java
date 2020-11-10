@@ -122,7 +122,7 @@ public class DWGParser extends AbstractParser {
             if (skipToPropertyInfoSection(stream, header)) {
                 get2004Props(stream,metadata,xhtml);
             }
-        } else if (version.equals("AC1021") || version.equals("AC1024")) {
+        } else if (version.equals("AC1021") || version.equals("AC1024") || version.equals("AC1027")) {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
             if (skipToPropertyInfoSection(stream, header)) {
                 get2007and2010Props(stream,metadata,xhtml);
@@ -196,19 +196,19 @@ public class DWGParser extends AbstractParser {
     }
 
     private String read2007and2010String(InputStream stream) throws IOException, TikaException {
-       int stringLen = EndianUtils.readUShortLE(stream);
-
-       byte[] stringData = new byte[stringLen * 2];
-       IOUtils.readFully(stream, stringData);
-       String value = StringUtil.getFromUnicodeLE(stringData);
-
-       // Some strings are null terminated
-       if(value.charAt(value.length()-1) == 0) {
-           value = value.substring(0, value.length()-1);
-       }
-
-       return value;
-    }
+        int stringLen = EndianUtils.readUShortLE(stream);
+ 
+        byte[] stringData = new byte[stringLen * 2];
+        IOUtils.readFully(stream, stringData);
+        String value = StringUtil.getFromUnicodeLE(stringData);
+ 
+        // Some strings are null terminated
+        if(value.charAt(value.length()-1) == 0) {
+            value = value.substring(0, value.length()-1);
+        }
+ 
+        return value;
+     }
 
     private void get2000Props(
             InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
@@ -325,14 +325,18 @@ public class DWGParser extends AbstractParser {
        // There should be 4 zero bytes or CUSTOM_PROPERTIES_ALT_PADDING_VALUES next
        byte[] padding = new byte[4];
        IOUtils.readFully(stream, padding);
-       if((padding[0] == 0 && padding[1] == 0 &&
+/*
+           if((padding[0] == 0 && padding[1] == 0 &&
              padding[2] == 0 && padding[3] == 0) ||
              (padding[0] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[0] && 
                padding[1] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[1] &&
                padding[2] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[2] &&
                padding[3] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[3])) {
-           
+*/
+        if(padding[0] <= 5 && padding[1] == 0 &&
+            padding[2] == 0 && padding[3] == 0) {           
           // Looks hopeful, skip on
+
           padding = new byte[CUSTOM_PROPERTIES_SKIP];
           IOUtils.readFully(stream, padding);
           
