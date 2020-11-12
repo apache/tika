@@ -505,4 +505,23 @@ public class TikaResourceTest extends CXFTestBase {
                 .getEntity());
         assertContains("Just some text.", responseMsg);
     }
+
+    // TIKA-3227
+    @Test
+    public void testSkipEmbedded() throws Exception {
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_SKIP_EMBEDDED_HEADER, "false")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("embed4.txt", responseMsg);
+
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .header(TikaResource.X_TIKA_SKIP_EMBEDDED_HEADER, "true")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertNotFound("embed4.txt", responseMsg);
+    }
+
 }
