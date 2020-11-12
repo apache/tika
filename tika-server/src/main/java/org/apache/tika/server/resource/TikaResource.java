@@ -26,6 +26,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
@@ -90,6 +91,7 @@ public class TikaResource {
     public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
     public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
+    public static final String X_TIKA_SKIP_EMBEDDED_HEADER = "X-Tika-Skip-Embedded";
     public static final String PASSWORD = "Password";
     public static final String PASSWORD_BASE64_UTF8 = "Password_Base64_UTF-8";
 
@@ -152,6 +154,7 @@ public class TikaResource {
         //upon server startup will be ignored.
         TesseractOCRConfig ocrConfig = null;
         PDFParserConfig pdfParserConfig = null;
+        DocumentSelector documentSelector = null;
         for (String key : httpHeaders.keySet()) {
             if (StringUtils.startsWith(key, X_TIKA_OCR_HEADER_PREFIX)) {
                 ocrConfig = (ocrConfig == null) ? new TesseractOCRConfig() : ocrConfig;
@@ -159,6 +162,11 @@ public class TikaResource {
             } else if (StringUtils.startsWith(key, X_TIKA_PDF_HEADER_PREFIX)) {
                 pdfParserConfig = (pdfParserConfig == null) ? new PDFParserConfig() : pdfParserConfig;
                 processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
+            } else if (StringUtils.endsWithIgnoreCase(key, X_TIKA_SKIP_EMBEDDED_HEADER)) {
+                String skipEmbedded = httpHeaders.getFirst(key);
+                if (Boolean.parseBoolean(skipEmbedded)) {
+                    documentSelector = metadata -> false;
+                }
             }
         }
         if (ocrConfig != null) {
@@ -169,6 +177,9 @@ public class TikaResource {
         }
         if (embeddedParser != null) {
             parseContext.set(Parser.class, embeddedParser);
+        }
+        if (documentSelector != null) {
+            parseContext.set(DocumentSelector.class, documentSelector);
         }
     }
 
