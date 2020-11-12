@@ -161,32 +161,32 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
     @Override
     public MediaType detect(ZipFile zipFile, TikaInputStream stream) throws IOException {
-        //as of 4.x, POI throws an exception for non-POI OPC file types
-        //unless we change POI, we can't rely on POI for non-POI files
+        // as of 4.x, POI throws an exception for non-POI OPC file types
+        // unless we change POI, we can't rely on POI for non-POI files
         ZipEntrySource zipEntrySource = new ZipFileZipEntrySource(zipFile);
 
         // Use POI to open and investigate it for us
-        //Unfortunately, POI can throw a RuntimeException...so we
-        //have to catch that.
-        OPCPackage pkg = null;
-        MediaType type = null;
+        // Unfortunately, POI can throw a RuntimeException...so we have to catch that.
         try {
-            pkg = OPCPackage.open(zipEntrySource);
-            type = detectOfficeOpenXML(pkg);
+            OPCPackage pkg = OPCPackage.open(zipEntrySource);
+            MediaType type = detectOfficeOpenXML(pkg);
 
-        } catch (SecurityException e) {
-            closeQuietly(zipEntrySource);
-            closeQuietly(zipFile);
-            //TIKA-2571
-            throw e;
+            // only set the open container if we made it here
+            stream.setOpenContainer(pkg);
+            return type;
+
         } catch (InvalidFormatException | RuntimeException e) {
             closeQuietly(zipEntrySource);
             closeQuietly(zipFile);
-            return null;
+
+            if (e instanceof SecurityException) {
+                // TIKA-2571 : throw if it's SecurityException
+                throw (SecurityException)e;
+            } else {
+                // Otherwise don't throw any exception and just return null
+                return null;
+            }
         }
-        //only set the open container if we made it here
-        stream.setOpenContainer(pkg);
-        return type;
     }
 
 
