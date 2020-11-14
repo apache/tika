@@ -238,7 +238,7 @@ abstract class AbstractPOIFSExtractor {
                     }
 
                     // Record what we can do about it
-                    metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
+                    metadata.set(Metadata.CONTENT_TYPE, mediaType.getType());
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
                 } catch (Exception e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);

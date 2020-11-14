@@ -42,7 +42,7 @@ public class HwpV5ParserTest extends MultiThreadedTikaTest {
             assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("SooMyung Lee", metadata.get(TikaCoreProperties.CREATOR));
 
-            assertContains("Apache Tika", result.xml.toString());
+            assertContains("Apache Tika", result.xml);
         }
     }
 

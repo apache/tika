@@ -171,7 +171,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
         try {
             Metadata metadata = new Metadata();
             // String mime = this.proDetector.detect(in, metadata).toString();
-            String mime = tika.detect(in, metadata).toString();
+            String mime = tika.detect(in, metadata);
             assertEquals(
                     urlOrFileName + " is not properly detected: detected.",
                     expected, mime);
@@ -179,7 +179,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
             // Add resource name and test again
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, urlOrFileName);
             // mime = this.proDetector.detect(in, metadata).toString();
-            mime = tika.detect(in, metadata).toString();
+            mime = tika.detect(in, metadata);
             assertEquals(urlOrFileName
                     + " is not properly detected after adding resource name.",
                     expected, mime);

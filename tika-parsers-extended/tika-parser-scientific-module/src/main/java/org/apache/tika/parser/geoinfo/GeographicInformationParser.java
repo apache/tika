@@ -147,7 +147,7 @@ public class GeographicInformationParser extends AbstractParser{
                 xhtmlContentHandler.startElement("h3");
                 xhtmlContentHandler.newline();
                 xhtmlContentHandler.characters("CitedResponsiblePartyRole " + r.getRole().toString());
-                xhtmlContentHandler.characters("CitedResponsiblePartyName " + r.getIndividualName().toString());
+                xhtmlContentHandler.characters("CitedResponsiblePartyName " + r.getIndividualName());
                 xhtmlContentHandler.endElement("h3");
                 xhtmlContentHandler.newline();
             }
@@ -240,7 +240,7 @@ public class GeographicInformationParser extends AbstractParser{
                 if(r.getRole()!=null)
                     metadata.add("CitedResponsiblePartyRole ",r.getRole().toString());
                 if(r.getIndividualName()!=null)
-                    metadata.add("CitedResponsiblePartyName ",r.getIndividualName().toString());
+                    metadata.add("CitedResponsiblePartyName ", r.getIndividualName());
                 if(r.getOrganisationName()!=null)
                     metadata.add("CitedResponsiblePartyOrganizationName ", r.getOrganisationName().toString());
                 if(r.getPositionName()!=null)
@@ -248,7 +248,7 @@ public class GeographicInformationParser extends AbstractParser{
 
                 if(r.getContactInfo()!=null){
                     for(String s:r.getContactInfo().getAddress().getElectronicMailAddresses()) {
-                        metadata.add("CitedResponsiblePartyEMail ",s.toString());
+                        metadata.add("CitedResponsiblePartyEMail ", s);
                     }
                 }
             }
@@ -314,7 +314,7 @@ public class GeographicInformationParser extends AbstractParser{
 
                     if(g instanceof DefaultGeographicDescription){
                         if(((DefaultGeographicDescription) g).getGeographicIdentifier()!=null && ((DefaultGeographicDescription) g).getGeographicIdentifier().getCode()!=null )
-                            metadata.add("GeographicIdentifierCode ",((DefaultGeographicDescription) g).getGeographicIdentifier().getCode().toString());
+                            metadata.add("GeographicIdentifierCode ", ((DefaultGeographicDescription) g).getGeographicIdentifier().getCode());
                         if(((DefaultGeographicDescription) g).getGeographicIdentifier()!=null && ((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority()!=null && ((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority().getTitle()!=null )
                         metadata.add("GeographicIdentifierAuthorityTitle ",((DefaultGeographicDescription) g).getGeographicIdentifier().getAuthority().getTitle().toString());
 
