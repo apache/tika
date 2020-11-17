@@ -62,6 +62,15 @@ public abstract class TikaTest {
 
     protected static Parser AUTO_DETECT_PARSER = new AutoDetectParser();
 
+    /**
+     * Finds a resource with a given name.
+     * @param name name of the desired resource
+     * @return A {@link java.net.URL} object or null
+     */
+    public URL getResourceAsUrl(String name) {
+        return this.getClass().getResource(name);
+    }
+
    /**
     * This method will give you back the filename incl. the absolute path name
     * to the resource. If the resource does not exist it will give you back the
