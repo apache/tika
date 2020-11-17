@@ -56,7 +56,7 @@
     <crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
 
              crawlOrder="sorted"
-             maxConsecWaitMillis="5000"
+             maxConsecWaitMillis="300000"
              maxFilesToAdd="-1"
              maxFilesToConsider="-1"
              includeFilePat=""

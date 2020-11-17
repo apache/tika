@@ -107,6 +107,11 @@ public class ExtractProfilerBuilder extends EvalConsumerBuilder {
     }
 
     @Override
+    protected TableInfo getMimeTable() {
+        return AbstractProfiler.MIME_TABLE;
+    }
+
+    @Override
     protected void addErrorLogTablePairs(DBConsumersManager manager) {
         Path errorLog = PropsUtil.getPath(localAttrs.get("errorLogFile"), null);
         if (errorLog == null) {

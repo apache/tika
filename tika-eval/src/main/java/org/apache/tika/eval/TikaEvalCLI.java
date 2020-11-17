@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,7 +33,8 @@ import org.apache.tika.eval.reports.ResultsReporter;
 import org.h2.tools.Console;
 
 public class TikaEvalCLI {
-    static final String[] tools = {"Profile", "Compare", "Report", "StartDB"};
+    static final String[] tools = {"Profile", "FileProfile",
+            "Compare", "Report", "StartDB"};
 
     private static String specifyTools() {
         StringBuilder sb = new StringBuilder();

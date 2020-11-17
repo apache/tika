@@ -20,6 +20,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.tika.Tika;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.fs.FSProperties;
@@ -30,6 +31,8 @@ import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.eval.io.IDBWriter;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,6 +56,8 @@ public class FileProfiler extends AbstractProfiler {
 //TODO: we should allow users to select digest type/encoding and file detector(s).
 
     private static final boolean HAS_FILE = FileCommandDetector.checkHasFile();
+    private static final Logger LOG = LoggerFactory.getLogger(FileProfiler.class);
+
     static Options OPTIONS;
     static {
 
@@ -90,6 +95,8 @@ public class FileProfiler extends AbstractProfiler {
     public static TableInfo FILE_PROFILES = HAS_FILE ?
             new TableInfo("file_profiles",
                 new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
+                new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+                new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
                 new ColInfo(Cols.LENGTH, Types.BIGINT),
                 new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
                 new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER),
@@ -97,11 +104,18 @@ public class FileProfiler extends AbstractProfiler {
             :
             new TableInfo("file_profiles",
                     new ColInfo(Cols.FILE_PATH, Types.VARCHAR, 2048, "PRIMARY KEY"),
+                    new ColInfo(Cols.FILE_NAME, Types.VARCHAR, 2048),
+                    new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 24),
                     new ColInfo(Cols.LENGTH, Types.BIGINT),
                     new ColInfo(Cols.SHA256, Types.VARCHAR, 64),
                     new ColInfo(Cols.TIKA_MIME_ID, Types.INTEGER));
 
 
+    public static TableInfo FILE_MIME_TABLE = new TableInfo("file_mimes",
+            new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
+            new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12)
+    );
 
     public static final String DETECT_EXCEPTION = "detect-exception";
     private static final Tika TIKA = new Tika();
@@ -123,9 +137,32 @@ public class FileProfiler extends AbstractProfiler {
                 Path path = tis.getPath();
                 Map<Cols, String> data = new HashMap<>();
                 int tikaMimeId = writer.getMimeId(detectTika(tis));
+                String fileName = "";
+                String extension = "";
+                long length = -1;
+                try {
+                    fileName = FilenameUtils.getName(relPath);
+                } catch (IllegalArgumentException e) {
+                    LOG.warn("bad file name: "+relPath, e);
+                }
+
+                try {
+                    extension = FilenameUtils.getExtension(relPath);
+                } catch (IllegalArgumentException e) {
+                    LOG.warn("bad extension: "+relPath, e);
+                }
+
+                try {
+                    length = Files.size(path);
+                } catch (IOException e) {
+                    LOG.warn("problem getting size: "+relPath, e);
+                }
+
                 data.put(Cols.FILE_PATH, relPath);
+                data.put(Cols.FILE_NAME, fileName);
+                data.put(Cols.FILE_EXTENSION, extension);
+                data.put(Cols.LENGTH, Long.toString(length));
                 data.put(Cols.TIKA_MIME_ID, Integer.toString(tikaMimeId));
-                data.put(Cols.LENGTH, Long.toString(Files.size(path)));
                 data.put(Cols.SHA256, DigestUtils.sha256Hex(tis));
                 if (HAS_FILE) {
                     int fileMimeId = writer.getMimeId(detectFile(tis));

@@ -113,16 +113,18 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
 
         boolean isAdded = false;
         if (select(fileResource.getMetadata())) {
-            long totalConsecutiveWait = 0;
-            while (queue.offer(fileResource, 1L, TimeUnit.SECONDS) == false) {
+            long start = System.currentTimeMillis();
+            while (queue.offer(fileResource, PAUSE_INCREMENT_MILLIS, TimeUnit.MILLISECONDS) == false) {
+                long elapsed = System.currentTimeMillis() - start;
+                LOG.info("FileResourceCrawler is pausing. Queue is full: {} after {} ms",
+                        queue.size(), elapsed);
 
-                LOG.info("FileResourceCrawler is pausing. Queue is full: {}", queue.size());
-                Thread.sleep(PAUSE_INCREMENT_MILLIS);
-                totalConsecutiveWait += PAUSE_INCREMENT_MILLIS;
-                if (maxConsecWaitInMillis > -1 && totalConsecutiveWait > maxConsecWaitInMillis) {
+                if (maxConsecWaitInMillis > -1 && elapsed > maxConsecWaitInMillis) {
                     timedOut = true;
-                    LOG.error("Crawler had to wait longer than max consecutive wait time.");
-                    throw new InterruptedException("FileResourceCrawler had to wait longer than max consecutive wait time.");
+                    String msg = "FileResourceCrawler had to wait longer (" +
+                            elapsed + " ms) than allowed ("+maxConsecWaitInMillis+" ms)";
+                    LOG.error(msg);
+                    throw new InterruptedException(msg);
                 }
                 if (Thread.currentThread().isInterrupted()) {
                     LOG.info("FileResourceCrawler shutting down because of interrupted thread.");

@@ -143,6 +143,11 @@ public class ExtractComparerBuilder extends EvalConsumerBuilder {
     }
 
     @Override
+    protected TableInfo getMimeTable() {
+        return AbstractProfiler.MIME_TABLE;
+    }
+
+    @Override
     protected void addErrorLogTablePairs(DBConsumersManager manager) {
         Path errorLogA = PropsUtil.getPath(localAttrs.get("errorLogFileA"), null);
         if (errorLogA == null) {
