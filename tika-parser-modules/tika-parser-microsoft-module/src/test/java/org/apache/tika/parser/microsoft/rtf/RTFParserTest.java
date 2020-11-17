@@ -334,7 +334,7 @@ public class RTFParserTest extends TikaTest {
 
     @Test
     public void testTurningOffList() throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(
+        try (InputStream is = getResourceAsStream(
                 "/org/apache/tika/parser/microsoft/rtf/ignoreListMarkup-tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
@@ -446,8 +446,7 @@ public class RTFParserTest extends TikaTest {
         //test that memory allocation of the bin element is limited
         //via the config file.  Unfortunately, this test file's bin embedding contains 10 bytes
         //so we had to set the config to 0.
-        try (InputStream is =
-                     getClass().getResourceAsStream("/org/apache/tika/parser/microsoft/rtf/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/microsoft/rtf/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);

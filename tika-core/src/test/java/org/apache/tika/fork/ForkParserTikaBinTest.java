@@ -187,7 +187,7 @@ public class ForkParserTikaBinTest extends TikaTest {
 
         ContentHandler handler = (contentHandler == null) ? new ToXMLContentHandler() : contentHandler;
         Metadata m = new Metadata();
-        try (InputStream is = getClass().getResourceAsStream("/test-documents/example.xml")) {
+        try (InputStream is = getResourceAsStream("/test-documents/example.xml")) {
             parser.parse(is, handler, m, new ParseContext());
         } finally {
             parser.close();

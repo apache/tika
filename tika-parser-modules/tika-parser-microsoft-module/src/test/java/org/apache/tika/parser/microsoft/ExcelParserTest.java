@@ -50,8 +50,7 @@ public class ExcelParserTest extends TikaTest {
     @Test
     @SuppressWarnings("deprecation") // Checks legacy Tika-1.0 style metadata keys
     public void testExcelParser() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -86,8 +85,7 @@ public class ExcelParserTest extends TikaTest {
         }
 
         // Request with missing rows
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL.xls")) {
             OfficeParserConfig config = new OfficeParserConfig();
             config.setIncludeMissingRows(true);
 
@@ -107,8 +105,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testExcelParserFormatting() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL-formats.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL-formats.xls")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -177,8 +174,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testExcelParserPassword() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_protected_passtika.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -190,8 +186,7 @@ public class ExcelParserTest extends TikaTest {
         }
 
         // Try again, this time with the password
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_protected_passtika.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_protected_passtika.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -223,8 +218,7 @@ public class ExcelParserTest extends TikaTest {
      */
     @Test
     public void testExcelParserCharts() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL-charts.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL-charts.xls")) {
             Metadata metadata = new Metadata();
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -258,8 +252,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testJXL() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/jxl.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/jxl.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
@@ -276,8 +269,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testWorksSpreadsheet70() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testWORKSSpreadsheet7.0.xlr")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORKSSpreadsheet7.0.xlr")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
@@ -302,7 +294,7 @@ public class ExcelParserTest extends TikaTest {
         // First try detection of Excel 5
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "excel_5.xls");
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel", type.toString());
         }
@@ -310,7 +302,7 @@ public class ExcelParserTest extends TikaTest {
         // Now Excel 95
         m = new Metadata();
         m.add(TikaCoreProperties.RESOURCE_NAME_KEY, "excel_95.xls");
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel", type.toString());
         }
@@ -324,7 +316,7 @@ public class ExcelParserTest extends TikaTest {
 
         // Parse the Excel 5 file
         m = new Metadata();
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_5.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -351,7 +343,7 @@ public class ExcelParserTest extends TikaTest {
 
         // Parse the Excel 95 file
         m = new Metadata();
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_95.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -377,8 +369,7 @@ public class ExcelParserTest extends TikaTest {
     public void testCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_custom_props.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_custom_props.xls")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -400,8 +391,7 @@ public class ExcelParserTest extends TikaTest {
 
 	@Test
     public void testHeaderAndFooterExtraction() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_headers_footers.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_headers_footers.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -429,8 +419,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testHeaderAndFooterNotExtraction() throws Exception {
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL_headers_footers.xls")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL_headers_footers.xls")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -514,7 +503,7 @@ public class ExcelParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", context));
 
         //test configuring via config file
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-macros.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xls", parser));
@@ -555,7 +544,7 @@ public class ExcelParserTest extends TikaTest {
                 getXML("testEXCEL_phonetic.xls", pc).xml);
 
         //test configuring via config file
-        TikaConfig tikaConfig = new TikaConfig(OfficeParser.class.getResourceAsStream("tika-config-exclude-phonetic.xml"));
+        TikaConfig tikaConfig = new TikaConfig(getResourceAsStream("tika-config-exclude-phonetic.xml"));
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xls", parser).xml);
@@ -576,7 +565,7 @@ public class ExcelParserTest extends TikaTest {
 
     @Test
     public void testDateFormat() throws Exception {
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-custom-date-override.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-custom-date-override.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
             String xml = getXML("testEXCEL_dateFormats.xls", p).xml;

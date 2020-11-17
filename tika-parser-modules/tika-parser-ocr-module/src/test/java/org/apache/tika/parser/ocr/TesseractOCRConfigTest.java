@@ -53,8 +53,7 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testPartialConfig() throws Exception {
 
-        InputStream stream = TesseractOCRConfigTest.class.getResourceAsStream(
-                "/test-properties/TesseractOCRConfig-partial.properties");
+        InputStream stream = getResourceAsStream("/test-properties/TesseractOCRConfig-partial.properties");
 
         TesseractOCRConfig config = new TesseractOCRConfig(stream);
         assertEquals("Invalid default tesseractPath value", "", config.getTesseractPath());
@@ -75,8 +74,7 @@ public class TesseractOCRConfigTest extends TikaTest {
     @Test
     public void testFullConfig() throws Exception {
 
-        InputStream stream = TesseractOCRConfigTest.class.getResourceAsStream(
-                "/test-properties/TesseractOCRConfig-full.properties");
+        InputStream stream = getResourceAsStream("/test-properties/TesseractOCRConfig-full.properties");
 
         TesseractOCRConfig config = new TesseractOCRConfig(stream);
         if(SystemUtils.IS_OS_UNIX) {

@@ -46,8 +46,7 @@ public class SAS7BDATParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = SAS7BDATParserTest.class.getResourceAsStream(
-                "/test-documents/testSAS.sas7bdat")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testSAS.sas7bdat")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -82,8 +81,7 @@ public class SAS7BDATParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = SAS7BDATParserTest.class.getResourceAsStream(
-                "/test-documents/test-columnar.sas7bdat")) {            
+        try (InputStream stream = getResourceAsStream("/test-documents/test-columnar.sas7bdat")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 

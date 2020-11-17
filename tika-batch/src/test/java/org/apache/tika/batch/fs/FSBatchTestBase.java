@@ -148,7 +148,7 @@ public abstract class FSBatchTestBase extends TikaTest {
 
     BatchProcess getNewBatchRunner(String testConfig,
                                   Map<String, String> args) throws IOException {
-        InputStream is = this.getClass().getResourceAsStream(testConfig);
+        InputStream is = getResourceAsStream(testConfig);
         BatchProcessBuilder b = new BatchProcessBuilder();
         BatchProcess runner = b.build(is, args);
 

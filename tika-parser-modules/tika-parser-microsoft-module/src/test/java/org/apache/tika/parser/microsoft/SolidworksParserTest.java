@@ -36,8 +36,7 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testPart2013SP2Parser() throws Exception {
-        try (InputStream input = SolidworksParserTest.class.getResourceAsStream(
-                "/test-documents/testsolidworksPart2013SP2.SLDPRT")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testsolidworksPart2013SP2.SLDPRT")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -63,8 +62,7 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testPart2014SP0Parser() throws Exception {
-        try (InputStream input = SolidworksParserTest.class.getResourceAsStream(
-                "/test-documents/testsolidworksPart2014SP0.SLDPRT")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testsolidworksPart2014SP0.SLDPRT")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -90,8 +88,7 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testAssembly2013SP2Parser() throws Exception {
-        try (InputStream input = SolidworksParserTest.class.getResourceAsStream(
-                "/test-documents/testsolidworksAssembly2013SP2.SLDASM")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testsolidworksAssembly2013SP2.SLDASM")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -117,8 +114,7 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testAssembly2014SP0Parser() throws Exception {
-        try (InputStream input = SolidworksParserTest.class
-                .getResourceAsStream("/test-documents/testsolidworksAssembly2014SP0.SLDASM")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testsolidworksAssembly2014SP0.SLDASM")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -144,8 +140,7 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testDrawing2013SP2Parser() throws Exception {
-        try (InputStream input = SolidworksParserTest.class.getResourceAsStream(
-                "/test-documents/testsolidworksDrawing2013SP2.SLDDRW")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testsolidworksDrawing2013SP2.SLDDRW")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -171,8 +166,7 @@ public class SolidworksParserTest extends TikaTest {
      */
     @Test
     public void testDrawing2014SP0Parser() throws Exception {
-        try (InputStream input = SolidworksParserTest.class.getResourceAsStream(
-                "/test-documents/testsolidworksDrawing2014SP0.SLDDRW")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testsolidworksDrawing2014SP0.SLDDRW")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());

@@ -61,8 +61,7 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testOO3() throws Exception {
        for (Parser parser : getParsers()) {
-           try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                   "/test-documents/testODFwithOOo3.odt")) {
+           try (InputStream input = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
                Metadata metadata = new Metadata();
                ContentHandler handler = new BodyContentHandler();
                parser.parse(input, handler, metadata, new ParseContext());
@@ -84,8 +83,7 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testOO2() throws Exception {
        for (Parser parser : getParsers()) {
-           try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                   "/test-documents/testOpenOffice2.odt")) {
+           try (InputStream input = getResourceAsStream("/test-documents/testOpenOffice2.odt")) {
                Metadata metadata = new Metadata();
                ContentHandler handler = new BodyContentHandler();
                parser.parse(input, handler, metadata, new ParseContext());
@@ -132,8 +130,7 @@ public class ODFParserTest extends TikaTest {
     */
     @Test
     public void testOO2Metadata() throws Exception {
-        try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testOpenOffice2.odf")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testOpenOffice2.odf")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OpenDocumentParser().parse(input, handler, metadata);
@@ -189,8 +186,7 @@ public class ODFParserTest extends TikaTest {
     */
     @Test
    public void testOO3Metadata() throws Exception {
-        try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testODFwithOOo3.odt")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testODFwithOOo3.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OpenDocumentParser().parse(input, handler, metadata);
@@ -238,8 +234,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODPMasterFooter() throws Exception {
-        try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testMasterFooter.odp")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testMasterFooter.odp")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
@@ -251,8 +246,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODTFooter() throws Exception {
-        try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testFooter.odt")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testFooter.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
@@ -266,8 +260,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test
     public void testODSFooter() throws Exception {
-        try (InputStream input = ODFParserTest.class.getResourceAsStream(
-                "/test-documents/testFooter.ods")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testFooter.ods")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             AUTO_DETECT_PARSER.parse(input, handler, metadata, new ParseContext());
@@ -330,7 +323,7 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testNullStylesInODTFooter() throws Exception {
         Parser parser = new OpenDocumentParser();
-        try (InputStream input = ODFParserTest.class.getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testODT-TIKA-6000.odt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             parser.parse(input, handler, metadata, getNonRecursingParseContext());

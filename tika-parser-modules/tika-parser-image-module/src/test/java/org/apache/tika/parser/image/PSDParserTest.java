@@ -39,7 +39,7 @@ public class PSDParserTest extends TikaTest {
     public void testPSD() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testPSD.psd")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testPSD.psd")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
 
@@ -56,7 +56,7 @@ public class PSDParserTest extends TikaTest {
     public void testOddPSD() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testPSD2.psd")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testPSD2.psd")) {
             parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("69", metadata.get(Metadata.IMAGE_WIDTH));

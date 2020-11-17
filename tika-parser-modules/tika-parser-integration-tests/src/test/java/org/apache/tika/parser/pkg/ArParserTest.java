@@ -35,8 +35,7 @@ public class ArParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofText.ar")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testARofText.ar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 
@@ -47,8 +46,7 @@ public class ArParserTest extends AbstractPkgTest {
         assertContains("Test d'indexation de Txt", content);
         assertContains("http://www.apache.org", content);
 
-        try (InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofSND.ar")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testARofSND.ar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 

@@ -38,8 +38,7 @@ public class TarParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = TarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tar")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 

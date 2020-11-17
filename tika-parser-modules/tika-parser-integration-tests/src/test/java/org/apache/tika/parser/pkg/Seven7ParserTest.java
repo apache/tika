@@ -78,8 +78,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         
         // No password, will fail with EncryptedDocumentException
         boolean ex = false;
-        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test7Z_protected_passTika.7z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
@@ -91,8 +90,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         
         // No password, will fail with EncryptedDocumentException
         ex = false;
-        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/full_encrypted.7z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/full_encrypted.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a full password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
@@ -115,8 +113,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             }
         });
         handler = new BodyContentHandler();
-        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test7Z_protected_passTika.7z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z with wrong password");
         } catch (TikaException e) {
@@ -139,8 +136,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 }
             });
             handler = new BodyContentHandler();
-            try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                    "/test-documents/test7Z_protected_passTika.7z")) {
+            try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             }
 
@@ -165,8 +161,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 }
             });
             handler = new BodyContentHandler();
-            try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                    "/test-documents/test7Z_protected_passTika.7z")) {
+            try (InputStream stream = getResourceAsStream("/test-documents/test7Z_protected_passTika.7z")) {
                 AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
             } catch (TikaException e) {
                 ioe = true;

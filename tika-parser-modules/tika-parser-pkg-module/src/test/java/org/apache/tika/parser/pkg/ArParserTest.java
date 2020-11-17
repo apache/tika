@@ -40,8 +40,7 @@ public class ArParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofText.ar")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testARofText.ar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
 
@@ -62,8 +61,7 @@ public class ArParserTest extends AbstractPkgTest {
         }
 
         tracker.reset();
-        try (InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofSND.ar")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testARofSND.ar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
 

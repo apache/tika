@@ -86,8 +86,7 @@ public class ParsingReaderTest extends TikaTest {
     @Test
     public void testMetadata() throws Exception {
         Metadata metadata = new Metadata();
-        InputStream stream = ParsingReaderTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xls");
+        InputStream stream = getResourceAsStream("/test-documents/testEXCEL.xls");
         try (Reader reader = new ParsingReader(
                 AUTO_DETECT_PARSER, stream, metadata, new ParseContext())) {
             // Metadata should already be available

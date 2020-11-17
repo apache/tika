@@ -40,7 +40,7 @@ public class CompressParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = TarParserTest.class.getResourceAsStream("/test-documents/test-documents.tar.Z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tar.Z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, recursingContext);
         }
 

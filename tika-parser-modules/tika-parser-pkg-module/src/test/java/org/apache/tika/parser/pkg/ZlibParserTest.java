@@ -39,8 +39,7 @@ public class ZlibParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/testTXT.zlib")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testTXT.zlib")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        

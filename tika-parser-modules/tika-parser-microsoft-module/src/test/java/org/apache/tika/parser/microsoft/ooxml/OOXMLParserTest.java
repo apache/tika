@@ -803,8 +803,7 @@ public class OOXMLParserTest extends TikaTest {
     public void testWordCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = OOXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_custom_props.docx")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORD_custom_props.docx")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -840,8 +839,7 @@ public class OOXMLParserTest extends TikaTest {
     public void testPowerPointCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = OOXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_custom_props.pptx")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testPPT_custom_props.pptx")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -877,8 +875,7 @@ public class OOXMLParserTest extends TikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
         handler.setResult(new StreamResult(sw));
 
-        try (InputStream input = OOXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_embedded_pdf.docx")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORD_embedded_pdf.docx")) {
             new OOXMLParser().parse(input, handler, metadata, new ParseContext());
         }
         String xml = sw.toString();
@@ -931,8 +928,7 @@ public class OOXMLParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_no_format.docx")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testWORD_no_format.docx")) {
             new OOXMLParser().parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -1348,7 +1344,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", context));
 
         //test configuring via config file
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-dom-macros.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             assertContainsAtLeast(minExpected, getRecursiveMetadata("testWORD_macros.docm", parser));
@@ -1381,7 +1377,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", context));
 
         //test configuring via config file
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-dom-macros.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
@@ -1415,7 +1411,7 @@ public class OOXMLParserTest extends TikaTest {
                 getRecursiveMetadata("testEXCEL_macro.xlsm", context));
 
         //test configuring via config file
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-dom-macros.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-dom-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             assertContainsAtLeast(minExpected, getRecursiveMetadata("testEXCEL_macro.xlsm", parser));
@@ -1453,8 +1449,7 @@ public class OOXMLParserTest extends TikaTest {
         //NOTE: this test relies on a bug in the DOM extractor that
         //is passing over the title information.
         //once we fix that, this test will no longer be meaningful!
-        try (InputStream is =
-                     getClass().getResourceAsStream("/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/microsoft/tika-config-sax-docx.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser p = new AutoDetectParser(tikaConfig);
@@ -1472,8 +1467,7 @@ public class OOXMLParserTest extends TikaTest {
 
         // Should be detected correctly
         MediaType type;
-        try (InputStream input = ExcelParserTest.class.getResourceAsStream(
-                "/test-documents/testEXCEL.xlsb")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testEXCEL.xlsb")) {
             type = detector.detect(input, m);
             assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
         }
@@ -1754,7 +1748,7 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testDateFormat() throws Exception {
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-custom-date-override.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-custom-date-override.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
             String xml = getXML("testEXCEL_dateFormats.xlsx", p).xml;

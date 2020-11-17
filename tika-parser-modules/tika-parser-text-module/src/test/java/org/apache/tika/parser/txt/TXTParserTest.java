@@ -236,7 +236,7 @@ public class TXTParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
         parser.parse(
-                TXTParserTest.class.getResourceAsStream("/test-documents/russian.cp866.txt"),
+                getResourceAsStream("/test-documents/russian.cp866.txt"),
                 new WriteOutContentHandler(writer),
                 metadata,
                 new ParseContext());
@@ -249,7 +249,7 @@ public class TXTParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
         parser.parse(
-                TXTParserTest.class.getResourceAsStream("/test-documents/english.cp500.txt"),
+                getResourceAsStream("/test-documents/english.cp500.txt"),
                 new WriteOutContentHandler(writer),
                 metadata,
                 new ParseContext());

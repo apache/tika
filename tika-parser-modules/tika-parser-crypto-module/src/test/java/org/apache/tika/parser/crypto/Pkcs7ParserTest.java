@@ -31,8 +31,7 @@ import org.xml.sax.ContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
     public void testDetachedSignature() throws Exception {
-        try (InputStream input = Pkcs7ParserTest.class.getResourceAsStream(
-                "/test-documents/testDetached.p7s")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testDetached.p7s")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new Pkcs7Parser().parse(input, handler, metadata, new ParseContext());

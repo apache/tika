@@ -35,18 +35,12 @@ public class TSDParserTest extends TikaTest {
 
     @Test
     public void testTSDFileData() throws Exception {
-        try (InputStream inputXml =
-                     TSDParserTest.class.getResourceAsStream("/test-documents/MANIFEST.XML.TSD");
-             InputStream inputTxt1 =
-                     TSDParserTest.class.getResourceAsStream("/test-documents/Test1.txt.tsd");
-             InputStream inputTxt2 =
-                     TSDParserTest.class.getResourceAsStream("/test-documents/Test2.txt.tsd");
-             InputStream inputDocx =
-                     TSDParserTest.class.getResourceAsStream("/test-documents/Test3.docx.tsd");
-             InputStream inputPdf =
-                     TSDParserTest.class.getResourceAsStream("/test-documents/Test4.pdf.tsd");
-             InputStream inputPng =
-                     TSDParserTest.class.getResourceAsStream("/test-documents/Test5.PNG.tsd");) {
+        try (InputStream inputXml = getResourceAsStream("/test-documents/MANIFEST.XML.TSD");
+             InputStream inputTxt1 = getResourceAsStream("/test-documents/Test1.txt.tsd");
+             InputStream inputTxt2 = getResourceAsStream("/test-documents/Test2.txt.tsd");
+             InputStream inputDocx = getResourceAsStream("/test-documents/Test3.docx.tsd");
+             InputStream inputPdf = getResourceAsStream("/test-documents/Test4.pdf.tsd");
+             InputStream inputPng = getResourceAsStream("/test-documents/Test5.PNG.tsd")) {
 
             TSDParser tsdParser = new TSDParser();
 

@@ -39,8 +39,7 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
     @Test
     public void testDefaultBehavior() throws Exception {
-        try (InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML3.xml")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new DefaultCustomXMLTestParser().parse(input, handler, metadata, new ParseContext());
@@ -64,8 +63,7 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
     
     @Test
     public void testEmptiesAndRepeats() throws Exception {
-        try (InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML3.xml")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new AllowEmptiesAndDuplicatesCustomXMLTestParser().parse(input, handler, metadata, new ParseContext());

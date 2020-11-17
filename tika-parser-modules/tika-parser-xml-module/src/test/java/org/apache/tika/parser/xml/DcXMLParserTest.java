@@ -34,8 +34,7 @@ public class DcXMLParserTest extends TikaTest {
 
     @Test
     public void testXMLParserAsciiChars() throws Exception {
-        try (InputStream input = DcXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML.xml")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new DcXMLParser().parse(input, handler, metadata);
@@ -76,7 +75,7 @@ public class DcXMLParserTest extends TikaTest {
     
     @Test
     public void testXMLParserNonAsciiChars() throws Exception {
-        try (InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
             new DcXMLParser().parse(input, new DefaultHandler(), metadata);
 

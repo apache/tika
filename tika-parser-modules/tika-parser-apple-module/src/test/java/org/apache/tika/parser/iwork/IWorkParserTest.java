@@ -52,7 +52,7 @@ public class IWorkParserTest extends TikaTest {
      */
     @Test
     public void testStreamNotClosed() throws Exception {
-        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
+        InputStream input = getResourceAsStream("/test-documents/testKeynote.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata);

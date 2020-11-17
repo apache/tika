@@ -36,8 +36,7 @@ public class DIFParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = DIFParser.class.getResourceAsStream(
-                "/test-documents/Zamora2010.dif")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/Zamora2010.dif")) {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
 

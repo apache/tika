@@ -41,6 +41,6 @@ public class OfficeParserTest extends TikaTest {
     }
 
     private InputStream getTestDocument(String name) {
-        return TikaInputStream.get(OOXMLParserTest.class.getResourceAsStream("/test-documents/" + name));
+        return TikaInputStream.get(getResourceAsStream("/test-documents/" + name));
     }
 }

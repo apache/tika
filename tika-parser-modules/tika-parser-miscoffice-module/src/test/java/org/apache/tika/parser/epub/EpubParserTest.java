@@ -81,7 +81,7 @@ public class EpubParserTest extends TikaTest {
         assert(tocIndex < ch2);
         assert(ch1 < ch2);
 
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/epub/tika-config.xml")) {
             assertNotNull(is);
             Parser p = new AutoDetectParser(new TikaConfig(is));
             xml = getXML("testEPUB.epub", p).xml;

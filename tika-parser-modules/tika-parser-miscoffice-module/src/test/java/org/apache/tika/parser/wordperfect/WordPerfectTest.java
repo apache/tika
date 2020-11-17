@@ -70,7 +70,7 @@ public class WordPerfectTest extends TikaTest {
         assertContains("this was deleted.", xml);
 
 
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/wordperfect/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/wordperfect/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
 

@@ -49,7 +49,7 @@ public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testDataURIInJS() throws Exception {
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);

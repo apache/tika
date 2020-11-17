@@ -737,7 +737,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContainsAtLeast(parsedBy, metadataList);
 
         //test configuring via config file
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-sax-macros.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-sax-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
             metadataList = getRecursiveMetadata("testWORD_macros.docm", parser);

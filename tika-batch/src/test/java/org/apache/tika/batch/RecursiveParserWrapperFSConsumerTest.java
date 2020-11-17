@@ -67,7 +67,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
             @Override
             public InputStream openInputStream() throws IOException {
-                return this.getClass().getResourceAsStream(path);
+                return getResourceAsStream(path);
             }
         });
         queue.add(new PoisonFileResource());
@@ -115,7 +115,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
             @Override
             public InputStream openInputStream() throws IOException {
-                return this.getClass().getResourceAsStream(path);
+                return getResourceAsStream(path);
             }
         });
         queue.add(new PoisonFileResource());

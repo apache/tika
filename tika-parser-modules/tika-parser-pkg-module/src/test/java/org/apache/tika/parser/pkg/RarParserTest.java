@@ -47,8 +47,7 @@ public class RarParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-        try (InputStream stream = RarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.rar")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.rar")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
@@ -101,8 +100,7 @@ public class RarParserTest extends AbstractPkgTest {
     public void testEncryptedRar() throws Exception {
         Parser parser = new RarParser();
         
-        try (InputStream input = RarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents-enc.rar")) {
+        try (InputStream input = getResourceAsStream("/test-documents/test-documents-enc.rar")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
