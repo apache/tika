@@ -78,6 +78,13 @@ public class FileCommandDetector implements Detector {
         return ExternalParser.check(commandline);
     }
 
+    /**
+     *
+     * @param input document input stream, or <code>null</code>
+     * @param metadata input metadata for the document
+     * @return mime as identified by the file command or application/octet-stream otherwise
+     * @throws IOException
+     */
     @Override
     public MediaType detect(InputStream input, Metadata metadata) throws IOException {
         if (hasFileCommand == null) {
@@ -144,7 +151,12 @@ public class FileCommandDetector implements Detector {
             outThread.join();
         } catch (InterruptedException e) {
         }
-        return MediaType.parse(outGobbler.toString().trim());
+        MediaType mt = MediaType.parse(outGobbler.toString().trim());
+        if (mt == null) {
+            return MediaType.OCTET_STREAM;
+        } else {
+            return mt;
+        }
     }
 
     @Field

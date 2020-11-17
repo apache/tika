@@ -17,14 +17,12 @@
 package org.apache.tika.eval.batch;
 
 import org.apache.tika.batch.FileResourceConsumer;
-import org.apache.tika.eval.AbstractProfiler;
 import org.apache.tika.eval.ExtractProfiler;
 import org.apache.tika.eval.FileProfiler;
 import org.apache.tika.eval.db.TableInfo;
 import org.apache.tika.util.PropsUtil;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -38,9 +36,10 @@ public class FileProfilerBuilder extends EvalConsumerBuilder {
     public final static String TABLE_PREFIX_KEY = "tablePrefix";
 
     private final List<TableInfo> tableInfos;
+
     public FileProfilerBuilder() {
         List<TableInfo> tableInfos = new ArrayList();
-        tableInfos.add(AbstractProfiler.MIME_TABLE);
+        tableInfos.add(FileProfiler.FILE_MIME_TABLE);
         tableInfos.add(FileProfiler.FILE_PROFILES);
         this.tableInfos = Collections.unmodifiableList(tableInfos);
 
@@ -80,6 +79,11 @@ public class FileProfilerBuilder extends EvalConsumerBuilder {
     @Override
     protected List<TableInfo> getNonRefTableInfos() {
         return tableInfos;
+    }
+
+    @Override
+    protected TableInfo getMimeTable() {
+        return FileProfiler.FILE_MIME_TABLE;
     }
 
     @Override
