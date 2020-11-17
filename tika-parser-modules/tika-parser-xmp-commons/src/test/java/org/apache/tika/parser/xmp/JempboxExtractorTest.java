@@ -36,7 +36,7 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpeg() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
             // set some values before extraction to see that they are overridden
             metadata.set(TikaCoreProperties.TITLE, "old title");
             metadata.set(TikaCoreProperties.DESCRIPTION, "old description");
@@ -63,8 +63,7 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegPhotoshop() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream =
-                     getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             JempboxExtractor extractor = new JempboxExtractor(metadata);
             extractor.parse(stream);
 
@@ -81,8 +80,7 @@ public class JempboxExtractorTest extends TikaTest {
     @Test
     public void testParseJpegXnviewmp() throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        try (InputStream stream =
-                     getClass().getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
             JempboxExtractor extractor = new JempboxExtractor(metadata);
             extractor.parse(stream);
 

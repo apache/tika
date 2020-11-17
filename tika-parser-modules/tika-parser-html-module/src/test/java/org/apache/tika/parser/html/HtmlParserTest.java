@@ -92,7 +92,7 @@ public class HtmlParserTest extends TikaTest {
         final StringWriter name = new StringWriter();
         ContentHandler body = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
+        try (InputStream stream = getResourceAsStream(path)) {
             ContentHandler link = new DefaultHandler() {
                 @Override
                 public void startElement(
@@ -137,8 +137,7 @@ public class HtmlParserTest extends TikaTest {
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
         String path = "/test-documents/testXHTML_utf8.html";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                HtmlParserTest.class.getResourceAsStream(path), metadata);
+        String content = new Tika().parseToString(getResourceAsStream(path), metadata);
 
         assertTrue("Did not contain expected text:"
                 + "Title : Tilte with UTF-8 chars √∂√§√•", content
@@ -156,8 +155,7 @@ public class HtmlParserTest extends TikaTest {
     public void testXhtmlParsing() throws Exception {
         String path = "/test-documents/testXHTML.html";
         Metadata metadata = new Metadata();
-        String content = new Tika().parseToString(
-                HtmlParserTest.class.getResourceAsStream(path), metadata);
+        String content = new Tika().parseToString(getResourceAsStream(path), metadata);
 
         //can't specify charset because default differs between OS's
         assertTrue(metadata.get(Metadata.CONTENT_TYPE).startsWith("application/xhtml+xml; charset="));
@@ -460,7 +458,7 @@ public class HtmlParserTest extends TikaTest {
         String path = "/test-documents/big-preamble.html";
         Metadata metadata = new Metadata();
         new HtmlParser().parse(
-                HtmlParserTest.class.getResourceAsStream(path),
+                getResourceAsStream(path),
                 new BodyContentHandler(), metadata, new ParseContext());
 
         assertEquals("windows-1251", metadata.get(Metadata.CONTENT_ENCODING));
@@ -478,7 +476,7 @@ public class HtmlParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         BodyContentHandler handler = new BodyContentHandler();
         new HtmlParser().parse(
-                HtmlParserTest.class.getResourceAsStream(path),
+                getResourceAsStream(path),
                 new BoilerpipeContentHandler(handler), metadata, new ParseContext());
 
         String content = handler.toString();
@@ -732,7 +730,7 @@ public class HtmlParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         StringWriter sw = new StringWriter();
         new HtmlParser().parse(
-                HtmlParserTest.class.getResourceAsStream(path),
+                getResourceAsStream(path),
                 makeHtmlTransformer(sw), metadata, new ParseContext());
 
         String content = sw.toString();
@@ -802,7 +800,7 @@ public class HtmlParserTest extends TikaTest {
         bpch.setIncludeMarkup(true);
 
         new HtmlParser().parse(
-                HtmlParserTest.class.getResourceAsStream(path),
+                getResourceAsStream(path),
                 bpch, metadata, new ParseContext());
 
         String content = sw.toString();
@@ -820,7 +818,7 @@ public class HtmlParserTest extends TikaTest {
     @Test
     public void testPushback() throws IOException, TikaException {
         String content = new Tika().parseToString(
-                HtmlParserTest.class.getResourceAsStream("/test-documents/tika434.html"), new Metadata());
+                getResourceAsStream("/test-documents/tika434.html"), new Metadata());
         assertNotNull(content);
     }
 
@@ -905,9 +903,7 @@ public class HtmlParserTest extends TikaTest {
         BoilerpipeContentHandler bpHandler = new BoilerpipeContentHandler(handler);
         bpHandler.setIncludeMarkup(true);
 
-        new HtmlParser().parse(
-                HtmlParserTest.class.getResourceAsStream(path),
-                bpHandler, metadata, new ParseContext());
+        new HtmlParser().parse(getResourceAsStream(path), bpHandler, metadata, new ParseContext());
 
         String content = handler.toString();
 
@@ -936,9 +932,7 @@ public class HtmlParserTest extends TikaTest {
         BoilerpipeContentHandler bpHandler = new BoilerpipeContentHandler(handler);
         bpHandler.setIncludeMarkup(true);
 
-        new HtmlParser().parse(
-                HtmlParserTest.class.getResourceAsStream(path),
-                bpHandler, metadata, new ParseContext());
+        new HtmlParser().parse(getResourceAsStream(path), bpHandler, metadata, new ParseContext());
 
         String content = handler.toString();
 
@@ -975,7 +969,7 @@ public class HtmlParserTest extends TikaTest {
     @Test
     public void testUserDefinedCharset() throws Exception {
         String content = new Tika().parseToString(
-                HtmlParserTest.class.getResourceAsStream("/test-documents/testUserDefinedCharset.mhtml"), new Metadata());
+                getResourceAsStream("/test-documents/testUserDefinedCharset.mhtml"), new Metadata());
         assertNotNull(content);
     }
 
@@ -987,8 +981,7 @@ public class HtmlParserTest extends TikaTest {
 
         for (int i = 1; i <= 4; i++) {
             String fileName = "/test-documents/testHTMLNoisyMetaEncoding_" + i + ".html";
-            String content = tika.parseToString(
-                    HtmlParserTest.class.getResourceAsStream(fileName));
+            String content = tika.parseToString(getResourceAsStream(fileName));
             assertTrue("testing: " + fileName, content.contains(hit));
         }
     }
@@ -1035,7 +1028,7 @@ public class HtmlParserTest extends TikaTest {
         final int col = 1;
         final int[] textPosition = new int[2];
 
-        new HtmlParser().parse(HtmlParserTest.class.getResourceAsStream("/test-documents/testHTML.html"),
+        new HtmlParser().parse(getResourceAsStream("/test-documents/testHTML.html"),
                 new ContentHandler() {
                     Locator locator;
 
@@ -1234,7 +1227,7 @@ public class HtmlParserTest extends TikaTest {
         final Map<String, Integer> tagFrequencies = new HashMap<>();
 
         String path = "/test-documents/testHTML_head.html";
-        try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
+        try (InputStream stream = getResourceAsStream(path)) {
             ContentHandler tagCounter = new DefaultHandler() {
                 @Override
                 public void startElement(
@@ -1303,7 +1296,7 @@ public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testConfigExtractScript() throws Exception {
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
@@ -1425,7 +1418,7 @@ public class HtmlParserTest extends TikaTest {
                 metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
 
         //make sure to include it if a user wants scripts to be extracted
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);

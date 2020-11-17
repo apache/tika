@@ -83,8 +83,7 @@ public class MP4ParserTest extends TikaTest {
         
         
         // Check again by file, rather than stream
-        TikaInputStream tstream = TikaInputStream.get(
-              MP4ParserTest.class.getResourceAsStream("/test-documents/testMP4.m4a"));
+        TikaInputStream tstream = TikaInputStream.get(getResourceAsStream("/test-documents/testMP4.m4a"));
         tstream.getFile();
         ContentHandler handler = new BodyContentHandler();
         try {

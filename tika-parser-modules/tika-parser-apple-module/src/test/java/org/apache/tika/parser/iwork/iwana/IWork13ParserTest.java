@@ -46,7 +46,7 @@ public class IWork13ParserTest extends TikaTest {
     
     @Test
     public void testParseKeynote13() throws Exception {
-        InputStream input = IWork13ParserTest.class.getResourceAsStream("/test-documents/testKeynote2013.key");
+        InputStream input = getResourceAsStream("/test-documents/testKeynote2013.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
@@ -60,7 +60,7 @@ public class IWork13ParserTest extends TikaTest {
     
     @Test
     public void testParseNumbers13() throws Exception {
-        InputStream input = IWork13ParserTest.class.getResourceAsStream("/test-documents/testNumbers2013.numbers");
+        InputStream input = getResourceAsStream("/test-documents/testNumbers2013.numbers");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
@@ -74,7 +74,7 @@ public class IWork13ParserTest extends TikaTest {
     
     @Test
     public void testParsePages13() throws Exception {
-        InputStream input = IWork13ParserTest.class.getResourceAsStream("/test-documents/testPages2013.pages");
+        InputStream input = getResourceAsStream("/test-documents/testPages2013.pages");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);

@@ -55,8 +55,7 @@ public class OutlookParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/test-outlook.msg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-outlook.msg")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals(
@@ -108,8 +107,7 @@ public class OutlookParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/testMSG.msg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testMSG.msg")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -153,8 +151,7 @@ public class OutlookParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/test-outlook2003.msg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-outlook2003.msg")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         assertEquals(
@@ -189,8 +186,7 @@ public class OutlookParserTest extends TikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
         handler.setResult(new StreamResult(sw));
 
-        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/testMSG_chinese.msg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testMSG_chinese.msg")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -230,8 +226,7 @@ public class OutlookParserTest extends TikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
         handler.setResult(new StreamResult(sw));
 
-        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/testMSG_forwarded.msg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testMSG_forwarded.msg")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -254,8 +249,7 @@ public class OutlookParserTest extends TikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
         handler.setResult(new StreamResult(sw));
 
-        try (InputStream stream = OutlookParserTest.class.getResourceAsStream(
-                "/test-documents/test-outlook2003.msg")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-outlook2003.msg")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
 

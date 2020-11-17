@@ -48,8 +48,7 @@ public class ZipParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.zip")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.zip")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        
@@ -91,9 +90,7 @@ public class ZipParserTest extends AbstractPkgTest {
      */
     @Test
     public void testUnsupportedZipCompressionMethod() throws Exception {
-        String content = new Tika().parseToString(
-                ZipParserTest.class.getResourceAsStream(
-                        "/test-documents/moby.zip"));
+        String content = new Tika().parseToString(getResourceAsStream("/test-documents/moby.zip"));
         assertContains("README", content);
     }
 
@@ -140,8 +137,7 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/testZip_with_DataDescriptor.zip")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testZip_with_DataDescriptor.zip")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
 
             assertEquals(5, tracker.filenames.size());

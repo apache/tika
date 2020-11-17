@@ -85,7 +85,7 @@ public class AutoDetectParserTest extends TikaTest {
      * @throws IOException
      */
     private void assertAutoDetect(TestParams tp) throws Exception {
-        try (InputStream input = AutoDetectParserTest.class.getResourceAsStream(tp.resourceRealName)) {
+        try (InputStream input = getResourceAsStream(tp.resourceRealName)) {
             if (input == null) {
                 fail("Could not open stream from specified resource: "
                         + tp.resourceRealName);
@@ -259,8 +259,7 @@ public class AutoDetectParserTest extends TikaTest {
      */
     @Test
     public void testZipBombPrevention() throws Exception {
-        try (InputStream tgz = AutoDetectParserTest.class.getResourceAsStream(
-                "/test-documents/TIKA-216.tgz")) {
+        try (InputStream tgz = getResourceAsStream("/test-documents/TIKA-216.tgz")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             new AutoDetectParser(tika).parse(tgz, handler, metadata);
@@ -331,8 +330,7 @@ public class AutoDetectParserTest extends TikaTest {
        // Have each file parsed, and check
        for (int i=0; i<testFiles.length; i++) {
            String file = testFiles[i];
-           try (InputStream input = AutoDetectParserTest.class.getResourceAsStream(
-                   "/test-documents/" + file)) {
+           try (InputStream input = getResourceAsStream("/test-documents/" + file)) {
                if (input == null) {
                    fail("Could not find test file " + file);
                }

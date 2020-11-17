@@ -29,7 +29,7 @@ public class CommandLineParserBuilderTest extends FSBatchTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        try (InputStream is = this.getClass().getResourceAsStream("/tika-batch-config-test.xml")) {
+        try (InputStream is = getResourceAsStream("/tika-batch-config-test.xml")) {
             CommandLineParserBuilder builder = new CommandLineParserBuilder();
             Options options = builder.build(is);
             //TODO: insert actual tests :)

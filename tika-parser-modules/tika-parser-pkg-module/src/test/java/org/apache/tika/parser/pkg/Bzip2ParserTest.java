@@ -40,8 +40,7 @@ public class Bzip2ParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tbz2")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.tbz2")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        

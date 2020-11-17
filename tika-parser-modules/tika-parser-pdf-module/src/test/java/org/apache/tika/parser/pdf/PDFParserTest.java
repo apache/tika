@@ -240,8 +240,7 @@ public class PDFParserTest extends TikaTest {
         boolean ex = false;
         ContentHandler handler = new BodyContentHandler();
         metadata = new Metadata();
-        try (InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDF_protected.pdf")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testPDF_protected.pdf")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, context);
         } catch (EncryptedDocumentException e) {
             ex = true;
@@ -257,8 +256,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testTwoTextBoxes() throws Exception {
         String content;
-        try(InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDFTwoTextBoxes.pdf")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf")) {
             content = getText(stream, AUTO_DETECT_PARSER);
         }
         content = content.replaceAll("\\s+", " ");
@@ -269,8 +267,7 @@ public class PDFParserTest extends TikaTest {
     public void testVarious() throws Exception {
         Metadata metadata = new Metadata();
         String content;
-        try(InputStream stream = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDFVarious.pdf")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testPDFVarious.pdf")) {
             content = getText(stream, AUTO_DETECT_PARSER, metadata);
         }
         //content = content.replaceAll("\\s+"," ");
@@ -629,8 +626,7 @@ public class PDFParserTest extends TikaTest {
         Metadata m = new Metadata();
         ParseContext c = new ParseContext();
         ContentHandler h = new EventCountingHandler();
-        try(InputStream is = PDFParserTest.class.getResourceAsStream(
-                "/test-documents/testPDFTripleLangTitle.pdf")) {
+        try (InputStream is = getResourceAsStream("/test-documents/testPDFTripleLangTitle.pdf")) {
             AUTO_DETECT_PARSER.parse(is, h, m, c);
         }
         assertEquals(1, ((EventCountingHandler) h).getEndDocument());
@@ -1181,7 +1177,7 @@ public class PDFParserTest extends TikaTest {
         assumeTrue("can run OCR", canRunOCR());
 
         //via the config, tesseract should skip this file because it is too large
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
@@ -1199,7 +1195,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testInitializationViaConfig() throws Exception {
-        try (InputStream is = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/pdf/tika-config.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             Parser p = new AutoDetectParser(tikaConfig);
@@ -1213,8 +1209,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testInitializationOfNonPrimitivesViaConfig() throws Exception {
-        try (InputStream is =
-                     getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml")) {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/pdf/tika-config-non-primitives.xml")) {
             assertNotNull(is);
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser p = new AutoDetectParser(tikaConfig);
@@ -1245,7 +1240,7 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testConfiguringMoreParams() throws Exception {
-        try (InputStream configIs = getClass().getResourceAsStream("/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
+        try (InputStream configIs = getResourceAsStream("/org/apache/tika/parser/pdf/tika-inline-config.xml")) {
             assertNotNull(configIs);
             TikaConfig tikaConfig = new TikaConfig(configIs);
             AutoDetectParser p = new AutoDetectParser(tikaConfig);

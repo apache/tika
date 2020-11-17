@@ -31,7 +31,7 @@ public class XLIFF12ParserTest extends TikaTest {
 
     @Test
     public void testXLIFF12() throws Exception {
-        try (InputStream input = XLIFF12ParserTest.class.getResourceAsStream("/test-documents/testXLIFF12.xlf")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testXLIFF12.xlf")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new XLIFF12Parser().parse(input, handler, metadata, new ParseContext());

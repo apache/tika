@@ -42,7 +42,7 @@ public class PhoneExtractingContentHandlerTest extends TikaTest {
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        try (InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, new ParseContext());
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");

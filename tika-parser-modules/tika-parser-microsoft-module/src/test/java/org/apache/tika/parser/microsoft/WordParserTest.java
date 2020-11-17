@@ -48,8 +48,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testWordParser() throws Exception {
-        try (InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD.doc")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORD.doc")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -65,8 +64,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testWordWithWAV() throws Exception {
-        try (InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/Doc1_ole.doc")) {
+        try (InputStream input = getResourceAsStream("/test-documents/Doc1_ole.doc")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -177,8 +175,7 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testWord6Parser() throws Exception {
-        try (InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD6.doc")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORD6.doc")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -231,8 +228,7 @@ public class WordParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_various.doc")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testWORD_various.doc")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -313,8 +309,7 @@ public class WordParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        try (InputStream stream = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_no_format.doc")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/testWORD_no_format.doc")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
         }
 
@@ -329,8 +324,7 @@ public class WordParserTest extends TikaTest {
     public void testCustomProperties() throws Exception {
         Metadata metadata = new Metadata();
 
-        try (InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_custom_props.doc")) {
+        try (InputStream input = getResourceAsStream("/test-documents/testWORD_custom_props.doc")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
@@ -597,7 +591,7 @@ public class WordParserTest extends TikaTest {
         assertContainsAtLeast(minExpected, metadataList);
 
         //test configuring via config file
-        try (InputStream is = this.getClass().getResourceAsStream("tika-config-macros.xml")) {
+        try (InputStream is = getResourceAsStream("tika-config-macros.xml")) {
             TikaConfig tikaConfig = new TikaConfig(is);
             AutoDetectParser parser = new AutoDetectParser(tikaConfig);
 

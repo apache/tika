@@ -43,7 +43,7 @@ public class NamedEntityParserTest extends TikaTest {
     public void testParse() throws Exception {
 
         //test config is added to resources directory
-        try (InputStream is = getClass().getResourceAsStream(CONFIG_FILE)) {
+        try (InputStream is = getResourceAsStream(CONFIG_FILE)) {
             TikaConfig config = new TikaConfig(is);
             Tika tika = new Tika(config);
             String text = "I am student at University of Southern California (USC)," +
@@ -78,7 +78,7 @@ public class NamedEntityParserTest extends TikaTest {
     public void testNerChain() throws Exception {
         String classNames = OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
-        try (InputStream is = getClass().getResourceAsStream(CONFIG_FILE)) {
+        try (InputStream is = getResourceAsStream(CONFIG_FILE)) {
             TikaConfig config = new TikaConfig(is);
             Tika tika = new Tika(config);
             String text = "University of Southern California (USC), is located in Los Angeles ." +

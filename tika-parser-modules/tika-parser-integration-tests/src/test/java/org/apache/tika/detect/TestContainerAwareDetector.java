@@ -458,8 +458,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     private TikaInputStream getTruncatedFile(String name, int n)
             throws IOException {
-        try (InputStream input = TestContainerAwareDetector.class.getResourceAsStream(
-                "/test-documents/" + name)) {
+        try (InputStream input = getResourceAsStream("/test-documents/" + name)) {
             byte[] bytes = new byte[n];
             int m = 0;
             while (m < bytes.length) {

@@ -63,8 +63,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     public void testForkedTextParsing() throws Exception {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
           ContentHandler output = new BodyContentHandler();
-          InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
-                  "/test-documents/testTXT.txt");
+          InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
           ParseContext context = new ParseContext();
           parser.parse(stream, output, new Metadata(), context);
 
@@ -153,7 +152,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     public void testParsingErrorInForkedParserShouldBeReported() throws Exception {
         BrokenParser brokenParser = new BrokenParser();
         ForkParser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
-        InputStream stream = getClass().getResourceAsStream("/test-documents/testTXT.txt");
+        InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
 
         // With a serializable error, we'll get that back
         try {
@@ -203,8 +202,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
 
        try {
           ContentHandler output = new BodyContentHandler();
-          InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
-              "/test-documents/testTXT.txt");
+          InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
           parser.parse(stream, output, new Metadata(), context);
           fail("Should have blown up with a non serializable ParseContext");
        } catch(TikaException e) {
@@ -233,8 +231,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
                                             "-Xrunjdwp:transport=dt_socket,address=54321,server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
-            InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
-                    "/test-documents/testTXT.txt");
+            InputStream stream = getResourceAsStream("/test-documents/testTXT.txt");
             parser.parse(stream, body, new Metadata(), context);
             String content = body.toString();
             assertContains("Test d'indexation", content);
@@ -252,8 +249,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     public void testForkedPDFParsing() throws Exception {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
-            InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
-                    "/test-documents/testPDF.pdf");
+            InputStream stream = getResourceAsStream("/test-documents/testPDF.pdf");
             ParseContext context = new ParseContext();
             context.set(Parser.class, new EmptyParser());
             parser.parse(stream, output, new Metadata(), context);
@@ -270,8 +266,7 @@ public class ForkParserIntegrationTest extends MultiThreadedTikaTest {
     public void testForkedPackageParsing() throws Exception {
         try (ForkParser parser = new ForkParser(ForkParserIntegrationTest.class.getClassLoader(), tika.getParser())) {
             ContentHandler output = new BodyContentHandler();
-            InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
-                    "/test-documents/moby.zip");
+            InputStream stream = getResourceAsStream("/test-documents/moby.zip");
             ParseContext context = new ParseContext();
             parser.parse(stream, output, new Metadata(), context);
             assertContains("Moby Dick", output.toString());

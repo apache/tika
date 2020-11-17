@@ -50,8 +50,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.7z")) {
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.7z")) {
             AUTO_DETECT_PARSER.parse(stream, handler, metadata, trackingContext);
         }
        

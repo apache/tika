@@ -68,7 +68,7 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     @Test
     public void testChmParser() throws Exception{
         for (String fileName : files) {
-            InputStream stream = TestChmExtraction.class.getResourceAsStream(fileName);
+            InputStream stream = getResourceAsStream(fileName);
             testingChm(stream);
         }
     }
@@ -86,7 +86,7 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     @Test
     public void testExtractChmEntries() throws TikaException, IOException{
         for (String fileName : files) {
-            try (InputStream stream = TestChmExtraction.class.getResourceAsStream(fileName)) {
+            try (InputStream stream = getResourceAsStream(fileName)) {
                 testExtractChmEntry(stream);
             }
         }
@@ -171,7 +171,7 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
                     for (String fileName : files) {
                         InputStream stream = null;
                         try {
-                            stream = TestChmExtraction.class.getResourceAsStream(fileName);
+                            stream = getResourceAsStream(fileName);
                             BodyContentHandler handler = new BodyContentHandler(-1);
                             parser.parse(stream, handler, new Metadata(), new ParseContext());
                             assertTrue(!handler.toString().isEmpty());

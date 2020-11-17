@@ -59,7 +59,7 @@ public class AgeRecogniserTest extends TikaTest {
     public void testAgeRecogniser() throws Exception {
 
         //test config is added to resources directory
-        try (InputStream is = getClass().getResourceAsStream(CONFIG_FILE);
+        try (InputStream is = getResourceAsStream(CONFIG_FILE);
              InputStream bis = new ByteArrayInputStream(TEST_TEXT.getBytes(Charset.defaultCharset()));
         ) {
             TikaConfig config = new TikaConfig(is);
