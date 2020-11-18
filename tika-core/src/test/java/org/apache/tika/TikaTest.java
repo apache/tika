@@ -26,6 +26,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -69,6 +70,21 @@ public abstract class TikaTest {
      */
     public URL getResourceAsUrl(String name) {
         return this.getClass().getResource(name);
+    }
+
+    /**
+     * Finds a resource with a given name.
+     * @param name name of the desired resource
+     * @return A {@link java.net.URI} object or null
+     * @throws URISyntaxException if this URL is not formatted strictly according to
+     *                            RFC2396 and cannot be converted to a URI.
+     */
+    public URI getResourceAsUri(String name) throws URISyntaxException {
+        URL url = getResourceAsUrl(name);
+        if (url == null) {
+            return null;
+        }
+        return url.toURI();
     }
 
    /**
