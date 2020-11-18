@@ -269,7 +269,7 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.13</version>
+        <version>4.13.1</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -382,6 +382,13 @@
         <version>3.1.0</version>
         <configuration>
           <fail>false</fail>
+          <excludeCoordinates>
+            <coordinate>
+              <groupId>junit</groupId>
+              <artifactId>junit</artifactId>
+              <version>4.13.1</version>
+            </coordinate>
+          </excludeCoordinates>
         </configuration>
         <executions>
           <execution>
