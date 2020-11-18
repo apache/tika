@@ -26,6 +26,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -62,6 +63,30 @@ public abstract class TikaTest {
 
     protected static Parser AUTO_DETECT_PARSER = new AutoDetectParser();
 
+    /**
+     * Finds a resource with a given name.
+     * @param name name of the desired resource
+     * @return A {@link java.net.URL} object or null
+     */
+    public URL getResourceAsUrl(String name) {
+        return this.getClass().getResource(name);
+    }
+
+    /**
+     * Finds a resource with a given name.
+     * @param name name of the desired resource
+     * @return A {@link java.net.URI} object or null
+     * @throws URISyntaxException if this URL is not formatted strictly according to
+     *                            RFC2396 and cannot be converted to a URI.
+     */
+    public URI getResourceAsUri(String name) throws URISyntaxException {
+        URL url = getResourceAsUrl(name);
+        if (url == null) {
+            return null;
+        }
+        return url.toURI();
+    }
+
    /**
     * This method will give you back the filename incl. the absolute path name
     * to the resource. If the resource does not exist it will give you back the
@@ -73,14 +98,14 @@ public abstract class TikaTest {
     *         the the class you've called it from.
     */
    public File getResourceAsFile(String name) throws URISyntaxException {
-       URL url = this.getClass().getResource(name);
-       if (url != null) {
-           return new File(url.toURI());
+       URI uri = getResourceAsUri(name);
+       if (uri != null) {
+           return new File(uri);
        } else {
            // We have a file which does not exists
            // We got the path
-           url = this.getClass().getResource(".");
-           File file = new File(new File(url.toURI()), name);
+           uri = getResourceAsUri(".");
+           File file = new File(new File(uri), name);
            if (file == null) {
               fail("Unable to find requested file " + name);
            }
@@ -501,8 +526,7 @@ public abstract class TikaTest {
         //for now, just get main files
         //TODO: fix this to be recursive
         try {
-            File[] pathArray = Paths.get(this.getClass().getResource("/test-documents")
-                    .toURI()).toFile().listFiles();
+            File[] pathArray = Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles();
             List<Path> paths = new ArrayList<>();
             for (File f : pathArray) {
                 paths.add(f.toPath());

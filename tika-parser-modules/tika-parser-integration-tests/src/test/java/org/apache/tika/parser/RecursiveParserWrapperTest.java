@@ -422,7 +422,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
         InputStream stream = null;
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(contentHandlerFactory);
         try {
-            stream = TikaInputStream.get(RecursiveParserWrapperTest.class.getResource(path).toURI());
+            stream = TikaInputStream.get(getResourceAsUri(path));
             wrapper.parse(stream, handler, metadata, context);
         } finally {
             IOUtils.closeQuietly(stream);

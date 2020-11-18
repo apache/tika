@@ -246,7 +246,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     
     @Test
     public void testDynamicServiceLoaderFromConfig() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-1700-dynamic.xml");
+        URL url = getResourceAsUrl("TIKA-1700-dynamic.xml");
         TikaConfig config = new TikaConfig(url);
         
         DummyParser parser = (DummyParser)config.getParser();
@@ -259,7 +259,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
     
     @Test
     public void testTikaExecutorServiceFromConfig() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-1762-executors.xml");
+        URL url = getResourceAsUrl("TIKA-1762-executors.xml");
         
         TikaConfig config = new TikaConfig(url);
         

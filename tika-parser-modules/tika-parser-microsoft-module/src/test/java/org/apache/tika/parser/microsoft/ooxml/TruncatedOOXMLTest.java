@@ -84,7 +84,7 @@ public class TruncatedOOXMLTest extends TikaTest {
     @Test
     @Ignore("for dev/debugging only")
     public void listStreams() throws Exception {
-        File tstDir = new File(TruncatedOOXMLTest.class.getResource("/test-documents").toURI());
+        File tstDir = new File(getResourceAsUri("/test-documents"));
         for (File f : tstDir.listFiles()) {
             if (f.isDirectory()) {
                 continue;

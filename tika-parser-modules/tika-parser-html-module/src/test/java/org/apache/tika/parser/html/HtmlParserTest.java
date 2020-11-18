@@ -1322,7 +1322,7 @@ public class HtmlParserTest extends TikaTest {
     }
 
     private void testDetector(EncodingDetector detector) throws Exception {
-        Path testDocs = Paths.get(this.getClass().getResource("/test-documents").toURI());
+        Path testDocs = Paths.get(getResourceAsUri("/test-documents"));
         List<Path> tmp = new ArrayList<>();
         Map<Path, String> encodings = new ConcurrentHashMap<>();
         File[] testDocArray = testDocs.toFile().listFiles();

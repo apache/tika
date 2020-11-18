@@ -145,7 +145,7 @@ public class TestGDALParser extends TikaTest {
 
         assumeTrue(canRun());
         // If the exit code is 1 (meaning FITS isn't supported by the installed version of gdalinfo, don't run this test.
-        String[] fitsCommand = {"gdalinfo", TestGDALParser.class.getResource(fitsFilename).getPath()};
+        String[] fitsCommand = {"gdalinfo", getResourceAsUrl(fitsFilename).getPath()};
         assumeTrue(ExternalParser.check(fitsCommand, 1));
 
         String expectedAllgMin = "-7.319537E1";
