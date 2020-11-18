@@ -277,8 +277,7 @@ public class BatchProcessTest extends FSBatchTestBase {
 
         Map<String, String> args = getDefaultArgs("hierarchical", outputDir);
         args.put("numConsumers", "1");
-        args.put("fileList",
-                Paths.get(this.getClass().getResource("/testFileList.txt").toURI()).toString());
+        args.put("fileList", Paths.get(getResourceAsUri("/testFileList.txt")).toString());
         args.put("recursiveParserWrapper", "true");
         args.put("basicHandlerType", "text");
         BatchProcessTestExecutor ex = new BatchProcessTestExecutor(args, "/tika-batch-config-MockConsumersBuilder.xml");

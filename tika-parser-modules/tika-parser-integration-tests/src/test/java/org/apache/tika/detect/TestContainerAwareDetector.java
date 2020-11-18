@@ -77,8 +77,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertTypeByNameAndData(dataFile, name, type, null);
     }
     private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector, String typeFromMagic) throws Exception {
-        try (TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource("/test-documents/" + dataFile))) {
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/" + dataFile))) {
             Metadata m = new Metadata();
             if (name != null)
                 m.add(TikaCoreProperties.RESOURCE_NAME_KEY, name);
@@ -227,8 +226,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testOpenContainer() throws Exception {
-        try (TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource("/test-documents/testPPT.ppt"))) {
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/testPPT.ppt"))) {
             assertNull(stream.getOpenContainer());
             assertEquals(
                     MediaType.parse("application/vnd.ms-powerpoint"),
@@ -367,8 +365,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private void assertRemovalTempfiles(String fileName) throws Exception {
         int numberOfTempFiles = countTemporaryFiles();
 
-        try (TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource("/test-documents/" + fileName))) {
+        try (TikaInputStream stream = TikaInputStream.get(getResourceAsUrl("/test-documents/" + fileName))) {
             detector.detect(stream, new Metadata());
         }
 

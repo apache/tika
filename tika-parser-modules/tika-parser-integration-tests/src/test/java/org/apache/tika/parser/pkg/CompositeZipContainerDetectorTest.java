@@ -195,8 +195,7 @@ public class CompositeZipContainerDetectorTest extends TikaTest {
 
     private List<File> getTestZipBasedFiles(Detector detector, MediaTypeRegistry registry) throws Exception {
         List<File> zips = new ArrayList<>();
-        for (File f : Paths.get(
-                this.getClass().getResource("/test-documents").toURI()).toFile().listFiles()) {
+        for (File f : Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles()) {
             try (InputStream is = TikaInputStream.get(f)) {
                 MediaType mt = detector.detect(is, new Metadata());
                 if (registry.isSpecializationOf(mt, MediaType.APPLICATION_ZIP)) {

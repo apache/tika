@@ -272,8 +272,7 @@ public class ODFParserTest extends TikaTest {
     
     @Test
     public void testFromFile() throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(this.getClass().getResource(
-                "/test-documents/testODFwithOOo3.odt"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsUrl("/test-documents/testODFwithOOo3.odt"))) {
             assertEquals(true, tis.hasFile());
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
@@ -292,8 +291,7 @@ public class ODFParserTest extends TikaTest {
     @Test
     public void testNPEFromFile() throws Exception {
         OpenDocumentParser parser = new OpenDocumentParser();
-        try (TikaInputStream tis = TikaInputStream.get(this.getClass().getResource(
-                "/test-documents/testNPEOpenDocument.odt"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsUrl("/test-documents/testNPEOpenDocument.odt"))) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             parser.parse(tis, handler, metadata, new ParseContext());
@@ -377,8 +375,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test(expected = IOException.class)
     public void testInvalidFromStream() throws Exception {
-        try (InputStream is = this.getClass().getResource(
-                "/test-documents/testODTnotaZipFile.odt").openStream()) {
+        try (InputStream is = getResourceAsUrl("/test-documents/testODTnotaZipFile.odt").openStream()) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
@@ -388,8 +385,7 @@ public class ODFParserTest extends TikaTest {
 
     @Test(expected = IOException.class)
     public void testInvalidFromFile() throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(this.getClass().getResource(
-                "/test-documents/testODTnotaZipFile.odt"))) {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsUrl("/test-documents/testODTnotaZipFile.odt"))) {
             OpenDocumentParser parser = new OpenDocumentParser();
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();

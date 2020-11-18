@@ -98,14 +98,14 @@ public abstract class TikaTest {
     *         the the class you've called it from.
     */
    public File getResourceAsFile(String name) throws URISyntaxException {
-       URL url = this.getClass().getResource(name);
-       if (url != null) {
-           return new File(url.toURI());
+       URI uri = getResourceAsUri(name);
+       if (uri != null) {
+           return new File(uri);
        } else {
            // We have a file which does not exists
            // We got the path
-           url = this.getClass().getResource(".");
-           File file = new File(new File(url.toURI()), name);
+           uri = getResourceAsUri(".");
+           File file = new File(new File(uri), name);
            if (file == null) {
               fail("Unable to find requested file " + name);
            }
@@ -526,8 +526,7 @@ public abstract class TikaTest {
         //for now, just get main files
         //TODO: fix this to be recursive
         try {
-            File[] pathArray = Paths.get(this.getClass().getResource("/test-documents")
-                    .toURI()).toFile().listFiles();
+            File[] pathArray = Paths.get(getResourceAsUri("/test-documents")).toFile().listFiles();
             List<Path> paths = new ArrayList<>();
             for (File f : pathArray) {
                 paths.add(f.toPath());

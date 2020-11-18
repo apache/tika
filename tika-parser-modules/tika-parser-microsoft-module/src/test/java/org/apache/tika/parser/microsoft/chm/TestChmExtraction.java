@@ -197,7 +197,7 @@ public class TestChmExtraction extends MultiThreadedTikaTest {
     
     @Test
     public void test_TIKA_1446() throws Exception {
-        URL chmDir = TestChmExtraction.class.getResource("/test-documents/chm/");
+        URL chmDir = getResourceAsUrl("/test-documents/chm/");
         File chmFolder = new File(chmDir.toURI());
         for (String fileName : chmFolder.list()) {
             File file = new File(chmFolder, fileName);

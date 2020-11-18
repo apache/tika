@@ -143,7 +143,7 @@ public abstract class FSBatchTestBase extends TikaTest {
 
     public Path getInputRoot(String subdir) throws Exception {
         String path = (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/"+subdir;
-        return Paths.get(this.getClass().getResource(path).toURI());
+        return Paths.get(getResourceAsUri(path));
     }
 
     BatchProcess getNewBatchRunner(String testConfig,
@@ -173,8 +173,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
         commandLine.add("-Djava.awt.headless=true");
-        commandLine.add("-Dlog4j.configuration=file:"+
-            this.getClass().getResource(loggerProps).getFile());
+        commandLine.add("-Dlog4j.configuration=file:" + getResourceAsUrl(loggerProps).getFile());
         commandLine.add("-Xmx128m");
         commandLine.add("-cp");
         String cp = System.getProperty("java.class.path");
@@ -185,7 +184,7 @@ public abstract class FSBatchTestBase extends TikaTest {
 
         String configFile = null;
         try {
-            configFile = Paths.get(this.getClass().getResource(testConfig).toURI()).toAbsolutePath().toString();
+            configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -212,8 +211,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.add(cp);
         commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
 
-        String configFile = Paths.get(
-                this.getClass().getResource(testConfig).toURI()).toAbsolutePath().toString();
+        String configFile = Paths.get(getResourceAsUri(testConfig)).toAbsolutePath().toString();
         commandLine.add("-bc");
 
         commandLine.add(configFile);
