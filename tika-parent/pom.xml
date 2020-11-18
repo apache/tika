@@ -320,7 +320,7 @@
     <log4j.version>1.2.17</log4j.version>
     <lombok.version>1.18.12</lombok.version>
     <lucene.version>8.6.2</lucene.version>
-    <metadata.extractor.version>2.14.0</metadata.extractor.version>
+    <metadata.extractor.version>2.15.0.1</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <mime4j.version>0.8.3</mime4j.version>
     <mockito.version>3.5.10</mockito.version>
@@ -347,7 +347,7 @@
     <uima.version>3.1.0</uima.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.0</xerces.version>
-    <xmpcore.version>6.1.10</xmpcore.version>
+    <xmpcore.version>6.1.11</xmpcore.version>
     <zstd.version>1.4.5-6</zstd.version>
   </properties>
 

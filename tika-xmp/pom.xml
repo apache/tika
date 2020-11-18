@@ -98,6 +98,12 @@
       <groupId>org.tallison.xmp</groupId>
       <artifactId>xmpcore-shaded</artifactId>
       <version>${xmpcore.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.adobe.xmp</groupId>
+          <artifactId>xmpcore</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
