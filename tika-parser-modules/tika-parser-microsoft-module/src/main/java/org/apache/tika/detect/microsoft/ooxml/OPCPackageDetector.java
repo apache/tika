@@ -52,6 +52,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.compress.utils.IOUtils.closeQuietly;
+
 public class OPCPackageDetector implements ZipContainerDetector {
 
 
@@ -243,28 +245,6 @@ public class OPCPackageDetector implements ZipContainerDetector {
 
         // Build the MediaType object and return
         return MediaType.parse(docType);
-    }
-
-    private static void closeQuietly(ZipFile zipFile) {
-        if (zipFile == null) {
-            return;
-        }
-        try {
-            zipFile.close();
-        } catch (IOException e) {
-
-        }
-    }
-
-    private static void closeQuietly(ZipEntrySource zipEntrySource) {
-        if (zipEntrySource == null) {
-            return;
-        }
-        try {
-            zipEntrySource.close();
-        } catch (IOException e) {
-            //swallow
-        }
     }
 
     @Override
