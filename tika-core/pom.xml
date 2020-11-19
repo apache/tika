@@ -46,7 +46,7 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.compendium</artifactId>
-      <version>4.0.0</version>
+      <version>5.0.0</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -78,6 +78,10 @@
               org.apache.tika.config.TikaActivator
             </Bundle-Activator>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
+            <!-- modern versions of the bundle plugin figure out that we
+                 test for a class in org.apache.xerces.util even though
+                 we don't include it in core -->
+            <Import-Package>!org.apache.xerces.util,!sun.misc,*</Import-Package>
           </instructions>
         </configuration>
       </plugin>

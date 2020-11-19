@@ -94,8 +94,9 @@ public class BundleIT {
     	 return options(
          		systemPackages("javax.xml.bind"),
          		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
-         		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
-         		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+         		//versions > 1.9.1 cause the forkparser test to fail ¯\_(ツ)_/¯
+         		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.9.1"),
+         		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.9.1"),
          		junitBundles(),
          		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString())
                  );
