@@ -16,6 +16,8 @@
  */
 package org.apache.tika.langdetect;
 
+import org.apache.commons.io.IOUtils;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
@@ -25,8 +27,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.tika.io.IOUtils;
 
 public abstract class LanguageDetectorTest {
 

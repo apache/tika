@@ -24,8 +24,8 @@ import java.util.Locale;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.w3c.dom.Document;

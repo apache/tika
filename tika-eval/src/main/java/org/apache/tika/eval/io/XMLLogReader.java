@@ -23,10 +23,11 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
@@ -86,9 +87,9 @@ public class XMLLogReader {
 
         private LogXMLWrappingInputStream(InputStream xmlLogFileIs){
             streams = new InputStream[3];
-            streams[0] = new ByteArrayInputStream(HEADER.getBytes(IOUtils.UTF_8));
+            streams[0] = new ByteArrayInputStream(HEADER.getBytes(StandardCharsets.UTF_8));
             streams[1] = xmlLogFileIs;
-            streams[2] = new ByteArrayInputStream(FOOTER.getBytes(IOUtils.UTF_8));
+            streams[2] = new ByteArrayInputStream(FOOTER.getBytes(StandardCharsets.UTF_8));
 
         }
 

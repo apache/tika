@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.sql.Blob;
 import java.sql.SQLException;
 
+import org.apache.commons.io.input.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
@@ -759,7 +760,7 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
-     * This relies on {@link IOUtils#skip(InputStream, long)} to ensure
+     * This relies on {@link IOUtils#skip(InputStream, long, byte[])} to ensure
      * that the alleged bytes skipped were actually skipped.
      *
      * @param ln the number of bytes to skip

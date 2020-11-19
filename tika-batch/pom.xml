@@ -60,11 +60,6 @@
       <artifactId>commons-cli</artifactId>
       <version>${cli.version}</version>
     </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons.io.version}</version>
-    </dependency>
 
     <dependency>
       <groupId>org.apache.tika</groupId>

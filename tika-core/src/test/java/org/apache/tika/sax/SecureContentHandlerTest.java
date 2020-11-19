@@ -20,8 +20,8 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
+import org.apache.commons.io.input.NullInputStream;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.NullInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.junit.Before;
 import org.junit.Test;

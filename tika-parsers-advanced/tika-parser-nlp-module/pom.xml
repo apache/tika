@@ -36,11 +36,6 @@
             <artifactId>tika-parser-pdf-module</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons.io.version}</version>
-        </dependency>
         <!-- Apache cTAKES -->
         <dependency>
             <groupId>org.apache.ctakes</groupId>

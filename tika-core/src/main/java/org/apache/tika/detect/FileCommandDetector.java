@@ -16,10 +16,10 @@
  */
 package org.apache.tika.detect;
 
+import org.apache.commons.io.IOExceptionWithCause;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.IOExceptionWithCause;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;

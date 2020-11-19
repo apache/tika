@@ -41,6 +41,7 @@ import java.util.UUID;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -53,7 +54,6 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.BoundedInputStream;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;

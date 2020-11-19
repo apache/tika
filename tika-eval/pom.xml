@@ -73,11 +73,6 @@
             <artifactId>commons-cli</artifactId>
             <version>${commons.cli.version}</version>
         </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons.io.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.lucene</groupId>

@@ -16,13 +16,13 @@
  */
 package org.apache.tika;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Locale;
-
-import org.apache.tika.io.IOUtils;
 
 public class TypeDetectionBenchmark {
 

@@ -18,8 +18,8 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Ignore;

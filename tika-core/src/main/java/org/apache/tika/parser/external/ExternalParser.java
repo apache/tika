@@ -32,9 +32,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.NullOutputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -46,6 +45,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 
 /**
  * Parser that uses an external program (like catdoc or pdf2txt) to extract
@@ -358,7 +358,7 @@ public class ExternalParser extends AbstractParser {
         Thread t = new Thread() {
             public void run() {
                 try {
-                    IOUtils.copy(stream, new NullOutputStream());
+                    IOUtils.copy(stream, NULL_OUTPUT_STREAM);
                 } catch (IOException e) {
                 } finally {
                     IOUtils.closeQuietly(stream);

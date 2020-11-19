@@ -20,8 +20,8 @@ package org.apache.tika.parser.digest;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;

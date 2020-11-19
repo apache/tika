@@ -16,9 +16,9 @@
  */
 package org.apache.tika.fuzzing.general;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fuzzing.Transformer;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.mime.MediaType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

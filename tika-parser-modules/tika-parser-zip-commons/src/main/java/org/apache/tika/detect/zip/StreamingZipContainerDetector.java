@@ -17,8 +17,8 @@
 package org.apache.tika.detect.zip;
 
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.LookaheadInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
