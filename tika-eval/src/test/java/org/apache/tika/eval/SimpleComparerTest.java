@@ -155,7 +155,7 @@ public class SimpleComparerTest extends TikaTest {
         );
         EvalFilePaths fpsB = new EvalFilePaths(
                 Paths.get("non-existent.json"),
-                getResourceAsFile("/test-dirs/extractsB/non-existent.json").toPath());
+                Paths.get("/test-dirs/extractsB/non-existent.json"));
 
         comparer.compareFiles(fpsA, fpsB);
 
@@ -338,8 +338,8 @@ public class SimpleComparerTest extends TikaTest {
                 getResourceAsFile("/test-dirs/extractsA/file17_tagsOutOfOrder.json").toPath()
         );
         EvalFilePaths fpsB = new EvalFilePaths(
-                Paths.get("file16_badtags.html"),
-                getResourceAsFile("/test-dirs/extractsB/file16_badtags.html").toPath());
+                Paths.get("file16_badTags.html"),
+                getResourceAsFile("/test-dirs/extractsB/file16_badTags.html").toPath());
         comparer.compareFiles(fpsA, fpsB);
         List<Map<Cols, String>> tableInfosA = WRITER.getTable(ExtractComparer.TAGS_TABLE_A);
         assertEquals(1, tableInfosA.size());
