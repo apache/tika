@@ -106,7 +106,7 @@ public abstract class TikaTest {
            // We got the path
            uri = getResourceAsUri(".");
            File file = new File(new File(uri), name);
-           if (file == null) {
+           if (!file.exists()) {
               fail("Unable to find requested file " + name);
            }
            return file;
