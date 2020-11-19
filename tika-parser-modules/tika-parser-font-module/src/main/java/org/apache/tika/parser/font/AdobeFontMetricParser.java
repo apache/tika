@@ -77,10 +77,7 @@ public class AdobeFontMetricParser extends AbstractParser {
        // Get the comments in the file to display in xhtml
        List<String> unModifiableComments = fontMetrics.getComments();
        //have to copy because we modify list in extractCreationDate
-       List<String> comments = new ArrayList<>();
-        for (String comment : unModifiableComments) {
-            comments.add(comment);
-        }
+       List<String> comments = new ArrayList<>(unModifiableComments);
        // Get the creation date
        extractCreationDate( metadata, comments );
 

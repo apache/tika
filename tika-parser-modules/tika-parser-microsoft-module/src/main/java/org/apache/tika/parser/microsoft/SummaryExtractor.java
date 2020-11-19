@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -238,9 +239,7 @@ public class SummaryExtractor {
         String[] current = metadata.getValues(property);
         Set<String> seen = new HashSet<>();
         if (current != null) {
-            for (String val : current) {
-                seen.add(val);
-            }
+            seen.addAll(Arrays.asList(current));
         }
         for (String part : parts) {
             if (! seen.contains(part)) {
