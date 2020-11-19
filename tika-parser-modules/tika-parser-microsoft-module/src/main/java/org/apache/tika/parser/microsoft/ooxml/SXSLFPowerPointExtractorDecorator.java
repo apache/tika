@@ -371,7 +371,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.startElement("b");
                     boolean authorExists = false;
                     if (authorString != null) {
-                        xhtml.characters(authorString.toString());
+                        xhtml.characters(authorString);
                         authorExists = true;
                     }
                     if (authorExists && authorInitials != null) {

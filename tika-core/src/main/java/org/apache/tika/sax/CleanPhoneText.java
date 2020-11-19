@@ -46,7 +46,7 @@ public class CleanPhoneText {
             if (start > 0) {
                 prefix = text.substring(start-1, start);
             }
-            if (digits.substring(0, 2).equals("82") && prefix.equals("*")) {
+            if (digits.startsWith("82") && prefix.equals("*")) {
                 // this number overlaps with a *82 sequence
                 idx += 2;
             } else {

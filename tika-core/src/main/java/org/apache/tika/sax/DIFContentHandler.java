@@ -53,7 +53,7 @@ public class DIFContentHandler extends DefaultHandler {
 	@Override
 	public void characters(char[] ch, int start, int length)
 			throws SAXException {
-		String value = (new String(ch, start, length)).toString();
+		String value = new String(ch, start, length);
 		this.dataStack.push(value);
 
 		if (this.treeStack.peek().equals("Entry_Title")) {

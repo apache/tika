@@ -150,7 +150,7 @@ public class ListManager extends AbstractListManager {
                 //silently stop
                 break;
             }
-            sb.append(numberText.substring(last, offset - 1));
+            sb.append(numberText, last, offset - 1);
             //need to add one because newer format
             //adds one.  In .doc, this was the array index;
             //but in .docx, this is the level number

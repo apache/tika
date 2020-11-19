@@ -150,7 +150,7 @@ public class TesseractOCRParserTest extends TikaTest {
         String contents = runOCR(resource, nonOCRContains, numMetadatas,
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, TesseractOCRConfig.OUTPUT_TYPE.TXT);
         if (canRun()) {
-        	if(resource.substring(resource.lastIndexOf('.'), resource.length()).equals(".jpg")) {
+            if(resource.substring(resource.lastIndexOf('.')).equals(".jpg")) {
         		assertContains("Apache", contents);
         	} else {
         		assertContains("Happy New Year 2003!", contents);

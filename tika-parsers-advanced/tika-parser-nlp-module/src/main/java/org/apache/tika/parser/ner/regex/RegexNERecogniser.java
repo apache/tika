@@ -85,7 +85,7 @@ public class RegexNERecogniser implements NERecogniser {
                     continue;
                 }
                 String type = line.substring(0, delim).trim();
-                String patternStr = line.substring(delim+1, line.length()).trim();
+                String patternStr = line.substring(delim+1).trim();
                 patterns.put(type, Pattern.compile(patternStr));
                 entityTypes.add(type);
             }

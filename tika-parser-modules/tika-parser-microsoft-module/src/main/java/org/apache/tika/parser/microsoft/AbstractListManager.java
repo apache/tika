@@ -112,7 +112,7 @@ public abstract class AbstractListManager {
             Matcher m = LEVEL_INTERPOLATOR.matcher(lvlText);
             int last = 0;
             while (m.find()) {
-                sb.append(lvlText.substring(last, m.start()));
+                sb.append(lvlText, last, m.start());
                 String lvlString = m.group(1);
                 int lvlNum = -1;
                 try {
