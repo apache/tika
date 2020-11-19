@@ -84,9 +84,7 @@ public class NetCDFParser extends AbstractParser {
         TemporaryResources tmp = TikaInputStream.isTikaInputStream(stream) ?
                 null : new TemporaryResources();
         TikaInputStream tis = TikaInputStream.get(stream, tmp);
-        NetcdfFile ncFile = null;
-        try {
-            ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath());
+        try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
             metadata.set("File-Type-Description", ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
@@ -134,9 +132,6 @@ public class NetCDFParser extends AbstractParser {
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
         } finally {
-            if (ncFile != null) {
-                ncFile.close();
-            }
             if (tmp != null) {
                 tmp.dispose();
             }

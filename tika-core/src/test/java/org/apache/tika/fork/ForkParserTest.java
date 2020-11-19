@@ -248,13 +248,11 @@ public class ForkParserTest extends TikaTest {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
-        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        try (InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+        try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+             InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
-        } finally {
-            fork.close();
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);
@@ -275,13 +273,11 @@ public class ForkParserTest extends TikaTest {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(
                         BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
-        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        try (InputStream is = getResourceAsStream("/test-documents/embedded_with_npe.xml")) {
+        try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+             InputStream is = getResourceAsStream("/test-documents/embedded_with_npe.xml")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
-        } finally {
-            fork.close();
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);
@@ -303,17 +299,15 @@ public class ForkParserTest extends TikaTest {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(
                         BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 20000));
-        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        try (InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+        try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+             InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
             fail();
         } catch (TikaException e) {
             assertTrue(e.getCause() instanceof NullPointerException);
             assertContains("another", e.getCause().getMessage());
-        } finally {
-            fork.close();
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);
@@ -369,13 +363,11 @@ public class ForkParserTest extends TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         BufferingHandler handler =
                 new BufferingHandler(new SBContentHandlerFactory());
-        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        try (InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+        try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+             InputStream is = getResourceAsStream("/test-documents/basic_embedded.xml")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
-        } finally {
-            fork.close();
         }
         List<Metadata> metadataList = handler.getMetadataList();
         List<ContentHandler> contentHandlers = handler.getContentHandlers();
@@ -399,17 +391,15 @@ public class ForkParserTest extends TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new NonSerializableHandlerFactory());
-        ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-        try (InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+        try (ForkParser fork = new ForkParser(ForkParserTest.class.getClassLoader(), wrapper);
+             InputStream is = getResourceAsStream("/test-documents/embedded_then_npe.xml")) {
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
             fork.parse(is, handler, metadata, context);
             fail();
         } catch (TikaException e) {
             assertTrue(e.getCause() instanceof NullPointerException);
             assertContains("another", e.getCause().getMessage());
-        } finally {
-            fork.close();
         }
         List<Metadata> metadataList = handler.getMetadataList();
         Metadata m0 = metadataList.get(0);

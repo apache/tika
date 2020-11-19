@@ -349,10 +349,8 @@ public class ComparerBatchTest extends FSBatchTestBase {
     private Map<String, String> getRow(String table, String where) throws Exception {
         String sql = getSql("*", table, where);
         Map<String, String> results = new HashMap<String, String>();
-        Statement st = null;
 
-        try {
-            st = conn.createStatement();
+        try (Statement st = conn.createStatement()) {
             ResultSet rs = st.executeQuery(sql);
             ResultSetMetaData m = rs.getMetaData();
             int rows = 0;
@@ -364,10 +362,6 @@ public class ComparerBatchTest extends FSBatchTestBase {
                     results.put(m.getColumnName(i), rs.getString(i));
                 }
                 rows++;
-            }
-        } finally {
-            if (st != null) {
-                st.close();
             }
         }
         return results;
@@ -383,17 +377,11 @@ public class ComparerBatchTest extends FSBatchTestBase {
     private List<String> getColStrings(String colName, String table, String where) throws Exception {
         String sql = getSql(colName, table, where);
         List<String> results = new ArrayList<>();
-        Statement st = null;
-        try {
-            st = conn.createStatement();
-            System.out.println("SQL: "+sql);
+        try (Statement st = conn.createStatement()) {
+            System.out.println("SQL: " + sql);
             ResultSet rs = st.executeQuery(sql);
             while (rs.next()) {
                 results.add(rs.getString(1));
-            }
-        } finally {
-            if (st != null) {
-                st.close();
             }
         }
         return results;

@@ -209,8 +209,7 @@ public class EpubParser extends AbstractParser {
     private void trySalvage(Path brokenZip, ContentHandler bodyHandler,
                                XHTMLContentHandler xhtml,
                                Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
-        TemporaryResources resources = new TemporaryResources();
-        try {
+        try (TemporaryResources resources = new TemporaryResources()) {
             Path salvaged = resources.createTempFile();
             ZipSalvager.salvageCopy(brokenZip.toFile(), salvaged.toFile());
             boolean success = false;
@@ -222,8 +221,6 @@ public class EpubParser extends AbstractParser {
                     streamingParse(is, xhtml, metadata, context);
                 }
             }
-        } finally {
-            resources.close();
         }
     }
 
