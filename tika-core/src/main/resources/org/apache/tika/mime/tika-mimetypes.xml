@@ -36,7 +36,7 @@
    * For logic too complex to be expressed in a magic match, do the best
      you can here, then provide a Custom Detector for the rest
 -->
-<mime-info>
+<mime-info xmlns:tika="https://tika.apache.org/">
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
