@@ -117,13 +117,13 @@ public class TSDParser extends AbstractParser {
 
             TimeStampToken[] tokens = cmsTimeStampedData.getTimeStampTokens();
 
-            for (int i = 0; i < tokens.length; i++) {
+            for (TimeStampToken token : tokens) {
                 TSDMetas tsdMetas = new TSDMetas(true,
-                        tokens[i].getTimeStampInfo().getGenTime(),
-                        tokens[i].getTimeStampInfo().getPolicy().getId(),
-                        tokens[i].getTimeStampInfo().getSerialNumber(),
-                        tokens[i].getTimeStampInfo().getTsa(),
-                        tokens[i].getTimeStampInfo().getHashAlgorithm().getAlgorithm().getId());
+                        token.getTimeStampInfo().getGenTime(),
+                        token.getTimeStampInfo().getPolicy().getId(),
+                        token.getTimeStampInfo().getSerialNumber(),
+                        token.getTimeStampInfo().getTsa(),
+                        token.getTimeStampInfo().getHashAlgorithm().getAlgorithm().getId());
 
                 tsdMetasList.add(tsdMetas);
             }

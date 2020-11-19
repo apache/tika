@@ -167,8 +167,8 @@ class DBFReader {
         row.setDeleted(isDeleted);
 
         boolean readSomeContent = false;
-        for (int i = 0; i < cells.length; i++) {
-            if (cells[i].read(is)) {
+        for (DBFCell cell : cells) {
+            if (cell.read(is)) {
                 readSomeContent = true;
             }
         }

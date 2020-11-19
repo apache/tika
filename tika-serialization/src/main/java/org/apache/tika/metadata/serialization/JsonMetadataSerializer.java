@@ -73,8 +73,8 @@ public class JsonMetadataSerializer implements JsonSerializer<Metadata> {
                 root.addProperty(n, vals[0]);
             } else {
                 JsonArray jArr = new JsonArray();
-                for (int i = 0; i < vals.length; i++) {
-                    jArr.add(new JsonPrimitive(vals[i]));
+                for (String val : vals) {
+                    jArr.add(new JsonPrimitive(val));
                 }
                 root.add(n, jArr);
             }

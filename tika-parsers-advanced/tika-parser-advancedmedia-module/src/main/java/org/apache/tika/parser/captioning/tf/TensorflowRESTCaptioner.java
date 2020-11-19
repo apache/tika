@@ -152,8 +152,8 @@ public class TensorflowRESTCaptioner implements ObjectRecogniser {
                 if (response.getStatusLine().getStatusCode() == 200) {
                     JSONObject jReply = (JSONObject) new JSONParser().parse(replyMessage);
                     JSONArray jCaptions = (JSONArray) jReply.get("captions");
-                    for (int i = 0; i < jCaptions.size(); i++) {
-                        JSONObject jCaption = (JSONObject) jCaptions.get(i);
+                    for (Object caption : jCaptions) {
+                        JSONObject jCaption = (JSONObject) caption;
                         String sentence = (String) jCaption.get("sentence");
                         Double confidence = (Double) jCaption.get("confidence");
                         capObjs.add(new CaptionObject(sentence, LABEL_LANG, confidence));

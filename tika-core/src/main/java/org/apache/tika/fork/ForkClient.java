@@ -203,8 +203,8 @@ class ForkClient {
         List<ForkResource> r = new ArrayList<>(resources);
         output.writeByte(ForkServer.CALL);
         output.writeUTF(method);
-        for (int i = 0; i < args.length; i++) {
-            sendObject(args[i], r);
+        for (Object arg : args) {
+            sendObject(arg, r);
         }
         return waitForResponse(r);
     }

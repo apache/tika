@@ -80,14 +80,14 @@ public class GeneralTransformer implements Transformer {
         //TODO -- make this actually streaming
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         IOUtils.copy(is, bos);
-        for (int i = 0; i < transformerIndices.length; i++) {
+        for (int transformerIndex : transformerIndices) {
             byte[] bytes = bos.toByteArray();
             bos = new ByteArrayOutputStream();
-            transformers[transformerIndices[i]].transform(
+            transformers[transformerIndex].transform(
                     new ByteArrayInputStream(bytes), bos);
             bos.flush();
             if (bos.toByteArray().length == 0) {
-                LOG.warn("zero length: "+transformers[transformerIndices[i]]);
+                LOG.warn("zero length: " + transformers[transformerIndex]);
             }
         }
         os.write(bos.toByteArray());

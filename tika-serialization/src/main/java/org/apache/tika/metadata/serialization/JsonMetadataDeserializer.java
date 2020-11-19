@@ -62,9 +62,7 @@ public class JsonMetadataDeserializer implements JsonDeserializer<Metadata> {
                 m.set(key, v.getAsString());
             } else if (v.isJsonArray()){
                 JsonArray vArr = v.getAsJsonArray();
-                Iterator<JsonElement> itr = vArr.iterator();
-                while (itr.hasNext()){
-                    JsonElement valueItem = itr.next();
+                for (JsonElement valueItem : vArr) {
                     m.add(key, valueItem.getAsString());
                 }
 

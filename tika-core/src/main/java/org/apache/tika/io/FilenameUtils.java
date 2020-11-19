@@ -38,8 +38,8 @@ public class FilenameUtils {
 
 
     static {
-        for (int i=0; i<RESERVED_FILENAME_CHARACTERS.length; ++i) {
-            RESERVED.add(RESERVED_FILENAME_CHARACTERS[i]);
+        for (char reservedFilenameCharacter : RESERVED_FILENAME_CHARACTERS) {
+            RESERVED.add(reservedFilenameCharacter);
         }
     }
 

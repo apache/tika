@@ -169,33 +169,31 @@ public class ISATabUtils {
 		Map<String, String> map = new HashMap<String, String>();
 
 		try (CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
-			Iterator<CSVRecord> iterator = csvParser.iterator();
 
-			while (iterator.hasNext()) {
-				CSVRecord record = iterator.next();
-				String field = record.get(0);
-				if ((field.toUpperCase(Locale.ENGLISH).equals(field)) && (record.size() == 1)) {
-					investigationSection = Arrays.asList(sections).contains(field);
-					studySection = (studyFileName != null) && (field.equals(studySectionField));
-				} else {
-					if (investigationSection) {
-						addMetadata(field, record, metadata);
-					} else if (studySection) {
-						if (studyTarget) {
-							break;
-						}
-						String value = record.get(1);
-						map.put(field, value);
-						studyTarget = (field.equals(studyFileNameField)) && (value.equals(studyFileName));
-						if (studyTarget) {
-							mapStudyToMetadata(map, metadata);
-							studySection = false;
-						}
-					} else if (studyTarget) {
-						addMetadata(field, record, metadata);
-					}
-				}
-			}
+            for (CSVRecord record : csvParser) {
+                String field = record.get(0);
+                if ((field.toUpperCase(Locale.ENGLISH).equals(field)) && (record.size() == 1)) {
+                    investigationSection = Arrays.asList(sections).contains(field);
+                    studySection = (studyFileName != null) && (field.equals(studySectionField));
+                } else {
+                    if (investigationSection) {
+                        addMetadata(field, record, metadata);
+                    } else if (studySection) {
+                        if (studyTarget) {
+                            break;
+                        }
+                        String value = record.get(1);
+                        map.put(field, value);
+                        studyTarget = (field.equals(studyFileNameField)) && (value.equals(studyFileName));
+                        if (studyTarget) {
+                            mapStudyToMetadata(map, metadata);
+                            studySection = false;
+                        }
+                    } else if (studyTarget) {
+                        addMetadata(field, record, metadata);
+                    }
+                }
+            }
 		} catch (IOException ioe) {
 			throw ioe;
 		}

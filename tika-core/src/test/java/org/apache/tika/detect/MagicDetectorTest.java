@@ -239,8 +239,8 @@ public class MagicDetectorTest {
             assertEquals(type, detector.detect(stream, new Metadata()));
 
             // Test that the stream has been reset
-            for (int i = 0; i < bytes.length; i++) {
-                assertEquals(bytes[i], (byte) stream.read());
+            for (byte aByte : bytes) {
+                assertEquals(aByte, (byte) stream.read());
             }
             assertEquals(-1, stream.read());
         } catch (IOException e) {

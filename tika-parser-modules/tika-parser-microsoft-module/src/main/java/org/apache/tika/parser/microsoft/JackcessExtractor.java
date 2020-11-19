@@ -143,12 +143,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
         }
 
-        Iterator<Table> it = db.newIterable().
-                setIncludeLinkedTables(false).
-                setIncludeSystemTables(false).iterator();
-
-        while (it.hasNext()) {
-            Table table = it.next();
+        for (Table table : db.newIterable().setIncludeLinkedTables(false).setIncludeSystemTables(false)) {
             String tableName = table.getName();
             List<? extends Column> columns = table.getColumns();
             xhtml.startElement("table", "name", tableName);

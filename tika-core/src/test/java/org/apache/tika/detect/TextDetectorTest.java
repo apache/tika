@@ -91,8 +91,8 @@ public class TextDetectorTest {
                     detector.detect(stream, new Metadata()));
 
             // Test that the stream has been reset
-            for (int i = 0; i < data.length; i++) {
-                assertEquals(data[i], (byte) stream.read());
+            for (byte aByte : data) {
+                assertEquals(aByte, (byte) stream.read());
             }
             assertEquals(-1, stream.read());
         } catch (IOException e) {

@@ -280,8 +280,7 @@ public class OOXMLExtractorFactory {
 
         XSLFRelation[] xslfRelations = org.apache.poi.xslf.extractor.XSLFPowerPointExtractor.SUPPORTED_TYPES;
 
-        for (int i = 0; i < xslfRelations.length; i++) {
-            XSLFRelation xslfRelation = xslfRelations[i];
+        for (XSLFRelation xslfRelation : xslfRelations) {
             if (xslfRelation.getContentType().equals(targetContentType)) {
                 if (eventBased) {
                     return new XSLFEventBasedPowerPointExtractor(pkg);
