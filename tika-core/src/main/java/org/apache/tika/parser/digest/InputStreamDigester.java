@@ -25,7 +25,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TemporaryResources;
@@ -148,7 +147,7 @@ public class InputStreamDigester implements DigestingParser.Digester {
                 try {
                     tmp.dispose();
                 } catch (TikaException e) {
-                    throw new IOExceptionWithCause(e);
+                    throw new IOException(e);
                 }
             }
         }

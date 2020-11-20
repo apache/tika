@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.JDBCUtil;
@@ -145,13 +144,13 @@ public class DBWriter implements IDBWriter {
             try {
                 p.executeBatch();
             } catch (SQLException e) {
-                throw new IOExceptionWithCause(e);
+                throw new IOException(e);
             }
         }
         try {
             conn.commit();
         } catch (SQLException e){
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
     }
 

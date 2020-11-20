@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -97,7 +96,7 @@ public class MockParser extends AbstractParser {
             doc = docBuilder.parse(stream);
         } catch (SAXException e) {
             //to distinguish between SAX on read vs SAX while writing
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         Node root = doc.getDocumentElement();
         NodeList actions = root.getChildNodes();

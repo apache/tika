@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.ConsumersManager;
 import org.apache.tika.batch.FileResource;
@@ -71,7 +70,7 @@ public class BatchProcessBuilder {
             DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
             doc = docBuilder.parse(is);
         } catch (TikaException|SAXException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         Node docElement = doc.getDocumentElement();
         return build(docElement, runtimeAttributes);

@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -68,7 +67,7 @@ class SQLite3DBParser extends AbstractDBParser {
         try {
             Class.forName(getJDBCClassName());
         } catch (ClassNotFoundException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         try {
             SQLiteConfig config = new SQLiteConfig();

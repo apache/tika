@@ -20,7 +20,6 @@ package org.apache.tika.parser.digest;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -49,7 +48,7 @@ public class CompositeDigester implements DigestingParser.Digester {
             try {
                 tmp.dispose();
             } catch (TikaException e) {
-                throw new IOExceptionWithCause(e);
+                throw new IOException(e);
             }
         }
     }

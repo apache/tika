@@ -43,7 +43,6 @@ import java.util.UUID;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tika.exception.TikaMemoryLimitException;
@@ -182,8 +181,7 @@ public class UnpackerResource {
             BoundedInputStream bis = new BoundedInputStream(MAX_ATTACHMENT_BYTES, inputStream);
             IOUtils.copy(bis, bos);
             if (bis.hasHitBound()) {
-                throw new IOExceptionWithCause(
-                        new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES+1, MAX_ATTACHMENT_BYTES));
+                throw new IOException(new TikaMemoryLimitException(MAX_ATTACHMENT_BYTES+1, MAX_ATTACHMENT_BYTES));
             }
             byte[] data = bos.toByteArray();
 

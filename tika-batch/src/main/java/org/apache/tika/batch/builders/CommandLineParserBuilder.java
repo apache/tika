@@ -24,7 +24,6 @@ import java.util.Locale;
 
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -47,7 +46,7 @@ public class CommandLineParserBuilder {
             DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
             doc = docBuilder.parse(is);
         } catch (TikaException|SAXException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
 
         Node docElement = doc.getDocumentElement();
