@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.contentstream.PDFGraphicsStreamEngine;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSStream;
@@ -177,7 +176,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         try {
             processImage(pdImage, imageNumber);
         } catch (TikaException|SAXException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         } catch (IOException e) {
             handleCatchableIOE(e);
         }

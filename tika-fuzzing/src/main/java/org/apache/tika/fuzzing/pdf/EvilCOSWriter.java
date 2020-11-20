@@ -16,7 +16,6 @@
  */
 package org.apache.tika.fuzzing.pdf;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSBoolean;
@@ -515,7 +514,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
             try {
                 unfilteredStreamTransformer.transform(new ByteArrayInputStream(bos.toByteArray()), transformed);
             } catch (TikaException e) {
-                throw new IOExceptionWithCause(e);
+                throw new IOException(e);
             }
             try (OutputStream os = cosStream.createRawOutputStream()) {
                 IOUtils.copy(new ByteArrayInputStream(transformed.toByteArray()), os);
@@ -540,7 +539,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                 try {
                     config.getStreamTransformer().transform(new ByteArrayInputStream(bytes), bos);
                 } catch (TikaException e) {
-                    throw new IOExceptionWithCause(e);
+                    throw new IOException(e);
                 }
                 bytes = bos.toByteArray();
             }
@@ -615,7 +614,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                     bos.close();
                     return TikaInputStream.get(bos.toByteArray());
                 } catch (TikaException e) {
-                    throw new IOExceptionWithCause(e);
+                    throw new IOException(e);
                 }
             } else {
                 TemporaryResources tmp = new TemporaryResources();
@@ -624,7 +623,7 @@ public class EvilCOSWriter implements ICOSVisitor, Closeable {
                     config.getUnfilteredStreamTransformer().transform(is, os);
                     os.flush();
                 } catch (TikaException e) {
-                    throw new IOExceptionWithCause(e);
+                    throw new IOException(e);
                 }
                 return TikaInputStream.get(p, new Metadata(), tmp);
             }

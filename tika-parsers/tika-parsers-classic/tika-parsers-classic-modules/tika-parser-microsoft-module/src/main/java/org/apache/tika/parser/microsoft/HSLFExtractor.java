@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.hslf.exceptions.EncryptedPowerPointFileException;
@@ -521,7 +520,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                             try {
                                 poifs = new POIFSFileSystem(new CloseShieldInputStream(stream));
                             } catch (RuntimeException e) {
-                                throw new IOExceptionWithCause(e);
+                                throw new IOException(e);
                             }
                             try {
                                 handleEmbeddedOfficeDoc(poifs.getRoot(), objID, xhtml);

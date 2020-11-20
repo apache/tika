@@ -16,7 +16,6 @@
  */
 package org.apache.tika.detect;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.io.BoundedInputStream;
@@ -140,11 +139,11 @@ public class FileCommandDetector implements Detector {
             finished = process.waitFor(timeoutMs, TimeUnit.MILLISECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                throw new IOExceptionWithCause(new TimeoutException("timed out"));
+                throw new IOException(new TimeoutException("timed out"));
             }
             int exitValue = process.exitValue();
             if (exitValue != 0) {
-                throw new IOExceptionWithCause(new RuntimeException("bad exit value"));
+                throw new IOException(new RuntimeException("bad exit value"));
             }
             errorThread.join();
             outThread.join();

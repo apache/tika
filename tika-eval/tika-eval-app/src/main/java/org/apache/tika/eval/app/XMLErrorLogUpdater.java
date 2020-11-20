@@ -32,7 +32,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.log4j.Level;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.H2Util;
@@ -98,7 +97,7 @@ public class XMLErrorLogUpdater {
             try {
                 reader = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
             } catch (XMLStreamException e) {
-                throw new IOExceptionWithCause(e);
+                throw new IOException(e);
             }
             String type = null;
             String resourceId = null;
@@ -121,7 +120,7 @@ public class XMLErrorLogUpdater {
                 }
                 reader.close();
             } catch (XMLStreamException e) {
-                throw new IOExceptionWithCause(e);
+                throw new IOException(e);
             }
         }
 

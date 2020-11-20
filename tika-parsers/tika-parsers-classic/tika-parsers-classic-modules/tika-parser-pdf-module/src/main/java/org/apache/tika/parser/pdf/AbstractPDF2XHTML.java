@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -193,7 +192,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try {
             xhtml.startElement("div", "class", "page");
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to start a page", e);
+            throw new IOException("Unable to start a page", e);
         }
         writeParagraphStart();
     }
@@ -470,7 +469,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (IOException e) {
             handleCatchableIOE(e);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("error writing OCR content from PDF", e);
+            throw new IOException("error writing OCR content from PDF", e);
         } finally {
             tmp.dispose();
         }
@@ -495,9 +494,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                             attributes.addAttribute("", "source", "source", "CDATA", "annotation");
                             extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec, attributes);
                         } catch (SAXException e) {
-                            throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
+                            throw new IOException("file embedded in annotation sax exception", e);
                         } catch (TikaException e) {
-                            throw new IOExceptionWithCause("file embedded in annotation tika exception", e);
+                            throw new IOException("file embedded in annotation tika exception", e);
                         } catch (IOException e) {
                             handleCatchableIOE(e);
                         }
@@ -567,7 +566,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
             xhtml.endElement("div");
         } catch (SAXException|TikaException e) {
-            throw new IOExceptionWithCause("Unable to end a page", e);
+            throw new IOException("Unable to end a page", e);
         } catch (IOException e) {
             handleCatchableIOE(e);
         } finally {
@@ -621,7 +620,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 //swallow -- no need to report this
             }
         } catch (TikaException|SAXException e) {
-            throw new IOExceptionWithCause("Unable to start a document", e);
+            throw new IOException("Unable to start a document", e);
         }
     }
 
@@ -713,9 +712,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             handleDestinationOrAction(additionalActions.getWS(), ActionTrigger.BEFORE_DOCUMENT_SAVE);
             xhtml.endDocument();
         } catch (TikaException e) {
-            throw new IOExceptionWithCause("Unable to end a document", e);
+            throw new IOException("Unable to end a document", e);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to end a document", e);
+            throw new IOException("Unable to end a document", e);
         }
         if (fontNames.size() > 0) {
             for (String fontName : fontNames) {

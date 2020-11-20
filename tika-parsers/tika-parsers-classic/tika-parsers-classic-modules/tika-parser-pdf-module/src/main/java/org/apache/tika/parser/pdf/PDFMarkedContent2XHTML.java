@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
@@ -154,7 +153,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         findPages(pdDocument.getPages().getCOSObject().getItem(COSName.KIDS), pageRefs);
         //confirm the right number of pages was found
         if (pageRefs.size() != pdDocument.getNumberOfPages()) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     new TikaException("Couldn't find the right number of page refs ("
                             + pageRefs.size() + ") for pages (" +
                             pdDocument.getNumberOfPages() + ")"));
@@ -174,7 +173,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         try {
             recurse(structureTreeRoot.getK(), null, 0, paragraphs, roleMap);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
 
         //STEP 5: handle all the potentially unprocessed bits
@@ -198,7 +197,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 }
             }
         } catch (SAXException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         //Step 6: for now, iterate through the pages again and do all the other handling
         //TODO: figure out when we're crossing page boundaries during the recursion
@@ -215,7 +214,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                          Map<MCID, String> paragraphs, Map<String, HtmlTag> roleMap) throws IOException, SAXException {
 
         if (depth > MAX_RECURSION_DEPTH) {
-            throw new IOExceptionWithCause(
+            throw new IOException(
                     new TikaException("Exceeded max recursion depth "+MAX_RECURSION_DEPTH));
         }
 

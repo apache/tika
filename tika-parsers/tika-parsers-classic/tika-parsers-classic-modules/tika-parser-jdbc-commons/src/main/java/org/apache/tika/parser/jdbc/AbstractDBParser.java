@@ -24,7 +24,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -70,7 +69,7 @@ public abstract class AbstractDBParser extends AbstractParser {
                 throw new CorruptedFileException("Corrupt SQLITE", e);
             }
 
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         for (String tableName : tableNames) {
             //add table names to parent metadata
@@ -144,7 +143,7 @@ public abstract class AbstractDBParser extends AbstractParser {
         try {
             connection = DriverManager.getConnection(connectionString);
         } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         return connection;
     }

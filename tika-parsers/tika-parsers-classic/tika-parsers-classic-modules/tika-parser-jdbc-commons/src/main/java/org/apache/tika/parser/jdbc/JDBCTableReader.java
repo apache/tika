@@ -33,7 +33,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -78,7 +77,7 @@ public class JDBCTableReader {
                 return false;
             }
         } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         try {
             ResultSetMetaData meta = results.getMetaData();
@@ -90,7 +89,7 @@ public class JDBCTableReader {
             }
             handler.endElement(XHTMLContentHandler.XHTML, "tr", "tr");
         } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         rows++;
         return true;
@@ -151,7 +150,7 @@ public class JDBCTableReader {
                 headers.add(meta.getColumnName(i));
             }
         } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         return headers;
     }
@@ -291,7 +290,7 @@ public class JDBCTableReader {
             Statement st = connection.createStatement();
             results = st.executeQuery(sql);
         } catch (SQLException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         }
         rows = 0;
     }

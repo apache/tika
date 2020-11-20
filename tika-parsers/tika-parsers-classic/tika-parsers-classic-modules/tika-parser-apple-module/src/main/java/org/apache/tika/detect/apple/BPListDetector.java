@@ -20,7 +20,6 @@ import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
 import com.dd.plist.PropertyListFormatException;
 import com.dd.plist.PropertyListParser;
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
@@ -111,7 +110,7 @@ public class BPListDetector implements Detector {
                 ((TikaInputStream) input).setOpenContainer(rootObj);
             }
         } catch (PropertyListFormatException | ParseException | ParserConfigurationException | SAXException e) {
-            throw new IOExceptionWithCause("problem parsing root", e);
+            throw new IOException("problem parsing root", e);
         }
         if (rootObj instanceof NSDictionary) {
             return detectOnKeys(((NSDictionary) rootObj).getHashMap().keySet());

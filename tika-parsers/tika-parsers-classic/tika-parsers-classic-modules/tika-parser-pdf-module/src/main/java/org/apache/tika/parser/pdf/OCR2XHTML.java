@@ -19,7 +19,6 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.Writer;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
@@ -97,7 +96,7 @@ class OCR2XHTML extends AbstractPDF2XHTML {
             doOCROnCurrentPage(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
             endPage(pdPage);
         } catch (TikaException|SAXException e) {
-            throw new IOExceptionWithCause(e);
+            throw new IOException(e);
         } catch (IOException e) {
             handleCatchableIOE(e);
         }
