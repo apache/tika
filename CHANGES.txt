@@ -15,6 +15,10 @@ Release 2.0.0 - ???
 
 Release 1.25 - ???
 
+   * Fix inconsistent license in xmpcore (TIKA-3204).
+
+   * General upgrades including some dependencies with
+     recently found security vulnerabilities (TIKA-3119).
 
    * Add detection and a parser for flat ODF files (TIKA-3159).
 
@@ -36,13 +40,26 @@ Release 1.25 - ???
 
    * Add detection and parsing for bplist (TIKA-3104).
 
-   * Enable metadata value filtering
+   * Enable metadata value filtering for RecursiveParserWrapper (TIKA-3137)
 
    * Add a basic parser for plist files based on com.googlecode.plist:dd-plist (TIKA-3104).
 
    * Read hyperlinked images from ODT files (TIKA-3156).
 
    * Updated GrobidRESTParser to use new API location (TIKA-3191).
+
+   * Add FileProfiler to tika-eval (TIKA-3216).
+
+   * Add status endpoint to tika-server (TIKA-3129).
+
+   * Improved handling of zip files with STORED entries with
+     data descriptor (TIKA-3196).
+
+   * Add parsers for XLZ and IDML (TIKA-2976 and TIKA-3188).
+
+   * Add the beginnings of a format-aware fuzzing module (TIKA-3083).
+
+   * Add wrapper for Linux 'file' command for mime detection (TIKA-3215).
 
 Release 1.24.1 - 4/17/2020
 
