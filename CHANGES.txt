@@ -40,11 +40,13 @@ Release 1.25 - 11/19/2020
    * Improved handling of zip files with STORED entries with
      data descriptor (TIKA-3196).
 
-   * Add parsers for XLZ and IDML (TIKA-2976 and TIKA-3188).
+   * Add parsers for XLZ, IDML and MIF (TIKA-2976, TIKA-3188 and TIKA-3189).
 
    * Add the beginnings of a format-aware fuzzing module (TIKA-3083).
 
    * Add wrapper for Linux 'file' command for mime detection (TIKA-3215).
+
+   * Added ability to skip parsing of embedded files in Tika Server (TIKA-3227).
 
 Release 1.24.1 - 4/17/2020
 
