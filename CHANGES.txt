@@ -5,7 +5,7 @@ Release 1.25 - 11/19/2020
    * General upgrades including some dependencies with
      recently found security vulnerabilities (TIKA-3119).
 
-  * Add detection and a parser for flat ODF files (TIKA-3159).
+   * Add detection and a parser for flat ODF files (TIKA-3159).
 
    * Add extraction of macros from ODF files  (TIKA-3161).
 
