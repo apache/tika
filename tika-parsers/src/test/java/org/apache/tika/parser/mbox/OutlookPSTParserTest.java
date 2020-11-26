@@ -76,9 +76,10 @@ public class OutlookPSTParserTest extends TikaTest {
 
         assertTrue(output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
 
+        assertTrue(output.contains("This is a docx attachment."));
 
         List<Metadata> metaList = trackingExtrator.trackingMetadata;
-        assertEquals(6, metaList.size());
+        assertEquals(9, metaList.size());
 
         Metadata firstMail = metaList.get(0);
         assertEquals("Jörn Kottmann", firstMail.get(TikaCoreProperties.CREATOR));
