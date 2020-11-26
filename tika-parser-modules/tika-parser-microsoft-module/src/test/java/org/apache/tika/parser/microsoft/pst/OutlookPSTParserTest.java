@@ -66,7 +66,7 @@ public class OutlookPSTParserTest extends TikaTest {
         String output = handler.toString();
 
         assertFalse(output.isEmpty());
-        assertTrue(output.contains("<meta name=\"Content-Length\" content=\"271360\">"));
+        assertTrue(output.contains("<meta name=\"Content-Length\" content=\"2302976\">"));
         assertTrue(output.contains("<meta name=\"Content-Type\" content=\"application/vnd.ms-outlook-pst\">"));
 
         assertTrue(output.contains("<body><div class=\"email-folder\"><h1>"));
@@ -76,9 +76,10 @@ public class OutlookPSTParserTest extends TikaTest {
 
         assertTrue(output.contains("<div class=\"email-folder\"><h1>Racine (pour la recherche)</h1>"));
 
+        assertTrue(output.contains("This is a docx attachment."));
 
         List<Metadata> metaList = trackingExtrator.trackingMetadata;
-        assertEquals(6, metaList.size());
+        assertEquals(9, metaList.size());
 
         Metadata firstMail = metaList.get(0);
         assertEquals("Jörn Kottmann", firstMail.get(TikaCoreProperties.CREATOR));
