@@ -1,6 +1,8 @@
 Release 1.26 - xx/xx/xxxx
 
    * Great optimization in ForkParser (TIKA-3237).
+   
+   * Fix parsing of emails attached to other emails in PST files (TIKA-3004).
 
 Release 1.25 - 11/25/2020
 
