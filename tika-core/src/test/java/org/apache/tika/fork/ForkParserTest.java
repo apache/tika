@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -411,6 +413,18 @@ public class ForkParserTest extends TikaTest {
         assertEquals("embeddedAuthor", m1.get(TikaCoreProperties.CREATOR));
         assertContains("some_embedded_content", m1.get(RecursiveParserWrapperHandler.TIKA_CONTENT));
         assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+    }
+
+    @Test
+    public void testNoUTFDataFormatException() throws Exception {
+        ContentHandlerProxy proxy = new ContentHandlerProxy(0);
+        DataOutputStream output = new DataOutputStream(new ByteArrayOutputStream());
+        proxy.init(null, output);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 65536; i++) {
+            sb.append(1);
+        }
+        proxy.skippedEntity(sb.toString());
     }
 
 

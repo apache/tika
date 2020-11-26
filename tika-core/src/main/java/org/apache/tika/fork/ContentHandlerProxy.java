@@ -67,7 +67,7 @@ class ContentHandlerProxy implements ContentHandler, ForkProxy {
         try {
             if (string != null) {
                 output.writeBoolean(true);
-                output.writeUTF(string);
+                writeString(string);
             } else {
                 output.writeBoolean(false);
             }
@@ -75,14 +75,27 @@ class ContentHandlerProxy implements ContentHandler, ForkProxy {
             throw new SAXException("Unexpected fork proxy problem", e);
         }
     }
+    
+    /**
+     * Breaks the string in 21,845 size chunks to not throw UTFDataFormatException at least in Oracle JDK 8.
+     */
+    private void writeString(String string) throws IOException {
+        int max = 65535 / 3;
+        int frags = (int) Math.ceil((double) string.length() / max);
+        output.writeInt(frags);
+        int i = 0;
+        while (i < frags) {
+            int end = (i < frags - 1) ? (i + 1) * max : string.length();
+            output.writeUTF(string.substring(i * max, end));
+            i++;
+        }
+    }
 
     private void sendCharacters(char[] ch, int start, int length)
             throws SAXException {
         try {
-            output.writeInt(length);
-            for (int i = 0; i < length; i++) {
-                output.writeChar(ch[start + i]);
-            }
+            writeString(new String(ch, start, length));
+            
         } catch (IOException e) {
             throw new SAXException("Unexpected fork proxy problem", e);
         }
