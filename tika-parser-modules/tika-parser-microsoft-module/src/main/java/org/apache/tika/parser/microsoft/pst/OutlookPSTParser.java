@@ -25,12 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
-import com.pff.PSTAttachment;
-import com.pff.PSTException;
-import com.pff.PSTFile;
-import com.pff.PSTFolder;
-import com.pff.PSTMessage;
-import com.pff.PSTRecipient;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -47,6 +41,13 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import com.pff.PSTAttachment;
+import com.pff.PSTException;
+import com.pff.PSTFile;
+import com.pff.PSTFolder;
+import com.pff.PSTMessage;
+import com.pff.PSTRecipient;
 
 /**
  * Parser for MS Outlook PST email storage files
@@ -115,23 +116,7 @@ public class OutlookPSTParser extends AbstractParser {
         if (pstFolder.getContentCount() > 0) {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
-                AttributesImpl attributes = new AttributesImpl();
-                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                attributes.addAttribute("", "id", "id", "CDATA", pstMail.getInternetMessageId());
-                handler.startElement("div", attributes);
-                handler.element("h1", pstMail.getSubject());
-
-                final Metadata mailMetadata = new Metadata();
-                //parse attachments first so that stream exceptions
-                //in attachments can make it into mailMetadata.
-                //RecursiveParserWrapper copies the metadata and thereby prevents
-                //modifications to mailMetadata from making it into the
-                //metadata objects cached by the RecursiveParserWrapper
-                parseMailAttachments(handler, pstMail, mailMetadata, embeddedExtractor);
-                parserMailItem(handler, pstMail, mailMetadata, embeddedExtractor);
-
-                handler.endElement("div");
-
+                parseMailAndAttachments(handler, pstMail, embeddedExtractor);
                 pstMail = (PSTMessage) pstFolder.getNextChild();
             }
         }
@@ -144,6 +129,26 @@ public class OutlookPSTParser extends AbstractParser {
                 handler.endElement("div");
             }
         }
+    }
+
+    private void parseMailAndAttachments(XHTMLContentHandler handler, PSTMessage pstMail,
+            EmbeddedDocumentExtractor embeddedExtractor) throws SAXException, IOException, TikaException {
+        AttributesImpl attributes = new AttributesImpl();
+        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+        attributes.addAttribute("", "id", "id", "CDATA", pstMail.getInternetMessageId());
+        handler.startElement("div", attributes);
+        handler.element("h1", pstMail.getSubject());
+
+        final Metadata mailMetadata = new Metadata();
+        // parse attachments first so that stream exceptions
+        // in attachments can make it into mailMetadata.
+        // RecursiveParserWrapper copies the metadata and thereby prevents
+        // modifications to mailMetadata from making it into the
+        // metadata objects cached by the RecursiveParserWrapper
+        parseMailAttachments(handler, pstMail, mailMetadata, embeddedExtractor);
+        parserMailItem(handler, pstMail, mailMetadata, embeddedExtractor);
+
+        handler.endElement("div");
     }
 
     private void parserMailItem(XHTMLContentHandler handler, PSTMessage pstMail, Metadata mailMetadata,
@@ -230,6 +235,12 @@ public class OutlookPSTParser extends AbstractParser {
         for (int i = 0; i < numberOfAttachments; i++) {
             try {
                 PSTAttachment attach = email.getAttachment(i);
+
+                PSTMessage attachedEmail = attach.getEmbeddedPSTMessage();
+                if (attachedEmail != null) {
+                    parseMailAndAttachments(xhtml, attachedEmail, embeddedExtractor);
+                    continue;
+                }
 
                 // Get the filename; both long and short filenames can be used for attachments
                 String filename = attach.getLongFilename();
