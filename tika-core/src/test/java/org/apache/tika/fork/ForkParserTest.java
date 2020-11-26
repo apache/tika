@@ -21,6 +21,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,8 +43,8 @@ import java.util.concurrent.Semaphore;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -55,7 +57,6 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -80,6 +81,8 @@ public class ForkParserTest extends TikaTest {
             parser.close();
         }
     }
+
+
 
     @Test
     public void testSerialParsing() throws Exception {
@@ -445,6 +448,17 @@ public class ForkParserTest extends TikaTest {
         assertEquals("/embed1.xml", m1.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
     }
 
+    @Test
+    public void testNoUTFDataFormatException() throws Exception {
+        ContentHandlerProxy proxy = new ContentHandlerProxy(0);
+        DataOutputStream output = new DataOutputStream(new ByteArrayOutputStream());
+        proxy.init(null, output);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 65536; i++) {
+            sb.append(1);
+        }
+        proxy.skippedEntity(sb.toString());
+    }
 
     //use this to test that the wrapper handler is acted upon by the server but not proxied back
     private static class ToFileHandler extends AbstractRecursiveParserWrapperHandler {

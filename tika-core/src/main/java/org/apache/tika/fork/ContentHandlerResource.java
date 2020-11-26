@@ -89,19 +89,23 @@ class ContentHandlerResource implements ForkResource {
 
     private String readString(DataInputStream input) throws IOException {
         if (input.readBoolean()) {
-            return input.readUTF();
+            return readStringUTF(input);
         } else {
             return null;
         }
     }
 
     private char[] readCharacters(DataInputStream input) throws IOException {
-        int n = input.readInt();
-        char[] ch = new char[n];
-        for (int i = 0; i < n; i++) {
-            ch[i] = input.readChar();
+        return readStringUTF(input).toCharArray();
+    }
+    
+    private String readStringUTF(DataInputStream input) throws IOException {
+        int frags = input.readInt();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < frags; i++) {
+            sb.append(input.readUTF());
         }
-        return ch;
+        return sb.toString();
     }
 
 }

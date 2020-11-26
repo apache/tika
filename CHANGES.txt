@@ -1,3 +1,7 @@
+Release 1.26 - xx/xx/xxxx
+
+   * Great optimization in ForkParser (TIKA-3237).
+
 Release 1.25 - 11/25/2020
 
    * Fix inconsistent license in xmpcore (TIKA-3204).
