@@ -38,6 +38,9 @@ Release 1.25 - 11/25/2020
 
    * Add a configurable metadata-filter for the RecursiveParserWrapper (TIKA-3137)
 
+   * Parameterize writeLimit and maxEmbeddedResources for RecursiveParserWrapper
+     in tika-server (TIKA-3133)
+
    * Add status endpoint to tika-server (TIKA-3129).
 
    * Remove whitelist/blacklist terminology (TIKA-3120)
