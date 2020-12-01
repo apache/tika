@@ -79,8 +79,7 @@ class ForkClient {
         loader = null;
         boolean ok = false;
         ProcessBuilder builder = new ProcessBuilder();
-        List<String> command = new ArrayList<>();
-        command.addAll(java);
+        List<String> command = new ArrayList<>(java);
         command.add("-cp");
         String dirString = tikaDir.toAbsolutePath().toString();
         if (!dirString.endsWith("/")) {
@@ -134,8 +133,7 @@ class ForkClient {
             this.jar = createBootstrapJar();
 
             ProcessBuilder builder = new ProcessBuilder();
-            List<String> command = new ArrayList<>();
-            command.addAll(java);
+            List<String> command = new ArrayList<>(java);
             command.add("-jar");
             command.add(jar.getPath());
             command.add(Long.toString(timeoutLimits.getPulseMS()));
