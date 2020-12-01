@@ -176,6 +176,12 @@
                             org.apache.tika.*,
                             *;resolution:=optional
                         </Import-Package>
+                        <Export-Package>
+                            org.apache.tika.parser.*,
+                            org.apache.tika.detect.*
+                        </Export-Package>
+                        <Embed-Dependency>commons-io;inline=true</Embed-Dependency>
+                        <Embed-Transitive>true</Embed-Transitive>
                     </instructions>
                 </configuration>
             </plugin>
