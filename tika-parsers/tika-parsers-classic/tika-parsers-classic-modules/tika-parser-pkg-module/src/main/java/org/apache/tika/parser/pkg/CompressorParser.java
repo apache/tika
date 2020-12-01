@@ -83,10 +83,8 @@ public class CompressorParser extends AbstractParser {
     private static Map<String, String> MIMES_TO_NAME;
 
     static {
-        Set<MediaType> TMP_SET = new HashSet<>();
-        TMP_SET.addAll(
-                MediaType.set(BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS,
-                        XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA));
+        Set<MediaType> TMP_SET = new HashSet<>(MediaType.set(
+                BZIP, BZIP2, DEFLATE64, GZIP, GZIP_ALT, LZ4_FRAMED, COMPRESS, XZ, PACK, SNAPPY_FRAMED, ZLIB, LZMA));
         try {
             Class.forName("org.brotli.dec.BrotliInputStream");
             TMP_SET.add(BROTLI);

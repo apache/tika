@@ -52,8 +52,7 @@ public class NamedEntityParserTest extends TikaTest {
             Metadata md = new Metadata();
             tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
 
-            HashSet<String> set = new HashSet<String>();
-            set.addAll(Arrays.asList(md.getValues("X-Parsed-By")));
+            HashSet<String> set = new HashSet<String>(Arrays.asList(md.getValues("X-Parsed-By")));
             assumeTrue(set.contains(NamedEntityParser.class.getName()));
 
             set.clear();
