@@ -38,7 +38,7 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
-<!--    <module>tika-bundle</module> turn this off for now -->
+    <module>tika-bundle</module>
     <module>tika-xmp</module>
     <module>tika-serialization</module>
     <module>tika-batch</module>
