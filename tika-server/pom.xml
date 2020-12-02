@@ -43,7 +43,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>tika-parsers</artifactId>
+            <artifactId>tika-parsers-classic-package</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

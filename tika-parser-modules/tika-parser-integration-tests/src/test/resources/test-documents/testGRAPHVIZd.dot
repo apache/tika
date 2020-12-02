@@ -1,6 +1,0 @@
-digraph "Tika-Relations" {
-   apache -> tika;
-   apache -> poi;
-   apache -> commons;
-   tika -> poi[label="amongst others"];
-}

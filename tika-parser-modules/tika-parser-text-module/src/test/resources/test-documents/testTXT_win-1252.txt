@@ -1,1 +1,0 @@
-These smart quotes are the trigger for CharsetRecog_sbcs to think this is a “windows” encoding
