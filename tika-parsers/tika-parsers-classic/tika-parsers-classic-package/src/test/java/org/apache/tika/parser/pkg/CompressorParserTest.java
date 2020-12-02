@@ -36,9 +36,7 @@ public class CompressorParserTest extends TikaTest {
     public void testLZ4Framed() throws Exception {
         XMLResult r = getXML("testLZ4-framed.lz4");
         assertEquals("application/x-lz4", r.metadata.get(Metadata.CONTENT_TYPE));
-        //xml parser throws an exception for test1.xml
-        //for now, be content that the container file is correctly identified
-        assertContains("test1.xml", r.xml);
+        assertContains("0123456789", r.xml);
     }
 
     @Test
