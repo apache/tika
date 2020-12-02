@@ -1,0 +1,10 @@
+[{
+  "Content-Type":"text/plain",
+  "X-TIKA:content":"the quick brown fox fox fox jumped over the lazy lazy dog"
+  },
+  {
+    "Content-Type":"text/plain",
+    "X-TIKA:embedded_resource_path":"inner.txt",
+    "X-TIKA:content":"attachment contents"
+  }
+]
