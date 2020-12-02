@@ -1,0 +1,9 @@
+From: =?ISO-8859-1?Q?Keld_J=F8rn_Simonsen?= <keld@dkuug.dk>
+To: Nobody in Particular <a.person@example.com>
+Subject: =?ISO-8859-1?B?SWYgeW91IGNhbiByZWFkIHRoaXMgeW8=?=
+ =?ISO-8859-2?B?dSB1bmRlcnN0YW5kIHRoZSBleGFtcGxlLg==?=
+MIME-Version: 1.0
+Content-type: text/plain
+Content-transfer-encoding: 7bit
+
+Examples taken from RFC 2047. 

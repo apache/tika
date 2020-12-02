@@ -1,0 +1,9 @@
+/* C++-style comments allowed,
+ * see http://www.graphviz.org/content/dot-language
+ */
+digraph tika_relations {
+   apache -> tika;
+   apache -> poi;
+   apache -> commons;
+   tika -> poi[label="amongst others"];
+}
