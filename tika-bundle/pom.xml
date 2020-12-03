@@ -1,23 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
--->
+        <!--
+          Licenseadsfd to the Apache Software Foundation (ASF) under one
+          or more contributor license agreements.  See the NOTICE file
+          distributed with this work for additional information
+          regarding copyright ownership.  The ASF licenses this file
+          to you under the Apache License, Version 2.0 (the
+          "License"); you may not use this file except in compliance
+          with the License.  You may obtain a copy of the License at
+            http://www.apache.org/licenses/LICENSE-2.0
+          Unless required by applicable law or agreed to in writing,
+          software distributed under the License is distributed on an
+          "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+          KIND, either express or implied.  See the License for the
+          specific language governing permissions and limitations
+          under the License.
+        -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -54,13 +52,8 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
+      <artifactId>tika-parsers-classic-package</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${commons.io.version}</version>
     </dependency>
 
     <!-- Test dependencies -->
@@ -140,33 +133,33 @@
       <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
-    
+
     <dependency>
-	    <groupId>org.glassfish.jaxb</groupId>
-	    <artifactId>jaxb-runtime</artifactId>
-	    <version>${jaxb.version}</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>com.sun.istack</groupId>
-	    <artifactId>istack-commons-runtime</artifactId>
-	    <version>3.0.11</version>
-	    <scope>test</scope>
-	</dependency>
-	<dependency>
-	    <groupId>com.sun.xml.fastinfoset</groupId>
-	    <artifactId>FastInfoset</artifactId>
-	    <version>1.2.16</version>
-	    <scope>test</scope>
-	</dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
+      <version>${jaxb.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
-	  <groupId>org.glassfish.jaxb</groupId>
-	  <artifactId>txw2</artifactId>
-	  <version>${jaxb.version}</version>
-	  <scope>test</scope>
-	</dependency>
-	
-    
+      <groupId>com.sun.istack</groupId>
+      <artifactId>istack-commons-runtime</artifactId>
+      <version>3.0.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.xml.fastinfoset</groupId>
+      <artifactId>FastInfoset</artifactId>
+      <version>1.2.16</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>txw2</artifactId>
+      <version>${jaxb.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+
   </dependencies>
 
   <build>
@@ -184,13 +177,12 @@
             <Bundle-Activator>
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
-            <Embed-Dependency>*;scope=compile;artifactId=tika-parsers|
+            <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-classic-package|
               commons-compress|
               xz|
               commons-codec|
               commons-csv|
               commons-io|
-              org.apache.commons.io;version=2.8.0|
               commons-exec|
               commons-collections4|
               dd-plist|
@@ -258,23 +250,14 @@
               org.apache.tika.exception,
               org.apache.tika.fork,
               org.apache.tika.io,
-	      org.apache.tika.metadata.serialization.*,
+              org.apache.tika.metadata.serialization.*,
             </Export-Package>
             <Import-Package>
               !org.junit,
               !org.junit.*,
               !junit.*,
-              !org.apache.ctakes.*,
-              !org.apache.uima.*,
-	      !org.apache.solr.client.solrj.*,
-	      !org.apache.solr.common.*,
-	      !org.apache.spark.api.java.*,
-	      !org.apache.spark.ml.*,
-	      !org.apache.spark.mllib.*,
-	      !org.apache.spark.sql.*,
-	          org.apache.tika.mime,
+              org.apache.tika.mime,
               org.apache.tika.fork,
-              org.apache.commons.io,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.impl;resolution:=optional,
@@ -282,10 +265,7 @@
               com.dd.plist;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.github.luben.zstd;resolution:=optional,
-              com.github.openjson;resolution:=optional,
               com.github.jaiimageio.*;resolution:=optional,
-              com.google.appengine.api.*;resolution:=optional,
-              com.google.apphosting.api.*;resolution:=optional,
               com.google.common.util.concurrent.internal;resolution:=optional,
               com.google.errorprone.annotations;resolution:=optional,
               com.google.errorprone.annotations.concurrent;resolution:=optional,
@@ -299,11 +279,6 @@
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
-              edu.mit.ll.mitie;resolution:=optional,
-              edu.stanford.nlp.*;resolution:=optional,
-              edu.wisc.ssec.mcidas;resolution:=optional,
-              edu.wisc.ssec.mcidas.adde;resolution:=optional,
-	          edu.usc.irds.agepredictor.spark.authorage;resolution:=optional,
               javax.annotation;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
@@ -319,15 +294,6 @@
               javax.xml.bind.attachment;resolution:=optional,
               javax.xml.bind.helpers;resolution:=optional,
               javax.xml.bind.util;resolution:=optional,
-              net.sf.ehcache;resolution:=optional,
-              nu.xom;resolution:=optional,
-              opendap.dap.http;resolution:=optional,
-              opendap.dap;resolution:=optional,
-              opendap.dap.parser;resolution:=optional,
-              opennlp.maxent;resolution:=optional,
-              opennlp.tools.namefind;resolution:=optional,
-	          opennlp.tools.authorage;resolution:=optional,
-              net.didion.jwnl;resolution:=optional,
               net.sf.saxon;resolution:=optional,
               net.sf.saxon.dom;resolution:=optional,
               net.sf.saxon.om;resolution:=optional,
@@ -340,43 +306,10 @@
               org.apache.batik.ext.awt.image.renderable;resolution:=optional,
               org.apache.batik.gvt;resolution:=optional,
               org.apache.batik.util;resolution:=optional,
-              org.apache.cxf.jaxrs.client;resolution:=optional,
-              org.apache.cxf.jaxrs.ext.multipart;resolution:=optional,
               org.apache.commons.exec;resolution:=optional,
-              org.apache.commons.httpclient;resolution:=optional,
-              org.apache.commons.httpclient.auth;resolution:=optional,
-              org.apache.commons.httpclient.methods;resolution:=optional,
-              org.apache.commons.httpclient.params;resolution:=optional,
-              org.apache.commons.httpclient.protocol;resolution:=optional,
-              org.apache.commons.httpclient.util;resolution:=optional,
-              org.apache.commons.vfs2;resolution:=optional,
-              org.apache.commons.vfs2.provider;resolution:=optional,
-              org.apache.commons.vfs2.util;resolution:=optional,
-              org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.pdfbox.debugger;resolution:=optional,
               org.apache.pdfbox.preflight.*;resolution:=optional,
-              org.apache.sis;resolution:=optional,
-              org.apache.sis.coverage;resolution:=optional,
-              org.apache.sis.coverage.grid;resolution:=optional,
-              org.apache.sis.distance;resolution:=optional,
-              org.apache.sis.feature;resolution:=optional,
-              org.apache.sis.geometry;resolution:=optional,
-              org.apache.sis.internal.coverage;resolution:=optional,
-              org.apache.sis.internal.feature;resolution:=optional,
-              org.apache.sis.internal.referencing;resolution:=optional,
-              org.apache.sis.internal.referencing.j2d;resolution:=optional,
-              org.apache.sis.internal.referencing.provider;resolution:=optional,
-              org.apache.sis.io.wkt;resolution:=optional,
-              org.apache.sis.parameter;resolution:=optional,
-              org.apache.sis.referencing;resolution:=optional,
-              org.apache.sis.referencing.crs;resolution:=optional,
-              org.apache.sis.referencing.cs;resolution:=optional,
-              org.apache.sis.referencing.datum;resolution:=optional,
-              org.apache.sis.referencing.operation;resolution:=optional,
-              org.apache.sis.referencing.operation.builder;resolution:=optional,
-              org.apache.sis.referencing.operation.matrix;resolution:=optional,
-              org.apache.sis.referencing.operation.transform;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
@@ -400,25 +333,13 @@
               org.bouncycastle.operator.bc;resolution:=optional,
               org.bouncycastle.tsp;resolution:=optional,
               org.brotli.dec;resolution:=optional,
-              org.checkerframework.checker.nullness.qual;resolution:=optional,
               org.cyberneko.html.xercesbridge;resolution:=optional,
               org.etsi.uri.x01903.v14;resolution:=optional,
-              org.ibex.nestedvm;resolution:=optional,
-              org.gjt.xpp;resolution:=optional,
               org.jaxen;resolution:=optional,
               org.jaxen.dom4j;resolution:=optional,
               org.jaxen.pattern;resolution:=optional,
               org.jaxen.saxpath;resolution:=optional,
               org.jaxen.util;resolution:=optional,
-              org.jdom;resolution:=optional,
-              org.jdom.input;resolution:=optional,
-              org.jdom.output;resolution:=optional,
-              org.jdom2;resolution:=optional,
-              org.jdom2.input;resolution:=optional,
-              org.jdom2.input.sax;resolution:=optional,
-              org.jdom2.output;resolution:=optional,
-              org.jdom2.filter;resolution:=optional,
-              org.json.simple;resolution:=optional,
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
               org.osgi.framework;resolution:=optional,
@@ -426,53 +347,17 @@
               org.quartz.impl;resolution:=optional,
               org.slf4j;resolution:=optional,
               org.slf4j.helpers;resolution:=optional,
-              org.sqlite;resolution:=optional,
               org.w3c.dom;resolution:=optional,
-              org.relaxng.datatype;resolution:=optional,
               org.xml.sax;resolution:=optional,
               org.xml.sax.ext;resolution:=optional,
               org.xml.sax.helpers;resolution:=optional,
-              org.xmlpull.v1;resolution:=optional,
               com.microsoft.schemas.office.powerpoint;resolution:=optional,
               com.microsoft.schemas.office.word;resolution:=optional,
+              sun.java2d.cmm.kcms;resolution:=optional,
               sun.misc;resolution:=optional,
-              ucar.units;resolution:=optional,
-              ucar.httpservices;resolution:=optional,
-              ucar.nc2.util;resolution:=optional,
-              ucar.nc2.util.cache;resolution:=optional,
-              ucar.nc2.dataset;resolution:=optional,
-              ucar.nc2;resolution:=optional,
-              ucar.nc2.constants;resolution:=optional,
-              ucar.nc2.dt;resolution:=optional,
-              ucar.nc2.dt.grid;resolution:=optional,
-              ucar.nc2.ft;resolution:=optional,
-              ucar.nc2.iosp;resolution:=optional,
-              ucar.nc2.iosp.hdf4;resolution:=optional,
-              ucar.nc2.ncml;resolution:=optional,
-              ucar.nc2.stream;resolution:=optional,
-              ucar.nc2.time;resolution:=optional,
-              ucar.nc2.units;resolution:=optional,
-              ucar.nc2.wmo;resolution:=optional,
-              ucar.nc2.write;resolution:=optional,
-              ucar.ma2;resolution:=optional,
-              ucar.grib;resolution:=optional,
-              ucar.grib.grib1;resolution:=optional,
-              ucar.grib.grib2;resolution:=optional,
-              ucar.grid;resolution:=optional,
-              ucar.unidata.geoloc;resolution:=optional,
-              ucar.unidata.geoloc.projection;resolution:=optional,
-              ucar.unidata.geoloc.projection.proj4;resolution:=optional,
-              ucar.unidata.geoloc.projection.sat;resolution:=optional,
-              ucar.unidata.io;resolution:=optional,
-              ucar.unidata.util;resolution:=optional,
               com.jmatio.io;resolution:=optional,
               com.google.gson;resolution:=optional,
-	          com.google.gson.reflect;resolution:=optional,
-              visad;resolution:=optional,
-              visad.data;resolution:=optional,
-              visad.data.vis5d;resolution:=optional,
-              visad.jmet;resolution:=optional,
-              visad.util;resolution:=optional,
+              com.google.gson.reflect;resolution:=optional,
               colorspace;resolution:=optional,
               com.sun.jna;resolution:=optional,
               com.sun.jna.ptr;resolution:=optional,
@@ -495,34 +380,10 @@
               org.jsoup.nodes;resolution:=optional,
               org.jsoup.select;resolution:=optional,
               thredds.featurecollection;resolution:=optional,
-              thredds.filesystem;resolution:=optional,
-              thredds.inventory;resolution:=optional,
-              thredds.inventory.filter;resolution:=optional,
-              thredds.inventory.partition;resolution:=optional,
               com.beust.jcommander;resolution:=optional,
               com.google.common.base;resolution:=optional,
               com.google.common.math;resolution:=optional,
-              org.apache.http;resolution:=optional,
-              org.apache.http.client.utils;resolution:=optional,
-              org.joda.time;resolution:=optional,
-              org.joda.time.chrono;resolution:=optional,
-              org.joda.time.field;resolution:=optional,
-              org.joda.time.format;resolution:=optional,
               sun.reflect.generics.reflectiveObjects;resolution:=optional,
-              org.apache.http.auth;resolution:=optional,
-              org.apache.http.client;resolution:=optional,
-              org.apache.http.client.entity;resolution:=optional,
-              org.apache.http.client.methods;resolution:=optional,
-              org.apache.http.conn;resolution:=optional,
-              org.apache.http.conn.scheme;resolution:=optional,
-              org.apache.http.cookie;resolution:=optional,
-              org.apache.http.entity;resolution:=optional,
-              org.apache.http.impl.client;resolution:=optional,
-              org.apache.http.impl.conn;resolution:=optional,
-              org.apache.http.message;resolution:=optional,
-              org.apache.http.params;resolution:=optional,
-              org.apache.http.protocol;resolution:=optional,
-              org.apache.http.util;resolution:=optional,
               org.apache.commons.logging;resolution:=optional,
               org.apache.log4j;resolution:=optional,
               *
@@ -599,7 +460,7 @@
         </executions>
         <configuration>
           <additionalClasspathElements>
-          	<additionalClasspathElement>${project.build.directory}/test-bundles/jdk9plus</additionalClasspathElement>
+            <additionalClasspathElement>${project.build.directory}/test-bundles/jdk9plus</additionalClasspathElement>
           </additionalClasspathElements>
           <systemPropertyVariables>
             <org.ops4j.pax.logging.DefaultServiceLog.level>
@@ -634,3 +495,5 @@
     <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
 </project>
+
+
