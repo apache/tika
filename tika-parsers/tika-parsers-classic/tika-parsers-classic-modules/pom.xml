@@ -81,7 +81,6 @@
         <module>tika-parser-miscoffice-module</module>
         <module>tika-parser-news-module</module>
         <module>tika-parser-crypto-module</module>
-        <module>tika-parser-integration-tests</module>
     </modules>
     <build>
         <pluginManagement>
