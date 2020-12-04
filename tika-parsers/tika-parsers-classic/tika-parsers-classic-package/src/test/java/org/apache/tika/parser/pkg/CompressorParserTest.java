@@ -22,6 +22,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
