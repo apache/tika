@@ -77,9 +77,9 @@ import org.xml.sax.SAXException;
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
 public class BundleIT {
-	
-	private final File TARGET = new File("target");
-	
+
+    private final File TARGET = new File("target");
+
     @Inject
     private Parser defaultParser;
 
@@ -91,15 +91,18 @@ public class BundleIT {
 
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException, ClassNotFoundException {
-    	File base = new File(TARGET, "test-bundles");
-    	 return options(
-         		systemPackages("javax.xml.bind"),
-         		bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
-         		mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
-         		mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
-         		junitBundles(),
-         		bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString())
-                 );
+        File base = new File(TARGET, "test-bundles");
+        return options(
+                systemPackages("javax.xml.bind"),
+                bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
+                //I couldn't find a way to get the build of bundle to work via imports
+                //for this one
+                mavenBundle("commons-io", "commons-io", "2.8.0"),
+                mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
+                mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+                junitBundles(),
+                bundle(new File(base, "tika-bundle-classic.jar").toURI().toURL().toString())
+        );
     }
 
     @Test
@@ -110,7 +113,7 @@ public class BundleIT {
                 hasCore = true;
                 assertEquals("Core not activated", Bundle.ACTIVE, b.getState());
             }
-            if ("org.apache.tika.bundle".equals(b.getSymbolicName())) {
+            if ("org.apache.tika.bundle-classic".equals(b.getSymbolicName())) {
                 hasBundle = true;
                 assertEquals("Bundle not activated", Bundle.ACTIVE, b.getState());
             }
@@ -123,7 +126,7 @@ public class BundleIT {
     public void testManifestNoJUnit() throws Exception {
         File TARGET = new File("target");
         File base = new File(TARGET, "test-bundles");
-        File tikaBundle = new File(base, "tika-bundle.jar");
+        File tikaBundle = new File(base, "tika-bundle-classic.jar");
 
         JarInputStream jarIs = new JarInputStream(new FileInputStream(tikaBundle));
         Manifest mf = jarIs.getManifest();
@@ -210,7 +213,7 @@ public class BundleIT {
                 }
             } else {
                 //TODO: figure out how to get this loaded correctly from tika-core
-                if (! d.getClass().getName().equals("org.apache.tika.detect.OverrideDetector")) {
+                if (!d.getClass().getName().equals("org.apache.tika.detect.OverrideDetector")) {
                     rawDetectors.add(d.getClass().getName());
                 }
             }
@@ -294,7 +297,7 @@ public class BundleIT {
         assertTrue(content.contains("testXML.xml"));
         assertTrue(content.contains("Rida Benjelloun"));
     }
-    
+
     @Test
     public void testPoiTikaBundle() throws Exception {
         Tika tika = new Tika();
@@ -335,7 +338,7 @@ public class BundleIT {
             if (needToFix.contains(f.getName())) {
                 continue;
             }
-            System.out.println("about to parse "+f);
+            System.out.println("about to parse " + f);
             Metadata metadata = new Metadata();
             try (InputStream is = TikaInputStream.get(f)) {
                 parser.parse(is, handler, metadata, context);
@@ -344,7 +347,7 @@ public class BundleIT {
             } catch (SAXException e) {
                 //
             } catch (TikaException e) {
-                System.err.println("tika Exception "+f.getName());
+                System.err.println("tika Exception " + f.getName());
                 e.printStackTrace();
             }
         }

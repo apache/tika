@@ -28,7 +28,7 @@
       <outputFileNameMapping>${artifact.artifactId}.jar</outputFileNameMapping>
       <includes>
         <include>org.apache.tika:tika-core</include>
-        <include>org.apache.tika:tika-bundle</include>
+        <include>org.apache.tika:tika-bundle-classic</include>
       </includes>
     </dependencySet>
     <dependencySet>

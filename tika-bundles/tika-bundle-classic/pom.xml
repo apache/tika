@@ -22,16 +22,18 @@
 
   <parent>
     <groupId>org.apache.tika</groupId>
-    <artifactId>tika-parent</artifactId>
+    <artifactId>tika-bundles</artifactId>
     <version>2.0.0-SNAPSHOT</version>
-    <relativePath>../tika-parent/pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <artifactId>tika-bundle</artifactId>
+  <artifactId>tika-bundle-classic</artifactId>
+  <version>2.0.0-SNAPSHOT</version>
   <packaging>bundle</packaging>
-  <name>Apache Tika OSGi bundle</name>
+  <name>Apache Tika OSGi classic bundle</name>
+
   <description>
-    OSGi bundle that contains the tika-parsers component and all its
+    OSGi bundle that contains the tika-parsers-classic component and all its
     upstream dependencies that aren't OSGI bundles by themselves. This
     bundle exports no packages, only the Parser and Detector services
     from the tika-parsers component.
@@ -178,6 +180,7 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-classic-package|
+              xerces|
               commons-compress|
               xz|
               commons-codec|
@@ -246,16 +249,13 @@
             <Export-Package>
               !org.apache.tika.parser,
               !org.apache.tika.parser.external,
-              org.apache.tika.parser.*,
-              org.apache.tika.exception,
-              org.apache.tika.fork,
-              org.apache.tika.io,
-              org.apache.tika.metadata.serialization.*,
+              org.apache.tika.parser.*
             </Export-Package>
             <Import-Package>
               !org.junit,
               !org.junit.*,
               !junit.*,
+              org.apache.tika.detect,
               org.apache.tika.mime,
               org.apache.tika.fork,
               android.util;resolution:=optional,
@@ -391,30 +391,6 @@
           </instructions>
           <createDependencyReducedPom>true</createDependencyReducedPom>
         </configuration>
-      </plugin>
-      <!-- TIKA-763: Workaround to avoid including LGPL classes -->
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>unpack-dependencies</goal>
-            </goals>
-            <configuration>
-              <includeArtifactIds>netcdf</includeArtifactIds>
-              <excludes>
-                ucar/nc2/iosp/fysat/Fysat*.class,
-                ucar/nc2/dataset/transform/VOceanSG1*class,
-                ucar/unidata/geoloc/vertical/OceanSG*.class,
-                META-INF/**,CHANGES,README
-              </excludes>
-              <outputDirectory>
-                ${project.build.directory}/classes
-              </outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
 
       <!-- The Tika Bundle has no java code of its own, so no need to do -->
