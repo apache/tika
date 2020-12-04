@@ -2,4 +2,4 @@ tika-parsers/tika-parsers-classic/tika-parsers-classic-package/src/test/resource
 tika-parsers/tika-parsers-classic/tika-parsers-classic-package/src/test/resources/test-documents/testTXT.txt eol=lf
 tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-html-module/src/test/resources/test-documents/testHTML.html eol=lf
 tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-pkg-module/src/test/resources/test-documents/testARofText.ar eol=lf
-tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-text-module/src/test/resources/test-documents/testVCalendar.vcs
+tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-text-module/src/test/resources/test-documents/testVCalendar.vcs eol=lf
