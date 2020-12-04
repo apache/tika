@@ -22,7 +22,16 @@ To build Tika from source, use the following command in the main directory:
 The build consists of a number of components, including a standalone runnable jar that you can use to try out Tika features. You can run it like this:
 
     java -jar tika-app/target/tika-app-*.jar --help
-    
+
+Optional Dependencies
+=====================
+zstd, jpeg2000
+
+
+Breaking Issues in Tika 2.0.0
+==============================
+
+
 Contributing via Github
 =======================
 To contribute a patch, follow these instructions (note that installing
@@ -120,3 +129,13 @@ If you encounter errors in Tika or want to suggest an improvement or a new featu
  please visit the [Tika issue tracker](https://issues.apache.org/jira/browse/TIKA). 
  There you can also find the latest information on known issues and 
  recent bug fixes and enhancements.
+
+Build Issues
+------------
+
+* 
+
+* Need to install jce
+
+* If you find any other issues while building, please email the dev@tika.apache.org
+  list.

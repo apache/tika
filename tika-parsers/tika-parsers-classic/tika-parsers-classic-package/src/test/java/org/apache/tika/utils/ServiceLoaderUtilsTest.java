@@ -51,7 +51,7 @@ public class ServiceLoaderUtilsTest extends TikaTest {
 
         assertNotEquals(vorbisIndex, fictIndex);
         assertNotEquals(fictIndex, dcxmlIndex);
-        assertTrue(vorbisIndex > fictIndex);
-        assertTrue(fictIndex > dcxmlIndex);
+        assertTrue(vorbisIndex < fictIndex);
+        assertTrue(fictIndex < dcxmlIndex);
     }
 }

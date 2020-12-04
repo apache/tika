@@ -4105,6 +4105,7 @@
   </mime-type>
   <mime-type type="application/x-mspublisher">
     <glob pattern="*.pub"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
   <mime-type type="application/x-msschedule">
     <glob pattern="*.scd"/>
@@ -4629,9 +4630,12 @@
   </mime-type>
 
   <!-- Note - password protected OOXML files are actually stored in -->
-  <!--  an OLE2 (application/x-tika-msoffice) container -->
+  <!--  an OLE2 (application/x-tika-msoffice) container. -->
+  <!--  The are logically subclasses of (application/x-tika-ooxml),
+        but their containers are literally subclasses
+        of (application/x-tika-msoffice) -->
   <mime-type type="application/x-tika-ooxml-protected">
-    <sub-class-of type="application/x-tika-ooxml"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
     <_comment>Password Protected OOXML File</_comment>
   </mime-type>
 

@@ -158,7 +158,6 @@ public class PackageParser extends AbstractParser {
                 "application/x-tika-java-enterprise-archive",
                 "application/x-tika-java-web-archive",
                 "application/x-tika-ooxml",
-                "application/x-tika-ooxml-protected",
                 "application/x-tika-visio-ooxml",
                 "application/x-xliff+zip",
                 "application/x-xmind",

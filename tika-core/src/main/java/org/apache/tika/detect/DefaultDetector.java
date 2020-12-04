@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.imageio.spi.ServiceRegistry;
@@ -48,14 +49,31 @@ public class DefaultDetector extends CompositeDetector {
      * so put the Tika parsers last so that non-Tika (user supplied)
      * parsers can take precedence.
      *
+     * If an {@link OverrideDetector} is loaded, it takes precedence over
+     * all other detectors.
+     *
      * @param loader service loader
      * @return ordered list of statically loadable detectors
      */
     private static List<Detector> getDefaultDetectors(
             MimeTypes types, ServiceLoader loader) {
         List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class);
+
         ServiceLoaderUtils.sortLoadedClasses(detectors);
-        
+        //look for the override index and put that first
+        int overrideIndex = -1;
+        int i = 0;
+        for (Detector detector : detectors) {
+            if (detector instanceof OverrideDetector) {
+                overrideIndex = i;
+                break;
+            }
+            i++;
+        }
+        if (overrideIndex > -1) {
+            Detector detector = detectors.remove(overrideIndex);
+            detectors.add(0, detector);
+        }
         // Finally the Tika MimeTypes as a fallback
         detectors.add(types);
         return detectors;

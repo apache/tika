@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.apple;
+package org.apache.tika.detect.apple;
 
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
@@ -47,17 +47,17 @@ import java.util.Set;
 public class BPListDetector implements Detector {
 
     //xml versions
-    static MediaType MEMGRAPH = MediaType.application("x-plist-memgraph");
-    static MediaType WEBARCHIVE = MediaType.application("x-plist-webarchive");
-    static MediaType PLIST = MediaType.application("x-plist");
-    static MediaType ITUNES = MediaType.application("x-plist-itunes");
+    public static MediaType MEMGRAPH = MediaType.application("x-plist-memgraph");
+    public static MediaType WEBARCHIVE = MediaType.application("x-plist-webarchive");
+    public static MediaType PLIST = MediaType.application("x-plist");
+    public static MediaType ITUNES = MediaType.application("x-plist-itunes");
 
 
     //binary versions
-    static MediaType BMEMGRAPH = MediaType.application("x-bplist-memgraph");
-    static MediaType BWEBARCHIVE = MediaType.application("x-bplist-webarchive");
-    static MediaType BPLIST = MediaType.application("x-bplist");
-    static MediaType BITUNES = MediaType.application("x-bplist-itunes");
+    public static MediaType BMEMGRAPH = MediaType.application("x-bplist-memgraph");
+    public static MediaType BWEBARCHIVE = MediaType.application("x-bplist-webarchive");
+    public static MediaType BPLIST = MediaType.application("x-bplist");
+    public static MediaType BITUNES = MediaType.application("x-bplist-itunes");
 
     private static Map<MediaType, MediaType> BINARY_TO_XML = new HashMap<>();
 
@@ -119,7 +119,7 @@ public class BPListDetector implements Detector {
         return BPLIST;
     }
 
-    static MediaType detectOnKeys(Set<String> keySet) {
+    public static MediaType detectOnKeys(Set<String> keySet) {
         if (keySet.contains("nodes") && keySet.contains("edges")
                 && keySet.contains("graphEncodingVersion")) {
             return BMEMGRAPH;
@@ -132,7 +132,7 @@ public class BPListDetector implements Detector {
         return BPLIST;
     }
 
-    static MediaType detectXMLOnKeys(Set<String> keySet) {
+    public static MediaType detectXMLOnKeys(Set<String> keySet) {
         return BINARY_TO_XML.get(detectOnKeys(keySet));
     }
 }
