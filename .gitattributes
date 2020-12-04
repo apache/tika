@@ -1,4 +1,5 @@
-tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-integration-tests/src/test/resources/test-documents/testEMLX.emlx eol=lf
-tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-integration-tests/src/test/resources/test-documents/testTXT.txt eol=lf
-tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-html/src/test/resources/test-documents/testHTML.html eol=lf
-tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-integration-tests/src/test/resources/test-documents/testARofText.ar eol=lf
+tika-parsers/tika-parsers-classic/tika-parsers-classic-package/src/test/resources/test-documents/testEMLX.emlx eol=lf
+tika-parsers/tika-parsers-classic/tika-parsers-classic-package/src/test/resources/test-documents/testTXT.txt eol=lf
+tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-html-module/src/test/resources/test-documents/testHTML.html eol=lf
+tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-pkg-module/src/test/resources/test-documents/testARofText.ar eol=lf
+tika-parsers/tika-parsers-classic/tika-parsers-classic-modules/tika-parser-text-module/src/test/resources/test-documents/testVCalendar.vcs
