@@ -25,12 +25,12 @@ The build consists of a number of components, including a standalone runnable ja
 
 Optional Dependencies
 =====================
-zstd, jpeg2000
+*TODO*  zstd, jpeg2000
 
 
 Breaking Issues in Tika 2.0.0
 ==============================
-
+*TODO*
 
 Contributing via Github
 =======================
@@ -133,7 +133,7 @@ If you encounter errors in Tika or want to suggest an improvement or a new featu
 Build Issues
 ------------
 
-* 
+*TODO*
 
 * Need to install jce
 
