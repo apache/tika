@@ -271,7 +271,7 @@ public class TikaResource {
             throw new WebApplicationException(
                     String.format(Locale.ROOT,
                     "%s is an invalid %s header",
-                            key, X_TIKA_OCR_HEADER_PREFIX), Response.Status.BAD_REQUEST);
+                            key, prefix), Response.Status.BAD_REQUEST);
         }
     }
 
