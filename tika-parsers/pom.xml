@@ -35,10 +35,10 @@
     <modules>
         <!-- basic parsers - avoid network dependent parsers, native code -->
         <module>tika-parsers-classic</module>
-        <!-- allow network dependent parsers and native code   - - >
+        <!-- allow network dependent parsers and native code  -->
         <module>tika-parsers-extended</module>
-        < ! - - potentially massive dependencies (e.g. dl4j)    - - >
-        <module>tika-parsers-advanced</module> -->
+        <!-- potentially massive dependencies (e.g. dl4j)    -->
+        <module>tika-parsers-advanced</module>
     </modules>
 
 </project>
