@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
@@ -62,8 +63,10 @@ public class PSDParser extends AbstractParser {
             Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
                     MediaType.image("vnd.adobe.photoshop"))));
 
-    private static final int MAX_DATA_LENGTH_BYTES = 1000000;
+    private static final int MAX_DATA_LENGTH_BYTES = 10_000_000;
     private static final int MAX_BLOCKS = 10000;
+
+    private int maxDataLengthBytes = MAX_DATA_LENGTH_BYTES;
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -127,7 +130,7 @@ public class PSDParser extends AbstractParser {
         //infinite loop by only reading 10000 blocks
         int blocks = 0;
         while (read < imageResourcesSectionSize && blocks < MAX_BLOCKS) {
-            ResourceBlock rb = new ResourceBlock(stream);
+            ResourceBlock rb = new ResourceBlock(stream, maxDataLengthBytes);
             if (rb.totalLength <= 0) {
                 //break;
             }
@@ -159,6 +162,11 @@ public class PSDParser extends AbstractParser {
         xhtml.endDocument();
     }
 
+    @Field
+    public void setMaxDataLengthBytes(int maxDataLengthBytes) {
+        this.maxDataLengthBytes = maxDataLengthBytes;
+    }
+
     private static class ResourceBlock {
         private static final long SIGNATURE = 0x3842494d; // 8BIM
         private static final int ID_CAPTION = 0x03F0;
@@ -170,12 +178,15 @@ public class PSDParser extends AbstractParser {
         private static final int ID_AUTO_SAVE_FILE_PATH = 0x043E;
         private static final int ID_THUMBNAIL_RESOURCE = 0x040C;
 
+        private final int maxDataLengthBytes;
         private int id;
         private String name;
         private byte[] data;
         private int totalLength;
         static int counter = 0;
-        private ResourceBlock(InputStream stream) throws IOException, TikaException {
+
+        private ResourceBlock(InputStream stream, int maxDataLengthBytes) throws IOException, TikaException {
+            this.maxDataLengthBytes = maxDataLengthBytes;
             counter++;
             // Verify the signature
             long sig = EndianUtils.readIntBE(stream);
@@ -224,9 +235,9 @@ public class PSDParser extends AbstractParser {
             totalLength = 4 + 2 + nameLen + 4 + dataLen;
             // Do we have use for the data segment?
             if (captureData(id)) {
-                if (dataLen > MAX_DATA_LENGTH_BYTES) {
-                    throw new TikaException("data length must be < "+MAX_DATA_LENGTH_BYTES+
-                            ": "+dataLen);
+                if (dataLen > maxDataLengthBytes) {
+                    throw new TikaException("data length must be < " +
+                            maxDataLengthBytes + ": " + dataLen);
                 }
                 data = new byte[dataLen];
                 IOUtils.readFully(stream, data);

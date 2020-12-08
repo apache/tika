@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
@@ -69,5 +71,13 @@ public class PSDParserTest extends TikaTest {
         Metadata metadata = getXML("testPSD_xmp.psd").metadata;
         assertEquals("Adobe Photoshop CC 2014 (Macintosh)", metadata.get(XMPMM.HISTORY_SOFTWARE_AGENT));
         assertEquals("xmp.iid:63681182-81a0-4035-b4b2-19bea6201c05", metadata.get(XMPMM.HISTORY_EVENT_INSTANCEID));
+    }
+
+    @Test (expected = TikaException.class)
+    public void testMaxLength() throws Exception {
+        TikaConfig config = new TikaConfig(getResourceAsStream("tika-config-TIKA-3243.xml"));
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
+        getXML("testPSD_xmp.psd", config.getParser(), metadata);
     }
 }
