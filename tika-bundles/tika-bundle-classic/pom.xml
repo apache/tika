@@ -180,7 +180,7 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-classic-package|
-              xerces|
+              xercesImpl|
               commons-compress|
               xz|
               commons-codec|
@@ -258,6 +258,7 @@
               org.apache.tika.detect,
               org.apache.tika.mime,
               org.apache.tika.fork,
+              org.apache.commons.io,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.impl;resolution:=optional,
@@ -318,6 +319,10 @@
               org.apache.xerces.xni;resolution:=optional,
               org.apache.xerces.xni.parser;resolution:=optional,
               org.apache.xml.resolver;resolution:=optional,
+              org.apache.xml.resolver.readers;resolution:=optional,
+              org.w3c.dom.ranges;resolution:=optional,
+              org.w3c.dom.traversal;resolution:=optional,
+              sun.io;resolution:=optional,
               org.apache.xml.resolver.tools;resolution:=optional,
               org.apache.xml.security;resolution:=optional,
               org.apache.xml.security.c14n;resolution:=optional,

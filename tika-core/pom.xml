@@ -100,8 +100,7 @@
               org.apache.tika.config.TikaActivator
             </Bundle-Activator>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
-            <Import-Package>!org.apache.xerces.util,!sun.misc,*</Import-Package>
-            <Embed-Dependency>commons-io</Embed-Dependency>
+            <Import-Package>!sun.misc,org.apache.xerces.util;resolution:=optional,*</Import-Package>
             <Export-Package>
               org.apache.tika.*
             </Export-Package>
