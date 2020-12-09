@@ -337,7 +337,7 @@
     <poi.version>4.1.2</poi.version>
     <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
-    <slf4j.version>1.7.28</slf4j.version>
+    <slf4j.version>1.7.30</slf4j.version>
     <spring.version>5.3.1</spring.version>
     <sqlite.version>3.32.3.2</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
