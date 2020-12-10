@@ -143,9 +143,14 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>com.sun.activation</groupId>
+      <artifactId>javax.activation</artifactId>
+      <version>1.2.0</version>
+    </dependency>
+    <dependency>
       <groupId>com.sun.istack</groupId>
       <artifactId>istack-commons-runtime</artifactId>
-      <version>4.0.0</version>
+      <version>3.0.11</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -180,6 +185,7 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-classic-package|
+              javax.activation|
               xerces|
               xercesImpl|
               commons-compress|
