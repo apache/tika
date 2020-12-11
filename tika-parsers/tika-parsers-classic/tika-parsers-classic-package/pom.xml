@@ -139,6 +139,11 @@
             <artifactId>tika-parser-xml-module</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>tika-parser-xmp-commons</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- externally maintained parsers -->
         <dependency>
