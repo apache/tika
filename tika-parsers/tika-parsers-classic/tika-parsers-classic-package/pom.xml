@@ -346,7 +346,7 @@
                 <version>${rat.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>src/test/resources/test-data/**</exclude>
+                        <exclude>src/test/resources/test-documents/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
