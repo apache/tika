@@ -343,7 +343,7 @@
     <tagsoup.version>1.2.1</tagsoup.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
     <tukaani.version>1.8</tukaani.version>
-    <twelvemonkeys.version>3.6</twelvemonkeys.version>
+    <twelvemonkeys.version>3.6.1</twelvemonkeys.version>
     <uima.version>3.1.0</uima.version>
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.0</xerces.version>
