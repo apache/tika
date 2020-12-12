@@ -47,6 +47,14 @@
             <artifactId>jai-imageio-core</artifactId>
             <version>${imageio.version}</version>
         </dependency>
+        <!-- For legal reasons (incompatible license), jai-imageio-jpeg2000 is to be used
+        only in the tests and may not be distributed. See also LEGAL-195 -->
+        <dependency>
+            <groupId>com.github.jai-imageio</groupId>
+            <artifactId>jai-imageio-jpeg2000</artifactId>
+            <version>${imageio.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.apache.pdfbox</groupId>
             <artifactId>jbig2-imageio</artifactId>
