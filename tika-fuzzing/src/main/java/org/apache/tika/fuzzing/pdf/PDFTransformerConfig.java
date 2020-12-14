@@ -156,7 +156,8 @@ public class PDFTransformerConfig {
             numFilters = minFilters + random.nextInt(maxFilters - minFilters);
         }
 
-        List<COSName> allowable = new ArrayList<>(allowableFilters);
+        List<COSName> allowable = new ArrayList<>();
+        allowable.addAll(allowableFilters);
 
         List<COSName> filters = new ArrayList<>();
         for (int i = 0; i < numFilters; i++) {

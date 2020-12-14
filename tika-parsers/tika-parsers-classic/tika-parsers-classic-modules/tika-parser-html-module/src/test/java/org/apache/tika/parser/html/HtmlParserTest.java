@@ -1312,8 +1312,10 @@ public class HtmlParserTest extends TikaTest {
 
     @Test
     public void testMultiThreadingEncodingDetection() throws Exception {
-        ServiceLoader loader = new ServiceLoader(AutoDetectReader.class.getClassLoader());
-        List<EncodingDetector> detectors = new ArrayList<>(loader.loadServiceProviders(EncodingDetector.class));
+        List<EncodingDetector> detectors = new ArrayList<>();
+        ServiceLoader loader =
+                new ServiceLoader(AutoDetectReader.class.getClassLoader());
+        detectors.addAll(loader.loadServiceProviders(EncodingDetector.class));
         for (EncodingDetector detector : detectors) {
             testDetector(detector);
         }

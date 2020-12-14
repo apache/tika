@@ -273,7 +273,8 @@ public class TikaConfigSerializer {
         Set<MediaType> addedTypes = new TreeSet<>();
         Set<MediaType> excludedTypes = new TreeSet<>();
         if (decorator != null) {
-            Set<MediaType> types = new TreeSet<>(decorator.getSupportedTypes(context));
+            Set<MediaType> types = new TreeSet<>();
+            types.addAll(decorator.getSupportedTypes(context));
             addedTypes.addAll(types);
 
             for (MediaType type : parser.getSupportedTypes(context)) {

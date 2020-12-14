@@ -195,7 +195,7 @@ public class MockParser extends AbstractParser {
 
     private void print(Node action, String name) throws IOException {
         String content = action.getTextContent();
-        boolean isStatic = (action.getAttributes().getNamedItem("static") != null);
+        boolean isStatic = (action.getAttributes().getNamedItem("static") == null) ? false : true;
         Node rand = action.getAttributes().getNamedItem("random");
         int randLength = -1;
         if (rand != null) {

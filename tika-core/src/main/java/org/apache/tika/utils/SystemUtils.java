@@ -50,7 +50,7 @@ public class SystemUtils {
     }
 
     static boolean isOSNameMatch(String osName, String osNamePrefix) {
-        return osName != null && osName.startsWith(osNamePrefix);
+        return osName == null ? false : osName.startsWith(osNamePrefix);
     }
 
     static {
