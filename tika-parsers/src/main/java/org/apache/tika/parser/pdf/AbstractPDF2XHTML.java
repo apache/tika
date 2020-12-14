@@ -474,17 +474,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
                 if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
-                    PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
-                    try {
-                        AttributesImpl attributes = new AttributesImpl();
-                        attributes.addAttribute("", "source", "source", "CDATA", "annotation");
-                        extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec, attributes);
-                    } catch (SAXException e) {
-                        throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
-                    } catch (TikaException e) {
-                        throw new IOExceptionWithCause("file embedded in annotation tika exception", e);
-                    } catch (IOException e) {
-                        handleCatchableIOE(e);
+                    if (fann.getFile() instanceof PDComplexFileSpecification) {
+                        PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
+                        try {
+                            AttributesImpl attributes = new AttributesImpl();
+                            attributes.addAttribute("", "source", "source", "CDATA", "annotation");
+                            extractMultiOSPDEmbeddedFiles(fann.getAttachmentName(), fileSpec, attributes);
+                        } catch (SAXException e) {
+                            throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
+                        } catch (TikaException e) {
+                            throw new IOExceptionWithCause("file embedded in annotation tika exception", e);
+                        } catch (IOException e) {
+                            handleCatchableIOE(e);
+                        }
                     }
                 } else if (annotation instanceof PDAnnotationWidget) {
                     handleWidget((PDAnnotationWidget)annotation);
