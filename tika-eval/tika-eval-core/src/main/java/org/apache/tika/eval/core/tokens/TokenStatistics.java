@@ -120,7 +120,7 @@ public class TokenStatistics {
     }
 
     private static boolean doubleEquals(double a, double b, double epsilon) {
-        return a == b ? true : Math.abs(a - b) < epsilon;
+        return a == b || Math.abs(a - b) < epsilon;
     }
 
 
