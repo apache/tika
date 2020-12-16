@@ -48,6 +48,8 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.fetcher.DefaultFetcher;
+import org.apache.tika.fetcher.Fetcher;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
@@ -112,6 +114,10 @@ public class TikaConfig {
         return new DefaultMetadataFilter(loader);
     }
 
+    private static Fetcher getDefaultFetcher(ServiceLoader loader) {
+        return new DefaultFetcher(loader);
+    }
+
     //use this to look for unneeded instantiations of TikaConfig
     protected static AtomicInteger TIMES_INSTANTIATED = new AtomicInteger();
 
@@ -124,6 +130,7 @@ public class TikaConfig {
     private final ExecutorService executorService;
     private final EncodingDetector encodingDetector;
     private final MetadataFilter metadataFilter;
+    private final Fetcher fetcher;
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
@@ -200,6 +207,7 @@ public class TikaConfig {
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
         this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
         this.metadataFilter = metadataFilterXmlLoader.loadOverall(element, mimeTypes, loader);
+        this.fetcher = new FetcherXmlLoader().loadOverall(element, mimeTypes, loader);
         this.serviceLoader = loader;
         TIMES_INSTANTIATED.incrementAndGet();
     }
@@ -226,6 +234,7 @@ public class TikaConfig {
         this.translator = getDefaultTranslator(serviceLoader);
         this.executorService = getDefaultExecutorService();
         this.metadataFilter = getDefaultMetadataFilter(serviceLoader);
+        this.fetcher = getDefaultFetcher(serviceLoader);
         TIMES_INSTANTIATED.incrementAndGet();
     }
 
@@ -262,6 +271,7 @@ public class TikaConfig {
             this.translator = getDefaultTranslator(serviceLoader);
             this.executorService = getDefaultExecutorService();
             this.metadataFilter = getDefaultMetadataFilter(serviceLoader);
+            this.fetcher = getDefaultFetcher(serviceLoader);
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
@@ -284,6 +294,7 @@ public class TikaConfig {
                 this.translator = translatorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.executorService = executorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.metadataFilter = metadataFilterXmlLoader.loadOverall(element, mimeTypes, serviceLoader);
+                this.fetcher = new FetcherXmlLoader().loadOverall(element, mimeTypes, serviceLoader);
             } catch (SAXException e) {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
@@ -558,6 +569,10 @@ public class TikaConfig {
         throw new TikaConfigException(
                 String.format(Locale.US, "Couldn't parse non-null '%s'. Must be one of 'ignore', 'info', 'warn' or 'throw'",
                         initializableProblemHandler));
+    }
+
+    public Fetcher getFetcher() {
+        return fetcher;
     }
 
 
@@ -1262,4 +1277,90 @@ public class TikaConfig {
         }
     }
 
+    private static class FetcherXmlLoader extends
+            XmlLoader<Fetcher, Fetcher> {
+
+        boolean supportsComposite() {
+            return true;
+        }
+
+        String getParentTagName() {
+            return "fetchers";
+        }
+
+        String getLoaderTagName() {
+            return "fetcher";
+        }
+
+        @Override
+        Class<? extends Fetcher> getLoaderClass() {
+            return Fetcher.class;
+        }
+
+
+        @Override
+        boolean isComposite(Fetcher loaded) {
+            return loaded instanceof DefaultFetcher;
+        }
+
+        @Override
+        boolean isComposite(Class<? extends Fetcher> loadedClass) {
+            return DefaultFetcher.class.isAssignableFrom(loadedClass);
+        }
+
+        @Override
+        Fetcher preLoadOne(Class<? extends Fetcher> loadedClass,
+                                  String classname, MimeTypes mimeTypes) throws TikaException {
+            // Check for classes which can't be set in config
+            // Continue with normal loading
+            return null;
+        }
+
+        @Override
+        Fetcher createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
+            return getDefaultFetcher(loader);
+        }
+
+        //this ignores the service loader
+        @Override
+        Fetcher createComposite(List<Fetcher> loaded, MimeTypes mimeTypes, ServiceLoader loader) {
+            return new DefaultFetcher(loaded);
+        }
+
+        @Override
+        Fetcher createComposite(Class<? extends Fetcher> fetcherClass,
+                                       List<Fetcher> childFetchers,
+                                       Set<Class<? extends Fetcher>> excludeFilters,
+                                       Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
+                throws InvocationTargetException, IllegalAccessException,
+                InstantiationException {
+            Fetcher fetcher = null;
+            Constructor<? extends Fetcher> c;
+
+            // Try the possible default and composite detector constructors
+            if (fetcher == null) {
+                try {
+                    c = fetcherClass.getConstructor(ServiceLoader.class, Collection.class);
+                    fetcher = c.newInstance(loader, excludeFilters);
+                } catch (NoSuchMethodException me) {
+                    me.printStackTrace();
+                }
+            }
+            if (fetcher == null) {
+                try {
+                    c = fetcherClass.getConstructor(List.class);
+                    fetcher = c.newInstance(childFetchers);
+                } catch (NoSuchMethodException me) {
+                    me.printStackTrace();
+                }
+            }
+
+            return fetcher;
+        }
+
+        @Override
+        Fetcher decorate(Fetcher created, Element element) {
+            return created; // No decoration of Fetchers
+        }
+    }
 }

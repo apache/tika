@@ -50,6 +50,7 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-eval</module>
+      <module>tika-fetchers</module>
   </modules>
 
   <profiles>
