@@ -74,7 +74,9 @@ import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
@@ -98,7 +100,6 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigester;
-import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
@@ -106,6 +107,7 @@ import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1041,6 +1043,7 @@ public class TikaCLI {
 
         private int count = 0;
         private final TikaConfig config = TikaConfig.getDefaultConfig();
+        private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
 
         public boolean shouldParseEmbedded(Metadata metadata) {
             return true;
@@ -1070,15 +1073,9 @@ public class TikaCLI {
             System.out.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
 
             try (FileOutputStream os = new FileOutputStream(outputFile)) {
-                if (inputStream instanceof TikaInputStream) {
-                    TikaInputStream tin = (TikaInputStream) inputStream;
-
-                    if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
-                        POIFSFileSystem fs = new POIFSFileSystem();
-                        copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                        fs.writeFilesystem(os);
-                    } else {
-                        IOUtils.copy(inputStream, os);
+                if (embeddedStreamTranslator.shouldTranslate(inputStream, metadata)) {
+                    try (InputStream translated = embeddedStreamTranslator.translate(inputStream, metadata)) {
+                        IOUtils.copy(translated, os);
                     }
                 } else {
                     IOUtils.copy(inputStream, os);
@@ -1147,23 +1144,6 @@ public class TikaCLI {
             }
             return ".bin";
 
-        }
-
-        protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
-                throws IOException {
-            for (org.apache.poi.poifs.filesystem.Entry entry : sourceDir) {
-                if (entry instanceof DirectoryEntry) {
-                    // Need to recurse
-                    DirectoryEntry newDir = destDir.createDirectory(entry.getName());
-                    copy((DirectoryEntry) entry, newDir);
-                } else {
-                    // Copy entry
-                    try (InputStream contents =
-                            new DocumentInputStream((DocumentEntry) entry)) {
-                        destDir.createDocument(entry.getName(), contents);
-                    }
-                }
-            }
         }
     }
 

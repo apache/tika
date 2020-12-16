@@ -11,6 +11,9 @@ Release 2.0.0 - ???
    
    * General code cleanup (PeterAlfredLee)
 
+   * tika-server's /metadata endpoint requires tika-server-classic to write XMP/rdf output.
+     This output is not available in tika-server-core.
+
    Other changes
    
 Release 1.26 - ???
