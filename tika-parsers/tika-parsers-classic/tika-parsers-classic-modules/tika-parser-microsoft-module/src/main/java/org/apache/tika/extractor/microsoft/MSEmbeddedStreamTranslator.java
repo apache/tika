@@ -1,0 +1,101 @@
+package org.apache.tika.extractor.microsoft;
+
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import org.apache.poi.poifs.filesystem.Entry;
+import org.apache.poi.poifs.filesystem.Ole10Native;
+import org.apache.poi.poifs.filesystem.Ole10NativeException;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.util.IOUtils;
+import org.apache.tika.extractor.EmbeddedStreamTranslator;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.microsoft.OfficeParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MSEmbeddedStreamTranslator.class);
+
+    @Override
+    public boolean shouldTranslate(InputStream inputStream, Metadata metadata) throws IOException {
+        String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
+        if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
+            return true;
+        } else if (inputStream instanceof TikaInputStream) {
+            TikaInputStream tin = (TikaInputStream) inputStream;
+            if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public InputStream translate(InputStream inputStream, Metadata metadata) throws IOException {
+        String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
+        if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(inputStream, bos);
+            byte[] data = bos.toByteArray();
+            POIFSFileSystem poifs = new POIFSFileSystem(new ByteArrayInputStream(data));
+            OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
+            String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+
+            if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
+                try {
+                    Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
+                    if (ole.getDataSize() > 0) {
+                        String label = ole.getLabel();
+
+                        name = label;
+
+                        data = ole.getDataBuffer();
+                    }
+                } catch (Ole10NativeException ex) {
+                    LOG.warn("Skipping invalid part", ex);
+                }
+            } else {
+                name += '.' + type.getExtension();
+            }
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            return new ByteArrayInputStream(data);
+        } else if (inputStream instanceof TikaInputStream) {
+            TikaInputStream tin = (TikaInputStream) inputStream;
+
+            if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+                POIFSFileSystem fs = new POIFSFileSystem();
+                copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
+                ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
+                fs.writeFilesystem(bos2);
+                bos2.close();
+                return new ByteArrayInputStream(bos2.toByteArray());
+            }
+        }
+        return inputStream;
+    }
+
+    protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
+            throws IOException {
+        for (Entry entry : sourceDir) {
+            if (entry instanceof DirectoryEntry) {
+                // Need to recurse
+                DirectoryEntry newDir = destDir.createDirectory(entry.getName());
+                copy((DirectoryEntry) entry, newDir);
+            } else {
+                // Copy entry
+                try (InputStream contents = new DocumentInputStream((DocumentEntry) entry)) {
+                    destDir.createDocument(entry.getName(), contents);
+                }
+            }
+        }
+    }
+}

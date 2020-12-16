@@ -123,8 +123,8 @@ public class MetadataResource {
         return Response.ok(metadata).build();
     }
 
-    private Metadata parseMetadata(InputStream is, Metadata metadata,
-                                   MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
+    protected Metadata parseMetadata(InputStream is, Metadata metadata,
+                                     MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
         final ParseContext context = new ParseContext();
         Parser parser = TikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);

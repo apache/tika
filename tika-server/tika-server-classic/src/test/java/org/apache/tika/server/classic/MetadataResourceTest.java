@@ -40,6 +40,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.server.classic.resource.XMPMetadataResource;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
@@ -55,9 +56,11 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        sf.setResourceClasses(MetadataResource.class);
+        sf.setResourceClasses(MetadataResource.class, XMPMetadataResource.class);
         sf.setResourceProvider(MetadataResource.class,
                 new SingletonResourceProvider(new MetadataResource()));
+        sf.setResourceProvider(XMPMetadataResource.class,
+                new SingletonResourceProvider(new XMPMetadataResource()));
     }
 
     @Override
@@ -163,7 +166,6 @@ public class MetadataResourceTest extends CXFTestBase {
     }
 
     @Test
-    @Ignore("TODO -- add back in xmp writer")
     public void testXMP() throws Exception {
         Response response = WebClient
                 .create(endPoint + META_PATH)

@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +43,7 @@ import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
@@ -54,6 +56,7 @@ import org.apache.tika.server.core.resource.TikaDetectors;
 import org.apache.tika.server.core.resource.TikaMimeTypes;
 import org.apache.tika.server.core.resource.TikaParsers;
 import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.resource.TikaServerResource;
 import org.apache.tika.server.core.resource.TikaServerStatus;
 import org.apache.tika.server.core.resource.TikaVersion;
 import org.apache.tika.server.core.resource.TikaWelcome;
@@ -313,6 +316,7 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaParsers()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
+            rCoreProviders.addAll(loadResourceServices());
             if (line.hasOption("status")) {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }
@@ -326,8 +330,8 @@ public class TikaServerCli {
             providers.add(new CSVMessageBodyWriter());
             providers.add(new MetadataListMessageBodyWriter());
             providers.add(new JSONMessageBodyWriter());
-            //providers.add(new XMPMessageBodyWriter());
             providers.add(new TextMessageBodyWriter());
+            providers.addAll(loadWriterServices());
             providers.add(new TikaServerParseExceptionMapper(returnStackTrace));
             if (line.hasOption("status")) {
                 providers.add(new JSONObjWriter());
@@ -355,6 +359,22 @@ public class TikaServerCli {
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
             sf.create();
             LOG.info("Started Apache Tika server at {}", url);
+    }
+
+    private static Collection<? extends ResourceProvider> loadResourceServices() {
+        List<TikaServerResource> resources = new ServiceLoader(TikaServerCli.class.getClassLoader())
+                .loadServiceProviders(TikaServerResource.class);
+        List<ResourceProvider> providers = new ArrayList<>();
+
+        for (TikaServerResource r : resources) {
+            providers.add(new SingletonResourceProvider(r));
+        }
+        return providers;
+    }
+
+    private static Collection<?> loadWriterServices() {
+        return new ServiceLoader(TikaServerCli.class.getClassLoader())
+                .loadServiceProviders(org.apache.tika.server.core.writer.TikaServerWriter.class);
     }
 
     private static void usage(Options options) {

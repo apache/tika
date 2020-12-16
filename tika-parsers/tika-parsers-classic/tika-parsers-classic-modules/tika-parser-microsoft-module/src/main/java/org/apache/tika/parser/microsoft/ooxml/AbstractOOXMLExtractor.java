@@ -31,6 +31,7 @@ import java.util.Set;
 
 import org.apache.poi.extractor.POITextExtractor;
 import org.apache.poi.ooxml.POIXMLDocument;
+import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -77,6 +78,9 @@ import org.xml.sax.helpers.AttributesImpl;
 public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
+    static {
+        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
+    }
 
     static final String RELATION_AUDIO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
     static final String RELATION_MEDIA = "http://schemas.microsoft.com/office/2007/relationships/media";

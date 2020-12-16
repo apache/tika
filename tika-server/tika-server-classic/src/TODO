@@ -1,8 +1,0 @@
-this is needed by poi-ooxml
-    static {
-        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
-    }
-
-figure out what to do with the xmp writer
-
-figure out what to do with the unpacker

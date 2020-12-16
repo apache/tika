@@ -21,7 +21,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
 import java.io.IOException;
@@ -33,13 +32,14 @@ import java.lang.reflect.Type;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.server.core.writer.TikaServerWriter;
 import org.apache.tika.xmp.XMPMetadata;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Provider
 @Produces("application/rdf+xml")
-public class XMPMessageBodyWriter implements MessageBodyWriter<Metadata> {
+public class XMPMessageBodyWriter implements TikaServerWriter<Metadata> {
 
     private static MediaType RDF_XML = MediaType.valueOf("application/rdf+xml");
 

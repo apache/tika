@@ -47,7 +47,9 @@ import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -163,6 +165,7 @@ public class UnpackerResource {
     private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
         private final MutableInt count;
         private final Map<String, byte[]> zout;
+        private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
 
         MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout) {
             this.count = count;
@@ -202,54 +205,20 @@ public class UnpackerResource {
                     LOG.warn("Unexpected MimeTypeException", e);
                 }
             }
-
-            if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
-                /*POIFSFileSystem poifs = new POIFSFileSystem(new ByteArrayInputStream(data));
-                OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
-
-                if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
-                    try {
-                        Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
-                        if (ole.getDataSize() > 0) {
-                            String label = ole.getLabel();
-
-                            if (label.startsWith("ole-")) {
-                                label = Integer.toString(count.intValue()) + '-' + label;
-                            }
-
-                            name = label;
-
-                            data = ole.getDataBuffer();
-                        }
-                    } catch (Ole10NativeException ex) {
-                        LOG.warn("Skipping invalid part", ex);
-                    }
-                } else {
-                    name += '.' + type.getExtension();
-                }*/
+            try (InputStream is = new ByteArrayInputStream(data)) {
+                if (embeddedStreamTranslator.shouldTranslate(is, metadata)) {
+                    InputStream translated = embeddedStreamTranslator.translate(new ByteArrayInputStream(data), metadata);
+                    ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
+                    IOUtils.copy(translated, bos2);
+                    data = bos2.toByteArray();
+                }
             }
 
             final String finalName = getFinalName(name, zout);
 
             if (data.length > 0) {
                 zout.put(finalName, data);
-
                 count.increment();
-            } else {
-                /*
-                if (inputStream instanceof TikaInputStream) {
-                    TikaInputStream tin = (TikaInputStream) inputStream;
-
-                    if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
-                        POIFSFileSystem fs = new POIFSFileSystem();
-                        copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                        ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
-                        fs.writeFilesystem(bos2);
-                        bos2.close();
-
-                        zout.put(finalName, bos2.toByteArray());
-                    }
-                }*/
             }
         }
 
