@@ -19,11 +19,14 @@ package org.apache.tika.server.classic;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.tika.TikaTest.assertNotContained;
+import static org.apache.tika.TikaTest.debug;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import java.io.InputStream;
@@ -135,6 +138,23 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
 
         assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
+    }
+
+    @Test
+    public void testHeaders() throws Exception {
+        MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
+        map.addAll("meta_mymeta", "first", "second", "third");
+
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .headers(map)
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals("first,second,third", metadataList.get(0).get("mymeta"));
     }
 
     @Test

@@ -22,19 +22,16 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.server.core.resource.TikaResource;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.ws.rs.ProcessingException;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TikaResourceTest extends CXFTestBase {
@@ -68,6 +65,24 @@ public class TikaResourceTest extends CXFTestBase {
                 getStringFromInputStream((InputStream) response.getEntity()));
     }
 
+    @Test
+    public void testHeaders() throws Exception {
+        MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
+        map.addAll("meta_mymeta", "first", "second", "third");
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .headers(map)
+                .accept("text/xml")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TEST_HELLO_WORLD));
+        String xml = getStringFromInputStream((InputStream) response.getEntity());
+        //can't figure out why these values are comma-delimited, rather
+        //than a true list...is this really the expected behavior?
+        //this at least tests that the pass-through, basically works...
+        //except for multi-values... :D
+        assertContains("<meta name=\"mymeta\" content=\"first,second,third\"/>",
+                xml);
+    }
 
     @Test
     public void testJAXBAndActivationDependency() {

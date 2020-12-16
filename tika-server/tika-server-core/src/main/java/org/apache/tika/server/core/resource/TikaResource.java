@@ -72,7 +72,9 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,7 +84,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class TikaResource {
 
     private static Pattern ALLOWABLE_HEADER_CHARS = Pattern.compile("(?i)^[-/_+\\.A-Z0-9 ]+$");
-
+    private static final String META_PREFIX = "meta_";
     public static final String GREETING = "This is Tika Server (" + new Tika().toString() + "). Please PUT\n";
 
 
@@ -308,6 +310,15 @@ public class TikaResource {
                     }
                 }
             });
+        }
+
+        for (Map.Entry<String, List<String>> e : httpHeaders.entrySet()) {
+            if (e.getKey().startsWith(META_PREFIX)) {
+                String tikaKey = e.getKey().substring(META_PREFIX.length());
+                for (String value: e.getValue()) {
+                    metadata.add(tikaKey, value);
+                }
+            }
         }
     }
 

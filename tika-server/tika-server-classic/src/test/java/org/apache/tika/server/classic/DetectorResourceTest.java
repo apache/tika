@@ -80,7 +80,7 @@ public class DetectorResourceTest extends CXFTestBase {
 
     @Test
     public void testDetectCsvNoExt() throws Exception {
-        String url = endPoint + DETECT_STREAM_PATH;
+
         Response response = WebClient
                 .create(endPoint + DETECT_STREAM_PATH)
                 .type("text/csv")
