@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -50,7 +50,7 @@ public class SystemUtils {
     }
 
     static boolean isOSNameMatch(String osName, String osNamePrefix) {
-        return osName == null ? false : osName.startsWith(osNamePrefix);
+        return osName != null && osName.startsWith(osNamePrefix);
     }
 
     static {

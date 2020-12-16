@@ -125,9 +125,7 @@ public class ServerStatus {
     }
 
     public synchronized Map<Long, TaskStatus> getTasks() {
-        Map<Long, TaskStatus> ret = new HashMap<>();
-        ret.putAll(tasks);
-        return ret;
+        return new HashMap<>(tasks);
     }
 
     public synchronized long getFilesProcessed() {

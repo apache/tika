@@ -192,9 +192,8 @@ public class ChmCommons {
      * @return boolean
      */
     public static boolean hasSkip(DirectoryListingEntry directoryListingEntry) {
-        return (directoryListingEntry.getName().startsWith("/$")
-                || directoryListingEntry.getName().startsWith("/#") || directoryListingEntry
-                .getName().startsWith("::")) ? true : false;
+        String name = directoryListingEntry.getName();
+        return name.startsWith("/$") || name.startsWith("/#") || name.startsWith("::");
     }
 
     /**

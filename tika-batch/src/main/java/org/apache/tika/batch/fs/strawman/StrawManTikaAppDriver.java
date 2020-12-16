@@ -226,10 +226,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
             }
         }
 
-        List<String> commandLine = new ArrayList<>();
-
         int initialParams = (fileList == null) ? 3 : 4;
-        commandLine.addAll(Arrays.asList(args).subList(initialParams, args.length));
+        List<String> commandLine = new ArrayList<>(Arrays.asList(args).subList(initialParams, args.length));
         totalThreads = (totalThreads < 1) ? 1 : totalThreads;
         ExecutorService ex = Executors.newFixedThreadPool(totalThreads);
         ExecutorCompletionService<Integer> completionService =
