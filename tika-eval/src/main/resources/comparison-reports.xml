@@ -1532,6 +1532,17 @@
             order by cnt desc
         </sql>
     </report>
+    <report reportName="Container files missing in B details"
+            reportFilename="attachments/container_files_missing_in_B_details.xlsx"
+            format="xlsx"
+            includeSql="true">
+        <sql>
+            select pa.file_name from profiles_a pa
+            left join profiles_b pb on pa.id=pb.id
+            where pb.id is null
+            and pa.is_embedded = false
+        </sql>
+    </report>
     <report reportName="Embedded files missing in B by Mime"
             reportFilename="attachments/embedded_files_missing_in_B_by_mime.xlsx"
             format="xlsx"
