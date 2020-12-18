@@ -67,7 +67,7 @@ class ForkClient {
     /**
      *
      * @param tikaDir directory containing jars from which to start the child server and load the Parser
-     * @param parserFactoryFactory factory to send to child process to build parser upon arrival
+     * @param parserFactoryFactory factory to send to forked process to build parser upon arrival
      * @param classLoader class loader to use for non-parser resource (content-handler, etc.)
      * @param java java commandline to use for the commandline server
      * @throws IOException

@@ -80,7 +80,7 @@ public class ForkParser extends AbstractParser implements Closeable
     private int maxFilesProcessedPerClient = -1;
 
     /**
-     * If you have a directory with, say, tike-app.jar and you want the child process/server to build a parser
+     * If you have a directory with, say, tike-app.jar and you want the forked process/server to build a parser
      * and run it from that -- so that you can keep all of those dependencies out of your client code, use
      * this initializer.
      *
@@ -99,8 +99,8 @@ public class ForkParser extends AbstractParser implements Closeable
      * <b>EXPERT</b>
      * @param tikaBin directory containing the tika-app.jar or similar -- full jar including tika-core and all
      *                desired parsers and dependencies
-     * @param parserFactoryFactory -- the factory to use to generate the parser factory in the child process/server
-     * @param classLoader to use for all classes besides the parser in the child process/server
+     * @param parserFactoryFactory -- the factory to use to generate the parser factory in the forked process/server
+     * @param classLoader to use for all classes besides the parser in the forked process/server
      */
     public ForkParser(Path tikaBin, ParserFactoryFactory parserFactoryFactory, ClassLoader classLoader) {
         parser = null;

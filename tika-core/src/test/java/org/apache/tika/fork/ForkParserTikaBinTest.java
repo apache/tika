@@ -74,7 +74,7 @@ public class ForkParserTikaBinTest extends TikaTest {
             addClasses(jarOs, classPath, ci -> ci.getPackageName().startsWith("org.apache.commons.io"));
             //exclude TypeDetectionBenchmark because it is not serializable
             //exclude UpperCasingContentHandler because we want to test that
-            //we can serialize it from the parent process into the child process
+            //we can serialize it from the parent process into the forked process
             addClasses(jarOs, classPath, ci ->
                     ci.getPackageName().startsWith("org.apache.tika")
                             && (!ci.getName().contains("TypeDetectionBenchmark"))
