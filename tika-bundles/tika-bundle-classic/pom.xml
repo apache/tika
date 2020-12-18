@@ -466,6 +466,9 @@
               INFO
             </org.ops4j.pax.logging.DefaultServiceLog.level>
           </systemPropertyVariables>
+          <classpathDependencyExcludes>
+            <classpathDependencyExclude>xerces:xercesImpl</classpathDependencyExclude>
+          </classpathDependencyExcludes>
         </configuration>
       </plugin>
       <plugin>
