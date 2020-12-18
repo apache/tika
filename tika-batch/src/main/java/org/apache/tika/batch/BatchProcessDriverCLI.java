@@ -54,7 +54,7 @@ public class BatchProcessDriverCLI {
 
     //how many times to wait pulseMillis milliseconds if a restart
     //message has been received through stdout, but the
-    //child process has not yet exited
+    //forked process has not yet exited
     private int waitNumLoopsAfterRestartMessage = 60;
     private int loopsAfterRestartMessageReceived = 0;
 
@@ -75,7 +75,7 @@ public class BatchProcessDriverCLI {
 
     private final String[] commandLine;
     private int numRestarts = 0;
-    private boolean redirectChildProcessToStdOut = true;
+    private boolean redirectForkedProcessToStdOut = true;
 
     public BatchProcessDriverCLI(String[] commandLine){
         this.commandLine = tryToReadMaxRestarts(commandLine);
@@ -114,7 +114,7 @@ public class BatchProcessDriverCLI {
             try {
                 LOG.trace("about to check exit value");
                 exit = process.exitValue();
-                LOG.info("The child process has finished with an exit value of: {}", exit);
+                LOG.info("The forked process has finished with an exit value of: {}", exit);
                 stop();
             } catch (IllegalThreadStateException e) {
                 //hasn't exited
@@ -194,7 +194,7 @@ public class BatchProcessDriverCLI {
                 }
             }
             LOG.error("Process didn't stop after 60 seconds after shutdown. " +
-                    "I am forcefully killing it.");
+                    "I am forcefully terminating it.");
         }
         interruptWatcherThread.interrupt();
     }
@@ -208,7 +208,7 @@ public class BatchProcessDriverCLI {
     }
 
     /**
-     * Tries to restart (stop and then start) the child process
+     * Tries to restart (stop and then start) the forked process
      * @return whether or not this was successful, will be false if numRestarts >= maxProcessRestarts
      * @throws Exception
      */
@@ -264,11 +264,11 @@ public class BatchProcessDriverCLI {
 
     /**
      * Typically only used for testing.  This determines whether or not
-     * to redirect child process's stdOut to driver's stdout
-     * @param redirectChildProcessToStdOut should the driver redirect the child's stdout
+     * to redirect forked process's stdOut to driver's stdout
+     * @param redirectForkedProcessToStdOut should the driver redirect the child's stdout
      */
-    public void setRedirectChildProcessToStdOut(boolean redirectChildProcessToStdOut) {
-        this.redirectChildProcessToStdOut = redirectChildProcessToStdOut;
+    public void setRedirectForkedProcessToStdOut(boolean redirectForkedProcessToStdOut) {
+        this.redirectForkedProcessToStdOut = redirectForkedProcessToStdOut;
     }
 
     /**
@@ -298,8 +298,8 @@ public class BatchProcessDriverCLI {
     }
 
     /**
-     * Class that writes to the child process
-     * to force an interrupt in the child process.
+     * Class that writes to the forked process
+     * to force an interrupt in the forked process.
      */
     private class InterruptWriter implements Runnable {
         private final Writer writer;
@@ -341,7 +341,7 @@ public class BatchProcessDriverCLI {
             try {
                 LOG.trace("gobbler starting to read");
                 while ((line = reader.readLine()) != null && this.running) {
-                    if (redirectChildProcessToStdOut) {
+                    if (redirectForkedProcessToStdOut) {
                         System.out.println("BatchProcess:" + line);
                     }
                 }
@@ -389,7 +389,7 @@ public class BatchProcessDriverCLI {
     public static void main(String[] args) throws Exception {
         final BatchProcessDriverCLI runner = new BatchProcessDriverCLI(args);
 
-        //make absolutely certain that the child process is killed
+        //make absolutely certain that the forked process is terminated
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

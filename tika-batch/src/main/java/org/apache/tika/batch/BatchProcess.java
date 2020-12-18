@@ -516,7 +516,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
     /**
      * If there is an early termination via an interrupt or too many timed out consumers
      * or because a consumer or other Runnable threw a Throwable, pause this long
-     * before killing the consumers and other threads.
+     * before interrupting the consumers and other threads.
      *
      * Typically makes sense for this to be the same or slightly larger than
      * timeoutThresholdMillis

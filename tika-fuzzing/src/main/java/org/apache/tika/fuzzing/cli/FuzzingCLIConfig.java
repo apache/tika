@@ -85,7 +85,7 @@ public class FuzzingCLIConfig {
                         .build())
                 .addOption(Option.builder("x")
                         .longOpt("xmx")
-                        .desc("e.g. 1G, max heap appended to -Xmx in the child process")
+                        .desc("e.g. 1G, max heap appended to -Xmx in the forked process")
                         .hasArg(true)
                         .required(false)
                         .build())
@@ -138,7 +138,7 @@ public class FuzzingCLIConfig {
     //times to retry a seed file after a catastrophic failure
     int retries;
 
-    //xmx for child process, e.g. 512m or 1G
+    //xmx for forked process, e.g. 512m or 1G
     String xmx;
     Path inputDir;
     Path outputDir;

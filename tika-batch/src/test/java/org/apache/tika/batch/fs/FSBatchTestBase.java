@@ -219,7 +219,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.addAll(Arrays.asList(args));
 
         BatchProcessDriverCLI driver = new BatchProcessDriverCLI(commandLine.toArray(new String[0]));
-        driver.setRedirectChildProcessToStdOut(false);
+        driver.setRedirectForkedProcessToStdOut(false);
         return driver;
     }
 

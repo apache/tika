@@ -152,8 +152,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
                 }
             }
             if (!finished) {
-                LOG.warn("Had to kill process working on: {}", file.toAbsolutePath());
-                proc.destroy();
+                LOG.warn("Had to terminate process working on: {}", file.toAbsolutePath());
+                proc.destroyForcibly();
             }
             try {
                 proc.getOutputStream().flush();

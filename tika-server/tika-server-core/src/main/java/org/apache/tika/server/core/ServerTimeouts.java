@@ -20,42 +20,42 @@ public class ServerTimeouts {
 
     /*
     TODO: integrate these settings:
-     * Number of milliseconds to wait to start child process.
-    public static final long DEFAULT_CHILD_PROCESS_STARTUP_MILLIS = 60000;
+     * Number of milliseconds to wait to start forked process.
+    public static final long DEFAULT_FORKED_PROCESS_STARTUP_MILLIS = 60000;
 
-     * Maximum number of milliseconds to wait to shutdown child process to allow
+     * Maximum number of milliseconds to wait to shutdown forked process to allow
      * for current parses to complete.
-    public static final long DEFAULT_CHILD_PROCESS_SHUTDOWN_MILLIS = 30000;
+    public static final long DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS = 30000;
 
-    private long childProcessStartupMillis = DEFAULT_CHILD_PROCESS_STARTUP_MILLIS;
+    private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
 
-    private long childProcessShutdownMillis = DEFAULT_CHILD_PROCESS_SHUTDOWN_MILLIS;
+    private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
 
      */
 
 
 
     /**
-     * If the child doesn't receive a ping or the parent doesn't
-     * hear back from a ping in this amount of time, kill and restart the child.
+     * If the forked process doesn't receive a ping or the parent doesn't
+     * hear back from a ping in this amount of time, terminate and restart the forked process.
      */
     public static final long DEFAULT_PING_TIMEOUT_MILLIS = 30000;
 
     /**
-     * How often should the parent try to ping the child to check status
+     * How often should the parent try to ping the forked process to check status
      */
     public static final long DEFAULT_PING_PULSE_MILLIS = 500;
 
     /**
      * Number of milliseconds to wait per server task (parse, detect, unpack, translate,
-     * etc.) before timing out and shutting down the child process.
+     * etc.) before timing out and shutting down the forked process.
      */
     public static final long DEFAULT_TASK_TIMEOUT_MILLIS = 120000;
 
     /**
-     * Number of milliseconds to wait for child process to startup
+     * Number of milliseconds to wait for forked process to startup
      */
-    public static final long DEFAULT_CHILD_STARTUP_MILLIS = 120000;
+    public static final long DEFAULT_FORKED_STARTUP_MILLIS = 120000;
 
     private int maxRestarts = -1;
 
@@ -65,11 +65,11 @@ public class ServerTimeouts {
 
     private long pingPulseMillis = DEFAULT_PING_PULSE_MILLIS;
 
-    private long maxChildStartupMillis = DEFAULT_CHILD_STARTUP_MILLIS;
+    private long maxforkedStartupMillis = DEFAULT_FORKED_STARTUP_MILLIS;
 
 
     /**
-     * How long to wait for a task before shutting down the child server process
+     * How long to wait for a task before shutting down the forked server process
      * and restarting it.
      * @return
      */
@@ -94,8 +94,8 @@ public class ServerTimeouts {
      *
      * @param pingTimeoutMillis if the parent doesn't receive a response
      *                          in this amount of time, or
-     *                          if the child doesn't receive a ping
-     *                          in this amount of time, restart the child process
+     *                          if the forked doesn't receive a ping
+     *                          in this amount of time, restart the forked process
      */
     public void setPingTimeoutMillis(long pingTimeoutMillis) {
         this.pingTimeoutMillis = pingTimeoutMillis;
@@ -107,7 +107,7 @@ public class ServerTimeouts {
 
     /**
      *
-     * @param pingPulseMillis how often to test that the parent and/or child is alive
+     * @param pingPulseMillis how often to test that the parent and/or forked is alive
      */
     public void setPingPulseMillis(long pingPulseMillis) {
         this.pingPulseMillis = pingPulseMillis;
@@ -122,15 +122,15 @@ public class ServerTimeouts {
     }
 
     /**
-     * Maximum time in millis to allow for the child process to startup
+     * Maximum time in millis to allow for the forked process to startup
      * or restart
      * @return
      */
-    public long getMaxChildStartupMillis() {
-        return maxChildStartupMillis;
+    public long getMaxForkedStartupMillis() {
+        return maxforkedStartupMillis;
     }
 
-    public void setMaxChildStartupMillis(long maxChildStartupMillis) {
-        this.maxChildStartupMillis = maxChildStartupMillis;
+    public void setMaxForkedStartupMillis(long maxForkedStartupMillis) {
+        this.maxforkedStartupMillis = maxForkedStartupMillis;
     }
 }

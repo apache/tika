@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Child process that runs against a single input file
+ * Forked process that runs against a single input file
  */
 public class FuzzOne {
     private static final Logger LOG = LoggerFactory.getLogger(FuzzOne.class);

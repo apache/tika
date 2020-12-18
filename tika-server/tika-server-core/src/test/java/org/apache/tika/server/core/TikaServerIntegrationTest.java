@@ -90,7 +90,8 @@ public class TikaServerIntegrationTest extends TikaTest {
     public static void staticSetup() throws Exception {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
         LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
-        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_child.xml"), LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_forked.xml"),
+                LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @Before
@@ -132,7 +133,6 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-maxFiles", "2000",
-                                "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-tmpFilePrefix", "basic-"
                         });
@@ -154,7 +154,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-JXmx256m",
+                                "-JXmx256m",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-pingPulseMillis", "100",
                                 "-tmpFilePrefix", "tika-server-oom"
@@ -176,7 +176,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             //oom may or may not cause an exception depending
             //on the timing
         }
-        //give some time for the server to crash/kill itself
+        //give some time for the server to crash/terminate itself
         Thread.sleep(2000);
         try {
             testBaseline();
@@ -193,10 +193,10 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-JXmx256m",
+                                "-JXmx256m",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-pingPulseMillis", "100",
-                                "--status",
+                                "-status",
                                 "-tmpFilePrefix", "tika-server-oom"
 
                         });
@@ -216,7 +216,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             //oom may or may not cause an exception depending
             //on the timing
         }
-        //give some time for the server to crash/kill itself
+        //give some time for the server to crash/terminate itself
         Thread.sleep(2000);
         try {
             testBaseline();
@@ -235,11 +235,11 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-JXmx256m",
+                                "-JXmx256m",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-pingPulseMillis", "100",
-                                "--status",
-                                "--id",
+                                "-status",
+                                "-id",
                                 serverId,
                                 "-tmpFilePrefix", "tika-server-oom"
 
@@ -259,7 +259,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             //oom may or may not cause an exception depending
             //on the timing
         }
-        //give some time for the server to crash/kill itself
+        //give some time for the server to crash/terminate itself
         Thread.sleep(2000);
         try {
             testBaseline();
@@ -299,7 +299,6 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-tmpFilePrefix", "tika-server-systemexit"
 
@@ -318,7 +317,7 @@ public class TikaServerIntegrationTest extends TikaTest {
         } catch (Exception e) {
             //sys exit causes catchable problems for the client
         }
-        //give some time for the server to crash/kill itself
+        //give some time for the server to crash/terminate itself
         Thread.sleep(2000);
         try {
             testBaseline();
@@ -335,7 +334,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-p", INTEGRATION_TEST_PORT,
+                                "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "500",
                                 "-tmpFilePrefix", "tika-server-timeoutok"
@@ -370,7 +369,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-p", INTEGRATION_TEST_PORT,
+                                "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "100",
                                 "-pingPulseMillis", "100",
                                 "-tmpFilePrefix", "tika-server-timeout"
@@ -405,7 +404,7 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild", "-JXms20m", "-JXmx10m",
+                                "-JXms20m", "-JXmx10m",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-tmpFilePrefix", "tika-server-badargs"
 
@@ -432,7 +431,6 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100",
@@ -469,7 +467,6 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "60000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100"
@@ -504,7 +501,6 @@ public class TikaServerIntegrationTest extends TikaTest {
             public void run() {
                 TikaServerCli.main(
                         new String[]{
-                                "-spawnChild",
                                 "-p", INTEGRATION_TEST_PORT,
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-pingPulseMillis", "100", "-maxRestarts", "0",
@@ -571,7 +567,6 @@ public class TikaServerIntegrationTest extends TikaTest {
                 TikaServerCli.main(
                         new String[]{
                                 "-maxFiles", "10",
-                                "-spawnChild",
                                 "-taskTimeoutMillis", "10000", "-taskPulseMillis", "500",
                                 "-p", INTEGRATION_TEST_PORT
                         });

@@ -224,10 +224,6 @@ if [ -z "$TIKA_PORT" ]; then
   TIKA_PORT=9998
 fi
 
-if [ -z "$TIKA_SPAWN_CHILD_OPTS" ]; then
-  TIKA_SPAWN_CHILD_OPTS="-spawnChild"
-fi
-
 if [ -z "$TIKA_UPGRADE" ]; then
   TIKA_UPGRADE=NO
 fi
@@ -336,7 +332,7 @@ else
 LOG4J_PROPS=\"$TIKA_VAR_DIR/log4j.properties\"
 TIKA_LOGS_DIR=\"$TIKA_VAR_DIR/logs\"
 TIKA_PORT=\"$TIKA_PORT\"
-TIKA_SPAWN_CHILD_OPTS=\"$TIKA_SPAWN_CHILD_OPTS\"
+TIKA_FORKED_OPTS=\"$TIKA_FORKED_OPTS\"
 " >> "/etc/default/$TIKA_SERVICE.in.sh"
 fi
 chown root:${TIKA_USER} "/etc/default/$TIKA_SERVICE.in.sh"

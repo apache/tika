@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Class that waits for input on System.in.  If this reads
  * EOF or if there is an exception from the parent's IO,
- * this will send a signal to shutdown the child process.
+ * this will send a signal to shutdown the forked process.
  * <p>
  *     This will call System.exit(-1) if the process
  *     doesn't stop after {@link #pauseOnEarlyTermination}

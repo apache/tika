@@ -31,7 +31,7 @@ import java.util.UUID;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.cxf.binding.BindingFactoryManager;
@@ -75,7 +75,7 @@ import org.slf4j.LoggerFactory;
 public class TikaServerCli {
 
 
-    //used in spawn-child mode
+    //used in fork mode -- restart after processing this many files
     private static final long DEFAULT_MAX_FILES = 100000;
 
 
@@ -92,11 +92,11 @@ public class TikaServerCli {
             "drive or a webpage from your intranet.  See CVE-2015-3271.\n"+
             "Please make sure you know what you are doing.";
 
-    private static final List<String> ONLY_IN_SPAWN_CHILD_MODE =
+    private static final List<String> ONLY_IN_FORK_MODE =
             Arrays.asList(new String[] { "taskTimeoutMillis", "taskPulseMillis",
             "pingTimeoutMillis", "pingPulseMillis", "maxFiles", "javaHome", "maxRestarts",
                     "numRestarts",
-            "childStatusFile", "maxChildStartupMillis", "tmpFilePrefix"});
+            "forkedStatusFile", "maxForkedStartupMillis", "tmpFilePrefix"});
 
     private static Options getOptions() {
         Options options = new Options();
@@ -113,22 +113,32 @@ public class TikaServerCli {
         options.addOption("?", "help", false, "this help message");
         options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
         options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
-        options.addOption("spawnChild", false, "whether or not to spawn a child process for robustness");
-        options.addOption("taskTimeoutMillis", true, "Only in spawn child mode: how long to wait for a task (e.g. parse) to finish");
-        options.addOption("taskPulseMillis", true, "Only in spawn child mode: how often to check if a task has timed out.");
-        options.addOption("pingTimeoutMillis", true, "Only in spawn child mode: how long to wait to wait for a ping and/or ping response.");
-        options.addOption("pingPulseMillis", true, "Only in spawn child mode: how often to check if a ping has timed out.");
-        options.addOption("maxChildStartupMillis", true, "Only in spawn child mode: Maximum number of millis to wait for the child process to startup.");
-        options.addOption("maxRestarts", true, "Only in spawn child mode: how many times to restart child process, default is -1 (always restart)");
-        options.addOption("maxFiles", true, "Only in spawn child mode: shutdown server after this many files (to handle parsers that might introduce " +
+        options.addOption("noFork", false, "legacy mode, less robust -- this starts up tika-server" +
+                " without forking a process.");
+        options.addOption("taskTimeoutMillis", true,
+                "Not allowed in -noFork: how long to wait for a task (e.g. parse) to finish");
+        options.addOption("taskPulseMillis", true,
+                "Not allowed in -noFork: how often to check if a task has timed out.");
+        options.addOption("pingTimeoutMillis", true,
+                "Not allowed in -noFork: how long to wait to wait for a ping and/or ping response.");
+        options.addOption("pingPulseMillis", true,
+                "Not allowed in -noFork: how often to check if a ping has timed out.");
+        options.addOption("maxForkedStartupMillis", true,
+                "Not allowed in -noFork: Maximum number of millis to wait for the forked process to startup.");
+        options.addOption("maxRestarts", true,
+                "Not allowed in -noFork: how many times to restart forked process, default is -1 (always restart)");
+        options.addOption("maxFiles", true,
+                "Not allowed in -noFork: shutdown server after this many files (to handle parsers that might introduce " +
                 "slowly building memory leaks); the default is "+DEFAULT_MAX_FILES +". Set to -1 to turn this off.");
-        options.addOption("javaHome", true, "Only in spawn child mode: override system property JAVA_HOME for calling java for the child process");
-        options.addOption("child", false, "Only in spawn child mode: this process is a child process -- do not use this! " +
-                "Should only be invoked by parent process");
-        options.addOption("childStatusFile", true, "Only in spawn child mode: temporary file used as mmap to communicate " +
-                "with parent process -- do not use this! Should only be invoked by parent process.");
-        options.addOption("tmpFilePrefix", true, "Only in spawn child mode: prefix for temp file - for debugging only");
-        options.addOption("numRestarts", true, "Only in spawn child mode: number of times that the child has had to be restarted.");
+        options.addOption("javaHome", true,
+                "Not allowed in -noFork: override system property JAVA_HOME for calling java for the forked process");
+        options.addOption("forkedStatusFile", true,
+                "Not allowed in -noFork: temporary file used as to communicate " +
+                "with forking process -- do not use this! Should only be invoked by forking process.");
+        options.addOption("tmpFilePrefix", true,
+                "Not allowed in -noFork: prefix for temp file - for debugging only");
+        options.addOption("numRestarts", true,
+                "Not allowed in -noFork: number of times that the forked server has had to be restarted.");
         return options;
     }
 
@@ -146,31 +156,31 @@ public class TikaServerCli {
     private static void execute(String[] args) throws Exception {
         Options options = getOptions();
 
-        CommandLineParser cliParser = new GnuParser();
+        CommandLineParser cliParser = new DefaultParser();
 
-        //need to strip out -J (child jvm opts) from this parse
+        //need to strip out -J (forked jvm opts) from this parse
         //they'll be processed correctly in args in the watch dog
         //and they won't be needed in legacy.
-        CommandLine line = cliParser.parse(options, stripChildArgs(args));
-        if (line.hasOption("spawnChild")) {
-            TikaServerWatchDog watchDog = new TikaServerWatchDog();
-            watchDog.execute(args, configureServerTimeouts(line));
-        } else {
-            if (! line.hasOption("child")) {
+        CommandLine line = cliParser.parse(options, stripForkedArgs(args));
+        if (line.hasOption("noFork") || line.hasOption("forkedStatusFile")) {
+            if (line.hasOption("noFork")) {
                 //make sure the user didn't misunderstand the options
-                for (String childOnly : ONLY_IN_SPAWN_CHILD_MODE) {
-                    if (line.hasOption(childOnly)) {
-                        System.err.println("The option '" + childOnly +
-                                "' can only be used with '-spawnChild'");
+                for (String forkedOnly : ONLY_IN_FORK_MODE) {
+                    if (line.hasOption(forkedOnly)) {
+                        System.err.println("The option '" + forkedOnly +
+                                "' can't be used with '-noFork'");
                         usage(options);
                     }
                 }
             }
-            executeLegacy(line, options);
+            actuallyRunServer(line, options);
+        } else {
+            TikaServerWatchDog watchDog = new TikaServerWatchDog();
+            watchDog.execute(args, configureServerTimeouts(line));
         }
     }
 
-    private static String[] stripChildArgs(String[] args) {
+    private static String[] stripForkedArgs(String[] args) {
         List<String> ret = new ArrayList<>();
         for (String arg : args) {
             if (!arg.startsWith("-J")) {
@@ -180,7 +190,10 @@ public class TikaServerCli {
         return ret.toArray(new String[0]);
     }
 
-    private static void executeLegacy(CommandLine line, Options options) throws Exception {
+    //This starts the server in this process.  This can
+    //be either a direct call from -noFork or the process that is forked
+    //in the 2.0 default mode.
+    private static void actuallyRunServer(CommandLine line, Options options) throws Exception {
             if (line.hasOption("help")) {
                 usage(options);
             }
@@ -277,8 +290,10 @@ public class TikaServerCli {
             String serverId = line.hasOption("i") ? line.getOptionValue("i") : UUID.randomUUID().toString();
             LOG.debug("SERVER ID:" +serverId);
             ServerStatus serverStatus;
-            //if this is a child process
-            if (line.hasOption("child")) {
+
+            if (line.hasOption("noFork")) {
+                serverStatus = new ServerStatus(serverId, 0, true);
+            } else {
                 serverStatus = new ServerStatus(serverId, Integer.parseInt(line.getOptionValue("numRestarts")),
                         false);
                 //redirect!!!
@@ -292,14 +307,12 @@ public class TikaServerCli {
                 }
 
                 ServerTimeouts serverTimeouts = configureServerTimeouts(line);
-                String childStatusFile = line.getOptionValue("childStatusFile");
+                String forkedStatusFile = line.getOptionValue("forkedStatusFile");
                 Thread serverThread =
-                new Thread(new ServerStatusWatcher(serverStatus, in,
-                        Paths.get(childStatusFile), maxFiles, serverTimeouts));
+                        new Thread(new ServerStatusWatcher(serverStatus, in,
+                                Paths.get(forkedStatusFile), maxFiles, serverTimeouts));
 
                 serverThread.start();
-            } else {
-                serverStatus = new ServerStatus(serverId, 0, true);
             }
             TikaResource.init(tika, digester, inputStreamFactory, serverStatus);
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
@@ -386,13 +399,13 @@ public class TikaServerCli {
     private static ServerTimeouts configureServerTimeouts(CommandLine line) {
         ServerTimeouts serverTimeouts = new ServerTimeouts();
         /*TODO -- add these in
-        if (line.hasOption("childProcessStartupMillis")) {
-            serverTimeouts.setChildProcessStartupMillis(
-                    Long.parseLong(line.getOptionValue("childProcessStartupMillis")));
+        if (line.hasOption("forkedProcessStartupMillis")) {
+            serverTimeouts.setForkedProcessStartupMillis(
+                    Long.parseLong(line.getOptionValue("forkedProcessStartupMillis")));
         }
-        if (line.hasOption("childProcessShutdownMillis")) {
-            serverTimeouts.setChildProcessShutdownMillis(
-                    Long.parseLong(line.getOptionValue("childProcesShutdownMillis")));
+        if (line.hasOption("forkedProcessShutdownMillis")) {
+            serverTimeouts.setForkedProcessShutdownMillis(
+                    Long.parseLong(line.getOptionValue("forkedProcesShutdownMillis")));
         }*/
         if (line.hasOption("taskTimeoutMillis")) {
             serverTimeouts.setTaskTimeoutMillis(
@@ -411,9 +424,9 @@ public class TikaServerCli {
             serverTimeouts.setMaxRestarts(Integer.parseInt(line.getOptionValue("maxRestarts")));
         }
 
-        if (line.hasOption("maxChildStartupMillis")) {
-            serverTimeouts.setMaxChildStartupMillis(
-                    Long.parseLong(line.getOptionValue("maxChildStartupMillis")));
+        if (line.hasOption("maxForkedStartupMillis")) {
+            serverTimeouts.setMaxForkedStartupMillis(
+                    Long.parseLong(line.getOptionValue("maxForkedStartupMillis")));
         }
 
         return serverTimeouts;

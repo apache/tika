@@ -48,7 +48,7 @@ class BatchCommandLineBuilder {
         Map<String, String> processArgs = new LinkedHashMap<String, String>();
         Map<String, String> jvmOpts = new LinkedHashMap<String,String>();
         //take the args, and divide them into process args and options for
-        //the child jvm process (i.e. log files, etc)
+        //the forked jvm process (i.e. log files, etc)
         mapifyArgs(args, processArgs, jvmOpts);
 
         //now modify processArgs in place
@@ -114,10 +114,10 @@ class BatchCommandLineBuilder {
 
     /**
      * Take the input args and separate them into args that belong on the commandline
-     * and those that belong as jvm args for the child process.
+     * and those that belong as jvm args for the forked process.
      * @param args -- literal args from TikaCLI commandline
      * @param commandLine args that should be part of the batch commandline
-     * @param jvmArgs args that belong as jvm arguments for the child process
+     * @param jvmArgs args that belong as jvm arguments for the forked process
      */
     private static void mapifyArgs(final String[] args,
                                    final Map<String, String> commandLine,

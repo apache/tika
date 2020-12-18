@@ -41,7 +41,7 @@ public class ServerStatusWatcher implements Runnable {
     private final DataInputStream fromParent;
     private final long maxFiles;
     private final ServerTimeouts serverTimeouts;
-    private final Path childStatusPath;
+    private final Path forkedStatusPath;
     private final ByteBuffer statusBuffer = ByteBuffer.allocate(16);
 
 
@@ -49,13 +49,13 @@ public class ServerStatusWatcher implements Runnable {
     private volatile Instant lastPing = null;
 
     public ServerStatusWatcher(ServerStatus serverStatus,
-                               InputStream inputStream, Path childStatusPath,
+                               InputStream inputStream, Path forkedStatusPath,
                                long maxFiles,
                                ServerTimeouts serverTimeouts) throws IOException {
         this.serverStatus = serverStatus;
         this.maxFiles = maxFiles;
         this.serverTimeouts = serverTimeouts;
-        this.childStatusPath = childStatusPath;
+        this.forkedStatusPath = forkedStatusPath;
         serverStatus.setStatus(ServerStatus.STATUS.OPERATING);
         this.fromParent = new DataInputStream(inputStream);
         Thread statusWatcher = new Thread(new StatusWatcher());
@@ -109,7 +109,7 @@ public class ServerStatusWatcher implements Runnable {
     private void writeStatus() throws IOException {
         Instant started = Instant.now();
         long elapsed = Duration.between(started, Instant.now()).toMillis();
-        try (FileChannel channel = FileChannel.open(childStatusPath,
+        try (FileChannel channel = FileChannel.open(forkedStatusPath,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.WRITE)) {
             while (elapsed < serverTimeouts.getPingTimeoutMillis()) {
@@ -170,21 +170,21 @@ public class ServerStatusWatcher implements Runnable {
         }
 
         //if something went wrong with the parent,
-        //the child process should try to delete the tmp file
+        //the forked process should try to delete the tmp file
         if (status == ServerStatus.STATUS.PARENT_EXCEPTION) {
             try {
-                Files.delete(childStatusPath);
+                Files.delete(forkedStatusPath);
             } catch (IOException e) {
                 //swallow
             }
         }
-        LOG.info("Shutting down child process with status: {}", status.name());
+        LOG.info("Shutting down forked process with status: {}", status.name());
         System.exit(status.getShutdownCode());
     }
 
 
     //This is an internal thread that pulses every ServerTimeouts#pingPulseMillis
-    //within the child to see if the child should die.
+    //within the forked process to see if the forked process should terminate.
     private class StatusWatcher implements Runnable {
 
         @Override
@@ -193,7 +193,7 @@ public class ServerStatusWatcher implements Runnable {
                 ServerStatus.STATUS currStatus = serverStatus.getStatus();
 
                 if (currStatus != ServerStatus.STATUS.OPERATING) {
-                    LOG.warn("child process observed "+currStatus.name()+ " and is shutting down.");
+                    LOG.warn("forked process observed "+currStatus.name()+ " and is shutting down.");
                     shutdown(currStatus);
                 }
 

@@ -73,7 +73,8 @@
 # Sets the port Tika binds to, default is 9998
 #TIKA_PORT=9998
 
-# Tika Server has a number of options to make it more robust to OOMs, Infinite
-# Loops, and Memory Leaks via the -spawnChild parameter. Learn more at
-# http://wiki.apache.org/tika/TikaJAXRS
-#TIKA_SPAWN_CHILD_OPTS=-spawnChild -maxFiles 100000 -JXmx4g
+# As of Tika 2.0, Tika Server forks a process so that the forked
+# process is more robust to OOMs, Infinite
+# Loops, and Memory Leaks.  Learn more at
+# http://wiki.apache.org/tika/TikaJAXRS.
+#TIKA_FORKED_OPTS=-maxFiles 100000 -JXmx4g

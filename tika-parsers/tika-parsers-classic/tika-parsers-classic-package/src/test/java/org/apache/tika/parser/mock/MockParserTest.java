@@ -135,7 +135,7 @@ public class MockParserTest extends TikaTest {
     @Test
     public void testRealOOM() throws Exception {
         //Note: we're not actually testing the diff between fake and real oom
-        //i.e. by creating child process and setting different -Xmx or
+        //i.e. by creating a forked process and setting different -Xmx or
         //memory profiling.
         Metadata m = new Metadata();
         assertThrowable("real_oom.xml", m, OutOfMemoryError.class, "Java heap space");

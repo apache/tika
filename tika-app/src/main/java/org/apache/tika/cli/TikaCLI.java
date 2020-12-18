@@ -642,9 +642,9 @@ public class TikaCLI {
         out.println("    -numConsumers              Number of processing threads");
         out.println("    -bc                        Batch config file");
         out.println("    -maxRestarts               Maximum number of times the ");
-        out.println("                               watchdog process will restart the child process.");
+        out.println("                               watchdog process will restart the forked process.");
         out.println("    -timeoutThresholdMillis    Number of milliseconds allowed to a parse");
-        out.println("                               before the process is killed and restarted");
+        out.println("                               before the process is terminated and restarted");
         out.println("    -fileList                  List of files to process, with");
         out.println("                               paths relative to the input directory");
         out.println("    -includeFilePat            Regular expression to determine which");
@@ -655,7 +655,7 @@ public class TikaCLI {
         out.println();
         out.println("    Control the type of output with -x, -h, -t and/or -J.");
         out.println();
-        out.println("    To modify child process jvm args, prepend \"J\" as in:");
+        out.println("    To modify forked process jvm args, prepend \"J\" as in:");
         out.println("    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.");
     }
 
