@@ -351,7 +351,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.0</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.4.5-12</zstd.version>
+    <zstd.version>1.4.7-3</zstd.version>
   </properties>
 
   <dependencyManagement>
