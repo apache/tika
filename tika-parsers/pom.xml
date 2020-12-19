@@ -51,7 +51,7 @@
     <jempbox.version>1.8.16</jempbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <sis.version>1.0</sis.version>
-    <parso.version>2.0.12</parso.version>
+    <parso.version>2.0.13</parso.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
     <bouncycastle.version>1.67</bouncycastle.version>
     <commonsexec.version>1.3</commonsexec.version>
