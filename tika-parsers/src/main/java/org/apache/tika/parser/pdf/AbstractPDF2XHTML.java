@@ -100,7 +100,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
-import org.apache.tika.parser.sas.SAS7BDATParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -234,8 +233,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         //now try the xfa
-        if (pdfDocument.getDocumentCatalog().getAcroForm() != null &&
-            pdfDocument.getDocumentCatalog().getAcroForm().getXFA() != null) {
+        if (pdfDocument.getDocumentCatalog().getAcroForm(null) != null &&
+            pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
 
             Metadata xfaMetadata = new Metadata();
             xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
@@ -244,7 +243,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     supportedTypes.contains(XFA_MEDIA_TYPE)) {
                 byte[] bytes = null;
                 try {
-                    bytes = pdfDocument.getDocumentCatalog().getAcroForm().getXFA().getBytes();
+                    bytes = pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes();
                 } catch (IOException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 }
@@ -744,7 +743,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (catalog == null)
             return;
 
-        PDAcroForm form = catalog.getAcroForm();
+        PDAcroForm form = catalog.getAcroForm(null);
         if (form == null)
             return;
 
