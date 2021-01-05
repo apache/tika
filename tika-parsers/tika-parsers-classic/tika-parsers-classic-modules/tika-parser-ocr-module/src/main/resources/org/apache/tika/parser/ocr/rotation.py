@@ -15,14 +15,9 @@
  limitations under the License.
 """
 
-from __future__ import division, print_function
-import numpy
 from skimage.transform import radon
 from PIL import Image
-from numpy import asarray, mean, array, blackman
-from numpy.fft import rfft
-import matplotlib.pyplot as plt
-from matplotlib.mlab import rms_flat
+from numpy import asarray, mean, array, blackman, sqrt, absolute
 
 import sys
 import getopt
@@ -67,6 +62,12 @@ def main(argv):
 	rotation = argmax(r)
 
 	print('{:.2f}'.format(-(90-rotation)))
+
+def rms_flat(a):
+    """
+    Return the root mean square of all the elements of *a*, flattened out.
+    """
+    return sqrt(mean(absolute(a)**2))
 
 if __name__ == "__main__":
 	main(sys.argv[1:])

@@ -88,6 +88,9 @@ public class TesseractOCRConfig implements Serializable {
     // Path to ImageMagick program, if not on system path.
     private String imageMagickPath = "";
 
+    // Path to the python3 executable, if not on system path
+    private String pythonPath = "";
+
     // resolution of processed image (in dpi).
     private int density = 300;
 
@@ -101,6 +104,8 @@ public class TesseractOCRConfig implements Serializable {
     private String filter = "triangle";
 
     // factor by which image is to be scaled.
+    // TODO: we should make this dynamic depending on the size of the image
+    // The current testRotation.png takes minutes to expand 900%
     private int resize = 900;
 
     // See setPageSeparator.
@@ -187,6 +192,9 @@ public class TesseractOCRConfig implements Serializable {
                 getProp(props, "resize", getResize()));
         setApplyRotation(
         		getProp(props, "applyRotation", getApplyRotation()));
+
+        setPythonPath(
+                getProp(props, "pythonPath", getPythonPath()));
 
         loadOtherTesseractConfig(props);
     }
@@ -540,12 +548,26 @@ public class TesseractOCRConfig implements Serializable {
      */
     public void setImageMagickPath(String imageMagickPath) {
         imageMagickPath = FilenameUtils.normalize(imageMagickPath);
-        if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator))
+        if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator)) {
             imageMagickPath += File.separator;
-
+        }
         this.imageMagickPath = imageMagickPath;
     }
 
+    /**
+     * Path to the directory that contains the Python executable.
+     * As of 2.0.0, Tika expects the executable python3 or python3.exe
+     * to be in the directory specified by the pythonPath
+     *
+     * @param pythonPath
+     */
+    public void setPythonPath(String pythonPath) {
+        this.pythonPath = FilenameUtils.normalize(pythonPath);
+    }
+
+    public String getPythonPath() {
+        return pythonPath;
+    }
     /**
      * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
      * (Requires that Python is installed).

@@ -289,10 +289,11 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testRotatedOCR() throws Exception {
-        if (TesseractOCRParser.hasPython()) {
-            TesseractOCRConfig config = new TesseractOCRConfig();
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        if (TesseractOCRParser.hasPython(config)) {
             config.setApplyRotation(true);
             config.setEnableImageProcessing(1);
+            config.setResize(100);
             ParseContext parseContext = new ParseContext();
             parseContext.set(TesseractOCRConfig.class, config);
             assumeTrue(canRun(config));

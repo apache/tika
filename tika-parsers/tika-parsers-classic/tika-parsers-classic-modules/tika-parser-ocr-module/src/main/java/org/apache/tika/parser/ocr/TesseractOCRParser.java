@@ -43,6 +43,7 @@ import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.parser.image.JpegParser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +118,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
     private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<>();
     private static Map<String,Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
+    private static Map<String, Boolean> PYTHON_PRESENT = new HashMap<>();
 
 
     @Override
@@ -188,11 +190,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             IMAGE_MAGICK_PRESENT.put(ImageMagick, false);
             return false;
         }
-        if (SystemUtils.IS_OS_WINDOWS && config.getImageMagickPath().isEmpty()) {
-            LOG.warn("Must specify path for imagemagick on Windows OS to avoid accidental confusion with convert.exe");
-            IMAGE_MAGICK_PRESENT.put(ImageMagick, false);
-            return false;
-        }
 
         // Try running ImageMagick program from there, and see if it exists + works
         String[] checkCmd = { ImageMagick };
@@ -203,28 +200,50 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      
     }
 
+
     private String getImageMagickPath(TesseractOCRConfig config) {
         return config.getImageMagickPath() + getImageMagickProg();
     }
 
-    public static boolean hasPython() {
+    private static String getPythonPath(TesseractOCRConfig config) {
+        return config.getPythonPath()+getPythonProg();
+    }
+
+    public static boolean hasPython(TesseractOCRConfig config) {
+        String pythonPath = getPythonPath(config);
+        if (PYTHON_PRESENT.containsKey(pythonPath)) {
+            return PYTHON_PRESENT.get(pythonPath);
+        }
+        //prevent memory bloat
+        if (PYTHON_PRESENT.size() > 100) {
+            PYTHON_PRESENT.clear();
+        }
+        //check that directory exists
+        if (!config.getPythonPath().isEmpty() &&
+                ! Files.isDirectory(Paths.get(config.getPythonPath()))) {
+            PYTHON_PRESENT.put(pythonPath, false);
+            return false;
+        }
+
         // check if python is installed and it has the required dependencies for the rotation program to run
         boolean hasPython = false;
         TemporaryResources tmp = null;
         try {
             tmp = new TemporaryResources();
             File importCheck = tmp.createTemporaryFile();
-            String prg = "import numpy, matplotlib, skimage, _tkinter";
+            String prg = "from skimage.transform import radon\n" +
+                    "from PIL import Image\n"+"" +
+                    "import numpy\n";
             OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importCheck), Charset.forName("UTF-8"));
             out.write(prg);
             out.close();
 
-            Process p = Runtime.getRuntime().exec("python " + importCheck.getAbsolutePath());
+            Process p = Runtime.getRuntime().exec(new String[]{
+                    pythonPath,
+                    ProcessUtils.escapeCommandLine(importCheck.getAbsolutePath())});
             if (p.waitFor() == 0) {
                 hasPython = true;
             }
-
-
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
@@ -232,7 +251,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         } finally {
             IOUtils.closeQuietly(tmp);
         }
-
+        PYTHON_PRESENT.put(pythonPath, hasPython);
         return hasPython;
     }
 
@@ -356,22 +375,21 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             Files.copy(in, rotationScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
 
-    	CommandLine commandLine = new CommandLine("python");
-    	String[] args = {"-W",
-                "ignore",
-                rotationScript.getAbsolutePath(),
-                "-f",
-                scratchFile.getAbsolutePath()};
-    	commandLine.addArguments(args, true);
-    	String angle = "0"; 
-    			
-    	DefaultExecutor executor = new DefaultExecutor();
-    	ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    	PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-        executor.setStreamHandler(streamHandler);
-        
+        String angle = "0";
+        DefaultExecutor executor = new DefaultExecutor();
         // determine the angle of rotation required to make the text horizontal
-        if(config.getApplyRotation() && hasPython()) {
+        if(config.getApplyRotation() && hasPython(config)) {
+            CommandLine commandLine = new CommandLine(getPythonPath(config));
+            String[] args = {"-W",
+                    "ignore",
+                    rotationScript.getAbsolutePath(),
+                    "-f",
+                    scratchFile.getAbsolutePath()};
+            commandLine.addArguments(args, true);
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+            executor.setStreamHandler(streamHandler);
             try {
                 executor.execute(commandLine);
                 String tmpAngle = outputStream.toString("UTF-8").trim();
@@ -379,13 +397,16 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 Double.parseDouble(tmpAngle);
                 angle = tmpAngle;
             } catch(Exception e) {	
-
+                //TODO: log
             }
         }
               
         // process the image - parameter values can be set in TesseractOCRConfig.properties
-        commandLine = new CommandLine(getImageMagickPath(config));
-        args = new String[]{
+        CommandLine commandLine = new CommandLine(getImageMagickPath(config));
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            commandLine.addArgument("convert");
+        }
+        String[] args = new String[]{
                 "-density", Integer.toString(config.getDensity()),
                 "-depth ", Integer.toString(config.getDepth()),
                 "-colorspace", config.getColorspace(),
@@ -396,10 +417,11 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 scratchFile.getAbsolutePath()
         };
         commandLine.addArguments(args, true);
+        LOG.debug("ImageMagick commandline: "+commandLine);
 		try {
 			executor.execute(commandLine);
 		} catch(Exception e) {	
-
+            //TODO: log
 		} 
        
         tmp.close();
@@ -633,7 +655,12 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     public static String getImageMagickProg() {
-    	return System.getProperty("os.name").startsWith("Windows") ? "convert.exe" : "convert";
+    	return System.getProperty("os.name").startsWith("Windows") ?
+                "magick" : "convert";
+    }
+
+    public static String getPythonProg() {
+        return "python3";
     }
 
 
@@ -783,6 +810,11 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     @Field
     public void setApplyRotation(boolean applyRotation) {
         defaultConfig.setApplyRotation(applyRotation);
+    }
+
+    @Field
+    public void setPythonPath(String pythonPath) {
+        defaultConfig.setPythonPath(pythonPath);
     }
 
     public TesseractOCRConfig getDefaultConfig() {
