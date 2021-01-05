@@ -290,17 +290,17 @@ public class TesseractOCRParserTest extends TikaTest {
     @Test
     public void testRotatedOCR() throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
-        if (TesseractOCRParser.hasPython(config)) {
-            config.setApplyRotation(true);
-            config.setEnableImageProcessing(1);
-            config.setResize(100);
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(TesseractOCRConfig.class, config);
-            assumeTrue(canRun(config));
+        assumeTrue(TesseractOCRParser.hasPython(config));
+        assumeTrue(TesseractOCRParser.hasImageMagick(config));
+        config.setApplyRotation(true);
+        config.setEnableImageProcessing(1);
+        config.setResize(100);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, config);
+        assumeTrue(canRun(config));
 
-            String ocr = getText("testRotated.png", new Metadata(), parseContext);
-            assertContains("Its had resolving otherwise she contented therefore", ocr);
-        }
+        String ocr = getText("testRotated.png", new Metadata(), parseContext);
+        assertContains("Its had resolving otherwise she contented therefore", ocr);
     }
 
     @Test

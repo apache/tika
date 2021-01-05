@@ -161,18 +161,22 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         if (! config.getTesseractPath().isEmpty() &&
                 ! Files.isDirectory(Paths.get(config.getTesseractPath()))) {
             TESSERACT_PRESENT.put(tesseract, false);
+            LOG.warn("You haven't specified an existing directory in " +
+                    "which the tesseract binary should be found: " +
+                    "(path:" + config.getTesseractPath()+")");
             return false;
         }
 
         // Try running Tesseract from there, and see if it exists + works
         String[] checkCmd = { tesseract };
         boolean hasTesseract = ExternalParser.check(checkCmd);
+        LOG.debug("hasTesseract (path: "+checkCmd+"): "+hasTesseract);
         TESSERACT_PRESENT.put(tesseract, hasTesseract);
         return hasTesseract;
      
     }
     
-    private boolean hasImageMagick(TesseractOCRConfig config) {
+    public static boolean hasImageMagick(TesseractOCRConfig config) {
         // Fetch where the config says to find ImageMagick Program
         String ImageMagick = getImageMagickPath(config);
 
@@ -194,6 +198,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         // Try running ImageMagick program from there, and see if it exists + works
         String[] checkCmd = { ImageMagick };
         boolean hasImageMagick = ExternalParser.check(checkCmd);
+        if (!hasImageMagick) {
+            LOG.warn("ImageMagick does not appear to be installed " +
+                    "(commandline: "+ImageMagick+")");
+        }
         IMAGE_MAGICK_PRESENT.put(ImageMagick, hasImageMagick);
         
         return hasImageMagick;
@@ -201,7 +209,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
 
-    private String getImageMagickPath(TesseractOCRConfig config) {
+    private static String getImageMagickPath(TesseractOCRConfig config) {
         return config.getImageMagickPath() + getImageMagickProg();
     }
 
@@ -227,30 +235,58 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
 
         // check if python is installed and it has the required dependencies for the rotation program to run
         boolean hasPython = false;
+
+        String[] checkCmd = { pythonPath, "--version" };
+        boolean hasPythonExecutable = ExternalParser.check(checkCmd);
+        if (! hasPythonExecutable) {
+            LOG.warn("couldn't run python executable ("+
+                    pythonPath+")");
+            PYTHON_PRESENT.put(pythonPath, hasPythonExecutable);
+            return hasPythonExecutable;
+        }
+
         TemporaryResources tmp = null;
+        File importCheck = null;
         try {
             tmp = new TemporaryResources();
-            File importCheck = tmp.createTemporaryFile();
+            importCheck = tmp.createTemporaryFile();
             String prg = "from skimage.transform import radon\n" +
-                    "from PIL import Image\n"+"" +
+                    "from PIL import Image\n" + "" +
                     "import numpy\n";
             OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importCheck), Charset.forName("UTF-8"));
             out.write(prg);
+            out.flush();
             out.close();
-
-            Process p = Runtime.getRuntime().exec(new String[]{
-                    pythonPath,
-                    ProcessUtils.escapeCommandLine(importCheck.getAbsolutePath())});
-            if (p.waitFor() == 0) {
-                hasPython = true;
-            }
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            //swallow
-        } finally {
-            IOUtils.closeQuietly(tmp);
+        } catch (IOException e) {
+            LOG.warn("Error writing file to test correct libs are available", e);
+            hasPython = false;
+            PYTHON_PRESENT.put(pythonPath, hasPython);
+            return hasPython;
         }
+
+        Process p = null;
+            try {
+                p = Runtime.getRuntime().exec(new String[]{
+                        pythonPath,
+                        ProcessUtils.escapeCommandLine(importCheck.getAbsolutePath())});
+                boolean completed = p.waitFor(30, TimeUnit.SECONDS);
+                hasPython = completed;
+                if (! completed) {
+                    LOG.warn("python3 did not successfully complete after 30 seconds");
+                    LOG.warn("rotation.py cannot be called");
+                }
+            } catch (SecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                LOG.warn("python3 ("+
+                                pythonPath+ ") is not installed with the required dependencies: scikit-image and numpy",
+                        e);
+            } finally {
+                if (p != null) {
+                    p.destroyForcibly();
+                }
+                IOUtils.closeQuietly(tmp);
+            }
         PYTHON_PRESENT.put(pythonPath, hasPython);
         return hasPython;
     }
@@ -390,14 +426,17 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
             executor.setStreamHandler(streamHandler);
+            String tmpAngle = "";
             try {
                 executor.execute(commandLine);
-                String tmpAngle = outputStream.toString("UTF-8").trim();
+                tmpAngle = outputStream.toString("UTF-8").trim();
                 //verify that you've gotten a numeric value out
                 Double.parseDouble(tmpAngle);
                 angle = tmpAngle;
-            } catch(Exception e) {	
-                //TODO: log
+            } catch(SecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                LOG.warn("rotation.py failed (commandline: "+commandLine+") tmpAngle: "+tmpAngle, e);
             }
         }
               
@@ -417,11 +456,12 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 scratchFile.getAbsolutePath()
         };
         commandLine.addArguments(args, true);
-        LOG.debug("ImageMagick commandline: "+commandLine);
 		try {
 			executor.execute(commandLine);
-		} catch(Exception e) {	
-            //TODO: log
+		} catch (SecurityException e) {
+		    throw e;
+        } catch (Exception e) {
+            LOG.warn("ImageMagick failed (commandline: "+commandLine+")", e);
 		} 
        
         tmp.close();
