@@ -37,7 +37,7 @@ public class CompareUtils {
 
         // If both classes are Tika's class or both are not Tika's class, compare by name String.
         if (tika1 == tika2) {
-            return n2.compareTo(n1);
+            return n1.compareTo(n2);
         }
 
         // Otherwise one of these two class is Tika's class. Then the non-Tika's class comes before Tika's class.

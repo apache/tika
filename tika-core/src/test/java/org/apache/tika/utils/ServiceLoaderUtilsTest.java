@@ -42,10 +42,10 @@ public class ServiceLoaderUtilsTest {
         //and then reverse alphabetical order
         Detector[] detectors = new Detector[]{
                 new MyCustomDetector(),
-                new ZeroSizeFileDetector(),
-                new OverrideDetector(),
-                new FileCommandDetector(),
                 new EmptyDetector(),
+                new FileCommandDetector(),
+                new OverrideDetector(),
+                new ZeroSizeFileDetector()
         };
         List<Detector> expected = Arrays.asList(detectors);
         List<Detector> shuffled = new ArrayList<>();

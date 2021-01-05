@@ -38,7 +38,7 @@ public class TestDetectorLoading {
                 detectors.get(1).getClass().getName());
 
         assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
-                detectors.get(4).getClass().getName());
+                detectors.get(3).getClass().getName());
         assertEquals("org.apache.tika.mime.MimeTypes",
                 detectors.get(6).getClass().getName());
     }
