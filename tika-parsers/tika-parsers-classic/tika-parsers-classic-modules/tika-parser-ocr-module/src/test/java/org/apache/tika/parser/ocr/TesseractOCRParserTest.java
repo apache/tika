@@ -16,9 +16,25 @@
  */
 package org.apache.tika.parser.ocr;
 
+import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class TesseractOCRParserTest {
+import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
+
+public class TesseractOCRParserTest extends TikaTest {
 
     public static boolean canRun() {
         TesseractOCRConfig config = new TesseractOCRConfig();
@@ -31,4 +47,79 @@ public class TesseractOCRParserTest {
         // If Tesseract is not on the path, do not run the test.
         return ExternalParser.check(checkCmd);
     }
+
+    @Test
+    public void testImageMagick() throws Exception {
+        //TODO -- figure out what the original intention was for this test or remove it.
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        assumeTrue(TesseractOCRParser.IMAGE_PREPROCESSOR.hasImageMagick(config));
+        String[] CheckCmd = {config.getImageMagickPath() + TesseractOCRParser.IMAGE_PREPROCESSOR.getImageMagickProg()};
+        assertTrue(ExternalParser.check(CheckCmd));
+    }
+
+    @Test
+    public void testInterwordSpacing() throws Exception {
+        assumeTrue("can run OCR", canRun());
+        //default
+        String xml = getXML("testOCR_spacing.png").xml;
+        assertContains("The quick", xml);
+
+        TesseractOCRConfig tesseractOCRConfigconfig = new TesseractOCRConfig();
+        tesseractOCRConfigconfig.setPreserveInterwordSpacing(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, tesseractOCRConfigconfig);
+
+        //with preserve interwordspacing "on"
+        //allow some flexibility in case Tesseract is computing spaces
+        //somewhat differently in different versions/OS's, etc.
+        xml = getXML("testOCR_spacing.png", parseContext).xml;
+        Matcher m = Pattern.compile("The\\s{5,20}quick").matcher(xml);
+        assertTrue(m.find());
+    }
+
+    @Test
+    public void confirmMultiPageTiffHandling() throws Exception {
+        assumeTrue("can run OCR", canRun());
+        //tesseract should handle multipage tiffs by itself
+        //let's confirm that
+        String xml = getXML("testTIFF_multipage.tif").xml;
+        assertContains("Page 2", xml);
+    }
+
+    @Test
+    public void testRotatedOCR() throws Exception {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        assumeTrue(TesseractOCRParser.IMAGE_PREPROCESSOR.hasPython(config));
+        assumeTrue(TesseractOCRParser.IMAGE_PREPROCESSOR.hasImageMagick(config));
+        config.setApplyRotation(true);
+        config.setEnableImageProcessing(true);
+        config.setResize(100);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, config);
+        assumeTrue(canRun(config));
+        Metadata metadata = new Metadata();
+        String ocr = getText("testRotated.png", metadata, parseContext);
+        assertContains("Its had resolving otherwise she contented therefore", ocr);
+        assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
+        assertEquals(-10.0,
+                Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)), 0.01);
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        try (InputStream is = getResourceAsStream("/org/apache/tika/config/TIKA-2705-tesseract.xml")) {
+            TikaConfig config = new TikaConfig(is);
+            Parser p = config.getParser();
+            Parser tesseractOCRParser = findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+            assertNotNull(tesseractOCRParser);
+
+            TesseractOCRConfig tesseractOCRConfig = ((TesseractOCRParser)tesseractOCRParser).getDefaultConfig();
+            Assert.assertEquals(241, tesseractOCRConfig.getTimeout());
+            Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
+            Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
+            Assert.assertEquals(false, tesseractOCRConfig.getApplyRotation());
+            assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
+        }
+    }
+
 }

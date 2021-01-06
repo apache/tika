@@ -279,6 +279,7 @@ public final class Property implements Comparable<Property> {
         return new Property(name, false, ValueType.OPEN_CHOICE, choices);
     }
 
+
     public static Property externalDate(String name) {
         return new Property(name, false, ValueType.DATE);
     }
@@ -287,6 +288,10 @@ public final class Property implements Comparable<Property> {
        return new Property(name, false, ValueType.REAL);
    }
 
+    public static Property externalRealSeq(String name) {
+        return new Property(name, false, PropertyType.SEQ, ValueType.BOOLEAN.REAL);
+    }
+
     public static Property externalInteger(String name) {
         return new Property(name, false, ValueType.INTEGER);
     }
@@ -294,6 +299,10 @@ public final class Property implements Comparable<Property> {
     public static Property externalBoolean(String name) {
        return new Property(name, false, ValueType.BOOLEAN);
    }
+
+    public static Property externalBooleanSeq(String name) {
+        return new Property(name, false, PropertyType.SEQ, ValueType.BOOLEAN);
+    }
 
     public static Property externalText(String name) {
         return new Property(name, false, ValueType.TEXT);

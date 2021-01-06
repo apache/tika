@@ -83,7 +83,7 @@ public class TesseractOCRConfig implements Serializable {
     private OUTPUT_TYPE outputType = OUTPUT_TYPE.TXT;
 
     // enable image processing (optional)
-    private int enableImageProcessing = 0;
+    private boolean enableImageProcessing = false;
 
     // Path to ImageMagick program, if not on system path.
     private String imageMagickPath = "";
@@ -177,7 +177,7 @@ public class TesseractOCRConfig implements Serializable {
 
         // set parameters for ImageMagick
         setEnableImageProcessing(
-                getProp(props, "enableImageProcessing", isEnableImageProcessing()));
+                getProp(props, "enableImageProcessing", getEnableImageProcessing()));
         setImageMagickPath(
                 getProp(props, "ImageMagickPath", getImageMagickPath()));
         setDensity(
@@ -408,9 +408,9 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * @return image processing is enabled or not
-     * @see #setEnableImageProcessing(int)
+     * @see #setEnableImageProcessing(boolean)
      */
-    public int isEnableImageProcessing() {
+    public boolean getEnableImageProcessing() {
         return enableImageProcessing;
     }
 
@@ -418,7 +418,7 @@ public class TesseractOCRConfig implements Serializable {
      * Set the value to true if processing is to be enabled.
      * Default value is false.
      */
-    public void setEnableImageProcessing(int enableImageProcessing) {
+    public void setEnableImageProcessing(boolean enableImageProcessing) {
         this.enableImageProcessing = enableImageProcessing;
     }
 
