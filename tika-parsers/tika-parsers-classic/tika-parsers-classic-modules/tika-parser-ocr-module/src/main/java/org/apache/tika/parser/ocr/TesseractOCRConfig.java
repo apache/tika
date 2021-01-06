@@ -17,6 +17,8 @@
 package org.apache.tika.parser.ocr;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +48,8 @@ import java.util.regex.Pattern;
 public class TesseractOCRConfig implements Serializable {
 
     private static final long serialVersionUID = -4861942486845757891L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRConfig.class);
 
     private static Pattern ALLOWABLE_PAGE_SEPARATORS_PATTERN =
             Pattern.compile("(?i)^[-_/\\.A-Z0-9]+$");
@@ -706,6 +710,12 @@ public class TesseractOCRConfig implements Serializable {
             if (k.contains("_")) {
                 addOtherTesseractConfig(k, properties.getProperty(k));
             }
+        }
+    }
+
+    void consistencyCheck() {
+        if (applyRotation && !enableImageProcessing) {
+            LOG.warn("can't apply rotation unless you've also enabled image processing");
         }
     }
 }

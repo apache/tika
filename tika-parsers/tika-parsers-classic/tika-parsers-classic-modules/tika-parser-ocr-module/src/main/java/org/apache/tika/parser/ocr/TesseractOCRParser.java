@@ -201,6 +201,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
         TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, defaultConfig);
+        config.consistencyCheck();
         // If Tesseract is not on the path with the current config, do not try to run OCR
         // getSupportedTypes shouldn't have listed us as handling it, so this should only
         //  occur if someone directly calls this parser, not via DefaultParser or similar
