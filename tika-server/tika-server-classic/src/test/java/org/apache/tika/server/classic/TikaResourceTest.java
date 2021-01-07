@@ -73,6 +73,11 @@ public class TikaResourceTest extends CXFTestBase {
         sf.setProviders(providers);
     }
 
+    @Override
+    protected InputStream getTikaConfigInputStream() {
+        return getClass().getResourceAsStream("/config/tika-config-for-server-tests.xml");
+    }
+
     @Test
     public void testHelloWorld() throws Exception {
         Response response = WebClient.create(endPoint + TIKA_PATH)

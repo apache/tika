@@ -78,6 +78,11 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         sf.setProviders(providers);
     }
 
+    @Override
+    protected InputStream getTikaConfigInputStream() {
+        return getClass().getResourceAsStream("/config/tika-config-for-server-tests.xml");
+    }
+
     @Test
     public void testGZOut() throws Exception {
         Response response = WebClient

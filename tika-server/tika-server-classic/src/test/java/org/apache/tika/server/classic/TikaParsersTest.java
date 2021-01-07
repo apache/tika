@@ -58,6 +58,11 @@ public class TikaParsersTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
     }
 
+    @Override
+    protected InputStream getTikaConfigInputStream() {
+        return getClass().getResourceAsStream("/config/tika-config-for-server-tests.xml");
+    }
+
     protected String getPath(boolean withDetails) {
         return withDetails ? PARSERS_DETAILS_PATH : PARSERS_SUMMARY_PATH;
     }

@@ -349,6 +349,10 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         getConfig("TIKA-2732-xmlreaderutils-exc.xml");
     }
 
+    @Test(expected = TikaConfigException.class)
+    public void testBadExclude() throws Exception {
+        getConfig("TIKA-3268-bad-parser-exclude.xml");
+    }
 
 
 }

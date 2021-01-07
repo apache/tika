@@ -121,7 +121,14 @@ public abstract class CXFTestBase {
     }
 
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/config/tika-config-for-server-tests.xml");
+        return new ByteArrayInputStream(
+                new String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+
+                        "<properties>\n" +
+                        "    <parsers>\n" +
+                        "        <parser class=\"org.apache.tika.parser.DefaultParser\"/>\n"+
+                        "    </parsers>\n"+
+                        "</properties>").getBytes(UTF_8)
+        );
     }
 
     /**

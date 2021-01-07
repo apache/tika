@@ -661,7 +661,12 @@ public class TikaConfig {
                         for (int i = 0; i < excludeChildNodes.getLength(); i++) {
                             Element excl = (Element)excludeChildNodes.item(i);
                             String exclName = excl.getAttribute("class");
-                            excludeChildren.add(loader.getServiceClass(getLoaderClass(), exclName));
+                            try {
+                                excludeChildren.add(loader.getServiceClass(getLoaderClass(), exclName));
+                            } catch (ClassNotFoundException e) {
+                                //TIKA-3268 -- This should stop the world.
+                                throw new TikaConfigException("Class now found in -exclude list: " +exclName);
+                            }
                         }
                     }
                     
