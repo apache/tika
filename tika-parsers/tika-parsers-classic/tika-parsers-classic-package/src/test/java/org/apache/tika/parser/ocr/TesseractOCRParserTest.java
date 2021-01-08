@@ -81,27 +81,6 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals(ImageParser.class, defaultParser.getParsers(parseContext).get(png).getClass());
     }
 
-    /*
-    If Tesseract is found, test we retrieve the proper number of supporting Parsers.
-     */
-    @Test
-    public void offersTypesIfFound() throws Exception {
-        TesseractOCRParser parser = new TesseractOCRParser();
-        DefaultParser defaultParser = new DefaultParser();
-
-        ParseContext parseContext = new ParseContext();
-        MediaType png = MediaType.image("png");
-
-        // Assuming that Tesseract is on the path, we should find 5 Parsers that support PNG.
-        assumeTrue("can run OCR", canRun());
-
-        Assert.assertEquals(8, parser.getSupportedTypes(parseContext).size());
-        assertTrue(parser.getSupportedTypes(parseContext).contains(png));
-
-        // DefaultParser will now select the TesseractOCRParser.
-        assertEquals(TesseractOCRParser.class, defaultParser.getParsers(parseContext).get(png).getClass());
-    }
-
     @Test
     public void testPDFOCR() throws Exception {
         String resource = "testOCR.pdf";
@@ -173,7 +152,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata(resource,
                 AUTO_DETECT_PARSER, handlerType, parseContext);
-
+        debug(metadataList);
         assertEquals(numMetadatas, metadataList.size());
 
         StringBuilder contents = new StringBuilder();

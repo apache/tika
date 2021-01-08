@@ -205,7 +205,7 @@ public class PDFParserTest extends TikaTest {
         }
 
         List<Metadata> metadatas = handler.getMetadataList();
-
+        debug(metadatas);
         assertEquals(5, metadatas.size());
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image0.jpg", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));

@@ -338,7 +338,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
     }
 
     
-    private class EmbeddedParserDecorator extends ParserDecorator {
+    private class EmbeddedParserDecorator extends StatefulParser {
         
         private static final long serialVersionUID = 207648200464263337L;
         

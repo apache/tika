@@ -121,4 +121,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
     }
 
+    public Parser getDelegatingParser() {
+        return DELEGATING_PARSER;
+    }
 }

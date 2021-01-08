@@ -17,8 +17,6 @@
 package org.apache.tika.parser.image;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryResources;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -34,7 +32,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 
-public class HeifParser extends AbstractParser {
+public class HeifParser extends AbstractImageParser {
+
     private static final Set<MediaType> SUPPORTED_TYPES =
             new HashSet<>(
                     Arrays.asList(
@@ -44,19 +43,16 @@ public class HeifParser extends AbstractParser {
                             MediaType.image("heic-sequence")
                             )
             );
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+    void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
+                         ParseContext parseContext) throws IOException, SAXException, TikaException {
         new ImageMetadataExtractor(metadata).parseHeif(stream);
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.endDocument();
-
     }
+
+
 }

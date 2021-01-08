@@ -16,10 +16,6 @@
  */
 package org.apache.tika.parser.ocr;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.Field;
 import org.apache.tika.config.Initializable;
@@ -32,30 +28,23 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
-import org.apache.tika.parser.image.ImageParser;
-import org.apache.tika.parser.image.TiffParser;
-import org.apache.tika.parser.image.JpegParser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.imageio.ImageIO;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -63,9 +52,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -75,7 +62,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -86,6 +72,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
  * TesseractOCRParser powered by tesseract-ocr engine. To enable this parser,
@@ -105,6 +92,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META+"rotation");
     public static final Property IMAGE_MAGICK = Property.externalBooleanSeq(TESS_META+"image_magick_processed");
+    private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
 
     private static volatile boolean HAS_WARNED = false;
@@ -114,9 +102,20 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     private static final long serialVersionUID = -8167538283213097265L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(new MediaType[]{
-                    MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
-                    MediaType.image("bmp"), MediaType.image("gif"), MediaType.image("jp2"),
-                    MediaType.image("jpx"), MediaType.image("x-portable-pixmap")
+                    MediaType.image(OCR+"png"),
+                    MediaType.image(OCR+"jpeg"),
+                    MediaType.image(OCR+"tiff"),
+                    MediaType.image(OCR+"bmp"),
+                    MediaType.image(OCR+"gif"),
+                    //these are not currently covered by other parsers
+                    MediaType.image("jp2"),
+                    MediaType.image("jpx"),
+                    MediaType.image("x-portable-pixmap"),
+                    //add the ocr- versions as well
+                    MediaType.image(OCR+"jp2"),
+                    MediaType.image(OCR+"jpx"),
+                    MediaType.image(OCR+"x-portable-pixmap"),
+
             })));
     private final TesseractOCRConfig defaultConfig = new TesseractOCRConfig();
 
@@ -218,14 +217,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             //this is the text output file name specified on the tesseract
             //commandline.  The actual output file name will have a suffix added.
             File tmpOCROutputFile = tmp.createTemporaryFile();
-
-            // Temporary workaround for TIKA-1445 - until we can specify
-            //  composite parsers with strategies (eg Composite, Try In Turn),
-            //  always send the image onwards to the regular parser to have
-            //  the metadata for them extracted as well
-            _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, new DefaultHandler(), metadata, parseContext);
-
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, new Metadata());
             xhtml.startDocument();
             parse(tikaStream, tmpOCROutputFile, xhtml, metadata, parseContext, config);
             xhtml.endDocument();
@@ -233,43 +225,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             tmp.dispose();
         }
     }
-
-
-    /**
-     * Use this to parse content without starting a new document.
-     * This appends SAX events to xhtml without re-adding the metadata, body start, etc.
-     *
-     * @param stream inputstream
-     * @param xhtml handler
-     * @param config TesseractOCRConfig to use for this parse
-     * @throws IOException
-     * @throws SAXException
-     * @throws TikaException
-     *
-     */
-    public void parseInline(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata,
-                            ParseContext parseContext,
-                            TesseractOCRConfig config)
-            throws IOException, SAXException, TikaException {
-        // If Tesseract is not on the path with the current config, do not try to run OCR
-        // getSupportedTypes shouldn't have listed us as handling it, so this should only
-        //  occur if someone directly calls this parser, not via DefaultParser or similar
-        if (! hasTesseract(config))
-            return;
-
-        TemporaryResources tmp = new TemporaryResources();
-        try {
-            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
-            File tmpImgFile = tmp.createTemporaryFile();
-            parse(tikaStream, tmpImgFile, xhtml, metadata, parseContext, config);
-        } finally {
-            tmp.dispose();
-        }
-    }
-
     
     private void parse(TikaInputStream tikaInputStream, File tmpOCROutputFile,
-                       XHTMLContentHandler xhtml, Metadata metadata, ParseContext parseContext,
+                       ContentHandler xhtml, Metadata metadata, ParseContext parseContext,
                        TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
         File tmpTxtOutput = null;
@@ -354,20 +312,6 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             }
         }
     }
-    // TIKA-1445 workaround parser
-    private static Parser _TMP_IMAGE_METADATA_PARSER = new CompositeImageParser();
-
-
-
-    private static class CompositeImageParser extends CompositeParser {
-        private static final long serialVersionUID = -2398203346206381382L;
-        private static List<Parser> imageParsers = Arrays.asList(new Parser[]{
-                new ImageParser(), new JpegParser(), new TiffParser()
-        });
-        CompositeImageParser() {
-            super(new MediaTypeRegistry(), imageParsers);
-        }
-    }
 
     /**
      * Run external tesseract-ocr process.
@@ -449,8 +393,11 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
      * @throws IOException
      *           if an input error occurred
      */
-    private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
-        xhtml.startElement("div", "class", "ocr");
+    private void extractOutput(InputStream stream, ContentHandler xhtml) throws SAXException, IOException {
+        //        <div class="ocr"
+        AttributesImpl attrs = new AttributesImpl();
+        attrs.addAttribute("", "class", "class", "CDATA", "ocr");
+        xhtml.startElement(XHTML, "div", "div", attrs);
         try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             char[] buffer = new char[1024];
             for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
@@ -459,18 +406,21 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                 }
             }
         }
-        xhtml.endElement("div");
+        xhtml.endElement(XHTML, "div", "div");
     }
 
     private void extractHOCROutput(InputStream is, ParseContext parseContext,
-                                   XHTMLContentHandler xhtml) throws TikaException, IOException, SAXException {
+                                   ContentHandler xhtml) throws TikaException, IOException, SAXException {
         if (parseContext == null) {
             parseContext = new ParseContext();
         }
 
-        xhtml.startElement("div", "class", "ocr");
+//        <div class="ocr"
+        AttributesImpl attrs = new AttributesImpl();
+        attrs.addAttribute("", "class", "class", "CDATA", "ocr");
+        xhtml.startElement(XHTML, "div", "div", attrs);
         XMLReaderUtils.parseSAX(is, new OfflineContentHandler(new HOCRPassThroughHandler(xhtml)), parseContext);
-        xhtml.endElement("div");
+        xhtml.endElement(XHTML, "div", "div");
 
     }
 
