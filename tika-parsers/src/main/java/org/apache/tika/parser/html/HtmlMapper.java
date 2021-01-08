@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.html;
 
+import org.xml.sax.Attributes;
+
 /**
  * HTML mapper used to make incoming HTML documents easier to handle by
  * Tika clients. The {@link HtmlParser} looks up an optional HTML mapper from
@@ -51,6 +53,17 @@ public interface HtmlMapper {
      */
     boolean isDiscardElement(String name);
 
+    /**
+     * An extended version of {@link HtmlMapper#isDiscardElement(String)} method which takes attributes into account.
+     *
+     * @param name HTML element name (upper case)
+     * @param attributes HTML element attributes
+     * @return <code>true</code> if content inside the named element
+     * should be ignored, <code>false</code> otherwise
+     * */
+    default boolean isDiscardElement(String name, Attributes attributes) {
+        return isDiscardElement(name);
+    }
 
     /**
      * Maps "safe" HTML attribute names to semantic XHTML equivalents. If the

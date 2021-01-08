@@ -131,7 +131,7 @@ class HtmlHandler extends TextContentHandler {
         if ("BODY".equals(name) || ("FRAMESET".equals(name)) || bodyLevel > 0) {
             bodyLevel++;
         }
-        if (mapper.isDiscardElement(name) || discardLevel > 0) {
+        if (mapper.isDiscardElement(name, atts) || discardLevel > 0) {
             discardLevel++;
         }
 
