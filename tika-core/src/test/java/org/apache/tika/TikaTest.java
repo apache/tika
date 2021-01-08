@@ -116,6 +116,11 @@ public abstract class TikaTest {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
 
+    public static void assertContainsEither(String needle1, String needle2, String haystack) {
+        assertTrue("neither " + needle1 + " nor " + needle2 + " found in:\n" + haystack,
+                haystack.contains(needle1) || haystack.contains(needle2));
+    }
+
     public static void assertNotContained(String needle, String haystack) {
         assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
     }
