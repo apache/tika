@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<XFDL xmlns:custom="http://www.ibm.com/xmlns/prod/XFDL/Custom" xmlns:designer="http://www.ibm.com/xmlns/prod/workplace/forms/designer/2.6" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xfdl="http://www.ibm.com/xmlns/prod/XFDL/7.6" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns="http://www.ibm.com/xmlns/prod/XFDL/7.6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <globalpage sid="global">
+      <global sid="global">
+         <designer:date>20070302</designer:date>
+         <formid>
+            <title>This is a test.</title>
+            <serialnumber>C3DD181F3635B3B7:19B280D6:11113872025:-8000</serialnumber>
+            <version>1.0.0</version>
+         </formid>
+         <designer:version>2.7.0.113</designer:version>
+         <custom:on_open xfdl:compute="(toggle(activated, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: Global page activated from off->on') : ''"></custom:on_open>
+         <custom:on_focused xfdl:compute="(toggle(focused, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: Global page focused from off->on') : ''"></custom:on_focused>
+         <custom:on_close xfdl:compute="(toggle(activated, 'on', 'off') == '1') ? viewer.messageBox('XFDL Event: Global page activated from on->off') : ''"></custom:on_close>
+         <xformsmodels>
+            <xforms:model>
+               <xforms:instance id="formData" xmlns="">
+                  <data>
+                     <xforms_ready>false</xforms_ready>
+                     <field1></field1>
+                     <field2></field2>
+                     <favourite_colour></favourite_colour>
+                     <check1>off</check1>
+                  </data>
+               </xforms:instance>
+               <xforms:action ev:event="xforms-model-construct">
+                  <xforms:message level="modal">XForms Event: xforms-model-construct</xforms:message>
+               </xforms:action>
+               <xforms:action ev:event="xforms-ready">
+                  <xforms:message level="modal">XForms Event: xforms-ready</xforms:message>
+                  <xforms:setvalue ref="instance('formData')/xforms_ready">true</xforms:setvalue>
+               </xforms:action>
+               <xforms:action ev:event="xforms-model-destruct">
+                  <xforms:message level="modal">XForms Event: xforms-model-destruct</xforms:message>
+               </xforms:action>
+               <xforms:instance id="New_Choice_List" xmlns="">
+                  <choices>
+                     <choice value="Black">Black</choice>
+                     <choice value="Blue">Blue</choice>
+                     <choice value="Brown">Brown</choice>
+                     <choice value="Green">Green</choice>
+                     <choice value="Orange">Orange</choice>
+                     <choice value="Pink">Pink</choice>
+                     <choice value="Red">Red</choice>
+                     <choice value="Yellow">Yellow</choice>
+                     <choice value="White">White</choice>
+                  </choices>
+               </xforms:instance>               
+            </xforms:model>
+         </xformsmodels>
+         <designer:design>
+            <designer:designValue key="ListOfLists" xmlns="http://www.ibm.com/xmlns/prod/workplace/forms/designer/2.6">
+               <ListOfLists>
+                  <element key="instance('New_Choice_List')/choice" value="New Choice List"></element>
+               </ListOfLists>
+            </designer:designValue>
+         </designer:design>
+         <ufv_settings>
+            <pagedonewithformaterrors>permit</pagedonewithformaterrors>
+         </ufv_settings>
+         <history>
+            <editors>
+               <editor minversion="3.5" version="3.5">IBM Lotus Forms Designer</editor>
+            </editors>
+         </history>
+      </global>
+   </globalpage>
+   <page sid="PAGE1">
+      <global sid="global">
+         <label>PAGE1</label>
+         <custom:on_open xfdl:compute="(toggle(activated, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: Current page activated from off->on') : ''"></custom:on_open>
+         <custom:on_focused xfdl:compute="(toggle(focused, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: Current page focused from off->on') : ''"></custom:on_focused>
+         <custom:on_close xfdl:compute="(toggle(activated, 'on', 'off') == '1') ? viewer.messageBox('XFDL Event: Current page activated from on->off') : ''"></custom:on_close>
+         <custom:on_focuseditem xfdl:compute="((toggle(focuseditem) == '1') and (CHECK1.value != 'on')) ? viewer.messageBox('XFDL Event: Focuseditem changed to: ' + focuseditem) : ''"></custom:on_focuseditem>
+      </global>
+      <action sid="beforePageDisplay_ACTION">
+         <delay>
+            <type>once</type>
+            <interval>-1</interval>
+         </delay>
+         <type>select</type>
+         <custom:on_open xfdl:compute="(toggle(activated, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: Action with delay of -1 fired.') : ''"></custom:on_open>
+      </action>
+      <action sid="afterPageDisplay_ACTION">
+         <delay>
+            <type>once</type>
+            <interval>0</interval>
+         </delay>
+         <type>select</type>
+         <custom:on_open xfdl:compute="(toggle(activated, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: Action with delay of 0 fired.') : ''"></custom:on_open>
+      </action>
+      <label sid="formTitle">
+         <itemlocation>
+            <x>26</x>
+            <y>25</y>
+         </itemlocation>
+         <value>eventTest.xfdl</value>
+         <fontcolor>#0000FF</fontcolor>
+      </label>
+      <field sid="FIELD1">
+         <xforms:input ref="instance('formData')/field1">
+            <xforms:label></xforms:label>
+         </xforms:input>
+         <itemlocation>
+            <x>26</x>
+            <y>65</y>
+         </itemlocation>
+         <scrollhoriz>wordwrap</scrollhoriz>
+         <value>Hey Norconex, this is a test.</value>
+         <custom:on_focused xfdl:compute="(toggle(focused, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: FIELD1 focused from off->on.') : ''"></custom:on_focused>
+         <custom:lost_focused xfdl:compute="(toggle(focused, 'on', 'off') == '1') ? viewer.messageBox('XFDL Event: FIELD1 focused from on->off.') : ''"></custom:lost_focused>
+         <label>FIELD1 - Reports focused releated events</label>
+      </field>
+      <field sid="FIELD2">
+         <xforms:input ref="instance('formData')/field2">
+            <xforms:label></xforms:label>
+            <xforms:action ev:event="xforms-value-changed">
+               <xforms:message level="modal">XForms Event: FIELD2 xforms-value-changed</xforms:message>
+            </xforms:action>
+            <xforms:action ev:event="xforms-enabled">
+               <xforms:message level="modal">XForms Event: FIELD2 xforms-enabled</xforms:message>
+            </xforms:action>
+         </xforms:input>
+         <itemlocation>
+            <x>26</x>
+            <y>125</y>
+         </itemlocation>
+         <scrollhoriz>wordwrap</scrollhoriz>
+         <custom:on_valueChanged xfdl:compute="(toggle(value) == '1') ? viewer.messageBox('XFDL Event: FIELD2 value changed.') : ''"></custom:on_valueChanged>
+         <label>FIELD2 - Reports value related events</label>
+      </field>
+      <label sid="LABEL2">
+         <itemlocation>
+            <x>26</x>
+            <y>185</y>
+         </itemlocation>
+         <value>POPUP1 - Reports activated and value related events.</value>
+      </label>
+      <popup sid="POPUP1">
+         <xforms:select1 ref="instance('formData')/favourite_colour">
+            <xforms:label></xforms:label>
+            <xforms:itemset nodeset="instance('New_Choice_List')/choice">
+               <xforms:label ref="."></xforms:label>
+               <xforms:value ref="@value"></xforms:value>
+               <xforms:extension>
+                  <custom:on_activated xfdl:compute="(toggle(activated, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: CHOICE &quot;' +. value +. '&quot; activated from off->on.') : ''"></custom:on_activated>
+               </xforms:extension>
+            </xforms:itemset>
+            <xforms:action ev:event="xforms-value-changed">
+               <xforms:message level="modal">XForms Event: POPUP1 xforms-value-changed</xforms:message>
+            </xforms:action>
+         </xforms:select1>
+         <itemlocation>
+            <x>26</x>
+            <y>205</y>
+         </itemlocation>
+         <size>
+            <width>20</width>
+            <height>1</height>
+         </size>
+         <custom:on_activated xfdl:compute="(toggle(activated, 'off', 'on') == '1') ? viewer.messageBox('XFDL Event: POPUP1 activated from off->on.') : ''"></custom:on_activated>
+         <custom:on_valueChanged xfdl:compute="(toggle(value) == '1') ? viewer.messageBox('XFDL Event: POPUP1 value changed.') : ''"></custom:on_valueChanged>
+         <custom:after_activated xfdl:compute="(toggle(activated, 'on', 'off') == '1') ? viewer.messageBox('XFDL Event: POPUP1 activated from on->off.') : ''"></custom:after_activated>
+      </popup>
+      <button sid="BUTTON1">
+         <xforms:trigger>
+            <xforms:label>BUTTON1 - Click Me!</xforms:label>
+            <xforms:action ev:event="DOMActivate">
+               <xforms:message level="modal">XForms Event: BUTTON1 DOMActivate</xforms:message>
+            </xforms:action>
+         </xforms:trigger>
+         <itemlocation>
+            <x>26</x>
+            <y>245</y>
+            <width>150</width>
+         </itemlocation>
+         <custom:activated_on xfdl:compute="&#xA;
+            (toggle(activated, 'off', 'on') == '1') &#xA;
+            ? viewer.messageBox('XFDL Event: BUTTON1 activated from off->on') &#xA;
+            : ''"></custom:activated_on>
+         <custom:activated_off xfdl:compute="&#xA;
+            (toggle(activated, 'on', 'off') == '1') &#xA;
+            ? viewer.messageBox('activated from \'on\' to \'off\'') &#xA;
+            : ''"></custom:activated_off>
+      </button>
+      <check sid="CHECK1">
+         <xforms:input ref="instance('formData')/check1">
+            <xforms:label>Turn off focuseditem message box.</xforms:label>
+         </xforms:input>
+         <itemlocation>
+            <x>376</x>
+            <y>65</y>
+         </itemlocation>
+      </check>
+      <spacer sid="vfd_spacer">
+         <itemlocation>
+            <x>960</x>
+            <y>1260</y>
+            <width>1</width>
+            <height>1</height>
+         </itemlocation>
+      </spacer>
+   </page>
+</XFDL>
