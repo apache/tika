@@ -125,6 +125,29 @@ public class DWGParserTest {
     }
 
     @Test
+    public void testDWG2018Parser() throws Exception {
+        InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2018.dwg");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        DWGParser dwgParser = new DWGParser();
+        File dwgread = new File("/usr/local/bin/dwgread");
+        if (dwgread.exists()) {
+            dwgParser.getDwgConfig().setDwgReadExecutable(dwgread.getAbsolutePath());
+        }
+        dwgParser.parse(input, handler, metadata, new ParseContext());
+        if (dwgread.exists()) {
+            Assert.assertEquals("AC1032", metadata.get("version"));
+            Assert.assertEquals("33", metadata.get("dwg_version"));
+            Assert.assertEquals("0", metadata.get("maint_version"));
+            Assert.assertEquals("0", metadata.get("app_dwg_version"));
+            Assert.assertEquals("0", metadata.get("app_maint_version"));
+            String text = handler.toString();
+            Assert.assertTrue(text.isEmpty());
+        }
+    }
+
+    @Test
     public void testDWG2017Parser3() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2017-2.dwg");
