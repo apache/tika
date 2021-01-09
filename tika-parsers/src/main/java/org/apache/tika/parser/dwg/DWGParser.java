@@ -231,10 +231,10 @@ public class DWGParser extends AbstractParser {
                 if (skipToPropertyInfoSection(stream, header)) {
                     get2004Props(stream, metadata, xhtml);
                 }
-            } else if (version.equals("AC1021") || version.equals("AC1024") || version.equals("AC1027")) {
+            } else if (version.equals("AC1021") || version.equals("AC1024") || version.equals("AC1027") || version.equals("AC1032")) {
                 metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
                 if (skipToPropertyInfoSection(stream, header)) {
-                    get2007and2010Props(stream, metadata, xhtml);
+                    get2010AndGreaterProps(stream, metadata, xhtml);
                 }
             } else {
                 throw new TikaException(
@@ -366,7 +366,7 @@ public class DWGParser extends AbstractParser {
     /**
      * Stored as UCS2, so 16 bit "unicode"
      */
-    private void get2007and2010Props(
+    private void get2010AndGreaterProps(
             InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
             throws IOException, TikaException, SAXException {
         // Standard properties
