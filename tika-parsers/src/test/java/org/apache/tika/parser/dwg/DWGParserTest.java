@@ -14,22 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.dwg;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.apache.tika.TikaTest.assertContains;
-
-import java.io.InputStream;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Assert;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
+import java.io.File;
+import java.io.InputStream;
+
+import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 public class DWGParserTest {
-  
+
     @Test
     public void testDWG2000Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
@@ -64,14 +69,14 @@ public class DWGParserTest {
                 "/test-documents/testDWG2010.dwg");
         testParser(input);
     }
-    
+
     @Test
     public void testDWG2010CustomPropertiesParser() throws Exception {
         // Check that standard parsing works
         InputStream testInput = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2010_custom_props.dwg");
         testParser(testInput);
-        
+
         // Check that custom properties with alternate padding work
         try (InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2010_custom_props.dwg")) {
@@ -94,15 +99,68 @@ public class DWGParserTest {
     }
 
     @Test
+    public void testDWG2017Parser2() throws Exception {
+        InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2017.dwg");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        DWGParser dwgParser = new DWGParser();
+        File dwgread = new File("/usr/local/bin/dwgread");
+        if (dwgread.exists()) {
+            dwgParser.getDwgConfig().setDwgReadExecutable(dwgread.getAbsolutePath());
+        }
+        dwgParser.parse(input, handler, metadata, new ParseContext());
+        if (dwgread.exists()) {
+            Assert.assertEquals("2018-08-08T21:33:45.965072215Z", metadata.get(TikaCoreProperties.CREATED));
+            Assert.assertEquals("2019-05-29T16:52:10.559992790Z", metadata.get(TikaCoreProperties.MODIFIED));
+            Assert.assertEquals("AC1027", metadata.get("version"));
+            Assert.assertEquals("31", metadata.get("dwg_version"));
+            Assert.assertEquals("125", metadata.get("maint_version"));
+            Assert.assertEquals("31", metadata.get("app_dwg_version"));
+            Assert.assertEquals("125", metadata.get("app_maint_version"));
+            String text = handler.toString();
+            Assert.assertFalse(text.isEmpty());
+            Assert.assertTrue(StringUtils.contains(text, "CONTROLADOR ESPECFICO DA APLICAO, CONFIGURVEL, UTILIZADO EM VENTILO-CONVECTORES, (FCU), VAV, etc."));
+        }
+    }
+
+    @Test
+    public void testDWG2017Parser3() throws Exception {
+        InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2017-2.dwg");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        File dwgread = new File("/usr/local/bin/dwgread");
+        DWGParser dwgParser = new DWGParser();
+        if (dwgread.exists()) {
+            dwgParser.getDwgConfig().setDwgReadExecutable(dwgread.getAbsolutePath());
+        }
+        dwgParser.parse(input, handler, metadata, new ParseContext());
+        if (dwgread.exists()) {
+            Assert.assertEquals("2018-08-08T21:33:45.965072215Z", metadata.get(TikaCoreProperties.CREATED));
+            Assert.assertEquals("2019-02-23T03:23:36.096000373Z", metadata.get(TikaCoreProperties.MODIFIED));
+            Assert.assertEquals("AC1027", metadata.get("version"));
+            Assert.assertEquals("31", metadata.get("dwg_version"));
+            Assert.assertEquals("125", metadata.get("maint_version"));
+            Assert.assertEquals("31", metadata.get("app_dwg_version"));
+            Assert.assertEquals("125", metadata.get("app_maint_version"));
+
+            String text = handler.toString();
+            Assert.assertFalse(text.isEmpty());
+            Assert.assertTrue(StringUtils.contains(text, "VARIABLE SPEED ELEVATOR SHAFT PRESSURIZATION FAN"));
+        }
+    }
+
+    @Test
     public void testDWGMechParser() throws Exception {
-        String[] types = new String[] {
-              "6", "2004", "2004DX", "2005", "2006",
-              "2007", "2008", "2009", "2010", "2011"
+        String[] types = new String[]{
+                "6", "2004", "2004DX", "2005", "2006",
+                "2007", "2008", "2009", "2010", "2011"
         };
         for (String type : types) {
-           InputStream input = DWGParserTest.class.getResourceAsStream(
-                   "/test-documents/testDWGmech"+type+".dwg");
-           testParserAlt(input);
+            InputStream input = DWGParserTest.class.getResourceAsStream(
+                    "/test-documents/testDWGmech" + type + ".dwg");
+            testParserAlt(input);
         }
     }
 
@@ -111,11 +169,11 @@ public class DWGParserTest {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata);
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
-            assertEquals("The quick brown fox jumps over the lazy dog", 
+            assertEquals("The quick brown fox jumps over the lazy dog",
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
                     metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -126,15 +184,15 @@ public class DWGParserTest {
             assertEquals("Pangram, fox, dog",
                     metadata.get(TikaCoreProperties.KEYWORDS));
             assertEquals("Lorem ipsum",
-                    metadata.get(TikaCoreProperties.COMMENTS).substring(0,11));
+                    metadata.get(TikaCoreProperties.COMMENTS).substring(0, 11));
             assertEquals("http://www.alfresco.com",
                     metadata.get(TikaCoreProperties.RELATION));
-            
+
             // Check some of the old style metadata too
-            assertEquals("The quick brown fox jumps over the lazy dog", 
-                  metadata.get(Metadata.TITLE));
+            assertEquals("The quick brown fox jumps over the lazy dog",
+                    metadata.get(Metadata.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
-                  metadata.get(Metadata.SUBJECT));
+                    metadata.get(Metadata.SUBJECT));
 
             String content = handler.toString();
             assertContains("The quick brown fox jumps over the lazy dog", content);
@@ -150,10 +208,10 @@ public class DWGParserTest {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata);
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
-            
+
             assertNull(metadata.get(TikaCoreProperties.TITLE));
             assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
             assertNull(metadata.get(Metadata.SUBJECT));
@@ -174,11 +232,11 @@ public class DWGParserTest {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata);
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
 
-            assertEquals("Test Title", 
+            assertEquals("Test Title",
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Test Subject",
                     metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -197,7 +255,7 @@ public class DWGParserTest {
             assertEquals("http://mycompany/drawings",
                     metadata.get(TikaCoreProperties.RELATION));
             assertEquals("MyCustomPropertyValue",
-                  metadata.get("MyCustomProperty"));
+                    metadata.get("MyCustomProperty"));
 
             String content = handler.toString();
             assertContains("This is a comment", content);
