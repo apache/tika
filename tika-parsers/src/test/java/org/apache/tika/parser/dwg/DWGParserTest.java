@@ -82,7 +82,7 @@ public class DWGParserTest {
                 "/test-documents/testDWG2010_custom_props.dwg")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new DWGParser().parse(input, handler, metadata, null);
+            new DWGParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("valueforcustomprop1",
                     metadata.get("customprop1"));
