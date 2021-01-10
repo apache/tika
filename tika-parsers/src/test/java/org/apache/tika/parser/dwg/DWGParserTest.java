@@ -165,6 +165,8 @@ public class DWGParserTest {
         dwgParser.parse(input, handler, metadata, new ParseContext());
         if (dwgread.exists()) {
             Assert.assertEquals("AC1032", metadata.get("version"));
+            Assert.assertEquals("2014-05-17T15:36:15.287617743Z", metadata.get(TikaCoreProperties.CREATED));
+            Assert.assertEquals("2018-04-09T22:12:41.316476762Z", metadata.get(TikaCoreProperties.MODIFIED));
             Assert.assertEquals("33", metadata.get("dwg_version"));
             Assert.assertEquals("4", metadata.get("maint_version"));
             Assert.assertEquals("0", metadata.get("app_dwg_version"));
