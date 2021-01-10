@@ -233,8 +233,6 @@ public class DWGParser extends AbstractParser {
             IOUtils.readFully(stream, header);
             String version = new String(header, 0, 6, StandardCharsets.US_ASCII);
 
-            System.out.println("Version: " + version);
-
             if (version.equals("AC1015")) {
                 metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
                 if (skipTo2000PropertyInfoSection(stream, header)) {
