@@ -58,7 +58,7 @@ import java.util.function.Consumer;
  *
  * This parser will use custom settings if DWGConfig.properties is on the classpath.
  *
- * You have 2 options with this parser: Basic headers parsing or parsing using GNU libredwg
+ * You have 2 options with this parser: Basic headers parsing or parsing using GNU libredwg's dwgread program.
  * See: https://www.gnu.org/software/libredwg
  *
  * If you specify the dwgReadExecutable property in the DWGConfig.properties file to a valid dwgread executable, such as
