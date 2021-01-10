@@ -300,12 +300,14 @@ public class DWGParser extends AbstractParser {
                         int julianDay = jsonParser.getIntValue();
                         jsonParser.nextToken();
                         int millisecondsIntoDay = jsonParser.getIntValue();
-                        Instant instant = JulianDateUtil.toInstant(julianDay, millisecondsIntoDay);
-                        jsonParser.nextToken(); // end array
-                        if ("TDCREATE".equals(nextFieldName)) {
-                            metadata.set(TikaCoreProperties.CREATED, instant.toString());
-                        } else {
-                            metadata.set(TikaCoreProperties.MODIFIED, instant.toString());
+                        if (julianDay > 0 && millisecondsIntoDay > 0) {
+                            Instant instant = JulianDateUtil.toInstant(julianDay, millisecondsIntoDay);
+                            jsonParser.nextToken(); // end array
+                            if ("TDCREATE".equals(nextFieldName)) {
+                                metadata.set(TikaCoreProperties.CREATED, instant.toString());
+                            } else {
+                                metadata.set(TikaCoreProperties.MODIFIED, instant.toString());
+                            }
                         }
                     } else {
                         jsonParser.skipChildren();
