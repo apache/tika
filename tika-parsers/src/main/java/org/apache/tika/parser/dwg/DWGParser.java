@@ -162,7 +162,7 @@ public class DWGParser extends AbstractParser {
 
                 try {
                     int exitCode = p.waitFor();
-                    LOG.info("Dwgread command returned exit code: {}, outputFileCreated? {}, took = {}", exitCode, tmpFileOut.exists(), dwgreadSw.elapsed(TimeUnit.MILLISECONDS));
+                    LOG.info("Dwgread command returned exit code: {}, outputFileCreated? {}, took = {} ms", exitCode, tmpFileOut.exists(), dwgreadSw.elapsed(TimeUnit.MILLISECONDS));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
