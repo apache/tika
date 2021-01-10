@@ -125,7 +125,7 @@ public class DWGParserTest {
     }
 
     @Test
-    public void testDWG2017Parser3() throws Exception {
+    public void testDWG2017Parser2() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2017-2.dwg");
         Metadata metadata = new Metadata();
