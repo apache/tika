@@ -54,10 +54,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * DWG (CAD Drawing) parser. This is a very basic parser, which just
- * looks for bits of the headers.
- * Note that we use Apache POI for various parts of the processing, as
- * lots of the low level string/int/short concepts are the same.
+ * DWG (CAD Drawing) parser.
+ *
+ * This parser will use custom settings if DWGConfig.properties is on the classpath.
+ *
+ * You have 2 options with this parser: Basic headers parsing or parsing using GNU dwgread.
+ *
+ * If you specify the dwgReadExecutable property in the DWGConfig.properties file to a valid dwgread executable, such as
+ * /usr/local/bin/dwgread on Linux, then each DWG file will be parsed to JSON using dwgread and
+ * all of the relevant text will be extracted from the result.
+ *
+ * If you do not specify the dwgReadExecutable property, it will do very basic parsing. It just
+ * looks for bits of the headers. For this Java-based parser, we use Apache POI for various parts of the processing, as
+ * lots of the low level string/int/short concepts are the same. The basic parsing does no text extraction.
  */
 public class DWGParser extends AbstractParser {
 
