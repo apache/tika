@@ -16,7 +16,7 @@
 # under the License.
 
 name: tika-server
-version: '1.16-SNAPSHOT'
+version: '2.0.0-SNAPSHOT'
 summary: Tika Server for metadata discovery and extraction 
 description: Apache Tika is a content detection and analysis framework, written 
       in Java, stewarded at the Apache Software Foundation.It detects and extracts 
@@ -30,7 +30,7 @@ confinement: strict
 apps:
    run:
     command: 
-       java -jar $SNAP/jar/tika-server-$SNAP_VERSION.jar
+       java -jar $SNAP/jar/tika-server-classic-$SNAP_VERSION.jar
 
 parts:
   compile-tika:
