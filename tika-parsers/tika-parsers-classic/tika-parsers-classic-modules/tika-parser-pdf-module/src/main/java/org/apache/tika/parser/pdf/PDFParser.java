@@ -63,7 +63,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -162,14 +161,10 @@ public class PDFParser extends AbstractParser implements Initializable {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
-                    metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else if (hasMarkedContent && localConfig.getExtractMarkedContent()) {
                     PDFMarkedContent2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
-                    if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
-                        metadata.add("X-Parsed-By", TesseractOCRParser.class.toString());
-                    }
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 }
             }

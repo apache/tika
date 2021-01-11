@@ -17,9 +17,7 @@
 -->
 <properties>
     <parsers>
-        <parser class="org.apache.tika.parser.DefaultParser">
-            <parser-exclude class="org.apache.tika.parser.ocr.TesseractOCRParser"/>
-        </parser>
+        <parser class="org.apache.tika.parser.DefaultParser"/>
         <parser class="org.apache.tika.parser.pdf.PDFParser">
             <params>
                 <param name="extractInlineImages" type="bool">true</param>

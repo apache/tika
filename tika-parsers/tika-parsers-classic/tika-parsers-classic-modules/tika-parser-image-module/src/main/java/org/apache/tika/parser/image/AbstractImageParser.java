@@ -27,6 +27,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -72,22 +73,26 @@ public abstract class AbstractImageParser extends AbstractParser {
         TikaInputStream tis = TikaInputStream.get(stream, tmpResources);
         Exception metadataException = null;
         try {
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
             Path path = tis.getPath();
             try (InputStream pathStream = Files.newInputStream(path)) {
-                extractMetadata(pathStream, handler, metadata, context);
+                extractMetadata(pathStream, new EmbeddedContentHandler(xhtml), metadata, context);
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {
                 metadataException = e;
             }
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-            xhtml.startDocument();
+
             String mime = metadata.get(Metadata.CONTENT_TYPE);
             String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
             try (InputStream pathStream = Files.newInputStream(path)) {
                 //specify ocr content type
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, ocrMediaType.toString());
-                ocrParser.parse(pathStream, new EmbeddedContentHandler(xhtml), metadata, context);
+                //need to use bodycontenthandler to filter out re-dumping of metadata
+                //in xhtmlhandler
+                ocrParser.parse(pathStream, new EmbeddedContentHandler(
+                        new BodyContentHandler(xhtml)), metadata, context);
             } finally {
                 //reset actual mime because AutoDetectParser will set mime to detected
                 //which is the override.

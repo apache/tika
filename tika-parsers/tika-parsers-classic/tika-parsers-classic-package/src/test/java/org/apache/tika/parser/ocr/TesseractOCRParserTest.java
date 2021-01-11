@@ -152,7 +152,6 @@ public class TesseractOCRParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata(resource,
                 AUTO_DETECT_PARSER, handlerType, parseContext);
-        debug(metadataList);
         assertEquals(numMetadatas, metadataList.size());
 
         StringBuilder contents = new StringBuilder();

@@ -58,6 +58,5 @@ public class JpegParser extends AbstractImageParser {
         } finally {
             tmp.dispose();
         }
-
     }
 }

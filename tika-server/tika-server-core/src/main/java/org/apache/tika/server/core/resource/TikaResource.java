@@ -290,26 +290,8 @@ public class TikaResource {
         }
 
         if (mediaType != null) {
-            metadata.add(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, mediaType.toString());
-
-            final Detector detector = getDetector(parser);
-
-            setDetector(parser, new Detector() {
-                public MediaType detect(InputStream inputStream, Metadata metadata) throws IOException {
-                    String ct = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
-                    //make sure never to return null -- TIKA-1845
-                    MediaType type = null;
-                    if (ct != null) {
-                        //this can return null if ct is not a valid mime type
-                        type = MediaType.parse(ct);
-                    }
-                    if (type != null) {
-                        return type;
-                    } else {
-                        return detector.detect(inputStream, metadata);
-                    }
-                }
-            });
+            metadata.add(Metadata.CONTENT_TYPE, mediaType.toString());
+            metadata.add(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, mediaType.toString());
         }
 
         for (Map.Entry<String, List<String>> e : httpHeaders.entrySet()) {
@@ -320,32 +302,6 @@ public class TikaResource {
                 }
             }
         }
-    }
-
-    public static void setDetector(Parser p, Detector detector) {
-        AutoDetectParser adp = getAutoDetectParser(p);
-        adp.setDetector(detector);
-    }
-
-    public static Detector getDetector(Parser p) {
-        AutoDetectParser adp = getAutoDetectParser(p);
-        return adp.getDetector();
-    }
-
-    private static AutoDetectParser getAutoDetectParser(Parser p) {
-        //bit stinky
-        if (p instanceof AutoDetectParser) {
-            return (AutoDetectParser)p;
-        } else if (p instanceof ParserDecorator) {
-            Parser wrapped = ((ParserDecorator)p).getWrappedParser();
-            if (wrapped instanceof AutoDetectParser) {
-                return (AutoDetectParser)wrapped;
-            }
-            throw new RuntimeException("Couldn't find AutoDetectParser within: "+wrapped.getClass());
-
-        }
-        throw new RuntimeException("Couldn't find AutoDetectParser within: "+p.getClass());
-
     }
 
     /**

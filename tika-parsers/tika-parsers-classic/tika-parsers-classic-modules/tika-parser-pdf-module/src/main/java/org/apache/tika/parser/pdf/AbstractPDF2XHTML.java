@@ -98,8 +98,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -140,8 +139,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      * Prevents theoretical AcroForm recursion bomb.
      */
     private final static int MAX_ACROFORM_RECURSIONS = 10;
-
-    private final static TesseractOCRConfig DEFAULT_TESSERACT_CONFIG = new TesseractOCRConfig();
 
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
@@ -455,7 +452,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             String overrideMime = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
             try (InputStream is = TikaInputStream.get(tmpFile)) {
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, ocrImageMediaType.toString());
-                ocrParser.parse(is, new EmbeddedContentHandler(xhtml), metadata, context);
+                ocrParser.parse(is,
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                        metadata, context);
             } finally {
                 metadata.set(Metadata.CONTENT_TYPE, mime);
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, overrideMime);

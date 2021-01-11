@@ -217,7 +217,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             //this is the text output file name specified on the tesseract
             //commandline.  The actual output file name will have a suffix added.
             File tmpOCROutputFile = tmp.createTemporaryFile();
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, new Metadata());
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
             parse(tikaStream, tmpOCROutputFile, xhtml, metadata, parseContext, config);
             xhtml.endDocument();
