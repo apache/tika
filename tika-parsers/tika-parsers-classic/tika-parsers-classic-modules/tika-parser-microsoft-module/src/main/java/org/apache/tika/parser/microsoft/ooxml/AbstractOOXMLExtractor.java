@@ -140,10 +140,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         buildXHTML(xhtml);
 
         // Now do any embedded parts
-        handleEmbeddedParts(handler, metadata);
+        handleEmbeddedParts(xhtml, metadata);
 
         // thumbnail
-        handleThumbnail(handler);
+        handleThumbnail(xhtml);
 
         xhtml.endDocument();
     }
@@ -180,6 +180,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, thumbName);
                 thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
                 thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
+                thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
 
                 if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
                     embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream), new EmbeddedContentHandler(handler), thumbnailMetadata, false);
