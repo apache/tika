@@ -23,6 +23,7 @@ import java.io.InputStream;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
@@ -170,5 +171,11 @@ public class ImageParserTest extends TikaTest {
         assertEquals("78", metadata.get("height"));
         assertEquals("328", metadata.get("width"));
         assertEquals("image/x-jbig2", metadata.get("Content-Type"));
+    }
+
+    @Test
+    public void testMimeTypeToOCRMimeTypeConversion() throws Exception {
+        assertEquals(new MediaType("image", "OCR-png"),
+                AbstractImageParser.convertToOCRMediaType(MediaType.image("png")));
     }
 }

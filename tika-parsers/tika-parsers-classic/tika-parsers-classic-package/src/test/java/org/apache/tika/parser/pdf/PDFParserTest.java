@@ -205,7 +205,6 @@ public class PDFParserTest extends TikaTest {
         }
 
         List<Metadata> metadatas = handler.getMetadataList();
-
         assertEquals(5, metadatas.size());
         assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image0.jpg", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -270,4 +269,103 @@ public class PDFParserTest extends TikaTest {
 
         assertTrue(xml.contains("This is a Excel"));
     }
+
+    @Test
+    public void testEmbeddedJPEG() throws Exception {
+        //TIKA-1990, test that an embedded jpeg is correctly decoded
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_childAttachments.pdf", context);
+        //shouldn't change
+        assertEquals(5, metadataList.size());
+        //inlined jpeg metadata
+        Metadata jpegMetadata = metadataList.get(1);
+        assertEquals("image/jpeg", jpegMetadata.get(Metadata.CONTENT_TYPE));
+        //the metadata parse will fail if the stream is not correctly decoded
+        assertEquals("1425", jpegMetadata.get(Metadata.IMAGE_LENGTH));
+    }
+
+    @Test // TIKA-2232
+    public void testEmbeddedJBIG2Image() throws Exception {
+
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(PDFParserConfig.class, config);
+
+
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
+        assertEquals(2, metadatas.size());
+        assertContains("test images compressed using JBIG2", metadatas.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+
+        for (String key : metadatas.get(1).names()) {
+            if (key.startsWith("X-TIKA:EXCEPTION")) {
+                fail("Exception: " + metadatas.get(1).get(key));
+            }
+        }
+        assertEquals("Invalid height.", "91", metadatas.get(1).get("height"));
+        assertEquals("Invalid width.", "352", metadatas.get(1).get("width"));
+
+        assertNull(metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("image0.jb2",
+                metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("x-jbig2").toString(),
+                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testJBIG2OCROnly() throws Exception {
+        assumeTrue("can run OCR", canRunOCR());
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.OCR_ONLY);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        //make sure everything works with regular xml _and_ with recursive
+        XMLResult xmlResult = getXML("testPDF_JBIG2.pdf", context);
+        assertContains("Norconex", xmlResult.xml);
+    }
+
+    @Test
+    public void testOCRAutoMode() throws Exception {
+        assumeTrue("can run OCR", canRunOCR());
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.AUTO);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        XMLResult xmlResult = getXML("testOCR.pdf", context);
+        assertContains("Happy New Year", xmlResult.xml);
+
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+        String txt = getText("testOCR.pdf", new Metadata(), context);
+        assertEquals("", txt.trim());
+    }
+
+    @Test
+    public void testTesseractInitializationWorks() throws Exception {
+        //TIKA-2970 -- make sure that configurations set on the TesseractOCRParser
+        //make it through to when the TesseractOCRParser is called via
+        //the PDFParser
+        assumeTrue("can run OCR", canRunOCR());
+
+        //via the config, tesseract should skip this file because it is too large
+        try (InputStream is = getResourceAsStream("/org/apache/tika/parser/pdf/tika-ocr-config.xml")) {
+            assertNotNull(is);
+            TikaConfig tikaConfig = new TikaConfig(is);
+            Parser p = new AutoDetectParser(tikaConfig);
+            String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
+            assertEquals("", text.trim());
+
+            //now override the max file size to ocr, and you should get text
+            ParseContext pc = new ParseContext();
+            TesseractOCRConfig tesseractOCRConfig = new TesseractOCRConfig();
+            pc.set(TesseractOCRConfig.class, tesseractOCRConfig);
+            text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p, pc);
+            assertContains("Happy", text);
+        }
+    }
+
 }

@@ -98,8 +98,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -141,8 +140,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     private final static int MAX_ACROFORM_RECURSIONS = 10;
 
-    private final static TesseractOCRConfig DEFAULT_TESSERACT_CONFIG = new TesseractOCRConfig();
-
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
 
@@ -163,7 +160,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
-    final TesseractOCRParser tesseractOCRParser;//can be null!
+    final Parser ocrParser;
 
     //zero-based pageIndex
     int pageIndex = 0;
@@ -182,9 +179,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.config = config;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (config.getOcrStrategy() == NO_OCR) {
-            tesseractOCRParser = null;
+            ocrParser = null;
         } else {
-            tesseractOCRParser = (TesseractOCRParser)EmbeddedDocumentUtil.tryToFindExistingLeafParser(TesseractOCRParser.class, context);
+            ocrParser = EmbeddedDocumentUtil.getStatelessParser(context);
         }
     }
 
@@ -429,12 +426,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (config.getOcrStrategy().equals(NO_OCR)) {
             return;
         }
-        TesseractOCRConfig tesseractConfig =
-                context.get(TesseractOCRConfig.class, tesseractOCRParser.getDefaultConfig());
-
-        if (! tesseractOCRParser.hasTesseract(tesseractConfig)) {
-            throw new TikaException("Tesseract is not available. "+
-                    "Please set the OCR_STRATEGY to NO_OCR or configure Tesseract correctly");
+        MediaType ocrImageMediaType =
+                MediaType.image("ocr-"+config.getOcrImageFormatName());
+        if (! ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
+            throw new TikaException("" +
+                    "I regret that I couldn't find an OCR parser to handle "+ocrImageMediaType+"."+
+                    "Please set the OCR_STRATEGY to NO_OCR or configure your" +
+                    "OCR parser correctly"
+                    );
         }
 
         PDFRenderer renderer = new PDFRenderer(pdDocument);
@@ -449,8 +448,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 ImageIOUtil.writeImage(image, config.getOcrImageFormatName(),
                         os, dpi, config.getOcrImageQuality());
             }
+            String mime = metadata.get(Metadata.CONTENT_TYPE);
+            String overrideMime = metadata.get(TikaCoreProperties.CONTENT_TYPE_OVERRIDE);
             try (InputStream is = TikaInputStream.get(tmpFile)) {
-                tesseractOCRParser.parseInline(is, xhtml, metadata, context, tesseractConfig);
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, ocrImageMediaType.toString());
+                ocrParser.parse(is,
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                        metadata, context);
+            } finally {
+                metadata.set(Metadata.CONTENT_TYPE, mime);
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, overrideMime);
             }
         } catch (IOException e) {
             handleCatchableIOE(e);

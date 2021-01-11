@@ -37,6 +37,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.StatefulParser;
 import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -94,6 +95,25 @@ public class EmbeddedDocumentUtil implements Serializable {
         return extractor;
     }
 
+    /**
+     * Utility function to get the Parser that was sent in to the
+     * ParseContext to handle embedded documents.  If it is stateful,
+     * unwrap it to get its stateless delegating parser.
+     *
+     * If there is no Parser in the parser context, this will return null.
+     * @param context
+     * @return
+     */
+    public static Parser getStatelessParser(ParseContext context) {
+        Parser p = context.get(Parser.class);
+        if (p == null) {
+            return null;
+        }
+        if (p instanceof StatefulParser) {
+            return ((StatefulParser)p).getWrappedParser();
+        }
+        return p;
+    }
 
     public PasswordProvider getPasswordProvider() {
         return context.get(PasswordProvider.class);

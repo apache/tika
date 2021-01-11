@@ -25,6 +25,7 @@ import java.util.Properties;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.tika.config.Field;
+import org.apache.tika.exception.TikaConfigException;
 
 /**
  * Config for PDFParser.
@@ -680,6 +681,13 @@ public class PDFParserConfig implements Serializable {
      *                           page image
      */
     public void setOcrImageFormatName(String ocrImageFormatName) {
+        if (! ocrImageFormatName.equals("png") &&
+                !ocrImageFormatName.equals("tiff") &&
+                ! ocrImageFormatName.equals("jpeg")
+        ) {
+            throw new IllegalArgumentException("Available options: png, tiff, jpeg. " +
+                    "I'm sorry, but I don't recognize: "+ocrImageFormatName);
+        }
         this.ocrImageFormatName = ocrImageFormatName;
     }
 

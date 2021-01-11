@@ -33,7 +33,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class TiffParser extends AbstractParser {
+public class TiffParser extends AbstractImageParser {
 
     /**
      * Serial version UID
@@ -47,9 +47,9 @@ public class TiffParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
+    @Override
+    void extractMetadata(InputStream stream, ContentHandler contentHandler,
+                         Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
         TemporaryResources tmp = new TemporaryResources();
         try {
@@ -59,10 +59,5 @@ public class TiffParser extends AbstractParser {
         } finally {
             tmp.dispose();
         }
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.endDocument();
     }
-
 }

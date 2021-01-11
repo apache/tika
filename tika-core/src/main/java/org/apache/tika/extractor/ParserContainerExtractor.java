@@ -34,6 +34,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.StatefulParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -78,7 +79,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
             EmbeddedResourceHandler handler)
             throws IOException, TikaException {
         ParseContext context = new ParseContext();
-        context.set(Parser.class, new RecursiveParser(recurseExtractor, handler));
+        context.set(Parser.class, new RecursiveParser(parser, recurseExtractor, handler));
         try {
             parser.parse(stream, new DefaultHandler(), new Metadata(), context);
         } catch (SAXException e) {
@@ -86,15 +87,16 @@ public class ParserContainerExtractor implements ContainerExtractor {
         }
     }
 
-    private class RecursiveParser extends AbstractParser {
+    private class RecursiveParser extends StatefulParser {
 
         private final ContainerExtractor extractor;
 
         private final EmbeddedResourceHandler handler;
 
-        private RecursiveParser(
+        private RecursiveParser(Parser statelessParser,
                 ContainerExtractor extractor,
                 EmbeddedResourceHandler handler) {
+            super(statelessParser);
             this.extractor = extractor;
             this.handler = handler;
         }

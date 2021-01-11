@@ -37,12 +37,12 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Parser for the Better Portable Graphics )BPG) File Format.
+ * Parser for the Better Portable Graphics (BPG) File Format.
  * <p/>
  * Documentation on the file format is available from
  * http://bellard.org/bpg/bpg_spec.txt
  */
-public class BPGParser extends AbstractParser {
+public class BPGParser extends AbstractImageParser {
     protected static final int EXTENSION_TAG_EXIF = 1;
     protected static final int EXTENSION_TAG_ICC_PROFILE = 2;
     protected static final int EXTENSION_TAG_XMP = 3;
@@ -56,10 +56,11 @@ public class BPGParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
+    @Override
+    void extractMetadata(InputStream stream, ContentHandler contentHandler,
+                         Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
+
         // Check for the magic header signature
         byte[] signature = new byte[4];
         IOUtils.readFully(stream, signature);
@@ -157,15 +158,9 @@ public class BPGParser extends AbstractParser {
                 extensionsDataSeen += extensionLength;
             }
         }
-
         // HEVC Header + Data
         // Alpha HEVC Header + Data
         // We can't do anything with these parts
-
-        // We don't have any helpful text, sorry...
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.endDocument();
     }
 
     protected void handleXMP(InputStream stream, int xmpLength,
