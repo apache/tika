@@ -26,7 +26,6 @@ import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,10 +46,7 @@ import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
-import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
-import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -65,7 +61,6 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -1134,13 +1129,13 @@ public class PDFParserTest extends TikaTest {
             assertTrue(pdfParser instanceof PDFParser);
             PDFParserConfig pdfParserConfig = ((PDFParser)pdfParser).getPDFParserConfig();
             assertEquals(new AccessChecker(true), pdfParserConfig.getAccessChecker());
-            assertEquals(true, pdfParserConfig.getExtractInlineImages());
-            assertEquals(false, pdfParserConfig.getExtractUniqueInlineImagesOnly());
+            assertEquals(true, pdfParserConfig.isExtractInlineImages());
+            assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
             assertEquals(314, pdfParserConfig.getOcrDPI());
             assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
             assertEquals("jpeg", pdfParserConfig.getOcrImageFormatName());
             assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
-            assertEquals(false, pdfParserConfig.getCatchIntermediateIOExceptions());
+            assertEquals(false, pdfParserConfig.isCatchIntermediateIOExceptions());
 
         }
     }

@@ -238,7 +238,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
             if (size >= config.getMinFileSizeToOcr() && size <= config.getMaxFileSizeToOcr()) {
 
             	// Process image
-            	if (config.getEnableImageProcessing()) {
+            	if (config.isEnableImageProcessing()) {
                     if (! ImagePreprocessor.hasImageMagick(config)) {
                         LOG.warn("User has selected to preprocess images, but I can't find ImageMagick." +
                                 "Backing off to original file.");
@@ -339,7 +339,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         cmd.addAll(Arrays.asList(
                 "-c", "page_separator=" + config.getPageSeparator(),
                 "-c",
-                (config.getPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
+                (config.isPreserveInterwordSpacing())? "preserve_interword_spaces=1" : "preserve_interword_spaces=0",
                 config.getOutputType().name().toLowerCase(Locale.US)
         ));
         LOG.debug("Tesseract command: " + String.join(" ", cmd));

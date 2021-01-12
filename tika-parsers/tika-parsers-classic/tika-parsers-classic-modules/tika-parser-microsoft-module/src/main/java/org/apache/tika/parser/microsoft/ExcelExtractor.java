@@ -329,7 +329,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
                 hssfRequest.addListener(formatListener, DrawingGroupRecord.sid);
-                if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                     hssfRequest.addListener(formatListener, HeaderRecord.sid);
                     hssfRequest.addListener(formatListener, FooterRecord.sid);
                 }
@@ -456,7 +456,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     LabelSSTRecord sst = (LabelSSTRecord) record;
                     UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
                     String cellString = null;
-                    if (officeParserConfig.getConcatenatePhoneticRuns()) {
+                    if (officeParserConfig.isConcatenatePhoneticRuns()) {
                         String phonetic = (unicode != null
                                 && unicode.getExtendedRst() != null
                                 && unicode.getExtendedRst().getPhoneticText() != null
@@ -497,7 +497,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     break;
 
                 case TextObjectRecord.sid:
-                    if (extractor.officeParserConfig.getIncludeShapeBasedContent()) {
+                    if (extractor.officeParserConfig.isIncludeShapeBasedContent()) {
                         TextObjectRecord tor = (TextObjectRecord) record;
                         addTextCell(record, tor.getStr().getString());
                     }
@@ -515,14 +515,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     break;
                     
                 case HeaderRecord.sid:
-                	if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                	if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                         HeaderRecord headerRecord = (HeaderRecord) record;
                         addTextCell(record, headerRecord.getText());
                     }
                     break;
                 	
                 case FooterRecord.sid:
-                    if (extractor.officeParserConfig.getIncludeHeadersAndFooters()) {
+                    if (extractor.officeParserConfig.isIncludeHeadersAndFooters()) {
                         FooterRecord footerRecord = (FooterRecord) record;
                         addTextCell(record, footerRecord.getText());
                     }
@@ -631,7 +631,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         handler.startElement("tr");
                         handler.startElement("td");
                         currentRow++;
-                    } while (officeParserConfig.getIncludeMissingRows() &&
+                    } while (officeParserConfig.isIncludeMissingRows() &&
                              currentRow < entry.getKey().y);
                     currentRow = entry.getKey().y;
                     currentColumn = 0;

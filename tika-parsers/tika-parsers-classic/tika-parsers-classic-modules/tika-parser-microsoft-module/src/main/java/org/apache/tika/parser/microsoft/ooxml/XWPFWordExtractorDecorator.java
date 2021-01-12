@@ -116,7 +116,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
         XWPFListManager listManager = new XWPFListManager(document.getNumbering());
         // headers
-        if (hfPolicy != null && config.getIncludeHeadersAndFooters()) {
+        if (hfPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractHeaders(xhtml, hfPolicy, listManager);
         }
 
@@ -147,7 +147,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         );
 
         // then all document footers
-        if (hfPolicy != null && config.getIncludeHeadersAndFooters()) {
+        if (hfPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, hfPolicy, listManager);
         }
     }
@@ -189,7 +189,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFHeaderFooterPolicy headerFooterPolicy = null;
         if (paragraph.getCTP().getPPr() != null) {
             CTSectPr ctSectPr = paragraph.getCTP().getPPr().getSectPr();
-            if (ctSectPr != null && config.getIncludeHeadersAndFooters()) {
+            if (ctSectPr != null && config.isIncludeHeadersAndFooters()) {
                 headerFooterPolicy =
                         new XWPFHeaderFooterPolicy(document, ctSectPr);
                 extractHeaders(xhtml, headerFooterPolicy, listManager);
@@ -331,7 +331,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // Also extract any paragraphs embedded in text boxes
         //Note "w:txbxContent//"...must look for all descendant paragraphs
         //not just the immediate children of txbxContent -- TIKA-2807
-        if (config.getIncludeShapeBasedContent()) {
+        if (config.isIncludeShapeBasedContent()) {
             for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent//w:p")) {
                 extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
             }
@@ -340,7 +340,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // Finish this paragraph
         xhtml.endElement(tag);
 
-        if (headerFooterPolicy != null && config.getIncludeHeadersAndFooters()) {
+        if (headerFooterPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, headerFooterPolicy, listManager);
         }
     }
@@ -366,7 +366,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // open/close required tags if run changes formatting
         FormattingUtils.ensureFormattingState(xhtml, FormattingUtils.toTags(run), formattingState);
 
-        if (config.getConcatenatePhoneticRuns()) {
+        if (config.isConcatenatePhoneticRuns()) {
             xhtml.characters(run.toString());
         } else {
             xhtml.characters(run.text());

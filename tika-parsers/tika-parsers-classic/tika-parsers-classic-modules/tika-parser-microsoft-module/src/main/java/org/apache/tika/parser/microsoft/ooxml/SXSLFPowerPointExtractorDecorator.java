@@ -50,8 +50,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.xml.parsers.SAXParser;
-
 /**
  * SAX/Streaming pptx extractior
  */
@@ -122,7 +120,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-        if (config.getIncludeSlideMasterContent()) {
+        if (config.isIncludeSlideMasterContent()) {
             handleGeneralTextContainingPart(XSLFRelation.SLIDE_MASTER.getRelation(),
                     "slide-master",
                     mainDocument,
@@ -197,7 +195,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         xhtml.endElement("div");
 
-        if (config.getIncludeSlideMasterContent()) {
+        if (config.isIncludeSlideMasterContent()) {
             handleGeneralTextContainingPart(XSLFRelation.SLIDE_LAYOUT.getRelation(),
                     "slide-master-content", slidePart,
                     metadata,
@@ -205,13 +203,13 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                             new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships))
             );
         }
-        if (config.getIncludeSlideNotes()) {
+        if (config.isIncludeSlideNotes()) {
             handleGeneralTextContainingPart(XSLFRelation.NOTES.getRelation(),
                     "slide-notes", slidePart,
                     metadata,
                     new OOXMLWordAndPowerPointTextHandler(
                             new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships));
-            if (config.getIncludeSlideMasterContent()) {
+            if (config.isIncludeSlideMasterContent()) {
                 handleGeneralTextContainingPart(XSLFRelation.NOTES_MASTER.getRelation(),
                         "slide-notes-master", slidePart,
                         metadata,

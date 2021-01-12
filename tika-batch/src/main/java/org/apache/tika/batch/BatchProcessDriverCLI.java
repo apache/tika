@@ -203,7 +203,7 @@ public class BatchProcessDriverCLI {
         return numRestarts;
     }
 
-    public boolean getUserInterrupted() {
+    public boolean isUserInterrupted() {
         return userInterrupted;
     }
 

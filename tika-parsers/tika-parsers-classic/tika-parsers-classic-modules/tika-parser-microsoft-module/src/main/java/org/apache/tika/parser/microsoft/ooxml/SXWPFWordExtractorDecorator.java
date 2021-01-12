@@ -48,8 +48,6 @@ import org.apache.tika.utils.XMLReaderUtils;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.SAXParser;
-
 /**
  * This is an experimental, alternative extractor for docx files.
  * This streams the main document content rather than loading the
@@ -136,7 +134,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
         }
 
-        if (config.getIncludeHeadersAndFooters()) {
+        if (config.isIncludeHeadersAndFooters()) {
             //headers
             try {
                 PackageRelationshipCollection headersPRC = documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
@@ -169,7 +167,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 XWPFRelation.ENDNOTE.getRelation(),
         }) {
             //skip footers if we shouldn't extract them
-            if (! config.getIncludeHeadersAndFooters() &&
+            if (! config.isIncludeHeadersAndFooters() &&
                     rel.equals(XWPFRelation.FOOTER.getRelation())) {
                 continue;
             }
@@ -198,7 +196,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     new OfflineContentHandler(new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
                                     new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
-                                            config), linkedRelationships, config.getIncludeShapeBasedContent(), config.getConcatenatePhoneticRuns()))),
+                                            config), linkedRelationships, config.isIncludeShapeBasedContent(), config.isConcatenatePhoneticRuns()))),
                     context);
         } catch (TikaException|IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,

@@ -403,7 +403,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     void handleCatchableIOE(IOException e) throws IOException {
-        if (config.getCatchIntermediateIOExceptions()) {
+        if (config.isCatchIntermediateIOExceptions()) {
             if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
                     e.getCause().getMessage().contains("Your document contained more than")) {
                 //TODO -- is there a cleaner way of checking for:
@@ -498,7 +498,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     handleWidget((PDAnnotationWidget)annotation);
                 }
                 // TODO: remove once PDFBOX-1143 is fixed:
-                if (config.getExtractAnnotationText()) {
+                if (config.isExtractAnnotationText()) {
                     PDActionURI uri = getActionURI(annotation);
                     if (uri != null) {
                         String link = uri.getURI();
@@ -567,7 +567,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             unmappedUnicodeCharsPerPage = 0;
         }
 
-        if (config.getExtractFontNames()) {
+        if (config.isExtractFontNames()) {
 
             for (COSName n : page.getResources().getFontNames()) {
                 PDFont font = page.getResources().getFont(n);
@@ -619,7 +619,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private void handleDestinationOrAction(PDDestinationOrAction action,
                                            ActionTrigger actionTrigger) throws IOException, SAXException, TikaException {
-        if (action == null || ! config.getExtractActions()) {
+        if (action == null || ! config.isExtractActions()) {
             return;
         }
         AttributesImpl attributes = new AttributesImpl();
@@ -677,7 +677,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
             // Extract text for any bookmarks:
-			if(config.getExtractBookmarksText()) {
+			if(config.isExtractBookmarksText()) {
                 extractBookmarkText();
             }
 
@@ -690,7 +690,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             extractXMPXFA(pdf, metadata, context);
 
             //extract acroform data at end of doc
-            if (config.getExtractAcroFormContent() == true) {
+            if (config.isExtractAcroFormContent() == true) {
                 try {
                     extractAcroForm(pdf);
                 } catch (IOException e) {

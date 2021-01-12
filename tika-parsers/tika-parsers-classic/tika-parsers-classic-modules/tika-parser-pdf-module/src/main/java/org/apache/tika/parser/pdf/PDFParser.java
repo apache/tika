@@ -125,7 +125,7 @@ public class PDFParser extends AbstractParser implements Initializable {
             throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
-        if (localConfig.getSetKCMS()) {
+        if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }
 
@@ -162,7 +162,7 @@ public class PDFParser extends AbstractParser implements Initializable {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
                 } else if (localConfig.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
-                } else if (hasMarkedContent && localConfig.getExtractMarkedContent()) {
+                } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
                     PDFMarkedContent2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
                 } else {
                     PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
@@ -361,7 +361,7 @@ public class PDFParser extends AbstractParser implements Initializable {
     }
 
     private boolean shouldHandleXFAOnly(boolean hasXFA, PDFParserConfig config) {
-        return config.getIfXFAExtractOnlyXFA() && hasXFA;
+        return config.isIfXFAExtractOnlyXFA() && hasXFA;
     }
 
     private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler,
@@ -390,8 +390,8 @@ public class PDFParser extends AbstractParser implements Initializable {
     /**
      * @see #setEnableAutoSpace(boolean)
      */
-    public boolean getEnableAutoSpace() {
-        return defaultConfig.getEnableAutoSpace();
+    public boolean isEnableAutoSpace() {
+        return defaultConfig.isEnableAutoSpace();
     }
 
     /**
@@ -410,8 +410,8 @@ public class PDFParser extends AbstractParser implements Initializable {
      *
      * @deprecated use {@link #getPDFParserConfig()}
      */
-    public boolean getExtractAnnotationText() {
-        return defaultConfig.getExtractAnnotationText();
+    public boolean isExtractAnnotationText() {
+        return defaultConfig.isExtractAnnotationText();
     }
 
     /**
@@ -426,8 +426,8 @@ public class PDFParser extends AbstractParser implements Initializable {
      * @see #setSuppressDuplicateOverlappingText(boolean)
      * @deprecated use {@link #getPDFParserConfig()}
      */
-    public boolean getSuppressDuplicateOverlappingText() {
-        return defaultConfig.getSuppressDuplicateOverlappingText();
+    public boolean isSuppressDuplicateOverlappingText() {
+        return defaultConfig.isSuppressDuplicateOverlappingText();
     }
 
     /**
@@ -448,8 +448,8 @@ public class PDFParser extends AbstractParser implements Initializable {
      * @see #setSortByPosition(boolean)
      * @deprecated use {@link #getPDFParserConfig()}
      */
-    public boolean getSortByPosition() {
-        return defaultConfig.getSortByPosition();
+    public boolean isSortByPosition() {
+        return defaultConfig.isSortByPosition();
     }
 
     /**

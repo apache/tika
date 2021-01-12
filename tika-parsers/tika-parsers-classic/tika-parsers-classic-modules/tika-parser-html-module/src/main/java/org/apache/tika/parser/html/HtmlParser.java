@@ -240,7 +240,7 @@ public class HtmlParser extends AbstractEncodingDetectorParser {
         this.extractScripts = extractScripts;
     }
 
-    public boolean getExtractScripts() {
+    public boolean isExtractScripts() {
         return extractScripts;
     }
 

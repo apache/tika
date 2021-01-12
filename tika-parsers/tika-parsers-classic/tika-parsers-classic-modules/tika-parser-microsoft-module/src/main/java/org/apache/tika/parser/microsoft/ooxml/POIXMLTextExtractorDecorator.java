@@ -32,7 +32,7 @@ public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
         super(context, extractor);
         
         if (extractor instanceof XSSFExcelExtractor) {
-            ((XSSFExcelExtractor)extractor).setIncludeTextBoxes(config.getIncludeShapeBasedContent());
+            ((XSSFExcelExtractor)extractor).setIncludeTextBoxes(config.isIncludeShapeBasedContent());
         }
     }
 

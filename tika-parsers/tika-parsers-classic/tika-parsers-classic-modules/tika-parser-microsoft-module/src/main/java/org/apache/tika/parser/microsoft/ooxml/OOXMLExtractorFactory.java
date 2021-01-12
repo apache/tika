@@ -155,11 +155,11 @@ public class OOXMLExtractorFactory {
             // This has already been set by OOXMLParser's call to configure()
             // We can rely on this being non-null.
             OfficeParserConfig config = context.get(OfficeParserConfig.class);
-            if (config.getUseSAXDocxExtractor()) {
+            if (config.isUseSAXDocxExtractor()) {
                 poiExtractor = trySXWPF(pkg);
             }
             if (poiExtractor == null) {
-                poiExtractor = tryXSLF(pkg, config.getUseSAXPptxExtractor());
+                poiExtractor = tryXSLF(pkg, config.isUseSAXPptxExtractor());
             }
             if (type.equals(OOXMLParser.XPS)) {
                 poiExtractor = new XPSTextExtractor(pkg);

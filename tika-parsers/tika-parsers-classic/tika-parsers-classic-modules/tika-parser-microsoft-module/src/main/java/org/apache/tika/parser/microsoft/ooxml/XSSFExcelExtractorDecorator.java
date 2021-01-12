@@ -105,7 +105,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
-        ((XSSFEventBasedExcelExtractor)extractor).setIncludeTextBoxes(config.getIncludeShapeBasedContent());
+        ((XSSFEventBasedExcelExtractor)extractor).setIncludeTextBoxes(config.isIncludeShapeBasedContent());
         ((XSSFEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
         ((XSSFEventBasedExcelExtractor)extractor).setLocale(locale);
         //given that we load our own shared strings table, setting:
@@ -142,7 +142,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             styles = xssfReader.getStylesTable();
 
             iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-            strings = new ReadOnlySharedStringsTable(container, config.getConcatenatePhoneticRuns());
+            strings = new ReadOnlySharedStringsTable(container, config.isConcatenatePhoneticRuns());
         } catch (InvalidFormatException e) {
             throw new XmlException(e);
         } catch (OpenXML4JException oe) {
@@ -184,7 +184,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
             
             // Do text held in shapes, if required
-            if (config.getIncludeShapeBasedContent()) {
+            if (config.isIncludeShapeBasedContent()) {
                 List<XSSFShape> shapes = iter.getShapes();
                 processShapes(shapes, xhtml);
             }
@@ -413,8 +413,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         private int lastSeenCol = -1;
 
         protected SheetTextAsHTML(OfficeParserConfig config, XHTMLContentHandler xhtml) {
-            this.includeHeadersFooters = config.getIncludeHeadersAndFooters();
-            this.includeMissingRows = config.getIncludeMissingRows();
+            this.includeHeadersFooters = config.isIncludeHeadersAndFooters();
+            this.includeMissingRows = config.isIncludeMissingRows();
             this.xhtml = xhtml;
             headers = new ArrayList<String>();
             footers = new ArrayList<String>();

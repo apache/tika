@@ -181,7 +181,7 @@ public class TesseractOCRConfig implements Serializable {
 
         // set parameters for ImageMagick
         setEnableImageProcessing(
-                getProp(props, "enableImageProcessing", getEnableImageProcessing()));
+                getProp(props, "enableImageProcessing", isEnableImageProcessing()));
         setImageMagickPath(
                 getProp(props, "ImageMagickPath", getImageMagickPath()));
         setDensity(
@@ -195,7 +195,7 @@ public class TesseractOCRConfig implements Serializable {
         setResize(
                 getProp(props, "resize", getResize()));
         setApplyRotation(
-        		getProp(props, "applyRotation", getApplyRotation()));
+        		getProp(props, "applyRotation", isApplyRotation()));
 
         setPythonPath(
                 getProp(props, "pythonPath", getPythonPath()));
@@ -330,7 +330,7 @@ public class TesseractOCRConfig implements Serializable {
      *
      * @return whether or not to maintain interword spacing.
      */
-    public boolean getPreserveInterwordSpacing() {
+    public boolean isPreserveInterwordSpacing() {
         return preserveInterwordSpacing;
     }
     /**
@@ -414,7 +414,7 @@ public class TesseractOCRConfig implements Serializable {
      * @return image processing is enabled or not
      * @see #setEnableImageProcessing(boolean)
      */
-    public boolean getEnableImageProcessing() {
+    public boolean isEnableImageProcessing() {
         return enableImageProcessing;
     }
 
@@ -572,11 +572,12 @@ public class TesseractOCRConfig implements Serializable {
     public String getPythonPath() {
         return pythonPath;
     }
+
     /**
      * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
      * (Requires that Python is installed).
      */
-    public boolean getApplyRotation() {
+    public boolean isApplyRotation() {
     	return this.applyRotation;
     }
 

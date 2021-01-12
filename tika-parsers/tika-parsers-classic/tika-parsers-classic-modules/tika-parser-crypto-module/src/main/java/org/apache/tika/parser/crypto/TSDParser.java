@@ -215,13 +215,13 @@ public class TSDParser extends AbstractParser {
             this.algorithm = algorithm;
         }
 
-        public Boolean getParseBuilt() {
+        public Boolean isParseBuilt() {
             return parseBuilt;
         }
 
         public String getParseBuiltStr() {
-            return String.valueOf(this.getParseBuilt() != null ?
-                    this.getParseBuilt() : false);
+            return String.valueOf(this.isParseBuilt() != null ?
+                    this.isParseBuilt() : false);
         }
 
         public void setParseBuilt(Boolean parseBuilt) {

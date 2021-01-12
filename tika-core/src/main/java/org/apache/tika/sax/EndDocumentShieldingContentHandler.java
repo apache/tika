@@ -47,7 +47,7 @@ public class EndDocumentShieldingContentHandler extends ContentHandlerDecorator 
        super.endDocument();
     }
     
-    public boolean getEndDocumentWasCalled() {
+    public boolean isEndDocumentWasCalled() {
        return endDocumentCalled;
     }
 }

@@ -132,7 +132,7 @@ public class OfficeParser extends AbstractOfficeParser {
             parse(root, context, metadata, xhtml);
             OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
-            if (officeParserConfig.getExtractMacros()) {
+            if (officeParserConfig.isExtractMacros()) {
                 //now try to get macros.
                 //Note that macros are handled separately for ppt in HSLFExtractor.
 

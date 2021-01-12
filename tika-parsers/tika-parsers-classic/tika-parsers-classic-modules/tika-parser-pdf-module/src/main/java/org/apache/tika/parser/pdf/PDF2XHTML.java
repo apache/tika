@@ -51,7 +51,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.
-     * If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
+     * If {@link PDFParserConfig#isExtractUniqueInlineImagesOnly()
      * is true, this will be checked before extracting an embedded image.
      * The integer keeps track of the inlineImageCounter for that image.
      * This integer is used to identify images in the markup.
@@ -86,7 +86,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content
             // handler.
-            if (config.getDetectAngles()) {
+            if (config.isDetectAngles()) {
                 pdf2XHTML = new AngleDetectingPDF2XHTML(document, handler, context, metadata, config);
             } else {
                 pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config);
@@ -147,8 +147,8 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     }
 
     void extractImages(PDPage page) throws SAXException, IOException {
-        if (config.getExtractInlineImages() == false
-                && config.getExtractInlineImageMetadataOnly() == false) {
+        if (config.isExtractInlineImages() == false
+                && config.isExtractInlineImageMetadataOnly() == false) {
             return;
         }
 
@@ -158,7 +158,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         List<IOException> engineExceptions = engine.getExceptions();
         if (engineExceptions.size() > 0) {
             IOException first = engineExceptions.remove(0);
-            if (config.getCatchIntermediateIOExceptions()) {
+            if (config.isCatchIntermediateIOExceptions()) {
                 exceptions.addAll(engineExceptions);
             }
             throw first;

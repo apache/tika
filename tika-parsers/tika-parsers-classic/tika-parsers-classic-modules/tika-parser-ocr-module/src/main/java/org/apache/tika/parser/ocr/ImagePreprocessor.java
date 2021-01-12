@@ -208,7 +208,7 @@ class ImagePreprocessor {
 
             DefaultExecutor executor = new DefaultExecutor();
             // determine the angle of rotation required to make the text horizontal
-            if (config.getApplyRotation() && hasPython(config)) {
+            if (config.isApplyRotation() && hasPython(config)) {
                 CommandLine commandLine = new CommandLine(getPythonPath(config));
                 String[] args = {"-W",
                         "ignore",

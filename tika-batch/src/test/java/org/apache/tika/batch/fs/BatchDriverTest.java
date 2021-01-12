@@ -49,7 +49,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         driver.execute();
 
         assertEquals(0, driver.getNumRestarts());
-        assertFalse(driver.getUserInterrupted());
+        assertFalse(driver.isUserInterrupted());
         assertEquals(5, countChildren(outputDir));
 
         assertContains("first test file",
@@ -69,7 +69,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         driver.execute();
         //could be one or two depending on timing
         assertTrue(driver.getNumRestarts() > 0);
-        assertFalse(driver.getUserInterrupted());
+        assertFalse(driver.isUserInterrupted());
         assertContains("first test file",
                 readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
     }
@@ -89,7 +89,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", mod);
         driver.execute();
         assertEquals(0, driver.getNumRestarts());
-        assertFalse(driver.getUserInterrupted());
+        assertFalse(driver.isUserInterrupted());
         assertEquals(2, countChildren(outputDir));
         Path test2 = outputDir.resolve("test2_norestart.xml.xml");
         assertTrue("test2_norestart.xml", Files.exists(test2));
@@ -109,7 +109,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", args);
         driver.execute();
         assertEquals(1, driver.getNumRestarts());
-        assertFalse(driver.getUserInterrupted());
+        assertFalse(driver.isUserInterrupted());
         assertContains("first test file",
                 readFileToString(outputDir.resolve("test2_ok.xml.xml"), UTF_8));
     }
@@ -127,7 +127,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", commandLine);
         driver.execute();
         assertEquals(3, driver.getNumRestarts());
-        assertFalse(driver.getUserInterrupted());
+        assertFalse(driver.isUserInterrupted());
         assertContains("first test file",
                 readFileToString(outputDir.resolve("test6_ok.xml.xml"), UTF_8));
     }
@@ -149,7 +149,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         BatchProcessDriverCLI driver = getNewDriver("/tika-batch-config-test.xml", commandLine);
         driver.execute();
         assertEquals(2, driver.getNumRestarts());
-        assertFalse(driver.getUserInterrupted());
+        assertFalse(driver.isUserInterrupted());
         assertEquals(3, countChildren(outputDir));
     }
 

@@ -26,7 +26,7 @@ public abstract class ParserFactory {
 
     public abstract Parser getParser(TikaConfig config);
 
-    public boolean getParseRecursively() {
+    public boolean isParseRecursively() {
         return parseRecursively;
     }
 

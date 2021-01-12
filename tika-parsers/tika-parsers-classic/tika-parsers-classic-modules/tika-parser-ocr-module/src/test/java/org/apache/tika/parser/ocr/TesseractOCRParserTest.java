@@ -18,11 +18,9 @@ package org.apache.tika.parser.ocr;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
@@ -152,7 +150,7 @@ public class TesseractOCRParserTest extends TikaTest {
             Assert.assertEquals(241, tesseractOCRConfig.getTimeout());
             Assert.assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR, tesseractOCRConfig.getOutputType());
             Assert.assertEquals("ceb", tesseractOCRConfig.getLanguage());
-            Assert.assertEquals(false, tesseractOCRConfig.getApplyRotation());
+            Assert.assertEquals(false, tesseractOCRConfig.isApplyRotation());
             assertContains("myspecial", tesseractOCRConfig.getTesseractPath());
         }
     }

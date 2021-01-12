@@ -40,39 +40,39 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     }
 
     /**
-     * @see OfficeParserConfig#getIncludeDeletedContent
+     * @see OfficeParserConfig#isIncludeDeletedContent
      *
      * @return
      */
-    public boolean getIncludeDeletedContent() {
-        return defaultOfficeParserConfig.getIncludeDeletedContent();
+    public boolean isIncludeDeletedContent() {
+        return defaultOfficeParserConfig.isIncludeDeletedContent();
     }
 
     /**
-     * @see OfficeParserConfig#getIncludeMoveFromContent()
+     * @see OfficeParserConfig#isIncludeMoveFromContent()
      *
      * @return
      */
 
-    public boolean getIncludeMoveFromContent() {
-        return defaultOfficeParserConfig.getIncludeMoveFromContent();
+    public boolean isIncludeMoveFromContent() {
+        return defaultOfficeParserConfig.isIncludeMoveFromContent();
     }
 
     /**
-     * @see OfficeParserConfig#getUseSAXDocxExtractor()
+     * @see OfficeParserConfig#isUseSAXDocxExtractor()
      *
      * @return
      */
-    public boolean getUseSAXDocxExtractor() {
-        return defaultOfficeParserConfig.getUseSAXDocxExtractor();
+    public boolean isUseSAXDocxExtractor() {
+        return defaultOfficeParserConfig.isUseSAXDocxExtractor();
     }
 
     /**
-     * @see OfficeParserConfig#getExtractMacros()
+     * @see OfficeParserConfig#isExtractMacros()
      * @return whether or not to extract macros
      */
-    public boolean getExtractMacros() {
-        return defaultOfficeParserConfig.getExtractMacros();
+    public boolean isExtractMacros() {
+        return defaultOfficeParserConfig.isExtractMacros();
     }
 
     @Field
@@ -111,7 +111,7 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     }
 
     void getConcatenatePhoneticRuns() {
-        defaultOfficeParserConfig.getConcatenatePhoneticRuns();
+        defaultOfficeParserConfig.isConcatenatePhoneticRuns();
     }
 
     /**
@@ -129,8 +129,8 @@ public abstract class AbstractOfficeParser extends AbstractParser {
     }
 
 
-    public boolean getExtractAllAlternativesFromMSG() {
-        return defaultOfficeParserConfig.getExtractAllAlternativesFromMSG();
+    public boolean isExtractAllAlternativesFromMSG() {
+        return defaultOfficeParserConfig.isExtractAllAlternativesFromMSG();
     }
 
     /**

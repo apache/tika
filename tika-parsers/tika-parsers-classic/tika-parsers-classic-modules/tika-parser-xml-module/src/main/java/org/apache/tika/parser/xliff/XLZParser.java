@@ -110,7 +110,7 @@ public class XLZParser extends AbstractParser {
             }
         }
 
-        if (handler.getEndDocumentWasCalled()) {
+        if (handler.isEndDocumentWasCalled()) {
             handler.reallyEndDocument();
         }
     }

@@ -169,7 +169,7 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public boolean getIncludeDeletedText() {
+        public boolean isIncludeDeletedText() {
             return false;
         }
 
@@ -184,7 +184,7 @@ public class XSLFEventBasedPowerPointExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public boolean getIncludeMoveFromText() {
+        public boolean isIncludeMoveFromText() {
             return false;
         }
 

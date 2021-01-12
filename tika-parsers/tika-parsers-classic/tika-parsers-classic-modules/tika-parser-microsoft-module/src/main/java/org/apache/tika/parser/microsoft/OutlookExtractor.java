@@ -133,7 +133,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
         this.parseContext = context;
-        this.extractAllAlternatives = context.get(OfficeParserConfig.class).getExtractAllAlternativesFromMSG();
+        this.extractAllAlternatives = context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
         try {
             this.msg = new MAPIMessage(root);
         } catch (IOException e) {

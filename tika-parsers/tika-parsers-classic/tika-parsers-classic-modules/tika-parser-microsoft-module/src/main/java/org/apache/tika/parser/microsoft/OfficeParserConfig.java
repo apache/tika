@@ -52,7 +52,7 @@ public class OfficeParserConfig implements Serializable {
      *
      * @return whether or not to extract macros
      */
-    public boolean getExtractMacros() {
+    public boolean isExtractMacros() {
         return extractMacros;
     }
     /**
@@ -66,7 +66,7 @@ public class OfficeParserConfig implements Serializable {
         this.includeDeletedContent = includeDeletedContent;
     }
 
-    public boolean getIncludeDeletedContent() {
+    public boolean isIncludeDeletedContent() {
         return includeDeletedContent;
     }
 
@@ -87,7 +87,7 @@ public class OfficeParserConfig implements Serializable {
         this.includeMoveFromContent = includeMoveFromContent;
     }
 
-    public boolean getIncludeMoveFromContent() {
+    public boolean isIncludeMoveFromContent() {
         return includeMoveFromContent;
     }
 
@@ -105,7 +105,7 @@ public class OfficeParserConfig implements Serializable {
         this.includeShapeBasedContent = includeShapeBasedContent;
     }
 
-    public boolean getIncludeShapeBasedContent() {
+    public boolean isIncludeShapeBasedContent() {
         return includeShapeBasedContent;
     }
 
@@ -122,10 +122,10 @@ public class OfficeParserConfig implements Serializable {
         this.includeHeadersAndFooters = includeHeadersAndFooters;
     }
 
-    public boolean getIncludeHeadersAndFooters() {
+    public boolean isIncludeHeadersAndFooters() {
         return includeHeadersAndFooters;
     }
-    public boolean getUseSAXDocxExtractor() {
+    public boolean isUseSAXDocxExtractor() {
         return useSAXDocxExtractor;
     }
 
@@ -153,12 +153,12 @@ public class OfficeParserConfig implements Serializable {
         this.useSAXPptxExtractor = useSAXPptxExtractor;
     }
 
-    public boolean getUseSAXPptxExtractor() {
+    public boolean isUseSAXPptxExtractor() {
         return useSAXPptxExtractor;
     }
 
 
-    public boolean getConcatenatePhoneticRuns() {
+    public boolean isConcatenatePhoneticRuns() {
         return concatenatePhoneticRuns;
     }
 
@@ -191,7 +191,7 @@ public class OfficeParserConfig implements Serializable {
         this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
     }
 
-    public boolean getExtractAllAlternativesFromMSG() {
+    public boolean isExtractAllAlternativesFromMSG() {
         return extractAllAlternativesFromMSG;
     }
 
@@ -205,11 +205,11 @@ public class OfficeParserConfig implements Serializable {
         this.includeMissingRows = includeMissingRows;
     }
 
-    public boolean getIncludeMissingRows() {
+    public boolean isIncludeMissingRows() {
         return includeMissingRows;
     }
 
-    public boolean getIncludeSlideNotes() {
+    public boolean isIncludeSlideNotes() {
         return includeSlideNotes;
     }
 
@@ -230,7 +230,7 @@ public class OfficeParserConfig implements Serializable {
      * @since 1.19.1
      * @return whether or not to process content in slide masters
      */
-    public boolean getIncludeSlideMasterContent() {
+    public boolean isIncludeSlideMasterContent() {
         return includeSlideMasterContent;
     }
 

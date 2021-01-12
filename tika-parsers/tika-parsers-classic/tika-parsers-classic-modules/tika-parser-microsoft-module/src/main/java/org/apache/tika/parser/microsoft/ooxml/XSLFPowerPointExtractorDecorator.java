@@ -30,13 +30,11 @@ import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
-import org.apache.poi.sl.extractor.SlideShowExtractor;
 import org.apache.poi.sl.usermodel.Placeholder;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFComment;
 import org.apache.poi.xslf.usermodel.XSLFCommentAuthors;
-import org.apache.poi.xslf.usermodel.XSLFComments;
 import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
 import org.apache.poi.xslf.usermodel.XSLFGroupShape;
 import org.apache.poi.xslf.usermodel.XSLFHyperlink;
@@ -110,7 +108,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             extractContent(slide.getShapes(), false, xhtml, slideDesc);
             xhtml.endElement("div");
 
-            if (config.getIncludeSlideMasterContent()) {
+            if (config.isIncludeSlideMasterContent()) {
                 // slide layout which is the master sheet for this slide
                 xhtml.startElement("div", "class", "slide-master-content");
                 XSLFSlideLayout slideLayout = slide.getMasterSheet();
@@ -121,7 +119,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 XSLFSheet slideMaster = slideLayout.getMasterSheet();
                 extractContent(slideMaster.getShapes(), true, xhtml, null);
             }
-            if (config.getIncludeSlideNotes()) {
+            if (config.isIncludeSlideNotes()) {
                 // notes (if present)
                 XSLFNotes slideNotes = slide.getNotes();
                 if (slideNotes != null) {
@@ -205,7 +203,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
                     xhtml.startElement("p");
-                    if (! config.getIncludeHeadersAndFooters() && p.isHeaderOrFooter()) {
+                    if (! config.isIncludeHeadersAndFooters() && p.isHeaderOrFooter()) {
                         continue;
                     }
                     for (XSLFTextRun run : p.getTextRuns()) {

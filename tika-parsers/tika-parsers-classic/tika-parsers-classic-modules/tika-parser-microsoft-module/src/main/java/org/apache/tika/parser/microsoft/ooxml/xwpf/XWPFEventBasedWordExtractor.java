@@ -324,7 +324,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public boolean getIncludeDeletedText() {
+        public boolean isIncludeDeletedText() {
             return true;
         }
 
@@ -339,7 +339,7 @@ public class XWPFEventBasedWordExtractor extends POIXMLTextExtractor {
         }
 
         @Override
-        public boolean getIncludeMoveFromText() {
+        public boolean isIncludeMoveFromText() {
             return false;
         }
 

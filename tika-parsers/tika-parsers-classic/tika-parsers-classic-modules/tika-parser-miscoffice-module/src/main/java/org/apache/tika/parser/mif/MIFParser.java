@@ -77,7 +77,7 @@ public class MIFParser extends AbstractEncodingDetectorParser {
             MIFExtractor.parse(reader, getContentHandler(parseHandler, metadata));
             xhtml.endDocument();
 
-            if (parseHandler.getEndDocumentWasCalled()) {
+            if (parseHandler.isEndDocumentWasCalled()) {
                 parseHandler.reallyEndDocument();
             }
         }

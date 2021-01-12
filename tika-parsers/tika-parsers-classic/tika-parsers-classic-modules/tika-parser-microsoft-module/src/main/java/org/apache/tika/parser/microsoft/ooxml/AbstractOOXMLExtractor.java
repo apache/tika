@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.extractor.POITextExtractor;
 import org.apache.poi.ooxml.POIXMLDocument;
 import org.apache.poi.ooxml.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
@@ -422,7 +421,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     void handleMacros(PackagePart macroPart, ContentHandler handler) throws TikaException, SAXException {
         OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class);
 
-        if (officeParserConfig.getExtractMacros()) {
+        if (officeParserConfig.isExtractMacros()) {
             try (InputStream is = macroPart.getInputStream()) {
                 try (POIFSFileSystem poifs = new POIFSFileSystem(is)) {
                     //Macro reading exceptions are already swallowed here

@@ -87,7 +87,7 @@ public class TikaEncodingDetectorTest extends AbstractTikaConfigTest {
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
         assertEquals(2, detectors.size());
-        assertTrue(((Icu4jEncodingDetector) detectors.get(0)).getStripMarkup());
+        assertTrue(((Icu4jEncodingDetector) detectors.get(0)).isStripMarkup());
         assertTrue(detectors.get(1) instanceof NonDetectingEncodingDetector);
     }
 

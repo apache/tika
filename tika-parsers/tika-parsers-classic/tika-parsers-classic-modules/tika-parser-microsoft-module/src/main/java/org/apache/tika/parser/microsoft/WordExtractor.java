@@ -173,7 +173,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         PicturesSource pictures = new PicturesSource(document);
         HeaderStories headerFooter = null;
         // Do any headers, if present
-        if (officeParserConfig.getIncludeHeadersAndFooters()) {
+        if (officeParserConfig.isIncludeHeadersAndFooters()) {
             headerFooter = new HeaderStories(document);
             Range[] headers = new Range[]{headerFooter.getFirstHeaderSubrange(),
                     headerFooter.getEvenHeaderSubrange(), headerFooter.getOddHeaderSubrange()};
@@ -187,7 +187,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, listManager, xhtml);
         }
 
-        if (officeParserConfig.getIncludeShapeBasedContent()) {
+        if (officeParserConfig.isIncludeShapeBasedContent()) {
             // Do everything else
             for (String paragraph : wordExtractor.getMainTextboxText()) {
                 xhtml.element("p", paragraph);
@@ -206,7 +206,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.element("p", paragraph);
         }
 
-        if (officeParserConfig.getIncludeHeadersAndFooters()) {
+        if (officeParserConfig.isIncludeHeadersAndFooters()) {
             // Do any footers, if present
             Range[] footers = new Range[]{headerFooter.getFirstFooterSubrange(),
                     headerFooter.getEvenFooterSubrange(), headerFooter.getOddFooterSubrange()};
@@ -609,7 +609,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             return true;
         }
         return !cr.isMarkedDeleted() ||
-                (cr.isMarkedDeleted() && officeParserConfig.getIncludeDeletedContent());
+                (cr.isMarkedDeleted() && officeParserConfig.isIncludeDeletedContent());
     }
 
     public static class TagAndStyle {

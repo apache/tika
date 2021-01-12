@@ -45,15 +45,11 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -117,7 +113,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
-        this.extractInlineImageMetadataOnly = pdfParserConfig.getExtractInlineImageMetadataOnly();
+        this.extractInlineImageMetadataOnly = pdfParserConfig.isExtractInlineImageMetadataOnly();
     }
 
     void run() throws IOException {
@@ -164,7 +160,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
             PDImageXObject xobject = (PDImageXObject) pdImage;
             Integer cachedNumber = processedInlineImages.get(xobject.getCOSObject());
-            if (cachedNumber != null && pdfParserConfig.getExtractUniqueInlineImagesOnly()) {
+            if (cachedNumber != null && pdfParserConfig.isExtractUniqueInlineImagesOnly()) {
                 // skip duplicate image
                 return;
             }
@@ -380,7 +376,7 @@ class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
     }
 
     void handleCatchableIOE(IOException e) throws IOException {
-        if (pdfParserConfig.getCatchIntermediateIOExceptions()) {
+        if (pdfParserConfig.isCatchIntermediateIOExceptions()) {
             if (e.getCause() instanceof SAXException && e.getCause().getMessage() != null &&
                     e.getCause().getMessage().contains("Your document contained more than")) {
                 //TODO -- is there a cleaner way of checking for:

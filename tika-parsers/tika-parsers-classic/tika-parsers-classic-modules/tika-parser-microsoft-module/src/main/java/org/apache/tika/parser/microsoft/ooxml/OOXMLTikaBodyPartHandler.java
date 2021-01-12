@@ -74,8 +74,8 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
         this.xhtml = xhtml;
         this.styles = styles;
         this.listManager = listManager;
-        this.includeDeletedText = parserConfig.getIncludeDeletedContent();
-        this.includeMoveFromText = parserConfig.getIncludeMoveFromContent();
+        this.includeDeletedText = parserConfig.isIncludeDeletedContent();
+        this.includeMoveFromText = parserConfig.isIncludeMoveFromContent();
     }
 
     @Override
@@ -332,7 +332,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public boolean getIncludeDeletedText() {
+    public boolean isIncludeDeletedText() {
         return includeDeletedText;
     }
 
@@ -363,7 +363,7 @@ public class OOXMLTikaBodyPartHandler implements OOXMLWordAndPowerPointTextHandl
     }
 
     @Override
-    public boolean getIncludeMoveFromText() {
+    public boolean isIncludeMoveFromText() {
         return includeMoveFromText;
     }
 

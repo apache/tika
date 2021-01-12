@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.utils.DateUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -499,12 +498,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
 
         if (editType.equals(EditType.MOVE_FROM) && inT) {
-            if (bodyContentsHandler.getIncludeMoveFromText()) {
+            if (bodyContentsHandler.isIncludeMoveFromText()) {
                 appendToBuffer(ch, start, length);
             }
         } else if (inT) {
             appendToBuffer(ch, start, length);
-        } else if (bodyContentsHandler.getIncludeDeletedText() && editType.equals(EditType.DELETE)) {
+        } else if (bodyContentsHandler.isIncludeDeletedText() && editType.equals(EditType.DELETE)) {
             appendToBuffer(ch, start, length);
         } else if (inV) {
             appendToBuffer(ch, start, length);
@@ -522,7 +521,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
         if (inT) {
             appendToBuffer(ch, start, length);
-        } else if (bodyContentsHandler.getIncludeDeletedText() && inDelText) {
+        } else if (bodyContentsHandler.isIncludeDeletedText() && inDelText) {
             appendToBuffer(ch, start, length);
         }
     }
@@ -570,13 +569,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
         void endEditedSection();
 
-        boolean getIncludeDeletedText();
+        boolean isIncludeDeletedText();
 
         void footnoteReference(String id);
 
         void endnoteReference(String id);
 
-        boolean getIncludeMoveFromText();
+        boolean isIncludeMoveFromText();
 
         void embeddedOLERef(String refId);
 

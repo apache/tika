@@ -44,7 +44,6 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.sl.usermodel.Comment;
 import org.apache.poi.sl.usermodel.ShapeContainer;
 import org.apache.poi.sl.usermodel.SimpleShape;
-import org.apache.poi.sl.usermodel.TextParagraph;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -93,14 +92,14 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         for (HSLFSlide slide : _slides) {
             xhtml.startElement("div", "class", "slide");
             HeadersFooters slideHeaderFooters =
-                    (officeParserConfig.getIncludeHeadersAndFooters()) ?
+                    (officeParserConfig.isIncludeHeadersAndFooters()) ?
                             slide.getHeadersFooters() : null;
 
             HeadersFooters notesHeadersFooters =
-                    (officeParserConfig.getIncludeHeadersAndFooters()) ?
+                    (officeParserConfig.isIncludeHeadersAndFooters()) ?
                             ss.getNotesHeadersFooters() : null;
 
-            if (officeParserConfig.getIncludeHeadersAndFooters()) {
+            if (officeParserConfig.isIncludeHeadersAndFooters()) {
                 // Slide header, if present
                 if (slideHeaderFooters != null && slideHeaderFooters.isHeaderVisible() && slideHeaderFooters.getHeaderText() != null) {
                     xhtml.startElement("p", "class", "slide-header");
@@ -112,7 +111,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             // Slide master, if present
-            if (officeParserConfig.getIncludeSlideMasterContent()) {
+            if (officeParserConfig.isIncludeSlideMasterContent()) {
                 extractMaster(xhtml, slide.getMasterSheet());
             }
             // Slide text
@@ -132,7 +131,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             //end slide content
             xhtml.endElement("div");
 
-            if (officeParserConfig.getIncludeHeadersAndFooters()) {
+            if (officeParserConfig.isIncludeHeadersAndFooters()) {
                 // Slide footer, if present
                 if (slideHeaderFooters != null && slideHeaderFooters.isFooterVisible() && slideHeaderFooters.getFooterText() != null) {
                     xhtml.startElement("p", "class", "slide-footer");
@@ -151,7 +150,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
 
         handleSlideEmbeddedPictures(ss, xhtml);
-        if (officeParserConfig.getExtractMacros()) {
+        if (officeParserConfig.isExtractMacros()) {
             extractMacros(ss, xhtml);
         }
         // All slides done
@@ -199,7 +198,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     private void handleNotes(HSLFSlide slide,
                              HeadersFooters notesHeaderFooters, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
 
-        if (!officeParserConfig.getIncludeSlideNotes()) {
+        if (!officeParserConfig.isIncludeSlideNotes()) {
             return;
         }
         // Find the Notes for this slide and extract inline
@@ -211,7 +210,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.startElement("div", "class", "notes");
 
         // Repeat the Notes header, if set
-        if (officeParserConfig.getIncludeHeadersAndFooters() &&
+        if (officeParserConfig.isIncludeHeadersAndFooters() &&
                 notesHeaderFooters != null &&
                 notesHeaderFooters.isHeaderVisible() &&
                 notesHeaderFooters.getHeaderText() != null) {
@@ -237,7 +236,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.endElement("div");
 
         // Repeat the Notes footer, if set
-        if (officeParserConfig.getIncludeHeadersAndFooters() &&
+        if (officeParserConfig.isIncludeHeadersAndFooters() &&
                 notesHeaderFooters != null &&
                 notesHeaderFooters.isFooterVisible() &&
                 notesHeaderFooters.getFooterText() != null) {

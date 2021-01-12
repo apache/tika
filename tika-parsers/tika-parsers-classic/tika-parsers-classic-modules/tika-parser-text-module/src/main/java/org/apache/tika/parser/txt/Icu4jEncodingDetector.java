@@ -94,7 +94,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         this.stripMarkup = stripMarkup;
     }
 
-    public boolean getStripMarkup() {
+    public boolean isStripMarkup() {
         return stripMarkup;
     }
 

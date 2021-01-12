@@ -176,7 +176,7 @@ public class OpenDocumentParser extends AbstractParser {
         }
 
         // Only now call the end document
-        if (handler.getEndDocumentWasCalled()) {
+        if (handler.isEndDocumentWasCalled()) {
             handler.reallyEndDocument();
         }
     }
