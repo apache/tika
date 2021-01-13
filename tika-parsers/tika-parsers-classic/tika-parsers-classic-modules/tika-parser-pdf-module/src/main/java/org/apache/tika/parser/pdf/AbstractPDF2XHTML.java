@@ -16,7 +16,10 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.AUTO;
 import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.NO_OCR;
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION;
+import static org.apache.tika.parser.pdf.PDFParserConfig.OCR_STRATEGY.OCR_ONLY;
 
 import javax.xml.stream.XMLStreamException;
 import java.awt.image.BufferedImage;
@@ -422,18 +425,23 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    void doOCROnCurrentPage() throws IOException, TikaException, SAXException {
-        if (config.getOcrStrategy().equals(NO_OCR)) {
+    void doOCROnCurrentPage(PDFParserConfig.OCR_STRATEGY ocrStrategy) throws IOException, TikaException, SAXException {
+        if (ocrStrategy.equals(NO_OCR)) {
             return;
         }
         MediaType ocrImageMediaType =
                 MediaType.image("ocr-"+config.getOcrImageFormatName());
         if (! ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
-            throw new TikaException("" +
-                    "I regret that I couldn't find an OCR parser to handle "+ocrImageMediaType+"."+
-                    "Please set the OCR_STRATEGY to NO_OCR or configure your" +
-                    "OCR parser correctly"
-                    );
+            if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
+                throw new TikaException("" +
+                        "I regret that I couldn't find an OCR parser to handle " + ocrImageMediaType + "." +
+                        "Please set the OCR_STRATEGY to NO_OCR or configure your" +
+                        "OCR parser correctly"
+                );
+            } else if (ocrStrategy == AUTO) {
+                //silently skip
+                return;
+            }
         }
 
         PDFRenderer renderer = new PDFRenderer(pdDocument);
@@ -544,11 +552,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 }
             }
             if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.OCR_AND_TEXT_EXTRACTION)) {
-                doOCROnCurrentPage();
+                doOCROnCurrentPage(OCR_AND_TEXT_EXTRACTION);
             } else if (config.getOcrStrategy().equals(PDFParserConfig.OCR_STRATEGY.AUTO)) {
                 //TODO add more sophistication
                 if (totalCharsPerPage < 10 || unmappedUnicodeCharsPerPage > 10) {
-                    doOCROnCurrentPage();
+                    doOCROnCurrentPage(AUTO);
                 }
             }
 

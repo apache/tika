@@ -131,7 +131,7 @@ public class PDFParserConfig implements Serializable {
     //content from elsewhere in the document.
     private boolean ifXFAExtractOnlyXFA = false;
 
-    private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.NO_OCR;
+    private OCR_STRATEGY ocrStrategy = OCR_STRATEGY.AUTO;
 
     private int ocrDPI = 300;
     private ImageType ocrImageType = ImageType.GRAY;

@@ -82,11 +82,19 @@ public class PDFParserTest extends TikaTest {
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     public static final MediaType TYPE_DOC = MediaType.application("msword");
 
+    private static ParseContext NO_OCR() {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        return context;
+    }
 
     @Test
     public void testXMLProfiler() throws Exception {
         //test that the xml profiler is not triggered by default
-        List<Metadata> metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf");
+        List<Metadata> metadataList = getRecursiveMetadata("testPDF_XFA_govdocs1_258578.pdf",
+                NO_OCR());
         assertEquals(1, metadataList.size());
 
         //test that it is triggered when added to the default parser
@@ -133,7 +141,8 @@ public class PDFParserTest extends TikaTest {
 
     @Test //TIKA-1374
     public void testOSSpecificEmbeddedFileExtraction() throws Exception {
-        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf");
+        List<Metadata> metadatas = getRecursiveMetadata("testPDF_multiFormatEmbFiles.pdf",
+                NO_OCR());
         assertEquals("metadata size", 5, metadatas.size());
 
         assertEquals("file name", "Test.txt", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -156,7 +165,7 @@ public class PDFParserTest extends TikaTest {
                docx
        */
 
-        String content = getXML("testPDFEmbeddingAndEmbedded.docx").xml;
+        String content = getXML("testPDFEmbeddingAndEmbedded.docx", NO_OCR()).xml;
         int outerHaystack = content.indexOf("Outer_haystack");
         int pdfHaystack = content.indexOf("pdf_haystack");
         int needle = content.indexOf("Needle");
@@ -194,6 +203,7 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
         config.setExtractUniqueInlineImagesOnly(false);
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, p);
 
@@ -219,53 +229,63 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testEmbeddedDocsWithOCROnly() throws Exception {
         assumeTrue("can run OCR", canRunOCR());
-
+        //test default is "auto"
+        assertEquals(PDFParserConfig.OCR_STRATEGY.AUTO, new PDFParserConfig().getOcrStrategy());
+        testStrategy(null);
+        //now test other options
         for (PDFParserConfig.OCR_STRATEGY strategy : PDFParserConfig.OCR_STRATEGY.values()) {
+            testStrategy(strategy);
+        }
+    }
+
+    private void testStrategy(PDFParserConfig.OCR_STRATEGY strategy) throws Exception {
+        //make sure everything works with regular xml _and_ with recursive
+        ParseContext context = new ParseContext();
+        if (strategy != null) {
             PDFParserConfig config = new PDFParserConfig();
             config.setOcrStrategy(strategy);
-            ParseContext context = new ParseContext();
             context.set(PDFParserConfig.class, config);
-            //make sure everything works with regular xml _and_ with recursive
-            XMLResult xmlResult = getXML("testPDFEmbeddingAndEmbedded.docx", context);
-            //can get dehaystack depending on version of tesseract and/or preprocessing
-            if (xmlResult.xml.contains("pdf_haystack") || xmlResult.xml.contains("dehaystack")) {
-                //great
-            } else {
-                fail("couldn't find pdf_haystack or its variants");
-            }
-            assertContains("Haystack", xmlResult.xml);
-            assertContains("Needle", xmlResult.xml);
-            if (! strategy.equals(PDFParserConfig.OCR_STRATEGY.NO_OCR)) {
-                // Tesseract may see the t in haystack as a ! some times...
-                //or it might see dehayslack...
-                //TODO: figure out how to make this test less hacky
-                String div = "<div class=\"ocr\">";
-                if (xmlResult.xml.contains(div+"pdf_hays!ack")) {
-                } else if (xmlResult.xml.contains(div+"pdf_haystack")) {
-                } else if (xmlResult.xml.contains(div+"dehayslack")) {
-                } else {
-                    fail("couldn't find acceptable variants of haystack");
-                }
-            } else {
-                assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
-            }
-            assertEquals(4, getRecursiveMetadata("testPDFEmbeddingAndEmbedded.docx", context).size());
         }
+        XMLResult xmlResult = getXML("testPDFEmbeddingAndEmbedded.docx", context);
 
+        //can get dehaystack depending on version of tesseract and/or preprocessing
+        if (xmlResult.xml.contains("pdf_haystack") || xmlResult.xml.contains("dehaystack")) {
+            //great
+        } else {
+            fail("couldn't find pdf_haystack or its variants");
+        }
+        assertContains("Haystack", xmlResult.xml);
+        assertContains("Needle", xmlResult.xml);
+        if (strategy == null || strategy != PDFParserConfig.OCR_STRATEGY.NO_OCR) {
+            // Tesseract may see the t in haystack as a ! some times...
+            //or it might see dehayslack...
+            //TODO: figure out how to make this test less hacky
+            String div = "<div class=\"ocr\">";
+            if (xmlResult.xml.contains(div+"pdf_hays!ack")) {
+            } else if (xmlResult.xml.contains(div+"pdf_haystack")) {
+            } else if (xmlResult.xml.contains(div+"dehayslack")) {
+            } else {
+                fail("couldn't find acceptable variants of haystack");
+            }
+        } else {
+            assertNotContained("<div class=\"ocr\">pdf_haystack", xmlResult.xml);
+        }
+        assertEquals(4, getRecursiveMetadata("testPDFEmbeddingAndEmbedded.docx", context).size());
     }
 
 
     @Test
     public void testFileInAnnotationExtractedIfNoContents() throws Exception {
         //TIKA-2845
-        List<Metadata> contents = getRecursiveMetadata("testPDFFileEmbInAnnotation_noContents.pdf");
+        List<Metadata> contents = getRecursiveMetadata("testPDFFileEmbInAnnotation_noContents.pdf",
+                NO_OCR());
         assertEquals(2, contents.size());
         assertContains("This is a Excel", contents.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
     }
 
     @Test
     public void testEmbeddedFilesInAnnotations() throws Exception {
-        String xml = getXML("testPDFFileEmbInAnnotation.pdf").xml;
+        String xml = getXML("testPDFFileEmbInAnnotation.pdf", NO_OCR()).xml;
 
         assertTrue(xml.contains("This is a Excel"));
     }
@@ -275,6 +295,7 @@ public class PDFParserTest extends TikaTest {
         //TIKA-1990, test that an embedded jpeg is correctly decoded
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 
@@ -295,6 +316,7 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
         config.setExtractUniqueInlineImagesOnly(false);
+        config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
         context.set(PDFParserConfig.class, config);
 
 
@@ -332,6 +354,10 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testOCRAutoMode() throws Exception {
         assumeTrue("can run OCR", canRunOCR());
+
+        //default
+        assertContains("Happy New Year", getXML("testOCR.pdf").xml);
+
         PDFParserConfig config = new PDFParserConfig();
         config.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.AUTO);
         ParseContext context = new ParseContext();

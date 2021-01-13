@@ -88,7 +88,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
  *
  *
  */
-public class TesseractOCRParser extends AbstractParser implements Initializable {
+public class TesseractOCRParser extends AbstractParser {
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META+"rotation");
     public static final Property IMAGE_MAGICK = Property.externalBooleanSeq(TESS_META+"image_magick_processed");
@@ -230,6 +230,7 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
                        ContentHandler xhtml, Metadata metadata, ParseContext parseContext,
                        TesseractOCRConfig config)
             throws IOException, SAXException, TikaException {
+        warnOnFirstParse();
         File tmpTxtOutput = null;
         try {
             Path input = tikaInputStream.getPath();
@@ -284,32 +285,9 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
         }
     }
 
-    /**
-     * no-op
-     * @param params params to use for initialization
-     * @throws TikaConfigException
-     */
-    @Override
-    public void initialize(Map<String, Param> params) throws TikaConfigException {
-
-    }
-
-    @Override
-    public void checkInitialization(InitializableProblemHandler problemHandler)
-            throws TikaConfigException {
-        //this will incorrectly trigger for people who turn off Tesseract
-        //by sending in a bogus tesseract path via a custom TesseractOCRConfig.
-        //TODO: figure out how to solve that.
-        if (! hasWarned()) {
-            if (hasTesseract(defaultConfig)) {
-                problemHandler.handleInitializableProblem(this.getClass().getName(),
-                        "Tesseract OCR is installed and will be automatically applied to image files unless\n" +
-                                "you've excluded the TesseractOCRParser from the default parser.\n"+
-                                "Tesseract may dramatically slow down content extraction (TIKA-2359).\n" +
-                                "As of Tika 1.15 (and prior versions), Tesseract is automatically called.\n" +
-                                "In future versions of Tika, users may need to turn the TesseractOCRParser on via TikaConfig.");
-                warn();
-            }
+    private void warnOnFirstParse() {
+        if (!hasWarned()) {
+            warn();
         }
     }
 
@@ -515,6 +493,10 @@ public class TesseractOCRParser extends AbstractParser implements Initializable 
     }
 
     protected void warn() {
+        LOG.info("Tesseract is installed and is being invoked. " +
+                "This can add greatly to processing time.  If you do not want tesseract " +
+                "to be applied to your files see: " +
+                "https://cwiki.apache.org/confluence/display/TIKA/TikaOCR#TikaOCR-disable-ocr");
         HAS_WARNED = true;
     }
 
