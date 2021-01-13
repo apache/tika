@@ -1,4 +1,5 @@
-Release 2.0.0 - ???
+Release 2.0.0-ALPHA - 01/13/2021
+
    BREAKING CHANGES in 2.0.0
    * General
      * Remove deprecated Metadata keys/properties (TIKA-1974).
@@ -28,10 +29,9 @@ Release 2.0.0 - ???
      * tika-server's /metadata endpoint requires tika-server-classic to write XMP/rdf output.
        This output is not available in tika-server-core.
 
-   Other changes
-   * General code cleanup (PeterAlfredLee)
+   Other changes:
 
-Release 1.26 - ???
+   * General code cleanup (PeterAlfredLee)
 
    * Great optimization in ForkParser (TIKA-3237).
    
