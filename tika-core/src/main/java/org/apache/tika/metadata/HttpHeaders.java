@@ -38,9 +38,6 @@ public interface HttpHeaders {
 
     String CONTENT_TYPE = "Content-Type";
 
-    Property LAST_MODIFIED = 
-        Property.internalDate("Last-Modified");
-
     String LOCATION = "Location";
 
 }

@@ -701,7 +701,7 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testMacrosInDocm() throws Exception {
 
         Metadata parsedBy = new Metadata();
-        parsedBy.add("X-Parsed-By",
+        parsedBy.add(TikaCoreProperties.TIKA_PARSED_BY,
                 "org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor");
 
         //test default is "don't extract macros"

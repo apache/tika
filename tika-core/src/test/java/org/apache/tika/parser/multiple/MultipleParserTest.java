@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DummyParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -84,7 +85,7 @@ public class MultipleParserTest {
         p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
        
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(1, usedParsers.length);
         assertEquals(DummyParser.class.getName(), usedParsers[0]);
         
@@ -97,7 +98,7 @@ public class MultipleParserTest {
         p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
        
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(2, usedParsers.length);
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
@@ -116,7 +117,7 @@ public class MultipleParserTest {
         p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
         assertEquals("Fell back!", handler.toString());
        
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(2, usedParsers.length);
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
@@ -172,7 +173,7 @@ public class MultipleParserTest {
         assertEquals("Test1", metadata.get("T1"));
         assertEquals("Test1", metadata.get("TBoth"));
        
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(1, usedParsers.length);
         assertEquals(DummyParser.class.getName(), usedParsers[0]);
         
@@ -191,7 +192,7 @@ public class MultipleParserTest {
         assertEquals("Test2", metadata.get("T2"));
         assertEquals("Test1", metadata.get("TBoth"));
        
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(4, usedParsers.length);
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
@@ -212,7 +213,7 @@ public class MultipleParserTest {
         assertEquals("Test2", metadata.get("T2"));
         assertEquals("Test2", metadata.get("TBoth"));
        
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(4, usedParsers.length);
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
@@ -235,7 +236,7 @@ public class MultipleParserTest {
         assertEquals("Test1", metadata.getValues("TBoth")[0]);
         assertEquals("Test2", metadata.getValues("TBoth")[1]);
 
-        usedParsers = metadata.getValues("X-Parsed-By");
+        usedParsers = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         assertEquals(4, usedParsers.length);
         assertEquals(ErrorParser.class.getName(), usedParsers[0]);
         assertEquals(DummyParser.class.getName(), usedParsers[1]);

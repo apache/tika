@@ -347,8 +347,10 @@ public class ForkParserTest extends TikaTest {
             try (Reader reader = Files.newBufferedReader(target, StandardCharsets.UTF_8)) {
                 contents = IOUtils.toString(reader);
             }
-            assertContainsCount("X-Parsed-By : org.apache.tika.parser.DefaultParser", contents,2);
-            assertContainsCount("X-Parsed-By : org.apache.tika.parser.mock.MockParser", contents,2);
+            assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
+                    " : org.apache.tika.parser.DefaultParser", contents,2);
+            assertContainsCount(TikaCoreProperties.TIKA_PARSED_BY.getName() +
+                    " : org.apache.tika.parser.mock.MockParser", contents,2);
             assertContains("Nikolai Lobachevsky", contents);
             assertContains("embeddedAuthor", contents);
             assertContains("main_content", contents);

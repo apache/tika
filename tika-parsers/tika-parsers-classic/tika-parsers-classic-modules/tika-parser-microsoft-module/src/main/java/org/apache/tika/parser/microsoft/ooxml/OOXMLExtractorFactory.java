@@ -178,11 +178,11 @@ public class OOXMLExtractorFactory {
             } else if (poiExtractor instanceof XWPFEventBasedWordExtractor) {
                 extractor = new SXWPFWordExtractorDecorator(metadata, context,
                         (XWPFEventBasedWordExtractor) poiExtractor);
-                metadata.add("X-Parsed-By", XWPFEventBasedWordExtractor.class.getCanonicalName());
+                metadata.add(TikaCoreProperties.TIKA_PARSED_BY, XWPFEventBasedWordExtractor.class.getCanonicalName());
             } else if (poiExtractor instanceof XSLFEventBasedPowerPointExtractor) {
                 extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
                         (XSLFEventBasedPowerPointExtractor) poiExtractor);
-                metadata.add("X-Parsed-By", XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
+                metadata.add(TikaCoreProperties.TIKA_PARSED_BY, XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
             } else if (poiExtractor instanceof XPSTextExtractor) {
                 extractor = new XPSExtractorDecorator(context, poiExtractor);
             } else if (document == null) {

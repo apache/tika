@@ -32,6 +32,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 public class MockParserTest extends TikaTest {
@@ -230,7 +231,7 @@ public class MockParserTest extends TikaTest {
     }
 
     private void assertMockParser(Metadata m) {
-        String[] parsers = m.getValues("X-Parsed-By");
+        String[] parsers = m.getValues(TikaCoreProperties.TIKA_PARSED_BY);
         //make sure that it was actually parsed by mock.
         boolean parsedByMock = false;
         for (String parser : parsers) {

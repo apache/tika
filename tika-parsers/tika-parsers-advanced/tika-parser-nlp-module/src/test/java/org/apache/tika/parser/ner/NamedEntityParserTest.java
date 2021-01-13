@@ -20,6 +20,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
 import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 import org.junit.Test;
@@ -52,7 +53,7 @@ public class NamedEntityParserTest extends TikaTest {
             Metadata md = new Metadata();
             tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
 
-            HashSet<String> set = new HashSet<String>(Arrays.asList(md.getValues("X-Parsed-By")));
+            HashSet<String> set = new HashSet<String>(Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
             assumeTrue(set.contains(NamedEntityParser.class.getName()));
 
             set.clear();

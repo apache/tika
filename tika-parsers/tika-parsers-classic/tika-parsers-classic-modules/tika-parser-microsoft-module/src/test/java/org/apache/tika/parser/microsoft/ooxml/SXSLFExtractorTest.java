@@ -535,7 +535,7 @@ public class SXSLFExtractorTest extends TikaTest {
     public void testMacrosInPptm() throws Exception {
 
         Metadata parsedBy = new Metadata();
-        parsedBy.add("X-Parsed-By",
+        parsedBy.add(TikaCoreProperties.TIKA_PARSED_BY,
                 "org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor");
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_macros.pptm", parseContext);

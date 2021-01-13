@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 /**
@@ -42,7 +43,7 @@ public class QuattroProTest extends TikaTest {
     @Test
     public void testWB3() throws Exception {
         XMLResult r = getXML("testQUATTRO.wb3");
-        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get("X-Parsed-By"));
+        assertEquals("org.apache.tika.parser.EmptyParser", r.metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
         assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
     }
 }

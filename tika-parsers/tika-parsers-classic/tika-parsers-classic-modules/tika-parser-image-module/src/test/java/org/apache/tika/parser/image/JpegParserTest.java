@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -90,7 +91,7 @@ public class JpegParserTest {
         assertEquals("Canon EOS 40D", metadata.get("Exif IFD0:Model"));
 
         // Common tags
-        assertEquals("2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
+        assertEquals("2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
                 "2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED));
         List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
@@ -138,7 +139,7 @@ public class JpegParserTest {
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
                 "2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("This image has different Date/Time than Date/Time Original, so it is probably modification date",
-                "2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
+                "2009-10-02T23:02:49", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("Date/Time Original should be stored in EXIF field too",
                 "2009-08-11T09:09:45", metadata.get(TIFF.ORIGINAL_DATE));
         assertEquals("canon-55-250", metadata.getValues(TikaCoreProperties.SUBJECT)[0]);

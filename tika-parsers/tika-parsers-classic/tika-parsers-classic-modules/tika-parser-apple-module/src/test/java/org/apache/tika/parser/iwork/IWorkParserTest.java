@@ -145,7 +145,7 @@ public class IWorkParserTest extends TikaTest {
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Office.PAGE_COUNT.getName()));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.CREATOR.getName()));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.LAST_MODIFIED.getName()));
+        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.MODIFIED.getName()));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.LANGUAGE.getName()));
         
         // Check the metadata values

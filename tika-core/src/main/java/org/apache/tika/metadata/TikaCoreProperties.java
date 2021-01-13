@@ -72,7 +72,6 @@ public interface TikaCoreProperties {
      * about the parsing process.  Users should be able to distinguish
      * between metadata that was contained within the document and
      * metadata about the parsing process.
-     * In Tika 2.0 (or earlier?), let's change X-ParsedBy to X-TIKA-Parsed-By.
      */
     public static String TIKA_META_PREFIX = "X-TIKA"+NAMESPACE_PREFIX_DELIMITER;
 
@@ -99,6 +98,8 @@ public interface TikaCoreProperties {
     Property TIKA_META_EXCEPTION_EMBEDDED_STREAM =
             Property.internalTextBag(TIKA_META_EXCEPTION_PREFIX+"embedded_stream_exception");
 
+    Property TIKA_PARSED_BY =
+            Property.internalTextBag(TIKA_META_PREFIX+"Parsed-By");
 
     String RESOURCE_NAME_KEY = "resourceName";
 
@@ -153,10 +154,7 @@ public interface TikaCoreProperties {
    /**
     * @see DublinCore#CREATOR
     */
-     Property CREATOR = Property.composite(DublinCore.CREATOR,
-            new Property[] { 
-                Office.AUTHOR,
-            });
+     Property CREATOR = DublinCore.CREATOR;
     
     /**
      * @see Office#LAST_AUTHOR
@@ -221,22 +219,14 @@ public interface TikaCoreProperties {
     
      /** 
       * @see DublinCore#DATE 
-      * @see Office#CREATION_DATE 
       */
-      Property CREATED = Property.composite(DublinCore.CREATED,
-             new Property[] { 
-                     Office.CREATION_DATE,
-             });
-     
+      Property CREATED = DublinCore.CREATED;
+
      /** 
       * @see DublinCore#MODIFIED
       * @see Office#SAVE_DATE
       */
-      Property MODIFIED = Property.composite(DublinCore.MODIFIED,
-             new Property[] {
-                     Office.SAVE_DATE,
-                     Property.internalText("Last-Modified")
-             });
+      Property MODIFIED = DublinCore.MODIFIED;
      
      /** @see Office#PRINT_DATE */
       Property PRINT_DATE = Office.PRINT_DATE;
@@ -275,17 +265,18 @@ public interface TikaCoreProperties {
     /** 
      * @see OfficeOpenXMLExtended#COMMENTS 
      */
-     Property COMMENTS = Property.composite(OfficeOpenXMLExtended.COMMENTS,
-            new Property[] { 
-                Property.internalTextBag(ClimateForcast.COMMENT)
-            });
+     Property COMMENTS = OfficeOpenXMLExtended.COMMENTS;
 
     /**
      * Embedded resource type property
      */
-     Property EMBEDDED_RESOURCE_TYPE = Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
-                                                                     EmbeddedResourceType.ATTACHMENT.toString(),
-                                                                     EmbeddedResourceType.INLINE.toString());
+     Property EMBEDDED_RESOURCE_TYPE =
+            Property.internalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
+                    EmbeddedResourceType.ATTACHMENT.toString(),
+                    EmbeddedResourceType.INLINE.toString(),
+                    EmbeddedResourceType.METADATA.toString(),
+                    EmbeddedResourceType.MACRO.toString(),
+                    EmbeddedResourceType.THUMBNAIL.toString());
 
 
 

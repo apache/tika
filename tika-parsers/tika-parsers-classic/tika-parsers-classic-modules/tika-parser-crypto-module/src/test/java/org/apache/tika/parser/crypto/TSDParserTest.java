@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.utils.ParserUtils;
@@ -117,7 +118,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("MANIFEST.XML.TSD");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -125,7 +126,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test1.txt.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -133,7 +134,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test2.txt.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -141,7 +142,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test3.docx.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test
@@ -149,7 +150,7 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test4.pdf.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     //@Test
@@ -157,6 +158,6 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("Test5.PNG.tsd");
         assertEquals(2, list.size());
         assertContains(TSDParser.class.getName(),
-                Arrays.asList(list.get(0).getValues("X-Parsed-By")));
+                Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 }

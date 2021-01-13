@@ -220,7 +220,7 @@ public class TikaCLITest {
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
         String json = getParamOutContent("--json", "-r", resourcePrefix + "testJsonMultipleInts.html");
 
-        assertTrue(json.contains("  \"X-Parsed-By\": [\n" +
+        assertTrue(json.contains("  \"X-TIKA:Parsed-By\": [\n" +
                 "    \"org.apache.tika.parser.DefaultParser\",\n" +
                 "    \"org.apache.tika.parser.html.HtmlParser\"\n" +
                 "  ],\n"));

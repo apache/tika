@@ -143,7 +143,7 @@ public class OutlookPSTParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPST_variousBodyTypes.pst");
         assertEquals(5, metadataList.size());//before the fix that prevents the RFC parser, this was 6
         for (Metadata metadata : metadataList) {
-            for (String v : metadata.getValues("X-Parsed-By")) {
+            for (String v : metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)) {
                 if (v.contains("RFC822Parser")) {
                     fail("RFCParser should never be called");
                 }

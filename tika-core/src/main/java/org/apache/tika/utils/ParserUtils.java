@@ -31,7 +31,7 @@ import org.apache.tika.parser.ParserDecorator;
  * Helper util methods for Parsers themselves.
  */
 public class ParserUtils {
-    public final static String X_PARSED_BY = "X-Parsed-By"; 
+
     public final static Property EMBEDDED_PARSER =
             Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
     public final static Property EMBEDDED_EXCEPTION =
@@ -74,7 +74,7 @@ public class ParserUtils {
      *  or used.
      */
     public static void recordParserDetails(Parser parser, Metadata metadata) {
-        metadata.add(X_PARSED_BY, getParserClassname(parser));
+        metadata.add(TikaCoreProperties.TIKA_PARSED_BY, getParserClassname(parser));
     }
 
     /**

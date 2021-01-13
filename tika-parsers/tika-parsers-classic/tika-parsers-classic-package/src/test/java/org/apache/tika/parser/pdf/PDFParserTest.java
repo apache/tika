@@ -102,7 +102,7 @@ public class PDFParserTest extends TikaTest {
         }
         int xmlProfilers = 0;
         for (Metadata metadata : metadataList) {
-            String[] parsedBy = metadata.getValues("X-Parsed-By");
+            String[] parsedBy = metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY);
             for (String s : parsedBy) {
                 if (s.equals(XMLProfiler.class.getCanonicalName())) {
                     xmlProfilers++;

@@ -27,6 +27,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.CompositeParser;
 import org.junit.Assert;
 import org.junit.Test;
@@ -70,7 +71,7 @@ public class AgeRecogniserTest extends TikaTest {
 
             Assert.assertArrayEquals("Age Parser not invoked.",
                     new String[] {CompositeParser.class.getCanonicalName(), AgeRecogniser.class.getCanonicalName()},
-                    md.getValues("X-Parsed-By"));
+                    md.getValues(TikaCoreProperties.TIKA_PARSED_BY));
             Assert.assertArrayEquals("Wrong age predicted.",
                     new String[] {Double.toString(TEST_AGE)},
                     md.getValues(AgeRecogniser.MD_KEY_ESTIMATED_AGE));

@@ -35,6 +35,7 @@ import org.apache.tika.config.Param;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
@@ -311,7 +312,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
         for (String n : lastMetadata.names()) {
             // If this is one of the metadata keys we're setting ourselves
             //  for tracking/errors, then always keep the latest one!
-            if (n.equals(ParserUtils.X_PARSED_BY)) continue;
+            if (n.equals(TikaCoreProperties.TIKA_PARSED_BY.getName())) continue;
             if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) continue;
             if (n.equals(ParserUtils.EMBEDDED_EXCEPTION.getName())) continue;
             

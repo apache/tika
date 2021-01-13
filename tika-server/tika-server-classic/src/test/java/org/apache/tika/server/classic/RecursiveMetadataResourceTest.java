@@ -111,7 +111,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
 
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        String[] parsedBy = metadataList.get(0).getValues("X-Parsed-By");
+        String[] parsedBy = metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY);
         //make sure the CompressorParser doesn't show up here
         assertEquals(3, parsedBy.length);
         assertEquals("org.apache.tika.parser.CompositeParser", parsedBy[0]);
