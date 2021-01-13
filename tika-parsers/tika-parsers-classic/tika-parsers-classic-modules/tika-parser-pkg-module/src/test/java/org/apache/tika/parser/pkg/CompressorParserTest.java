@@ -18,31 +18,18 @@
 package org.apache.tika.parser.pkg;
 
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.io.BufferedWriter;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -85,12 +72,19 @@ public class CompressorParserTest extends TikaTest {
 
     @Test(expected = TikaException.class)
     public void testQuineXHTML() throws Exception {
+        //Anti-virus can surreptitiously remove this file
+        Assume.assumeTrue(CompressorParserTest.class
+                .getResourceAsStream("/test-documents/quine.gz") != null);
+
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getXML("quine.gz");
     }
 
     @Test
     public void testQuineRecursive() throws Exception {
+        //Anti-virus can surreptitiously remove this file
+        Assume.assumeTrue(CompressorParserTest.class
+                .getResourceAsStream("/test-documents/quine.gz") != null);
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getRecursiveMetadata("quine.gz");
     }

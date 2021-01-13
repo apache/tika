@@ -123,16 +123,6 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     @Test
-    public void testQuineRecursiveParserWrapper() throws Exception {
-        //received permission from author via dm
-        //2019-07-25 to include
-        //http://alf.nu/s/droste.zip in unit tests
-        //Out of respect to the author, please maintain
-        //the original file name
-        getRecursiveMetadata("droste.zip");
-    }
-
-    @Test
     public void testDataDescriptorWithEmptyEntry() throws Exception {
 
         //test that an empty first entry does not cause problems

@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Assume;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -119,6 +120,9 @@ public class ZipParserTest extends AbstractPkgTest {
 
     @Test
     public void testQuineRecursiveParserWrapper() throws Exception {
+        //Anti-virus can surreptitiously remove this file
+        Assume.assumeTrue(ZipParserTest.class
+                .getResourceAsStream("/test-documents/droste.zip") != null);
         //received permission from author via dm
         //2019-07-25 to include
         //http://alf.nu/s/droste.zip in unit tests
@@ -129,6 +133,9 @@ public class ZipParserTest extends AbstractPkgTest {
 
     @Test(expected = TikaException.class)
     public void testQuine() throws Exception {
+        //Anti-virus can surreptitiously remove this file
+        Assume.assumeTrue(ZipParserTest.class
+                .getResourceAsStream("/test-documents/droste.zip") != null);
         getXML("droste.zip");
     }
 
