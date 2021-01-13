@@ -46,7 +46,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("Invalid default depth value", 4 , config.getDepth());
         assertEquals("Invalid default colorpsace value", "gray" , config.getColorspace());
         assertEquals("Invalid default filter value", "triangle" , config.getFilter());
-        assertEquals("Invalid default resize value", 900 , config.getResize());
+        assertEquals("Invalid default resize value", 200 , config.getResize());
         assertEquals("Invalid default applyRotation value", false, config.isApplyRotation());
     }
 
