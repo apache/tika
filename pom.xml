@@ -99,17 +99,18 @@
                       <fileset dir="${basedir}">
                         <include name="CHANGES.txt" />
                         <include name="target/*-src.zip*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-app-${project.version}.jar*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-app-${project.version}.jar*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-module/target/tika-parser-scientific-module-${project.version}.jar*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-module/target/tika-parser-sqlite3-module-${project.version}.jar*" />
                         <include name="tika-app/target/tika-app-${project.version}.jar*" />
                         <include name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}.jar*" />
                         <include name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.tgz*" />
                         <include name="tika-server/tika-server-classic/target/tika-server-classic-${project.version}-bin.zip*" />
-                        <include name="tika-eval/tika-eval-app/target/tika-eval-${project.version}.jar*" />
+                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="SHA-512" fileext=".sha512">
                       <fileset dir="${basedir}/target/${project.version}">
+                        <include name="*.tgz" />
                         <include name="*.zip" />
                         <include name="*.?ar" />
                       </fileset>
