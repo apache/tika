@@ -110,7 +110,7 @@ public class TesseractOCRConfig implements Serializable {
     // factor by which image is to be scaled.
     // TODO: we should make this dynamic depending on the size of the image
     // The current testRotation.png takes minutes to expand 900%
-    private int resize = 900;
+    private int resize = 200;
 
     // See setPageSeparator.
     private String pageSeparator = "";
