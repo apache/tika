@@ -713,10 +713,4 @@ public class TesseractOCRConfig implements Serializable {
             }
         }
     }
-
-    void consistencyCheck() {
-        if (applyRotation && !enableImageProcessing) {
-            LOG.warn("can't apply rotation unless you've also enabled image processing");
-        }
-    }
 }

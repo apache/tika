@@ -18,35 +18,39 @@ package org.apache.tika.parser.ocr;
 
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
 import org.apache.tika.utils.ProcessUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 class ImagePreprocessor {
-    private static final Map<String,Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
+    private static final Map<String, Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
     private static final Map<String, Boolean> PYTHON_PRESENT = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
+    private static final double MINIMUM_DESKEW_THRESHOLD = 1.0D;
 
     public static boolean hasImageMagick(TesseractOCRConfig config) {
         // Fetch where the config says to find ImageMagick Program
@@ -164,79 +168,92 @@ class ImagePreprocessor {
 
     //this assumes that image magick is available
     void process(Path sourceFile, Path targFile, Metadata metadata,
-                 TesseractOCRConfig config) throws TikaException, IOException {
+                 TesseractOCRConfig config) throws IOException {
 
-        String angle = getAngle(sourceFile, metadata, config);
 
-        // process the image - parameter values can be set in TesseractOCRConfig.properties
-        CommandLine commandLine = new CommandLine(getImageMagickPath(config));
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            commandLine.addArgument("convert");
+        double angle = config.isApplyRotation()
+                ? getAngle(sourceFile, metadata)
+                : 0d;
+
+        if (config.isEnableImageProcessing() || config.isApplyRotation() && angle != 0) {
+            // process the image - parameter values can be set in TesseractOCRConfig.properties
+            CommandLine commandLine = new CommandLine(getImageMagickPath(config));
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                commandLine.addArgument("convert");
+            }
+
+            // Arguments for ImageMagick
+            final List<String> density = Arrays.asList("-density", Integer.toString(config.getDensity()));
+            final List<String> depth = Arrays.asList("-depth", Integer.toString(config.getDepth()));
+            final List<String> colorspace = Arrays.asList("-colorspace", config.getColorspace());
+            final List<String> filter = Arrays.asList("-filter", config.getFilter());
+            final List<String> resize = Arrays.asList("-resize", config.getResize() + "%");
+            final List<String> rotate = Arrays.asList("-rotate", Double.toString(-angle));
+            final List<String> sourceFileArg = Collections.singletonList(sourceFile.toAbsolutePath().toString());
+            final List<String> targFileArg = Collections.singletonList(targFile.toAbsolutePath().toString());
+
+            Stream<List<String>> stream = Stream.empty();
+            if (angle == 0) {
+                if (config.isEnableImageProcessing()) {
+                    // Do pre-processing, but don't do any rotation
+                    LOG.warn(("image processing with angle=0"));
+                    stream = Stream.of(
+                            density,
+                            depth,
+                            colorspace,
+                            filter,
+                            resize,
+                            sourceFileArg,
+                            targFileArg);
+                }
+            } else if (config.isEnableImageProcessing()) {
+                // Do pre-processing with rotation
+                LOG.warn(("image processing with angle != 0"));
+                stream = Stream.of(
+                        density,
+                        depth,
+                        colorspace,
+                        filter,
+                        resize,
+                        rotate,
+                        sourceFileArg,
+                        targFileArg);
+
+            } else if (config.isApplyRotation()) {
+                // Just rotation
+                LOG.warn(("angle rotation"));
+                stream = Stream.of(
+                        rotate,
+                        sourceFileArg,
+                        targFileArg);
+            }
+            final String[] args = stream.flatMap(Collection::stream).toArray(String[]::new);
+            LOG.warn("**** ImageMagick: " + Arrays.toString(args));
+            commandLine.addArguments(args, true);
+            DefaultExecutor executor = new DefaultExecutor();
+            try {
+                executor.execute(commandLine);
+            } catch (SecurityException e) {
+                throw e;
+            } catch (Exception e) {
+                LOG.warn("ImageMagick failed (commandline: " + commandLine + ")", e);
+            }
+            metadata.add(TesseractOCRParser.IMAGE_MAGICK, "true");
         }
-        String[] args = new String[]{
-                "-density", Integer.toString(config.getDensity()),
-                "-depth ", Integer.toString(config.getDepth()),
-                "-colorspace", config.getColorspace(),
-                "-filter", config.getFilter(),
-                "-resize", config.getResize() + "%",
-                "-rotate", angle,
-                sourceFile.toAbsolutePath().toString(),
-                targFile.toAbsolutePath().toString()
-        };
-        commandLine.addArguments(args, true);
-        DefaultExecutor executor = new DefaultExecutor();
-        try {
-            executor.execute(commandLine);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.warn("ImageMagick failed (commandline: "+commandLine+")", e);
-        }
-        metadata.add(TesseractOCRParser.IMAGE_MAGICK, "true");
     }
 
-    private String getAngle(Path sourceFile, Metadata metadata, TesseractOCRConfig config) throws IOException {
-        String angle = "0";
-        // fetch rotation script from resources
-        TemporaryResources tmp = new TemporaryResources();
-        File rotationScript = tmp.createTemporaryFile();
-        try {
-            try (InputStream in = getClass().getResourceAsStream("rotation.py")) {
-                Files.copy(in, rotationScript.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
+    private double getAngle(Path sourceFile, Metadata metadata) throws IOException {
+        BufferedImage bi = ImageIO.read(sourceFile.toFile());
+        ImageDeskew id = new ImageDeskew(bi);
+        double angle = id.getSkewAngle();
 
-
-            DefaultExecutor executor = new DefaultExecutor();
-            // determine the angle of rotation required to make the text horizontal
-            if (config.isApplyRotation() && hasPython(config)) {
-                CommandLine commandLine = new CommandLine(getPythonPath(config));
-                String[] args = {"-W",
-                        "ignore",
-                        rotationScript.getAbsolutePath(),
-                        "-f",
-                        sourceFile.toString()};
-                commandLine.addArguments(args, true);
-
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-                executor.setStreamHandler(streamHandler);
-                String tmpAngle = "";
-                try {
-                    executor.execute(commandLine);
-                    tmpAngle = outputStream.toString("UTF-8").trim();
-                    //verify that you've gotten a numeric value out
-                    Double.parseDouble(tmpAngle);
-                    metadata.add(TesseractOCRParser.IMAGE_ROTATION, tmpAngle);
-                    angle = tmpAngle;
-                } catch (SecurityException e) {
-                    throw e;
-                } catch (Exception e) {
-                    LOG.warn("rotation.py failed (commandline: " + commandLine + ") tmpAngle: " + tmpAngle, e);
-                }
-            }
-        } finally {
-            tmp.close();
+        if (angle < MINIMUM_DESKEW_THRESHOLD && angle > -MINIMUM_DESKEW_THRESHOLD) {
+            LOG.debug("Changing angle " + angle  + " to 0.0");
+            angle = 0d;
+        } else {
+            metadata.add(TesseractOCRParser.IMAGE_ROTATION, Double.toString(angle));
         }
+
         return angle;
     }
 
