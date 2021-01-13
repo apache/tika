@@ -92,9 +92,6 @@ public class TesseractOCRConfig implements Serializable {
     // Path to ImageMagick program, if not on system path.
     private String imageMagickPath = "";
 
-    // Path to the python3 executable, if not on system path
-    private String pythonPath = "";
-
     // resolution of processed image (in dpi).
     private int density = 300;
 
@@ -126,7 +123,7 @@ public class TesseractOCRConfig implements Serializable {
 
 
     /**
-     * Default contructor.
+     * Default constructor.
      */
     public TesseractOCRConfig() {
         init(this.getClass().getResourceAsStream("TesseractOCRConfig.properties"));
@@ -196,9 +193,6 @@ public class TesseractOCRConfig implements Serializable {
                 getProp(props, "resize", getResize()));
         setApplyRotation(
         		getProp(props, "applyRotation", isApplyRotation()));
-
-        setPythonPath(
-                getProp(props, "pythonPath", getPythonPath()));
 
         loadOtherTesseractConfig(props);
     }
@@ -558,24 +552,9 @@ public class TesseractOCRConfig implements Serializable {
         this.imageMagickPath = imageMagickPath;
     }
 
-    /**
-     * Path to the directory that contains the Python executable.
-     * As of 2.0.0, Tika expects the executable python3 or python3.exe
-     * to be in the directory specified by the pythonPath
-     *
-     * @param pythonPath
-     */
-    public void setPythonPath(String pythonPath) {
-        this.pythonPath = FilenameUtils.normalize(pythonPath);
-    }
-
-    public String getPythonPath() {
-        return pythonPath;
-    }
 
     /**
      * @return Whether or not a rotation value should be calculated and passed to ImageMagick before performing OCR.
-     * (Requires that Python is installed).
      */
     public boolean isApplyRotation() {
     	return this.applyRotation;
@@ -584,7 +563,7 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Sets whether or not a rotation value should be calculated and passed to ImageMagick.
      * 
-     * @param applyRotation to calculate and apply rotation, false to skip.  Default is false, true required Python installed.
+     * @param applyRotation to calculate and apply rotation, false to skip.  Default is false
      */
     public void setApplyRotation(boolean applyRotation) {
     	this.applyRotation = applyRotation;

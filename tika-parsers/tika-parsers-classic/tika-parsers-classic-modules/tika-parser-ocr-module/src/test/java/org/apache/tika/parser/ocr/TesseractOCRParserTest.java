@@ -120,18 +120,33 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     @Test
-    public void testRotatedOCR() throws Exception {
+    public void testPositiveRotateOCR() throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
-        assumeTrue(TesseractOCRParser.IMAGE_PREPROCESSOR.hasPython(config));
         assumeTrue(TesseractOCRParser.IMAGE_PREPROCESSOR.hasImageMagick(config));
         config.setApplyRotation(true);
-        config.setEnableImageProcessing(true);
         config.setResize(100);
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, config);
         assumeTrue(canRun(config));
         Metadata metadata = getMetadata(MediaType.image("png"));
-        String ocr = getText("testRotated.png", metadata, parseContext);
+        String ocr = getText("testRotated+10.png", metadata, parseContext);
+        assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
+        assertEquals(10.0,
+                Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)), 0.01);
+        assertContains("Its had resolving otherwise she contented therefore", ocr);
+    }
+
+    @Test
+    public void testNegativeRotateOCR() throws Exception {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        assumeTrue(TesseractOCRParser.IMAGE_PREPROCESSOR.hasImageMagick(config));
+        config.setApplyRotation(true);
+        config.setResize(100);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, config);
+        assumeTrue(canRun(config));
+        Metadata metadata = getMetadata(MediaType.image("png"));
+        String ocr = getText("testRotated-10.png", metadata, parseContext);
         assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
         assertEquals(-10.0,
                 Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)), 0.01);

@@ -42,13 +42,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 class ImagePreprocessor {
     private static final Map<String, Boolean> IMAGE_MAGICK_PRESENT = new HashMap<>();
-    private static final Map<String, Boolean> PYTHON_PRESENT = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
     private static final double MINIMUM_DESKEW_THRESHOLD = 1.0D;
 
@@ -88,83 +88,6 @@ class ImagePreprocessor {
         return config.getImageMagickPath() + getImageMagickProg();
     }
 
-    private static String getPythonPath(TesseractOCRConfig config) {
-        return config.getPythonPath()+getPythonProg();
-    }
-
-    public static boolean hasPython(TesseractOCRConfig config) {
-        String pythonPath = getPythonPath(config);
-        if (PYTHON_PRESENT.containsKey(pythonPath)) {
-            return PYTHON_PRESENT.get(pythonPath);
-        }
-        //prevent memory bloat
-        if (PYTHON_PRESENT.size() > 100) {
-            PYTHON_PRESENT.clear();
-        }
-        //check that directory exists
-        if (!config.getPythonPath().isEmpty() &&
-                ! Files.isDirectory(Paths.get(config.getPythonPath()))) {
-            PYTHON_PRESENT.put(pythonPath, false);
-            return false;
-        }
-
-        // check if python is installed and it has the required dependencies for the rotation program to run
-        boolean hasPython = false;
-
-        String[] checkCmd = { pythonPath, "--version" };
-        boolean hasPythonExecutable = ExternalParser.check(checkCmd);
-        if (! hasPythonExecutable) {
-            LOG.warn("couldn't run python executable ("+
-                    pythonPath+")");
-            PYTHON_PRESENT.put(pythonPath, hasPythonExecutable);
-            return hasPythonExecutable;
-        }
-
-        TemporaryResources tmp = null;
-        File importCheck = null;
-        try {
-            tmp = new TemporaryResources();
-            importCheck = tmp.createTemporaryFile();
-            String prg = "from skimage.transform import radon\n" +
-                    "from PIL import Image\n" + "" +
-                    "import numpy\n";
-            OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(importCheck), Charset.forName("UTF-8"));
-            out.write(prg);
-            out.flush();
-            out.close();
-        } catch (IOException e) {
-            LOG.warn("Error writing file to test correct libs are available", e);
-            hasPython = false;
-            PYTHON_PRESENT.put(pythonPath, hasPython);
-            return hasPython;
-        }
-
-        Process p = null;
-        try {
-            p = Runtime.getRuntime().exec(new String[]{
-                    pythonPath,
-                    ProcessUtils.escapeCommandLine(importCheck.getAbsolutePath())});
-            boolean completed = p.waitFor(30, TimeUnit.SECONDS);
-            hasPython = completed;
-            if (! completed) {
-                LOG.warn("python3 did not successfully complete after 30 seconds");
-                LOG.warn("rotation.py cannot be called");
-            }
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.warn("python3 ("+
-                            pythonPath+ ") is not installed with the required dependencies: scikit-image and numpy",
-                    e);
-        } finally {
-            if (p != null) {
-                p.destroyForcibly();
-            }
-            IOUtils.closeQuietly(tmp);
-        }
-        PYTHON_PRESENT.put(pythonPath, hasPython);
-        return hasPython;
-    }
 
     //this assumes that image magick is available
     void process(Path sourceFile, Path targFile, Metadata metadata,
@@ -196,7 +119,6 @@ class ImagePreprocessor {
             if (angle == 0) {
                 if (config.isEnableImageProcessing()) {
                     // Do pre-processing, but don't do any rotation
-                    LOG.warn(("image processing with angle=0"));
                     stream = Stream.of(
                             density,
                             depth,
@@ -208,7 +130,6 @@ class ImagePreprocessor {
                 }
             } else if (config.isEnableImageProcessing()) {
                 // Do pre-processing with rotation
-                LOG.warn(("image processing with angle != 0"));
                 stream = Stream.of(
                         density,
                         depth,
@@ -221,14 +142,12 @@ class ImagePreprocessor {
 
             } else if (config.isApplyRotation()) {
                 // Just rotation
-                LOG.warn(("angle rotation"));
                 stream = Stream.of(
                         rotate,
                         sourceFileArg,
                         targFileArg);
             }
             final String[] args = stream.flatMap(Collection::stream).toArray(String[]::new);
-            LOG.warn("**** ImageMagick: " + Arrays.toString(args));
             commandLine.addArguments(args, true);
             DefaultExecutor executor = new DefaultExecutor();
             try {
@@ -242,6 +161,9 @@ class ImagePreprocessor {
         }
     }
 
+    /**
+     * Get the current skew angle of the image.  Positive = clockwise; Negative = counter-clockwise
+     */
     private double getAngle(Path sourceFile, Metadata metadata) throws IOException {
         BufferedImage bi = ImageIO.read(sourceFile.toFile());
         ImageDeskew id = new ImageDeskew(bi);
@@ -251,7 +173,7 @@ class ImagePreprocessor {
             LOG.debug("Changing angle " + angle  + " to 0.0");
             angle = 0d;
         } else {
-            metadata.add(TesseractOCRParser.IMAGE_ROTATION, Double.toString(angle));
+            metadata.add(TesseractOCRParser.IMAGE_ROTATION, String.format(Locale.getDefault(), "%.3f", angle));
         }
 
         return angle;
@@ -261,9 +183,4 @@ class ImagePreprocessor {
         return System.getProperty("os.name").startsWith("Windows") ?
                 "magick" : "convert";
     }
-
-    public static String getPythonProg() {
-        return "python3";
-    }
-
 }

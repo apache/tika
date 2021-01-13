@@ -580,11 +580,6 @@ public class TesseractOCRParser extends AbstractParser {
         defaultConfig.setApplyRotation(applyRotation);
     }
 
-    @Field
-    public void setPythonPath(String pythonPath) {
-        defaultConfig.setPythonPath(pythonPath);
-    }
-
     public TesseractOCRConfig getDefaultConfig() {
         return defaultConfig;
     }
