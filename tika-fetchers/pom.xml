@@ -35,6 +35,7 @@
 
     <modules>
         <module>s3-fetcher</module>
+        <module>jdbc-fetcher</module>
     </modules>
 
 </project>

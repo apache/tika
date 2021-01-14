@@ -16,13 +16,16 @@
  */
 package org.apache.tika.fetcher;
 
+import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -31,9 +34,8 @@ import java.util.Set;
 public class FileSystemFetcher implements Fetcher {
 
     private static String PREFIX = "file";
-    public static Property PATH_BASE = Property.externalText(PREFIX + ":base");
     private static final Set<String> SUPPORTED = Collections.singleton(PREFIX);
-
+    private Path basePath = null;
     @Override
     public Set<String> getSupportedPrefixes() {
         return SUPPORTED;
@@ -43,13 +45,35 @@ public class FileSystemFetcher implements Fetcher {
     public InputStream fetch(String fetchString, Metadata metadata)
             throws IOException, TikaException {
         FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
-        String base = metadata.get(PATH_BASE);
+        metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fetchPrefixKeyPair.getKey());
         Path p = null;
-        if (base != null) {
-            p = Paths.get(base).resolve(fetchPrefixKeyPair.getKey());
+        if (basePath != null) {
+            p = basePath.resolve(fetchPrefixKeyPair.getKey());
+            if (!Files.isRegularFile(p)) {
+                if (!Files.isDirectory(basePath)) {
+                    throw new IOException("BasePath is not a directory: "+basePath);
+                } else {
+                    throw new FileNotFoundException(p.toAbsolutePath().toString());
+                }
+            }
         } else {
             p = Paths.get(fetchPrefixKeyPair.getKey());
+            if (!Files.isRegularFile(p)) {
+                throw new FileNotFoundException(p.toAbsolutePath().toString());
+            }
         }
         return TikaInputStream.get(p, metadata);
+    }
+
+    /**
+     * If clients will send in relative paths, this
+     * must be set to allow this fetcher to fetch the
+     * full path.
+     *
+     * @param basePath
+     */
+    @Field
+    public void setBasePath(String basePath) {
+        this.basePath = Paths.get(basePath);
     }
 }
