@@ -45,7 +45,7 @@ public class FileSystemFetcher implements Fetcher {
     public InputStream fetch(String fetchString, Metadata metadata)
             throws IOException, TikaException {
         FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
-        metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, fetchPrefixKeyPair.getKey());
+        metadata.set(TikaCoreProperties.SOURCE_PATH, fetchPrefixKeyPair.getKey());
         Path p = null;
         if (basePath != null) {
             p = basePath.resolve(fetchPrefixKeyPair.getKey());

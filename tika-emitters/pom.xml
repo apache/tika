@@ -28,14 +28,15 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-fetchers</artifactId>
+    <artifactId>tika-emitters</artifactId>
     <packaging>pom</packaging>
-    <name>Apache Tika fetchers</name>
+    <name>Apache Tika emitters</name>
     <url>http://tika.apache.org/</url>
 
     <modules>
-        <module>tika-fetcher-jdbc</module>
-        <module>tika-fetcher-s3</module>
+        <module>tika-emitter-fs</module>
+        <module>tika-emitter-solr</module>
     </modules>
+
 
 </project>
