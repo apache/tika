@@ -342,7 +342,7 @@
     <guava.version>30.1-jre</guava.version>
     <osgi.core.version>6.0.0</osgi.core.version>
 
-    <cxf.version>3.4.1</cxf.version>
+    <cxf.version>3.4.2</cxf.version>
     <slf4j.version>1.7.30</slf4j.version>
     <jackson.version>2.12.0</jackson.version>
     <!-- when this is next upgraded, see if we can get rid of
@@ -350,7 +350,7 @@
     <jaxb.version>2.3.3</jaxb.version>
     <cli.version>1.4</cli.version>
     <lucene.version>8.7.0</lucene.version>
-    <mockito.version>3.6.28</mockito.version>
+    <mockito.version>3.7.7</mockito.version>
     <opennlp.version>1.9.3</opennlp.version>
   </properties>
 
