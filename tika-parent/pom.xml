@@ -340,7 +340,7 @@
     <rome.version>1.15.0</rome.version>
     <sis.version>1.0</sis.version>
     <slf4j.version>1.7.30</slf4j.version>
-    <spring.version>5.3.2</spring.version>
+    <spring.version>5.3.3</spring.version>
     <sqlite.version>3.34.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
