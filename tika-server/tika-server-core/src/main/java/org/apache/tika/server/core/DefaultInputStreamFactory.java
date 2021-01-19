@@ -29,11 +29,6 @@ import java.io.InputStream;
 public class DefaultInputStreamFactory implements InputStreamFactory {
 
     @Override
-    public InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException {
-        return is;
-    }
-
-    @Override
     public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException {
         return is;
     }

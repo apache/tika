@@ -14,9 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.fetcher;
+package org.apache.tika.emitter;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.fetcher.FetchPrefixKeyPair;
+import org.apache.tika.fetcher.Fetcher;
 import org.apache.tika.metadata.Metadata;
 
 import java.io.IOException;
@@ -30,40 +33,50 @@ import java.util.concurrent.ConcurrentHashMap;
  * Utility class that will apply the appropriate fetcher
  * to the fetchString based on the prefix.
  *
- * This forbids multiple fetchers supporting the same prefix.
+ * This does not allow multiple fetchers supporting the same prefix.
  */
-public class DefaultFetcher implements Fetcher {
+public class DefaultEmitter implements Emitter {
 
-    private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
+    private final Map<String, Emitter> emitterMap = new ConcurrentHashMap<>();
 
-    public DefaultFetcher(List<Fetcher> fetchers) {
-        for (Fetcher fetcher : fetchers) {
-            for (String supportedPrefix : fetcher.getSupportedPrefixes()) {
-                if (fetcherMap.containsKey(supportedPrefix)) {
+    private static List<Emitter> getDefaultFilters(
+            ServiceLoader loader) {
+        return loader.loadStaticServiceProviders(Emitter.class);
+    }
+
+
+    public DefaultEmitter(ServiceLoader serviceLoader) {
+        this(getDefaultFilters(serviceLoader));
+    }
+
+    public DefaultEmitter(List<Emitter> emitters) {
+        for (Emitter emitter : emitters) {
+            for (String name : emitter.getSupported()) {
+                if (emitterMap.containsKey(name)) {
                     throw new IllegalArgumentException(
-                            "Multiple fetchers cannot support the same prefix: "
-                            + supportedPrefix);
+                            "Multiple emitters cannot support the same name: "
+                            + name);
                 }
-                fetcherMap.put(supportedPrefix, fetcher);
+                emitterMap.put(name, emitter);
             }
         }
     }
 
     @Override
-    public Set<String> getSupportedPrefixes() {
-        return fetcherMap.keySet();
+    public Set<String> getSupported() {
+        return emitterMap.keySet();
     }
 
-    @Override
-    public InputStream fetch(String fetchString, Metadata metadata)
-            throws IOException, TikaException {
-        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
 
-        Fetcher fetcher = fetcherMap.get(fetchPrefixKeyPair.getPrefix());
-        if (fetcher == null) {
+    @Override
+    public void emit(String emitterName, List<Metadata> metadata)
+            throws IOException, TikaException {
+
+        Emitter emitter = emitterMap.get(emitterName);
+        if (emitter == null) {
             throw new IllegalArgumentException("Can't find fetcher for prefix: "+
-                    fetchPrefixKeyPair.getPrefix());
+                    emitterName);
         }
-        return fetcher.fetch(fetchString, metadata);
+        emitter.emit(emitterName, metadata);
     }
 }

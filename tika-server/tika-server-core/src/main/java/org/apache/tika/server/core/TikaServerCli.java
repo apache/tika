@@ -45,10 +45,12 @@ import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.emitter.Emitter;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
 import org.apache.tika.server.core.resource.DetectorResource;
+import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.resource.LanguageResource;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
@@ -85,11 +87,13 @@ public class TikaServerCli {
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerCli.class);
 
-    private static final String FILE_URL_WARNING =
-            "WARNING: You have chosen to run tika-server with fileUrl enabled.\n"+
+    private static final String UNSECURE_WARNING =
+            "WARNING: You have chosen to run tika-server with unsecure features enabled.\n"+
             "Whoever has access to your service now has the same read permissions\n"+
-            "as tika-server. Users could request and receive a sensitive file from your\n" +
-            "drive or a webpage from your intranet.  See CVE-2015-3271.\n"+
+            "as you've given your fetchers and the same write permissions as your emitters.\n" +
+            "Users could request and receive a sensitive file from your\n" +
+            "drive or a webpage from your intranet and/or send malicious content to\n" +
+            " your emitter endpoints.  See CVE-2015-3271.\n"+
             "Please make sure you know what you are doing.";
 
     private static final List<String> ONLY_IN_FORK_MODE =
@@ -111,8 +115,8 @@ public class TikaServerCli {
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("status", false, "enable the status endpoint");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("enableUnsecureFeatures", false, "this is required to enable fileUrl.");
-        options.addOption("enableFileUrl", false, "allows user to pass in fileUrl instead of InputStream.");
+        options.addOption("enableUnsecureFeatures", false, "this is required to enable fetchers and emitters. "+
+            " The user acknowledges that fetchers and emitters introduce potential security vulnerabilities.");
         options.addOption("noFork", false, "legacy mode, less robust -- this starts up tika-server" +
                 " without forking a process.");
         options.addOption("taskTimeoutMillis", true,
@@ -272,21 +276,14 @@ public class TikaServerCli {
                 }
             }
 
-            if (line.hasOption("enableFileUrl") &&
-                    !line.hasOption("enableUnsecureFeatures")) {
-                System.err.println("If you want to enable fileUrl, you must also acknowledge the security risks\n"+
-                "by including --enableUnsecureFeatures.  See CVE-2015-3271.");
-                System.exit(-1);
-            }
             InputStreamFactory inputStreamFactory = null;
-            if (line.hasOption("enableFileUrl") &&
-                    line.hasOption("enableUnsecureFeatures")) {
-                inputStreamFactory = new URLEnabledInputStreamFactory();
-                System.out.println(FILE_URL_WARNING);
+            if (line.hasOption("enableUnsecureFeatures")) {
+                inputStreamFactory = new FetcherStreamFactory(tika.getFetcher());
+                LOG.info(UNSECURE_WARNING);
             } else {
                 inputStreamFactory = new DefaultInputStreamFactory();
             }
-
+            logFetchersAndEmitters(line.hasOption("enableUnsecureFeatures"), tika);
             String serverId = line.hasOption("i") ? line.getOptionValue("i") : UUID.randomUUID().toString();
             LOG.debug("SERVER ID:" +serverId);
             ServerStatus serverStatus;
@@ -329,6 +326,9 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaParsers()));
             rCoreProviders.add(new SingletonResourceProvider(new TikaVersion()));
+            if (line.hasOption("enableUnsecureFeatures")) {
+                rCoreProviders.add(new SingletonResourceProvider(new EmitterResource()));
+            }
             rCoreProviders.addAll(loadResourceServices());
             if (line.hasOption("status")) {
                 rCoreProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
@@ -372,6 +372,47 @@ public class TikaServerCli {
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
             sf.create();
             LOG.info("Started Apache Tika server at {}", url);
+    }
+
+    private static void logFetchersAndEmitters(boolean enableUnsecureFeatures, TikaConfig tika) {
+        if (enableUnsecureFeatures) {
+            StringBuilder sb = new StringBuilder();
+            Set<String> supportedFetchers = tika.getFetcher().getSupportedPrefixes();
+            sb.append("enableSecureFeatures has been selected.\n");
+            if (supportedFetchers.size() == 0) {
+                sb.append("There are no fetchers specified in the TikaConfig");
+            } else {
+                sb.append("The following fetchers are available to whomever has access to this server:\n");
+                for (String p : supportedFetchers) {
+                    sb.append(p).append("\n");
+                }
+            }
+            Set<String> emitters = tika.getEmitter().getSupported();
+            if (supportedFetchers.size() == 0) {
+                sb.append("There are no emitters specified in the TikaConfig");
+            } else {
+                sb.append("The following emitters are available to whomever has access to this server:\n");
+                for (String e : emitters) {
+                    sb.append(e).append("\n");
+                }
+            }
+            LOG.info(sb.toString());
+        } else {
+            if (tika.getEmitter().getSupported().size() > 0) {
+                String warn = "-enableUnsecureFeatures has not been specified on the commandline.\n"+
+                "The "+tika.getEmitter().getSupported().size() + " emitter(s) that you've\n"+
+                "specified in TikaConfig will not be available on the /emit endpoint\n"+
+                "To enable your emitters, start tika-server with the -enableUnsecureFeatures flag\n\n";
+                LOG.warn(warn);
+            }
+            if (tika.getFetcher().getSupportedPrefixes().size() > 0) {
+                String warn = "-enableUnsecureFeatures has not been specified on the commandline.\n"+
+                "The "+tika.getFetcher().getSupportedPrefixes().size() + " fetcher(s) that you've\n"+
+                "specified in TikaConfig will not be available\n"+
+                "To enable your fetchers, start tika-server with the -enableUnsecureFeatures flag\n\n";
+                LOG.warn(warn);
+            }
+        }
     }
 
     private static Collection<? extends ResourceProvider> loadResourceServices() {

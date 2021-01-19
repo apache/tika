@@ -46,6 +46,8 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.emitter.DefaultEmitter;
+import org.apache.tika.emitter.Emitter;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fetcher.DefaultFetcher;
@@ -69,6 +71,8 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.AnnotationUtils;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -115,7 +119,11 @@ public class TikaConfig {
     }
 
     private static Fetcher getDefaultFetcher(ServiceLoader loader) {
-        return new DefaultFetcher(loader);
+        return new DefaultFetcher(Collections.EMPTY_LIST);
+    }
+
+    private static Emitter getDefaultEmitter(ServiceLoader loader) {
+        return new DefaultEmitter(Collections.EMPTY_LIST);
     }
 
     //use this to look for unneeded instantiations of TikaConfig
@@ -131,6 +139,7 @@ public class TikaConfig {
     private final EncodingDetector encodingDetector;
     private final MetadataFilter metadataFilter;
     private final Fetcher fetcher;
+    private final Emitter emitter;
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
@@ -198,6 +207,7 @@ public class TikaConfig {
         EncodingDetectorXmlLoader encodingDetectorXmlLoader = new EncodingDetectorXmlLoader();
         MetadataFilterXmlLoader metadataFilterXmlLoader = new MetadataFilterXmlLoader();
         FetcherXmlLoader fetcherXmlLoader = new FetcherXmlLoader();
+        EmitterXmlLoader emitterXmlLoader = new EmitterXmlLoader();
         updateXMLReaderUtils(element);
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
@@ -209,6 +219,7 @@ public class TikaConfig {
         this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
         this.metadataFilter = metadataFilterXmlLoader.loadOverall(element, mimeTypes, loader);
         this.fetcher = fetcherXmlLoader.loadOverall(element, mimeTypes, loader);
+        this.emitter = emitterXmlLoader.loadOverall(element, mimeTypes, loader);
         this.serviceLoader = loader;
         TIMES_INSTANTIATED.incrementAndGet();
     }
@@ -236,6 +247,7 @@ public class TikaConfig {
         this.executorService = getDefaultExecutorService();
         this.metadataFilter = getDefaultMetadataFilter(serviceLoader);
         this.fetcher = getDefaultFetcher(serviceLoader);
+        this.emitter = getDefaultEmitter(serviceLoader);
         TIMES_INSTANTIATED.incrementAndGet();
     }
 
@@ -273,6 +285,7 @@ public class TikaConfig {
             this.executorService = getDefaultExecutorService();
             this.metadataFilter = getDefaultMetadataFilter(serviceLoader);
             this.fetcher = getDefaultFetcher(serviceLoader);
+            this.emitter = getDefaultEmitter(serviceLoader);
         } else {
             ServiceLoader tmpServiceLoader = new ServiceLoader();
             try (InputStream stream = getConfigInputStream(config, tmpServiceLoader)) {
@@ -285,6 +298,7 @@ public class TikaConfig {
                 ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
                 MetadataFilterXmlLoader metadataFilterXmlLoader = new MetadataFilterXmlLoader();
                 FetcherXmlLoader fetcherXmlLoader = new FetcherXmlLoader();
+                EmitterXmlLoader emitterXmlLoader = new EmitterXmlLoader();
 
                 this.mimeTypes = typesFromDomElement(element);
                 this.encodingDetector = encodingDetectorLoader.loadOverall(element, mimeTypes, serviceLoader);
@@ -297,6 +311,7 @@ public class TikaConfig {
                 this.executorService = executorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.metadataFilter = metadataFilterXmlLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.fetcher = fetcherXmlLoader.loadOverall(element, mimeTypes, serviceLoader);
+                this.emitter = emitterXmlLoader.loadOverall(element, mimeTypes, serviceLoader);
             } catch (SAXException e) {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
@@ -427,6 +442,10 @@ public class TikaConfig {
 
     public Fetcher getFetcher() {
         return fetcher;
+    }
+
+    public Emitter getEmitter() {
+        return emitter;
     }
 
     /**
@@ -1362,13 +1381,104 @@ public class TikaConfig {
                     me.printStackTrace();
                 }
             }
-
             return fetcher;
         }
 
         @Override
         Fetcher decorate(Fetcher created, Element element) {
             return created; // No decoration of MetadataFilters
+        }
+    }
+
+    private static class EmitterXmlLoader extends
+            XmlLoader<Emitter, Emitter> {
+
+        boolean supportsComposite() {
+            return true;
+        }
+
+        String getParentTagName() {
+            return "emitters";
+        }
+
+        String getLoaderTagName() {
+            return "emitter";
+        }
+
+        @Override
+        Class<? extends Emitter> getLoaderClass() {
+            return Emitter.class;
+        }
+
+
+        @Override
+        boolean isComposite(Emitter loaded) {
+            return loaded instanceof DefaultEmitter;
+        }
+
+        @Override
+        boolean isComposite(Class<? extends Emitter> loadedClass) {
+            return DefaultFetcher.class.isAssignableFrom(loadedClass);
+        }
+
+        @Override
+        Emitter preLoadOne(Class<? extends Emitter> loadedClass,
+                           String classname, MimeTypes mimeTypes) throws TikaException {
+            // Check for classes which can't be set in config
+            // Continue with normal loading
+            return null;
+        }
+
+        @Override
+        Emitter createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
+            return getDefaultEmitter(loader);
+        }
+
+        private Emitter getDefaultEmitter(ServiceLoader loader) {
+            //TODO: should we allow service loading?
+            return new DefaultEmitter(Collections.EMPTY_LIST);
+        }
+
+        //this ignores the service loader
+        @Override
+        Emitter createComposite(List<Emitter> loaded, MimeTypes mimeTypes, ServiceLoader loader) {
+            return new DefaultEmitter(loaded);
+        }
+
+        @Override
+        Emitter createComposite(Class<? extends Emitter> emitterClass,
+                                List<Emitter> childEmitters,
+                                Set<Class<? extends Emitter>> excludeFilters,
+                                Map<String, Param> params, MimeTypes mimeTypes, ServiceLoader loader)
+                throws InvocationTargetException, IllegalAccessException,
+                InstantiationException {
+            Emitter emitter = null;
+            Constructor<? extends Emitter> c;
+
+            // Try the possible default and composite detector constructors
+            if (emitter == null) {
+                try {
+                    c = emitterClass.getConstructor(ServiceLoader.class, Collection.class);
+                    emitter = c.newInstance(loader, excludeFilters);
+                } catch (NoSuchMethodException me) {
+                    me.printStackTrace();
+                }
+            }
+            if (emitter == null) {
+                try {
+                    c = emitterClass.getConstructor(List.class);
+                    emitter = c.newInstance(childEmitters);
+                } catch (NoSuchMethodException me) {
+                    me.printStackTrace();
+                }
+            }
+
+            return emitter;
+        }
+
+        @Override
+        Emitter decorate(Emitter created, Element element) {
+            return created; // No decoration of emitters yet
         }
     }
 }

@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.fetcher.Fetcher;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
@@ -40,30 +42,24 @@ import org.apache.tika.metadata.Metadata;
  * See <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271">CVE-2015-3271</a>
  *
  */
-public class URLEnabledInputStreamFactory implements InputStreamFactory {
+public class FetcherStreamFactory implements InputStreamFactory {
 
-    /**
-     * @deprecated use {@link #getInputSteam(InputStream, Metadata, HttpHeaders)}
-     * @param is
-     * @param httpHeaders
-     * @return
-     * @throws IOException
-     */
-    @Override
-    @Deprecated
-    public InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException {
-        String fileUrl = httpHeaders.getHeaderString("fileUrl");
-        if(fileUrl != null && !"".equals(fileUrl)){
-            return TikaInputStream.get(new URL(fileUrl));
-        }
-        return is;
+    private final Fetcher fetcher;
+
+    public FetcherStreamFactory(Fetcher fetcher) {
+        this.fetcher = fetcher;
     }
-
     @Override
-    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException {
-        String fileUrl = httpHeaders.getHeaderString("fileUrl");
-        if(fileUrl != null && !"".equals(fileUrl)){
-            return TikaInputStream.get(new URL(fileUrl), metadata);
+    public InputStream getInputSteam(InputStream is, Metadata metadata,
+                                     HttpHeaders httpHeaders) throws IOException {
+        String fetcherString = httpHeaders.getHeaderString("fetcherString");
+
+        if(fetcherString != null && !"".equals(fetcherString)){
+            try {
+                return fetcher.fetch(fetcherString, metadata);
+            } catch (TikaException e) {
+                throw new IOException(e);
+            }
         }
         return is;
     }

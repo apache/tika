@@ -14,7 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class FileSystemEmitter implements Emitter {
 
@@ -22,14 +24,13 @@ public class FileSystemEmitter implements Emitter {
     private Path basePath = null;
     private String fileExtension = "json";
 
-
     @Override
-    public String getName() {
-        return name;
+    public Set<String> getSupported() {
+        return Collections.singleton(name);
     }
 
     @Override
-    public void emit(List<Metadata> metadataList) throws IOException, TikaException {
+    public void emit(String emitterName, List<Metadata> metadataList) throws IOException, TikaException {
         Path output;
         if (metadataList == null || metadataList.size() == 0) {
             throw new TikaEmitterException("metadata list must not be null or of size 0");

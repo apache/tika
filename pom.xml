@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+ <?xml version="1.0" encoding="UTF-8"?>
 
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
@@ -37,6 +37,7 @@
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>
+    <module>tika-emitters</module>
     <module>tika-fetchers</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
@@ -51,7 +52,6 @@
     <module>tika-example</module>
     <module>tika-java7</module>
     <module>tika-eval</module>
-      <module>tika-emitters</module>
   </modules>
 
   <profiles>

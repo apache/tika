@@ -93,7 +93,7 @@ public abstract class CXFTestBase {
         this.tika = new TikaConfig(getTikaConfigInputStream());
         TikaResource.init(tika,
                 new CommonsDigester(DIGESTER_READ_LIMIT, "md5,sha1:32"),
-                new DefaultInputStreamFactory(), new ServerStatus("", 0,true));
+                getInputStreamFactory(tika), new ServerStatus("", 0,true));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         //set compression interceptors
         sf.setOutInterceptors(
@@ -118,6 +118,10 @@ public abstract class CXFTestBase {
                 factory
         );
         server = sf.create();
+    }
+
+    protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
+        return new DefaultInputStreamFactory();
     }
 
     protected InputStream getTikaConfigInputStream() {

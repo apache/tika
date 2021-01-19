@@ -17,53 +17,45 @@
 package org.apache.tika.fetcher;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
+import java.net.URL;
+import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Utility class that will apply the appropriate fetcher
- * to the fetchString based on the prefix.
+ * This is a lightweight fetcher that uses Java's
+ * {@link URL#openStream()}. Please consider a more
+ * robust way to fetch URLs, e.g. Apache httpcomponents,
+ * curl or wget...
  *
- * This forbids multiple fetchers supporting the same prefix.
+ * This is limited to http: and https: urls.  This does
+ * not support the file:/// protocol.  See {@link FileSystemFetcher}.
  */
-public class DefaultFetcher implements Fetcher {
+public class SimpleUrlFetcher implements Fetcher {
 
-    private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
-
-    public DefaultFetcher(List<Fetcher> fetchers) {
-        for (Fetcher fetcher : fetchers) {
-            for (String supportedPrefix : fetcher.getSupportedPrefixes()) {
-                if (fetcherMap.containsKey(supportedPrefix)) {
-                    throw new IllegalArgumentException(
-                            "Multiple fetchers cannot support the same prefix: "
-                            + supportedPrefix);
-                }
-                fetcherMap.put(supportedPrefix, fetcher);
-            }
-        }
-    }
+    private static String PREFIX = "url";
+    private static final Set<String> SUPPORTED = Collections.singleton(PREFIX);
 
     @Override
     public Set<String> getSupportedPrefixes() {
-        return fetcherMap.keySet();
+        return SUPPORTED;
     }
 
     @Override
     public InputStream fetch(String fetchString, Metadata metadata)
             throws IOException, TikaException {
         FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
-
-        Fetcher fetcher = fetcherMap.get(fetchPrefixKeyPair.getPrefix());
-        if (fetcher == null) {
-            throw new IllegalArgumentException("Can't find fetcher for prefix: "+
-                    fetchPrefixKeyPair.getPrefix());
+        URL url = new URL(fetchPrefixKeyPair.getKey());
+        if (! url.getProtocol().equals("http") &&
+                ! url.getProtocol().equals("https") &&
+                        ! url.getProtocol().equals("ftp")) {
+            throw new TikaException("This fetcher only handles: http, https; NOT: "
+                    + url.getProtocol());
         }
-        return fetcher.fetch(fetchString, metadata);
+        return TikaInputStream.get(url, metadata);
     }
 }
