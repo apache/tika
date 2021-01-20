@@ -279,7 +279,9 @@ public class TikaResource {
         }
 
         String contentTypeHeader = httpHeaders.getFirst(HttpHeaders.CONTENT_TYPE);
-        javax.ws.rs.core.MediaType mediaType = contentTypeHeader == null ? null
+        javax.ws.rs.core.MediaType mediaType =
+                (contentTypeHeader == null || "*/*".equals(contentTypeHeader))
+                        ? null
                 : javax.ws.rs.core.MediaType.valueOf(contentTypeHeader);
         if (mediaType != null && "xml".equals(mediaType.getSubtype())) {
             mediaType = null;

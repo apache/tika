@@ -33,7 +33,7 @@ import java.util.Set;
 
 public class FileSystemFetcher implements Fetcher {
 
-    private static String PREFIX = "file";
+    private static String PREFIX = "fs";
     private static final Set<String> SUPPORTED = Collections.singleton(PREFIX);
     private Path basePath = null;
     @Override

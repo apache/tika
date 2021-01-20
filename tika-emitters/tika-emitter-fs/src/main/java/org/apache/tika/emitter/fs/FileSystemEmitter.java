@@ -39,6 +39,9 @@ public class FileSystemEmitter implements Emitter {
         String relPath = metadataList.get(0)
                 .get(TikaCoreProperties.SOURCE_PATH);
 
+        if (fileExtension != null && fileExtension.length() > 0) {
+            relPath += "." + fileExtension;
+        }
         if (basePath != null) {
             output = basePath.resolve(relPath);
         } else {
@@ -54,8 +57,8 @@ public class FileSystemEmitter implements Emitter {
     }
 
     @Field
-    public void setBasePath(Path basePath) {
-        this.basePath = basePath;
+    public void setBasePath(String basePath) {
+        this.basePath = Paths.get(basePath);
     }
 
     /**

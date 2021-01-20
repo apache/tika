@@ -20,27 +20,19 @@ package org.apache.tika.server.classic;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.OfficeOpenXMLExtended;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.CXFTestBase;
-import org.apache.tika.server.core.DefaultInputStreamFactory;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
-import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
+import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -54,6 +46,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+@Ignore("turn into actual unit tests")
 public class FetcherTest extends CXFTestBase {
 
     private static final String META_PATH = "/rmeta";
