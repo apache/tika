@@ -57,7 +57,7 @@ public class JDBCFetcher implements Fetcher, Initializable {
     }
 
     @Override
-    public InputStream fetch(String fetchString, Metadata metadata) throws TikaException, IOException {
+    public InputStream fetch(String fetcherString, Metadata metadata) throws TikaException, IOException {
         return null;
     }
 

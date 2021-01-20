@@ -25,13 +25,13 @@ public class FetchPrefixKeyPair {
         this.key = key;
     }
 
-    public static FetchPrefixKeyPair create(String fetchString) throws FetcherStringException {
-        int prefixIndex = fetchString.indexOf(":");
+    public static FetchPrefixKeyPair create(String fetcherString) throws FetcherStringException {
+        int prefixIndex = fetcherString.indexOf(":");
         if (prefixIndex < 0) {
             throw new FetcherStringException("Can't find fetcher prefix, e.g. the 's3' in s3:/myfile");
         }
-        String prefix = fetchString.substring(0, prefixIndex);
-        String key = fetchString.substring(prefixIndex+1);
+        String prefix = fetcherString.substring(0, prefixIndex);
+        String key = fetcherString.substring(prefixIndex+1);
         return new FetchPrefixKeyPair(prefix, key);
     }
 

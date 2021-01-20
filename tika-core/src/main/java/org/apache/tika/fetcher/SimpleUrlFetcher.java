@@ -46,9 +46,9 @@ public class SimpleUrlFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchString, Metadata metadata)
+    public InputStream fetch(String fetcherString, Metadata metadata)
             throws IOException, TikaException {
-        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
+        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetcherString);
         URL url = new URL(fetchPrefixKeyPair.getKey());
         if (! url.getProtocol().equals("http") &&
                 ! url.getProtocol().equals("https") &&

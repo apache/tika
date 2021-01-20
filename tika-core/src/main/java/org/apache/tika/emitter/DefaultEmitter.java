@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility class that will apply the appropriate fetcher
- * to the fetchString based on the prefix.
+ * to the fetcherString based on the prefix.
  *
  * This does not allow multiple fetchers supporting the same prefix.
  */

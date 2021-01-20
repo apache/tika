@@ -38,7 +38,10 @@ public class FileSystemEmitter implements Emitter {
 
         String relPath = metadataList.get(0)
                 .get(TikaCoreProperties.SOURCE_PATH);
-
+        if (relPath == null) {
+            throw new TikaEmitterException("Must specify a "+TikaCoreProperties.SOURCE_PATH.getName() +
+                    " in the metadata in order for this emitter to generate the output file path.");
+        }
         if (fileExtension != null && fileExtension.length() > 0) {
             relPath += "." + fileExtension;
         }

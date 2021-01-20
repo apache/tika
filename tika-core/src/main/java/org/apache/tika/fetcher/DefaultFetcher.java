@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Utility class that will apply the appropriate fetcher
- * to the fetchString based on the prefix.
+ * to the fetcherString based on the prefix.
  *
  * This forbids multiple fetchers supporting the same prefix.
  */
@@ -55,15 +55,15 @@ public class DefaultFetcher implements Fetcher {
     }
 
     @Override
-    public InputStream fetch(String fetchString, Metadata metadata)
+    public InputStream fetch(String fetcherString, Metadata metadata)
             throws IOException, TikaException {
-        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
+        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetcherString);
 
         Fetcher fetcher = fetcherMap.get(fetchPrefixKeyPair.getPrefix());
         if (fetcher == null) {
             throw new IllegalArgumentException("Can't find fetcher for prefix: "+
                     fetchPrefixKeyPair.getPrefix());
         }
-        return fetcher.fetch(fetchString, metadata);
+        return fetcher.fetch(fetcherString, metadata);
     }
 }

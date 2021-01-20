@@ -59,9 +59,9 @@ public class S3Fetcher implements Fetcher, Initializable {
     }
 
     @Override
-    public InputStream fetch(String fetchString, Metadata metadata)
+    public InputStream fetch(String fetcherString, Metadata metadata)
             throws TikaException, IOException {
-        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetchString);
+        FetchPrefixKeyPair fetchPrefixKeyPair = FetchPrefixKeyPair.create(fetcherString);
         String bucketKey = fetchPrefixKeyPair.getKey();
         if (bucketKey.startsWith("//")) {
             bucketKey = bucketKey.substring(2);

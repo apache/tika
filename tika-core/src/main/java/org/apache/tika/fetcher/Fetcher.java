@@ -30,12 +30,12 @@ import java.util.Set;
  *
  * Implementations of Fetcher must be thread safe.
  *
- * The fetchString must start with a prefix that can be
+ * The fetcherString must start with a prefix that can be
  * used to uniquely select the fetcher, e.g. file:my_file.pdf, s3:bucket/path/to/my_file
  *
  * Each fetcher must specify which prefixes it can handle.
  */
 public interface Fetcher {
     Set<String> getSupportedPrefixes();
-    InputStream fetch(String fetchString, Metadata metadata) throws TikaException, IOException;
+    InputStream fetch(String fetcherString, Metadata metadata) throws TikaException, IOException;
 }

@@ -16,7 +16,12 @@
  */
 package org.apache.tika.server.core;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
@@ -24,6 +29,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.core.resource.EmitterResource;
@@ -44,7 +50,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 /**
  * This offers basic integration tests with fetchers and emitters.
@@ -68,6 +76,7 @@ public class TikaEmitterTest extends CXFTestBase {
         Files.createDirectories(TMP_OUTPUT_DIR);
         Files.copy(TikaEmitterTest.class.getResourceAsStream("/test-documents/mock/hello_world.xml"),
                 inputDir.resolve("hello_world.xml"));
+
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
                 "<properties>"+
                     "<fetchers>"+
@@ -125,13 +134,16 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Test
     public void testGet() throws Exception {
-        String q = "?fetchString="+ URLEncoder.encode("fs:hello_world.xml", StandardCharsets.UTF_8.name());
+        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
+        assertFalse(Files.isRegularFile(targetFile));
+
+        String q = "?fetcherString="+
+                URLEncoder.encode("fs:hello_world.xml", StandardCharsets.UTF_8.name());
         String getUrl = endPoint+EMITTER_PATH+q;
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json").get();
         assertEquals(200, response.getStatus());
-        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
         List<Metadata> metadataList = null;
         try (Reader reader = Files.newBufferedReader(targetFile)) {
             metadataList = JsonMetadataList.fromJson(reader);
@@ -145,6 +157,76 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
     }
 
-    //TODO: add put and post
+    @Test
+    public void testPost() throws Exception {
+        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
+        assertFalse(Files.isRegularFile(targetFile));
+
+        JsonObject root = new JsonObject();
+        root.add("fetcherString", new JsonPrimitive("fs:hello_world.xml"));
+        JsonObject userMetadata = new JsonObject();
+        String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
+        JsonArray arr = new JsonArray();
+        for (int i = 0; i < valueArray.length; i++) {
+            arr.add(valueArray[i]);
+        }
+
+        userMetadata.add("my-key", new JsonPrimitive("my-value"));
+        userMetadata.add("my-key-multi", arr);
+        root.add("metadata", userMetadata);
+        String jsonPost = new Gson().toJson(root);
+
+        String getUrl = endPoint+EMITTER_PATH;
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(jsonPost);
+        assertEquals(200, response.getStatus());
+
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(targetFile)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        assertEquals("hello world",
+                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim());
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("你好，世界", metadata.get("title"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("my-value", metadata.get("my-key"));
+        assertArrayEquals(valueArray, metadata.getValues("my-key-multi"));
+    }
+
+    @Test
+    public void testPut() throws Exception {
+        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
+        assertFalse(Files.isRegularFile(targetFile));
+
+        String getUrl = endPoint+EMITTER_PATH;
+        String metaPathKey = EmitterResource.PATH_KEY_FOR_HTTP_HEADER;
+
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .header(metaPathKey, "hello_world.xml")
+                .put(
+                        ClassLoader
+                                .getSystemResourceAsStream("test-documents/mock/hello_world.xml")
+                );
+        System.out.println(IOUtils.toString((InputStream) response.getEntity(), StandardCharsets.UTF_8));
+        assertEquals(200, response.getStatus());
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(targetFile)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        assertEquals("hello world",
+                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim());
+        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
+        assertEquals("你好，世界", metadata.get("title"));
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+    }
 
 }
