@@ -203,6 +203,6 @@ least three +1 Tika PMC votes are cast.
   </issueManagement>
   <ciManagement>
     <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
+    <url>https://ci-builds.apache.org/job/Tika/job/tika-main-jdk8/</url>
   </ciManagement>
 </project>
