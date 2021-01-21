@@ -200,7 +200,7 @@ public class TesseractOCRParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
         TesseractOCRConfig config = parseContext.get(TesseractOCRConfig.class, defaultConfig);
-        config.consistencyCheck();
+
         // If Tesseract is not on the path with the current config, do not try to run OCR
         // getSupportedTypes shouldn't have listed us as handling it, so this should only
         //  occur if someone directly calls this parser, not via DefaultParser or similar
@@ -239,7 +239,7 @@ public class TesseractOCRParser extends AbstractParser {
             if (size >= config.getMinFileSizeToOcr() && size <= config.getMaxFileSizeToOcr()) {
 
             	// Process image
-            	if (config.isEnableImageProcessing()) {
+            	if (config.isEnableImageProcessing() || config.isApplyRotation()) {
                     if (! ImagePreprocessor.hasImageMagick(config)) {
                         LOG.warn("User has selected to preprocess images, but I can't find ImageMagick." +
                                 "Backing off to original file.");
@@ -247,17 +247,12 @@ public class TesseractOCRParser extends AbstractParser {
                     } else {
                         // copy the contents of the original input file into a temporary file
                         // which will be preprocessed for OCR
-                        TemporaryResources tmp = new TemporaryResources();
-                        try {
+
+                        try (TemporaryResources tmp = new TemporaryResources()) {
                             Path tmpFile = tmp.createTempFile();
                             Files.copy(input, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-                            //if image magic is not available
                             IMAGE_PREPROCESSOR.process(tmpFile, tmpFile, metadata, config);
                             doOCR(tmpFile.toFile(), tmpOCROutputFile, config);
-                        } finally {
-                            if (tmp != null) {
-                                tmp.dispose();
-                            }
                         }
                     }
             	} else {
@@ -583,11 +578,6 @@ public class TesseractOCRParser extends AbstractParser {
     @Field
     public void setApplyRotation(boolean applyRotation) {
         defaultConfig.setApplyRotation(applyRotation);
-    }
-
-    @Field
-    public void setPythonPath(String pythonPath) {
-        defaultConfig.setPythonPath(pythonPath);
     }
 
     public TesseractOCRConfig getDefaultConfig() {
