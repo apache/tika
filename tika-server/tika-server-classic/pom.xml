@@ -53,7 +53,11 @@
             <artifactId>tika-xmp</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+        <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>tika-emitter-fs</artifactId>
+        <version>${project.version}</version>
+        </dependency>
         <!-- test jars -->
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -100,7 +104,6 @@
                         <artifactSet>
                             <excludes>
                                 <exclude>org.apache.tika:tika-parsers-classic-package:jar:</exclude>
-                                <exclude>org.apache.tika:tika-server-core:jar:</exclude>
                             </excludes>
                         </artifactSet>
                         <filters>

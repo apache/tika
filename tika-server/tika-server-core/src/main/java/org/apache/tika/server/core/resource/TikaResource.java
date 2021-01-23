@@ -292,8 +292,8 @@ public class TikaResource {
         }
 
         if (mediaType != null) {
-            metadata.add(Metadata.CONTENT_TYPE, mediaType.toString());
-            metadata.add(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, mediaType.toString());
+            //metadata.add(Metadata.CONTENT_TYPE, mediaType.toString());
+            //metadata.add(TikaCoreProperties.CONTENT_TYPE_OVERRIDE, mediaType.toString());
         }
 
         for (Map.Entry<String, List<String>> e : httpHeaders.entrySet()) {

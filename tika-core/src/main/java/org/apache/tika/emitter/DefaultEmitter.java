@@ -74,7 +74,7 @@ public class DefaultEmitter implements Emitter {
 
         Emitter emitter = emitterMap.get(emitterName);
         if (emitter == null) {
-            throw new IllegalArgumentException("Can't find fetcher for prefix: "+
+            throw new IllegalArgumentException("Can't find emitter for prefix: "+
                     emitterName);
         }
         emitter.emit(emitterName, metadata);

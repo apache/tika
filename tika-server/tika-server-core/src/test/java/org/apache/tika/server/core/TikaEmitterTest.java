@@ -19,6 +19,7 @@ package org.apache.tika.server.core;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -42,6 +43,7 @@ import org.junit.Test;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -53,6 +55,7 @@ import java.util.List;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * This offers basic integration tests with fetchers and emitters.
@@ -60,22 +63,30 @@ import static org.junit.Assert.assertFalse;
  */
 public class TikaEmitterTest extends CXFTestBase {
 
-    private static final String EMITTER_PATH = "/emit/fs";
+    private static final String EMITTER_PATH = "/emit";
+    private static final String EMITTER_PATH_AND_FS = "/emit/fs";
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static Path TMP_OUTPUT_FILE;
     private static String TIKA_CONFIG_XML;
+    private static String HELLO_WORLD = "hello_world.xml";
+    private static String HELLO_WORLD_JSON = "hello_world.xml.json";
 
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         TMP_DIR = Files.createTempDirectory("tika-emitter-test-");
         Path inputDir = TMP_DIR.resolve("input");
         TMP_OUTPUT_DIR = TMP_DIR.resolve("output");
-        TMP_OUTPUT_FILE = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
+        TMP_OUTPUT_FILE = TMP_OUTPUT_DIR.resolve(HELLO_WORLD_JSON);
         Files.createDirectories(inputDir);
         Files.createDirectories(TMP_OUTPUT_DIR);
-        Files.copy(TikaEmitterTest.class.getResourceAsStream("/test-documents/mock/hello_world.xml"),
-                inputDir.resolve("hello_world.xml"));
+
+        for (String mockFile : new String[]{
+                "hello_world.xml", "null_pointer.xml"}) {
+            Files.copy(TikaEmitterTest.class.getResourceAsStream(
+                    "/test-documents/mock/"+mockFile),
+                    inputDir.resolve(mockFile));
+        }
 
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
                 "<properties>"+
@@ -106,6 +117,7 @@ public class TikaEmitterTest extends CXFTestBase {
         if (Files.exists(TMP_OUTPUT_FILE)) {
             Files.delete(TMP_OUTPUT_FILE);
         }
+        assertFalse(Files.isRegularFile(TMP_OUTPUT_FILE));
     }
 
     @Override
@@ -134,18 +146,16 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Test
     public void testGet() throws Exception {
-        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
-        assertFalse(Files.isRegularFile(targetFile));
 
-        String q = "?fetcherString="+
+        String q = "?f="+
                 URLEncoder.encode("fs:hello_world.xml", StandardCharsets.UTF_8.name());
-        String getUrl = endPoint+EMITTER_PATH+q;
+        String getUrl = endPoint+EMITTER_PATH_AND_FS+q;
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json").get();
         assertEquals(200, response.getStatus());
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(targetFile)) {
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -159,11 +169,10 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Test
     public void testPost() throws Exception {
-        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
-        assertFalse(Files.isRegularFile(targetFile));
 
         JsonObject root = new JsonObject();
         root.add("fetcherString", new JsonPrimitive("fs:hello_world.xml"));
+        root.add("emitter", new JsonPrimitive("fs"));
         JsonObject userMetadata = new JsonObject();
         String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
         JsonArray arr = new JsonArray();
@@ -184,7 +193,7 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(targetFile)) {
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -200,10 +209,8 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Test
     public void testPut() throws Exception {
-        Path targetFile = TMP_OUTPUT_DIR.resolve("hello_world.xml.json");
-        assertFalse(Files.isRegularFile(targetFile));
 
-        String getUrl = endPoint+EMITTER_PATH;
+        String getUrl = endPoint+EMITTER_PATH_AND_FS;
         String metaPathKey = EmitterResource.PATH_KEY_FOR_HTTP_HEADER;
 
         Response response = WebClient
@@ -214,10 +221,9 @@ public class TikaEmitterTest extends CXFTestBase {
                         ClassLoader
                                 .getSystemResourceAsStream("test-documents/mock/hello_world.xml")
                 );
-        System.out.println(IOUtils.toString((InputStream) response.getEntity(), StandardCharsets.UTF_8));
         assertEquals(200, response.getStatus());
         List<Metadata> metadataList = null;
-        try (Reader reader = Files.newBufferedReader(targetFile)) {
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_FILE)) {
             metadataList = JsonMetadataList.fromJson(reader);
         }
         assertEquals(1, metadataList.size());
@@ -229,4 +235,51 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
     }
 
+    @Test
+    public void testPostNPE() throws Exception {
+
+        JsonObject root = new JsonObject();
+        root.add("fetcherString", new JsonPrimitive("fs:null_pointer.xml"));
+        root.add("emitter", new JsonPrimitive("fs"));
+        JsonObject userMetadata = new JsonObject();
+        String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
+        JsonArray arr = new JsonArray();
+        for (int i = 0; i < valueArray.length; i++) {
+            arr.add(valueArray[i]);
+        }
+
+        userMetadata.add("my-key", new JsonPrimitive("my-value"));
+        userMetadata.add("my-key-multi", arr);
+        root.add("metadata", userMetadata);
+        String jsonPost = new Gson().toJson(root);
+
+        String getUrl = endPoint+EMITTER_PATH;
+        Response response = WebClient
+                .create(getUrl)
+                .accept("application/json")
+                .post(jsonPost);
+        assertEquals(200, response.getStatus());
+
+        JsonObject jsonResponse;
+        try (Reader reader = new InputStreamReader(
+                (InputStream)response.getEntity(), StandardCharsets.UTF_8)) {
+            jsonResponse = JsonParser.parseReader(reader).getAsJsonObject();
+        };
+        String parseException = jsonResponse.get("parse_exception").getAsString();
+        assertNotNull(parseException);
+        assertContains("NullPointerException", parseException);
+
+        List<Metadata> metadataList = null;
+        try (Reader reader = Files.newBufferedReader(TMP_OUTPUT_DIR.resolve("null_pointer.xml.json"))) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("my-value", metadata.get("my-key"));
+        assertArrayEquals(valueArray, metadata.getValues("my-key-multi"));
+        assertContains("NullPointerException", metadata.get(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
+    }
+
+    //can't test system_exit here because server is in same process
 }

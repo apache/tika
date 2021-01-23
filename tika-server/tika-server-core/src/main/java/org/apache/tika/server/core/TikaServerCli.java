@@ -346,9 +346,8 @@ public class TikaServerCli {
             providers.add(new TextMessageBodyWriter());
             providers.addAll(loadWriterServices());
             providers.add(new TikaServerParseExceptionMapper(returnStackTrace));
-            if (line.hasOption("status")) {
-                providers.add(new JSONObjWriter());
-            }
+            providers.add(new JSONObjWriter());
+
             if (logFilter != null) {
                 providers.add(logFilter);
             }
