@@ -100,7 +100,6 @@
                         <artifactSet>
                             <excludes>
                                 <exclude>org.apache.tika:tika-parsers-classic-package:jar:</exclude>
-                                <exclude>org.apache.tika:tika-server-core:jar:</exclude>
                             </excludes>
                         </artifactSet>
                         <filters>
