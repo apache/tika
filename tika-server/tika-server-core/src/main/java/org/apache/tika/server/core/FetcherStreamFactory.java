@@ -19,12 +19,12 @@ package org.apache.tika.server.core;
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.fetcher.Fetcher;
-import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 
 /**
  * This class looks for &quot;fileUrl&quot; in the http header.  If it is not null
@@ -44,19 +44,25 @@ import org.apache.tika.metadata.Metadata;
  */
 public class FetcherStreamFactory implements InputStreamFactory {
 
-    private final Fetcher fetcher;
+    private final FetcherManager fetcherManager;
 
-    public FetcherStreamFactory(Fetcher fetcher) {
-        this.fetcher = fetcher;
+    public FetcherStreamFactory(FetcherManager fetcherManager) {
+        this.fetcherManager = fetcherManager;
     }
+
     @Override
     public InputStream getInputSteam(InputStream is, Metadata metadata,
                                      HttpHeaders httpHeaders) throws IOException {
-        String fetcherString = httpHeaders.getHeaderString("fetcherString");
+        String fetcherName= httpHeaders.getHeaderString("fetcherName");
+        String fetchKey = httpHeaders.getHeaderString("fetchKey");
+        if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
+            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: "+
+                    " fetcherName:"+fetcherName+" and fetchKey:"+fetchKey);
+        }
 
-        if(fetcherString != null && !"".equals(fetcherString)){
+        if (!StringUtils.isBlank(fetcherName)){
             try {
-                return fetcher.fetch(fetcherString, metadata);
+                return fetcherManager.getFetcher(fetcherName).fetch(fetchKey, metadata);
             } catch (TikaException e) {
                 throw new IOException(e);
             }

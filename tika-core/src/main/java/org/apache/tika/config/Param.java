@@ -218,16 +218,16 @@ public class Param<T> implements Serializable {
         if (valueAttr != null && (value == null || value.getTextContent() == null)) {
             value = valueAttr;
         }
-        if (typeAttr == null) {
-            throw new TikaConfigException("Must specify a \"type\" in: " + node.getLocalName());
-        }
-        
+
         Param<T> ret = new Param<T>();
         ret.name  = nameAttr.getTextContent();
         if (typeAttr != null) {
             ret.setTypeString(typeAttr.getTextContent());
         } else {
             ret.type = (Class<T>)wellKnownMap.get(ret.name);
+            if (ret.type == null) {
+                throw new TikaConfigException("Must specify a \"type\" in: " + node.getLocalName());
+            }
         }
 
         if (List.class.isAssignableFrom(ret.type)) {

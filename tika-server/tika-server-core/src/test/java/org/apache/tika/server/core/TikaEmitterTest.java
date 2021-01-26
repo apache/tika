@@ -64,7 +64,7 @@ import static org.junit.Assert.assertNotNull;
 public class TikaEmitterTest extends CXFTestBase {
 
     private static final String EMITTER_PATH = "/emit";
-    private static final String EMITTER_PATH_AND_FS = "/emit/fs";
+    private static final String EMITTER_PATH_AND_FS = "/emit/fse";
     private static Path TMP_DIR;
     private static Path TMP_OUTPUT_DIR;
     private static Path TMP_OUTPUT_FILE;
@@ -91,8 +91,9 @@ public class TikaEmitterTest extends CXFTestBase {
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
                 "<properties>"+
                     "<fetchers>"+
-                        "<fetcher class=\"org.apache.tika.fetcher.FileSystemFetcher\">"+
+                        "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">"+
                             "<params>"+
+                                "<param name=\"name\" type=\"string\">fsf</param>"+
                                 "<param name=\"basePath\" type=\"string\">"+inputDir.toAbsolutePath()+"</param>"+
                             "</params>"+
                         "</fetcher>"+
@@ -100,6 +101,7 @@ public class TikaEmitterTest extends CXFTestBase {
                     "<emitters>"+
                         "<emitter class=\"org.apache.tika.emitter.fs.FileSystemEmitter\">"+
                             "<params>"+
+                                "<param name=\"name\" type=\"string\">fse</param>"+
                                 "<param name=\"basePath\" type=\"string\">"+ TMP_OUTPUT_DIR.toAbsolutePath()+"</param>"+
                             "</params>"+
                         "</emitter>"+
@@ -141,14 +143,13 @@ public class TikaEmitterTest extends CXFTestBase {
 
     @Override
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
-        return new FetcherStreamFactory(tikaConfig.getFetcher());
+        return new FetcherStreamFactory(tikaConfig.getFetcherManager());
     }
 
     @Test
     public void testGet() throws Exception {
 
-        String q = "?f="+
-                URLEncoder.encode("fs:hello_world.xml", StandardCharsets.UTF_8.name());
+        String q = "?fn=fsf&fk=hello_world.xml";
         String getUrl = endPoint+EMITTER_PATH_AND_FS+q;
         Response response = WebClient
                 .create(getUrl)
@@ -171,8 +172,9 @@ public class TikaEmitterTest extends CXFTestBase {
     public void testPost() throws Exception {
 
         JsonObject root = new JsonObject();
-        root.add("fetcherString", new JsonPrimitive("fs:hello_world.xml"));
-        root.add("emitter", new JsonPrimitive("fs"));
+        root.add("fetcherName", new JsonPrimitive("fsf"));
+        root.add("fetchKey", new JsonPrimitive("hello_world.xml"));
+        root.add("emitter", new JsonPrimitive("fse"));
         JsonObject userMetadata = new JsonObject();
         String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
         JsonArray arr = new JsonArray();
@@ -239,8 +241,9 @@ public class TikaEmitterTest extends CXFTestBase {
     public void testPostNPE() throws Exception {
 
         JsonObject root = new JsonObject();
-        root.add("fetcherString", new JsonPrimitive("fs:null_pointer.xml"));
-        root.add("emitter", new JsonPrimitive("fs"));
+        root.add("fetcherName", new JsonPrimitive("fsf"));
+        root.add("fetchKey", new JsonPrimitive("null_pointer.xml"));
+        root.add("emitter", new JsonPrimitive("fse"));
         JsonObject userMetadata = new JsonObject();
         String[] valueArray = new String[] {"my-value-1", "my-value-2", "my-value-3"};
         JsonArray arr = new JsonArray();

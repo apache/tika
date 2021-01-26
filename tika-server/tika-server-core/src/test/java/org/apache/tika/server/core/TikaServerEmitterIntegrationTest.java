@@ -60,6 +60,9 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
     private static Path TIKA_CONFIG;
     private static Gson GSON = new GsonBuilder().create();
 
+    private static final String EMITTER_NAME = "fse";
+    private static final String FETCHER_NAME = "fsf";
+
     private static String[] FILES = new String[] {
             "hello_world.xml",
             "heavy_hang_30000.xml", "real_oom.xml", "system_exit.xml"
@@ -83,8 +86,9 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
         TIKA_CONFIG_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"+
                 "<properties>"+
                 "<fetchers>"+
-                "<fetcher class=\"org.apache.tika.fetcher.FileSystemFetcher\">"+
+                "<fetcher class=\"org.apache.tika.pipes.fetcher.FileSystemFetcher\">"+
                 "<params>"+
+                "<param name=\"name\" type=\"string\">"+FETCHER_NAME+"</param>"+
                 "<param name=\"basePath\" type=\"string\">"+inputDir.toAbsolutePath()+"</param>"+
                 "</params>"+
                 "</fetcher>"+
@@ -92,6 +96,8 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                 "<emitters>"+
                 "<emitter class=\"org.apache.tika.emitter.fs.FileSystemEmitter\">"+
                 "<params>"+
+                "<param name=\"name\" type=\"string\">"+EMITTER_NAME+"</param>"+
+
                 "<param name=\"basePath\" type=\"string\">"+ TMP_OUTPUT_DIR.toAbsolutePath()+"</param>"+
                 "</params>"+
                 "</emitter>"+
@@ -261,8 +267,9 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
 
     private String getJsonString(String fileName) {
         JsonObject root = new JsonObject();
-        root.add("fetcherString", new JsonPrimitive("fs:"+fileName));
-        root.add("emitter", new JsonPrimitive("fs"));
+        root.add("fetcherName", new JsonPrimitive(FETCHER_NAME));
+        root.add("fetchKey", new JsonPrimitive(fileName));
+        root.add("emitter", new JsonPrimitive(EMITTER_NAME));
         return GSON.toJson(root);
     }
 }

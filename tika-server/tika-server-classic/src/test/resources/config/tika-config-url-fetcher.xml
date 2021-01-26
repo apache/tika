@@ -22,6 +22,10 @@
         <parser class="org.apache.tika.parser.DefaultParser"/>
     </parsers>
     <fetchers>
-        <fetcher class="org.apache.tika.fetcher.SimpleUrlFetcher"/>
+        <fetcher class="org.apache.tika.pipes.fetcher.SimpleUrlFetcher">
+            <params>
+                <param name="name" type="string">url</param>
+            </params>
+        </fetcher>
     </fetchers>
 </properties>

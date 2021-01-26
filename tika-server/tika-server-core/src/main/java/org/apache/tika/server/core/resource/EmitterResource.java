@@ -20,10 +20,11 @@ package org.apache.tika.server.core.resource;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.apache.tika.emitter.Emitter;
-import org.apache.tika.emitter.TikaEmitterException;
+import org.apache.tika.pipes.emitter.Emitter;
+import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.fetcher.Fetcher;
+import org.apache.tika.pipes.fetcher.FetchId;
+import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
@@ -54,7 +55,8 @@ import java.util.Map;
 public class EmitterResource {
 
     private static final String EMITTER_PARAM = "emitter";
-    private static final String FETCH_STRING_ABBREV = "f";
+    private static final String FETCHER_NAME_ABBREV = "fn";
+    private static final String FETCH_KEY_ABBREV = "fk";
 
     /**
      * key that is safe to pass through http header.
@@ -69,24 +71,23 @@ public class EmitterResource {
      * @param httpHeaders
      * @param info
      * @param emitterName
-     * @param fetcherString specify the fetch string in the url's query section
+     * @param fetcherName specify the fetcherName in the url's query section
+     * @param fetchKey specify the fetch key in the url's query section
      * @return
      * @throws Exception
      */
     @GET
     @Produces("application/json")
     @Path("{" + EMITTER_PARAM + " : (\\w+)?}")
-    public Map<String, String> getMetadataAbbrev(InputStream is, @Context HttpHeaders httpHeaders,
+    public Map<String, String> getRmeta(InputStream is, @Context HttpHeaders httpHeaders,
                                            @Context UriInfo info,
                                            @PathParam(EMITTER_PARAM) String emitterName,
-                                           @QueryParam(FETCH_STRING_ABBREV) String fetcherString) throws Exception {
+                                           @QueryParam(FETCHER_NAME_ABBREV) String fetcherName,
+                                                 @QueryParam(FETCH_KEY_ABBREV) String fetchKey) throws Exception {
         Metadata metadata = new Metadata();
-        Fetcher fetcher = TikaResource.getConfig().getFetcher();
-        System.out.println("FETCHER: " + fetcher.getClass() + " : " + fetcher.getSupportedPrefixes());
-        System.out.println("emitter: " + TikaResource.getConfig().getEmitter().getClass()
-                + " : " + TikaResource.getConfig().getEmitter().getSupported());
+        Fetcher fetcher = TikaResource.getConfig().getFetcherManager().getFetcher(fetcherName);
         List<Metadata> metadataList;
-        try (InputStream fetchedIs = fetcher.fetch(fetcherString, metadata)) {
+        try (InputStream fetchedIs = fetcher.fetch(fetchKey, metadata)) {
             for (String n : metadata.names()) {
                 System.out.println(n + " ; "+metadata.get(n));
             }
@@ -116,7 +117,7 @@ public class EmitterResource {
     @PUT
     @Produces("application/json")
     @Path("{" + EMITTER_PARAM + " : (\\w+)?}")
-    public Map<String, String> getMetadataFromInputStream(InputStream is,
+    public Map<String, String> putRmeta(InputStream is,
                                            @Context HttpHeaders httpHeaders,
                                            @Context UriInfo info,
                                            @PathParam(EMITTER_PARAM) String emitterName
@@ -140,7 +141,7 @@ public class EmitterResource {
      * through of metadata from the client.
      * <p>
      * The extracted text content is stored with the key
-     * {@link org.apache.tika.sax.AbstractRecursiveParserWrapperHandler#TIKA_CONTENT}
+     * {@link AbstractRecursiveParserWrapperHandler#TIKA_CONTENT}
      * <p>
      * Must specify a fetcherString and an emitter in the posted json.
      * @param info uri info
@@ -149,7 +150,7 @@ public class EmitterResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, String> getMetadataFromPost(InputStream is,
+    public Map<String, String> postRmeta(InputStream is,
                                 @Context HttpHeaders httpHeaders,
                                 @Context UriInfo info
                                 ) throws Exception {
@@ -157,9 +158,35 @@ public class EmitterResource {
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             root = JsonParser.parseReader(reader);
         }
-        String fetcherString = root.getAsJsonObject().get("fetcherString").getAsString();
+        String fetcherName = root.getAsJsonObject().get("fetcherName").getAsString();
+        String fetchKey = root.getAsJsonObject().get("fetchKey").getAsString();
         String emitterName = root.getAsJsonObject().get("emitter").getAsString();
         Metadata metadata = new Metadata();
+
+
+        List<Metadata> metadataList = null;
+        try (InputStream stream =
+                     TikaResource.getConfig().getFetcherManager()
+                             .getFetcher(fetcherName).fetch(fetchKey, metadata)) {
+
+            metadataList = RecursiveMetadataResource.parseMetadata(
+                    stream,
+                    metadata,
+                    httpHeaders.getRequestHeaders(), info, "text");
+        } catch (Error error) {
+            return returnError(emitterName, error);
+        }
+
+        injectUserMetadata(metadataList.get(0), root.getAsJsonObject());
+
+        for (String n : metadataList.get(0).names()) {
+            LOG.debug("post parse/pre emit metadata {}: {}",
+                    n, metadataList.get(0).get(n));
+        }
+        return emit(emitterName, metadataList);
+    }
+
+    private void injectUserMetadata(Metadata metadata, JsonObject root) {
         if (root.getAsJsonObject().has("metadata")) {
             JsonObject meta = root.getAsJsonObject().getAsJsonObject("metadata");
             for (String k : meta.keySet()) {
@@ -173,25 +200,6 @@ public class EmitterResource {
                 }
             }
         }
-        for (String n : metadata.names()) {
-            System.out.println(n + " ; "+metadata.get(n));
-        }
-        List<Metadata> metadataList = null;
-        try (InputStream stream = TikaResource.getConfig().getFetcher().fetch(fetcherString, metadata)) {
-            for (String n : metadata.names()) {
-                System.out.println("2: " + n + " ; "+metadata.get(n));
-            }
-            metadataList = RecursiveMetadataResource.parseMetadata(
-                    stream,
-                    metadata,
-                    httpHeaders.getRequestHeaders(), info, "text");
-        } catch (Error error) {
-            return returnError(emitterName, error);
-        }
-        for (String n : metadataList.get(0).names()) {
-            System.out.println("3: " + n + " ; "+metadataList.get(0).get(n));
-        }
-        return emit(emitterName, metadataList);
     }
 
     private Map<String, String> returnError(String emitterName, Error error) {
@@ -201,15 +209,14 @@ public class EmitterResource {
         String msg = ExceptionUtils.getStackTrace(error);
         statusMap.put("parse_error", msg);
         return statusMap;
-
     }
 
     private Map<String, String> emit(String emitterName, List<Metadata> metadataList) throws TikaException {
-        Emitter emitter = TikaResource.getConfig().getEmitter();
+        Emitter emitter = TikaResource.getConfig().getEmitterManager().getEmitter(emitterName);
         String status = "ok";
         String exceptionMsg = "";
         try {
-            emitter.emit(emitterName, metadataList);
+            emitter.emit(metadataList);
         } catch (IOException|TikaEmitterException e) {
             LOG.warn("problem with emitting", e);
             status = "emitter_exception";

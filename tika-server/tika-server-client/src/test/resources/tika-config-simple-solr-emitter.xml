@@ -20,7 +20,7 @@
 <properties>
     <service-loader initializableProblemHandler="throw"/>
     <fetchIterators>
-        <fetchIterator class="org.apache.tika.fetcher.FileSystemFetchIterator">
+        <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
             <params>
                 <param name="fetchPrefix" type="string">fs</param>
                 <param name="basePath" type="string">fix</param>
@@ -28,7 +28,7 @@
         </fetchIterator>
     </fetchIterators>
     <fetchers>
-        <fetcher class="org.apache.tika.fetcher.FileSystemFetcher">
+        <fetcher class="org.apache.tika.pipes.fetcher.FileSystemFetcher">
             <params>
                 <param name="name" type="string">fs</param>
                 <param name="basePath" type="string">fix</param>

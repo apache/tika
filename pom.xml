@@ -37,8 +37,7 @@
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>
-    <module>tika-emitters</module>
-    <module>tika-fetchers</module>
+    <module>tika-pipes</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>

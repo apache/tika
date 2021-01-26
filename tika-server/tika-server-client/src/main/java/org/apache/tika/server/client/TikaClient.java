@@ -16,17 +16,15 @@
  */
 package org.apache.tika.server.client;
 
-
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetcher.FetchId;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,17 +57,18 @@ public class TikaClient {
 
     }*/
 
-    public TikaEmitterResult parse(String fetcherString, Metadata metadata, String emitter)
+    public TikaEmitterResult parse(FetchId fetchId, Metadata metadata, String emitter)
             throws IOException, TikaException {
         TikaHttpClient client = getHttpClient();
-        String jsonRequest = jsonifyRequest(fetcherString, metadata, emitter);
+        String jsonRequest = jsonifyRequest(fetchId, metadata, emitter);
         return client.postJson(jsonRequest);
 
     }
 
-    private String jsonifyRequest(String fetcherString, Metadata metadata, String emitter) {
+    private String jsonifyRequest(FetchId fetchId, Metadata metadata, String emitter) {
         JsonObject root = new JsonObject();
-        root.add("fetcherString", new JsonPrimitive(fetcherString));
+        root.add("fetcherName", new JsonPrimitive(fetchId.getFetcherName()));
+        root.add("fetchKey", new JsonPrimitive(fetchId.getFetchKey()));
         root.add("emitter", new JsonPrimitive(emitter));
         if (metadata.size() > 0) {
             JsonObject m = new JsonObject();

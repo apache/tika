@@ -75,7 +75,7 @@ public class FetcherTest extends CXFTestBase {
 
     @Override
     protected InputStreamFactory getInputStreamFactory(TikaConfig tikaConfig) {
-        return new FetcherStreamFactory(tikaConfig.getFetcher());
+        return new FetcherStreamFactory(tikaConfig.getFetcherManager());
     }
 
     @Test
@@ -84,7 +84,8 @@ public class FetcherTest extends CXFTestBase {
                 .create(endPoint + META_PATH)
                 .accept("application/json")
                 .acceptEncoding("gzip")
-                .header("fetcherString", "url:https://tika.apache.org").put("");
+                .header("fetcherName", "url")
+                .header("fetchKey", "https://tika.apache.org").put("");
 
         Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);

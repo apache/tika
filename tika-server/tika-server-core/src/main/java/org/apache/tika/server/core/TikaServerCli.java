@@ -45,7 +45,6 @@ import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.emitter.Emitter;
 import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.digestutils.BouncyCastleDigester;
 import org.apache.tika.parser.digestutils.CommonsDigester;
@@ -278,7 +277,7 @@ public class TikaServerCli {
 
             InputStreamFactory inputStreamFactory = null;
             if (line.hasOption("enableUnsecureFeatures")) {
-                inputStreamFactory = new FetcherStreamFactory(tika.getFetcher());
+                inputStreamFactory = new FetcherStreamFactory(tika.getFetcherManager());
                 LOG.info(UNSECURE_WARNING);
             } else {
                 inputStreamFactory = new DefaultInputStreamFactory();
@@ -376,7 +375,7 @@ public class TikaServerCli {
     private static void logFetchersAndEmitters(boolean enableUnsecureFeatures, TikaConfig tika) {
         if (enableUnsecureFeatures) {
             StringBuilder sb = new StringBuilder();
-            Set<String> supportedFetchers = tika.getFetcher().getSupportedPrefixes();
+            Set<String> supportedFetchers = tika.getFetcherManager().getSupported();
             sb.append("enableSecureFeatures has been selected.\n");
             if (supportedFetchers.size() == 0) {
                 sb.append("There are no fetchers specified in the TikaConfig");
@@ -386,7 +385,7 @@ public class TikaServerCli {
                     sb.append(p).append("\n");
                 }
             }
-            Set<String> emitters = tika.getEmitter().getSupported();
+            Set<String> emitters = tika.getEmitterManager().getSupported();
             if (supportedFetchers.size() == 0) {
                 sb.append("There are no emitters specified in the TikaConfig");
             } else {
@@ -397,16 +396,16 @@ public class TikaServerCli {
             }
             LOG.info(sb.toString());
         } else {
-            if (tika.getEmitter().getSupported().size() > 0) {
+            if (tika.getEmitterManager().getSupported().size() > 0) {
                 String warn = "-enableUnsecureFeatures has not been specified on the commandline.\n"+
-                "The "+tika.getEmitter().getSupported().size() + " emitter(s) that you've\n"+
+                "The "+tika.getEmitterManager().getSupported().size() + " emitter(s) that you've\n"+
                 "specified in TikaConfig will not be available on the /emit endpoint\n"+
                 "To enable your emitters, start tika-server with the -enableUnsecureFeatures flag\n\n";
                 LOG.warn(warn);
             }
-            if (tika.getFetcher().getSupportedPrefixes().size() > 0) {
+            if (tika.getFetcherManager().getSupported().size() > 0) {
                 String warn = "-enableUnsecureFeatures has not been specified on the commandline.\n"+
-                "The "+tika.getFetcher().getSupportedPrefixes().size() + " fetcher(s) that you've\n"+
+                "The "+tika.getFetcherManager().getSupported().size() + " fetcher(s) that you've\n"+
                 "specified in TikaConfig will not be available\n"+
                 "To enable your fetchers, start tika-server with the -enableUnsecureFeatures flag\n\n";
                 LOG.warn(warn);
