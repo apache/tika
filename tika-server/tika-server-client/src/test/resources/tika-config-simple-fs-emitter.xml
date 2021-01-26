@@ -22,7 +22,7 @@
     <fetchIterators>
         <fetchIterator class="org.apache.tika.pipes.fetchiterator.FileSystemFetchIterator">
             <params>
-                <param name="fetchPrefix" type="string">fs</param>
+                <param name="fetcherName" type="string">fs</param>
                 <param name="basePath" type="string">fix</param>
             </params>
         </fetchIterator>

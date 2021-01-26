@@ -145,7 +145,7 @@ public class StackTraceOffTest extends CXFTestBase {
     }
 
     //For now, make sure that non-complete document
-    //still returtestXDP.xdpns BAD_REQUEST.  We may want to
+    //still returns BAD_REQUEST.  We may want to
     //make MetadataResource return the same types of parse
     //exceptions as the others...
     @Test
