@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.multiple.AbstractMultipleParser;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -205,25 +206,28 @@ public class Param<T> implements Serializable {
         return load(document.getFirstChild());
     }
 
-    public static <T> Param<T> load(Node node) {
+    public static <T> Param<T> load(Node node) throws TikaConfigException{
         
         Node nameAttr = node.getAttributes().getNamedItem("name");
         Node typeAttr = node.getAttributes().getNamedItem("type");
         Node valueAttr = node.getAttributes().getNamedItem("value");
         Node value = node.getFirstChild();
         if (value instanceof NodeList && valueAttr != null) {
-            throw new IllegalArgumentException("can't specify a value attr _and_ a node list");
+            throw new TikaConfigException("can't specify a value attr _and_ a node list");
         }
         if (valueAttr != null && (value == null || value.getTextContent() == null)) {
             value = valueAttr;
         }
-        
+
         Param<T> ret = new Param<T>();
         ret.name  = nameAttr.getTextContent();
         if (typeAttr != null) {
             ret.setTypeString(typeAttr.getTextContent());
         } else {
             ret.type = (Class<T>)wellKnownMap.get(ret.name);
+            if (ret.type == null) {
+                throw new TikaConfigException("Must specify a \"type\" in: " + node.getLocalName());
+            }
         }
 
         if (List.class.isAssignableFrom(ret.type)) {

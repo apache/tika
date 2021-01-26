@@ -31,7 +31,6 @@ import java.io.InputStream;
  */
 public interface InputStreamFactory {
 
-    InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException;
     InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException;
 
 }

@@ -113,11 +113,21 @@ public interface TikaCoreProperties {
 
     /**
      * Some file formats can store information about their original
-     * file name/location or about their attachment's original file name/location.
+     * file name/location or about their attachment's original file name/location
+     * within the file.
      */
-    public static final Property ORIGINAL_RESOURCE_NAME =
+    Property ORIGINAL_RESOURCE_NAME =
             Property.internalTextBag(TIKA_META_PREFIX+"origResourceName");
 
+    /**
+     * This should be used to store the path (relative or full)
+     * of the source file, including the file name,
+     * e.g. doc/path/to/my_pdf.pdf
+     *
+     * This can also be used for a primary key within a database.
+     */
+    Property SOURCE_PATH =
+            Property.internalText(TIKA_META_PREFIX+"sourcePath");
     /**
      * This is currently used to identify Content-Type that may be
      * included within a document, such as in html documents

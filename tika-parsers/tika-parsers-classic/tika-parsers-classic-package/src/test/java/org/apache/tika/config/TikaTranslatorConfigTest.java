@@ -19,6 +19,7 @@ package org.apache.tika.config;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.EmptyTranslator;
 import org.junit.Test;
@@ -58,9 +59,9 @@ public class TikaTranslatorConfigTest extends AbstractTikaConfigTest {
     
     /**
      * Currently, Translators don't support Composites, so
-     *  if multiple translators are given, only the first wins
+     *  if multiple translators are given, throw a TikaConfigException
      */
-    @Test
+    @Test(expected = TikaConfigException.class)
     public void testRequestsMultiple() throws Exception {
         TikaConfig config = getConfig("TIKA-1702-translator-empty-default.xml");
         assertNotNull(config.getParser());

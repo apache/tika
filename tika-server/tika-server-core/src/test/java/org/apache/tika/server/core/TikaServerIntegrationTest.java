@@ -50,79 +50,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
-public class TikaServerIntegrationTest extends TikaTest {
+public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerIntegrationTest.class);
 
-    private static final String TEST_HELLO_WORLD = "test-documents/mock/hello_world.xml";
-    private static final String TEST_OOM = "test-documents/mock/fake_oom.xml";
-    private static final String TEST_SYSTEM_EXIT = "test-documents/mock/system_exit.xml";
-    private static final String TEST_HEAVY_HANG = "test-documents/mock/heavy_hang_30000.xml";
-    private static final String TEST_HEAVY_HANG_SHORT = "test-documents/mock/heavy_hang_100.xml";
-    private static final String TEST_STDOUT_STDERR = "test-documents/mock/testStdOutErr.xml";
-    private static final String TEST_STATIC_STDOUT_STDERR = "test-documents/mock/testStaticStdOutErr.xml";
-    private static final String META_PATH = "/rmeta";
-    private static final String STATUS_PATH = "/status";
 
-    private static final long MAX_WAIT_MS = 60000;
-
-    //running into conflicts on 9998 with the CXFTestBase tests
-    //TODO: figure out why?!
-    private static final String INTEGRATION_TEST_PORT = "9999";
-
-    protected static final String endPoint =
-            "http://localhost:" + INTEGRATION_TEST_PORT;
-
-    private SecurityManager existingSecurityManager = null;
-    private static Path LOG_FILE;
-
-    private static class MyExitException extends RuntimeException {
-        private final int status;
-        MyExitException(int status) {
-            this.status = status;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-    }
-    @BeforeClass
-    public static void staticSetup() throws Exception {
-        LogUtils.setLoggerClass(NullWebClientLogger.class);
-        LOG_FILE = Files.createTempFile("tika-server-integration", ".xml");
-        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j_forked.xml"),
-                LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        existingSecurityManager = System.getSecurityManager();
-        System.setSecurityManager(new SecurityManager() {
-            @Override
-            public void checkExit(int status) {
-                super.checkExit(status);
-                throw new MyExitException(status);
-            }
-            @Override
-            public void checkPermission(Permission perm) {
-                // all ok
-            }
-            @Override
-            public void checkPermission(Permission perm, Object context) {
-                // all ok
-            }
-        });
-    }
-
-    @AfterClass
-    public static void staticTearDown() throws Exception {
-        Files.delete(LOG_FILE);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        System.setSecurityManager(existingSecurityManager);
-    }
 
     @Test
     public void testBasic() throws Exception {
@@ -527,6 +459,11 @@ public class TikaServerIntegrationTest extends TikaTest {
         } finally {
             serverThread.interrupt();
         }
+    }
+
+    @Test
+    public void testEmitterSysExit() throws Exception {
+
     }
 
     private void awaitServerStartup() throws Exception {

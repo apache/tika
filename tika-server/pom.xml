@@ -34,18 +34,4 @@
     <name>Apache Tika server</name>
     <url>http://tika.apache.org/</url>
 
-
-
-    <organization>
-        <name>The Apache Software Foundation</name>
-        <url>http://www.apache.org</url>
-    </organization>
-    <issueManagement>
-        <system>JIRA</system>
-        <url>https://issues.apache.org/jira/browse/TIKA</url>
-    </issueManagement>
-    <ciManagement>
-        <system>Jenkins</system>
-        <url>https://builds.apache.org/job/Tika-trunk/</url>
-    </ciManagement>
 </project>

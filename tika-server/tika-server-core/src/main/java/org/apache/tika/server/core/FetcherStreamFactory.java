@@ -19,10 +19,12 @@ package org.apache.tika.server.core;
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
-import org.apache.tika.io.TikaInputStream;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.pipes.fetcher.FetcherManager;
 
 /**
  * This class looks for &quot;fileUrl&quot; in the http header.  If it is not null
@@ -40,30 +42,30 @@ import org.apache.tika.metadata.Metadata;
  * See <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271">CVE-2015-3271</a>
  *
  */
-public class URLEnabledInputStreamFactory implements InputStreamFactory {
+public class FetcherStreamFactory implements InputStreamFactory {
 
-    /**
-     * @deprecated use {@link #getInputSteam(InputStream, Metadata, HttpHeaders)}
-     * @param is
-     * @param httpHeaders
-     * @return
-     * @throws IOException
-     */
-    @Override
-    @Deprecated
-    public InputStream getInputSteam(InputStream is, HttpHeaders httpHeaders) throws IOException {
-        String fileUrl = httpHeaders.getHeaderString("fileUrl");
-        if(fileUrl != null && !"".equals(fileUrl)){
-            return TikaInputStream.get(new URL(fileUrl));
-        }
-        return is;
+    private final FetcherManager fetcherManager;
+
+    public FetcherStreamFactory(FetcherManager fetcherManager) {
+        this.fetcherManager = fetcherManager;
     }
 
     @Override
-    public InputStream getInputSteam(InputStream is, Metadata metadata, HttpHeaders httpHeaders) throws IOException {
-        String fileUrl = httpHeaders.getHeaderString("fileUrl");
-        if(fileUrl != null && !"".equals(fileUrl)){
-            return TikaInputStream.get(new URL(fileUrl), metadata);
+    public InputStream getInputSteam(InputStream is, Metadata metadata,
+                                     HttpHeaders httpHeaders) throws IOException {
+        String fetcherName= httpHeaders.getHeaderString("fetcherName");
+        String fetchKey = httpHeaders.getHeaderString("fetchKey");
+        if (StringUtils.isBlank(fetcherName) != StringUtils.isBlank(fetchKey)) {
+            throw new IOException("Must specify both a 'fetcherName' and a 'fetchKey'. I see: "+
+                    " fetcherName:"+fetcherName+" and fetchKey:"+fetchKey);
+        }
+
+        if (!StringUtils.isBlank(fetcherName)){
+            try {
+                return fetcherManager.getFetcher(fetcherName).fetch(fetchKey, metadata);
+            } catch (TikaException e) {
+                throw new IOException(e);
+            }
         }
         return is;
     }

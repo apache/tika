@@ -21,5 +21,6 @@
 <mock>
     <metadata action="add" name="author">Nikolai Lobachevsky</metadata>
     <metadata action="add" name="title">你好，世界</metadata>
+    <metadata action="add" name="my-key">parsers-value</metadata>
     <write element="p">hello world</write>
 </mock>

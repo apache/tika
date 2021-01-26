@@ -29,6 +29,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.InputStream;
+import java.util.List;
 
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.metadata.Metadata;
@@ -84,7 +85,7 @@ public class RecursiveMetadataResource {
                                              @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
         return Response.ok(
-                parseMetadata(att.getObject(InputStream.class), new Metadata(),
+                parseMetadataToMetadataList(att.getObject(InputStream.class), new Metadata(),
                         att.getHeaders(), info, handlerTypeName)).build();
     }
 
@@ -122,14 +123,17 @@ public class RecursiveMetadataResource {
                                 ) throws Exception {
         Metadata metadata = new Metadata();
         return Response.ok(
-                parseMetadata(TikaResource.getInputStream(is, metadata, httpHeaders),
+                parseMetadataToMetadataList(TikaResource.getInputStream(is, metadata, httpHeaders),
 						metadata,
 						httpHeaders.getRequestHeaders(), info, handlerTypeName)).build();
     }
 
-	private MetadataList parseMetadata(InputStream is, Metadata metadata,
-			MultivaluedMap<String, String> httpHeaders, UriInfo info, String handlerTypeName)
-			throws Exception {
+    public static List<Metadata> parseMetadata(InputStream is,
+                                               Metadata metadata,
+                                               MultivaluedMap<String, String> httpHeaders,
+                                               UriInfo info, String handlerTypeName)
+            throws Exception {
+
 		final ParseContext context = new ParseContext();
 		Parser parser = TikaResource.createParser();
 		// TODO: parameterize choice of max chars/max embedded attachments
@@ -147,7 +151,7 @@ public class RecursiveMetadataResource {
 
         int maxEmbeddedResources = -1;
         if (httpHeaders.containsKey("maxEmbeddedResources")) {
-        maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
+            maxEmbeddedResources = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedResources"));
         }
 
         BasicContentHandlerFactory.HANDLER_TYPE type =
@@ -170,7 +174,14 @@ public class RecursiveMetadataResource {
 					}
 				},
 		 */
-		return new MetadataList(handler.getMetadataList());
+		return handler.getMetadataList();
 	}
 
+
+    private MetadataList parseMetadataToMetadataList(InputStream is, Metadata metadata,
+                                       MultivaluedMap<String, String> httpHeaders,
+                                                     UriInfo info, String handlerTypeName)
+            throws Exception {
+        return new MetadataList(parseMetadata(is, metadata, httpHeaders, info, handlerTypeName));
+    }
 }

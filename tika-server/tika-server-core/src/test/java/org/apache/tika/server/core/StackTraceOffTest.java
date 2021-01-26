@@ -1,6 +1,4 @@
-package org.apache.tika.server.core;
-
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,6 +14,7 @@ package org.apache.tika.server.core;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.server.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -146,7 +145,7 @@ public class StackTraceOffTest extends CXFTestBase {
     }
 
     //For now, make sure that non-complete document
-    //still returtestXDP.xdpns BAD_REQUEST.  We may want to
+    //still returns BAD_REQUEST.  We may want to
     //make MetadataResource return the same types of parse
     //exceptions as the others...
     @Test
