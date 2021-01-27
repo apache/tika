@@ -18,11 +18,13 @@ package org.apache.tika.pipes.fetcher;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Collections;
 import java.util.Set;
 
@@ -55,5 +57,16 @@ public class SimpleUrlFetcher extends AbstractFetcher {
                     + url.getProtocol());
         }
         return TikaInputStream.get(url, metadata);
+    }
+
+    public InputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata)
+            throws IOException, TikaException {
+        URL url = new URL(fetchKey);
+        URLConnection connection = url.openConnection();
+        connection.setRequestProperty("Range", "bytes="+startRange+"-"+endRange);
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(endRange-startRange+1));
+        TikaInputStream tis = TikaInputStream.get(connection.getInputStream());
+        tis.getPath();
+        return tis;
     }
 }
