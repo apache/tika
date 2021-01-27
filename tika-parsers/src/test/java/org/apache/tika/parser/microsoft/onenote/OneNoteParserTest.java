@@ -210,7 +210,8 @@ public class OneNoteParserTest extends TikaTest {
     public void testOneNoteWithNonAsciiCharacter() throws Exception {
         String txt = getText("testOneNoteNonAscii.one");
 
-        assertContains("einschränken", txt);
+        assertContains("äöüß", txt);
+        assertContains("的是\uD83D\uDE0A", txt);
     }
 
     private void assertNoJunk(String txt) {
