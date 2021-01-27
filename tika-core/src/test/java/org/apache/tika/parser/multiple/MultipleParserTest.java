@@ -104,7 +104,7 @@ public class MultipleParserTest {
         assertEquals(DummyParser.class.getName(), usedParsers[1]);
         
         // Check we got an exception
-        assertNotNull(metadata.get(ParserUtils.EMBEDDED_EXCEPTION));
+        assertNotNull(metadata.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         assertNotNull(metadata.get(ParserUtils.EMBEDDED_PARSER));
         assertEquals(ErrorParser.class.getName(), metadata.get(ParserUtils.EMBEDDED_PARSER));
         

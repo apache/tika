@@ -22,7 +22,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -37,7 +36,7 @@ public class HtmlParserTest extends TikaTest {
     public void testDataURI() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img.html");
         assertEquals(2, metadataList.size());
-        String content = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("some content", content);
         //make sure that you've truncated the data: value
         assertContains("src=\"data:\"", content);
@@ -55,7 +54,7 @@ public class HtmlParserTest extends TikaTest {
             Parser p = new AutoDetectParser(tikaConfig);
             List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_img_in_js.html", p);
             assertEquals(3, metadataList.size());
-            String content = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+            String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
             assertContains("some content", content);
             Metadata imgMetadata = metadataList.get(1);
             assertEquals("image/jpeg", imgMetadata.get(Metadata.CONTENT_TYPE));

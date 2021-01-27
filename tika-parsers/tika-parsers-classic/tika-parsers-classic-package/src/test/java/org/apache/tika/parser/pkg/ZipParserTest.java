@@ -20,7 +20,6 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -119,7 +118,7 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("EncryptedDocumentException: stream (encrypted.txt) is encrypted", values[0]);
 
 
-        assertContains("hello world", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("hello world", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test

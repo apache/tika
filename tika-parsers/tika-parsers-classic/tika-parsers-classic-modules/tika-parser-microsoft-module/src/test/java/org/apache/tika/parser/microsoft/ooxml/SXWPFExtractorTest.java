@@ -85,7 +85,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("16.0000", m.get(OfficeOpenXMLExtended.APP_VERSION));
 
 
-        String content = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = m.get(TikaCoreProperties.TIKA_CONTENT);
 
         assertContainsCount("engaging title page", content, 1);
         //need \n to differentiate from metadata values
@@ -290,7 +290,7 @@ public class SXWPFExtractorTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("headerPic.docx", parseContext);
         assertEquals(2, metadataList.size());
         Metadata m = metadataList.get(0);
-        String mainContent = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String mainContent = m.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 m.get(Metadata.CONTENT_TYPE));
@@ -306,7 +306,7 @@ public class SXWPFExtractorTest extends TikaTest {
 
         //only process embedded resources once
         assertEquals(3, metadataList.size());
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         for (int i = 1; i < 4; i++) {
             assertContains("header" + i + "_pic", content);
             assertContains("footer" + i + "_pic", content);
@@ -722,13 +722,13 @@ public class SXWPFExtractorTest extends TikaTest {
 
         metadataList = getRecursiveMetadata("testWORD_macros.docm", context);
         //check that content came out of the .docm file
-        assertContains("quick", metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("quick", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContainsAtLeast(parsedBy, metadataList);
 
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
@@ -750,7 +750,7 @@ public class SXWPFExtractorTest extends TikaTest {
     public void testEmbedded() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_embeded.docx", parseContext);
         Metadata main = metadataList.get(0);
-        String content = main.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = main.get(TikaCoreProperties.TIKA_CONTENT);
         //make sure mark up is there
         assertContains("<img src=\"embedded:image2.jpeg\" alt=\"A description...\" />",
                 content);
@@ -764,7 +764,7 @@ public class SXWPFExtractorTest extends TikaTest {
     @Test
     public void testDotx() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testWORD_template.docx", parseContext);
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("Metallica", content);
         assertContains("Hetfield", content);
         assertContains("one eye open", content);
@@ -773,7 +773,7 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("table rows", content);
 
         metadataList = getRecursiveMetadata("testWORD_template.dotx", parseContext);
-        content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         //from glossary document
         assertContainsCount("ready to write", content, 2);
     }

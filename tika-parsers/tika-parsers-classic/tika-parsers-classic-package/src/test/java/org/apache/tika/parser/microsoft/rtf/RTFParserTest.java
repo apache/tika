@@ -24,7 +24,6 @@ import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Assert;
@@ -77,7 +76,7 @@ public class RTFParserTest extends TikaTest {
             //directory: _1457338524/HW.txt
             Assert.assertEquals("filename equals ",
                     p.fileName, FilenameUtils.getName(
-                            metadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH)));
+                            metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
 
             assertEquals(p.mimeType, metadata.get(Metadata.CONTENT_TYPE));
         }

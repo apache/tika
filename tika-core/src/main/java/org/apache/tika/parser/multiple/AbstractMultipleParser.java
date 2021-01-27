@@ -314,7 +314,7 @@ public abstract class AbstractMultipleParser extends AbstractParser {
             //  for tracking/errors, then always keep the latest one!
             if (n.equals(TikaCoreProperties.TIKA_PARSED_BY.getName())) continue;
             if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) continue;
-            if (n.equals(ParserUtils.EMBEDDED_EXCEPTION.getName())) continue;
+            if (n.equals(TikaCoreProperties.EMBEDDED_EXCEPTION.getName())) continue;
             
             // Merge as per policy 
             String[] newVals = newMetadata.getValues(n);

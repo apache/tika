@@ -41,7 +41,7 @@ public class AppleSingleFileParserTest extends TikaTest {
                 Arrays.asList(list.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
         assertContains(PDFParser.class.getName(),
                 Arrays.asList(list.get(1).getValues(TikaCoreProperties.TIKA_PARSED_BY)));
-        assertContains("Hello World", list.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Hello World", list.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("fltsyllabussortie2rev1_2.pdf", list.get(1).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
     }
 }

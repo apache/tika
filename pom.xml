@@ -1,4 +1,4 @@
- <?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
@@ -46,11 +46,11 @@
     <module>tika-langdetect</module>
     <module>tika-app</module>
     <module>tika-server</module>
+    <module>tika-eval</module>
     <module>tika-fuzzing</module>
     <module>tika-translate</module>
     <module>tika-example</module>
     <module>tika-java7</module>
-    <module>tika-eval</module>
   </modules>
 
   <profiles>

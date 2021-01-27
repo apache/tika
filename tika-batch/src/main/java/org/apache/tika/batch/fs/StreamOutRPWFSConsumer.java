@@ -20,11 +20,8 @@ package org.apache.tika.batch.fs;
 
 
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.Tika;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
-import org.apache.tika.batch.ParserFactory;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -32,11 +29,8 @@ import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.serialization.JsonStreamingSerializer;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -154,7 +148,7 @@ public class StreamOutRPWFSConsumer extends AbstractFSConsumer {
 
         @Override
         public void endEmbeddedDocument(ContentHandler contentHandler, Metadata metadata) throws SAXException {
-            metadata.add(RecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
+            metadata.add(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
             try {
                 metadataFilter.filter(metadata);
             } catch (TikaException e) {

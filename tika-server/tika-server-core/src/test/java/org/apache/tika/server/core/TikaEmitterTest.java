@@ -22,17 +22,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.core.resource.EmitterResource;
 import org.apache.tika.server.core.writer.JSONObjWriter;
 import org.junit.AfterClass;
@@ -45,7 +42,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -162,7 +158,7 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
         assertEquals("hello world",
-                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim());
+                metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -201,7 +197,7 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
         assertEquals("hello world",
-                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim());
+                metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -231,7 +227,7 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
         assertEquals("hello world",
-                metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim());
+                metadata.get(TikaCoreProperties.TIKA_CONTENT).trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -281,7 +277,7 @@ public class TikaEmitterTest extends CXFTestBase {
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
         assertArrayEquals(valueArray, metadata.getValues("my-key-multi"));
-        assertContains("NullPointerException", metadata.get(AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
+        assertContains("NullPointerException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     //can't test system_exit here because server is in same process

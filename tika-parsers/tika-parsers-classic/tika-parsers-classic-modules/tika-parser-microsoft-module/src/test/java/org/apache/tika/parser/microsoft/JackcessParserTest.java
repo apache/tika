@@ -61,7 +61,7 @@ public class JackcessParserTest extends TikaTest {
             }
             List<Metadata> list = handler.getMetadataList();
             assertEquals(4, list.size());
-            String mainContent = list.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+            String mainContent = list.get(0).get(TikaCoreProperties.TIKA_CONTENT);
 
             //make sure there's a thead and tbody
             assertContains("</thead><tbody>", mainContent);
@@ -81,7 +81,7 @@ public class JackcessParserTest extends TikaTest {
 
             //test embedded document handling
             assertContains("Test Document with embedded pdf",
-                    list.get(3).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+                    list.get(3).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 

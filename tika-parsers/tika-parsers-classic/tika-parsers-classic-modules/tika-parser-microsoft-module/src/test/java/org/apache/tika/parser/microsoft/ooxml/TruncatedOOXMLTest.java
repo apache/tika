@@ -21,20 +21,16 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Random;
 
@@ -51,7 +47,7 @@ public class TruncatedOOXMLTest extends TikaTest {
                 "testWORD_various.docx", 14435), true);
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        String content = metadata.get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 metadata.get(Metadata.CONTENT_TYPE));
         assertContains("This is the header", content);

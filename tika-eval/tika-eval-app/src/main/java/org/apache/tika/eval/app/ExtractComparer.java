@@ -47,7 +47,6 @@ import org.apache.tika.eval.core.tokens.TokenIntPair;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 public class ExtractComparer extends AbstractProfiler {
 
@@ -406,10 +405,10 @@ public class ExtractComparer extends AbstractProfiler {
         String pathA = null;
         String pathB = null;
         if (mA != null) {
-            pathA = mA.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
+            pathA = mA.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
         }
         if (mB != null) {
-            pathB = mB.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
+            pathB = mB.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
         }
         if (pathA != null) {
             Map<Cols, String> d = new HashMap<>();
@@ -473,11 +472,11 @@ public class ExtractComparer extends AbstractProfiler {
 
         //assume same embedded resource path.  Not always true!
         Metadata thisMetadata = metadataListA.get(aIndex);
-        String embeddedPath = thisMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
+        String embeddedPath = thisMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
         if (embeddedPath != null) {
             for (int j = 0; j < metadataListB.size(); j++) {
                 String thatEmbeddedPath = metadataListB.get(j).get(
-                        AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
+                        TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
                 if (embeddedPath.equals(thatEmbeddedPath)) {
                     return j;
                 }

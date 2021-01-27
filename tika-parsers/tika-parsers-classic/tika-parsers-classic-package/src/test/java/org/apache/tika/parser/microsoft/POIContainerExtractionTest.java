@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft;
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

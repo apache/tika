@@ -40,8 +40,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.slf4j.Logger;
@@ -152,13 +150,13 @@ public class ExtractReader {
                     StringBuilder sb = new StringBuilder();
                     Metadata containerMetadata = metadataList.get(0);
                     for (Metadata m : metadataList) {
-                        String c = m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+                        String c = m.get(TikaCoreProperties.TIKA_CONTENT);
                         if (c != null) {
                             sb.append(c);
                             sb.append(" ");
                         }
                     }
-                    containerMetadata.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, sb.toString());
+                    containerMetadata.set(TikaCoreProperties.TIKA_CONTENT, sb.toString());
                     while (metadataList.size() > 1) {
                         metadataList.remove(metadataList.size()-1);
                     }
@@ -182,11 +180,11 @@ public class ExtractReader {
         List<Metadata> metadataList = new ArrayList<>();
         String content = IOUtils.toString(reader);
         Metadata m = new Metadata();
-        m.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, content);
+        m.set(TikaCoreProperties.TIKA_CONTENT, content);
         if (fileSuffixes.format == FileSuffixes.FORMAT.HTML) {
-            m.set(RecursiveParserWrapperHandler.TIKA_CONTENT_HANDLER, ToXMLContentHandler.class.getSimpleName());
+            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER, ToXMLContentHandler.class.getSimpleName());
         } else if (fileSuffixes.format == FileSuffixes.FORMAT.TXT) {
-            m.set(RecursiveParserWrapperHandler.TIKA_CONTENT_HANDLER, ToTextContentHandler.class.getSimpleName());
+            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER, ToTextContentHandler.class.getSimpleName());
         }
         //Let's hope the file name has a suffix that can
         //be used to determine the mime.  Could be wrong or missing,

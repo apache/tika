@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;

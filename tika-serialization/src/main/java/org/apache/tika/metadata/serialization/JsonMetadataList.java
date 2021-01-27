@@ -28,7 +28,7 @@ import com.google.gson.JsonIOException;
 import com.google.gson.reflect.TypeToken;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class JsonMetadataList extends JsonMetadataBase {
     
@@ -79,9 +79,9 @@ public class JsonMetadataList extends JsonMetadataBase {
         //flip it to be the first element.
         if (ms.size() > 1) {
             Metadata last = ms.get(ms.size()-1);
-            String embResourcePath = last.get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH);
+            String embResourcePath = last.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
             if (embResourcePath == null &&
-                    ms.get(0).get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH) != null) {
+                    ms.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH) != null) {
                 ms.add(0, ms.remove(ms.size()-1));
             }
         }

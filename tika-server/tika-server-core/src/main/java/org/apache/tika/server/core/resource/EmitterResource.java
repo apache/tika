@@ -23,11 +23,9 @@ import com.google.gson.JsonParser;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.pipes.fetcher.FetchId;
 import org.apache.tika.pipes.fetcher.Fetcher;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,7 +103,7 @@ public class EmitterResource {
      * fetcher, use the get or post options.
      * <p>
      * The extracted text content is stored with the key
-     * {@link org.apache.tika.sax.AbstractRecursiveParserWrapperHandler#TIKA_CONTENT}
+     * {@link TikaCoreProperties#TIKA_CONTENT}
      * <p>
      * Must specify an emitter in the path, e.g. /emit/solr
      * @param info uri info
@@ -141,7 +139,7 @@ public class EmitterResource {
      * through of metadata from the client.
      * <p>
      * The extracted text content is stored with the key
-     * {@link AbstractRecursiveParserWrapperHandler#TIKA_CONTENT}
+     * {@link TikaCoreProperties#TIKA_CONTENT}
      * <p>
      * Must specify a fetcherString and an emitter in the posted json.
      * @param info uri info
@@ -229,7 +227,7 @@ public class EmitterResource {
             statusMap.put("emitter_exception", exceptionMsg);
         }
         String parseStackTrace = metadataList.get(0).get(
-                AbstractRecursiveParserWrapperHandler.CONTAINER_EXCEPTION);
+                TikaCoreProperties.CONTAINER_EXCEPTION);
         if (parseStackTrace != null) {
             statusMap.put("parse_exception", parseStackTrace);
         }

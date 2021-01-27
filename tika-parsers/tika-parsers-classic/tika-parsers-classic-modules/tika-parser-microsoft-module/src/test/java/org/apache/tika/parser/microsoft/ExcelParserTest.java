@@ -22,7 +22,6 @@ import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 import java.text.DecimalFormatSymbols;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.util.LocaleUtil;
@@ -40,7 +39,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -494,8 +492,8 @@ public class ExcelParserTest extends TikaTest {
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Dirty()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "dirty dirt dirt");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());

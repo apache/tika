@@ -29,7 +29,6 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
@@ -147,19 +146,19 @@ public class SQLite3ParserTest extends TikaTest {
         assertEquals(5, metadataList.size());
         //make sure the \t are inserted in a body handler
 
-        String table = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        String table = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("0\t2.3\t2.4\tlorem", table);
         assertContains("普林斯顿大学", table);
 
         //make sure the \n is inserted
-        String table2 = metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        String table2 = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("do eiusmod tempor\n", table2);
 
-        assertContains("The quick brown fox", metadataList.get(2).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertContains("The quick brown fox", metadataList.get(4).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("The quick brown fox", metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test

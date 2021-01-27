@@ -18,8 +18,8 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -32,16 +32,16 @@ public class OOXMLParserTest extends TikaTest {
     public void testEmbeddedPDFInPPTX() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
         Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
     public void testEmbeddedPDFInXLSX() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xlsx");
         Metadata pdfMetadata = metadataList.get(1);
-        assertContains("Hello World", pdfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Hello World", pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -53,9 +53,9 @@ public class OOXMLParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
         Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
         Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Ignore("TODO figure out why this doesn't work")

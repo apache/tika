@@ -63,7 +63,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -1271,7 +1270,7 @@ public class PDFParserTest extends TikaTest {
         assertNull(context.get(ZeroByteFileException.IgnoreZeroByteFileException.class));
         assertEquals(2, metadataList.size());
         assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals("/image0.png", metadataList.get(1).get(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/image0.png", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(261, (int)metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
         assertEquals(934, (int)metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
         assertEquals("image0.png", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));

@@ -29,7 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 public class JsonMetadataListTest {
@@ -143,7 +143,7 @@ public class JsonMetadataListTest {
         m1.add("k1", "v4");
         m1.add("k1", "v4");
         m1.add("k2", "v1");
-        m1.add(RecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/embedded-1");
+        m1.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/embedded-1");
 
         Metadata m2 = new Metadata();
         m2.add("k3", "v1");

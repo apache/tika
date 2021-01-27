@@ -16,6 +16,11 @@
  */
 package org.apache.tika.metadata;
 
+import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.utils.ParserUtils;
+
 /**
  * Contains a core set of basic Tika metadata properties, which all parsers
  *  will attempt to supply (where the file format permits). These are all
@@ -73,13 +78,39 @@ public interface TikaCoreProperties {
      * between metadata that was contained within the document and
      * metadata about the parsing process.
      */
-    public static String TIKA_META_PREFIX = "X-TIKA"+NAMESPACE_PREFIX_DELIMITER;
+    String TIKA_META_PREFIX = "X-TIKA"+NAMESPACE_PREFIX_DELIMITER;
+
+    Property EMBEDDED_DEPTH =
+            Property.internalInteger(TIKA_META_PREFIX +"embedded_depth");
+    Property EMBEDDED_RESOURCE_PATH =
+                    Property.internalText(TIKA_META_PREFIX +"embedded_resource_path");
+    Property PARSE_TIME_MILLIS = Property.internalText(TIKA_META_PREFIX + "parse_time_millis");
+    /**
+     * Simple class name of the content handler
+     */
+    Property TIKA_CONTENT_HANDLER = Property.internalText(TIKA_META_PREFIX +"content_handler");
+    Property TIKA_CONTENT = Property.internalText(TIKA_META_PREFIX +"content");
 
     /**
      * Use this to store parse exception information in the Metadata object.
      */
-    public static String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX+"EXCEPTION"+
+    String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX+"EXCEPTION"+
             NAMESPACE_PREFIX_DELIMITER;
+
+    //exception in main file
+    Property CONTAINER_EXCEPTION = Property.internalText(
+            TIKA_META_EXCEPTION_PREFIX +"container_exception");
+
+    //exception in an embedded file
+    Property EMBEDDED_EXCEPTION =
+            Property.internalText(
+                    TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+
+    Property WRITE_LIMIT_REACHED =
+                    Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
+
+    Property EMBEDDED_RESOURCE_LIMIT_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 
     /**
      * Use this to store exceptions caught during a parse that are
@@ -110,6 +141,7 @@ public interface TikaCoreProperties {
     String EMBEDDED_STORAGE_CLASS_ID = "embeddedStorageClassId";
 
     String EMBEDDED_RESOURCE_TYPE_KEY = "embeddedResourceType";
+
 
     /**
      * Some file formats can store information about their original

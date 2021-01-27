@@ -46,8 +46,7 @@ public class TestEmbeddedDocumentUtil {
     @Test
     public void testDoublyDecorated() {
         Parser d = new DigestingAutoDetectParserFactory().getParser(TikaConfig.getDefaultConfig());
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(d,
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(d,true);
         ParseContext parseContext = new ParseContext();
         parseContext.set(Parser.class, wrapper);
         Parser txtParser = EmbeddedDocumentUtil.tryToFindExistingLeafParser(org.apache.tika.parser.csv.TextAndCSVParser.class, parseContext);

@@ -28,7 +28,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 
 public class EpubParserTest extends TikaTest {
@@ -72,7 +71,7 @@ public class EpubParserTest extends TikaTest {
         //test attachments
         assertEquals(2, metadataList.size());
         assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
         int ch1 = xml.indexOf("<h1>Chapter 1");
         int ch2 = xml.indexOf("<h1>Chapter 2");
@@ -103,7 +102,7 @@ public class EpubParserTest extends TikaTest {
         try (InputStream is = truncate("testEPUB.epub", 10000)) {
             metadataList = getRecursiveMetadata(is, p, true);
         }
-        String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int ch1 = xml.indexOf("<h1>Chapter 1");
         int ch2 = xml.indexOf("<h1>Chapter 2");
         assert(ch1 < ch2);
@@ -115,6 +114,6 @@ public class EpubParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testEPUB_xml_ext.epub");
         assertEquals(1, metadataList.size());
         assertContains("It was a bright cold day in April",
-                metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

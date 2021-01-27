@@ -39,7 +39,7 @@ public class XPSParserTest extends TikaTest {
         assertEquals("2010-06-29T12:06:31Z", metadataList.get(0).get(TikaCoreProperties.MODIFIED));
         assertEquals("Attachment Test", metadataList.get(0).get(TikaCoreProperties.TITLE));
 
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("<p>Attachment Test</p>", content);
         assertContains("<div class=\"canvas\"><p>Different", content);
 
@@ -61,7 +61,7 @@ public class XPSParserTest extends TikaTest {
                 "\u0627\u0644\u0628\u0646\u064A\u0020" +
                 "\u0627\u0644\u0633\u0631\u064A\u0639";
 
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains(quickBrownFox, content);
 
         assertContains("The \u0627\u0644\u0628\u0646\u064A fox", content);

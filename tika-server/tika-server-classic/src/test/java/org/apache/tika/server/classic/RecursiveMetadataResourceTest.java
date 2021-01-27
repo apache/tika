@@ -45,8 +45,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
@@ -178,7 +176,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
         assertNotNull(metadataList.get(0).get(TikaCoreProperties.CREATOR));
-        assertContains("org.apache.tika.exception.EncryptedDocumentException", metadataList.get(0).get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException", metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
         // Try again, this time with the password
         response = WebClient
                 .create(endPoint + META_PATH)
@@ -209,7 +207,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        String content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        String content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //extra slash
@@ -221,7 +219,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //unparseable
@@ -233,7 +231,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //xml
@@ -245,7 +243,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //text
@@ -257,7 +255,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("embed_3"));
 
         //ignore
@@ -269,7 +267,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        assertNull(metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNull(metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
 
     }
 
@@ -288,7 +286,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        String content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        String content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //unparseable
@@ -304,7 +302,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //xml
@@ -320,7 +318,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
 
         //text
@@ -336,7 +334,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        content = metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).trim();
+        content = metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT).trim();
         assertTrue(content.startsWith("embed_3"));
 
         //ignore -- no content
@@ -352,7 +350,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        assertNull(metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertNull(metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -388,7 +386,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(1, metadataList.size());
-        assertEquals("true", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+        assertEquals("true", metadataList.get(0).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
 
         //now try with a write limit of 100
         writeLimit = 100;
@@ -404,11 +402,11 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         metadataList = JsonMetadataList.fromJson(reader);
         assertEquals(12, metadataList.size());
-        assertEquals("true", metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED));
+        assertEquals("true", metadataList.get(6).get(TikaCoreProperties.WRITE_LIMIT_REACHED));
         assertContains("When in the Course of human events it becomes necessary for one people",
-                metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
         TikaTest.assertNotContained("to dissolve",
-                metadataList.get(6).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
 
     }
 }

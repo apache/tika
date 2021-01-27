@@ -24,7 +24,6 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -50,7 +49,7 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p>Hello dear user,</p>",
-                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                parent.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.oasis.opendocument.text",
                 parent.get(Metadata.CONTENT_TYPE));
 
@@ -61,12 +60,12 @@ public class ODFParserTest extends TikaTest {
 
         Metadata macro1 = metadataList.get(1);
         assertEquals("MACRO", macro1.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro1.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 2 Then", macro1.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test", macro1.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata macro2 = metadataList.get(2);
         assertEquals("MACRO", macro2.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 1 Then", macro2.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 1 Then", macro2.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test2", macro2.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(3);
@@ -97,13 +96,13 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<tr>",
-                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                parent.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.oasis.opendocument.spreadsheet",
                 parent.get(Metadata.CONTENT_TYPE));
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 2 Then", macro.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test1", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
@@ -117,7 +116,7 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p",
-                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                parent.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.oasis.opendocument.presentation",
                 parent.get(Metadata.CONTENT_TYPE));
         //make sure metadata came through
@@ -128,7 +127,7 @@ public class ODFParserTest extends TikaTest {
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 2 Then", macro.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("testmodule", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("testmodule", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
@@ -141,7 +140,7 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p>Hello dear user,</p>",
-                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                parent.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.oasis.opendocument.flat.text",
                 parent.get(Metadata.CONTENT_TYPE));
 
@@ -152,7 +151,7 @@ public class ODFParserTest extends TikaTest {
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 2 Then", macro.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
@@ -174,13 +173,13 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<tr>",
-                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                parent.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.oasis.opendocument.flat.spreadsheet",
                 parent.get(Metadata.CONTENT_TYPE));
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 2 Then", macro.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test1", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         Metadata image = metadataList.get(2);
@@ -194,7 +193,7 @@ public class ODFParserTest extends TikaTest {
         Metadata parent = metadataList.get(0);
 
         assertContains("<p",
-                parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                parent.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.oasis.opendocument.flat.presentation",
                 parent.get(Metadata.CONTENT_TYPE));
         //make sure metadata came through
@@ -205,7 +204,7 @@ public class ODFParserTest extends TikaTest {
 
         Metadata macro = metadataList.get(1);
         assertEquals("MACRO", macro.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY));
-        assertContains("If WsGQFM Or 2 Then", macro.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("If WsGQFM Or 2 Then", macro.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("test", macro.get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
     }

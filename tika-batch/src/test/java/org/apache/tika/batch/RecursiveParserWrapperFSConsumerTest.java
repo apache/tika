@@ -38,9 +38,7 @@ import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.Test;
 
 public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
@@ -85,12 +83,12 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
 
         assertEquals(4, results.size());
         assertContains("another null pointer",
-                results.get(2).get(AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION));
+                results.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
 
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         for (int i = 1; i < 4; i++) {
             assertEquals("embeddedAuthor"+i, results.get(i).get("author"));
-            assertContains("some_embedded_content"+i, results.get(i).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+            assertContains("some_embedded_content"+i, results.get(i).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 
@@ -132,10 +130,10 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
         assertEquals(2, results.size());
         assertContains("another null pointer",
-                results.get(0).get(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION));
+                results.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
         assertEquals("Nikolai Lobachevsky", results.get(0).get("author"));
         assertEquals("embeddedAuthor", results.get(1).get("author"));
-        assertContains("some_embedded_content", results.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("some_embedded_content", results.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
 

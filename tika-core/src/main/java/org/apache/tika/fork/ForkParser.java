@@ -31,6 +31,7 @@ import java.util.Set;
 import org.apache.tika.config.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
@@ -236,7 +237,7 @@ public class ForkParser extends AbstractParser implements Closeable
      *     If the handler does not implement {@link java.io.Serializable} or if there is a
      *     {@link java.io.NotSerializableException} thrown during serialization, the server will
      *     call {@link ContentHandler#toString()} on the ContentHandler and set that value with the
-     *     {@link org.apache.tika.sax.RecursiveParserWrapperHandler#TIKA_CONTENT} key and then
+     *     {@link TikaCoreProperties#TIKA_CONTENT} key and then
      *     serialize and proxy that data back.
      * </p>
      *

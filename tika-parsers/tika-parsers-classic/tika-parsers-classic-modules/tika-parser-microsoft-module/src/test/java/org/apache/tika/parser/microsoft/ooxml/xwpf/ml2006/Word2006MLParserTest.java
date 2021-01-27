@@ -68,7 +68,7 @@ public class Word2006MLParserTest extends MultiThreadedTikaTest {
         assertEquals("16.0000", m.get(OfficeOpenXMLExtended.APP_VERSION));
 
 
-        String content = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = m.get(TikaCoreProperties.TIKA_CONTENT);
 
         assertContainsCount("This is the Author", content, 1);
         assertContainsCount("This is an engaging title page", content, 1);

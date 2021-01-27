@@ -156,7 +156,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
                 if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
-                assertNull(m.get(ParserUtils.EMBEDDED_EXCEPTION));
+                assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
             }
             assertTrue("didn't find chart in "+suffix, found);
         }

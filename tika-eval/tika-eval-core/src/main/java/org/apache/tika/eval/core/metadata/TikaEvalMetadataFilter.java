@@ -30,7 +30,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +67,7 @@ public class TikaEvalMetadataFilter implements MetadataFilter {
 
     @Override
     public void filter(Metadata metadata) throws TikaException {
-        String content = metadata.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         if (StringUtils.isAllBlank(content)) {
             return;
         }

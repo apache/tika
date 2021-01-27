@@ -17,7 +17,7 @@
 package org.apache.tika.fork;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.xml.sax.ContentHandler;
@@ -102,7 +102,7 @@ class RecursiveMetadataContentHandlerProxy extends RecursiveParserWrapperHandler
             //if contenthandler is not allegedly or actually Serializable
             //fall back to adding contentHandler.toString() to the metadata object
             //and send that.
-            metadata.set(RecursiveParserWrapperHandler.TIKA_CONTENT, contentHandler.toString());
+            metadata.set(TikaCoreProperties.TIKA_CONTENT, contentHandler.toString());
             output.writeByte(METADATA_ONLY);
             send(metadata);
             output.writeByte(COMPLETE);

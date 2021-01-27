@@ -18,6 +18,7 @@ package org.apache.tika.sax;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.utils.ParserUtils;
@@ -33,7 +34,7 @@ import java.util.List;
  * See its documentation for more details.
  *
  * This caches the a metadata object for each embedded file and for the container file.
- * It places the extracted content in the metadata object, with this key: {@link AbstractRecursiveParserWrapperHandler#TIKA_CONTENT}
+ * It places the extracted content in the metadata object, with this key: {@link TikaCoreProperties#TIKA_CONTENT}
  * If memory is a concern, subclass AbstractRecursiveParserWrapperHandler to handle each
  * embedded document.
  * <p>
@@ -138,8 +139,8 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
         } else {
             String content = handler.toString();
             if (content != null && content.trim().length() > 0 ) {
-                metadata.add(TIKA_CONTENT, content);
-                metadata.add(TIKA_CONTENT_HANDLER, handler.getClass().getSimpleName());
+                metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
+                metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER, handler.getClass().getSimpleName());
             }
         }
     }

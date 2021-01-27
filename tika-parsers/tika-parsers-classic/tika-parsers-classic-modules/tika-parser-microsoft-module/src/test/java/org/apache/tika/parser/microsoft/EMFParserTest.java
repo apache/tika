@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.junit.Test;
 
@@ -34,9 +35,9 @@ public class EMFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF_mac.xls");
         Metadata emfMetadata = metadataList.get(2);
         assertEquals("image/emf", emfMetadata.get(Metadata.CONTENT_TYPE));
-        assertContains("is a toolkit for detecting", emfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("is a toolkit for detecting", emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
         //test that a space was inserted before url
-        assertContains("Tika http://incubator.apache.org/tika/", emfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("Tika http://incubator.apache.org/tika/", emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
 

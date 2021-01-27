@@ -24,7 +24,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -152,16 +151,16 @@ public class RFC822ParserTest extends TikaTest {
         //not treated as an attachment. TIKA-2547
         List<Metadata> metadataList = getRecursiveMetadata("testRFC822_oddfrom");
         assertEquals(7, metadataList.size());
-        assertContains("Air Quality Planning", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("Air Quality Planning", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         //Make sure text alternative doesn't get treated as an attachment
         metadataList = getRecursiveMetadata("testRFC822_normal_zip");
         assertEquals(3, metadataList.size());
-        assertContains("This is the HTML part", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("This is the HTML part", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/zip", metadataList.get(2).get(Metadata.CONTENT_TYPE));
 
         metadataList = getRecursiveMetadata("testRFC822-txt-body");
         assertEquals(2, metadataList.size());
-        assertContains("body 1", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("body 1", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

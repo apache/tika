@@ -18,8 +18,8 @@ package org.apache.tika.parser.pdf;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -69,7 +69,7 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
         //make sure that embedded docs are still getting extracted
         assertEquals(3, metadataList.size());
 
-        String xml = metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT);
+        String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         //the point here is that in the annotations (that we were grabbing by the classic PDF2XHTML),
         //the <a> content is identical to the href.  Here, they are not, which we only get from
         //marked up content...victory!!!

@@ -581,8 +581,8 @@ public class WordParserTest extends TikaTest {
 
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());

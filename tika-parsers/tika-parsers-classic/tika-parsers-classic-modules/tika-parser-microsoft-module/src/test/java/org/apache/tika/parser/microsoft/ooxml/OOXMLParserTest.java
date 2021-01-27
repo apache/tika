@@ -451,7 +451,7 @@ public class OOXMLParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("headerPic.docx");
         assertEquals(2, metadataList.size());
         Metadata m = metadataList.get(0);
-        String mainContent = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String mainContent = m.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals(
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 m.get(Metadata.CONTENT_TYPE));
@@ -468,7 +468,7 @@ public class OOXMLParserTest extends TikaTest {
 
         //only process embedded resources once
         assertEquals(3, metadataList.size());
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         for (int i = 1; i < 4; i++) {
             assertContains("header"+i+"_pic", content);
             assertContains("footer"+i+"_pic", content);
@@ -1335,8 +1335,8 @@ public class OOXMLParserTest extends TikaTest {
 
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
@@ -1368,8 +1368,8 @@ public class OOXMLParserTest extends TikaTest {
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
@@ -1401,8 +1401,8 @@ public class OOXMLParserTest extends TikaTest {
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Dirty()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "dirty dirt dirt");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Dirty()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "dirty dirt dirt");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
@@ -1497,7 +1497,7 @@ public class OOXMLParserTest extends TikaTest {
             List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_various.xlsb", parseContext);
             assertEquals(4, metadataList.size());
 
-            String xml = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+            String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
             assertContains("<td>13</td>", xml);
             assertContains("<td>13.1211231321</td>", xml);
             assertContains("<td>$   3.03</td>", xml);
@@ -1639,7 +1639,7 @@ public class OOXMLParserTest extends TikaTest {
     public void testPPTXGroups() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.pptx");
         assertEquals(3, metadataList.size());
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("WordArt1", content);
         assertContains("WordArt2", content);
         assertContainsCount("Ungrouped text box", content, 1);//should only be 1
@@ -1655,10 +1655,10 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("MyTitle", content);
 
         assertEquals("/image1.jpg",
-                metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertEquals("/thumbnail.jpeg",
-                metadataList.get(2).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
@@ -1717,8 +1717,8 @@ public class OOXMLParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_oleWorkbook.pptx");
         assertEquals(4, metadataList.size());
         Metadata xlsx = metadataList.get(2);
-        assertContains("<h1>Sheet1</h1>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("<td>1</td>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 xlsx.get(Metadata.CONTENT_TYPE));
     }

@@ -65,7 +65,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
         assertEquals("right number of attachments", 14, metadataList.size());
 
-        String mainContent = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String mainContent = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
 
         assertContains("This slide is hidden", mainContent);//TODO: parameterize this
 
@@ -557,8 +557,8 @@ public class SXSLFExtractorTest extends TikaTest {
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
@@ -607,7 +607,7 @@ public class SXSLFExtractorTest extends TikaTest {
     public void testPPTXGroups() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.pptx", parseContext);
         assertEquals(3, metadataList.size());
-        String content = metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("WordArt1", content);
         assertContains("WordArt2", content);
         assertContainsCount("Ungrouped text box", content, 1);//should only be 1
@@ -623,10 +623,10 @@ public class SXSLFExtractorTest extends TikaTest {
         assertContains("MyTitle", content);
 
         assertEquals("/image1.jpg",
-                metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertEquals("/thumbnail.jpeg",
-                metadataList.get(2).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
 }

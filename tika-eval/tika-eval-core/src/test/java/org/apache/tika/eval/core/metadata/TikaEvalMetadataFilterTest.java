@@ -17,9 +17,9 @@
 package org.apache.tika.eval.core.metadata;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.DefaultMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -35,7 +35,7 @@ public class TikaEvalMetadataFilterTest {
         }) {
             Metadata metadata = new Metadata();
             String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog";
-            metadata.set(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT, content);
+            metadata.set(TikaCoreProperties.TIKA_CONTENT, content);
 
             filter.filter(metadata);
             assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));

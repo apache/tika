@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 public class WMFParserTest extends TikaTest {
@@ -42,7 +42,7 @@ public class WMFParserTest extends TikaTest {
         Metadata wmfMetadata = metadataList.get(metaDataItemIndex);
 
         assertEquals("image/wmf", wmfMetadata.get(Metadata.CONTENT_TYPE));
-        assertContains(expectedText, wmfMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains(expectedText, wmfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }
 

@@ -296,7 +296,7 @@ public class OutlookParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testMSG.msg");
         assertEquals(1, metadataList.size());
         assertContains("breaking your application",
-                metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.ms-outlook",
                 metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
@@ -311,17 +311,17 @@ public class OutlookParserTest extends TikaTest {
             assertEquals(3, metadataList.size());
 
             assertNotContained("breaking your application",
-                    metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT));
+                    metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
             assertEquals("application/vnd.ms-outlook",
                     metadataList.get(0).get(Metadata.CONTENT_TYPE));
 
             assertContains("breaking your application",
-                    metadataList.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+                    metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
             assertEquals("application/rtf",
                     metadataList.get(1).get(Metadata.CONTENT_TYPE));
 
             assertContains("breaking your application",
-                    metadataList.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+                    metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
             assertTrue(metadataList.get(2).get(Metadata.CONTENT_TYPE).startsWith("text/plain"));
         }
 

@@ -289,8 +289,8 @@ public class PowerPointParserTest extends TikaTest {
     @Test
     public void testMacros() throws  Exception {
         Metadata minExpected = new Metadata();
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(RecursiveParserWrapper.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
         minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
@@ -333,7 +333,7 @@ public class PowerPointParserTest extends TikaTest {
     public void testGroups() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.ppt");
         assertEquals(3, metadataList.size());
-        String content =  metadataList.get(0).get(RecursiveParserWrapper.TIKA_CONTENT);
+        String content =  metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         //this tests that we're ignoring text shapes at depth=0
         //i.e. POI has already included them in the slide's getTextParagraphs()
         assertContainsCount("Text box1", content, 1);
@@ -356,10 +356,10 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("MyTitle", content);
 
         assertEquals("/embedded-1",
-                metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
         assertEquals("/embedded-2",
-                metadataList.get(2).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
 
     }
 
@@ -382,8 +382,8 @@ public class PowerPointParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_oleWorkbook.ppt");
         assertEquals(3, metadataList.size());
         Metadata xlsx = metadataList.get(1);
-        assertContains("<h1>Sheet1</h1>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
-        assertContains("<td>1</td>", xlsx.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 xlsx.get(Metadata.CONTENT_TYPE));
 

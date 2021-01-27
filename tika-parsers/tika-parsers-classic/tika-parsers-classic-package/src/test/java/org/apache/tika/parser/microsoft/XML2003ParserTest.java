@@ -21,7 +21,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.RecursiveParserWrapper;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -35,7 +34,7 @@ public class XML2003ParserTest extends TikaTest {
         List<Metadata> list =  getRecursiveMetadata("testWORD2003.xml");
         assertEquals(8, list.size());
         Metadata m = list.get(0);//container doc
-        String xml = m.get(RecursiveParserWrapper.TIKA_CONTENT);
+        String xml = m.get(TikaCoreProperties.TIKA_CONTENT);
         xml = xml.replaceAll("\\s+", " ");
         //make sure that metadata gets dumped to xml
         assertContains("<meta name=\"meta:character-count-with-spaces\" content=\"256\"", xml);

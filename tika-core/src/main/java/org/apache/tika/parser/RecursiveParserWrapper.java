@@ -24,7 +24,6 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
@@ -51,7 +50,7 @@ import java.util.Set;
  * Metadata objects, one for each embedded resource.  The first item
  * in the list will contain the Metadata for the outer container file.
  * <p>
- * Content can also be extracted and stored in the {@link #TIKA_CONTENT} field
+ * Content can also be extracted and stored in the {@link TikaCoreProperties#TIKA_CONTENT} field
  * of a Metadata object.  Select the type of content to be stored
  * at initialization.
  * <p>
@@ -68,10 +67,6 @@ import java.util.Set;
  * Note that this wrapper holds all data in memory and is not appropriate
  * for files with content too large to be held in memory.
  * <p>
- * Note, too, that this wrapper is not thread safe because it stores state.  
- * The client must initialize a new wrapper for each thread, and the client
- * is responsible for calling {@link #reset()} after each parse.
- * <p>
  * The unit tests for this class are in the tika-parsers module.
  * </p>
  */
@@ -82,61 +77,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
      */
     private static final long serialVersionUID = 9086536568120690938L;
 
-    /**
-     * @deprecated use {@link org.apache.tika.sax.RecursiveParserWrapperHandler#TIKA_CONTENT}
-     */
-    @Deprecated
-    public final static Property TIKA_CONTENT = AbstractRecursiveParserWrapperHandler.TIKA_CONTENT;
-    /**
-     * @deprecated use {@link org.apache.tika.sax.RecursiveParserWrapperHandler#PARSE_TIME_MILLIS}
-     */
-    @Deprecated
-    public final static Property PARSE_TIME_MILLIS = AbstractRecursiveParserWrapperHandler.PARSE_TIME_MILLIS;
-
-    /**
-     * @deprecated use {@link org.apache.tika.sax.RecursiveParserWrapperHandler#EMBEDDED_EXCEPTION}
-     */
-    @Deprecated
-    public final static Property WRITE_LIMIT_REACHED =
-            AbstractRecursiveParserWrapperHandler.WRITE_LIMIT_REACHED;
-    /**
-     * @deprecated use {@link org.apache.tika.sax.RecursiveParserWrapperHandler#EMBEDDED_RESOURCE_LIMIT_REACHED}
-     */
-    @Deprecated
-    public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED =
-            AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED;
-
-    /**
-     * @deprecated use {@link org.apache.tika.sax.RecursiveParserWrapperHandler#EMBEDDED_EXCEPTION}
-     */
-    @Deprecated
-    public final static Property EMBEDDED_EXCEPTION = AbstractRecursiveParserWrapperHandler.EMBEDDED_EXCEPTION;
-
-    /**
-     * @deprecated use {@link org.apache.tika.sax.RecursiveParserWrapperHandler#EMBEDDED_RESOURCE_PATH}
-     */
-    @Deprecated
-    public final static Property EMBEDDED_RESOURCE_PATH = AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH;
-
-    /**
-     * @deprecated this should be passed in via the {@link RecursiveParserWrapperHandler}
-     */
-    @Deprecated
-    private ContentHandlerFactory contentHandlerFactory = null;
 
     private final boolean catchEmbeddedExceptions;
-
-    /**
-     * set this on the RecursiveParserWrapperHandler instead
-     * @deprecated this is here only for legacy behavior; it will be removed in 2.0 and/or 1.20
-     */
-    @Deprecated
-    private int maxEmbeddedResources = -1;
-    /**
-     * @deprecated this is here only for legacy behavior; it will be removed in 2.0 and/or 1.20
-     */
-    @Deprecated
-    private ParserState lastParseState = null;
 
     /**
      * Initialize the wrapper with {@link #catchEmbeddedExceptions} set
@@ -160,65 +102,35 @@ public class RecursiveParserWrapper extends ParserDecorator {
         super(wrappedParser);
         this.catchEmbeddedExceptions = catchEmbeddedExceptions;
     }
-    /**
-     * Initialize the wrapper with {@link #catchEmbeddedExceptions} set
-     * to <code>true</code> as default.
-     *
-     * @param wrappedParser parser to use for the container documents and the embedded documents
-     * @param contentHandlerFactory factory to use to generate a new content handler for
-     *                              the container document and each embedded document
-     * @deprecated use {@link RecursiveParserWrapper#RecursiveParserWrapper(Parser)}
-     */
-    @Deprecated
-    public RecursiveParserWrapper(Parser wrappedParser, ContentHandlerFactory contentHandlerFactory) {
-        this(wrappedParser, contentHandlerFactory, true);
-    }
 
-    /**
-     * Initialize the wrapper.
-     *
-     * @param wrappedParser parser to use for the container documents and the embedded documents
-     * @param contentHandlerFactory factory to use to generate a new content handler for
-     *                              the container document and each embedded document
-     * @param catchEmbeddedExceptions whether or not to catch the embedded exceptions.
-     *                                If set to <code>true</code>, the stack traces will be stored in
-     *                                the metadata object with key: {@link #EMBEDDED_EXCEPTION}.
-     * @deprecated use {@link RecursiveParserWrapper#RecursiveParserWrapper(Parser, boolean)}
-     */
-    @Deprecated
-    public RecursiveParserWrapper(Parser wrappedParser,
-                                  ContentHandlerFactory contentHandlerFactory, boolean catchEmbeddedExceptions) {
-        super(wrappedParser);
-        this.contentHandlerFactory = contentHandlerFactory;
-        this.catchEmbeddedExceptions = catchEmbeddedExceptions;
-    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return getWrappedParser().getSupportedTypes(context);
     }
 
+
     /**
-     * Acts like a regular parser except it ignores the ContentHandler
-     * and it automatically sets/overwrites the embedded Parser in the 
-     * ParseContext object.
-     * <p>
-     * To retrieve the results of the parse, use {@link #getMetadata()}.
-     * <p>
-     * Make sure to call {@link #reset()} after each parse.
+     *
+     * @param stream
+     * @param recursiveParserWrapperHandler -- handler must implement {@link RecursiveParserWrapperHandler}
+     * @param metadata
+     * @param context
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     * @throws IllegalStateException if the handler is not a {@link RecursiveParserWrapperHandler}
      */
     @Override
     public void parse(InputStream stream, ContentHandler recursiveParserWrapperHandler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         //this tracks the state of the parent parser, per call to #parse
-        //in future versions, we can remove lastParseState, and this will be thread-safe
         ParserState parserState;
         if (recursiveParserWrapperHandler instanceof AbstractRecursiveParserWrapperHandler) {
             parserState = new ParserState((AbstractRecursiveParserWrapperHandler)recursiveParserWrapperHandler);
         } else {
-            parserState = new ParserState(new RecursiveParserWrapperHandler(contentHandlerFactory, maxEmbeddedResources));
-            lastParseState = parserState;
+           throw new IllegalStateException("ContentHandler must implement RecursiveParserWrapperHandler");
         }
         EmbeddedParserDecorator decorator = new EmbeddedParserDecorator(getWrappedParser(), "/", parserState);
         context.set(Parser.class, decorator);
@@ -237,75 +149,22 @@ public class RecursiveParserWrapper extends ParserDecorator {
             if (wlr == false) {
                 throw e;
             }
-            metadata.set(RecursiveParserWrapperHandler.WRITE_LIMIT_REACHED, "true");
+            metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
         } catch (Throwable e) {
             //try our best to record the problem in the metadata object
             //then rethrow
             String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
-            metadata.add(RecursiveParserWrapperHandler.CONTAINER_EXCEPTION, stackTrace);
+            metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, stackTrace);
             throw e;
         } finally {
             tmp.dispose();
             long elapsedMillis = System.currentTimeMillis() - started;
-            metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
+            metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);
             parserState.recursiveParserWrapperHandler.endDocument();
         }
     }
 
-    /**
-     * 
-     * The first element in the returned list represents the 
-     * data from the outer container file.  There is no guarantee
-     * about the ordering of the list after that.
-     *
-     * @deprecated use a {@link RecursiveParserWrapperHandler} instead
-     *
-     * @return list of Metadata objects that were gathered during the parse
-     * @throws IllegalStateException if you've used a {@link RecursiveParserWrapperHandler} in your last
-     * call to {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)}
-     */
-    @Deprecated
-    public List<Metadata> getMetadata() {
-        if (lastParseState != null) {
-            return ((RecursiveParserWrapperHandler) lastParseState.recursiveParserWrapperHandler).getMetadataList();
-        } else {
-            throw new IllegalStateException("This is deprecated; please use a RecursiveParserWrapperHandler instead");
-        }
-    }
-    
-    /**
-     * Set the maximum number of embedded resources to store.
-     * If the max is hit during parsing, the {@link #EMBEDDED_RESOURCE_LIMIT_REACHED}
-     * property will be added to the container document's Metadata.
-     * 
-     * <p>
-     * If this value is < 0 (the default), the wrapper will store all Metadata.
-     * @deprecated set this on a {@link RecursiveParserWrapperHandler}
-     * @param max maximum number of embedded resources to store
-     */
-    @Deprecated
-    public void setMaxEmbeddedResources(int max) {
-        maxEmbeddedResources = max;
-    }
-    
-
-    /**
-     * This clears the last parser state (metadata list, unknown count, hit embeddedresource count)
-     *
-     * @deprecated use a {@link org.apache.tika.sax.RecursiveParserWrapperHandler} instead
-     * @throws IllegalStateException if you used a {@link RecursiveParserWrapper} in your call
-     * to {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)}
-     */
-    @Deprecated
-    public void reset() {
-        if (lastParseState != null) {
-            lastParseState = new ParserState(new RecursiveParserWrapperHandler(contentHandlerFactory, maxEmbeddedResources));
-        } else {
-            throw new IllegalStateException("This is deprecated; please use a RecursiveParserWrapperHandler instead");
-        }
-    }
-    
     /**
      * Copied/modified from WriteOutContentHandler.  Couldn't make that 
      * static, and we need to have something that will work 
@@ -367,7 +226,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             String objectName = getResourceName(metadata, parserState);
             String objectLocation = this.location + objectName;
       
-            metadata.add(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, objectLocation);
+            metadata.add(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, objectLocation);
 
 
             //get a fresh handler
@@ -388,7 +247,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } catch (SAXException e) {
                 boolean wlr = isWriteLimitReached(e);
                 if (wlr == true) {
-                    metadata.add(WRITE_LIMIT_REACHED, "true");
+                    metadata.add(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
                 } else {
                     if (catchEmbeddedExceptions) {
                         ParserUtils.recordParserFailure(this, e, metadata);
@@ -411,7 +270,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 context.set(Parser.class, preContextParser);
                 secureContentHandler.updateContentHandler(preContextHandler);
                 long elapsedMillis = System.currentTimeMillis() - started;
-                metadata.set(RecursiveParserWrapperHandler.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
+                metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
                 parserState.recursiveParserWrapperHandler.endEmbeddedDocument(localHandler, metadata);
             }
         }

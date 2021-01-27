@@ -18,7 +18,7 @@ package org.apache.tika.parser.apple;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
 
 import java.util.List;
@@ -33,7 +33,7 @@ public class PListParserTest extends TikaTest {
         Metadata m0 = metadataList.get(0);
         assertEquals("application/x-bplist-webarchive", m0.get(Metadata.CONTENT_TYPE));
         Metadata m1 = metadataList.get(1);
-        String content = m1.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        String content = m1.get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("December 2008: Apache Tika Release", content);
     }
 

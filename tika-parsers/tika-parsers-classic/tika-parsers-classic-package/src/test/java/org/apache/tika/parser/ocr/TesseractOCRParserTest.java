@@ -17,27 +17,20 @@
 package org.apache.tika.parser.ocr;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
-import java.io.InputStream;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -156,7 +149,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
         StringBuilder contents = new StringBuilder();
         for (Metadata m : metadataList) {
-            contents.append(m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+            contents.append(m.get(TikaCoreProperties.TIKA_CONTENT));
         }
  
         for (String needle : nonOCRContains) {

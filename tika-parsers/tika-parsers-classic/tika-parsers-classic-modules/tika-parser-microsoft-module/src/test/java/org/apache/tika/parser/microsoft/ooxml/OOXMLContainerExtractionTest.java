@@ -26,6 +26,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.utils.ParserUtils;
@@ -317,7 +318,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
                 if (m.get(Metadata.CONTENT_TYPE).equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
-                assertNull(m.get(ParserUtils.EMBEDDED_EXCEPTION));
+                assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
             }
             assertTrue("didn't find chart in "+suffix, found);
         }

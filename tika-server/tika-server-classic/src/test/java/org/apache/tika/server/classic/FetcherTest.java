@@ -21,12 +21,10 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.FetcherStreamFactory;
 import org.apache.tika.server.core.InputStreamFactory;
@@ -90,7 +88,7 @@ public class FetcherTest extends CXFTestBase {
         Reader reader = new InputStreamReader(new GzipCompressorInputStream((InputStream) response.getEntity()), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         Metadata parent = metadataList.get(0);
-        String txt = parent.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT);
+        String txt = parent.get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("toolkit detects and extracts metadata", txt);
         assertEquals("Apache Tika – Apache Tika", parent.get(TikaCoreProperties.TITLE));
     }

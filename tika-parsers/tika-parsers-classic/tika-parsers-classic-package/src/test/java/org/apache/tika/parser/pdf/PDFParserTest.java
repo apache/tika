@@ -32,9 +32,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
-import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.xml.XMLProfiler;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.junit.AfterClass;
@@ -146,13 +144,13 @@ public class PDFParserTest extends TikaTest {
         assertEquals("metadata size", 5, metadatas.size());
 
         assertEquals("file name", "Test.txt", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("os specific", metadatas.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("os specific", metadatas.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("file name", "TestMac.txt", metadatas.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("mac embedded", metadatas.get(2).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("mac embedded", metadatas.get(2).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("file name", "TestDos.txt", metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("dos embedded", metadatas.get(3).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("dos embedded", metadatas.get(3).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("file name", "TestUnix.txt", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertContains("unix embedded", metadatas.get(4).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("unix embedded", metadatas.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
     }
 
@@ -280,7 +278,7 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> contents = getRecursiveMetadata("testPDFFileEmbInAnnotation_noContents.pdf",
                 NO_OCR());
         assertEquals(2, contents.size());
-        assertContains("This is a Excel", contents.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("This is a Excel", contents.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -322,7 +320,7 @@ public class PDFParserTest extends TikaTest {
 
         List<Metadata> metadatas = getRecursiveMetadata("testPDF_JBIG2.pdf", context);
         assertEquals(2, metadatas.size());
-        assertContains("test images compressed using JBIG2", metadatas.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertContains("test images compressed using JBIG2", metadatas.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         for (String key : metadatas.get(1).names()) {
             if (key.startsWith("X-TIKA:EXCEPTION")) {

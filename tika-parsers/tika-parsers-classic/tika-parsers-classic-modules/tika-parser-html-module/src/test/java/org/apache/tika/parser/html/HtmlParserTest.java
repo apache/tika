@@ -67,11 +67,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
-import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.boilerpipe.BoilerpipeContentHandler;
 import org.ccil.cowan.tagsoup.HTMLSchema;
@@ -1291,8 +1289,8 @@ public class HtmlParserTest extends TikaTest {
         assertEquals(2, metadataList.size());
         assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertContains("cool",
-                metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertNotContained("cool", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("cool", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -1304,8 +1302,8 @@ public class HtmlParserTest extends TikaTest {
             List<Metadata> metadataList = getRecursiveMetadata("testHTMLGoodScript.html", p);
             assertEquals(2, metadataList.size());
             assertEquals("MACRO", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-            assertContains("cool", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-            assertNotContained("cool", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+            assertContains("cool", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
+            assertNotContained("cool", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 
@@ -1414,7 +1412,7 @@ public class HtmlParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html");
         assertEquals(1, metadataList.size());
         assertNotContained("alert( 'Hello, world!' );",
-                metadataList.get(0).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         //make sure to include it if a user wants scripts to be extracted
         try (InputStream is = getResourceAsStream("/org/apache/tika/parser/html/tika-config.xml")) {
@@ -1424,7 +1422,7 @@ public class HtmlParserTest extends TikaTest {
             metadataList = getRecursiveMetadata("testHTML_embedded_data_uri_js.html", p);
             assertEquals(2, metadataList.size());
             assertContains("alert( 'Hello, world!' );",
-                    metadataList.get(1).get(RecursiveParserWrapperHandler.TIKA_CONTENT));
+                    metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 }

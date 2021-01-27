@@ -27,6 +27,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 
+import static org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_EXCEPTION;
+
 /**
  * Helper util methods for Parsers themselves.
  */
@@ -34,8 +36,7 @@ public class ParserUtils {
 
     public final static Property EMBEDDED_PARSER =
             Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
-    public final static Property EMBEDDED_EXCEPTION =
-            Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
+
     
     /**
      * Does a deep clone of a Metadata object.

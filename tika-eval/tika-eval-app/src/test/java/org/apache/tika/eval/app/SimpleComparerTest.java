@@ -37,7 +37,7 @@ import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -232,23 +232,23 @@ public class SimpleComparerTest extends TikaTest {
     public void testAttachmentCounts() {
         List<Metadata> list = new ArrayList<>();
         Metadata m0 = new Metadata();
-        m0.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "dir1/dir2/file.zip");//bad data should be ignored
+        m0.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "dir1/dir2/file.zip");//bad data should be ignored
                                                                                     //in the first metadata object
         list.add(m0);
         Metadata m1 = new Metadata();
-        m1.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/f1.docx/f2.zip/text1.txt");
+        m1.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/f1.docx/f2.zip/text1.txt");
         list.add(m1);
         Metadata m2 = new Metadata();
-        m2.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/f1.docx/f2.zip/text2.txt");
+        m2.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/f1.docx/f2.zip/text2.txt");
         list.add(m2);
         Metadata m3 = new Metadata();
-        m3.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/f1.docx/f2.zip");
+        m3.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/f1.docx/f2.zip");
         list.add(m3);
         Metadata m4 = new Metadata();
-        m4.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/f1.docx");
+        m4.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/f1.docx");
         list.add(m4);
         Metadata m5 = new Metadata();
-        m5.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_PATH, "/f1.docx/text3.txt");
+        m5.set(TikaCoreProperties.EMBEDDED_RESOURCE_PATH, "/f1.docx/text3.txt");
         list.add(m5);
 
         List<Integer> counts = AbstractProfiler.countAttachments(list);

@@ -18,9 +18,6 @@ package org.apache.tika.parser.pkg;
 
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.pkg.AbstractPkgTest;
-import org.apache.tika.parser.pkg.TarParserTest;
-import org.apache.tika.parser.pkg.ZipParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;

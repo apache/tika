@@ -22,10 +22,10 @@ import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -401,8 +401,8 @@ public class MultiThreadedTikaTest extends TikaTest {
                     extractA.metadataList.get(i).size(), extractB.metadataList.get(i).size());
 
             assertEquals("content in attachment: " + i,
-                    extractA.metadataList.get(i).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT),
-                    extractB.metadataList.get(i).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                    extractA.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT),
+                    extractB.metadataList.get(i).get(TikaCoreProperties.TIKA_CONTENT));
         }
     }
 

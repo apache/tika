@@ -25,7 +25,7 @@ import java.util.List;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,24 +47,24 @@ public class ExtractReaderTest extends TikaTest {
         List<Metadata> metadataList = extractReader.loadExtract(testJsonFile);
 
         assertEquals(2, metadataList.size());
-        assertEquals(1, metadataList.get(0).getValues(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length);
-        assertEquals(1, metadataList.get(1).getValues(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length);
-        assertContains("fox", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertContains("attachment", metadataList.get(1).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertEquals(1, metadataList.get(1).getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("attachment", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
 
         extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.FIRST_ONLY);
         metadataList = extractReader.loadExtract(testJsonFile);
         assertEquals(1, metadataList.size());
-        assertEquals(1, metadataList.get(0).getValues(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length);
-        assertContains("fox", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertNotContained("attachment", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertNotContained("attachment", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.CONCATENATE_CONTENT_INTO_FIRST);
         metadataList = extractReader.loadExtract(testJsonFile);
         assertEquals(1, metadataList.size());
-        assertEquals(1, metadataList.get(0).getValues(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length);
-        assertContains("fox", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
-        assertContains("attachment", metadataList.get(0).get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+        assertEquals(1, metadataList.get(0).getValues(TikaCoreProperties.TIKA_CONTENT).length);
+        assertContains("fox", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("attachment", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
@@ -73,9 +73,9 @@ public class ExtractReaderTest extends TikaTest {
         List<Metadata> metadataList = extractReader.loadExtract(testTxtFile);
         assertEquals(1, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals(1, m.getValues(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT).length);
+        assertEquals(1, m.getValues(TikaCoreProperties.TIKA_CONTENT).length);
         assertContains("the quick brown fox fox fox jumped over the lazy lazy dog",
-                m.get(AbstractRecursiveParserWrapperHandler.TIKA_CONTENT));
+                m.get(TikaCoreProperties.TIKA_CONTENT));
 
         //test that the mime is inferred from the file extension
         assertEquals("application/msword", m.get(Metadata.CONTENT_TYPE));
