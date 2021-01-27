@@ -307,7 +307,7 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(InputStreamFactory factory, TemporaryResources tmp) throws IOException {
         TikaInputStream stream = get(factory.getInputStream(), tmp);
-        stream.steamFactory = factory;
+        stream.streamFactory = factory;
         return stream;
     }
 
@@ -481,7 +481,7 @@ public class TikaInputStream extends TaggedInputStream {
      * The Factory that can create fresh {@link InputStream}s for
      *  the resource this reads for, eg when needing to re-read.
      */
-    private InputStreamFactory steamFactory;
+    private InputStreamFactory streamFactory;
 
     /**
      * The path to the file that contains the contents of this stream.
@@ -633,7 +633,7 @@ public class TikaInputStream extends TaggedInputStream {
     }
     
     public boolean hasInputStreamFactory() {
-        return steamFactory != null;
+        return streamFactory != null;
     }
     
     /**
@@ -641,7 +641,7 @@ public class TikaInputStream extends TaggedInputStream {
      *  return that, otherwise <code>null</code>.
      */
     public InputStreamFactory getInputStreamFactory() {
-        return steamFactory;
+        return streamFactory;
     }
 
     public boolean hasFile() {
