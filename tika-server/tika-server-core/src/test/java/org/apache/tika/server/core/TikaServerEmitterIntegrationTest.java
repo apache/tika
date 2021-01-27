@@ -94,7 +94,7 @@ public class TikaServerEmitterIntegrationTest extends IntegrationTestBase {
                 "</fetcher>"+
                 "</fetchers>"+
                 "<emitters>"+
-                "<emitter class=\"org.apache.tika.emitter.fs.FileSystemEmitter\">"+
+                "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">"+
                 "<params>"+
                 "<param name=\"name\" type=\"string\">"+EMITTER_NAME+"</param>"+
 

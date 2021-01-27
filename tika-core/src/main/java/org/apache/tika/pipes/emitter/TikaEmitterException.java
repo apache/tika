@@ -22,4 +22,8 @@ public class TikaEmitterException extends TikaException {
     public TikaEmitterException(String msg) {
         super(msg);
     }
+
+    public TikaEmitterException(String msg, Throwable t) {
+        super(msg, t);
+    }
 }

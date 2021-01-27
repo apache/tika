@@ -17,7 +17,7 @@
 -->
 <properties>
     <fetchers>
-        <fetcher class="org.apache.tika.fetcher.s3.S3Fetcher">
+        <fetcher class="org.apache.tika.pipes.fetcher.s3.S3Fetcher">
             <params>
                 <param name="name" type="string">s3</param>
                 <param name="region" type="string">us-east-1</param>

@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
 public class CSVFetchIterator extends FetchIterator implements Initializable {
 
     private Charset charset = StandardCharsets.UTF_8;

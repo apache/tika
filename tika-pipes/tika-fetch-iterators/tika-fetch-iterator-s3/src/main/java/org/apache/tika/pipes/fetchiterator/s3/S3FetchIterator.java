@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
 public class S3FetchIterator extends FetchIterator implements Initializable {
 
 
@@ -96,10 +98,10 @@ public class S3FetchIterator extends FetchIterator implements Initializable {
         int count = 0;
         for (S3ObjectSummary summary : S3Objects.withPrefix(s3Client, bucket, s3PathPrefix)) {
             long elapsed = System.currentTimeMillis() - start;
-            LOGGER.debug("adding ({}) {} in {} ms", count, bucket+"/"+summary.getKey(),
+            LOGGER.debug("adding ({}) {} in {} ms", count, summary.getKey(),
                     elapsed);
             tryToAdd( new FetchIdMetadataPair(
-                    new FetchId(fetcherName, bucket+"/"+summary.getKey()),
+                    new FetchId(fetcherName, summary.getKey()),
                     new Metadata()));
             count++;
         }

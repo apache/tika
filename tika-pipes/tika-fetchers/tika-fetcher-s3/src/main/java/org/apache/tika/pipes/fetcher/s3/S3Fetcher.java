@@ -47,6 +47,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
 /**
  * Fetches files from s3. Example string: s3://my_bucket/path/to/my_file.pdf
  * This will parse the bucket out of that string and retrieve the path.
@@ -56,6 +58,7 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Fetcher.class);
     private static final String PREFIX = "s3";
     private String region;
+    private String bucket;
     private String profile;
     private boolean extractUserMetadata = true;
     private AmazonS3 s3Client;
@@ -65,22 +68,10 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
     public InputStream fetch(String fetchKey, Metadata metadata)
             throws TikaException, IOException {
 
-        LOGGER.debug("about to fetch fetchkey={}", fetchKey);
-        final String origFetchKey = fetchKey;
-        if (fetchKey.startsWith("//")) {
-            fetchKey = fetchKey.substring(2);
-        } else if (fetchKey.startsWith("/")) {
-            fetchKey = fetchKey.substring(1);
-        }
-        int i = fetchKey.indexOf("/");
-        if (i < 0) {
-            throw new FetcherStringException("Couldn't find bucket:" +
-                    origFetchKey);
-        }
-        String bucket = fetchKey.substring(0, i);
-        String key = fetchKey.substring(i + 1);
-        LOGGER.debug("about to fetch bucket: ({}); key: ({})", bucket, key);
-        S3Object fullObject = s3Client.getObject(new GetObjectRequest(bucket, key));
+        LOGGER.debug("about to fetch fetchkey={} from bucket ({})",
+                fetchKey, bucket);
+
+        S3Object fullObject = s3Client.getObject(new GetObjectRequest(bucket, fetchKey));
         if (extractUserMetadata) {
             for (Map.Entry<String, String> e :
                     fullObject.getObjectMetadata().getUserMetadata().entrySet()) {
@@ -116,6 +107,11 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
         this.profile = profile;
     }
 
+    @Field
+    public void setBucket(String bucket) {
+        this.bucket = bucket;
+    }
+
     /**
      * Whether or not to extract user metadata from the S3Object
      *
@@ -138,6 +134,9 @@ public class S3Fetcher extends AbstractFetcher implements Initializable {
 
     @Override
     public void checkInitialization(InitializableProblemHandler problemHandler) throws TikaConfigException {
+        mustNotBeEmpty("bucket", this.bucket);
+        mustNotBeEmpty("profile", this.profile);
+        mustNotBeEmpty("region", this.region);
 
     }
 }

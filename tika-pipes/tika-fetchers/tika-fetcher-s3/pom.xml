@@ -85,7 +85,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>org.apache.tika.fetcher.s3</Automatic-Module-Name>
+                            <Automatic-Module-Name>org.apache.tika.pipes.fetcher.s3</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>

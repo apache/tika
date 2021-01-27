@@ -125,11 +125,4 @@ public abstract class FetchIterator implements Callable<Integer>, Initializable 
         //no-op
     }
 
-    protected static void mustNotBeEmpty(String paramName, String paramValue) {
-        if (paramValue == null || paramValue.trim().equals("")) {
-            throw new IllegalArgumentException("parameter '"+
-                    paramName + "' must be set in the config file");
-        }
-    }
-
 }

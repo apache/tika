@@ -26,6 +26,7 @@ public abstract class AbstractEmitter implements Emitter {
     public void setName(String name) {
         this.name = name;
     }
+
     @Override
     public String getName() {
         return name;

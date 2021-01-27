@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
+import static org.apache.tika.config.TikaConfig.mustNotBeEmpty;
+
 public class JDBCFetchIterator extends FetchIterator implements Initializable {
 
 

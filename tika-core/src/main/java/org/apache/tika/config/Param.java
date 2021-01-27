@@ -233,8 +233,13 @@ public class Param<T> implements Serializable {
         if (List.class.isAssignableFrom(ret.type)) {
             loadList(ret, node);
         } else {
-            ret.actualValue = getTypedValue(ret.type, value.getTextContent());
-            ret.valueStrings.add(value.getTextContent());
+            //allow the empty string
+            String textContent = "";
+            if (value != null) {
+                textContent = value.getTextContent();
+            }
+            ret.actualValue = getTypedValue(ret.type, textContent);
+            ret.valueStrings.add(textContent);
         }
         return ret;
     }

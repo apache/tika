@@ -52,7 +52,7 @@ public class FileSystemFetchIteratorTest {
 
         String fetcherName = "fs";
         ExecutorService es = Executors.newFixedThreadPool(1);
-        ExecutorCompletionService cs = new ExecutorCompletionService(es);
+        ExecutorCompletionService<Integer> cs = new ExecutorCompletionService<>(es);
         FetchIterator it = new FileSystemFetchIterator(fetcherName, root);
         it.setQueueSize(20000);
         ArrayBlockingQueue<FetchIdMetadataPair> q = it.init(1);
@@ -60,7 +60,7 @@ public class FileSystemFetchIteratorTest {
         cs.submit(it);
 
 
-        Future f = cs.take();
+        Future<Integer> f = cs.take();
         f.get();
 
         Set<String> iteratorSet = new HashSet<>();

@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.emitter.fs;
+package org.apache.tika.pipes.emitter.fs;
 
 import org.apache.tika.config.Field;
+import org.apache.tika.pipes.emitter.AbstractEmitter;
 import org.apache.tika.pipes.emitter.Emitter;
 import org.apache.tika.pipes.emitter.TikaEmitterException;
 import org.apache.tika.exception.TikaException;
@@ -34,16 +35,33 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-public class FileSystemEmitter implements Emitter {
+/**
+ * Emitter to write to a file system.
+ *
+ * This calculates the path to write to based on the {@link #basePath}
+ * and the value of the {@link TikaCoreProperties#SOURCE_PATH} value.
+ *
+ * <pre class="prettyprint">
+ *  &lt;properties&gt;
+ *      &lt;emitters&gt;
+ *          &lt;emitter class="org.apache.tika.pipes.emitter.fs.FileSystemEmitter&gt;
+ *              &lt;params&gt;
+ *                  &lt;!-- required --&gt;
+ *                  &lt;param name="name" type="string"&gt;fs&lt;/param&gt;
+ *                  &lt;!-- required --&gt;
+ *                  &lt;param name="basePath" type="string"&gt;/path/to/output&lt;/param&gt;
+ *                  &lt;!-- optional; default is 'json' --&gt;
+ *                  &lt;param name="fileExtension" type="string"&gt;json&lt;/param&gt;
+ *              &lt;/params&gt;
+ *          &lt;/emitter&gt;
+ *      &lt;/emitters&gt;
+ *  &lt;/properties&gt;</pre>
+ */
+public class FileSystemEmitter extends AbstractEmitter {
 
-    private String name = "fs";
     private Path basePath = null;
     private String fileExtension = "json";
 
-    @Override
-    public String getName() {
-        return name;
-    }
 
     @Override
     public void emit(List<Metadata> metadataList) throws IOException, TikaException {
@@ -88,15 +106,5 @@ public class FileSystemEmitter implements Emitter {
     @Field
     public void setFileExtension(String fileExtension) {
         this.fileExtension = fileExtension;
-    }
-
-    /**
-     * Set this so to uniquely identify this emitter if
-     * there might be others available. The default is "fs"
-     * @param name
-     */
-    @Field
-    public void setName(String name) {
-        this.name = name;
     }
 }

@@ -95,7 +95,7 @@ public class TikaEmitterTest extends CXFTestBase {
                         "</fetcher>"+
                     "</fetchers>"+
                     "<emitters>"+
-                        "<emitter class=\"org.apache.tika.emitter.fs.FileSystemEmitter\">"+
+                        "<emitter class=\"org.apache.tika.pipes.emitter.fs.FileSystemEmitter\">"+
                             "<params>"+
                                 "<param name=\"name\" type=\"string\">fse</param>"+
                                 "<param name=\"basePath\" type=\"string\">"+ TMP_OUTPUT_DIR.toAbsolutePath()+"</param>"+
