@@ -445,7 +445,7 @@ class OneNoteTreeWalker {
                 }
                 ByteBuffer buf = ByteBuffer.allocate(content.size());
                 dif.read(buf);
-                propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
+                propMap.put("dataAscii", new String(buf.array(), StandardCharsets.ISO_8859_1));
                 xhtml.startElement(P);
                 xhtml.characters((String) propMap.get("dataAscii"));
                 xhtml.endElement(P);
